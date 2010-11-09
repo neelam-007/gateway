@@ -246,8 +246,8 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
                     maxFrontendResponseTime = bin.getMaxFrontendResponseTime();
                 } else {
                     if (bin.getNumAttemptedRequest() != 0) {
-                        minFrontendResponseTime = Math.min(minFrontendResponseTime, bin.getMinFrontendResponseTime());
-                        maxFrontendResponseTime = Math.max(maxFrontendResponseTime, bin.getMaxFrontendResponseTime());
+                        minFrontendResponseTime = min(minFrontendResponseTime, bin.getMinFrontendResponseTime());
+                        maxFrontendResponseTime = max(maxFrontendResponseTime, bin.getMaxFrontendResponseTime());
                     }
                 }
                 sumFrontendResponseTime += bin.getSumFrontendResponseTime();
@@ -256,8 +256,8 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
                     maxBackendResponseTime = bin.getMaxBackendResponseTime();
                 } else {
                     if (bin.getNumCompletedRequest() != 0) {
-                        minBackendResponseTime = Math.min(minBackendResponseTime, bin.getMinBackendResponseTime());
-                        maxBackendResponseTime = Math.max(maxBackendResponseTime, bin.getMaxBackendResponseTime());
+                        minBackendResponseTime = min(minBackendResponseTime, bin.getMinBackendResponseTime());
+                        maxBackendResponseTime = max(maxBackendResponseTime, bin.getMaxBackendResponseTime());
                     }
                 }
                 sumBackendResponseTime += bin.getSumBackendResponseTime();
@@ -648,8 +648,8 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
                     _maxFrontendResponseTime = other.getMaxFrontendResponseTime();
                 } else {
                     if (other.getNumAttemptedRequest() != 0) {
-                        _minFrontendResponseTime = Math.min(_minFrontendResponseTime, other.getMinFrontendResponseTime());
-                        _maxFrontendResponseTime = Math.max(_maxFrontendResponseTime, other.getMaxFrontendResponseTime());
+                        _minFrontendResponseTime = min(_minFrontendResponseTime==null?Integer.MAX_VALUE:_minFrontendResponseTime, other.getMinFrontendResponseTime());
+                        _maxFrontendResponseTime = max(_maxFrontendResponseTime==null?-1:_minFrontendResponseTime, other.getMaxFrontendResponseTime());
                     }
                 }
 
@@ -658,8 +658,8 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
                     _maxBackendResponseTime = other.getMaxBackendResponseTime();
                 } else {
                     if (other.getNumCompletedRequest() != 0) {
-                        _minBackendResponseTime = Math.min(_minBackendResponseTime, other.getMinBackendResponseTime());
-                        _maxBackendResponseTime = Math.max(_maxBackendResponseTime, other.getMaxBackendResponseTime());
+                        _minBackendResponseTime = min(_minBackendResponseTime==null?Integer.MAX_VALUE:_minBackendResponseTime, other.getMinBackendResponseTime());
+                        _maxBackendResponseTime = max(_maxBackendResponseTime==null?-1:_minBackendResponseTime, other.getMaxBackendResponseTime());
                     }
                 }
 
@@ -729,5 +729,13 @@ public class MetricsBin extends PersistentEntityImp implements Comparable {
             return (int)(_periodStart - other._periodStart);
         }
         return _resolution - other._resolution;
+    }
+
+    static int min( final int value1, final Integer value2 ) {
+        return value2==null ? value1 : Math.min( value1, value2 );
+    }
+
+    static int max( final int value1, final Integer value2 ) {
+        return value2==null ? value1 : Math.max( value1, value2 );
     }
 }

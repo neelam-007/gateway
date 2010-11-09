@@ -178,8 +178,8 @@ public class MetricsSummaryBin extends MetricsBin {
                     maxFrontendResponseTime = bin.getMaxFrontendResponseTime();
                 } else {
                     if (bin.getNumAttemptedRequest() != 0) {
-                        minFrontendResponseTime = Math.min(minFrontendResponseTime==null?100000000:minFrontendResponseTime, bin.getMinFrontendResponseTime());
-                        maxFrontendResponseTime = Math.max(maxFrontendResponseTime==null?-1:maxFrontendResponseTime, bin.getMaxFrontendResponseTime());
+                        minFrontendResponseTime = MetricsBin.min(minFrontendResponseTime==null?Integer.MAX_VALUE:minFrontendResponseTime, bin.getMinFrontendResponseTime());
+                        maxFrontendResponseTime = MetricsBin.max(maxFrontendResponseTime==null?-1:maxFrontendResponseTime, bin.getMaxFrontendResponseTime());
                     }
                 }
                 sumFrontendResponseTime += bin.getSumFrontendResponseTime();
@@ -188,8 +188,8 @@ public class MetricsSummaryBin extends MetricsBin {
                     maxBackendResponseTime = bin.getMaxBackendResponseTime();
                 } else {
                     if (bin.getNumCompletedRequest() != 0) {
-                        minBackendResponseTime = Math.min(minBackendResponseTime==null?100000000:minBackendResponseTime, bin.getMinBackendResponseTime());
-                        maxBackendResponseTime = Math.max(maxBackendResponseTime==null?-1:maxBackendResponseTime, bin.getMaxBackendResponseTime());
+                        minBackendResponseTime = MetricsBin.min(minBackendResponseTime==null?Integer.MAX_VALUE:minBackendResponseTime, bin.getMinBackendResponseTime());
+                        maxBackendResponseTime = MetricsBin.max(maxBackendResponseTime==null?-1:maxBackendResponseTime, bin.getMaxBackendResponseTime());
                     }
                 }
                 sumBackendResponseTime += bin.getSumBackendResponseTime();
