@@ -119,7 +119,6 @@ public class GlobalResourcesDialog extends JDialog {
         Utilities.setButtonAccelerator( this, helpButton, KeyEvent.VK_F1 );
         enableDisableComponents();
         loadResources();
-        updateSummaryDisplay();        
     }
 
     private void registerListeners() {
@@ -304,6 +303,7 @@ public class GlobalResourcesDialog extends JDialog {
                     "Error Loading Resources",
                     "Unexpected error loading resources:\n" + ExceptionUtils.getMessage(e) );
         }
+        updateSummaryDisplay();
     }
 
     private void doFilter() {
