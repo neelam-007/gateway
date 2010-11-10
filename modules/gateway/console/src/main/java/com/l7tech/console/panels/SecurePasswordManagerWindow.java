@@ -177,6 +177,6 @@ public class SecurePasswordManagerWindow extends JDialog {
 
     /** @return the selected SecurePassword, or null if no row is selected. */
     private SecurePassword getSelectedSecurePassword() {
-        return passwordTableModel.getRowObject(passwordTable.getSelectedRow());                
+        return passwordTableModel.getRowObject(passwordTable.getRowSorter().convertRowIndexToModel(passwordTable.getSelectedRow()));
     }
 }
