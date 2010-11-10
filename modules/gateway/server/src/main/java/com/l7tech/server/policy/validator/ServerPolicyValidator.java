@@ -1,7 +1,7 @@
 package com.l7tech.server.policy.validator;
 
-import com.l7tech.common.io.DocumentReferenceProcessor;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.ResourceReference;
+import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
@@ -32,6 +32,7 @@ import com.l7tech.policy.validator.AbstractPolicyValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.globalresources.ResourceEntryManager;
+import com.l7tech.server.globalresources.ResourceEntrySchemaSourceResolver;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
@@ -39,11 +40,13 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.security.KeyStoreException;
 import java.text.MessageFormat;
@@ -401,47 +404,65 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     }
 
     private void validateSchemaValidation(Assertion a, AssertionPath ap, StaticResourceInfo sri, PolicyValidatorResult r) {
-        Document schemaDoc;
         try {
-            schemaDoc = XmlUtil.stringToDocument(sri.getDocument());
+            final InputSource inputSource = new InputSource();
+            inputSource.setSystemId( sri.getOriginalUrl()!=null ? sri.getOriginalUrl() : "urn:uuid:" + UUID.randomUUID().toString() );
+            inputSource.setCharacterStream( new StringReader(sri.getDocument()) );
 
-            final List<Element> dependencyElements = new ArrayList<Element>();
-            final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
-            schemaReferenceProcessor.processDocumentReferences( schemaDoc, new DocumentReferenceProcessor.ReferenceCustomizer(){
-                @Override
-                public String customize( final Document document,
-                                         final Node node,
-                                         final String documentUrl,
-                                         final DocumentReferenceProcessor.ReferenceInfo referenceInfo  ) {
-                    if ( node instanceof Element ) dependencyElements.add( (Element)node );
-                    return null;
-                }
-            } );
+            final Collection<ResourceReference> references = SchemaUtil.getDependencies( inputSource, new ResourceEntrySchemaSourceResolver(resourceEntryManager) );
 
-            if (!dependencyElements.isEmpty()) {
-                final ArrayList<String> unresolvedImportsList = new ArrayList<String>();
+            if (!references.isEmpty()) {
+                final ArrayList<String> unresolvedReferencesList = new ArrayList<String>();
 
-                for ( final Element dependencyElement : dependencyElements  ) {
-                    final String schemaNamespace = dependencyElement.getAttribute("namespace");
-                    final String schemaUrl = dependencyElement.getAttribute("schemaLocation");
+                for ( final ResourceReference reference : references ) {
                     try {
-                        if (resourceEntryManager.findHeaderByUriAndType(schemaUrl, ResourceType.XML_SCHEMA) == null ) {
-                            if (!"import".equals(dependencyElement.getLocalName()) || resourceEntryManager.findHeadersByTNS(schemaNamespace).isEmpty()) {
-                                if (schemaUrl != null) {
-                                    unresolvedImportsList.add(schemaUrl);
-                                } else {
-                                    unresolvedImportsList.add(schemaNamespace);
+                        boolean resolved = false;
+
+                        // By unresolved URI
+                        if ( reference.getUri() != null && resourceEntryManager.findHeaderByUriAndType(reference.getUri(), null) != null ) {
+                            resolved = true;
+                        }
+
+                        // By resolved URI
+                        if ( !resolved && reference.getBaseUri() != null && reference.getUri() != null ) {
+                            try {
+                                final String resolvedUri = new URI(reference.getBaseUri()).resolve(reference.getUri()).toString();
+                                if ( resourceEntryManager.findHeaderByUriAndType(resolvedUri, null) != null ) {
+                                    resolved = true;
                                 }
+                            } catch ( URISyntaxException e ) {
+                                logger.info( "Unable to resolve schema dependency URI '"+reference.getUri()+"' against '"+reference.getBaseUri()+"': " + ExceptionUtils.getMessage(e) );
+                            } catch ( IllegalArgumentException e ) {
+                                logger.info( "Unable to resolve schema dependency URI '"+reference.getUri()+"' against '"+reference.getBaseUri()+"': " + ExceptionUtils.getMessage(e) );
+                            }
+                        }
+
+                        // By target namespace
+                        if ( !resolved && reference.hasTargetNamespace() && !resourceEntryManager.findHeadersByTNS(reference.getTargetNamespace()).isEmpty()) {
+                            resolved = true;
+                        }
+
+                        // By public identifier
+                        if ( !resolved && reference.getPublicIdentifier() != null && !resourceEntryManager.findHeadersByPublicIdentifier(reference.getPublicIdentifier()).isEmpty() ) {
+                            resolved = true;    
+                        }
+
+                        if ( !resolved ) {
+                            if (reference.getUri() != null) {
+                                unresolvedReferencesList.add( reference.getUri() );
+                            } else {
+                                unresolvedReferencesList.add( reference.getTargetNamespace()!=null ? reference.getTargetNamespace() : "<no namespace>" );
                             }
                         }
                     } catch (ObjectModelException e) {
                         logger.log(Level.SEVERE, "cannot get schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
                 }
-                if (!unresolvedImportsList.isEmpty()) {
+
+                if (!unresolvedReferencesList.isEmpty()) {
                     StringBuffer msg = new StringBuffer("The schema validation assertion contains unresolved " +
                             "schema dependencies: ");
-                    for (Iterator iterator = unresolvedImportsList.iterator(); iterator.hasNext();) {
+                    for (Iterator iterator = unresolvedReferencesList.iterator(); iterator.hasNext();) {
                         msg.append(iterator.next());
                         if (iterator.hasNext()) msg.append(", ");
                     }
@@ -450,6 +471,13 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 }
             }
         } catch (SAXException e) {
+            logger.log(Level.INFO, "cannot parse xml from schema validation assertion: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            r.addError(new PolicyValidatorResult.Error(a,
+                                                       ap,
+                                                       "This schema validation assertion does not appear " +
+                                                               "to contain a well-formed xml schema.",
+                                                       null));
+        } catch ( IOException e ) {
             logger.log(Level.INFO, "cannot parse xml from schema validation assertion: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             r.addError(new PolicyValidatorResult.Error(a,
                                                        ap,
