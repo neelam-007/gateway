@@ -317,9 +317,8 @@ Please ensure that:
 * The module switch on the back of the HSM is in the "O" position (operational mode)
 
 EOM
-        if (!pressEnterOrCancel()) {
-            die "Operation canceled by user.\n";
-        }
+
+        pressEnter();
 
         system(@NOPCLEARFAIL) == 0
             or die "Unable to reset board: $!\n";
