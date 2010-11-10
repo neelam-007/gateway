@@ -874,10 +874,13 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         ResourceType processedResourceType = resourceType;
 
         if ( processedResourceType == null ) {
-            for ( final ResourceType type : ResourceType.values() ) {
-                if ( location.getPath().endsWith( "." + type.getFilenameSuffix() )) {
-                    processedResourceType = type;
-                    break;
+            final String locationPath = location.getPath();
+            if ( locationPath != null ) {
+                for ( final ResourceType type : ResourceType.values() ) {
+                    if ( locationPath.endsWith( "." + type.getFilenameSuffix() )) {
+                        processedResourceType = type;
+                        break;
+                    }
                 }
             }
 
