@@ -243,7 +243,6 @@ fi
 [ ! -d /opt/SecureSpan/Appliance/config ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/config
 
 %post
-sh %{prefix}/bin/upgrade-appliance.sh >> %{prefix}/config/appliance-upgrade.log 2>&1
 [ ! -f %{prefix}/config/appliance-upgrade.log ] || mv %{prefix}/config/appliance-upgrade.log %{prefix}/config/logs/appliance-upgrade.log 2>/dev/null
 sh %{prefix}/bin/upgrade-appliance.sh >> %{prefix}/config/logs/appliance-upgrade.log 2>&1
 

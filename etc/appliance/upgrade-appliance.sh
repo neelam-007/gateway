@@ -57,3 +57,11 @@ find /opt/SecureSpan/Controller/etc -group gateway -exec chgrp layer7 '{}' \;
 
 # re-enable IPv6 modules
 grep -v "alias ipv6 off" /etc/modprobe.conf | grep -v "alias net-pf-10 off" > /etc/modprobe.conf
+
+# my.cnf update for mysql-cluster
+sed -i -e "s/default-character-set=utf8//" /etc/my.cnf
+sed -i -e "s/log-long-format//" /etc/my.cnf
+sed -i -e "s/log-slow-queries/slow_query_log=1/" /etc/my.cnf
+sed -i -e "s/bind-address=0.0.0.0//" /etc/my.cnf
+sed -i -e "s/basedir=\/var\/lib/basedir=\/usr/" /etc/my.cnf
+
