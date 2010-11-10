@@ -477,7 +477,7 @@ EOM
 }
 
 
-MAIN: {
+MAIN: eval {
     checkUid();
 
     my $badsleft = 30;
@@ -504,4 +504,13 @@ MAIN: {
             showMenu() if $badsleft % 5 == 0;
         }
     }
+};
+
+my $err = $@;
+
+if ($err =~ /operation canceled/i) {
+  print $err, "\n";
+  exit 0;
 }
+
+die $err if $err;
