@@ -1,6 +1,5 @@
-package com.l7tech.xml;
+package com.l7tech.common.io;
 
-import com.l7tech.common.io.XmlUtil;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.w3c.dom.Document;

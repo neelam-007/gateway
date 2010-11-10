@@ -13,7 +13,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.service.ServiceDocumentResolver;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Config;
@@ -41,14 +40,14 @@ public class ResourceAdminImpl implements ResourceAdmin {
                               final DefaultHttpProxyManager defaultHttpProxyManager,
                               final HttpConfigurationManager httpConfigurationManager,
                               final ServiceDocumentResolver serviceDocumentResolver,
-                              final SchemaManager schemaManager,
+                              final SchemaResourceManager schemaResourceManager,
                               final Map<String,String> defaultResourceMap ) {
         this.config = config;
         this.resourceEntryManager = resourceEntryManager;
         this.defaultHttpProxyManager = defaultHttpProxyManager;
         this.httpConfigurationManager = httpConfigurationManager;
         this.serviceDocumentResolver = serviceDocumentResolver;
-        this.schemaManager = schemaManager;
+        this.schemaResourceManager = schemaResourceManager;
         this.defaultResources = buildDefaultResources( defaultResourceMap );
     }
 
@@ -180,7 +179,7 @@ public class ResourceAdminImpl implements ResourceAdmin {
         
         int useCount = 0;
         for ( final String uri : uris ) {
-            if ( schemaManager.isSchemaRegistered( uri ) ) {
+            if ( schemaResourceManager.isSchemaRequired( uri ) ) {
                 useCount++;
             }
         }
@@ -266,7 +265,7 @@ public class ResourceAdminImpl implements ResourceAdmin {
     private final DefaultHttpProxyManager defaultHttpProxyManager;
     private final HttpConfigurationManager httpConfigurationManager;
     private final ServiceDocumentResolver serviceDocumentResolver;
-    private final SchemaManager schemaManager;
+    private final SchemaResourceManager schemaResourceManager;
     private final Map<String,ResourceEntryHeader> defaultResources;
 
     /**

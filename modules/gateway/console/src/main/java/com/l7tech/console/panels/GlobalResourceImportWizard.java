@@ -1,9 +1,11 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.DtdUtils;
 import com.l7tech.common.io.FileResourceDocumentResolver;
 import com.l7tech.common.io.ResourceDocument;
 import com.l7tech.common.io.ResourceDocumentResolver;
+import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.URIResourceDocument;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.util.Registry;
@@ -27,9 +29,7 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
-import com.l7tech.util.SchemaUtil;
 import com.l7tech.util.TextUtils;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -682,6 +682,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
                 if ( dependency.processed ) {
                     resourceHolder.addDependency( dependency.uri, dependency.uri );
+                    // TODO [steve] update DTD reference here if possible (system identifier)                    
                     continue;
                 }
 

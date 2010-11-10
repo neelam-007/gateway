@@ -1,6 +1,7 @@
 package com.l7tech.wsdl;
 
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
+import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.*;
 import org.apache.ws.policy.Assertion;
@@ -1866,7 +1867,7 @@ public class Wsdl implements Serializable {
 
         @Override
         public ExtensionDeserializer queryDeserializer(Class parentType, QName elementType) throws WSDLException {
-            if (SchemaUtil.isSchema(elementType)) return delegate.getDefaultDeserializer();
+            if ( SchemaUtil.isSchema(elementType)) return delegate.getDefaultDeserializer();
             return delegate.queryDeserializer(parentType, elementType);
         }
 

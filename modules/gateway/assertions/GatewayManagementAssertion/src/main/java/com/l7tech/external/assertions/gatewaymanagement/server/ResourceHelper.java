@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ResourceSet;
@@ -8,7 +9,6 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;

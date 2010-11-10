@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -33,7 +34,6 @@ import com.l7tech.server.service.resolution.*;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.WsdlUtil;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Document;

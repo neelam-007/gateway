@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.validator;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
@@ -37,7 +38,6 @@ import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

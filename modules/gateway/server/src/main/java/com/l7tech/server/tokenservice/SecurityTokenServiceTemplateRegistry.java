@@ -1,5 +1,6 @@
 package com.l7tech.server.tokenservice;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gateway.common.service.ServiceTemplate;
@@ -11,7 +12,6 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.xml.sax.EntityResolver;

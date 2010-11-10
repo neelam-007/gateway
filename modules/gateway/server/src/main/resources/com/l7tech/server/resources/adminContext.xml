@@ -261,7 +261,7 @@
         <constructor-arg index="2" ref="defaultHttpProxyManager"/>
         <constructor-arg index="3" ref="httpConfigurationManager"/>
         <constructor-arg index="4" ref="serviceDocumentResolver"/>
-        <constructor-arg index="5" ref="schemaManager"/>
+        <constructor-arg index="5" ref="schemaResourceManager"/>
         <constructor-arg index="6">
             <map>
                 <entry key="SOAP_1_1.xsd" value="http://schemas.xmlsoap.org/soap/envelope/|http://schemas.xmlsoap.org/soap/envelope/"/>

@@ -1,9 +1,9 @@
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.Resolver;
 import com.l7tech.wsdl.Wsdl;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

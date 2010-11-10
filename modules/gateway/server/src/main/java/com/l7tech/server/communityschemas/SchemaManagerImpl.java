@@ -1,9 +1,11 @@
 package com.l7tech.server.communityschemas;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.IOExceptionThrowingReader;
+import com.l7tech.common.io.ResourceReference;
+import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.*;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
 import com.l7tech.xml.tarari.TarariSchemaSource;
@@ -648,6 +650,13 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         return inputSource;
     }
 
+    private InputSource makeInputSource( final SchemaResource schemaResource ) {
+        final InputSource inputSource = new InputSource();
+        inputSource.setSystemId( schemaResource.getUri() );
+        inputSource.setCharacterStream( new StringReader( schemaResource.getContent() ) );
+        return inputSource;
+    }
+
     /**
      * Add this schema to the TNS cache, and enable hardware if this is the only schema using it and
      * only if all child schemas are already hardware-enabled.
@@ -826,6 +835,122 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
 
         return active;
+    }
+
+    @Override
+    public Set<String> getRequiredSchemaUris() {
+        final Set<String> requiredUris;
+        synchronized( this.registeredUris ) {
+            requiredUris = new HashSet<String>( this.registeredUris.keySet() );
+        }
+
+        // for registered schemas both the schema and it direct dependencies are required
+        // this covers the use case of hardware schemas (from global resources) and those
+        // registered by schema validation policy assertions (when only the dependencies
+        // are global schemas)
+        for ( final Map.Entry<String,SchemaResource> uriAndResource : registeredSchemasByUri.entrySet() ) {
+            requiredUris.add( uriAndResource.getKey() );
+
+            boolean dependenciesHandled = false;
+            final SchemaHandle handle = schemasBySystemId.get( uriAndResource.getKey() );
+            if ( handle != null ) {
+                final CompiledSchema schema = handle.getTarget();
+                if ( schema != null ) {
+                    dependenciesHandled = true;
+                    requiredUris.addAll( schema.getDependencies().keySet() );
+                }
+            }
+
+            if ( !dependenciesHandled ) { // the registered schema is not compiled, so find the dependencies now
+                final SchemaResource schemaResource = uriAndResource.getValue();
+                try {
+                    // parse and permit registered DTDs, we still want the dependency
+                    // information even if the schema is invalid due to DTDs being disabled
+                    final Collection<ResourceReference> references =
+                            SchemaUtil.getDependencies(makeInputSource(schemaResource), schemaEntityResolver);
+                    for ( final ResourceReference reference : references ) {
+                        if ( reference.getUri() !=null ) {
+                            try {
+                                final URI base = new URI( reference.getBaseUri() );
+                                requiredUris.add( base.resolve( new URI(reference.getUri())).toString() );
+                            } catch ( URISyntaxException e ) {
+                                logger.log( Level.INFO,
+                                        "Unable to resolve '"+reference.getUri()+"', against '"+reference.getBaseUri()+"', error is: " + ExceptionUtils.getMessage( e ),
+                                        ExceptionUtils.getDebugException(e) );
+                                requiredUris.add( reference.getUri() );
+                            }
+                        }
+                    }
+                } catch ( SAXException e ) {
+                    logger.log( Level.INFO,
+                            "Unable to parse XML Schema '"+schemaResource.getUri()+"', dependency info not available, error is: " + ExceptionUtils.getMessage( e ),
+                            ExceptionUtils.getDebugException(e) );
+                } catch ( IOException e ) {
+                    logger.log( Level.INFO,
+                            "Unable to parse XML Schema '"+schemaResource.getUri()+"', dependency info not available, error is: " + ExceptionUtils.getMessage( e ),
+                            ExceptionUtils.getDebugException(e) );
+                }
+            }
+        }
+
+        return requiredUris;
+    }
+
+    @Override
+    public Set<String> getRequiredSchemaTargetNamespaces() {
+       final Set<String> requiredTargetNamespaces = new HashSet<String>();
+
+        for ( final Map.Entry<String,SchemaResource> uriAndResource : registeredSchemasByUri.entrySet() ) {
+            boolean dependenciesHandled = false;
+            final SchemaHandle handle = schemasBySystemId.get( uriAndResource.getKey() );
+            if ( handle != null ) {
+                final CompiledSchema schema = handle.getTarget();
+                if ( schema != null ) {
+                    dependenciesHandled = true;
+                    requiredTargetNamespaces.add( schema.getTargetNamespace() );
+                    for ( final String uri : schema.getDependencies().keySet() ) {
+                        final SchemaHandle dependencyHandle = schemasBySystemId.get( uri );
+                        if ( dependencyHandle != null ) {
+                            final CompiledSchema dependencySchema = dependencyHandle.getTarget();
+                            if ( dependencySchema != null ) {
+                                requiredTargetNamespaces.add( dependencySchema.getTargetNamespace() );
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ( !dependenciesHandled ) { // the registered schema is not compiled, so find the dependencies now
+                final SchemaResource schemaResource = uriAndResource.getValue();
+                try {
+                    requiredTargetNamespaces.add( XmlUtil.getSchemaTNS( schemaResource.getContent() ) );
+
+                    // parse and permit registered DTDs, we still want the dependency
+                    // information even if the schema is invalid due to DTDs being disabled
+                    final Collection<ResourceReference> references =
+                            SchemaUtil.getDependencies(makeInputSource(schemaResource), schemaEntityResolver);
+                    for ( final ResourceReference reference : references ) {
+                        if ( reference.hasTargetNamespace() ) {
+                            requiredTargetNamespaces.add( reference.getTargetNamespace() );
+                        }
+                    }
+                } catch ( SAXException e ) {
+                    logger.log( Level.INFO,
+                            "Unable to parse XML Schema '"+schemaResource.getUri()+"', dependency info not available, error is: " + ExceptionUtils.getMessage( e ),
+                            ExceptionUtils.getDebugException(e) );
+                } catch ( IOException e ) {
+                    logger.log( Level.INFO,
+                            "Unable to parse XML Schema '"+schemaResource.getUri()+"', dependency info not available, error is: " + ExceptionUtils.getMessage( e ),
+                            ExceptionUtils.getDebugException(e) );
+                } catch ( XmlUtil.BadSchemaException e ) {
+                    logger.log( Level.INFO,
+                            "Unable to parse XML Schema '"+schemaResource.getUri()+"', dependency info not available, error is: " + ExceptionUtils.getMessage( e ),
+                            ExceptionUtils.getDebugException(e) );
+                }
+            }
+        }
+
+        return requiredTargetNamespaces;
     }
 
     @Override

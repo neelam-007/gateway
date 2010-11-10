@@ -3,6 +3,7 @@ package com.l7tech.wsdl;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.IOExceptionThrowingReader;
+import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.*;
 import org.w3c.dom.DOMConfiguration;

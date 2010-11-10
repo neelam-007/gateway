@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.uddinotification.server;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.event.system.LicenseEvent;
@@ -16,7 +17,6 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.external.assertions.uddinotification.UDDINotificationAssertion;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
 

@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import static com.l7tech.console.panels.GlobalResourceImportContext.*;
 import static com.l7tech.console.panels.GlobalResourceImportWizard.*;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceType;
@@ -18,7 +19,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TextUtils;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;

@@ -1,6 +1,7 @@
 package com.l7tech.client;
 
 import com.l7tech.common.http.*;
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -26,7 +27,6 @@ import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.WsdlUtil;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.SoapFaultDetailImpl;
 import com.l7tech.xml.soap.SoapFaultUtils;

@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.resourceresponse.server;
 
 import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.HttpResponseKnob;
@@ -15,7 +16,6 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ValidationUtils;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;

@@ -25,7 +25,7 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
-import com.l7tech.xml.DocumentReferenceProcessor;
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;

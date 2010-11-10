@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.service.ServiceDocument;
@@ -22,7 +23,6 @@ import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;

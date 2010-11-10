@@ -3,6 +3,7 @@ package com.l7tech.server.communityschemas;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.Set;
 
 public interface SchemaManager {
 
@@ -78,4 +79,27 @@ public interface SchemaManager {
      * @return True if the associated schema is registered.
      */
     boolean isSchemaRegistered(String uri);
+
+    /**
+     * Get the set of required schema URIs.
+     *
+     * <p>Required schema URIs are the registered URIs plus the direct
+     * dependencies of registered schemas.</p>
+     * 
+     * <p>URIs will be absolute where possible, but in some cases only relative
+     * URIs are available.</p>
+     *
+     * @return The set of URIs (may be empty, never null)
+     */
+    Set<String> getRequiredSchemaUris();
+
+    /**
+     * Get the set of required schema target namespaces.
+     *
+     * <p>Required schema target namespaces are the registered schemas target
+     * namespaces plus the direct dependencies of registered schemas.</p>
+     *
+     * @return The set of target namespaces (may be empty, never null)
+     */
+    Set<String> getRequiredSchemaTargetNamespaces();
 }

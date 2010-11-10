@@ -1,4 +1,4 @@
-package com.l7tech.xml;
+package com.l7tech.common.io;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -12,7 +12,6 @@ import java.net.URISyntaxException;
 import java.io.IOException;
 import java.io.StringReader;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.Functions;
 import com.l7tech.util.CausedIOException;
 
@@ -314,7 +313,7 @@ public class DocumentReferenceProcessor {
                 Element referenceElement = (Element) node;
                 if ( namespace.equals( referenceElement.getNamespaceURI() ) &&
                      elements.contains( referenceElement.getLocalName() ) ) {
-                    referenceElement.setAttribute( attribute, replacementReferenceUrl );
+                    referenceElement.setAttributeNS( null, attribute, replacementReferenceUrl );
                 }
             }
         }

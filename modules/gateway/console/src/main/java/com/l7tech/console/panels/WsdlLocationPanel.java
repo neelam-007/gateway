@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
@@ -18,7 +19,6 @@ import com.l7tech.util.*;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.WsdlEntityResolver;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.EntityResolver;

@@ -1,6 +1,7 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.common.http.GenericHttpClientFactory;
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.gateway.common.uddi.UDDIServiceControlRuntime;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -26,7 +27,6 @@ import com.l7tech.uddi.UDDIInvalidKeyException;
 import com.l7tech.wsdl.WsdlEntityResolver;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.Wsdl;
-import com.l7tech.xml.DocumentReferenceProcessor;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.GenericHttpRequestParams;
