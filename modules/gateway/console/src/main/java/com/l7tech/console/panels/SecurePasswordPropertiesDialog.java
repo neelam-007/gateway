@@ -136,7 +136,9 @@ public class SecurePasswordPropertiesDialog extends JDialog {
 
     private void modelToView() {
         nameField.setText(nn(securePassword.getName()));
+        nameField.setCaretPosition(0);
         descriptionField.setText(nn(securePassword.getDescription()));
+        descriptionField.setCaretPosition(0);
         final long update = securePassword.getLastUpdate();
         lastUpdateLabel.setText(update > 0 ? new Date(update).toString() : "<Never Set>");
         allowVariableCheckBox.setSelected(securePassword.isUsageFromVariable());
