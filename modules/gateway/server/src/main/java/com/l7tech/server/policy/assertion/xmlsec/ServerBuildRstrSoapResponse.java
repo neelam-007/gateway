@@ -210,7 +210,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:bad_token", "There are more than one attribute recognized as an ID attribute in the SecurityContextToken element.");
                 return AssertionStatus.BAD_TOKEN;
             }
-            tokenInfo.put(SCT_WSU_ID, root.getAttribute("wsu:Id"));
+            tokenInfo.put(SCT_WSU_ID, sctWsuId);
 
             try {
                 // Set Identifier
@@ -491,6 +491,8 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
     private X509Certificate getClientCert(Message targetMessage) {
         ProcessorResult wssOutput = targetMessage.getSecurityKnob().getProcessorResult();
+        if (wssOutput == null) return null;
+        
         SecurityToken[] tokens = wssOutput.getXmlSecurityTokens();
         X509Certificate clientCert = null;
 
