@@ -806,6 +806,7 @@ class GlobalResourceImportContext {
                 if ( internal == null || choice != ImportChoice.EXISTING ) {
                     try {
                         external = externalResolver.resolveByUri( uri );
+                        if ( external != null ) external.getContent(); // to handle invalid resource
                     } catch ( IOException ioe ) {
                         external = doInvalid( null, null, uri, ioe );
                     }
@@ -823,6 +824,7 @@ class GlobalResourceImportContext {
                 if ( internal == null || choice != ImportChoice.EXISTING ) {
                     try {
                         external = externalResolver.resolveByPublicId( uri, publicId );
+                        if ( external != null ) external.getContent(); // to handle invalid resource
                     } catch ( IOException ioe ) {
                         external = doInvalid( ResourceType.DTD, "Public ID: " + TextUtils.truncStringMiddleExact( publicId, 80 ), uri, ioe );
                     }
@@ -840,8 +842,9 @@ class GlobalResourceImportContext {
                 if ( internal == null || choice != ImportChoice.EXISTING ) {
                     try {
                         external = externalResolver.resolveByTargetNamespace( uri, targetNamespace );
+                        if ( external != null ) external.getContent(); // to handle invalid resource
                     } catch ( IOException ioe ) {
-                        external = doInvalid( ResourceType.XML_SCHEMA, "URI: " + TextUtils.truncStringMiddleExact( targetNamespace, 80 ), uri, ioe );
+                        external = doInvalid( ResourceType.XML_SCHEMA, "Target Namespace: " + TextUtils.truncStringMiddleExact( targetNamespace, 80 ), uri, ioe );
                     }
                 }
 

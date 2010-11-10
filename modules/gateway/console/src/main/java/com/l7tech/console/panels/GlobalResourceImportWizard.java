@@ -698,7 +698,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
                 if ( dependency.hasTargetNamespace ) {
                     final ResourceDocument dependencyDocument =
-                            context.getResourceDocumentResolverForType(ResourceType.XML_SCHEMA).resolveByTargetNamespace( absoluteUri.toString(), dependency.targetNamespace );
+                            context.getResourceDocumentResolverForType(ResourceType.XML_SCHEMA).resolveByTargetNamespace( absoluteUri==null?null:absoluteUri.toString(), dependency.targetNamespace );
 
                     if ( dependencyDocument != null && dependencyDocument.exists() ) {
                         resourceHolder.addDependency( dependency.uri, dependencyDocument.getUri().toString() );
@@ -852,7 +852,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
         if ( baseUri != null ) {
             try {
-                absoluteUri = new URI(baseUri).resolve( uri );
+                absoluteUri = uri.isEmpty() ? new URI(baseUri) : new URI(baseUri).resolve( uri );
             } catch ( URISyntaxException e ) {
                 throw new IOException( "Error resolving uri '"+uri+"' against '"+baseUri+"'" );
             } catch ( IllegalArgumentException e ) {
@@ -1221,7 +1221,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
         private static DependencyInfo fromSchemaDependencyElement( final String baseUri,
                                                                    final Element dependencyEl ) {
-            final String dependencyLocation = dependencyEl.getAttributeNS( null, "schemaLocation" );
+            final String dependencyLocation = dependencyEl.hasAttributeNS( null, "schemaLocation" ) ? dependencyEl.getAttributeNS( null, "schemaLocation" ) : null;
             final String dependencyNamespace = dependencyEl.hasAttributeNS( null, "namespace" ) ? dependencyEl.getAttributeNS(null, "namespace") : null;
             final boolean dependencyNamespaceSet = "import".equals( dependencyEl.getLocalName() );
 
