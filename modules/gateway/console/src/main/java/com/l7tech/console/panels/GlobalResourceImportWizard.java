@@ -156,7 +156,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                 //TODO [steve] only process one level of dependency, no need to traverse the entire tree
                 final Map<String,ResourceHolder> processed = new HashMap<String,ResourceHolder>();
                 processResource( context, mainResource, type, null, true, processed);
-                if ( processed.get(uriString) != null && processed.get(uriString).isPersist() ) {
+                if ( processed.get(uriString) != null && !content.equals(processed.get(uriString).getContent()) ) {
                     // treat as missing since a relative URI had to be updated to resolve the dependency
                     missingDependencies = true;
                 }
