@@ -90,7 +90,12 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         DocumentListener validationListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
-                enableOrDisableOkButton();
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        enableOrDisableOkButton();
+                    }
+                });
             }
         });
         
@@ -121,7 +126,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
                 addressTextField.setEnabled(appliesToCheckBox.isSelected());
                 enableOrDisableOkButton();
             }
-        });;
+        });
 
         addressTextField.setDocument(new MaxLengthDocument(128));
         addressTextField.getDocument().addDocumentListener(validationListener);
@@ -133,7 +138,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
                 lifetimeUnitComboBox.setEnabled(lifetimeCheckBox.isSelected());
                 enableOrDisableOkButton();
             }
-        });;
+        });
 
         lifetimeTextField.getDocument().addDocumentListener(validationListener);
 
@@ -170,7 +175,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
                 keySizeComboBox.setEnabled(keySizeCheckBox.isSelected());
                 enableOrDisableOkButton();
             }
-        });;
+        });
 
         keySizeComboBox.setModel(new DefaultComboBoxModel(new Object[] {"", AUTOMATIC_KEYSIZE_ITEM, "128", "256", "512", "1024"}));
         ((JTextField)keySizeComboBox.getEditor().getEditorComponent()).setHorizontalAlignment(JTextField.RIGHT);
