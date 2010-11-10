@@ -7,13 +7,9 @@ import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -124,7 +120,7 @@ public class SecurePasswordManagerWindow extends JDialog {
                             showError("delete stored password", de);
                         } catch (FindException fe) {
                             showError("delete stored password", fe);
-                        } catch (DataIntegrityViolationException dive) {
+                        } catch (ConstraintViolationException e1) {
                             DialogDisplayer.showMessageDialog(removeButton, "Error", "Unable to delete this stored password: it is currently in use", null);
                         }
                     }

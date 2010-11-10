@@ -462,9 +462,10 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      *
      * @param oid the objectid of the SecurePassword to delete.  Required.
      * @throws FindException if there is a problem locating the specified secure password.
-     * @throws DeleteException if there is a problem deleting the SecurePassword.
+     * @throws ConstraintViolationException if the secure password cannot be deleted because it is in use.
+     * @throws DeleteException if there is some other problem deleting the SecurePassword.
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(types=SECURE_PASSWORD,stereotype=DELETE_BY_ID, relevantArg=0)
-    void deleteSecurePassword(long oid) throws DeleteException, FindException;
+    void deleteSecurePassword(long oid) throws ConstraintViolationException, DeleteException, FindException;
 }
