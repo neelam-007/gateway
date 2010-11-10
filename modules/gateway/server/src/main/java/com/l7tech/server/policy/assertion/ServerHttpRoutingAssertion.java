@@ -235,13 +235,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
+        final Message requestMessage = getRequestMessage(context);
+
         URL u = null;
         try {
-            Message requestMessage = getRequestMessage(context);
+            context.routingStarted();
 
             if (! customURLList) {
                 PublishedService service = context.getService();
-                context.routingStarted();
                 try {
                     u = getProtectedServiceUrl(service, context);
                 } catch (WSDLException we) {
