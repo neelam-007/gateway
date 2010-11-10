@@ -499,7 +499,6 @@ doNcipherConfiguration() {
         return 0
     else
         echo ""
-        confirmedMessage ""
         return 0
     fi
 }
