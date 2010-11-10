@@ -59,6 +59,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
     private static final Logger logger = Logger.getLogger(SchemaManagerImpl.class.getName());
 
     private static final long minCleanupPeriod = SyspropUtil.getLong( "com.l7tech.server.schema.minCleanupPeriod", 5000L );
+    private static final boolean allowRemoteReferencesFromLocal = SyspropUtil.getBoolean( "com.l7tech.server.schema.allowRemote", false );
 
     /**
      * Validated schema configuration.
@@ -473,7 +474,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
 
         // Cache miss.  We'll need to compile a new instance of this schema.
-        final SchemaSource schemaSource = getSchemaStringForUri(uri, uri, true, true);
+        final SchemaSource schemaSource = getSchemaStringForUri(uri, uri, true, true, false);
         assert schemaSource.getContent() != null;
 
         // We'll prevent other threads from compiling new schemas concurrently, to avoid complications with other
@@ -530,8 +531,9 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
     private SchemaSource getSchemaStringForUri( final String baseUri,
                                                 String uri,
                                                 final boolean policyOk,
-                                                final boolean remoteOk ) throws IOException {
-        if (!policyOk && uri.trim().toLowerCase().startsWith("policy:"))
+                                                final boolean remoteOk,
+                                                final boolean remoteForbidden ) throws IOException {
+        if (!policyOk && (uri.trim().toLowerCase().startsWith("policy:") || uri.contains( "policy:assertion:schemaval:sa" )))
             throw new IOException("Schema URI not permitted in this context: " + uri );
 
         // Find a local schema by exact uri
@@ -552,13 +554,15 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
 
         // Not a local schema, try to resolve a remote schema
-        if ( !remoteOk ) {
-            validateRemoteSchemaUrl( uri ); //TODO [steve] prevent remote references from persistent schemas.
-        }
-        for ( final SchemaSourceResolver source : schemaSourceResolvers ) {
-            if ( source.isRemote() ) {
-                final SchemaSource schemaSource = source.getSchemaByUri( uri );
-                if ( schemaSource != null ) return schemaSource;
+        if ( !remoteForbidden || allowRemoteReferencesFromLocal ) {
+            if ( !remoteOk ) {
+                validateRemoteSchemaUrl( uri );
+            }
+            for ( final SchemaSourceResolver source : schemaSourceResolvers ) {
+                if ( source.isRemote() ) {
+                    final SchemaSource schemaSource = source.getSchemaByUri( uri );
+                    if ( schemaSource != null ) return schemaSource;
+                }
             }
         }
 
@@ -1080,8 +1084,13 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
     private Set<String> preCacheSchemaDependencies( final SchemaSource source ) throws SAXException, IOException {
         final Set<String> dependencies = new HashSet<String>();
 
-        SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
-        LSResourceResolver resolver = new LSResourceResolver() {
+        final Set<String> localDependencies = new HashSet<String>();
+        if ( !isRemoteSource( source.getResolverId() ) ) {
+            localDependencies.add( source.getUri() );
+        }
+
+        final SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
+        final LSResourceResolver resolver = new LSResourceResolver() {
             @Override
             public LSInput resolveResource(String type,
                                            String namespaceURI,
@@ -1094,15 +1103,18 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                 } else {
                     try {
                         if (systemId == null) {
-                            String resolvedSystemId = findUriForTargetNamespace( namespaceURI );
+                            final String resolvedSystemId = findUriForTargetNamespace( namespaceURI );
                             if ( resolvedSystemId != null ) {
                                 systemId = resolvedSystemId;
                             } else {
                                 throw new CausedIOException("No systemId, cannot resolve resource");
                             }
                         }
-                        SchemaSource dependencySource = getSchemaStringForUri(baseURI, systemId, false, false);
+                        final SchemaSource dependencySource = getSchemaStringForUri(baseURI, systemId, false, false, localDependencies.contains(baseURI));
                         assert dependencySource != null;
+                        if ( !isRemoteSource( dependencySource.getResolverId() ) ) {
+                            localDependencies.add( source.getUri() );
+                        }
                         dependencies.add(dependencySource.getUri());
                         return makeLsInput(dependencySource);
                     } catch (IOException e) {
@@ -1117,7 +1129,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
             sf.newSchema(makeSource(source)); // populates dependencies as side-effect
             return dependencies;
         } catch (RuntimeException e) {
-            UnresolvableException exception = ExceptionUtils.getCauseIfCausedBy(e, UnresolvableException.class);
+            final UnresolvableException exception = ExceptionUtils.getCauseIfCausedBy(e, UnresolvableException.class);
             if (exception != null) throw new CausedIOException(
                     "Unable to resolve dependency for resource " + exception.getResourceDescription() +
                     " : " + ExceptionUtils.getMessage(exception.getCause()),
@@ -1136,6 +1148,19 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
 
         return null;
+    }
+
+    private boolean isRemoteSource( final String resolverId ) throws IOException {
+        boolean remote = false;
+
+        for ( final SchemaSourceResolver source : schemaSourceResolvers ) {
+            if ( source.getId().equals( resolverId )) {
+                remote = source.isRemote();
+                break;
+            }
+        }
+
+        return remote;
     }
 
     /**
@@ -1321,7 +1346,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                 throw new CausedIOException("No systemId, cannot resolve resource");
             }
         }
-        final SchemaSource source = getSchemaStringForUri(baseURI, systemId, false, false);
+        final SchemaSource source = getSchemaStringForUri(baseURI, systemId, false, false, false);
         assert source != null;
 
         SchemaHandle handle = schemasBySystemId.get(source.getUri());
