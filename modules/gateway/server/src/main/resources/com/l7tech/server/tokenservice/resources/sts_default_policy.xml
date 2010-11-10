@@ -51,6 +51,12 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                             <L7p:Properties/>
                         </wsse:SecurityToken>
                     </wsp:OneOrMore>
+                    <L7p:SpecificUser>
+                        <L7p:IdentityProviderOid longValue="-2"/>
+                        <L7p:UserLogin stringValue="admin"/>
+                        <L7p:UserName stringValue="admin"/>
+                        <L7p:UserUid stringValue="3"/>
+                    </L7p:SpecificUser>
                     <L7p:RequireWssTimestamp>
                         <L7p:MaxExpiryMilliseconds longValue="3600000"/>
                     </L7p:RequireWssTimestamp>
