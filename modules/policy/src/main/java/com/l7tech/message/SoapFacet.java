@@ -4,6 +4,7 @@
 package com.l7tech.message;
 
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.SoapFaultDetail;
@@ -75,6 +76,8 @@ class SoapFacet extends MessageFacet {
         TarariMessageContextFactory mcfac = TarariLoader.getMessageContextFactory();
         if (mcfac != null) {
             try {
+                // Not safe to destory-as-read because mcfac might consume an unknown amount of the input stream
+                // before throwing SoftwareFallbackException
                 InputStream inputStream = message.getMimeKnob().getFirstPart().getInputStream(false);
                 TarariMessageContext mc = mcfac.makeMessageContext(inputStream);
                 SoapInfo soapInfo = mc.getSoapInfo(soapAction);
@@ -87,7 +90,10 @@ class SoapFacet extends MessageFacet {
 
                 return soapInfo;
             } catch (SoftwareFallbackException e) {
-                logger.log(Level.INFO, "Falling back from hardware to software processing", e);
+                if (logger.isLoggable(Level.FINE)) {
+                    //noinspection ThrowableResultOfMethodCallIgnored
+                    logger.log(Level.INFO, "Falling back from hardware to software processing: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }                
                 // fallthrough to software
             }
         }

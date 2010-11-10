@@ -53,7 +53,11 @@ class TarariUtil {
         throw new SoftwareFallbackException(cause);
     }
 
-    public static void translateException(XmlParseException e) throws SAXException {
+    public static void translateException(XmlParseException e) throws SoftwareFallbackException, SAXException {
+        switch (e.getErrorCode()) {
+            case RaxErrorCode.UNSUPPORTED_ENCODING:
+                throw new SoftwareFallbackException("XML character encoding not supported by Tarari", e);
+        }
         throw new SAXException(e);
     }
 

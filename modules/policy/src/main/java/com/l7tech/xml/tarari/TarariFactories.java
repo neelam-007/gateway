@@ -51,6 +51,8 @@ public class TarariFactories implements TarariMessageContextFactory {
             return new TarariMessageContextImpl(RaxDocument.createDocument(xmlSource));
 
         } catch (XmlParseException e) { // more-specific
+            // TODO if this is an unsupported encoding (error code 5), we could try to sniff the encoding
+            // out of the <?xml?> decl, wrap the stream in a reader, and retry
             TarariUtil.translateException(e);
         } catch (XmlConfigException e) { // less-specific
             TarariUtil.translateException(e);
