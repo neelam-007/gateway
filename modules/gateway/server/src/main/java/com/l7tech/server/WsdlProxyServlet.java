@@ -763,11 +763,11 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         URL ssgurl;
         String routinguri = svc.getRoutingUri();
         if (routinguri == null || routinguri.length() < 1) {
-            ssgurl = new URL(proto + "://" + req.getServerName() +
+            ssgurl = new URL(proto + "://" + InetAddressUtil.getHostForUrl(req.getServerName()) +
                              portStr + SecureSpanConstants.SERVICE_FILE +
                              Long.toString(svc.getOid()));
         } else {
-            ssgurl = new URL(proto + "://" + req.getServerName() +
+            ssgurl = new URL(proto + "://" + InetAddressUtil.getHostForUrl(req.getServerName()) +
                              portStr + routinguri);
         }
 
@@ -970,7 +970,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     outDoc.append("\t\t<abstract>").append(svc.getName()).append("</abstract>\n");
                     outDoc.append("\t\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
                     outDoc.append("location=\"");
-                    outDoc.append(protocol).append("://").append(host).append(":").append(port).append(uri).append("?").append(query);
+                    outDoc.append(protocol).append("://").append(InetAddressUtil.getHostForUrl(host)).append(":").append(port).append(uri).append("?").append(query);
                     outDoc.append("\"/>\n");
                     outDoc.append("\t</service>\n");
                 } catch (ServiceResolutionException sre) {

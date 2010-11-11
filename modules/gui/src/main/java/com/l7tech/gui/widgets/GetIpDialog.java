@@ -152,7 +152,7 @@ public class GetIpDialog extends JDialog {
      *         Pair<-1,-1> if the invalid range could not be determined.
      */
     private Pair<Integer, Integer> getBadRange(String s) {
-        if ( InetAddressUtil.isValidIpAddress(s) || InetAddressUtil.isValidIpv6Address(s) ) {
+        if ( InetAddressUtil.isValidIpv4Address(s) || InetAddressUtil.isValidIpv6Address(s) ) {
             return null;
         }
 
@@ -183,7 +183,7 @@ public class GetIpDialog extends JDialog {
             for(int i = 0; i < nibbles.length; i++) {
                 start = end + 1;
                 end += nibbles[i].length() + 1;
-                if ( i < 8 && isValidIpv6Nibbles(nibbles[i], ! wasEmpty) || (i == nibbles.length-1 && InetAddressUtil.isValidIpAddress(nibbles[i])) ) {
+                if ( i < 8 && isValidIpv6Nibbles(nibbles[i], ! wasEmpty) || (i == nibbles.length-1 && InetAddressUtil.isValidIpv4Address(nibbles[i])) ) {
                     wasEmpty |= nibbles[i].length() == 0;
                     continue;
                 }

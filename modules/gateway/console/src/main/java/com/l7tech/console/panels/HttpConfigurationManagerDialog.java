@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -72,7 +73,7 @@ public class HttpConfigurationManagerDialog extends JDialog {
                         String proxy = null;
                         final HttpProxyConfiguration proxyConfiguration = httpConfiguration.getProxyConfiguration();
                         if ( proxyConfiguration != null && proxyConfiguration.getHost() != null ) {
-                            proxy = proxyConfiguration.getHost()+":"+proxyConfiguration.getPort();
+                            proxy = InetAddressUtil.getHostForUrl(proxyConfiguration.getHost()) + ":" + proxyConfiguration.getPort();
                         }
                         return proxy;
                     }
@@ -200,7 +201,7 @@ public class HttpConfigurationManagerDialog extends JDialog {
             try {
                 final HttpProxyConfiguration proxyConfiguration = admin.getDefaultHttpProxyConfiguration();
                 if ( proxyConfiguration!=null && proxyConfiguration.getHost() != null ) {
-                    defaultHttpProxyTextField.setText( proxyConfiguration.getHost()+":"+proxyConfiguration.getPort() );
+                    defaultHttpProxyTextField.setText( InetAddressUtil.getHostForUrl(proxyConfiguration.getHost()) + ":" + proxyConfiguration.getPort() );
                     defaultHttpProxyTextField.setCaretPosition( 0 );
                 } else {
                     defaultHttpProxyTextField.setText( getResourceString("no-default-proxy") );
@@ -320,7 +321,7 @@ public class HttpConfigurationManagerDialog extends JDialog {
                 description.append( httpConfiguration.getProtocol().name().toLowerCase() );
             }
             description.append("://");
-            description.append( httpConfiguration.getHost() );
+            description.append( InetAddressUtil.getHostForUrl(httpConfiguration.getHost()) );
             description.append(':');
             if ( httpConfiguration.getPort()<=0 ) {
                 description.append( "*" );

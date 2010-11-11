@@ -6,6 +6,7 @@ import java.net.HttpURLConnection;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 
+import com.l7tech.common.io.InetAddressUtil;
 import org.springframework.remoting.httpinvoker.SimpleHttpInvokerRequestExecutor;
 import org.springframework.remoting.httpinvoker.HttpInvokerClientConfiguration;
 import org.springframework.remoting.support.RemoteInvocationResult;
@@ -90,7 +91,7 @@ public class SimpleBrowserHttpInvokerRequestExecutor extends SimpleHttpInvokerRe
         private String decorate(final String url) {
             // switch in the correct host/port
             Matcher matcher = hostSubstitutionPattern.matcher(url);
-            return matcher.replaceFirst(host + ":" + port);
+            return matcher.replaceFirst(InetAddressUtil.getHostForUrl(host) + ":" + port);
         }
     }
 }

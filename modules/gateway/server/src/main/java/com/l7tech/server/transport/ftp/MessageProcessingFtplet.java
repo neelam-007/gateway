@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.ftp;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.HasServiceOid;
@@ -373,7 +374,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
 
                 urlBuffer.append(secure ? "ftps" : "ftp");
                 urlBuffer.append("://");
-                urlBuffer.append(serverAddress.getHostAddress());
+                urlBuffer.append(InetAddressUtil.getHostForUrl(serverAddress.getHostAddress()));
                 urlBuffer.append(":");
                 urlBuffer.append(port);
                 urlBuffer.append(path);

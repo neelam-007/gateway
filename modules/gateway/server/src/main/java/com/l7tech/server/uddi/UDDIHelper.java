@@ -449,9 +449,9 @@ public class UDDIHelper implements SsgConnectorActivationListener {
 
     private String buildCompleteGatewayUrl( final String relativeUri, final boolean secure ) {
         if ( secure ) {
-            return "https://" + getExternalHostName() + getPrefixedExternalHttpsPort() + relativeUri;
+            return "https://" + InetAddressUtil.getHostForUrl(getExternalHostName()) + getPrefixedExternalHttpsPort() + relativeUri;
         } else {
-            return "http://" + getExternalHostName() + getPrefixedExternalPort() + relativeUri;
+            return "http://" + InetAddressUtil.getHostForUrl(getExternalHostName()) + getPrefixedExternalPort() + relativeUri;
         }
     }
 

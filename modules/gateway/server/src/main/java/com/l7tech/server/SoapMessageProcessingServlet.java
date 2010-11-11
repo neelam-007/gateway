@@ -5,6 +5,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -154,7 +155,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 if( !serverConfig.getBooleanProperty("request.compress.gzip.allow", true) ) {
                     logger.log(Level.WARNING, "Rejecting GZIP compressed request.");
                     String soapFault = GZIP_REQUESTS_FORBIDDEN_SOAP_FAULT.replace("http://soong:8080/xml/blub",
-                            hrequest.getScheme() + "://" + hrequest.getServerName() +
+                            hrequest.getScheme() + "://" + InetAddressUtil.getHostForUrl(hrequest.getServerName()) +
                             (hrequest.getServerPort() == 80 ? "" : ":" + hrequest.getServerPort()) +
                             hrequest.getRequestURI());
                     OutputStream responseStream = null;
@@ -415,7 +416,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private String makePolicyUrl(HttpServletRequest hreq, long oid) {
         StringBuffer policyUrl = new StringBuffer(hreq.getScheme());
         policyUrl.append("://");
-        policyUrl.append(hreq.getServerName());
+        policyUrl.append(InetAddressUtil.getHostForUrl(hreq.getServerName()));
         policyUrl.append(":");
         policyUrl.append(hreq.getServerPort());
         policyUrl.append(hreq.getContextPath());

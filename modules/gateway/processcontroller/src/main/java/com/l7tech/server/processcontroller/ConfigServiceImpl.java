@@ -431,7 +431,7 @@ public class ConfigServiceImpl implements ConfigService {
         String address = getSslIPAddress();
         if (InetAddressUtil.isValidIpv6Address(address))
             address = "[" + address + "]";
-        return "https://" + address + ":" + getSslPort() + SERVICES_CONTEXT_BASE_PATH + apiEndpointPaths.getProperty(endpoint.getPropName());
+        return "https://" + InetAddressUtil.getHostForUrl(address) + ":" + getSslPort() + SERVICES_CONTEXT_BASE_PATH + apiEndpointPaths.getProperty(endpoint.getPropName());
     }
 
     @Override

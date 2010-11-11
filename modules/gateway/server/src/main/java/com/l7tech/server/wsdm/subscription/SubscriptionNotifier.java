@@ -5,6 +5,7 @@ package com.l7tech.server.wsdm.subscription;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.ServiceMessages;
@@ -137,7 +138,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         }
 
         try {
-            incomingUrl = new URL("http://" + clusterHostName + ":" + clusterHttpPort);
+            incomingUrl = new URL("http://" + InetAddressUtil.getHostForUrl(clusterHostName) + ":" + clusterHttpPort);
             logger.log(Level.CONFIG, "Using SSG URL '" + incomingUrl.toString() + "'.");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e); // Uh-oh

@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.standardreports;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -97,17 +98,17 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                 // The reason to skip SOAPFaultException is because Wicket throws WicketNotSerializableException
                 // due to com.sun.xml.messaging.saaj.soap.ver1_1.SOAPPart1_1Impl not serializable.
                 // (bugzilla 6856)
-                throw new ReportException( "Cannot contact gateway '"+(host+":"+port)+"'.", ce );
+                throw new ReportException( "Cannot contact gateway '"+(InetAddressUtil.getHostForUrl(host)+":"+port)+"'.", ce );
             } else {
                 final Throwable cause = e.getCause();
                 throw new ReportException(
-                        "Error submitting report generation to gateway '"+(host+":"+port)+"', due to '"+ExceptionUtils.getMessage(e)+"'.",
+                        "Error submitting report generation to gateway '"+(InetAddressUtil.getHostForUrl(host)+":"+port)+"', due to '"+ExceptionUtils.getMessage(e)+"'.",
                         ExceptionUtils.getDebugException(cause) );
             }
         } catch ( GatewayException ge ) {
-            throw new ReportException( "Error submitting report generation to gateway '"+(host+":"+port)+"'.", ge );
+            throw new ReportException( "Error submitting report generation to gateway '"+(InetAddressUtil.getHostForUrl(host)+":"+port)+"'.", ge );
         } catch ( ReportApi.ReportException re ) {
-            throw new ReportException( "Error submitting report generation to gateway '"+(host+":"+port)+"'.", re );
+            throw new ReportException( "Error submitting report generation to gateway '"+(InetAddressUtil.getHostForUrl(host)+":"+port)+"'.", re );
         }
 
         report.setSubmissionHost( host );

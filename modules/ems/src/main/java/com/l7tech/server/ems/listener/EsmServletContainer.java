@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.listener;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -310,7 +311,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
     }
 
     private void rebuildConnectors( final ListenerConfiguration configuration ) throws IOException {
-        logger.info("Building HTTPS listener '"+configuration.getIpAddress()+":"+configuration.getHttpsPort()+"'.");
+        logger.info("Building HTTPS listener '" + InetAddressUtil.getHostForUrl(configuration.getIpAddress()) + ":" + configuration.getHttpsPort() + "'.");
 
         boolean enableHttp = SyspropUtil.getBoolean("com.l7tech.ems.enableHttpListener");
 

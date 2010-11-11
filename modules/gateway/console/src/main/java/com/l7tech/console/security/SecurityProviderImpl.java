@@ -421,39 +421,13 @@ public class SecurityProviderImpl extends SecurityProvider
     }
 
     private Pair<String,Integer> getHostAndPort(String hostAndPossiblyPort) {
-        String host;
-        Integer port = DEFAULT_PORT;
-
-        int lastColon = hostAndPossiblyPort.lastIndexOf(':');
-        if (lastColon < 0) {
-            host = hostAndPossiblyPort;
-        } else if ( hostAndPossiblyPort.startsWith("[")) {
-            if (hostAndPossiblyPort.lastIndexOf(']') == lastColon -1 ) {
-                host = hostAndPossiblyPort.substring(0, lastColon);
-                try {
-                    port = Integer.valueOf(hostAndPossiblyPort.substring(lastColon +1, hostAndPossiblyPort.length()));
-                } catch (NumberFormatException e1) {
-                    // use default port
-                } catch (ArrayIndexOutOfBoundsException e2) {
-                    // use default port
-                }
-            } else {
-                host = hostAndPossiblyPort;
-            }
-        } else {
-            if (InetAddressUtil.isValidIpv6Address(hostAndPossiblyPort)) {
-                host = "[" + hostAndPossiblyPort + "]";
-            } else {
-                host = hostAndPossiblyPort.substring(0, lastColon);
-                try {
-                    port = Integer.valueOf(hostAndPossiblyPort.substring(lastColon+1, hostAndPossiblyPort.length()));
-                } catch (NumberFormatException e1) {
-                    // use default port
-                } catch (ArrayIndexOutOfBoundsException e2) {
-                    // use default port
-                }
-            }
+        Pair<String, String> hostAndPort = InetAddressUtil.getHostAndPort(hostAndPossiblyPort, Integer.toString(DEFAULT_PORT));
+        int port;
+        try {
+            port = Integer.valueOf(hostAndPort.right);
+        } catch (NumberFormatException e) {
+            port = DEFAULT_PORT;
         }
-        return new Pair<String, Integer>(host, port);
+        return new Pair<String, Integer>(hostAndPort.left, port);
     }
 }

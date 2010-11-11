@@ -1,17 +1,18 @@
 package com.l7tech.server.log;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.log.syslog.Syslog;
 import com.l7tech.server.log.syslog.SyslogManager;
 import com.l7tech.server.log.syslog.SyslogProtocol;
 import com.l7tech.server.log.syslog.SyslogSeverity;
+import com.l7tech.util.Pair;
 
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -190,18 +191,17 @@ class SyslogMessageSink extends MessageSinkSupport {
     {
         String[][] result = new String[configuration.syslogHostList().size()][];
 
-        StringTokenizer stok = null;
         int index = 0;
         for (String value : configuration.syslogHostList()) {
 
-            stok = new StringTokenizer(value, ":");
+            Pair<String,String> hostAndPort = InetAddressUtil.getHostAndPort(value, null);
 
             // this error should not occur if the UI is validating the input data correctly
-            if (stok.countTokens() != 2) {
+            if (hostAndPort.right == null) {
                 throw new ConfigurationException("Invalid Syslog host format encountered=" + value);
             }
 
-            result[index++] = new String[] { stok.nextToken(), stok.nextToken() };
+            result[index++] = new String[] { hostAndPort.left, hostAndPort.right };
         }
 
         return result;

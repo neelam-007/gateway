@@ -1,5 +1,6 @@
 package com.l7tech.gateway.client;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.util.*;
@@ -277,28 +278,12 @@ public class GatewayManagementClient {
                 }
                 url = hostPortOrUrl;
             } else {
-                final String[] hostAndPort = hostPortOrUrl.split(":");
-                String host = null;
-                String port = null;
-
-                if ( hostAndPort.length == 1 ) {
-                    if ( ValidationUtils.isValidDomain(hostAndPort[0]) ) {
-                        host = hostAndPort[0];
-                        port = DEFAULT_HTTPS_PORT;
-                    }
-                } else if ( hostAndPort.length == 2 ) {
-                    if ( ValidationUtils.isValidDomain(hostAndPort[0]) &&
-                         ValidationUtils.isValidInteger(hostAndPort[1], false, 1, 65535) ) {
-                        host = hostAndPort[0];
-                        port = hostAndPort[1];
-                    }
-                }
-
-                if ( host == null ) {
+                Pair<String, String> hostAndPort = InetAddressUtil.getHostAndPort(hostPortOrUrl, DEFAULT_HTTPS_PORT);
+                if ( ! ValidationUtils.isValidDomain(hostAndPort.left) ||
+                     ! ValidationUtils.isValidInteger(hostAndPort.right, false, 1, 65535)) {
                     throw new CommandException("Invalid host or port '" + hostPortOrUrl + "'.");
                 }
-
-                url = MessageFormat.format( URL_TEMPLATE, host, port );
+                url = MessageFormat.format( URL_TEMPLATE, hostAndPort.left, hostAndPort.right );
             }
         }
 

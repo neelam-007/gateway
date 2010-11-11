@@ -1,5 +1,6 @@
 package com.l7tech.server.hpsoam;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.DomUtils;
@@ -347,11 +348,11 @@ public class ServiceManagedObject {
             try {
                 if (routinguri == null || routinguri.length() < 1) {
 
-                    ssgurl = new URL(proto + "://" + req.getServerName() +
+                    ssgurl = new URL(proto + "://" + InetAddressUtil.getHostForUrl(req.getServerName()) +
                                      portStr + SecureSpanConstants.SERVICE_FILE +
                                      Long.toString(service.getOid()));
                 } else {
-                    ssgurl = new URL(proto + "://" + req.getServerName() +
+                    ssgurl = new URL(proto + "://" + InetAddressUtil.getHostForUrl(req.getServerName()) +
                                      portStr + routinguri);
                 }
                 Document wsdlDoc = XmlUtil.stringToDocument(service.getWsdlXml());

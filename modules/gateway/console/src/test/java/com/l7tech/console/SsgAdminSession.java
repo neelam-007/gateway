@@ -1,5 +1,6 @@
 package com.l7tech.console;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.util.JdkLoggerConfigurator;
@@ -81,7 +82,7 @@ public class SsgAdminSession {
                 String surl = urls[i].toString();
                 try {
                     URL url = new URL(surl);
-                    return url.getHost() + ":" + url.getPort();
+                    return InetAddressUtil.getHostForUrl(url.getHost()) + ":" + url.getPort();
                 } catch (MalformedURLException e) {
                 }
                 return surl;

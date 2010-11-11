@@ -712,7 +712,7 @@ public class DBActions {
             return new DBActionsResult(StatusType.SUCCESS);
         } catch (SQLException e) {
             String message = ExceptionUtils.getMessage(e);
-            logger.warning("Could not login to the database using " + databaseConfig.getNodeUsername() + ":" + hidepass(databaseConfig.getNodePassword()) +  "@" + databaseConfig.getHost() + ":" + databaseConfig.getPort() + "/" + databaseConfig.getName());
+            logger.warning("Could not login to the database using " + databaseConfig.getNodeUsername() + ":" + hidepass(databaseConfig.getNodePassword()) +  "@" + InetAddressUtil.getHostForUrl(databaseConfig.getHost()) + ":" + databaseConfig.getPort() + "/" + databaseConfig.getName());
             logger.warning(message);
             return new DBActionsResult(determineErrorStatus(e.getSQLState()), message, e);
         } finally {
@@ -989,7 +989,7 @@ public class DBActions {
 
     private String makeConnectionString(String hostname, int port, String dbName) {
         String urlPattern = SyspropUtil.getString("com.l7tech.config.dburl", DEFAULT_DB_URL);
-        return MessageFormat.format( urlPattern, hostname, Integer.toString(port), dbName );
+        return MessageFormat.format( urlPattern, InetAddressUtil.getHostForUrl(hostname), Integer.toString(port), dbName );
     }
 
     private Map<String, String[]> buildUpgradeMap(File parentDir) {

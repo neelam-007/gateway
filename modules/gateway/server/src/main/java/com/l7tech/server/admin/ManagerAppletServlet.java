@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.admin;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -102,7 +103,7 @@ public class ManagerAppletServlet extends HttpServlet {
         OutputStream os = hresp.getOutputStream();
         PrintStream ps = new PrintStream(os);
         try {
-            String codebase = hreq.getScheme() + "://" + hreq.getServerName() + ":" + hreq.getServerPort()
+            String codebase = hreq.getScheme() + "://" + InetAddressUtil.getHostForUrl(hreq.getServerName()) + ":" + hreq.getServerPort()
                     + ManagerAppletFilter.DEFAULT_CODEBASE_PREFIX;
 
             String pageOpen = PAGE_OPEN;

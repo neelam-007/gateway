@@ -8,6 +8,8 @@ import com.l7tech.config.client.options.Option;
 import com.l7tech.config.client.ConfigurationException;
 import com.l7tech.config.client.ConfigurationFactory;
 
+import java.util.regex.Pattern;
+
 /**
  *
  */
@@ -86,6 +88,29 @@ public class ConfigurationFactoryTest {
     public void testValidStatusConfiguration() throws Exception {
         validateConfiguration("configTemplates/NodeStatus.xml");
     }
+
+    @Test
+    public void testTrustedCertUrl() throws Exception {
+        String processed = processUserInput("localhost:8888");
+        System.out.println(processed);
+    }
+
+    protected static String processUserInput( final String userInput ) {
+        String value = userInput;
+
+        if ( !userInput.startsWith("https://") && (
+                !Pattern.matches("^[a-zA-Z]{1,10}:.*", userInput) ||
+                userInput.startsWith("localhost")
+        )) {
+            if ( value.indexOf(':') < 0 ) {
+                value += ":8182";
+            }
+            value = "https://" + value;
+        }
+
+        return value;
+    }
+
 
     private void validateConfiguration(final String resource) throws Exception {
         OptionSet options = ConfigurationFactory.newConfiguration(ConfigurationFactoryTest.class, resource);

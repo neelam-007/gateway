@@ -106,7 +106,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
             return;
         }
 
-        boolean isIpv4 = InetAddressUtil.isValidIpAddress(addressStr);
+        boolean isIpv4 = InetAddressUtil.isValidIpv4Address(addressStr);
         boolean isIpv6 = InetAddressUtil.isValidIpv6Address(addressStr);
         if ( ! isIpv4 && ! isIpv6 ) {
             bark(resources.getString("error.badaddress"));

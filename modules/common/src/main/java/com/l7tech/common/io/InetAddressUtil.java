@@ -6,6 +6,7 @@
 package com.l7tech.common.io;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 
 import java.net.*;
@@ -98,7 +99,7 @@ public class InetAddressUtil {
      * @param address the string to check
      * @return true if the provided string is a valid IPv4 address, false otherwise.
      */
-    public static boolean isValidIpAddress(String address) {
+    public static boolean isValidIpv4Address(String address) {
 
         if (address == null) return false;
 
@@ -141,7 +142,7 @@ public class InetAddressUtil {
      */
     public static InetAddress getAddress(String address) {
         try {
-            return isValidIpAddress(address) ? Inet4Address.getByName(address):
+            return isValidIpv4Address(address) ? Inet4Address.getByName(address):
                    getIpv6Address(address);
         } catch (UnknownHostException e) {
             return null; // should not happen after isValid
@@ -393,7 +394,7 @@ public class InetAddressUtil {
     }
 
     public static boolean isLoopbackAddress(String ipAddress) {
-        if (! isValidIpAddress(ipAddress) && ! isValidIpv6Address(ipAddress))
+        if (! isValidIpv4Address(ipAddress) && ! isValidIpv6Address(ipAddress))
             return false;
 
         try {
@@ -405,7 +406,7 @@ public class InetAddressUtil {
     }
 
     public static boolean isAnyLocalAddress(String ipAddress) {
-        if (! isValidIpAddress(ipAddress) && ! isValidIpv6Address(ipAddress))
+        if (! isValidIpv4Address(ipAddress) && ! isValidIpv6Address(ipAddress))
             return false;
 
         try {
@@ -456,6 +457,58 @@ public class InetAddressUtil {
         }
 
         return networkBytes;
+    }
+
+    /**
+     * If the provided string parameter is a IPv6 address, returns it enclosed in square brackets so that it can be used within URL, per RFC2732.
+     * Otherwise the provided host (IPv4 address) is returned back.
+     */
+    public static String getHostForUrl(String hostMaybeAddress) {
+        String maybeIpv6Address = "[" + hostMaybeAddress + "]";
+        return isValidIpv6Address(maybeIpv6Address) ? maybeIpv6Address : hostMaybeAddress;
+    }
+
+    /**
+     * Parses the host and port from a "host[:port]" string.
+     *
+     * If the host is an IPv6 literal, the returned host part is enclosed in square brackets.
+     * If the port is not present, the provided default port is returned.
+     *
+     * @param hostAndPossiblyPort string containing a host and optionally a port (delimited from the host part with ":")
+     * @param defaultPort the port to be returned if the first parameter did not contain a port
+     * @return the host and port determined as described above
+     */
+    public static Pair<String,String> getHostAndPort(String hostAndPossiblyPort, String defaultPort) {
+        String host;
+        String port = defaultPort;
+
+        int lastColon = hostAndPossiblyPort.lastIndexOf(':');
+        if (lastColon < 0) {
+            host = hostAndPossiblyPort;
+        } else if ( hostAndPossiblyPort.startsWith("[")) {
+            if (hostAndPossiblyPort.lastIndexOf(']') == lastColon -1 ) {
+                host = hostAndPossiblyPort.substring(0, lastColon);
+                try {
+                    port = hostAndPossiblyPort.substring(lastColon +1, hostAndPossiblyPort.length());
+                } catch (ArrayIndexOutOfBoundsException e2) {
+                    // use default port
+                }
+            } else {
+                host = hostAndPossiblyPort;
+            }
+        } else {
+            if (InetAddressUtil.isValidIpv6Address(hostAndPossiblyPort)) {
+                host = "[" + hostAndPossiblyPort + "]";
+            } else {
+                host = hostAndPossiblyPort.substring(0, lastColon);
+                try {
+                    port = hostAndPossiblyPort.substring(lastColon+1, hostAndPossiblyPort.length());
+                } catch (ArrayIndexOutOfBoundsException e2) {
+                    // use default port
+                }
+            }
+        }
+        return new Pair<String, String>(host, port);
     }
 
     /**
@@ -541,7 +594,7 @@ public class InetAddressUtil {
     }
 
     private static String getHostAddress(String maybeIpAddress) {
-        if (isValidIpAddress(maybeIpAddress)) return maybeIpAddress;
+        if (isValidIpv4Address(maybeIpAddress)) return maybeIpAddress;
         if (maybeIpAddress != null && maybeIpAddress.length() > 2 &&
             maybeIpAddress.charAt(0) == '[' && maybeIpAddress.charAt(maybeIpAddress.length()-1) == ']' &&
             isValidIpv6Address(maybeIpAddress.substring(1, maybeIpAddress.length() - 1)) ) {

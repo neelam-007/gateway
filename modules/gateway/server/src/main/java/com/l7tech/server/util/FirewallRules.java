@@ -45,7 +45,7 @@ public class FirewallRules {
             for (SsgConnector connector : list) {
                 String device = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
                 String interfaceName = null;
-                if ( InetAddressUtil.isValidIpAddress(device) ) {
+                if ( InetAddressUtil.isValidIpv4Address(device) ) {
                     interfaceName = getInterfaceForIP(device);
                     if ( interfaceName == null ) {
                         logger.log( Level.WARNING, "Could not determine interface for IP address ''{0}'', this connector will be inaccessible.", device);

@@ -1,9 +1,11 @@
 package com.l7tech.gateway.common.log;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.Pair;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -444,24 +446,19 @@ public class SinkConfiguration extends NamedEntityImp {
          * @param hostString single host entry to parse formatted as "hostName:portNumber"
          */
         SyslogHostEntry(String hostString) {
-            StringTokenizer stok = new StringTokenizer(hostString, HOST_ENTRY_DELIM);
-            String hostNameTest = null;
-            String portTest = null;
-            if (stok.hasMoreTokens())
-                hostNameTest = stok.nextToken();
-            if (stok.hasMoreTokens())
-                portTest = stok.nextToken();
+
+            Pair<String,String> hostAndPort = InetAddressUtil.getHostAndPort(hostString, null);
 
             // if either are null, get angry
-            if (hostNameTest == null || hostNameTest.trim().isEmpty()) {
+            if (hostAndPort.left == null || hostAndPort.left.trim().isEmpty()) {
                 throw new IllegalArgumentException("Syslog hostName cannot be null or empty");
             }
-            if (portTest == null || portTest.trim().isEmpty()) {
+            if (hostAndPort.right == null ) {
                 throw new IllegalArgumentException("Syslog port cannot be null or empty");
             }
 
-            hostName = hostNameTest;
-            port = portTest;
+            hostName = hostAndPort.left;
+            port = hostAndPort.right;
         }
 
         public String getHostName() {

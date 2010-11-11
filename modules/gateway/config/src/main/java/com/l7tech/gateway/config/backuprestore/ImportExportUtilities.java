@@ -9,6 +9,7 @@ import java.net.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
@@ -424,11 +425,11 @@ public class ImportExportUtilities {
         if (host == null) throw new NullPointerException("host cannot be null");
         if(host.trim().isEmpty()) throw new IllegalArgumentException("host cannot be an empty string or just spaces");
 
-        if (host.indexOf(':') != -1) {
-            String [] parts = host.split(":",2);
-            return new Pair<String, String>(parts[0], parts[1]);
+        Pair<String, String> hostAndPort = InetAddressUtil.getHostAndPort(host, "3306");
+        if (hostAndPort.left != null && hostAndPort.left.startsWith("[") && hostAndPort.left.endsWith("]")) {
+            return new Pair<String, String>(hostAndPort.left.substring(1, hostAndPort.left.length()-1), hostAndPort.right);
         } else {
-            return new Pair<String, String>(host, "3306");
+            return hostAndPort;
         }
     }
 

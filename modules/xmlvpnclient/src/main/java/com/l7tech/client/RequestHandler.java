@@ -410,7 +410,7 @@ public class RequestHandler extends AbstractHandler {
             int port = request.getLocalPort();
             for (Ssg ssg : ssgs) {
                 if (ssg.isWsdlProxySupported()) {
-                    String wsilUrl = "http://" + request.getLocalName() + ":" + port + "/" +
+                    String wsilUrl = "http://" + InetAddressUtil.getHostForUrl(request.getLocalName()) + ":" + port + "/" +
                                      ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX;
                     o.println("<li><a href=\"" + wsilUrl + "\">" + ssg.getSsgAddress() + " (" + ssg.getUsername() + ")</a></li>");
                 }
@@ -574,7 +574,7 @@ public class RequestHandler extends AbstractHandler {
             String host = request.getLocalName();
             if (InetAddressUtil.isValidIpv6Address(host))
                 host = "[" + host + "]";
-            String newUrl = "http://" + host + ":" + port + "/" +
+            String newUrl = "http://" + InetAddressUtil.getHostForUrl(host) + ":" + port + "/" +
               ssg.getLocalEndpoint() + ClientProxy.WSDL_SUFFIX + "?serviceoid=";
             NodeList descList = wsil.getElementsByTagName("description");
             Pattern replaceService = Pattern.compile("http.*serviceoid=(-?\\d+)");
@@ -647,7 +647,7 @@ public class RequestHandler extends AbstractHandler {
                                     final Ssg ssg,
                                     final String oidStr,
                                     final Document wsdlDoc ) {
-        final String urlPrefix = "http://" + request.getLocalName() + ":" + request.getLocalPort();
+        final String urlPrefix = "http://" + InetAddressUtil.getHostForUrl(request.getLocalName()) + ":" + request.getLocalPort();
         final DocumentReferenceProcessor documentReferenceProcessor = new DocumentReferenceProcessor();
         documentReferenceProcessor.processDocumentReferences( wsdlDoc, new DocumentReferenceProcessor.ReferenceCustomizer() {
             @Override

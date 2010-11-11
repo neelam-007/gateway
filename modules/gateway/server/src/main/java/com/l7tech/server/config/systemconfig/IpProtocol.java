@@ -58,7 +58,7 @@ enum IpProtocol {
         String message = null;
         if (StringUtils.isEmpty(ipAddress))
             message = MISSING_IP_ADDRESS_MSG;
-        else if (!InetAddressUtil.isValidIpAddress(ipAddress))
+        else if (!InetAddressUtil.isValidIpv4Address(ipAddress))
             message = "Invalid IPv4 address: " + ipAddress;
 
         if (message != null)

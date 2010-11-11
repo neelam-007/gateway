@@ -191,7 +191,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep<Networking
         String message = null;
         if (StringUtils.isEmpty(netMask))
             message = MISSING_NETMASK_MSG;
-        else if (!InetAddressUtil.isValidIpAddress(netMask))
+        else if (!InetAddressUtil.isValidIpv4Address(netMask))
             message = MessageFormat.format(INVALID_SOMETHING, netMask , "netmask");
 
         if (message != null)

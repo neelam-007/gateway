@@ -5,6 +5,7 @@
 
 package com.l7tech.console;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.util.AppletSsmPreferences;
@@ -330,7 +331,7 @@ public class AppletMain extends JApplet implements SheetHolder {
             if (codebase != null) port = Integer.toString(codebase.getPort());
         }
         if ( port != null && port.length() > 0 && isInt(port )) {
-            hostname = hostname.trim() + ":" + port;
+            hostname = InetAddressUtil.getHostForUrl(hostname.trim()) + ":" + port;
         }
 
         this.hostAndPort = hostname;

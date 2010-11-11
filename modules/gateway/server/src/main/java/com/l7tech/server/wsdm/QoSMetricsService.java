@@ -1,5 +1,6 @@
 package com.l7tech.server.wsdm;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -180,7 +181,7 @@ public class QoSMetricsService {
             logger.warning("Unexpected null incoming URL");
             return "";
         }
-        String resourceID = url.getProtocol() + "://" + url.getHost() + ":" + url.getPort() + "/service/" + context.getServiceId();
+        String resourceID = url.getProtocol() + "://" + InetAddressUtil.getHostForUrl(url.getHost()) + ":" + url.getPort() + "/service/" + context.getServiceId();
         return  "           <muws1:ResourceId>\n" +
                 "             " + resourceID + "\n" +
                 "           </muws1:ResourceId>\n";

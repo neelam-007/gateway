@@ -3,12 +3,14 @@
  */
 package com.l7tech.gateway.config.client.beans.trust;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.PermissiveHostnameVerifier;
 import com.l7tech.common.io.PermissiveSSLSocketFactory;
 import com.l7tech.config.client.ConfigurationException;
 import com.l7tech.gateway.config.client.beans.ConfigResult;
 import com.l7tech.gateway.config.client.beans.ConfigurationContext;
 import com.l7tech.gateway.config.client.beans.UrlConfigurableBean;
+import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -17,12 +19,12 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.regex.Pattern;
 
 /** @author alex */
 public class TrustedCertUrl extends UrlConfigurableBean {
     private volatile X509Certificate cert;
     private final NewTrustedCertFactory factory;
+    private static final int DEFAULT_TRUSTED_CERT_PORT = 8182;
 
     TrustedCertUrl(NewTrustedCertFactory factory) {
         super("host.controller.remoteNodeManagement.tempTrustedCertUrl", "HTTPS URL", null, "https");
@@ -59,18 +61,15 @@ public class TrustedCertUrl extends UrlConfigurableBean {
 
     @Override
     protected String processUserInput( final String userInput ) {
-        String value = userInput;
-
-        if ( !userInput.startsWith("https://") && (
-                !Pattern.matches("^[a-zA-Z]{1,10}:.*", userInput) ||
-                userInput.startsWith("localhost")
-        )) {
-            if ( value.indexOf(':') < 0 ) {
-                value += ":8182";
-            }
-            value = "https://" + value;
+        if ( ! startsWithScheme(userInput)) {
+            Pair<String, String> hostAndPort = InetAddressUtil.getHostAndPort(userInput, Integer.toString(DEFAULT_TRUSTED_CERT_PORT));
+            return "https://" + hostAndPort.left + ":" + hostAndPort.right;
+        } else {
+            return userInput;
         }
+    }
 
-        return value;
+    private boolean startsWithScheme(String userInput) {
+        return userInput != null && userInput.indexOf(':') > -1 && userInput.charAt(0) != '[' && ! InetAddressUtil.isValidIpv6Address(userInput);
     }
 }
