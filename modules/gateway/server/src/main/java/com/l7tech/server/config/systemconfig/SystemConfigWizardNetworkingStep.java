@@ -5,6 +5,8 @@ import com.l7tech.server.config.wizard.BaseConsoleStep;
 import com.l7tech.server.config.wizard.ConfigurationWizard;
 import com.l7tech.common.io.InetAddressUtil;
 import org.apache.commons.lang.StringUtils;
+
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
@@ -80,6 +82,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep<Networking
     private static final String NEW_INTERFACE_NAME_PROMPT = EOL + "Please enter the name of the new interface (ex: eth5): ";
     private static final String CONFIGURE_IPV4 = EOL + "Would you like to configure IPv4 networking?";
     private static final String CONFIGURE_IPV6 = EOL + "Would you like to configure IPv6 networking?";
+    private static final String CONFIGURE_IPV6_UNAVAILABLE = EOL + "IPv6 support is not available in the currently running configuration. Please enable it with the corresponding OS update patch.";
     private static final String CONFIGURE_IPV6_AUTO = EOL + "Enable IPv6 auto-configuration for this interface?";
     private static final String CONFIGURE_IPV6_DHCP = EOL + "Enable DHCPv6 for this interface?";
     private static final String CONFIGURE_IPV6_STATIC_FIRST = EOL + "Add static IPv6 address(es) for this interface?";
@@ -253,10 +256,13 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep<Networking
         }
 
         if (getConfirmationFromUser(CONFIGURE_IPV6, "yes")) {
-            // todo: detect and warn if ipv6 is not available
-            ifConfig.setIpv6Enabled(true);
-            printText(EOL);
-            doIpv6ConfigPrompts(ifConfig);
+            if (new File("/proc/net/if_inet6").exists()) {
+                ifConfig.setIpv6Enabled(true);
+                printText(EOL);
+                doIpv6ConfigPrompts(ifConfig);
+            } else {
+                printText(CONFIGURE_IPV6_UNAVAILABLE);
+            }
         }
     }
 
