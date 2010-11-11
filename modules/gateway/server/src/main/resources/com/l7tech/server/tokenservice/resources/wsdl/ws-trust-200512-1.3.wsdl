@@ -8,9 +8,9 @@ The limited permissions granted above are perpetual and will not be revoked by O
 This document and the information contained herein is provided on an AS IS basis and OASIS DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 -->
 <wsdl:definitions
-        targetNamespace="http://docs.oasis-open.org/ws-sx/ws-trust/200512/"
-        xmlns:tns="http://docs.oasis-open.org/ws-sx/ws-trust/200512/"
-        xmlns:wst="http://docs.oasis-open.org/ws-sx/ws-trust/200512/"
+        targetNamespace="http://docs.oasis-open.org/ws-sx/ws-trust/200512/wsdl"
+        xmlns:tns="http://docs.oasis-open.org/ws-sx/ws-trust/200512/wsdl"
+        xmlns:wst="http://docs.oasis-open.org/ws-sx/ws-trust/200512"
         xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
