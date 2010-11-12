@@ -18,6 +18,8 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -29,6 +31,7 @@ import java.io.StringReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -495,6 +498,35 @@ public class XmlUtilTest {
     @BugNumber(7685)
     public void testDoctypeParserInfiniteLoop_doctypeAllowingParser() throws IOException, SAXException {
         XmlUtil.parse(new ByteArrayInputStream(HexUtils.decodeBase64(BUG_7685_DOCTYPE_INFINITE_LOOP_SPLOIT_BASE64)), true);
+    }
+
+    @Test
+    public void testDoctypeSerialization() throws Exception {
+        final Collection<String> docsWithDocTypes = Arrays.asList(
+            "<!DOCTYPE test [<!ELEMENT test (#PCDATA)>]><test/>",
+            "<!DOCTYPE test SYSTEM 'test.dtd' [<!ELEMENT test (#PCDATA)>]><test/>",
+            "<!DOCTYPE test PUBLIC '-//LAYER 7/DTD TEST/EN' 'test.dtd' [<!ELEMENT test (#PCDATA)>]><test/>"
+        );
+
+        for ( final String docsWithDocType : docsWithDocTypes ){
+            final Document document = XmlUtil.parse( new InputSource(new StringReader( docsWithDocType )), new EntityResolver(){
+                @Override
+                public InputSource resolveEntity( final String publicId, final String systemId ) throws SAXException, IOException {
+                    return new InputSource( new StringReader("") );
+                }
+            } );
+
+            assertNotNull( "Doctype present", document.getDoctype() );
+
+            final String withDoctype = XmlUtil.nodeToString( document, true );
+            assertTrue( "Doctype serialized - " + withDoctype, withDoctype.startsWith( "<!DOCTYPE test " ));
+
+            final String noDoctype = XmlUtil.nodeToString( document, false );
+            assertFalse( "Doctype not serialized - " + noDoctype, noDoctype.startsWith( "<!DOCTYPE test " ));
+
+            final String noDoctype2 = XmlUtil.nodeToString( document );
+            assertFalse( "Doctype not serialized - " + noDoctype2, noDoctype2.startsWith( "<!DOCTYPE test " ));
+        }
     }
 
     @Test

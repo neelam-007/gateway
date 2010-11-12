@@ -280,7 +280,7 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
     private void doView() {
         final ResourceHolder resourceHolder = getSelectedResourceHolder();
         if ( resourceHolder != null ) {
-            GlobalResourceImportWizard.viewResourceHolder( this, resourceHolder );
+            GlobalResourceImportWizard.viewResourceHolder( this, resourceHolder, resourceHolderTableModel.getRows() );
         }
     }
 

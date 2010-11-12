@@ -33,6 +33,7 @@ import com.l7tech.util.TextUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.ext.DefaultHandler2;
@@ -153,7 +154,6 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             // 1) See if there are any dependencies that are unknown
             boolean missingDependencies = false;
             try {
-                //TODO [steve] only process one level of dependency, no need to traverse the entire tree
                 final Map<String,ResourceHolder> processed = new HashMap<String,ResourceHolder>();
                 processResource( context, mainResource, type, null, true, processed);
                 if ( processed.get(uriString) != null && !content.equals(processed.get(uriString).getContent()) ) {
@@ -281,6 +281,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
     protected static Map<String,ResourceHolder> processResources( final GlobalResourceImportContext context,
                                                                   final Collection<ResourceInputSource> resourceInputSources ) {
         Map<String, ResourceHolder> processedResources = new LinkedHashMap<String, ResourceHolder>();
+        context.setCurrentResourceHolders( processedResources.values() );
 
         for ( final ResourceInputSource resourceInputSource : resourceInputSources ) {
             ResourceDocument resourceDocument = null;
@@ -294,6 +295,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             }
         }
 
+        context.setCurrentResourceHolders( Collections.<ResourceHolder>emptyList() );
         return processedResources;
     }
 
@@ -325,7 +327,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
     }
     
     protected static void viewResourceHolder( final Window owner,
-                                              final ResourceHolder holder ) {
+                                              final ResourceHolder holder,
+                                              final Collection<ResourceHolder> resourceHolders ) {
         try {
             final ResourceEntry entry = new ResourceEntry();
             entry.setUri( holder.getSystemId() );
@@ -335,7 +338,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             DialogDisplayer.display( new ResourceEntryEditor(
                     owner,
                     entry,
-                    null, //TODO [steve] entity resolver
+                    new ResourceHolderEntityResolver(resourceHolders),
                     true,
                     false ) );
         } catch ( IOException e ) {
@@ -346,7 +349,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
     protected static Pair<String,String> editResource( final Window owner,
                                                        final ResourceType type,
                                                        final String uri,
-                                                       final String content ) {
+                                                       final String content,
+                                                       final EntityResolver entityResolver ) {
         Pair<String,String> editedResource = null;
 
         final ResourceEntry entry = new ResourceEntry();
@@ -357,7 +361,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         final ResourceEntryEditor editor = new ResourceEntryEditor(
                 owner,
                 entry,
-                null, //TODO [steve] entity resolver
+                entityResolver,
                 true,
                 true);
 
@@ -502,7 +506,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                 final int selectedRow = resourcesTable.getSelectedRow();
                 if ( selectedRow >= 0 ) {
                     final ResourceHolder resourceHolder = resourceHolderTableModel.getRowObject( resourcesTable.convertRowIndexToModel( selectedRow ));
-                    viewResourceHolder( parent, resourceHolder );
+                    viewResourceHolder( parent, resourceHolder, resourceHolderTableModel.getRows() );
                 }
             }
         } );
@@ -677,14 +681,9 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             }
 
             boolean contentUpdated = false;
+            String updatedDoctypeSystemId = null;
             final ResourceHolder resourceHolder = processedResources.get( resourceUriStr );
             for ( final DependencyInfo dependency : dependencies ) {
-
-                if ( dependency.processed ) {
-                    resourceHolder.addDependency( dependency.uri, dependency.uri );
-                    // TODO [steve] update DTD reference here if possible (system identifier)                    
-                    continue;
-                }
 
                 final URI depUri = dependency.uri==null ? null : asUri(dependency.uri);
                 final boolean absoluteLocation = depUri != null && depUri.isAbsolute();
@@ -694,6 +693,22 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                     absoluteUri = depUri;
                 } else {
                     absoluteUri = dependency.uri==null ? null : resolveUri( resourceDocument.getUri().toString(), dependency.uri );
+                }
+
+                if ( dependency.processed ) {
+                    resourceHolder.addDependency( dependency.uri, dependency.uri );
+
+                    if ( processDependencies && schemaDoc!=null && schemaDoc.getDoctype()!=null && schemaDoc.getDoctype().getSystemId()!=null &&
+                         absoluteUri!=null && dependency.originalReferenceUri!=null && dependency.originalReferenceUri.equals(schemaDoc.getDoctype().getSystemId()) ) {
+
+                        // Update the reference to point to the resolved document
+                        final String dependencyReference = relativizeUri( resourceDocument.getUri(), absoluteUri ).toString();
+                        if ( !dependencyReference.equals( schemaDoc.getDoctype().getSystemId() ) ) {
+                            updatedDoctypeSystemId = dependencyReference;
+                        }
+                    }
+
+                    continue;
                 }
 
                 if ( dependency.hasTargetNamespace ) {
@@ -739,7 +754,10 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             }
 
             if ( contentUpdated ) {
-                resourceHolder.setContent( XmlUtil.nodeToString( schemaDoc ) ); //TODO [steve] serialize preserving doctype
+                resourceHolder.setContent( XmlUtil.nodeToString( schemaDoc, true ) );
+            }
+            if ( updatedDoctypeSystemId != null ) {
+                resourceHolder.setContent( DtdUtils.updateExternalSystemId( resourceHolder.getContent(), updatedDoctypeSystemId ) );
             }
         } catch ( Exception e ) {
             processedResources.remove( resourceUriStr );
@@ -809,7 +827,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         final ResourceHolder holder = processedResources.get( absoluteSystemId.toString() );
         if ( holder != null && !holder.isError() ) {
             if ( dependencies != null ) {
-                dependencies.add( DependencyInfo.fromResourceDocument( holder.getType(), holder.asResourceDocument() ) );
+                dependencies.add( DependencyInfo.fromResourceDocument( holder.getType(), holder.asResourceDocument(), null ) );
             }
             entity = new Pair<String,String>( absoluteSystemId.toString(), holder.getContent());
         }
@@ -821,7 +839,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             if ( dtdResourceDocument != null ) {
                 entity = new Pair<String,String>( dtdResourceDocument.getUri().toString(), dtdResourceDocument.getContent());
                 if ( dependencies != null ) {
-                    dependencies.add( DependencyInfo.fromResourceDocument( ResourceType.DTD, dtdResourceDocument ) );
+                    dependencies.add( DependencyInfo.fromResourceDocument( ResourceType.DTD, dtdResourceDocument, systemId ) );
                 }
 
                 processResource( context, dtdResourceDocument, ResourceType.DTD, publicId, false, processedResources );
@@ -973,7 +991,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                                 editResource( parent,
                                               resourceType!=null ? resourceType : ResourceType.DTD,
                                               uri,
-                                              content );
+                                              content,
+                                              new ResourceHolderEntityResolver( context.getCurrentResourceHolders(), true) );
                         if ( resourceUriAndContent == null ) {
                             break; // manual import cancelled
                         }
@@ -1200,23 +1219,28 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         private final boolean hasTargetNamespace;
         private final String targetNamespace;
         private final boolean processed;
+        private final String originalReferenceUri; // the original URI which can be different from URI when processed
 
         private DependencyInfo( final ResourceType resourceType,
                                 final String baseUri,
                                 final String uri,
                                 final boolean hasTargetNamespace,
                                 final String targetNamespace,
-                                final boolean processed ) {
+                                final boolean processed,
+                                final String originalReferenceUri ) {
             this.resourceType = resourceType;
             this.baseUri = baseUri;
             this.uri = uri;
             this.hasTargetNamespace = hasTargetNamespace;
             this.targetNamespace = targetNamespace;
             this.processed = processed;
+            this.originalReferenceUri = originalReferenceUri;
         }
 
-        private static DependencyInfo fromResourceDocument( final ResourceType type, final ResourceDocument resourceDocument ) {
-            return new DependencyInfo( type, null, resourceDocument.getUri().toString(), false, null, true );
+        private static DependencyInfo fromResourceDocument( final ResourceType type,
+                                                            final ResourceDocument resourceDocument,
+                                                            final String originalReferenceUri ) {
+            return new DependencyInfo( type, null, resourceDocument.getUri().toString(), false, null, true, originalReferenceUri );
         }
 
         private static DependencyInfo fromSchemaDependencyElement( final String baseUri,
@@ -1225,7 +1249,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             final String dependencyNamespace = dependencyEl.hasAttributeNS( null, "namespace" ) ? dependencyEl.getAttributeNS(null, "namespace") : null;
             final boolean dependencyNamespaceSet = "import".equals( dependencyEl.getLocalName() );
 
-            return new DependencyInfo( ResourceType.XML_SCHEMA, baseUri, dependencyLocation, dependencyNamespaceSet, dependencyNamespace, false );
+            return new DependencyInfo( ResourceType.XML_SCHEMA, baseUri, dependencyLocation, dependencyNamespaceSet, dependencyNamespace, false, null );
         }
 
         public String toString() {

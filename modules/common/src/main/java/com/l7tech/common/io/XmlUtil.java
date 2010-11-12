@@ -470,14 +470,14 @@ public class XmlUtil extends DomUtils {
     }
 
     @SuppressWarnings({"deprecation"})
-    private static XMLSerializer getTransparentXMLSerializer() {
+    private static XMLSerializer getTransparentXMLSerializer( final boolean omitDocumentType ) {
         OutputFormat format = new OutputFormat();
         format.setLineWidth(0);
         format.setIndenting(false);
         format.setPreserveSpace(true);
         format.setOmitXMLDeclaration(true);
         format.setOmitComments(false);
-        format.setOmitDocumentType(true);
+        format.setOmitDocumentType(omitDocumentType);
         format.setPreserveEmptyAttributes(true);
         return new XMLSerializer(format);
     }
@@ -486,11 +486,20 @@ public class XmlUtil extends DomUtils {
         return exclusiveCanonicalizer.get();
     }
 
+    /**
+     * Serialize the given node to the provided output stream.
+     *
+     * <p>Serialization will not include a DOCTYPE for Document nodes.</p>
+     *
+     * @param node The node to serialize (required)
+     * @param os The output stream to use (required)
+     * @throws IOException If an error occurs during serialization.
+     */
     public static void nodeToOutputStream(Node node, OutputStream os) throws IOException {
         if (serializeWithXss4j)
             nodeToOutputStreamWithXss4j(node, os);
         else
-            nodeToOutputStreamWithXMLSerializer(node, os);
+            nodeToOutputStreamWithXMLSerializer(node, os, null);
     }
 
     public static void nodeToOutputStreamWithXss4j(Node node, final OutputStream os) throws IOException {
@@ -499,8 +508,8 @@ public class XmlUtil extends DomUtils {
     }
 
     @SuppressWarnings({"deprecation"})
-    static void nodeToOutputStreamWithXMLSerializer(Node node, final OutputStream os) throws IOException {
-        XMLSerializer serializer = getTransparentXMLSerializer();
+    static void nodeToOutputStreamWithXMLSerializer( final Node node, final OutputStream os, final XMLSerializer inSerializer) throws IOException {
+        XMLSerializer serializer = inSerializer==null ? getTransparentXMLSerializer(true) : inSerializer;
         serializer.setOutputByteStream(os);
         switch (node.getNodeType()) {
             case Node.ELEMENT_NODE:
@@ -611,10 +620,35 @@ public class XmlUtil extends DomUtils {
             throw new IllegalArgumentException("Node must be either a Document or an Element");
     }
 
+    /**
+     * Serialize the given node to a String.
+     *
+     * <p>For Document nodes any DOCTYPE will be omitted.</p>
+     *
+     * @param node The node to serialize (required)
+     * @return The String for the node.
+     * @throws IOException If and error occurs during serialization.
+     */
     public static String nodeToString(Node node) throws IOException {
+        return nodeToString( node, false );
+    }
+
+    /**
+     * Serialize the given node to a String.
+     *
+     * @param node The node to serialize (required)
+     * @param doctype True to include the DOCTYPE for Document nodes if present.
+     * @return The String for the node.
+     * @throws IOException If and error occurs during serialization.
+     */
+    public static String nodeToString( final Node node, final boolean doctype ) throws IOException {
         final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
         try {
-            nodeToOutputStream(node, out);
+            if ( doctype ) {
+                nodeToOutputStreamWithXMLSerializer( node, out, getTransparentXMLSerializer(false) );
+            } else {
+                nodeToOutputStream(node, out);
+            }
             return out.toString(Charsets.UTF8);
         } finally {
             out.close();

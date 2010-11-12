@@ -17,9 +17,13 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TextUtils;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -384,6 +388,14 @@ class GlobalResourceImportContext {
 
     void setResourceInputSources( final Collection<ResourceInputSource> resourceInputSources ) {
         this.resourceInputSources = new ArrayList<ResourceInputSource>( resourceInputSources );
+    }
+
+    Collection<ResourceHolder> getCurrentResourceHolders() {
+        return Collections.unmodifiableCollection( currentResourceHolders );
+    }
+
+    void setCurrentResourceHolders( final Collection<ResourceHolder> currentResourceHolders ) {
+        this.currentResourceHolders = currentResourceHolders;
     }
 
     Map<String, ResourceHolder> getProcessedResources() {
@@ -919,7 +931,7 @@ class GlobalResourceImportContext {
 
                 if ( resolved != null && resolved == external && resourceType == ResourceType.XML_SCHEMA ) {
                     try {
-                        XmlUtil.getSchemaTNS( resolved.getContent(), null ); //TODO [steve] entity resolver
+                        XmlUtil.getSchemaTNS( resolved.getContent(), new ResourceHolderEntityResolver(GlobalResourceImportContext.this.getCurrentResourceHolders(),true) );
                     } catch ( XmlUtil.BadSchemaException e ) {
                         final String fullDetail;
                         switch ( option ) {
@@ -957,6 +969,59 @@ class GlobalResourceImportContext {
             }
         };
     }
+
+    static class ResourceHolderEntityResolver implements EntityResolver {
+        private final Collection<ResourceHolder> resourceHolders;
+        private final boolean allowDefaultResolution;
+
+        ResourceHolderEntityResolver( final Collection<ResourceHolder> resourceHolders ) {
+            this( resourceHolders, false );
+        }
+
+        ResourceHolderEntityResolver( final Collection<ResourceHolder> resourceHolders,
+                                      final boolean allowDefaultResolution ) {
+            this.resourceHolders = resourceHolders;
+            this.allowDefaultResolution = allowDefaultResolution;
+        }
+
+        private InputSource asInputSource( final ResourceHolder resourceHolder ) throws IOException {
+            final InputSource inputSource = new InputSource();
+            inputSource.setSystemId( resourceHolder.getSystemId() );
+            inputSource.setCharacterStream( new StringReader( resourceHolder.getContent() ) );
+            return inputSource;
+        }
+
+        @Override
+        public InputSource resolveEntity( final String publicId, final String systemId ) throws SAXException, IOException {
+            InputSource inputSource = null;
+
+            if ( systemId != null ) {
+                for ( final ResourceHolder resourceHolder : resourceHolders ) {
+                    if ( systemId.equals(resourceHolder.getSystemId()) ) {
+                        inputSource = asInputSource(resourceHolder);
+                        break;
+                    }
+                }
+            }
+
+            if ( inputSource == null && publicId != null ) {
+                for ( final ResourceHolder resourceHolder : resourceHolders ) {
+                    if ( publicId.equals(resourceHolder.getPublicId()) ) {
+                        inputSource = asInputSource(resourceHolder);
+                        break;
+                    }
+                }
+            }
+
+            if ( inputSource == null && !allowDefaultResolution ) {
+                throw new IOException( "Resource not found '"+systemId+"', public identifier '"+publicId+"'" );
+            }
+
+            return inputSource;
+        }
+    }
+
+    //- PROTECTED
 
     /**
      * Interface for fixing missing or invalid resources.
@@ -1137,6 +1202,7 @@ class GlobalResourceImportContext {
     private static final Logger logger = Logger.getLogger( GlobalResourceImportContext.class.getName() );
 
     private List<ResourceInputSource> resourceInputSources = Collections.emptyList();
+    private Collection<ResourceHolder> currentResourceHolders = Collections.emptyList();
     private Map<String, ResourceHolder> processedResources = Collections.emptyMap();
     private Map<ImportOption,ImportChoice> importOptions = buildImportOptionMap();
     private ResourceDocumentResolver schemaResolver;

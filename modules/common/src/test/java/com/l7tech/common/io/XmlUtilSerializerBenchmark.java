@@ -33,7 +33,7 @@ public class XmlUtilSerializerBenchmark {
     public void testXMLSerializerPerformance() throws Exception {
         testSerializer(new Ser() {
             public void serialize(Document doc, OutputStream os) throws IOException {
-                XmlUtil.nodeToOutputStreamWithXMLSerializer(doc, os);
+                XmlUtil.nodeToOutputStreamWithXMLSerializer(doc, os, null);
             }
         });
     }

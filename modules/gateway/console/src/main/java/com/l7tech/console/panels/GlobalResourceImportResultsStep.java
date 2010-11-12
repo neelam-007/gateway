@@ -22,6 +22,7 @@ import com.l7tech.util.TextUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -165,7 +166,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
         if ( selectedRows.length == 1 ) {
             final ResourceHolder holder = resourceHolderTableModel.getRowObject(
                     resourcesTable.convertRowIndexToModel( selectedRows[0] ) );
-            GlobalResourceImportWizard.viewResourceHolder( getOwner(), holder );
+            GlobalResourceImportWizard.viewResourceHolder( getOwner(), holder, resourceHolderTableModel.getRows() );
         }
     }
 
@@ -377,7 +378,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
                     try {
                         final InputSource source = new InputSource( resourceHolder.getSystemId() );
                         source.setCharacterStream( new StringReader( resourceHolder.getContent() ) );
-                        final Document schemaDocument = XmlUtil.parse( source, null ); // TODO [steve] entity resolver
+                        final Document schemaDocument = XmlUtil.parse( source, new ResourceHolderEntityResolver(resourceHolders) );
                         final DocumentReferenceProcessor schemaProcessor = DocumentReferenceProcessor.schemaProcessor();
                         schemaProcessor.processDocumentReferences( schemaDocument, new DocumentReferenceProcessor.ReferenceCustomizer(){
                             @Override
@@ -397,7 +398,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
                             }
                         } );
 
-                        contentUpdate = XmlUtil.nodeToString( schemaDocument ); // TODO [steve] preserve doctype
+                        contentUpdate = XmlUtil.nodeToString( schemaDocument, true );
                     } catch ( SAXException e ) {
                         throw new IOException("Error updating references for resource:\n"+TextUtils.truncStringMiddleExact(resourceHolder.getSystemId(), 80)+"\n"+ExceptionUtils.getMessage(e));
                     } catch ( IOException e ) {

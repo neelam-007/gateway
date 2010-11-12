@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Utility methods for working with DTDs.
@@ -112,6 +114,48 @@ public class DtdUtils {
         return normalized;
     }
 
+    /**
+     * Update the external identifier system identifier if present.
+     *
+     * <p>If the given document does not contain a system identifier then one
+     * will not be added.</p>
+     *
+     * <p>If the given system identifier contains both single and double quotes
+     * then it cannot be used and the original document is returned.</p>
+     *
+     * @param document The XML document to update (must not be null)
+     * @param systemId The system identifier to use (must not be null)
+     * @return The (possibly updated) document (never null)
+     */
+    public static String updateExternalSystemId( final String document,
+                                                 final String systemId ) {
+        String updatedDocument = document;
+
+        final boolean hasQuote = systemId.contains( "'" );
+        final boolean hasDoubleQuote = systemId.contains( "\"" );
+
+        if ( !hasQuote || !hasDoubleQuote ) { // if the system id contains both quote types it can't be used
+            final Matcher matcher = systemIdSearchPattern.matcher( document );
+            if ( matcher.find() ) {
+                String quote;
+                if ( hasQuote ) {
+                    quote = "\"";
+                } else if ( hasDoubleQuote ) {
+                    quote = "'";
+                } else {
+                    quote = matcher.group( 0 ).substring( 0, 1 );
+                }
+
+                final String updatedSystemId = quote + systemId + quote;
+                if ( !updatedSystemId.equals( matcher.group( 0 ) ) ) {
+                    updatedDocument = document.substring( 0, matcher.start()) + updatedSystemId + document.substring( matcher.end() );
+                }
+            }
+        }
+
+        return updatedDocument;
+    }
+
     public interface Resolver {
 
         /**
@@ -127,6 +171,18 @@ public class DtdUtils {
     }
 
     //- PRIVATE
+
+    /**
+     * Regular expression for matching the system identifier in a DOCTYPE declaration.
+     *
+     * '<!DOCTYPE' S Name (S ExternalID)? S? ('[' intSubset ']' S?)? '>'
+     * S               ::=   (#x20 | #x9 | #xD | #xA)+
+     * ExternalID      ::=   'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral
+     * SystemLiteral   ::=   ('"' [^"]* '"') | ("'" [^']* "'")
+     * PubidLiteral    ::=   '"' PubidChar* '"' | "'" (PubidChar - "'")* "'"
+     * PubidChar       ::=   #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
+     */
+    private static final Pattern systemIdSearchPattern = Pattern.compile( "(?s)(?<=<!DOCTYPE\\s{1,128}[^\\s]{1,1024}\\s{1,128}(?:SYSTEM\\s{1,128}|PUBLIC\\s{1,128}(?:\"[\\sa-zA-Z0-9\\-'()+,\\./:=\\?;!*#@$_%]{0,1024}\"|'[\\sa-zA-Z0-9\\-()+,\\./:=\\?;!*#@$_%]{0,1024}')\\s{1,128}))(?:'[^']+'|\"[^\"]+\")" );
 
     private static void processReferencesRecursively(
             final String dtdSystemId,
