@@ -464,8 +464,7 @@ public class InetAddressUtil {
      * Otherwise the provided host (IPv4 address) is returned back.
      */
     public static String getHostForUrl(String hostMaybeAddress) {
-        String maybeIpv6Address = "[" + hostMaybeAddress + "]";
-        return isValidIpv6Address(maybeIpv6Address) ? maybeIpv6Address : hostMaybeAddress;
+        return isValidIpv6Address(hostMaybeAddress) ? "[" + hostMaybeAddress + "]" : hostMaybeAddress;
     }
 
     /**
