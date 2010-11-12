@@ -573,7 +573,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
             this.certificate = sslKey.getSslInfo().getCertificate();
             this.keyManagers = sslKey.getSslKeyManagers();
             this.alias = sslKey.getSslInfo().getAlias();
-            this.ipAddress = ipaddress;
+            this.ipAddress = "*".equals(ipaddress) ? InetAddressUtil.getAnyHostAddress() : ipaddress;
             this.httpPort = httpPort;
             this.httpsPort = httpsPort;
         }

@@ -35,11 +35,7 @@ public enum OptionType {
         @Override
         protected boolean nonRegexMatch(String input) {
             // IPv4 regex failed, expect an IPv6 literal; prevent InetAddress.getByName from doing a lookup
-            try {
-                return input != null && input.length() > 0 && InetAddress.getByName("[" + input + "]") != null;
-            } catch (UnknownHostException e) {
-                return false;
-            }
+            return InetAddressUtil.isValidIpv6Address(input);
         }},
 
     /**

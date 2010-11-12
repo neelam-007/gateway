@@ -93,11 +93,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
     public void configureListener( final String ipaddress, final int port ) throws SetupException {
         // update server settings
         serverConfig.putProperty( "em.server.listenport", Integer.toString(port) );
-        if ( "*".equals(ipaddress) ) {            
-            serverConfig.putProperty( "em.server.listenaddr", InetAddressUtil.getAnyHostAddress());
-        } else {
-            serverConfig.putProperty( "em.server.listenaddr", ipaddress );
-        }
+        serverConfig.putProperty( "em.server.listenaddr", "*".equals(ipaddress) ? InetAddressUtil.getAnyHostAddress() : ipaddress);
     }
 
     @Override
