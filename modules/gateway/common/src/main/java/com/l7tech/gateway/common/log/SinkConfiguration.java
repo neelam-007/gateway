@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.log;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;

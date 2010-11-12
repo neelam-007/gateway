@@ -1,6 +1,6 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.policy.Policy;
 import com.l7tech.common.http.HttpConstants;

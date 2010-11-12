@@ -12,7 +12,7 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 
 import com.l7tech.server.management.config.node.NodeConfig.ClusterType;
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 
 import javax.xml.ws.WebServiceException;
 import java.util.*;

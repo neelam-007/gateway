@@ -1,11 +1,12 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**

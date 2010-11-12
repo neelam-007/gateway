@@ -4,7 +4,7 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.management.config.host.HostConfig;

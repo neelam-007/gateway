@@ -5,7 +5,7 @@ package com.l7tech.server.wsdm.subscription;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.ServiceMessages;

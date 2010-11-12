@@ -1,6 +1,6 @@
 package com.l7tech.server.event;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;

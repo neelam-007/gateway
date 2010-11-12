@@ -1,7 +1,7 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.CertVerifier;

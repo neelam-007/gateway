@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.server.ems.setup.SetupManager;
 import com.l7tech.server.ems.setup.SetupException;
 import com.l7tech.util.Config;

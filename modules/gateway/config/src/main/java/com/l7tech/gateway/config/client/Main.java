@@ -1,6 +1,6 @@
 package com.l7tech.gateway.config.client;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.config.client.beans.ConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.NodeConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.StateConfigurationBeanProvider;

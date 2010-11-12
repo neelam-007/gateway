@@ -1,6 +1,6 @@
 package com.l7tech.server.transport.ftp;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.HasServiceOid;

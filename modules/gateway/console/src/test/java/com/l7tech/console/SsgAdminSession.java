@@ -1,6 +1,6 @@
 package com.l7tech.console;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.util.JdkLoggerConfigurator;

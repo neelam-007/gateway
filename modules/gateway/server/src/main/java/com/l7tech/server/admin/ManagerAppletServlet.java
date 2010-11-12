@@ -3,7 +3,7 @@
  */
 package com.l7tech.server.admin;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;

@@ -1,6 +1,6 @@
 package com.l7tech.server.transport.http;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.SyspropUtil;

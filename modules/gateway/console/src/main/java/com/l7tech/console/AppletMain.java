@@ -5,7 +5,7 @@
 
 package com.l7tech.console;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.util.AppletSsmPreferences;

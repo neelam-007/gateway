@@ -1,6 +1,6 @@
-package com.l7tech.common.io;
+package com.l7tech.util;
 
-import static com.l7tech.common.io.InetAddressUtil.patternMatchesAddress;
+import static com.l7tech.util.InetAddressUtil.patternMatchesAddress;
 import static junit.framework.Assert.*;
 import org.junit.*;
 

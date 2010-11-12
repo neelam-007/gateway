@@ -3,7 +3,7 @@
  */
 package com.l7tech.console.security;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.*;
 import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.audit.LogonEvent;

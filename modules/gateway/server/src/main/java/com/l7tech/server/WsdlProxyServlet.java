@@ -1,7 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.io.DocumentReferenceProcessor;
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;

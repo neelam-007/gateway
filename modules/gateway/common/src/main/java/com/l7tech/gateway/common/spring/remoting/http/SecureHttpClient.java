@@ -1,6 +1,6 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
 import com.l7tech.util.SyspropUtil;
 import org.apache.commons.httpclient.ConnectTimeoutException;

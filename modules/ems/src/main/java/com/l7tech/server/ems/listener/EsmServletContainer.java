@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.listener;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.transport.SsgConnector;

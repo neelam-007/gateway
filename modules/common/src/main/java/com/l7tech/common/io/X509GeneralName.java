@@ -1,5 +1,7 @@
 package com.l7tech.common.io;
 
+import com.l7tech.util.InetAddressUtil;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;

@@ -1,6 +1,6 @@
 package com.l7tech.server.log;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.log.syslog.Syslog;

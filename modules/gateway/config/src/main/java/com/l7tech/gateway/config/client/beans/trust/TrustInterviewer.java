@@ -4,19 +4,13 @@
 package com.l7tech.gateway.config.client.beans.trust;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.config.client.ConfigurationException;
 import com.l7tech.config.client.options.OptionType;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.gateway.config.client.beans.ConfigInterviewer;
 import com.l7tech.gateway.config.client.beans.TypedConfigurableBean;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 
 import java.io.*;
 import java.security.GeneralSecurityException;

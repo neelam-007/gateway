@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.rawtcp.server;
 
 import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion;
 import com.l7tech.gateway.common.LicenseManager;

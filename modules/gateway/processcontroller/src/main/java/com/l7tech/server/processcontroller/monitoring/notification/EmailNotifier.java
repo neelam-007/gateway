@@ -3,7 +3,7 @@
  */
 package com.l7tech.server.processcontroller.monitoring.notification;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;

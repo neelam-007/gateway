@@ -1,6 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.policy.assertion.RemoteIpRange;
 import junit.framework.Test;

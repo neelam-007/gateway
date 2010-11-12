@@ -1,6 +1,6 @@
 package com.l7tech.security.saml;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;

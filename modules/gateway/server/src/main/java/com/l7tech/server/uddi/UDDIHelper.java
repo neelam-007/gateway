@@ -12,7 +12,7 @@ import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.io.SingleCertX509KeyManager;
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.SyspropUtil;
 

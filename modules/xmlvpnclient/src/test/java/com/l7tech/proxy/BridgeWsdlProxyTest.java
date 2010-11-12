@@ -4,7 +4,7 @@ import com.l7tech.common.http.GenericHttpException;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ResourceUtils;

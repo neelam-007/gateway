@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.mtom.server;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
+import com.l7tech.util.*;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -11,17 +12,6 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ValidationUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.server.StashManagerFactory;

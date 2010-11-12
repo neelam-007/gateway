@@ -1,6 +1,6 @@
 package com.l7tech.server.config.systemconfig;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.server.config.beans.BaseConfigurationBean;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.lang.StringUtils;

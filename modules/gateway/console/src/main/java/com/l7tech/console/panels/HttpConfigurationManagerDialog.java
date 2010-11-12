@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.resources.HttpConfiguration;

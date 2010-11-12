@@ -5,7 +5,7 @@
 
 package com.l7tech.gui.widgets;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;

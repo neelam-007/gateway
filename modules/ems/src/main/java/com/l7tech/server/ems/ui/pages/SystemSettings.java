@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.InvalidLicenseException;
@@ -13,7 +13,6 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.UpdatableLicenseManager;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ems.EsmLicenseManager;
 import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.ui.EsmApplication;
 import com.l7tech.server.ems.ui.CertLicExpiryStatus;

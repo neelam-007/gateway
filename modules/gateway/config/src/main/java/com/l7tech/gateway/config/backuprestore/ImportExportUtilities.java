@@ -9,7 +9,7 @@ import java.net.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;

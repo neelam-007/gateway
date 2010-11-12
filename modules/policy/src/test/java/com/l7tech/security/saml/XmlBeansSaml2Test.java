@@ -1,6 +1,6 @@
 package com.l7tech.security.saml;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.policy.assertion.SslAssertion;

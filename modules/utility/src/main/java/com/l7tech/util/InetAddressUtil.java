@@ -3,11 +3,7 @@
  *
  */
 
-package com.l7tech.common.io;
-
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
+package com.l7tech.util;
 
 import java.net.*;
 import java.util.Enumeration;

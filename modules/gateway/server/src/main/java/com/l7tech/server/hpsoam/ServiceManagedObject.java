@@ -1,6 +1,6 @@
 package com.l7tech.server.hpsoam;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.DomUtils;

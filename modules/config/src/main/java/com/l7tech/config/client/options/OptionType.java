@@ -1,9 +1,7 @@
 package com.l7tech.config.client.options;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.text.Format;
 import java.text.FieldPosition;
 import java.text.ParsePosition;

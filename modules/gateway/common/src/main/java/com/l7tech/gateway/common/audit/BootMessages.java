@@ -5,7 +5,7 @@
  */
 package com.l7tech.gateway.common.audit;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 
 import java.util.logging.Level;
 

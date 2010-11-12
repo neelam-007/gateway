@@ -1,6 +1,6 @@
 package com.l7tech.server.transport;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.transport.InterfaceTag;

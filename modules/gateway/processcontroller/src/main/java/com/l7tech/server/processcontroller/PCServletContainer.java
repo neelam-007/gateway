@@ -1,6 +1,6 @@
 package com.l7tech.server.processcontroller;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;

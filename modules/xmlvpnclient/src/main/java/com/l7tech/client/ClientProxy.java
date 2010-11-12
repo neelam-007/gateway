@@ -1,6 +1,6 @@
 package com.l7tech.client;
 
-import com.l7tech.common.io.InetAddressUtil;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.security.prov.JceProvider;
