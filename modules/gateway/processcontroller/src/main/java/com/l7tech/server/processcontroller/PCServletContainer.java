@@ -118,7 +118,8 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         InetAddress httpAddr = InetAddress.getByName(httpIPAddress);
 
         if (InetAddressUtil.isIpv4Enabled()) {
-            if ( httpPort != DEFAULT_SSL_REMOTE_MANAGEMENT_PORT || !(httpAddr instanceof Inet4Address) ||
+            if ( httpPort != DEFAULT_SSL_REMOTE_MANAGEMENT_PORT ||
+                ! ( httpAddr instanceof Inet4Address || (httpAddr instanceof Inet6Address && httpAddr.isAnyLocalAddress() )) ||
                 ! ( httpAddr.isLoopbackAddress() || httpAddr.isAnyLocalAddress() )  ) {
 
                 final SslSocketConnector localSslConnector = new SslSocketConnector() {

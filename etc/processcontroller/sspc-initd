@@ -42,13 +42,13 @@ start() {
         fi
         if [ "APPLIANCE" == "${HOST_TYPE}" ] ; then
             [ ! -f "${PC_FIREWALL_RULES}" ] || rm -f "${PC_FIREWALL_RULES}" &>/dev/null
-            PC_ADDR=$(grep host.controller.sslIpAddress "${PC_CONFIG}" | sed 's/host.controller.sslIpAddress\s\{0,128\}=\s\{0,128\}//')
+            PC_ADDR=$(grep host.controller.sslIpAddress "${PC_CONFIG}" | sed 's/host.controller.sslIpAddress\s\{0,128\}=\s\{0,128\}//' | sed 's/\\:/:/g')
             PC_PORT=$(grep host.controller.sslPort "${PC_CONFIG}" | sed 's/host.controller.sslPort\s\{0,128\}=\s\{0,128\}//')
             if [ ! -z "${PC_ADDR}" ] && [ "${PC_ADDR}" != "127.0.0.1" ] ; then
                 if [ -z "${PC_PORT}" ] ; then
                     PC_PORT="8765"
                 fi
-                if [ "${PC_ADDR}" != "0.0.0.0" ] ; then
+                if [ "${PC_ADDR}" != "0.0.0.0" ] && [ "${PC_ADDR}" != "::" ] && [ "${PC_ADDR}" != "0:0:0:0:0:0:0:0" ]; then
                     echo "[0:0] -A INPUT -p tcp -m tcp -d ${PC_ADDR} --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL_RULES}"
                 else
                     echo "[0:0] -A INPUT -p tcp -m tcp --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL_RULES}"
