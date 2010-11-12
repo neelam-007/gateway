@@ -22,7 +22,6 @@ import com.l7tech.util.TextUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -260,7 +259,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
 
 
         // Ensure no uri conflicts or invalid uris
-        final Map<String,URI> newUris = new HashMap<String,URI>();
+        final Map<String,URI> newUris = new HashMap<String,URI>(); // map of current to updated uris.
         try {
             for ( final ResourceHolder resourceHolder : resourceHolderTableModel.getRows() ) {
                 if ( resourceHolder.isPersist() && resourceHolder.isNew() && resourceHolder.getSystemId().startsWith( uriPrefix )) {
@@ -278,10 +277,25 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
 
         String conflictUri = null;
         try {
+            final Set<String> importUris = new HashSet<String>(Functions.map( resourceHolderTableModel.getRows(), new Functions.Unary<String,ResourceHolder>(){
+                @Override
+                public String call( final ResourceHolder resourceHolder ) {
+                    return resourceHolder.getSystemId();
+                }
+            } ) );
+            importUris.removeAll( newUris.keySet() ); // ignore anything being renamed
             for ( final URI uri : newUris.values() ) {
-                if ( resourceAdmin.findResourceHeaderByUriAndType( uri.toString(), null ) != null ) {
+                if ( importUris.contains( uri.toString() )) {
                     conflictUri = uri.toString();
                     break;
+                }
+            }
+            if ( conflictUri == null ) {
+                for ( final URI uri : newUris.values() ) {
+                    if ( resourceAdmin.findResourceHeaderByUriAndType( uri.toString(), null ) != null ) {
+                        conflictUri = uri.toString();
+                        break;
+                    }
                 }
             }
         } catch ( FindException e ) {
@@ -290,7 +304,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
         }
 
         if ( conflictUri != null ) {
-            GlobalResourceImportWizard.showErrorMessage( this, "Update Error", "Updated system identifier conflicts with an existing resource:\n" + TextUtils.truncStringMiddleExact( conflictUri, 80 ));
+            GlobalResourceImportWizard.showErrorMessage( this, "Update Error", "An updated system identifier conflicts with an imported or existing resource:\n" + TextUtils.truncStringMiddleExact( conflictUri, 80 )+"\nSystem identifiers have not been updated.");
         } else {
             // Build updated content first, fix any references to the updated system identifiers
             final Collection<ResourceHolder> resourceHolders = resourceHolderTableModel.getRows();
