@@ -347,8 +347,8 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 if (serviceControl == null)
                     throw new IllegalStateException("No UDDIServiceControl found for PublishedService with id #(" + uddiProxiedServiceInfo.getPublishedServiceOid() + ")");
 
-                if (uddiProxiedServiceInfo.isRemoveOtherBindings() && serviceControl.isUnderUddiControl()) {
-                    throw new IllegalStateException("Cannot remove other bindings when the WSDL is under UDDI control");
+                if (serviceControl.isUnderUddiControl()) {
+                    throw new IllegalStateException("Cannot publish GIF endpoint when service is under UDDI control.");
                 }
 
                 logger.log(Level.INFO, "Publishing endpoint from Published Service id #(" + publishedService.getOid() + ") to UDDI registry id #(" + uddiRegistry.getOid() + ")");
@@ -528,7 +528,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                 }
 
                 logger.log(Level.INFO,
-                        "Publishing Gateway WSDL " + ((serviceWasOverwritten) ? "for overwritten service" : "") + " for Published Service id #(" + publishedService.getOid() + ") to UDDI Registry id #(" + uddiRegistry.getOid() + ")");
+                        "Publishing Gateway WSDL " + ((serviceWasOverwritten) ? "for overwritten service " : "") + "for Published Service id #(" + publishedService.getOid() + ") to UDDI Registry id #(" + uddiRegistry.getOid() + ")");
 
                 final Wsdl wsdl;
                 try {

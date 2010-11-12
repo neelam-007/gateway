@@ -943,7 +943,7 @@ public class BusinessServicePublisher implements Closeable {
                     updateKeysSoFar);
 
             //clean up any required UDDI references
-            if (runtimeKeyedReferences != null) {
+            if (runtimeKeyedReferences != null && !runtimeKeyedReferences.isEmpty()) {
                 removeOldKeyedReferences(configKeyedReferences, runtimeKeyedReferences, toPublishTemplate);
             }
         }
@@ -2150,7 +2150,10 @@ public class BusinessServicePublisher implements Closeable {
     }
 
     private void removeOldKeyedReferences(Set<UDDIKeyedReference> configKeyedReferences, Set<UDDIKeyedReference> runtimeKeyedReferences, BindingTemplate toPublishTemplate) {
-        final List<KeyedReference> toPubRefs = toPublishTemplate.getCategoryBag().getKeyedReference();
+        final CategoryBag categoryBag = toPublishTemplate.getCategoryBag();
+        if(categoryBag == null) return;
+
+        final List<KeyedReference> toPubRefs = categoryBag.getKeyedReference();
         final List<UDDIKeyedReference> refBeans = convertToBeans(toPubRefs);
         for (UDDIKeyedReference runtimeRef : runtimeKeyedReferences) {
             if (configKeyedReferences == null || !configKeyedReferences.contains(runtimeRef)) {

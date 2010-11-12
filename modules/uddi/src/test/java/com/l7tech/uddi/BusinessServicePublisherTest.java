@@ -699,6 +699,63 @@ public class BusinessServicePublisherTest {
     }
 
     /**
+     * Confirms that an empty set of runtimeKeyedReferences does not cause a null pointer
+     * @throws Exception
+     */
+    @BugNumber(9400)
+    @Test
+    public void testUpdatePublishOfEndpoint_WithExternalMeta() throws Exception{
+
+        //Set up test
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/bug8147_playerstats.wsdl"));
+
+        final String gatewayWsdlUrl = "http://thegatewayhost.l7tech.com:8080/3828382?wsdl";
+        final String gatewayURL = "http://thegatewayhost.l7tech.com:8080/service/3828382";
+        EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+        final String secureGatewayURL = "https://thegatewayhost.l7tech.com:8080/service/3828382";
+        //this reflects the current state of trunk - there are no secure WSDL URLs currently published
+        EndpointPair secureEndpointPair = new EndpointPair(secureGatewayURL, gatewayWsdlUrl);
+
+        final int serviceOid = 3828382;
+
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsProxiedEndpoint_NoMeta.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding_2endpoints.xml");
+        final TModel bindingTModel2 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType_2endpoints.xml");
+        final TModel portTypeTModel2 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_Binding_3endpoints.xml");
+        final TModel bindingTModel3 = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/PlayerStatsTModel_PortType_3endpoints.xml");
+        final TModel portTypeTModel3 = JAXB.unmarshal(stream, TModel.class);
+
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModel, portTypeTModel, bindingTModel2, portTypeTModel2, bindingTModel3, portTypeTModel3));
+
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        EndpointPair previousPair = new EndpointPair();
+        previousPair.setEndPointUrl("http://thegatewayhost.l7tech.com");
+
+        //test set up
+        //if we can publish here, then bug is fixed
+        servicePublisher.publishBindingTemplate(
+                "uddi:e3544a00-2234-11df-acce-251c32a0acbe",
+                "PlayerStatsWsdlPort",
+                "PlayerStatsSoapBinding",
+                "http://hugh:8081/axis/services/PlayerStats",
+                Arrays.asList(previousPair),
+                Arrays.asList(endpointPair, secureEndpointPair),
+                null,
+                false,
+                null,
+                Collections.<UDDIKeyedReference>emptySet());
+    }
+
+    /**
      * Tests that if the functional endpoints GIF keyedReferences were removed, that they are added again during an
      * update
      * @throws Exception

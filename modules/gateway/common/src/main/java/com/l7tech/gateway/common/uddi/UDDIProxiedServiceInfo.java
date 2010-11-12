@@ -61,7 +61,7 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     public static final String KEYED_REFERENCES_CONFIG = "KEYED_REFERENCES_CONFIG";//DO NOT REFACTOR THEY ARE IN THE DB
 
     /**
-     * This value cannot be updated by a client. If it is is just ignored. This tracks what was published and enables
+     * This value cannot be updated by a client. If it is, it's ignored. This tracks what was published and enables
      * the gateway to track when something we published needs to be removed as it is no longer required.
      */
     public static final String KEYED_REFERENCES_RUNTIME = "KEYED_REFERENCES_RUNTIME";//DO NOT REFACTOR THEY ARE IN THE DB

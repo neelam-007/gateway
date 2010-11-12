@@ -111,7 +111,7 @@ public class UDDIProxiedService extends PersistentEntityImp {
     }
 
     /**
-     * Serivce key of the proxied business service in UDDI. Always created by the UDDI Registry
+     * Service key of the proxied business service in UDDI. Always created by the UDDI Registry
      */
     private String uddiServiceKey;
 
@@ -132,7 +132,7 @@ public class UDDIProxiedService extends PersistentEntityImp {
 
     /**
      * We cannot allow null values for wsdlServiceNamespace as the unique key in the database allows multiple null
-     * values and it will renender the unique key useless
+     * values and it will render the unique key useless
      */
     private static final String NULL_NAMESPACE = "NULL_NAMESPACE";
 

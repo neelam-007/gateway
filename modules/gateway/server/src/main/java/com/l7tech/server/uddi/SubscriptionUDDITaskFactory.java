@@ -554,7 +554,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
             //if just URL - download the accessPoint and see what it's value is
             try {
                 //each result is for a unique PublishedService. More than one results is when more than one
-                //published service is monitoring the same WSDL in UDDI
+                //published service has the same original service in UDDI
                 final Collection<UDDIServiceControl> allApplicableServiceControls =
                         factory.uddiServiceControlManager.findByUDDIRegistryAndServiceKey(registryOid, serviceKey, null);
 
@@ -610,12 +610,12 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                     if(monitorRuntime != null){
                                         final long lastKnownModificationTime = monitorRuntime.getLastUDDIModifiedTimeStamp();
                                         if (uddiModifiedTime <= lastKnownModificationTime) {
-                                            logger.log(Level.FINE, "Recieved duplicate notification for serviceKey: " + serviceControl.getUddiServiceKey() +
+                                            logger.log(Level.FINE, "Received duplicate notification for serviceKey: " + serviceControl.getUddiServiceKey() +
                                                     " from registry " + describe(uddiRegistry) + ".");
                                             continue;
                                         }
                                     }else{
-                                        logger.log(Level.WARNING, "Recieved notification for service for which we had no persisted runtime " +
+                                        logger.log(Level.WARNING, "Received notification for service for which we had no persisted runtime " +
                                                 "information. BusinessService: " + serviceControl.getUddiServiceKey() +
                                                 " from registry " + describe(uddiRegistry) + ". Related PublishedService #(" + serviceControl.getPublishedServiceOid()+").");
                                         continue;
@@ -652,7 +652,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                 }
 
                                 //only want changes to the accessPoint
-                                //we do this regardless of configuration. UDDI is the authorative source of info for the endPoint
+                                //we do this regardless of configuration. UDDI is the authoritative source of info for the endPoint
                                 boolean serviceUpdated = false;
                                 //update serviceControl in case it has been updated
                                 serviceControl = factory.uddiServiceControlManager.findByPublishedServiceOid(serviceControl.getPublishedServiceOid());
@@ -747,7 +747,7 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                                                 context.logAndAudit( SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_UPDATE, ps.displayName() + " (#"+ps.getOid()+")" );
                                             }
                                         } else {
-                                            logger.info( "WSDL is not updated as it is already up to date for business service '"+serviceKey+"' for registry "+describe(uddiRegistry)+"." );
+                                            logger.info("Published Service #(" + ps.getOid() + ") WSDL is not updated as it is already up to date for business service '" + serviceKey + "' for registry " + describe(uddiRegistry) + ".");
                                         }
                                     } catch ( IOException ioe ) {
                                         context.logAndAudit(SystemMessages.UDDI_NOTIFICATION_SERVICE_WSDL_ERROR, ExceptionUtils.getDebugException(ioe), "Cause '" + ExceptionUtils.getMessage(ioe) + "'", ps.displayName() + " (#" + ps.getOid() + ")");
@@ -827,7 +827,9 @@ public class SubscriptionUDDITaskFactory extends UDDITaskFactory {
                         public void handleTaskError() {
                             try {
                                 context.logAndAudit(SystemMessages.UDDI_ORIGINAL_SERVICE_INVALIDATED, serviceControl.getUddiServiceKey(), Long.toString(serviceControl.getUddiRegistryOid()));
-                                logger.log(Level.WARNING, "Deleting UDDIServiceControl as the original service in UDDI can no longer be monitored");
+                                logger.log(Level.WARNING, "Deleting UDDIServiceControl #(" + serviceControl.getOid() + ") " +
+                                        "for Published Service #(" + serviceControl.getPublishedServiceOid() + ") " +
+                                        "as the original service in UDDI can no longer be monitored.");
                                 //todo any UDDIServiceControl which is monitoring the same serviceKey needs to be deleted.
                                 factory.uddiServiceControlManager.delete(serviceControl.getOid());
                             } catch (DeleteException e) {
