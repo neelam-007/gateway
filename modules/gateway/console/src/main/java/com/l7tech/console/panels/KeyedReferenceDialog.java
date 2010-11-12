@@ -82,18 +82,20 @@ public class KeyedReferenceDialog extends JDialog {
         final String duplicateErrorMsg = resources.getString("duplicate.error.msg");
         String error = null;
         final String tModelKey = tModelKeyTextField.getText();
+        final String keyName = keyNameTextField.getText();
+
         if(tModelKey.trim().isEmpty()){
             error = resources.getString("tmodelkey.is.required");
         } else if (keyValueTextField.getText().trim().isEmpty()){
             error = resources.getString("keyvalue.is.required");
+        } else if(tModelKey.equals(UDDIKeyedReference.GENERAL_KEYWORDS) && (keyName == null || keyName.trim().isEmpty())) {
+            error = "A value for keyName is required when the tModelKey represents a general keywords reference.";
         } else {
             final UDDIKeyedReference keyRef = getKeyedReference();
-
             if(isUpdate){
                 final boolean refChanged = !keyRef.equals(incomingKeyRef);
                 if(refChanged){
                     if(existingRefs.contains(keyRef)){
-
                         return duplicateErrorMsg;
                     }
                 }
