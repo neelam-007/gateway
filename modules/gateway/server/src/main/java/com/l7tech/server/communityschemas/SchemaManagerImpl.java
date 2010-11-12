@@ -614,20 +614,24 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                 throw new UnresolvableException( null, describeResource(baseURI, systemId, publicId, null));
             }
         } catch ( SAXException e ) {
-            if ( isResourceNotPermitted( e ) ) {
-                throw new UnresolvableException( null, describeResource(baseURI, systemId, publicId, null));
-            } else {
-                input.setCharacterStream( new IOExceptionThrowingReader( new CausedIOException(e) ) );
-            }
+            handleResourceNotPermitted( e, describeResource(baseURI, systemId, publicId, null) );
+            input.setCharacterStream( new IOExceptionThrowingReader( new CausedIOException(e) ) );
         } catch ( IOException e ) {
-            if ( isResourceNotPermitted( e ) ) {
-                throw new UnresolvableException( null, describeResource(baseURI, systemId, publicId, null));
-            } else {
-                input.setCharacterStream( new IOExceptionThrowingReader( e ) );
-            }
+            handleResourceNotPermitted( e, describeResource(baseURI, systemId, publicId, null) );
+            input.setCharacterStream( new IOExceptionThrowingReader( e ) );
         }
 
         return input;
+    }
+
+    @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
+    protected void handleResourceNotPermitted( final Exception e,
+                                               final String resourceDescription ) throws UnresolvableException {
+        if ( isResourceNotPermitted( e ) ) {
+            final Exception detail = config.isAllowDoctype() ? null :
+                    new Exception( "Use of document type definitions in XML Schemas is disabled (schema.allowDoctype cluster property)" );
+            throw new UnresolvableException( detail, resourceDescription );
+        }
     }
 
     protected boolean isResourceNotPermitted( final Exception e ) {
