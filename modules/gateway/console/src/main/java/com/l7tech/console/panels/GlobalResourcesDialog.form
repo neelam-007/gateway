@@ -193,6 +193,7 @@
             <properties>
               <labelFor value="74c24"/>
               <text resource-bundle="com/l7tech/console/panels/GlobalResourcesDialog" key="label.matches"/>
+              <toolTipText resource-bundle="com/l7tech/console/panels/GlobalResourcesDialog" key="tooltip.matches"/>
             </properties>
           </component>
           <component id="1d015" class="javax.swing.JLabel">
