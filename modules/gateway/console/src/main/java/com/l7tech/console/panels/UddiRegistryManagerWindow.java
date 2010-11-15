@@ -185,6 +185,25 @@ public class UddiRegistryManagerWindow extends JDialog {
     }
 
     private void editAndSave(final UDDIRegistry uddiRegistry) {
+        final Runnable errorFunction = new Runnable() {
+            @Override
+            public void run() {
+                showErrorMessage("UDDIRegistry not found", "UDDI Registry no longer exists. Please reopen dialog.", null);
+            }
+        };
+        try {
+            final UDDIRegistry reg = getUDDIRegistryAdmin().findByPrimaryKey(uddiRegistry.getOid());
+            if(reg == null){
+                errorFunction.run();
+                return;
+            }
+
+        } catch (FindException e) {
+            //UDDIRegistry no longer exists
+            errorFunction.run();
+            return;
+        }
+
         final UddiRegistryPropertiesDialog dlg = new UddiRegistryPropertiesDialog(this, uddiRegistry, flags.canUpdateAll());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
