@@ -255,8 +255,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
 
     private void updateNewResourceUris( final String uriPrefix,
                                         final String replacementUri ) {
-        final ResourceAdmin resourceAdmin = getWizard().getResourceAdmin();
-
+        final ResourceAdmin resourceAdmin = getResourceAdmin();
 
         // Ensure no uri conflicts or invalid uris
         final Map<String,URI> newUris = new HashMap<String,URI>(); // map of current to updated uris.
@@ -528,7 +527,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
     public boolean onNextButton() {
         // process schemas
         try {
-            GlobalResourceImportWizard.saveResources( processedResources.values() );
+            GlobalResourceImportWizard.saveResources( getResourceAdmin(), processedResources.values() );
         } catch ( SaveException se ) {
             GlobalResourceImportWizard.handleSaveError( getOwner(), se );
         }

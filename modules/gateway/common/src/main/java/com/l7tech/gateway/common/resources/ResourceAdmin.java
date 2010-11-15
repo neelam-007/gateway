@@ -22,76 +22,235 @@ import java.util.Collection;
 @Secured(types=EntityType.RESOURCE_ENTRY)
 public interface ResourceAdmin {
 
+    /**
+     * Find all resource entry headers.
+     *
+     * @return The collection of headers (may be empty, never null)
+     * @throws FindException If an error occurs
+     */
     @Transactional(readOnly=true)
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     Collection<ResourceEntryHeader> findAllResources() throws FindException;
 
+    /**
+     * Find a resource entry by primary key.
+     *
+     * @param oid The primary key
+     * @return The resource or null if not found
+     * @throws FindException If an error occurs
+     */
     @Transactional(readOnly=true)
     @Secured(stereotype=MethodStereotype.FIND_ENTITY)
     ResourceEntry findResourceEntryByPrimaryKey(long oid) throws FindException;
 
+    /**
+     * Find a resource entry by URI and type.
+     *
+     * @param uri The URI to use (required)
+     * @param type The type to match (may be null)
+     * @return The resource or null if not found (or incorrect type)
+     * @throws FindException If an error occurs
+     */
     @Transactional(readOnly=true)
     @Secured(stereotype=MethodStereotype.FIND_ENTITY)
     ResourceEntry findResourceEntryByUriAndType(String uri, ResourceType type) throws FindException;
 
+    /**
+     * Delete the given resource entry.
+     *
+     * @param resourceEntry The resource entry to delete.
+     * @throws DeleteException If an error occurs
+     */
     @Secured(stereotype=MethodStereotype.DELETE_ENTITY)
     void deleteResourceEntry(ResourceEntry resourceEntry) throws DeleteException;
 
+    /**
+     * Delete the resource entry with the given identifier if it exists.
+     *
+     * @param resourceEntryOid The primary key of the resource entry to delete
+     * @throws FindException If an error occurs
+     * @throws DeleteException If an error occurs
+     */
     @Secured(stereotype=MethodStereotype.DELETE_BY_ID)
     void deleteResourceEntry(long resourceEntryOid) throws FindException, DeleteException;
 
+    /**
+     * Save the given resource entry.
+     *
+     * @param resourceEntry The resource entry to save or update.
+     * @return The primary key of the resource entry
+     * @throws SaveException If an error occurs
+     * @throws UpdateException If an error occurs
+     */
     @Secured(stereotype=MethodStereotype.SAVE_OR_UPDATE)
     long saveResourceEntry(ResourceEntry resourceEntry) throws SaveException, UpdateException;
 
+    /**
+     * Save a bag of resource entries.
+     *
+     * <p>This allows multiple resources to be saved atomically.</p>
+     *
+     * @param resourceEntryBag The resource entry bag.
+     * @throws SaveException If an error occurs
+     * @throws UpdateException If an error occurs
+     */
     @Secured(stereotype=MethodStereotype.SAVE_OR_UPDATE)
-    void saveResourceEntryBag( final ResourceEntryBag resourceEntry ) throws SaveException, UpdateException;
+    void saveResourceEntryBag( final ResourceEntryBag resourceEntryBag ) throws SaveException, UpdateException;
 
+    /**
+     * Find resource entry headers by resource type.
+     *
+     * @param type The resource type to find (may be null)
+     * @return The collection of resource entry headers (may be empty, never null)
+     * @throws FindException If an error occurs
+     */
     @Transactional(readOnly=true)
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     Collection<ResourceEntryHeader> findResourceHeadersByType( ResourceType type ) throws FindException;
 
+    /**
+     * Find a resource entry header by URI and type.
+     *
+     * @param uri The URI of the resource (required)
+     * @param type The type of the resource (may be null)
+     * @return The resource entry header or null if not found (or incorrect type)
+     * @throws FindException If an error occurs.
+     */
     @Transactional(readOnly=true)
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     ResourceEntryHeader findResourceHeaderByUriAndType( String uri, ResourceType type ) throws FindException;
 
+    /**
+     * Find resource entry headers by target namespace.
+     *
+     * <p>This will find resource of type XML Schema matching the given target
+     * namespace.</p>
+     *
+     * @param targetNamespace The target namespace (may be null)
+     * @return The collection of resource entry headers (may be empty, never null)
+     * @throws FindException If an error occurs.
+     */
     @Transactional(readOnly=true)
     @Secured(stereotype= MethodStereotype.FIND_HEADERS)
     Collection<ResourceEntryHeader> findResourceHeadersByTargetNamespace( String targetNamespace ) throws FindException;
 
+    /**
+     * Find resource entry headers by public identifier.
+     *
+     * <p>This will find resource of type DTD matching the given public
+     * identifier.</p>
+     *
+     * @param publicIdentifier The target namespace (required)
+     * @return The collection of resource entry headers (may be empty, never null)
+     * @throws FindException If an error occurs.
+     */
     @Transactional(readOnly=true)
     @Secured(stereotype= MethodStereotype.FIND_HEADERS)
     Collection<ResourceEntryHeader> findResourceHeadersByPublicIdentifier( String publicIdentifier ) throws FindException;
 
+    /**
+     * Find the collection of default resources.
+     *
+     * <p>Default resources are not persistent and not used at runtime.</p>
+     *
+     * @return The collection of default resources (may be empty, never null)
+     * @throws FindException
+     */
     @Transactional(readOnly=true)
     Collection<ResourceEntryHeader> findDefaultResources() throws FindException;
 
+    /**
+     * Find a default resource ty URI.
+     *
+     * @param uri The URI of the default resource.
+     * @return The resource entry or null.
+     * @throws FindException If an error occurs.
+     */
     @Transactional(readOnly=true)
     ResourceEntry findDefaultResourceByUri( final String uri ) throws FindException;
 
+    /**
+     * Count the given resources that are registered.
+     *
+     * <p>This will count the number of given resources that are either
+     * registered, or are dependencies of registered resources.</p>
+     *
+     * @param resourceOids The set of resources to check.
+     * @return The count of registered resources.
+     * @throws FindException If an error occurs.
+     */
     @Transactional(readOnly=true)
     int countRegisteredSchemas( Collection<Long> resourceOids ) throws FindException;
 
+    /**
+     * Are schema doctypes currently permitted.
+     *
+     * <p>This should only be used to advise on a resources current runtime
+     * compatibility.</p>
+     *
+     * @return True if permitted.
+     */
     @Transactional(readOnly=true)
     boolean allowSchemaDoctype();
 
+    /**
+     * Get the default HTTP proxy configuration.
+     *
+     * @return The proxy configuration (may be invalid, never null)
+     * @throws FindException If an error occurs
+     */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.FIND_ENTITIES)
     HttpProxyConfiguration getDefaultHttpProxyConfiguration() throws FindException;
-    
+
+    /**
+     * Set the default HTTP proxy configuration.
+     *
+     * @param httpProxyConfiguration The configuration to use (may be null)
+     * @throws SaveException If an error occurs
+     * @throws UpdateException If an error occurs
+     */
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.SET_PROPERTY_BY_UNIQUE_ATTRIBUTE)
     void setDefaultHttpProxyConfiguration( HttpProxyConfiguration httpProxyConfiguration ) throws SaveException, UpdateException;
 
+    /**
+     * Find all HTTP configurations.
+     *
+     * @return The collection of HTTP configurations (may be empty, never null)
+     * @throws FindException If an error occurs
+     */
     @Secured(types=EntityType.HTTP_CONFIGURATION, stereotype=MethodStereotype.FIND_ENTITIES)
     @Transactional(readOnly=true)
     Collection<HttpConfiguration> findAllHttpConfigurations() throws FindException;
 
+    /**
+     * Find an HTTP configuration by primary key.
+     *
+     * @param oid The primary key of the HTTP configuration (required)
+     * @return The HTTP configuration or null
+     * @throws FindException If an error occurs
+     */
     @Secured(types=EntityType.HTTP_CONFIGURATION, stereotype=MethodStereotype.FIND_ENTITY)
     @Transactional(readOnly=true)
     HttpConfiguration findHttpConfigurationByPrimaryKey( long oid ) throws FindException;
 
+    /**
+     * Delete the given HTTP configuration.
+     *
+     * @param httpConfiguration The HTTP configuration to delete.
+     * @throws DeleteException If an error occurs
+     */
     @Secured(types=EntityType.HTTP_CONFIGURATION, stereotype=MethodStereotype.DELETE_ENTITY)
     void deleteHttpConfiguration( HttpConfiguration httpConfiguration ) throws DeleteException;
 
+    /**
+     * Save the given HTTP configuration.
+     *
+     * @param httpConfiguration The HTTP configuration to save.
+     * @return The primary key of the HTTP configuration
+     * @throws SaveException If an error occurs
+     * @throws UpdateException If an error occurs
+     */
     @Secured(types=EntityType.HTTP_CONFIGURATION, stereotype=MethodStereotype.SAVE_OR_UPDATE)
     long saveHttpConfiguration( HttpConfiguration httpConfiguration ) throws SaveException, UpdateException;
 

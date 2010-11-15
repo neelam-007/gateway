@@ -8,7 +8,6 @@ import com.l7tech.common.io.ResourceDocumentResolver;
 import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.URIResourceDocument;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.util.Registry;
 import static com.l7tech.console.panels.GlobalResourceImportContext.*;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
@@ -80,38 +79,26 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
     public GlobalResourceImportWizard( final Window parent,
                                        final Collection<ResourceEntryHeader> initialSources,
                                        final ResourceAdmin resourceAdmin ) {
+        this( parent, initialSources, resourceAdmin, getUIErrorListener(parent) );
+    }
+
+    /**
+     * Create an import wizard with optional starting resources.
+     *
+     * @param parent The parent window (optional)
+     * @param initialSources The initial set of resources to import (optional)
+     * @param resourceAdmin The resource admin to use (required)
+     */
+    public GlobalResourceImportWizard( final Window parent,
+                                       final Collection<ResourceEntryHeader> initialSources,
+                                       final ResourceAdmin resourceAdmin,
+                                       final ErrorListener errorListener ) {
         super( parent, new GlobalResourceImportSearchStep( new GlobalResourceImportOptionsStep( new GlobalResourceImportResultsStep( null ) ) ) );
         this.resourceAdmin = resourceAdmin;
-        wizardInput = new GlobalResourceImportContext();
-        final ChoiceSelector choiceSelector = buildChoiceSelector( parent, wizardInput );
-        final Functions.UnaryThrows<ResourceEntryHeader,Collection<ResourceEntryHeader>,IOException> entitySelector = buildEntitySelector( parent, choiceSelector );
-        final ResourceTherapist manualResourceTherapist = buildManualResourceTherapist( parent, wizardInput );
-        final Collection<ResourceDocumentResolver> newResourceResolvers = Arrays.asList(
-                new FileResourceDocumentResolver(),
-                GlobalResourceImportContext.buildDownloadingResolver( resourceAdmin ),
-                GlobalResourceImportContext.buildManualResolver(manualResourceTherapist, choiceSelector)
-        );
-        wizardInput.setResourceDocumentResolverForType( ResourceType.XML_SCHEMA, wizardInput.buildSmartResolver( ResourceType.XML_SCHEMA, resourceAdmin, newResourceResolvers, choiceSelector, entitySelector, manualResourceTherapist ));
-        wizardInput.setResourceDocumentResolverForType( ResourceType.DTD, wizardInput.buildSmartResolver( ResourceType.DTD, resourceAdmin, newResourceResolvers, choiceSelector, entitySelector, manualResourceTherapist ));
-
-        if ( initialSources != null ) {
-            final Collection<ResourceInputSource> inputSources = new ArrayList<ResourceInputSource>();
-            for ( final ResourceEntryHeader header : initialSources ) {
-                try {
-                    inputSources.add( wizardInput.newResourceInputSource( asUri(header.getUri()), header.getResourceType() ) );
-                } catch ( IOException e ) {
-                    showErrorMessage(
-                        parent,
-                        "Error Processing Resource",
-                        "Error processing resource '"+TextUtils.truncStringMiddleExact(header.getUri(),80)+"':\n" + ExceptionUtils.getMessage( e ) );
-                }
-            }
-            wizardInput.setResourceInputSources( inputSources );
-        }
-
+        this.wizardInput = buildContext( parent, initialSources, resourceAdmin, errorListener );
         init();
     }
-                       
+
     /**
      * Import dependencies for the given resource.
      *
@@ -119,21 +106,135 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
      * @param uriString The URI of the resource
      * @param type The type of the resource
      * @param content The content of the resource
-     * @param confirmed True if the import of dependencies is confirmed
      * @param resourceAdmin The resource admin to use
-     * @param additionalResolvers Additional resolvers to use for imported resources
-     * @param updatedContentCallback Callback for modification of the main schema content
+     * @param additionalResolvers Additional resolvers to use for imported resources (may be null)
+     * @param importAdvisor Callback for consultation if the import needs confirmation (may be null)
+     * @param updatedContentCallback Callback for modification of the main schema content (may be null)
+     * @param errorListener listener for errors
      * @return true if the import completed successfully (false if cancelled).
      */
     public static boolean importDependencies( final Window parent,
                                               final String uriString,
                                               final ResourceType type,
                                               final String content,
-                                              final boolean confirmed,
                                               final ResourceAdmin resourceAdmin,
                                               final Collection<ResourceDocumentResolver> additionalResolvers,
-                                              final Functions.UnaryVoid<String> updatedContentCallback ) {
+                                              final ImportAdvisor importAdvisor,
+                                              final Functions.UnaryVoid<String> updatedContentCallback,
+                                              final ErrorListener errorListener ) {
         final GlobalResourceImportContext context = new GlobalResourceImportContext();
+        final ChoiceSelector choiceSelector = buildChoiceSelector( parent, context );
+        final Functions.UnaryThrows<ResourceEntryHeader,Collection<ResourceEntryHeader>,IOException> entitySelector = buildEntitySelector( parent, choiceSelector );
+        final ResourceTherapist manualResourceTherapist = buildManualResourceTherapist( parent, context );
+        return importDependencies( context, uriString, type, content, resourceAdmin, additionalResolvers, importAdvisor, updatedContentCallback, errorListener, choiceSelector, entitySelector, manualResourceTherapist );
+    }
+
+    public static Collection<ResourceHolder> resolveDependencies( final Set<String> uriStrings,
+                                                                  final ResourceAdmin resourceAdmin,
+                                                                  final ErrorListener errorListener ) {
+        final GlobalResourceImportContext context = new GlobalResourceImportContext();
+        context.setResourceDocumentResolverForType( null, GlobalResourceImportContext.buildResourceEntryResolver( resourceAdmin, null ) );
+
+        final Collection<ResourceInputSource> inputSources = new ArrayList<ResourceInputSource>();
+        for ( final String uriString : uriStrings ) {
+            try {
+                inputSources.add( context.newResourceInputSource( asUri(uriString), (ResourceType)null ) );
+            } catch ( IOException e ) {
+                errorListener.notifyError(
+                    "Error Loading Dependencies",
+                    "Error processing resource '"+TextUtils.truncStringMiddleExact(uriString,80)+"':\n" + ExceptionUtils.getMessage( e ) );
+            }
+        }
+
+        return processResources( context, inputSources ).values();
+    }
+
+    /**
+     * Build an import advisor with UI callback.
+     *
+     * @param parent The parent component to use
+     * @param importConfirmed True if the import of dependencies is pre-confirmed (so no UI prompt required)
+     * @return The import advisor
+     */
+    public static ImportAdvisor getUIImportAdvisor( final Component parent,
+                                                    final boolean importConfirmed ) {
+        return new ImportAdvisor() {
+            @Override
+            public DependencyImportChoice confirmImportDependencies() {
+                return importConfirmed ? DependencyImportChoice.IMPORT : confirmResourceImport( parent );
+            }
+
+            @Override
+            public DependencyImportChoice confirmCompleteImport( final Collection<ResourceHolder> resourceHolders ) {
+                return confirmResourceSave( parent, resourceHolders );
+            }
+        };
+    }
+
+    /**
+     * Advice for importing resources.
+     */
+    public interface ImportAdvisor {
+
+        /**
+         * Confirmation callback for importing dependencies (before any import is attempted).
+         *
+         * @return The import choice.
+         */
+        DependencyImportChoice confirmImportDependencies();
+
+        /**
+         * Confirmation callback for resource changes (when import is complete)
+         *
+         * @param resourceHolders The resource changes that will be made.
+         * @return The import choice
+         */
+        DependencyImportChoice confirmCompleteImport( Collection<ResourceHolder> resourceHolders );
+    }
+
+    /**
+     * Enumerated type for an import choice.
+     */
+    public enum DependencyImportChoice{
+        /**
+         * Import the dependencies (proceed)
+         */
+        IMPORT,
+
+        /**
+         * Skip import of dependencies (proceed)
+         */
+        SKIP,
+
+        /**
+         * Cancel the current activity.
+         */
+        CANCEL
+    }
+
+    //- PROTECTED
+
+    protected static final ResourceBundle resources = ResourceBundle.getBundle( GlobalResourceImportWizard.class.getName() );
+
+    protected ResourceAdmin getResourceAdmin() {
+        return resourceAdmin;
+    }
+
+    /**
+     * Import dependencies for the given resource.
+     */
+    protected static boolean importDependencies( final GlobalResourceImportContext context,
+                                                 final String uriString,
+                                                 final ResourceType type,
+                                                 final String content,
+                                                 final ResourceAdmin resourceAdmin,
+                                                 final Collection<ResourceDocumentResolver> additionalResolvers,
+                                                 final ImportAdvisor importAdvisor,
+                                                 final Functions.UnaryVoid<String> updatedContentCallback,
+                                                 final ErrorListener errorListener,
+                                                 final ChoiceSelector choiceSelector,
+                                                 final Functions.UnaryThrows<ResourceEntryHeader,Collection<ResourceEntryHeader>,IOException> entitySelector,
+                                                 final ResourceTherapist resourceTherapist ) {
         context.setResourceDocumentResolverForType( null, GlobalResourceImportContext.buildResourceEntryResolver( resourceAdmin, null ) );
 
         final URI uri;
@@ -142,15 +243,13 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             uri = asUri(uriString);
             mainResource = context.newResourceDocument( uriString, content );
         } catch ( IOException e ) {
-            showErrorMessage(
-                parent,
+            errorListener.notifyError(
                 "Error Checking Dependencies",
                 "Error processing resource:\n" + ExceptionUtils.getMessage( e ) );
             return true; // user can still use the main resource if they want
         }
 
-
-        if ( !confirmed ) {
+        if ( importAdvisor != null ) {
             // 1) See if there are any dependencies that are unknown
             boolean missingDependencies = false;
             try {
@@ -168,17 +267,11 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
             // 2) Ask if dependencies should be imported
             if ( missingDependencies ) {
-                final int choice = JOptionPane.showOptionDialog(
-                        parent,
-                        "Do you want to import the schema's dependencies as global resources?",
-                        "Import Global Resources?",
-                        JOptionPane.YES_NO_CANCEL_OPTION,
-                        JOptionPane.QUESTION_MESSAGE,
-                        null,
-                        new Object[]{"Import","Skip","Cancel"},
-                        "Import" );
-                if ( choice != JOptionPane.YES_OPTION ) {
-                    return choice == JOptionPane.NO_OPTION;
+                switch ( importAdvisor.confirmImportDependencies() ) {
+                    case SKIP:
+                        return true;
+                    case CANCEL:
+                        return false;
                 }
             } else {
                 return true;
@@ -186,16 +279,13 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         }
 
         // 3) Do import and prompt if options need selecting
-        final ChoiceSelector choiceSelector = buildChoiceSelector( parent, context );
-        final Functions.UnaryThrows<ResourceEntryHeader,Collection<ResourceEntryHeader>,IOException> entitySelector = buildEntitySelector( parent, choiceSelector );
-        final ResourceTherapist manualResourceTherapist = buildManualResourceTherapist( parent, context );
         Collection<ResourceDocumentResolver> resolvers = new ArrayList<ResourceDocumentResolver>();
-        resolvers.addAll( additionalResolvers );
+        if ( additionalResolvers!=null ) resolvers.addAll( additionalResolvers );
         resolvers.add( new FileResourceDocumentResolver() );
         resolvers.add( GlobalResourceImportContext.buildDownloadingResolver( resourceAdmin ) );
-        resolvers.add( GlobalResourceImportContext.buildManualResolver(manualResourceTherapist, choiceSelector) );
-        context.setResourceDocumentResolverForType( ResourceType.XML_SCHEMA, context.buildSmartResolver(  ResourceType.XML_SCHEMA, resourceAdmin, resolvers, choiceSelector, entitySelector, manualResourceTherapist ));
-        context.setResourceDocumentResolverForType( ResourceType.DTD, context.buildSmartResolver(  ResourceType.DTD, resourceAdmin, resolvers, choiceSelector, entitySelector, manualResourceTherapist ));
+        resolvers.add( GlobalResourceImportContext.buildManualResolver(resourceTherapist, choiceSelector) );
+        context.setResourceDocumentResolverForType( ResourceType.XML_SCHEMA, context.buildSmartResolver(  ResourceType.XML_SCHEMA, resourceAdmin, resolvers, choiceSelector, entitySelector, resourceTherapist ));
+        context.setResourceDocumentResolverForType( ResourceType.DTD, context.buildSmartResolver(  ResourceType.DTD, resourceAdmin, resolvers, choiceSelector, entitySelector, resourceTherapist ));
         final Map<String,ResourceHolder> processedResources =
                 processResources( context, Collections.singleton( context.newResourceInputSource( uri, content ) ) );
 
@@ -205,8 +295,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                         Level.WARNING,
                         "Global resource import of schema dependencies failed due to: " + ExceptionUtils.getMessage( resourceHolder.getError() ),
                         ExceptionUtils.getDebugException( resourceHolder.getError() ) );
-                showErrorMessage(
-                    parent,
+                errorListener.notifyError(
                     "Error Importing Dependencies",
                     "Dependency import failed:\n" + ExceptionUtils.getMessage( resourceHolder.getError() ) );
                 return true;
@@ -216,11 +305,13 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         final ResourceHolder holder = processedResources.remove( uriString ); // don't import the original resource, only its dependencies.
 
         // 4) Show summary and save if desired
-        final int choice = confirmResourceSave( parent, processedResources.values() );
-        if ( choice == JOptionPane.YES_OPTION ||
-             choice == JOptionPane.NO_OPTION ) {
+        final DependencyImportChoice choice = importAdvisor==null ?
+                DependencyImportChoice.IMPORT :
+                importAdvisor.confirmCompleteImport( processedResources.values() );
+        if ( choice == DependencyImportChoice.IMPORT ||
+             choice == DependencyImportChoice.SKIP ) {
             // callback with updated content unless import is cancelled
-            if ( holder != null && holder.isPersist() ) {
+            if ( holder != null && holder.isPersist() && updatedContentCallback!=null ) {
                 try {
                     updatedContentCallback.call( holder.getContent() );
                 } catch ( IOException e ) {
@@ -229,48 +320,18 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                 }
             }
         }
-        if ( choice == JOptionPane.YES_OPTION ) {
+        if ( choice == DependencyImportChoice.IMPORT ) {
             try {
-                saveResources( processedResources.values() );
+                saveResources( resourceAdmin, processedResources.values() );
             } catch ( SaveException e ) {
-                handleSaveError( parent, e );
+                handleSaveError( errorListener, e );
             }
             return true;
         } else {
-            return choice == JOptionPane.NO_OPTION;
+            return choice == DependencyImportChoice.SKIP;
         }
     }
-
-    public static Collection<ResourceHolder> resolveDependencies( final Window parent,
-                                                                  final Set<String> uriStrings,
-                                                                  final ResourceAdmin resourceAdmin ) {
-        final GlobalResourceImportContext context = new GlobalResourceImportContext();
-        context.setResourceDocumentResolverForType( null, GlobalResourceImportContext.buildResourceEntryResolver( resourceAdmin, null ) );
-
-        final Collection<ResourceInputSource> inputSources = new ArrayList<ResourceInputSource>();
-        for ( final String uriString : uriStrings ) {
-            try {
-                inputSources.add( context.newResourceInputSource( asUri(uriString), (ResourceType)null ) );
-            } catch ( IOException e ) {
-                showErrorMessage(
-                    parent,
-                    "Error Loading Dependencies",
-                    "Error processing resource '"+TextUtils.truncStringMiddleExact(uriString,80)+"':\n" + ExceptionUtils.getMessage( e ) );
-            }
-        }
-
-        return processResources( context, inputSources ).values();
-    }
-
-    //- PROTECTED
-
-    protected static final ResourceBundle resources = ResourceBundle.getBundle( GlobalResourceImportWizard.class.getName() );
-
-    protected ResourceAdmin getResourceAdmin() {
-        return resourceAdmin;
-    }
-
-
+    
     /**
      * Process the given inputs and output all (new and updated) dependencies.
      *
@@ -299,8 +360,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         return processedResources;
     }
 
-    protected static void saveResources( final Collection<ResourceHolder> resourceHolders ) throws SaveException {
-        final ResourceAdmin admin = Registry.getDefault().getResourceAdmin();
+    protected static void saveResources( final ResourceAdmin admin,
+                                         final Collection<ResourceHolder> resourceHolders ) throws SaveException {
         final Collection<ResourceEntry> resourceEntries = new ArrayList<ResourceEntry>();
 
         for ( final ResourceHolder resourceHolder : resourceHolders ) {
@@ -419,7 +480,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                                            final Throwable error ) {
         logger.log( Level.WARNING, "Error viewing resource", error );
         showErrorMessage(
-                owner,
+            owner,
             "Error Displaying Resource",
             "Unable to display resource:\n" + ExceptionUtils.getMessage( error ) );
     }
@@ -433,6 +494,14 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             "Unable to save resources:\n" + ExceptionUtils.getMessage( saveException ) );
     }
 
+    protected static void handleSaveError( final ErrorListener listener,
+                                           final SaveException saveException ) {
+        logger.log( Level.WARNING, "Error saving resources", saveException );
+        listener.notifyError(
+            "Error Saving Resources",
+            "Unable to save resources:\n" + ExceptionUtils.getMessage( saveException ) );
+    }
+
     protected static void showErrorMessage( final Component owner,
                                             final String title,
                                             final String message) {
@@ -442,6 +511,19 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                 title,
                 JOptionPane.ERROR_MESSAGE,
                 null);
+    }
+
+    protected static ErrorListener getUIErrorListener( final Component owner ) {
+        return new ErrorListener() {
+            @Override
+            public void notifyError( final String title, final String message ) {
+                showErrorMessage( owner, title, message );
+            }
+        };
+    }
+
+    protected static interface ErrorListener {
+        void notifyError( String title, String message );
     }
 
     protected static class DependencySummaryListCellRenderer extends DefaultListCellRenderer {
@@ -462,6 +544,42 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         }
     }
 
+    //- PACKAGE
+
+    static GlobalResourceImportContext buildContext( final Window parent,
+                                                     final Collection<ResourceEntryHeader> initialSources,
+                                                     final ResourceAdmin resourceAdmin,
+                                                     final ErrorListener errorListener ) {
+        final GlobalResourceImportContext context = new GlobalResourceImportContext();
+
+        final ChoiceSelector choiceSelector = buildChoiceSelector( parent, context );
+        final Functions.UnaryThrows<ResourceEntryHeader,Collection<ResourceEntryHeader>, IOException> entitySelector = buildEntitySelector( parent, choiceSelector );
+        final ResourceTherapist manualResourceTherapist = buildManualResourceTherapist( parent, context );
+        final Collection<ResourceDocumentResolver> newResourceResolvers = Arrays.asList(
+                new FileResourceDocumentResolver(),
+                GlobalResourceImportContext.buildDownloadingResolver( resourceAdmin ),
+                GlobalResourceImportContext.buildManualResolver(manualResourceTherapist, choiceSelector)
+        );
+        context.setResourceDocumentResolverForType( ResourceType.XML_SCHEMA, context.buildSmartResolver( ResourceType.XML_SCHEMA, resourceAdmin, newResourceResolvers, choiceSelector, entitySelector, manualResourceTherapist ));
+        context.setResourceDocumentResolverForType( ResourceType.DTD, context.buildSmartResolver( ResourceType.DTD, resourceAdmin, newResourceResolvers, choiceSelector, entitySelector, manualResourceTherapist ));
+
+        if ( initialSources != null ) {
+            final Collection<ResourceInputSource> inputSources = new ArrayList<ResourceInputSource>();
+            for ( final ResourceEntryHeader header : initialSources ) {
+                try {
+                    inputSources.add( context.newResourceInputSource( asUri(header.getUri()), header.getResourceType() ) );
+                } catch ( IOException e ) {
+                    errorListener.notifyError(
+                        "Error Processing Resource",
+                        "Error processing resource '"+ TextUtils.truncStringMiddleExact(header.getUri(),80)+"':\n" + ExceptionUtils.getMessage( e ) );
+                }
+            }
+            context.setResourceInputSources( inputSources );
+        }
+
+        return context;
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( GlobalResourceImportWizard.class.getName() );
@@ -474,9 +592,29 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         Utilities.centerOnParentWindow( this );
     }
 
-    private static int confirmResourceSave( final Window parent,
-                                            final Collection<ResourceHolder> resourceHolders ) {
+    private static DependencyImportChoice confirmResourceImport( final Component parent ) {
+        final GlobalResourceImportWizard.DependencyImportChoice importChoice;
+        final int choice = JOptionPane.showOptionDialog(
+                parent,
+                "Do you want to import the schema's dependencies as global resources?",
+                "Import Global Resources?",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                new Object[]{"Import","Skip","Cancel"},
+                "Import" );
+        if ( choice == JOptionPane.YES_OPTION ) {
+            importChoice = GlobalResourceImportWizard.DependencyImportChoice.IMPORT;
+        } else if ( choice == JOptionPane.NO_OPTION  ) {
+            importChoice = GlobalResourceImportWizard.DependencyImportChoice.SKIP;
+        } else {
+            importChoice = GlobalResourceImportWizard.DependencyImportChoice.CANCEL;
+        }
+        return importChoice;
+    }
 
+    private static DependencyImportChoice confirmResourceSave( final Component parent,
+                                                               final Collection<ResourceHolder> resourceHolders ) {
         final JButton viewButton = new JButton( resources.getString("button.view").replace( "&", "" ));
         viewButton.setMnemonic( 'V' );
         viewButton.setEnabled( false );
@@ -506,7 +644,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                 final int selectedRow = resourcesTable.getSelectedRow();
                 if ( selectedRow >= 0 ) {
                     final ResourceHolder resourceHolder = resourceHolderTableModel.getRowObject( resourcesTable.convertRowIndexToModel( selectedRow ));
-                    viewResourceHolder( parent, resourceHolder, resourceHolderTableModel.getRows() );
+                    viewResourceHolder( SwingUtilities.getWindowAncestor(parent), resourceHolder, resourceHolderTableModel.getRows() );
                 }
             }
         } );
@@ -544,11 +682,11 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         final Object selectedValue = pane.getValue();
 
         if( "Import".equals( selectedValue )) {
-            return JOptionPane.YES_OPTION;
+            return DependencyImportChoice.IMPORT;
         } else if ( "Skip".equals( selectedValue )) {
-            return JOptionPane.NO_OPTION;
+            return DependencyImportChoice.SKIP;
         } else {
-            return JOptionPane.CLOSED_OPTION;
+            return DependencyImportChoice.CANCEL;
         }
     }
 

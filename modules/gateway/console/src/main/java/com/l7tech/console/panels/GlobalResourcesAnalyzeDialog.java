@@ -193,9 +193,9 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
 
     private void initAnalyze( final Collection<ResourceEntryHeader> resourceHeaders ) {
         final Collection<ResourceHolder> resourceHolders = GlobalResourceImportWizard.resolveDependencies(
-                this,
                 new HashSet<String>(Functions.map( resourceHeaders, Functions.<String,ResourceEntryHeader>propertyTransform( ResourceEntryHeader.class, "uri" ))),
-                resourceAdmin );
+                resourceAdmin,
+                GlobalResourceImportWizard.getUIErrorListener( this ));
 
         resourceHolderTableModel.setRows( new ArrayList<ResourceHolder>(resourceHolders) );
     }
@@ -433,7 +433,7 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
                 try {
                     resourceHolder.updateContentFrom( defaultResource.asResourceDocument() );
                     resourceHolder.setError( null ); // clear any error to allow save
-                    GlobalResourceImportWizard.saveResources( Collections.singleton( resourceHolder ) );
+                    GlobalResourceImportWizard.saveResources( resourceAdmin, Collections.singleton( resourceHolder ) );
                 } catch ( SaveException e ) {
                     logger.log(
                             Level.WARNING,

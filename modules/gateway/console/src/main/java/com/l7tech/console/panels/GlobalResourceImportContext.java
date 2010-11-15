@@ -936,7 +936,7 @@ class GlobalResourceImportContext {
                         final String fullDetail;
                         switch ( option ) {
                             case CONFLICTING_URI:
-                                fullDetail = "URI: " + TextUtils.truncStringMiddleExact( conflictDetail, 80 );
+                                fullDetail = "URI: " + TextUtils.truncStringMiddleExact( resolved.getUri().toString(), 80 );
                                 break;
                             case CONFLICTING_TARGET_NAMESPACE:
                                 fullDetail = "Target Namespace: " + TextUtils.truncStringMiddleExact( conflictDetail, 80 );
@@ -1035,7 +1035,7 @@ class GlobalResourceImportContext {
          * @param resourceDescription A description of the resource (required)
          * @param invalidResource The invalid resource if any (optional)
          * @param invalidDetail The reason the resource is invalid (optional)
-         * @return
+         * @return The fixed/located document or null to fail
          */
         ResourceDocument consult( ResourceType resourceType,
                                   String resourceDescription,

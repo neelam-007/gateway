@@ -1,7 +1,7 @@
 package com.l7tech.gateway.common.resources;
 
 /**
- *
+ * The type for a resource.
  */
 public enum ResourceType {
 

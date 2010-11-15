@@ -635,9 +635,9 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                     schemaUri!=null ? schemaUri : "urn:uuid:" + UUID.randomUUID().toString(),
                     ResourceType.XML_SCHEMA,
                     schemaDoc,
-                    true,
                     getResourceAdmin(),
                     resolvers,
+                    GlobalResourceImportWizard.getUIImportAdvisor( this, true ),
                     new Functions.UnaryVoid<String>(){
                         @Override
                         public void call( final String content ) {
@@ -645,7 +645,8 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                                 setEditorText( content );
                             }
                         }
-                    } );
+                    },
+                    GlobalResourceImportWizard.getUIErrorListener( this ));
             } else if ( choice == JOptionPane.NO_OPTION  ) {
                 DialogDisplayer.display(new GlobalResourcesDialog(this));
             }
@@ -1111,15 +1112,16 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 uri!=null ? uri : "urn:uuid:" + UUID.randomUUID().toString(),
                 ResourceType.XML_SCHEMA,
                 content,
-                false,
                 getResourceAdmin(),
                 resolvers,
+                GlobalResourceImportWizard.getUIImportAdvisor( this, false ),
                 new Functions.UnaryVoid<String>(){
                     @Override
                     public void call( final String content ) {
                         contentHolder[0] = content;
                     }
-                });
+                },
+                GlobalResourceImportWizard.getUIErrorListener( this ));
 
         if ( update ) {
             if ( uri == null ) {

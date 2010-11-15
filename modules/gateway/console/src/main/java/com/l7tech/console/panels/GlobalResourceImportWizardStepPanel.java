@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gateway.common.resources.ResourceAdmin;
+
 import javax.swing.*;
 import java.util.ResourceBundle;
 
@@ -44,6 +46,10 @@ abstract class GlobalResourceImportWizardStepPanel extends WizardStepPanel<Globa
 
     GlobalResourceImportContext getContext() {
         return getWizard().getWizardInput();
+    }
+
+    ResourceAdmin getResourceAdmin() {
+        return getWizard().getResourceAdmin();
     }
 
     //- PRIVATE
