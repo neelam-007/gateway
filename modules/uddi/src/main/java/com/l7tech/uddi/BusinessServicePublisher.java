@@ -1914,7 +1914,7 @@ public class BusinessServicePublisher implements Closeable {
         try {
             logger.log(Level.FINE, "Attemping to delete bindingTemplate published to UDDI with bindingKey: " + bindingKey);
             uddiClient.deleteBindingTemplate(bindingKey);
-            logger.log(Level.FINE, "Succesfully deleted tModel with bindingKey: " + bindingKey);
+            logger.log(Level.FINE, "Succesfully deleted bindingTemplate with bindingKey: " + bindingKey);
         } catch (UDDIException e1) {
             logger.log(Level.WARNING, "Could not rollback published bindingTemplate with key " + bindingKey + "to UDDI: " + ExceptionUtils.getMessage(e1));
         }
