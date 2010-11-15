@@ -128,7 +128,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         }
 
         // Build a RSTR SOAP response message
-        String rstrSoapResponse = buildRstrSoapResponse(rstParameters, rstrXml);
+        String rstrSoapResponse = buildRstrSoapResponse(rstParameters.get(RstSoapMessageProcessor.SOAP_ENVELOPE_NS), rstrXml);
 
         // Set the context variable for rstrResponse
         context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_RSTR_RESPONSE, new Message(XmlUtil.stringAsDocument(rstrSoapResponse)));
@@ -251,8 +251,8 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         return AssertionStatus.NONE;
     }
 
-    private String buildRstrSoapResponse(Map<String, String> parameters, String rstrElement) {
-        StringBuilder soapMessageBuilder = new StringBuilder("<soap:Envelope xmlns:soap=\"").append(parameters.get(RstSoapMessageProcessor.SOAP_ENVELOPE_NS)).append("\">\n")
+    private String buildRstrSoapResponse(String soapEnvelopeNS, String rstrElement) {
+        StringBuilder soapMessageBuilder = new StringBuilder("<soap:Envelope xmlns:soap=\"").append(soapEnvelopeNS).append("\">\n")
             .append("<soap:Body>\n")
             .append(rstrElement).append("\n")
             .append("</soap:Body>\n")
@@ -429,7 +429,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 String secretXml;
                 try {
                     secretXml = clientCert != null?
-                        produceEncryptedKeyXml(session.getSharedSecret(), clientCert) :
+                        produceEncryptedKeyXml(session.getSharedSecret(), clientCert, wsseNS) :
                         produceBinarySecretXml(session.getSharedSecret(), parameters.get(RstSoapMessageProcessor.WST_NS));
                 } catch (GeneralSecurityException e) {
                     throw new RuntimeException("Cannot produce an EncryptedKey for shared secret in a RSTR element.", e);
@@ -518,32 +518,33 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         return auditor;
     }
 
-    private String produceBinarySecretXml( final byte[] sharedSecret,
-                                           final String trustns ) {
+    // This method is modified from the method "produceBinarySecretXml" in TokenServiceImpl.
+    private String produceBinarySecretXml(final byte[] sharedSecret, final String wstNS) {
         StringBuilder output = new StringBuilder();
-        output.append("<wst:BinarySecret Type=\"").append(trustns).append("/SymmetricKey" + "\">");
+        output.append("<wst:BinarySecret Type=\"").append(wstNS).append("/SymmetricKey" + "\">");
         output.append(HexUtils.encodeBase64(sharedSecret, true));
         output.append("</wst:BinarySecret>");
         return output.toString();
     }
 
-    private String produceEncryptedKeyXml( final byte[] sharedSecret, final X509Certificate requestorCert ) throws GeneralSecurityException {
+    // This method is modified from the method "produceEncryptedKeyXml" in TokenServiceImpl.
+    private String produceEncryptedKeyXml(final byte[] sharedSecret, final X509Certificate requestorCert, final String wsseNS) throws GeneralSecurityException {
         StringBuilder encryptedKeyXml = new StringBuilder();
         // Key info and all
-        encryptedKeyXml.append("<xenc:EncryptedKey wsu:Id=\"newProof\" xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\">" +
-            "<xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\" />");
+        encryptedKeyXml.append("<xenc:EncryptedKey wsu:Id=\"newProof\" xmlns:xenc=\"").append(SoapConstants.XMLENC_NS)
+            .append("\"><xenc:EncryptionMethod Algorithm=\"").append(SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO).append("\" />");
 
         // append ski if applicable
         String recipSkiB64 = CertUtils.getSki(requestorCert);
         if (recipSkiB64 != null) {
             // add the ski
-            String skiRef = "<wsse:SecurityTokenReference>" +
+            String skiRef = "<wsse:SecurityTokenReference xmlns:wsse=\"" + wsseNS + "\">" +
                 "<wsse:KeyIdentifier ValueType=\"" + SoapConstants.VALUETYPE_SKI + "\">" +
                 recipSkiB64 +
                 "</wsse:KeyIdentifier>" +
                 "</wsse:SecurityTokenReference>";
 
-            encryptedKeyXml.append("<KeyInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\">");
+            encryptedKeyXml.append("<KeyInfo xmlns=\"").append(SoapConstants.DIGSIG_URI).append("\">");
             encryptedKeyXml.append(skiRef);
             encryptedKeyXml.append("</KeyInfo>");
         } else {
@@ -551,8 +552,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         }
         encryptedKeyXml.append("<xenc:CipherData>" +
             "<xenc:CipherValue>");
-        String encryptedKeyValue = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(sharedSecret, requestorCert, requestorCert.getPublicKey()),
-            true);
+        String encryptedKeyValue = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(sharedSecret, requestorCert, requestorCert.getPublicKey()), true);
         encryptedKeyXml.append(encryptedKeyValue);
         encryptedKeyXml.append("</xenc:CipherValue>" +
             "</xenc:CipherData>" +
