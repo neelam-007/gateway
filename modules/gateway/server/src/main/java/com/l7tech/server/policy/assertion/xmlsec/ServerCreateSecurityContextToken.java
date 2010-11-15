@@ -75,14 +75,14 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
         if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_WS_ADDRESSING_ACTION))) {
             String action = rstParameters.get(RstSoapMessageProcessor.WS_ADDRESSING_ACTION);
             if (action == null || action.trim().isEmpty()) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wsa_action_value_not_specified", "The value of WS-Addressing Action is not specified in the RST/SCT message.");
+                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wsa_action_value_not_specified", "The value of WS-Addressing Action is not specified in the RST/SCT request message.");
                 return AssertionStatus.BAD_REQUEST;
             } else if (! SoapConstants.WSC_RST_SCT_ACTION_LIST.contains(action)) {
                 RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wsa_action_value_not_supported", "The value of WS-Addressing Action is not supported.");
                 return AssertionStatus.BAD_REQUEST;
             }
         } else {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_wsa_action", "There is no WS-Addressing Action element in the RST/SCT message.");
+            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_wsa_action", "There is no WS-Addressing Action element in the RST/SCT request message.");
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -110,23 +110,38 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                     return AssertionStatus.BAD_REQUEST;
                 }
             } else {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_request_type", "There is no RequestToken element in the RST/SCT message.");
+                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_request_type", "There is no RequestToken element in the RST/SCT request message.");
                 return AssertionStatus.BAD_REQUEST;
             }
         } else {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_rst", "There is no RequestSecurityToken element in the RST/SCT message.");
+            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_rst", "There is no RequestSecurityToken element in the RST/SCT request message.");
             return AssertionStatus.BAD_REQUEST;
         }
 
         // At this point, everything is fine and ready to create a SecurityContextToken.
         String wsuId = "uuid:" + UUID.randomUUID().toString();
         String identifier = "urn:uuid:" + UUID.randomUUID().toString();
-        String tokenIssued = buildSCT(rstParameters.get(
-            RstSoapMessageProcessor.WSC_NS),
-            rstParameters.get(RstSoapMessageProcessor.WSU_NS),
-            wsuId,
-            identifier
-        );
+
+        String wscNS = rstParameters.get(RstSoapMessageProcessor.WSC_NS);
+        if (wscNS == null || wscNS.trim().isEmpty()) {
+            // Get the namespace of WS-Trust first then retrieve the namespace of WS-Secure Conversation according to the namespace of WS-Trust.
+            String wstNS = rstParameters.get(RstSoapMessageProcessor.WST_NS);
+
+            // Check if the namespace is specified in the RST/SCT request message.  If not specified, fail this assertion.
+            if (wstNS == null || wstNS.trim().isEmpty()) {
+                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:missing_ws-trust_namespace", "The namespace of WS-Trust is not specified in the RST/SCT request message.");
+                return AssertionStatus.BAD_REQUEST;
+            }
+
+            wscNS = deriveWscNamespace(wstNS);
+        }
+
+        String wsuNS = rstParameters.get(RstSoapMessageProcessor.WSU_NS);
+        if (wsuNS == null || wsuNS.trim().isEmpty()) {
+            wsuNS = SoapConstants.WSU_NAMESPACE;
+        }
+
+        String tokenIssued = buildSCT(wscNS, wsuNS, wsuId, identifier);
 
         // Create a context variable, issuedSCT
         String variableFullName = getVariablePrefix(context) + "." + CreateSecurityContextToken.VARIABLE_ISSUED_SCT;
@@ -166,12 +181,36 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                 int size = Integer.parseInt(keySize); // Unit: bits
                 newSession.setKeySize(size);
             } catch (NumberFormatException e) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_key_size", "The key size is not a integer in the RST/SCT message.");
+                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_key_size", "The key size is not a integer in the RST/SCT request message.");
                 return AssertionStatus.BAD_REQUEST;
             }
         }
 
         return AssertionStatus.NONE;
+    }
+
+    /**
+     * Derive the namespace of WS-Secure Conversation from a given namespace of WS-Trust.
+     * @param wstNamespace: the namespace of WS-Trust
+     * @return a corresponding namespace of WS-Secure Conversation.
+     */
+    private String deriveWscNamespace(String wstNamespace) {
+        if (wstNamespace == null) throw new IllegalArgumentException("WS-Trust Namespace must be required.");
+
+        String wscNamespace;
+        if (SoapConstants.WST_NAMESPACE1.equals(wstNamespace)) {
+            wscNamespace = SoapConstants.WSSC_NAMESPACE;
+        } else if (SoapConstants.WST_NAMESPACE2.equals(wstNamespace)) {
+            wscNamespace = SoapConstants.WSSC_NAMESPACE2;
+        } else if (SoapConstants.WST_NAMESPACE3.equals(wstNamespace)) {
+            wscNamespace = SoapConstants.WSSC_NAMESPACE3;
+        } else if (SoapConstants.WST_NAMESPACE4.equals(wstNamespace)) {
+            wscNamespace = SoapConstants.WSSC_NAMESPACE3;
+        } else {
+            throw new IllegalArgumentException("Invalid WS-Trust namespace, " + wstNamespace);
+        }
+
+        return wscNamespace;
     }
 
     @Override
