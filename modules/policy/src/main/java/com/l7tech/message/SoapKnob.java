@@ -16,18 +16,13 @@ import java.io.IOException;
  * Aspect of Message that represents a SOAP envelope.
  */
 public interface SoapKnob extends MessageKnob {
-    /*
-    Element getPayload();
-    Iterator getHeaders();
-    void addHeader(Element headerElement);
-    */
-
     /**
      * Get the payload namespace URIs for this soap document.
      *
      * @return an array of namespace URIs.  May contain duplicates.  Never null or empty.
      * @throws SAXException if the first part's content type is not text/xml.
      * @throws IOException if there is a problem reading XML from the first part's InputStream
+     * @throws NoSuchPartException if the Message first part has already been destructively read
      */
     QName[] getPayloadNames() throws IOException, SAXException, NoSuchPartException;
 
@@ -63,7 +58,10 @@ public interface SoapKnob extends MessageKnob {
     void setFaultDetail(SoapFaultDetail faultDetail);
 
     /**
-     * True if a Security header was noticed.
+     * @return True if a Security header was noticed.
+     * @throws SAXException if the first part's content type is not text/xml.
+     * @throws IOException if there is a problem reading XML from the first part's InputStream
+     * @throws NoSuchPartException if the Message first part has already been destructively read.
      */
     boolean isSecurityHeaderPresent() throws NoSuchPartException, IOException, SAXException;
 
@@ -73,10 +71,13 @@ public interface SoapKnob extends MessageKnob {
     void invalidate();
 
     /**
-     * Get the SoapInfo if available.
-     * @return Null if not available.
+     * @return the SOAPAction value from the transport layer, if any.  May be null.
+     * @throws SAXException if the XML in the first part's InputStream is not well formed
+     * @throws IOException if there is a problem reading XML from the first part's InputStream; or,
+     *                     if there is a problem reading from or writing to a stash
+     * @throws NoSuchPartException if the Message first part has already been destructively read.
      */
-    SoapInfo getSoapInfo();
+    public String getSoapAction() throws IOException, SAXException, NoSuchPartException;
 
     /**
      * @return the SOAP version of this message.  Never null, but may be SoapVersion.UNKNOWN if the SOAP envelope namespace URI

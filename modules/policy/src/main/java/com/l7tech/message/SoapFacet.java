@@ -39,7 +39,7 @@ class SoapFacet extends MessageFacet {
 
     /**
      * Create a new SoapFacet for the specified message, wrapping the specified root facet.  SoapFacets can only
-     * be created on messages for which {@link #getSoapInfo()} has already returned a non-null value.
+     * be created on messages for which {@link #getSoapInfo(Message)} has already returned a non-null value.
      *
      * @param message  the message being enhanced.  May not be null.
      * @param facet  the previous root facet.  May not be null.  Must contain an XML facet.
@@ -132,7 +132,12 @@ class SoapFacet extends MessageFacet {
 
                 @Override
                 public QName[] getPayloadNames() throws IOException, SAXException, NoSuchPartException {
-                    return getSoapInfo().getPayloadNames();
+                    return getOrCreateSoapInfo().getPayloadNames();
+                }
+
+                @Override
+                public String getSoapAction() throws IOException, SAXException, NoSuchPartException {
+                    return getOrCreateSoapInfo().getSoapAction();
                 }
 
                 @Override
@@ -155,7 +160,7 @@ class SoapFacet extends MessageFacet {
 
                 @Override
                 public boolean isSecurityHeaderPresent() throws NoSuchPartException, IOException, SAXException {
-                    return getSoapInfo().hasSecurityNode;
+                    return getOrCreateSoapInfo().hasSecurityNode;
                 }
 
                 @Override
@@ -194,11 +199,6 @@ class SoapFacet extends MessageFacet {
                        faultDetail = SoapFaultUtils.gatherSoapFaultDetail(getMessage().getXmlKnob().getDocumentReadOnly());
                     return faultDetail;
                 }
-
-                @Override
-                public SoapInfo getSoapInfo() {
-                    return soapInfo;
-                }
             };
         }
         return super.getKnob(c);
@@ -216,7 +216,7 @@ class SoapFacet extends MessageFacet {
         soapVersion = SoapVersion.namespaceToSoapVersion(envelopeNs);
     }
 
-    private SoapInfo getSoapInfo() throws NoSuchPartException, IOException, SAXException {
+    private SoapInfo getOrCreateSoapInfo() throws NoSuchPartException, IOException, SAXException {
         if (soapInfo == null) {
             soapInfo = SoapFacet.getSoapInfo(getMessage());
         }

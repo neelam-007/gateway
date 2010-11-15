@@ -8,7 +8,6 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.wsaddressing.AddWsAddressingAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
-import com.l7tech.message.SoapInfo;
 import com.l7tech.message.SoapKnob;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
@@ -18,11 +17,15 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.xmlsec.ServerAddWssSignature;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.*;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -55,10 +58,10 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
                                             final DecorationRequirements wssReq,
                                             final Message targetMessage) throws PolicyAssertionException {
         final Element header;
-        final SoapInfo soapInfo;
+        final String soapAction;
         try {
             final SoapKnob soapKnob = targetMessage.getSoapKnob();
-            soapInfo = soapKnob.getSoapInfo();
+            soapAction = soapKnob.getSoapAction();
             final Document writeDoc = targetMessage.getXmlKnob().getDocumentWritable();
             header = SoapUtil.getOrMakeHeader(writeDoc);
         } catch (Exception e) {
@@ -83,15 +86,14 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
                 return -1;
             }
 
-            final boolean hasSoapAction = soapInfo != null && soapInfo.getSoapAction() != null;
+            final boolean hasSoapAction = soapAction != null;
             if (resolvedAction.equals(AddWsAddressingAssertion.ACTION_AUTOMATIC)) {
                 if (!hasSoapAction) {
                     auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_SOAP_ACTION);
                     return -1;
                 }
-                resolvedAction = soapInfo.getSoapAction();
+                resolvedAction = soapAction;
             } else if (hasSoapAction) {
-                final String soapAction = soapInfo.getSoapAction();
                 if(!soapAction.equals(resolvedAction)){
                     auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_SOAP_ACTION_MISMATCH, soapAction, resolvedAction);
                     return -1;
