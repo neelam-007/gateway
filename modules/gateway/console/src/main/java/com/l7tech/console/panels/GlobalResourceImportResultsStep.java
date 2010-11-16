@@ -242,8 +242,9 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
                 final String toUri = targetUriTextField.getText().trim();
 
                 if ( !fromUri.isEmpty() && !toUri.isEmpty() ) {
-                    updateNewResourceUris( fromUri, toUri );
-                    break;
+                    if ( updateNewResourceUris( fromUri, toUri ) ) {
+                        break;
+                    }
                 } else {
                     GlobalResourceImportWizard.showErrorMessage( this, "Update Error", "Current and updated System Identifiers are required." );
                 }
@@ -253,8 +254,8 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
         }
     }
 
-    private void updateNewResourceUris( final String uriPrefix,
-                                        final String replacementUri ) {
+    private boolean updateNewResourceUris( final String uriPrefix,
+                                           final String replacementUri ) {
         final ResourceAdmin resourceAdmin = getResourceAdmin();
 
         // Ensure no uri conflicts or invalid uris
@@ -271,7 +272,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
             }
         } catch ( IOException e ) {
             GlobalResourceImportWizard.showErrorMessage( this, "Update Error", "Unable to generate updated system identifiers:\n" + ExceptionUtils.getMessage(e));
-            return;
+            return false;
         }
 
         String conflictUri = null;
@@ -299,11 +300,12 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
             }
         } catch ( FindException e ) {
             GlobalResourceImportWizard.showErrorMessage( this, "Update Error", "Error checking for resource system identifier conflicts:\n" + ExceptionUtils.getMessage(e));
-            return;
+            return false;
         }
 
         if ( conflictUri != null ) {
             GlobalResourceImportWizard.showErrorMessage( this, "Update Error", "An updated system identifier conflicts with an imported or existing resource:\n" + TextUtils.truncStringMiddleExact( conflictUri, 80 )+"\nSystem identifiers have not been updated.");
+            return false;
         } else {
             // Build updated content first, fix any references to the updated system identifiers
             final Collection<ResourceHolder> resourceHolders = resourceHolderTableModel.getRows();
@@ -312,7 +314,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
                 currentUriToUpdatedInfo = buildUpdateMap( uriPrefix, replacementUri, resourceHolders );
             } catch ( IOException e ) {
                 GlobalResourceImportWizard.showErrorMessage( this, "Update Error", ExceptionUtils.getMessage(e));
-                return;
+                return false;
             }
 
             for ( final ResourceHolder resourceHolder : resourceHolders ) {
@@ -336,6 +338,8 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
 
             resourceHolderTableModel.fireTableDataChanged();
         }
+
+        return true;
     }
 
     /**
