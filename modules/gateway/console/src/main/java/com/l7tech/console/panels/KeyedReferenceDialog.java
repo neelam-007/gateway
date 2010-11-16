@@ -3,11 +3,13 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.uddi.UDDIKeyedReference;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
 import java.util.Set;
 
@@ -42,11 +44,22 @@ public class KeyedReferenceDialog extends JDialog {
 
     public UDDIKeyedReference getKeyedReference() {
         return new UDDIKeyedReference(
-                tModelKeyTextField.getText(),
-                keyNameTextField.getText(),
-                keyValueTextField.getText());
+                getTModelKey(),
+                getKeyName(),
+                getKeyValue());
     }
 
+    private String getTModelKey(){
+        return tModelKeyTextField.getText().trim();
+    }
+
+    private String getKeyName(){
+        return keyNameTextField.getText().trim().replaceAll(" ", "");
+    }
+
+    private String getKeyValue(){
+        return keyValueTextField.getText().trim().replaceAll(" ", "");
+    }
     // - PRIVATE
 
     private void initialize(){
@@ -79,34 +92,57 @@ public class KeyedReferenceDialog extends JDialog {
     }
 
     private String validateValues(){
-        final String duplicateErrorMsg = resources.getString("duplicate.error.msg");
-        String error = null;
-        final String tModelKey = tModelKeyTextField.getText();
-        final String keyName = keyNameTextField.getText();
+        final String tModelKey = getTModelKey();
 
-        if(tModelKey.trim().isEmpty()){
-            error = resources.getString("tmodelkey.is.required");
-        } else if (keyValueTextField.getText().trim().isEmpty()){
-            error = resources.getString("keyvalue.is.required");
-        } else if(tModelKey.equals(UDDIKeyedReference.GENERAL_KEYWORDS) && (keyName == null || keyName.trim().isEmpty())) {
-            error = "A value for keyName is required when the tModelKey represents a general keywords reference.";
-        } else {
-            final UDDIKeyedReference keyRef = getKeyedReference();
-            if(isUpdate){
-                final boolean refChanged = !keyRef.equals(incomingKeyRef);
-                if(refChanged){
-                    if(existingRefs.contains(keyRef)){
-                        return duplicateErrorMsg;
-                    }
-                }
-            } else {
+        if(tModelKey.isEmpty()){
+            return resources.getString("tmodelkey.is.required");
+        }
+
+        if(!ValidationUtils.isValidUri(tModelKey)){
+            return resources.getString("tmodelKey.invalid");
+        }
+
+        if(tModelKey.length() > 255){
+            final String msg = resources.getString("field.maxLength");
+            return MessageFormat.format(msg, new Object[]{"tModelKey", tModelKey.length()});
+        }
+
+        final String keyValue = getKeyValue();
+        if (keyValue.isEmpty()){
+            return resources.getString("keyvalue.is.required");
+        }
+
+        if(keyValue.length() > 255){
+            final String msg = resources.getString("field.maxLength");
+            return MessageFormat.format(msg, new Object[]{"keyValue", keyValue.length()});
+        }
+
+        final String keyName = getKeyName();
+        if(tModelKey.equals(UDDIKeyedReference.GENERAL_KEYWORDS) && (keyName == null || keyName.isEmpty())) {
+            return resources.getString("keyName.required");
+        }
+
+        if(keyName.length() > 255){
+            final String msg = resources.getString("field.maxLength");
+            return MessageFormat.format(msg, new Object[]{"keyName", keyName.length()});
+        }
+
+        final UDDIKeyedReference keyRef = getKeyedReference();
+        final String duplicateErrorMsg = resources.getString("duplicate.error.msg");
+        if(isUpdate){
+            final boolean refChanged = !keyRef.equals(incomingKeyRef);
+            if(refChanged){
                 if(existingRefs.contains(keyRef)){
                     return duplicateErrorMsg;
                 }
             }
+        } else {
+            if(existingRefs.contains(keyRef)){
+                return duplicateErrorMsg;
+            }
         }
 
-        return error;
+        return null;
     }
 
     private JPanel contentPane;
