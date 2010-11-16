@@ -36,7 +36,7 @@ public class InetAddressUtil {
         } catch (UnknownHostException e) {
             // Misconfigured local hostname or DNS -- fall back to 127.0.0.1 or ::1
             lh = getAddress(getLocalHostAddress());
-            logger.log(Level.WARNING, "Unable to get localhost: " + e.getMessage() + " falling back to: " + lh, e);
+            logger.log(Level.WARNING, "Unable to get localhost: " + e.getMessage() + " falling back to: " + lh, ExceptionUtils.getDebugException(e));
         }
         localHost = lh;
     }
