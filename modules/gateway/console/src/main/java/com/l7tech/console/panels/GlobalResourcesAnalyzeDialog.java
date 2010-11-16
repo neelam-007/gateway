@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.ResourceDocument;
+import com.l7tech.common.io.URIResourceDocument;
 import com.l7tech.console.action.Actions;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
@@ -22,6 +23,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.LSInputImpl;
 import com.l7tech.util.Pair;
+import com.l7tech.util.TextUtils;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
@@ -79,7 +81,7 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
 
     private final ResourceAdmin resourceAdmin;
     private final PermissionFlags flags;
-    private final Collection<ResourceEntryHeader> resourceHeaders;
+    private final java.util.List<ResourceEntryHeader> resourceHeaders;
     private SimpleTableModel<ResourceHolder> resourceHolderTableModel;
     private Collection<ResourceHolder> defaultResources = Collections.emptyList();
 
@@ -88,7 +90,7 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
                                          final Collection<ResourceEntryHeader> resourceHeaders ) {
         super( parent, JDialog.DEFAULT_MODALITY_TYPE );
         this.resourceAdmin = resourceAdmin;
-        this.resourceHeaders = resourceHeaders;
+        this.resourceHeaders = new ArrayList<ResourceEntryHeader>( resourceHeaders );
         this.flags = PermissionFlags.get( EntityType.RESOURCE_ENTRY );
         init();
         initAnalyze( resourceHeaders );
@@ -197,7 +199,25 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
                 resourceAdmin,
                 GlobalResourceImportWizard.getUIErrorListener( this ));
 
+        final int[] selectedRows = resourcesTable.getSelectedRows();
+        final Set<String> selectedSystemIds = new HashSet<String>();
+        for ( final int selectedRow : selectedRows ) {
+            final int modelRow = resourcesTable.convertRowIndexToModel( selectedRow );
+            selectedSystemIds.add( resourceHolderTableModel.getRowObject( modelRow ).getSystemId() );
+        }
+
         resourceHolderTableModel.setRows( new ArrayList<ResourceHolder>(resourceHolders) );
+
+        // restore users selections
+        for ( final String selectedSystemId : selectedSystemIds ) {
+            for ( final ResourceHolder holder : resourceHolders  ) {
+                if ( selectedSystemId.equals( holder.getSystemId() )) {
+                    final int tableRow = resourcesTable.convertRowIndexToView( resourceHolderTableModel.getRowIndex( holder ) );
+                    resourcesTable.getSelectionModel().addSelectionInterval( tableRow, tableRow );
+                    break;
+                }
+            }
+        }
     }
 
     private void initDefaults() {
@@ -233,7 +253,8 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
 
     private void enableAndDisableComponents() {
         viewButton.setEnabled( resourcesTable.getSelectedRowCount()==1 );
-        resetButton.setEnabled( flags.canUpdateAll() && !isDefaultUriAndContent( getSelectedResourceHolder() ).right );
+        final Pair<Boolean,Boolean> defaultUriAndContent = isDefaultUriAndContent( getSelectedResourceHolder() );
+        resetButton.setEnabled( flags.canUpdateAll() && (!defaultUriAndContent.left || !defaultUriAndContent.right) );
     }
 
     private Pair<Boolean,Boolean> isDefaultUriAndContent( final ResourceHolder resourceHolder ) {
@@ -455,21 +476,64 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
                        resourceHolder.getPublicId(),
                        resourceHolder.getTargetNamespace() );
             if ( defaultResource != null ) {
+                final Pair<Boolean,Boolean> defaultUriAndContent = isDefaultUriAndContent( resourceHolder );
+                String originalUri = null;
+                String originalContent = null;
+                boolean updateUri = false;
+                boolean updateContent = false;
+
+                final String displayUri = TextUtils.truncStringMiddleExact( resourceHolder.getSystemId(), 64 );
+                if ( !defaultUriAndContent.left && !defaultUriAndContent.right ) {
+                    final String message = "Reset resource to use the default system identifier and content?\n\n" + displayUri;
+                    Pair<Boolean,Boolean> resetOptions = confirmReset( message, true );
+                    updateUri = resetOptions.left;
+                    updateContent = resetOptions.right;
+                } else if ( !defaultUriAndContent.left ) {
+                    final String message = "Reset resource to use the default system identifier?\n\n" + displayUri;
+                    if ( confirmReset( message, false ).left ) {
+                        updateUri = true;
+                    }
+                } else if ( !defaultUriAndContent.right ) {
+                    final String message = "Reset resource to use the default content?\n\n" + displayUri;
+                    if ( confirmReset( message, false ).left ) {
+                        updateContent = true;
+                    }
+                }
+
                 try {
-                    resourceHolder.updateContentFrom( defaultResource.asResourceDocument() );
-                    resourceHolder.setError( null ); // clear any error to allow save
-                    GlobalResourceImportWizard.saveResources( resourceAdmin, Collections.singleton( resourceHolder ) );
+                    if ( updateContent ) {
+                        originalContent = resourceHolder.getContent();
+                        resourceHolder.updateContentFrom( defaultResource.asResourceDocument() );
+                    } else { // dummy update so the resource is persisted on save
+                        resourceHolder.updateContentFrom( resourceHolder.asResourceDocument() );
+                    }
+                    if ( updateUri ) {
+                        originalUri = resourceHolder.getSystemId();
+                        resourceHolder.setSystemId( new URI( defaultResource.getSystemId() ) );
+                    }
+                    if ( updateUri || updateContent ) {
+                        resourceHolder.setError( null ); // clear any error to allow save
+                        GlobalResourceImportWizard.saveResources( resourceAdmin, Collections.singleton( resourceHolder ) );
+                    }
+                    if ( updateUri && originalUri != null) { // if update succeeds, we may need to update the initial resource headers
+                        updateResourceHeaders( resourceHeaders, originalUri, resourceHolder.getSystemId() );
+                    }
                 } catch ( SaveException e ) {
+                    resetResource( resourceHolder, originalUri, originalContent );
                     logger.log(
                             Level.WARNING,
                             "Error resetting resource '"+resourceHolder.getSystemId()+": " + ExceptionUtils.getMessage(e),
                             ExceptionUtils.getDebugException(e));
                     showErrorMessage( "Resource Reset Error", "Unable to reset resource to default value:\n" + ExceptionUtils.getMessage(e) );
                 } catch ( IOException e ) {
+                    resetResource( resourceHolder, originalUri, originalContent );
                     logger.log(
                             Level.WARNING,
                             "Error resetting resource '"+resourceHolder.getSystemId()+": " + ExceptionUtils.getMessage(e),
                             ExceptionUtils.getDebugException(e));
+                    showErrorMessage( "Resource Reset Error", "Unable to reset resource to default value:\n" + ExceptionUtils.getMessage(e) );
+                } catch ( URISyntaxException e ) {
+                    resetResource( resourceHolder, originalUri, originalContent );
                     showErrorMessage( "Resource Reset Error", "Unable to reset resource to default value:\n" + ExceptionUtils.getMessage(e) );
                 }
             }
@@ -477,6 +541,59 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
             initAnalyze( resourceHeaders );
             updateSummaries(false);
         }
+    }
+
+    private void resetResource( final ResourceHolder resourceHolder,
+                                final String uri,
+                                final String content ) {
+        if ( uri != null ) {
+            try {
+                resourceHolder.setSystemId( new URI( uri ) );
+            } catch ( URISyntaxException e ) {
+                logger.warning( "Unable to reset resource URI : " + ExceptionUtils.getMessage(e) );
+            }
+        }
+
+        if ( content != null ) {
+            try {
+                resourceHolder.updateContentFrom( new URIResourceDocument( URI.create("content.dat"), content, null ) );
+            } catch ( IOException e ) {
+                logger.warning( "Unable to reset resource content : " + ExceptionUtils.getMessage(e) );
+            }
+        }
+    }
+
+
+    private Pair<Boolean,Boolean> confirmReset( final String message,
+                                                final boolean uriAndContent ) {
+        Pair<Boolean,Boolean> confirmed = new Pair<Boolean,Boolean>( false, false );
+
+        final int optionType;
+        final Object[] options;
+        if ( uriAndContent ) {
+            optionType = JOptionPane.YES_NO_CANCEL_OPTION;
+            options = new Object[]{"Reset", "Reset Content Only", "Cancel"};
+        } else {
+            optionType = JOptionPane.YES_NO_OPTION;
+            options = new Object[]{"Reset","Cancel"};
+        }
+
+        final int choice = JOptionPane.showOptionDialog(
+                this,
+                message,
+                "Confirm Resource Reset",
+                optionType,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                "Cancel" );
+        if ( choice == JOptionPane.YES_OPTION ) {
+            confirmed = new Pair<Boolean,Boolean>( true, true );
+        } else if ( choice == JOptionPane.NO_OPTION ) {
+            confirmed = new Pair<Boolean,Boolean>( false, true );            
+        }
+
+        return confirmed;
     }
 
     private void showErrorMessage( final String title,
@@ -510,7 +627,7 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
             descriptionTextField.setCaretPosition( 0 );
             statusTextField.setText( getStatus(resourceHolder) );
             statusTextField.setCaretPosition( 0 );
-            statusDetailTextPane.setText( resourceHolder.isError() ? ExceptionUtils.getMessage(resourceHolder.getError()) : "" );
+            statusDetailTextPane.setText( getStatusDetail(resourceHolder) );
             statusDetailTextPane.setCaretPosition( 0 );
             final DependencyScope scope = (DependencyScope)dependenciesComboBox.getSelectedItem();
             dependenciesList.setModel( asListModel( getDependencies( scope, resourceHolder, resourceHolderTableModel.getRows() ) ) );
@@ -546,6 +663,55 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
         }
 
         return statusBuilder.toString();
+    }
+
+    private String getStatusDetail( final ResourceHolder resourceHolder ) {
+        String statusDetail = resourceHolder.isError() ? ExceptionUtils.getMessage(resourceHolder.getError()) : "";
+
+        final ResourceHolder defaultResource = resolve(
+                   defaultResources,
+                   resourceHolder.getType(),
+                   null,
+                   resourceHolder.getSystemId(),
+                   resourceHolder.getPublicId(),
+                   resourceHolder.getTargetNamespace() );
+        if ( defaultResource != null && !defaultResource.getSystemId().equals( resourceHolder.getSystemId() ) ) {
+            if ( !statusDetail.isEmpty() ) statusDetail += "\n\n";
+
+            statusDetail += "The default URI for this resource is:\n" + defaultResource.getSystemId();
+        }
+
+        return statusDetail;
+    }
+
+    private void updateResourceHeaders( final java.util.List<ResourceEntryHeader> headers,
+                                        final String originalUri,
+                                        final String updatedUri ) {
+        ResourceEntryHeader oldHeader = null;
+        ResourceEntryHeader newHeader = null;
+        for ( final ResourceEntryHeader header : headers ) {
+            if ( originalUri.equals( header.getUri() ) ) {
+                oldHeader = header;
+                newHeader = new ResourceEntryHeader(
+                        header.getStrId(),
+                        updatedUri,
+                        header.getDescription(),
+                        header.getResourceType(),
+                        header.getResourceKey1(),
+                        header.getResourceKey2(),
+                        header.getResourceKey3(),
+                        header.getVersion()
+                );
+
+                break;
+            }
+        }
+
+        if ( oldHeader != null ) {
+            final int index = headers.indexOf( oldHeader );
+            headers.remove( index );
+            headers.add( index, newHeader );
+        }
     }
 
     private void navigateDependencySummary( final JList list ) {

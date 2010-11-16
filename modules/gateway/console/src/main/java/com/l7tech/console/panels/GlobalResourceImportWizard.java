@@ -21,7 +21,6 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.Charsets;
@@ -380,10 +379,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         if ( !resourceEntries.isEmpty() ) {
             try {
                 admin.saveResourceEntryBag( new ResourceEntryBag( resourceEntries ) );
-            } catch ( DuplicateObjectException e ) {
-                throw new SaveException(e);
             } catch ( UpdateException e ) {
-                throw new SaveException(e);
+                throw new SaveException(ExceptionUtils.getMessage( e ), e);
             }
         }
     }
