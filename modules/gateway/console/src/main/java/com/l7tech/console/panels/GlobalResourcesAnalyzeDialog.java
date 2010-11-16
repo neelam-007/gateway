@@ -300,7 +300,9 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
                 }
             }
         }
+        final int[] selections = resourcesTable.getSelectedRows();
         resourceHolderTableModel.fireTableDataChanged();
+        for ( final int selection : selections ) resourcesTable.getSelectionModel().addSelectionInterval( selection, selection );
         updateSummaries( true );
 
         if ( !resourceAdmin.allowSchemaDoctype() && GlobalResourceImportWizard.hasDoctype( resources, false ) ) {
@@ -309,6 +311,21 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
                     "One or more resources use a document type declaration and support is currently\ndisabled (schema.allowDoctype cluster property)",
                     "Schema Warning",
                     JOptionPane.WARNING_MESSAGE );
+        } else {
+            final int errors = countErrors( resources );
+            if ( errors == 0 ) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Validation completed successfully.",
+                        "Validation Successful",
+                        JOptionPane.INFORMATION_MESSAGE );
+            } else {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Validation completed with " + errors + " error(s).\nSelect each 'Failed' resource to view error details.",
+                        "Validation Failed",
+                        JOptionPane.WARNING_MESSAGE );
+            }
         }
     }
 
@@ -546,15 +563,20 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
     }
 
     private void updateSummaries( final boolean validated ) {
-        analyzedResourceCountLabel.setText( Integer.toString( resourceHolderTableModel.getRowCount() ));
+        final Collection<ResourceHolder> resourceHolders = resourceHolderTableModel.getRows();
+        final int invalidCount = countErrors( resourceHolders );
+        final String suffix = validated ? "" : resources.getString("suffix.not-validated");
+        
+        analyzedResourceCountLabel.setText( Integer.toString( resourceHolders.size() ));
+        validationFailureCountLabel.setText( invalidCount + " " + suffix);
+    }
 
-        final Integer invalidCount = Functions.reduce( resourceHolderTableModel.getRows(), 0, new Functions.Binary<Integer,Integer,ResourceHolder>(){
+    private int countErrors( final Collection<ResourceHolder> resourceHolders ) {
+        return Functions.reduce( resourceHolders, 0, new Functions.Binary<Integer,Integer,ResourceHolder>(){
             @Override
             public Integer call( final Integer count, final ResourceHolder resourceHolder ) {
                 return count + (resourceHolder.isError() ? 1 : 0);
             }
         } );
-        final String suffix = validated ? "" : resources.getString("suffix.not-validated");
-        validationFailureCountLabel.setText( invalidCount + " " + suffix);                
     }
 }
