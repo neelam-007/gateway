@@ -60,6 +60,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
 
     private static final long minCleanupPeriod = SyspropUtil.getLong( "com.l7tech.server.schema.minCleanupPeriod", 5000L );
     private static final boolean allowRemoteReferencesFromLocal = SyspropUtil.getBoolean( "com.l7tech.server.schema.allowRemote", false );
+    private static final boolean strictDoctypeChecking = SyspropUtil.getBoolean( "com.l7tech.server.schema.strictDoctypeCheck", true );
 
     /**
      * Validated schema configuration.
@@ -131,6 +132,11 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
      * The EntityResolver to use when parsing schema documents
      */
     private final AtomicReference<EntityResolver> entityResolverRef = new AtomicReference<EntityResolver>(XmlUtil.getSafeEntityResolver());
+
+    /**
+     * The XML parser function to use for parsing schema documents.
+     */
+    private final AtomicReference<SchemaSourceTransformer> schemaSourceTransformerRef = new AtomicReference<SchemaSourceTransformer>( new SafeSchemaSourceTransformer() );
 
     /** Bean that handles Tarari hardware reloads for us, null if no Tarari. */
     private final TarariSchemaHandler tarariSchemaHandler;
@@ -220,8 +226,10 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
 
         if ( config.isAllowDoctype() ) {
             entityResolverRef.set( schemaEntityResolver );
+            schemaSourceTransformerRef.set( new SchemaSourceTransformer() );
         } else {
             entityResolverRef.set( XmlUtil.getSafeEntityResolver() );
+            schemaSourceTransformerRef.set( new SafeSchemaSourceTransformer() );
         }
 
         if (tarariSchemaHandler != null) {
@@ -624,38 +632,21 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         return input;
     }
 
-    @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
     protected void handleResourceNotPermitted( final Exception e,
                                                final String resourceDescription ) throws UnresolvableException {
         if ( isResourceNotPermitted( e ) ) {
-            final Exception detail = config.isAllowDoctype() ? null :
-                    new Exception( "Use of document type definitions in XML Schemas is disabled (schema.allowDoctype cluster property)" );
+            final Exception detail = config.isAllowDoctype() ? null : getUnresolvableDoctypeException();
             throw new UnresolvableException( detail, resourceDescription );
         }
+    }
+
+    private static Exception getUnresolvableDoctypeException() {
+        return new Exception( "Use of document type definitions in XML Schemas is disabled (schema.allowDoctype cluster property)" );
     }
 
     protected boolean isResourceNotPermitted( final Exception e ) {
         return (e instanceof IOException || e instanceof SAXException) &&
                 ExceptionUtils.getMessage( e ).startsWith("Document referred to an external entity with system id");
-    }
-
-    /** @return an LSInput that contains StringData and a SystemId. */
-    private LSInput makeLsInput( final SchemaSource schemaSource ) {
-        final LSInput lsi =  new LSInputImpl();
-        lsi.setSystemId( schemaSource.getUri() );
-        lsi.setStringData( schemaSource.getContent() );
-        return lsi;
-    }
-
-    private Source makeSource( final SchemaSource schemaSource ) {
-        return new StreamSource( new StringReader(schemaSource.getContent()), schemaSource.getUri() );
-    }
-
-    private InputSource makeInputSource( final SchemaSource schemaSource ) {
-        final InputSource inputSource = new InputSource();
-        inputSource.setSystemId( schemaSource.getUri() );
-        inputSource.setCharacterStream( new StringReader( schemaSource.getContent() ) );
-        return inputSource;
     }
 
     private InputSource makeInputSource( final SchemaResource schemaResource ) {
@@ -1011,14 +1002,14 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         return new TreeSet<String>(registeredSchemasByUri.keySet());
     }
 
-    private String describeResource( final String baseURI, final String uri ) {
+    private static String describeResource( final String baseURI, final String uri ) {
         return describeResource(baseURI, uri, null, null);
     }
 
-    private String describeResource( final String baseURI,
-                                     final String systemId,
-                                     final String publicId,
-                                     final String namespaceURI ) {
+    private static String describeResource( final String baseURI,
+                                            final String systemId,
+                                            final String publicId,
+                                            final String namespaceURI ) {
         final String description;
 
         if (systemId != null) {
@@ -1120,7 +1111,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                             localDependencies.add( source.getUri() );
                         }
                         dependencies.add(dependencySource.getUri());
-                        return makeLsInput(dependencySource);
+                        return schemaSourceTransformerRef.get().makeLsInput(dependencySource);
                     } catch (IOException e) {
                         throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                     }
@@ -1130,7 +1121,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         sf.setResourceResolver(resolver);
 
         try {
-            sf.newSchema(makeSource(source)); // populates dependencies as side-effect
+            sf.newSchema(schemaSourceTransformerRef.get().makeSource(source)); // populates dependencies as side-effect
             return dependencies;
         } catch (RuntimeException e) {
             final UnresolvableException exception = ExceptionUtils.getCauseIfCausedBy(e, UnresolvableException.class);
@@ -1256,7 +1247,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         // Re-parse, building up CompiledSchema instances as needed from the bottom up
         final SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
 
-        final Document schema = XmlUtil.parse(makeInputSource(source), entityResolverRef.get());
+        final Document schema = XmlUtil.parse(schemaSourceTransformerRef.get().makeInputSource(source), entityResolverRef.get());
         final Set<String> includes = new HashSet<String>();
         final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
         schemaReferenceProcessor.processDocumentReferences( schema, new DocumentReferenceProcessor.ReferenceCustomizer(){
@@ -1288,7 +1279,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                 } else {
                     Map<String,SchemaHandle> dependencyMap = includes.contains(systemId) ? directIncludes : directImports;
                     try {
-                        return makeLsInput(resolveSchema( namespaceURI, systemId, baseURI, seenSystemIds, dependencyMap ));
+                        return schemaSourceTransformerRef.get().makeLsInput(resolveSchema( namespaceURI, systemId, baseURI, seenSystemIds, dependencyMap ));
                     } catch (IOException e) {
                         throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                     } catch (SAXException e) {
@@ -1301,7 +1292,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
 
         boolean success = false;
         try {
-            final Schema softwareSchema = sf.newSchema(makeSource(source));
+            final Schema softwareSchema = sf.newSchema(schemaSourceTransformerRef.get().makeSource(source));
             final String tns = XmlUtil.getSchemaTNS(schemaDoc, entityResolverRef.get());
             final Element mangledElement = DomUtils.normalizeNamespaces(schema.getDocumentElement());
             final CompiledSchema newSchema =
@@ -1763,6 +1754,44 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
 
         public String getContent() {
             return right;
+        }
+    }
+
+    private static class SchemaSourceTransformer {
+        /** @return an LSInput that contains StringData and a SystemId. */
+        protected LSInput makeLsInput( final SchemaSource schemaSource ) {
+            processingSource( schemaSource );
+
+            final LSInput lsi =  new LSInputImpl();
+            lsi.setSystemId( schemaSource.getUri() );
+            lsi.setStringData( schemaSource.getContent() );
+            return lsi;
+        }
+
+        protected Source makeSource( final SchemaSource schemaSource ) {
+            processingSource( schemaSource );
+            return new StreamSource( new StringReader(schemaSource.getContent()), schemaSource.getUri() );
+        }
+
+        protected InputSource makeInputSource( final SchemaSource schemaSource ) {
+            processingSource( schemaSource );
+
+            final InputSource inputSource = new InputSource();
+            inputSource.setSystemId( schemaSource.getUri() );
+            inputSource.setCharacterStream( new StringReader( schemaSource.getContent() ) );
+            return inputSource;
+        }
+
+        protected void processingSource( final SchemaSource schemaSource ) {
+        }
+    }
+
+    private static final class SafeSchemaSourceTransformer extends SchemaSourceTransformer {
+        @Override
+        protected void processingSource( final SchemaSource schemaSource ) {
+            if ( strictDoctypeChecking && XmlUtil.hasDoctype( schemaSource.getContent() ) ) {
+                throw new UnresolvableException( getUnresolvableDoctypeException(), describeResource( null, schemaSource.getUri() ) );
+            }
         }
     }
 
