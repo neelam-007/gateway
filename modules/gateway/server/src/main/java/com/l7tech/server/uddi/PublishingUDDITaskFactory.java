@@ -606,7 +606,10 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             }
                         }
 
-                        uddiProxiedServiceInfo.getProxiedServices().removeAll(removeSet);
+                        if(!removeSet.isEmpty()){
+                            uddiProxiedServiceInfo.getProxiedServices().removeAll(removeSet);
+                            context.flushSession();
+                        }
 
                         //create required new UDDIProxiedServices
                         Set<UDDIBusinessService> newlyCreatedServices = deletedAndNewServices.right;

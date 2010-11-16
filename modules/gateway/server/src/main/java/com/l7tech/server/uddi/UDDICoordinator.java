@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import org.hibernate.SessionFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationContextAware;
@@ -62,7 +63,8 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                            final ClusterMaster clusterMaster,
                            final Timer timer,
                            final Collection<UDDITaskFactory> taskFactories,
-                           final Config config) {
+                           final Config config,
+                           final SessionFactory sessionFactory) {
         this.transactionManager = transactionManager;
         this.uddiHelper = uddiHelper;
         this.uddiRegistryManager = uddiRegistryManager;
@@ -74,6 +76,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         this.uddiServiceControlManager = uddiServiceControlManager;
         this.uddiBusinessServiceStatusManager = uddiBusinessServiceStatusManager;
         this.uddiPublishStatusManager = uddiPublishStatusManager;
+        this.sessionFactory = sessionFactory;
         this.taskContext = new UDDICoordinatorTaskContext( this, config );
     }
 
@@ -244,6 +247,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
     private final Collection<UDDITaskFactory> taskFactories;
     private final Timer timer;
     private final UDDITaskFactory.UDDITaskContext taskContext;
+    private final SessionFactory sessionFactory;
     private final AtomicReference<Map<Long,UDDIRegistryRuntime>> registryRuntimes = // includes disabled registries
             new AtomicReference<Map<Long,UDDIRegistryRuntime>>( Collections.<Long,UDDIRegistryRuntime>emptyMap() );
     private ApplicationEventPublisher eventPublisher;
@@ -1126,6 +1130,11 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
         @Override
         public int getMaxRetryAttempts() {
             return config.getIntProperty( UDDI_WSDL_PUBLISH_MAX_RETRIES, 3) - 1;//the first time is the first attempt
+        }
+
+        @Override
+        public void flushSession() {
+            coordinator.sessionFactory.getCurrentSession().flush();
         }
     }
 }

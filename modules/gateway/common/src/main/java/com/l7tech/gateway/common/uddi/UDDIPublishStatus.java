@@ -55,7 +55,7 @@ public class UDDIPublishStatus extends PersistentEntityImp {
         DELETE_FAILED,
 
         /**
-         * Like CANNOT_PUBLISH, all delete attemps have been tried. This is a final state.
+         * Like CANNOT_PUBLISH, all delete attempts have been tried. This is a final state.
          */
         CANNOT_DELETE
     }

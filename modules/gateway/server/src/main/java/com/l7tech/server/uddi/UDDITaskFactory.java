@@ -24,6 +24,7 @@ public abstract class UDDITaskFactory {
         void logAndAudit( AuditDetailMessage msg, String... params );
         void logAndAudit( AuditDetailMessage msg );
         int getMaxRetryAttempts();
+        void flushSession();
     }
 
     public static abstract class UDDITask {

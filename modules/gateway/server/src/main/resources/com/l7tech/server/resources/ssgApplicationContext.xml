@@ -1826,6 +1826,7 @@
             </list>
         </constructor-arg>
         <constructor-arg index="11" ref="serverConfig" />
+        <constructor-arg index="12" ref="sessionFactory" />
     </bean>
 
     <bean id="uddiRegistryManager" class="com.l7tech.server.uddi.UDDIRegistryManagerImpl" parent="hibernateBean">

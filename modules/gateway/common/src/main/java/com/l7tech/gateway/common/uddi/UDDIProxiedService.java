@@ -89,14 +89,14 @@ public class UDDIProxiedService extends PersistentEntityImp {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof UDDIProxiedService)) return false;
-        if (!super.equals(o)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
 
         UDDIProxiedService that = (UDDIProxiedService) o;
 
         if (!uddiServiceKey.equals(that.uddiServiceKey)) return false;
         if (!uddiServiceName.equals(that.uddiServiceName)) return false;
         if (!wsdlServiceName.equals(that.wsdlServiceName)) return false;
+        if (!wsdlServiceNamespace.equals(that.wsdlServiceNamespace)) return false;
 
         return true;
     }
@@ -107,6 +107,7 @@ public class UDDIProxiedService extends PersistentEntityImp {
         result = 31 * result + uddiServiceKey.hashCode();
         result = 31 * result + uddiServiceName.hashCode();
         result = 31 * result + wsdlServiceName.hashCode();
+        result = 31 * result + wsdlServiceNamespace.hashCode();
         return result;
     }
 

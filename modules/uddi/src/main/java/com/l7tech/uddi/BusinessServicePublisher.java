@@ -1385,6 +1385,8 @@ public class BusinessServicePublisher implements Closeable {
         for (String s : publishedServiceKeys) {
             //and these are they keys we got - uddiServicesToDependentModels
             if (!receivedFromUDDISet.contains(s)) {
+                logger.log(Level.INFO, "Gateway published BusinessService with serviceKey #("+s+") " +
+                        "was deleted from UDDI outside of Gateway's control. Service was republished if applicable.");
                 keysDeletedViaUDDI.add(s);
             }
         }
