@@ -261,27 +261,23 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
             false // Flag to indicate if the input process is finished or not.
         };
         while (! (Boolean)info[INDEX_DONE]) {
-            DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter a name for the new interface.", "Interface Name", JOptionPane.PLAIN_MESSAGE, null, null, info[INDEX_VALUE], new DialogDisplayer.InputListener() {
-                @Override
-                public void reportResult(Object option) {
-                    if (option == null || option.toString().length() < 1) {
-                        info[INDEX_DONE] = true;
-                        return;
-                    }
-                    final String name = option.toString();
-                    if (!InterfaceTag.isValidName(name)) {
-                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "An interface name must start with a letter or underscore, and can contain only ASCII letters, underscores, or numbers.",
-                            "Invalid Interface Name", JOptionPane.ERROR_MESSAGE, null);
-                    } else if (isDuplicateInterfaceName(name)) {
-                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The interface '" + name + "' already exists.  Please use a new interface name to try again.",
-                            "Duplicate Interface Name", JOptionPane.ERROR_MESSAGE, null);
-                    } else {
-                        info[INDEX_DONE] = true;
-                        nameUser.call(name);
-                    }
-                    info[INDEX_VALUE] = name;
-                }
-            });
+            Object option = JOptionPane.showInputDialog(InterfaceTagsPanel.this, "Please enter a name for the new interface.", "Interface Name", JOptionPane.PLAIN_MESSAGE, null, null, info[INDEX_VALUE]);
+            if (option == null || option.toString().length() < 1) {
+                info[INDEX_DONE] = true;
+                return;
+            }
+            final String name = option.toString();
+            if (!InterfaceTag.isValidName(name)) {
+                DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "An interface name must start with a letter or underscore, and can contain only ASCII letters, underscores, or numbers.",
+                    "Invalid Interface Name", JOptionPane.ERROR_MESSAGE, null);
+            } else if (isDuplicateInterfaceName(name)) {
+                DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The interface '" + name + "' already exists.  Please use a new interface name to try again.",
+                    "Duplicate Interface Name", JOptionPane.ERROR_MESSAGE, null);
+            } else {
+                info[INDEX_DONE] = true;
+                nameUser.call(name);
+            }
+            info[INDEX_VALUE] = name;
         }
     }
 
@@ -311,29 +307,25 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
             false         // Flag to indicate if the input process is finished or not.
         };
         while (! (Boolean)info[INDEX_DONE]) {
-            DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter an address pattern.", "Address Pattern", JOptionPane.PLAIN_MESSAGE, null, null, info[INDEX_VALUE], new DialogDisplayer.InputListener() {
-                @Override
-                public void reportResult(Object option) {
-                    if (option == null || option.toString().length() < 1) {
-                        info[INDEX_DONE] = true;
-                        return;
-                    }
-                    final String pattern = option.toString();
-                    if (!InterfaceTag.isValidPattern(pattern)) {
-                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this,
-                            "Address patterns should be in this format: 127.0.0/24" + (Registry.getDefault().getTransportAdmin().isUseIpv6() ? " or 2222::/64" :""),
-                            "Invalid Address Pattern", JOptionPane.ERROR_MESSAGE, null);
-                    } else if (isDuplicateAddressPattern(pattern)) {
-                        DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The address pattern '" + pattern + "' already exists.  Please use a new pattern to try again.",
-                            "Duplicate Address Pattern", JOptionPane.ERROR_MESSAGE, null);
-                    }
-                    else {
-                        info[INDEX_DONE] = true;
-                        patternUser.call(pattern);
-                    }
-                    info[INDEX_VALUE] = pattern;
-                }
-            });
+            Object option = JOptionPane.showInputDialog(InterfaceTagsPanel.this, "Please enter an address pattern.", "Address Pattern", JOptionPane.PLAIN_MESSAGE, null, null, info[INDEX_VALUE]);
+            if (option == null || option.toString().length() < 1) {
+                info[INDEX_DONE] = true;
+                return;
+            }
+            final String pattern = option.toString();
+            if (!InterfaceTag.isValidPattern(pattern)) {
+                JOptionPane.showMessageDialog(InterfaceTagsPanel.this,
+                    "Address patterns should be in this format: 127.0.0/24" + (Registry.getDefault().getTransportAdmin().isUseIpv6() ? " or 2222::/64" :""),
+                    "Invalid Address Pattern", JOptionPane.ERROR_MESSAGE);
+            } else if (isDuplicateAddressPattern(pattern)) {
+                JOptionPane.showMessageDialog(InterfaceTagsPanel.this, "The address pattern '" + pattern + "' already exists.  Please use a new pattern to try again.",
+                    "Duplicate Address Pattern", JOptionPane.ERROR_MESSAGE);
+            }
+            else {
+                info[INDEX_DONE] = true;
+                patternUser.call(pattern);
+            }
+            info[INDEX_VALUE] = pattern;
         }
     }
 
