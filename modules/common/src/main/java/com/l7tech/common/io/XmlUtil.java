@@ -792,6 +792,62 @@ public class XmlUtil extends DomUtils {
     }
 
     /**
+     * Does the given XML text have a document type declaration.
+     *
+     * <p>This method is likely to be slow so should be tested if used where
+     * speed is important.</p>
+     *
+     * <p>If the given source is invalid then the result is not meaningful.</p>
+     *
+     * @param xml The XML text
+     * @return True if there is a document type declaration.
+     */
+    public static boolean hasDoctype( final String xml ) {
+        return hasDoctype( new StreamSource( new StringReader(xml) ) );
+    }
+
+    /**
+     * Does the given source have a document type declaration.
+     *
+     * <p>This method is likely to be slow so should be tested if used where
+     * speed is important.</p>
+     *
+     * <p>If the given source is invalid then the result is not meaningful.</p>
+     *
+     * @param source The XML source
+     * @return True if there is a document type declaration.
+     */
+    public static boolean hasDoctype( final Source source ) {
+        boolean doctype = false;
+
+        final XMLInputFactory xif = XMLInputFactory.newInstance();
+        xif.setXMLReporter( SILENT_REPORTER );
+        xif.setXMLResolver( FAILING_RESOLVER );
+        XMLStreamReader reader = null;
+        try {
+            reader = xif.createXMLStreamReader( source );
+            while( reader.hasNext() ) {
+                final int eventType = reader.next();
+                if ( eventType == XMLStreamReader.DTD ) {
+                    doctype = true;
+                    break;
+                } else if ( eventType == XMLStreamReader.START_DOCUMENT ||
+                            eventType == XMLStreamReader.START_ELEMENT ) {
+                    break;
+                }
+            }
+        } catch ( XMLStreamException e ) {
+            if ( ExceptionUtils.getMessage(e).contains( "External entity access forbidden '" )) {
+                doctype = true;    
+            }
+        } finally {
+            ResourceUtils.closeQuietly( reader );
+        }
+
+        return doctype;
+    }
+
+    /**
      * Get the QName of the document element.
      *
      * @param systemId The system identifier for the document (optional)

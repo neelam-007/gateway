@@ -637,7 +637,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                     schemaDoc,
                     getResourceAdmin(),
                     resolvers,
-                    GlobalResourceImportWizard.getUIImportAdvisor( this, true ),
+                    GlobalResourceImportWizard.getUIImportAdvisor( this, true, !getResourceAdmin().allowSchemaDoctype() ),
                     new Functions.UnaryVoid<String>(){
                         @Override
                         public void call( final String content ) {
@@ -1114,7 +1114,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 content,
                 getResourceAdmin(),
                 resolvers,
-                GlobalResourceImportWizard.getUIImportAdvisor( this, false ),
+                GlobalResourceImportWizard.getUIImportAdvisor( this, false, !getResourceAdmin().allowSchemaDoctype() ),
                 new Functions.UnaryVoid<String>(){
                     @Override
                     public void call( final String content ) {

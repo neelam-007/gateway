@@ -24,6 +24,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import javax.xml.soap.SOAPConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -577,6 +579,31 @@ public class XmlUtilTest {
         } catch ( XmlUtil.BadSchemaException e ) {
             // expected
         }
+    }
+
+    @Test
+    public void testHasDoctype() throws Exception {
+        final String testWithXmlDeclaration = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><a/>";
+        assertFalse( "XML declaration, no doctype", XmlUtil.hasDoctype( source(testWithXmlDeclaration) ) );
+        final String testWithNoDeclaration = "<a/>";
+        assertFalse( "No XML declaration, no doctype", XmlUtil.hasDoctype( source(testWithNoDeclaration) ) );
+        final String testWithCommentNoDeclaration = "<!-- <!DOCTYPE --><a/>";
+        assertFalse( "No XML declaration, no doctype", XmlUtil.hasDoctype( source(testWithCommentNoDeclaration) ) );
+
+        final String testWithDoctypeDeclaration = "<!DOCTYPE a><a/>";
+        assertTrue( "Doctype", XmlUtil.hasDoctype( source(testWithDoctypeDeclaration) ) );
+        final String testWithCommentAndDoctypeDeclaration = "<!-- AER T$@#%@%  --><!DOCTYPE a><a/>";
+        assertTrue( "Comment, doctype", XmlUtil.hasDoctype( source(testWithCommentAndDoctypeDeclaration) ) );
+        final String testWithXmlAndDoctypeDeclaration = "<?xml version=\"1.0\"?><!DOCTYPE a><a/>";
+        assertTrue( "XML declaration, doctype", XmlUtil.hasDoctype( source(testWithXmlAndDoctypeDeclaration) ) );
+        final String testWithExternalDoctypeDeclaration = "<?xml version=\"1.0\"?><!DOCTYPE a SYSTEM \"http://0.0.0.0/notused.dtd\"><a/>";
+        assertTrue( "XML declaration, external id doctype", XmlUtil.hasDoctype( source(testWithExternalDoctypeDeclaration) ) );
+        final String testWithFullDoctypeDeclaration = "<?xml version=\"1.0\"?><!DOCTYPE a PUBLIC \"-//LAYER7/DTD TEST/EN\" \"http://0.0.0.0/notused.dtd\" [ ]><a/>";
+        assertTrue( "XML declaration, full doctype", XmlUtil.hasDoctype( source(testWithFullDoctypeDeclaration) ) );
+    }
+
+    private Source source( final String content ) {
+        return new StreamSource( new StringReader(content) );
     }
 
     public static final String XML_WITH_LEADING_WHITESPACE =

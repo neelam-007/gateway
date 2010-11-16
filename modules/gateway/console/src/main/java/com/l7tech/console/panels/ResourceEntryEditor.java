@@ -74,6 +74,7 @@ public class ResourceEntryEditor extends JDialog {
     private final EntityResolver entityResolver;
     private final boolean contentOnly;
     private final boolean canEdit;
+    private final boolean warnForDoctype;
     private boolean dataLoaded = false;
     private boolean success = false;
 
@@ -81,12 +82,14 @@ public class ResourceEntryEditor extends JDialog {
                                 final ResourceEntry resourceEntry,
                                 final EntityResolver entityResolver,
                                 final boolean contentOnly,
-                                final boolean canEditEntry ) {
+                                final boolean canEditEntry,
+                                final boolean warnForDoctype ) {
         super( owner, JDialog.DEFAULT_MODALITY_TYPE );
         this.resourceEntry = resourceEntry;
         this.entityResolver = entityResolver;
         this.contentOnly = contentOnly;
         this.canEdit = canEditEntry;
+        this.warnForDoctype = warnForDoctype;
         initialize();
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xml pad
     }
@@ -511,6 +514,21 @@ public class ResourceEntryEditor extends JDialog {
             displayError( "This is not a valid xml schema: " + ExceptionUtils.getMessage(e),
                           "Invalid Schema" );
             return false;
+        }
+
+        if ( warnForDoctype && XmlUtil.hasDoctype( contents )) {
+            final int choice = JOptionPane.showOptionDialog(
+                    this,
+                    "The schema has a document type declaration and support is currently\ndisabled (schema.allowDoctype cluster property)",
+                    "Schema Warning",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    null,
+                    new String[]{ "Save", "Cancel" },
+                    "Cancel");
+            if ( choice == JOptionPane.NO_OPTION ) {
+                return false;
+            }
         }
 
         resourceEntry.setResourceKey1( tns );

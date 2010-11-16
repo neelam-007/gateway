@@ -125,7 +125,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         final GlobalResourceImportContext context = new GlobalResourceImportContext();
         final ChoiceSelector choiceSelector = buildChoiceSelector( parent, context );
         final Functions.UnaryThrows<ResourceEntryHeader,Collection<ResourceEntryHeader>,IOException> entitySelector = buildEntitySelector( parent, choiceSelector );
-        final ResourceTherapist manualResourceTherapist = buildManualResourceTherapist( parent, context );
+        final ResourceTherapist manualResourceTherapist = buildManualResourceTherapist( parent, context, resourceAdmin );
         return importDependencies( context, uriString, type, content, resourceAdmin, additionalResolvers, importAdvisor, updatedContentCallback, errorListener, choiceSelector, entitySelector, manualResourceTherapist );
     }
 
@@ -157,7 +157,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
      * @return The import advisor
      */
     public static ImportAdvisor getUIImportAdvisor( final Component parent,
-                                                    final boolean importConfirmed ) {
+                                                    final boolean importConfirmed,
+                                                    final boolean warnForDoctype ) {
         return new ImportAdvisor() {
             @Override
             public DependencyImportChoice confirmImportDependencies() {
@@ -166,7 +167,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
             @Override
             public DependencyImportChoice confirmCompleteImport( final Collection<ResourceHolder> resourceHolders ) {
-                return confirmResourceSave( parent, resourceHolders );
+                return confirmResourceSave( parent, warnForDoctype, resourceHolders );
             }
         };
     }
@@ -401,6 +402,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                     entry,
                     new ResourceHolderEntityResolver(resourceHolders),
                     true,
+                    false,
                     false ) );
         } catch ( IOException e ) {
             handleViewError( owner, e );
@@ -411,7 +413,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                                                        final ResourceType type,
                                                        final String uri,
                                                        final String content,
-                                                       final EntityResolver entityResolver ) {
+                                                       final EntityResolver entityResolver,
+                                                       final boolean warnForDoctype ) {
         Pair<String,String> editedResource = null;
 
         final ResourceEntry entry = new ResourceEntry();
@@ -424,7 +427,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                 entry,
                 entityResolver,
                 true,
-                true);
+                true,
+                warnForDoctype );
 
         editor.setVisible( true );
         if ( editor.wasOk() ) {
@@ -434,6 +438,22 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         return editedResource;
     }
 
+    protected static boolean hasDoctype( final Collection<ResourceHolder> resourceHolders,
+                                         final boolean persistOnly ) {
+        boolean hasDoctype = false;
+        for ( final ResourceHolder holder : resourceHolders ) {
+            try {
+                if ( (!persistOnly || holder.isPersist()) && holder.isXml() && XmlUtil.hasDoctype( holder.getContent() ) ) {
+                    hasDoctype = true;
+                    break;
+                }
+            } catch ( IOException e ) {
+                // check other resources
+            }
+        }
+        return hasDoctype;
+    }
+    
     protected static String describe( final String baseUri,
                                       final String uri,
                                       final String publicId,
@@ -554,7 +574,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
         final ChoiceSelector choiceSelector = buildChoiceSelector( parent, context );
         final Functions.UnaryThrows<ResourceEntryHeader,Collection<ResourceEntryHeader>, IOException> entitySelector = buildEntitySelector( parent, choiceSelector );
-        final ResourceTherapist manualResourceTherapist = buildManualResourceTherapist( parent, context );
+        final ResourceTherapist manualResourceTherapist = buildManualResourceTherapist( parent, context, resourceAdmin );
         final Collection<ResourceDocumentResolver> newResourceResolvers = Arrays.asList(
                 new FileResourceDocumentResolver(),
                 GlobalResourceImportContext.buildDownloadingResolver( resourceAdmin ),
@@ -614,6 +634,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
     }
 
     private static DependencyImportChoice confirmResourceSave( final Component parent,
+                                                               final boolean warnForDoctype,
                                                                final Collection<ResourceHolder> resourceHolders ) {
         final JButton viewButton = new JButton( resources.getString("button.view").replace( "&", "" ));
         viewButton.setMnemonic( 'V' );
@@ -659,7 +680,12 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
         final JPanel displayPanel = new JPanel();
         displayPanel.setLayout( new BorderLayout( 4, 4) );
-        displayPanel.add( new JLabel("Do you want to import the schema's dependencies as global resources?"), BorderLayout.NORTH );
+        String text = "<html>Do you want to import the schema's dependencies as global resources?";
+        if ( warnForDoctype && hasDoctype( resourceHolders, true ) ) {
+            text += "<br/><br/>Warning! One or more resources use a document type declaration and support is currently<br/>disabled (schema.allowDoctype cluster property)";
+        }
+        text += "</html>";
+        displayPanel.add( new JLabel(text), BorderLayout.NORTH );
         displayPanel.add( tableScrollPane, BorderLayout.CENTER );
         displayPanel.add( buttonPanel, BorderLayout.EAST );
         displayPanel.add( new JLabel("Total Resources: " + resourceHolders.size()), BorderLayout.SOUTH );
@@ -1110,7 +1136,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
     }
 
     private static ResourceTherapist buildManualResourceTherapist( final Window parent,
-                                                                   final GlobalResourceImportContext context ) {
+                                                                   final GlobalResourceImportContext context,
+                                                                   final ResourceAdmin resourceAdmin ) {
         return new ResourceTherapist(){
             @Override
             public ResourceDocument consult( final ResourceType resourceType,
@@ -1167,7 +1194,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                                               resourceType!=null ? resourceType : ResourceType.DTD,
                                               uri,
                                               content,
-                                              new ResourceHolderEntityResolver( context.getCurrentResourceHolders(), true) );
+                                              new ResourceHolderEntityResolver( context.getCurrentResourceHolders(), true),
+                                              !resourceAdmin.allowSchemaDoctype() );
                         if ( resourceUriAndContent == null ) {
                             break; // manual import cancelled
                         }

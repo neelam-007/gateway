@@ -531,6 +531,21 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
     @Override
     public boolean onNextButton() {
         // process schemas
+        if ( !getResourceAdmin().allowSchemaDoctype() && GlobalResourceImportWizard.hasDoctype( processedResources.values(), true ) ) {
+            final int choice = JOptionPane.showOptionDialog(
+                    this,
+                    "One or more resources use a document type declaration and support is currently\ndisabled (schema.allowDoctype cluster property)",
+                    "Schema Warning",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    null,
+                    new String[]{ "Import", "Cancel" },
+                    "Cancel");
+            if ( choice == JOptionPane.NO_OPTION ) {
+                return false;
+            }
+        }
+
         try {
             GlobalResourceImportWizard.saveResources( getResourceAdmin(), processedResources.values() );
         } catch ( SaveException se ) {

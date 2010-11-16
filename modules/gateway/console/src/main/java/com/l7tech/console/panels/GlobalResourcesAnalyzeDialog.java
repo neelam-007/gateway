@@ -301,7 +301,15 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
             }
         }
         resourceHolderTableModel.fireTableDataChanged();
-        updateSummaries( true );        
+        updateSummaries( true );
+
+        if ( !resourceAdmin.allowSchemaDoctype() && GlobalResourceImportWizard.hasDoctype( resources, false ) ) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "One or more resources use a document type declaration and support is currently\ndisabled (schema.allowDoctype cluster property)",
+                    "Schema Warning",
+                    JOptionPane.WARNING_MESSAGE );
+        }
     }
 
     private void validateResource( final ResourceHolder resource,
