@@ -80,7 +80,7 @@ public class SchemaResourceManager implements ApplicationListener, InitializingB
                         outer:
                         for ( final String requiredTargetNamespace : requiredSchemaTargetNamespaces ) {
                             final Collection<DependencyReferenceInfo> dependencyReferences =
-                                    resourceDependenciesByTns.get( requiredTargetNamespace );
+                                    resourceDependenciesByTns.get( tnsKey(requiredTargetNamespace) );
                             if ( dependencyReferences != null ) {
                                 for ( final DependencyReferenceInfo dependencyReference : dependencyReferences ) {
                                     if ( isDependency( uri, dependencyReference.uri, new HashSet<String>() ) ) {
@@ -137,7 +137,7 @@ public class SchemaResourceManager implements ApplicationListener, InitializingB
     private final SchemaManager schemaManager;
 
     private final Map<String,DependencyReferenceInfo> resourceDependencies = new ConcurrentHashMap<String,DependencyReferenceInfo>();
-    private final Map<String,Collection<DependencyReferenceInfo>> resourceDependenciesByTns = new ConcurrentHashMap<String,Collection<DependencyReferenceInfo>>();
+    private final Map<TnsKey,Collection<DependencyReferenceInfo>> resourceDependenciesByTns = new ConcurrentHashMap<TnsKey,Collection<DependencyReferenceInfo>>();
     private final AtomicLong invalidationTime = new AtomicLong();
     private final Object reloadLock = new Object();
     private Set<String> hardwareSchemas = Collections.emptySet();
@@ -200,13 +200,13 @@ public class SchemaResourceManager implements ApplicationListener, InitializingB
 
                     resourceDependencies.put( entry.getUri(), info );
 
-                    final Collection<DependencyReferenceInfo> referencesForTns = resourceDependenciesByTns.get( entry.getResourceKey1() );
+                    final Collection<DependencyReferenceInfo> referencesForTns = resourceDependenciesByTns.get( tnsKey(entry.getResourceKey1()) );
                     if ( referencesForTns == null ) {
-                        resourceDependenciesByTns.put( entry.getResourceKey1(), Collections.singleton( info ) );
+                        resourceDependenciesByTns.put( tnsKey(entry.getResourceKey1()), Collections.singleton( info ) );
                     } else {
                         final Collection<DependencyReferenceInfo> newReferencesForTns = new ArrayList<DependencyReferenceInfo>( referencesForTns );
                         newReferencesForTns.add( info );
-                        resourceDependenciesByTns.put( entry.getResourceKey1(), Collections.unmodifiableCollection( newReferencesForTns ) );
+                        resourceDependenciesByTns.put( tnsKey(entry.getResourceKey1()), Collections.unmodifiableCollection( newReferencesForTns ) );
                     }
                 }
             }
@@ -364,6 +364,10 @@ public class SchemaResourceManager implements ApplicationListener, InitializingB
         return dependency;
     }
 
+    private static TnsKey tnsKey( final String targetNamespace ) {
+        return new TnsKey( targetNamespace );
+    }
+
     private static final class SchemaResource extends Triple<String,String,String> {
         private SchemaResource( final String uri, final String tns, final String content ) {
             super( uri, tns, content );
@@ -402,4 +406,30 @@ public class SchemaResourceManager implements ApplicationListener, InitializingB
         }
     }
 
+    private static final class TnsKey {
+        private final String targetNamespace;
+
+        private TnsKey( final String targetNamespace ) {
+            this.targetNamespace = targetNamespace;
+        }
+
+        @SuppressWarnings({ "RedundantIfStatement" })
+        @Override
+        public boolean equals( final Object o ) {
+            if ( this == o ) return true;
+            if ( o == null || getClass() != o.getClass() ) return false;
+
+            final TnsKey tnsKey = (TnsKey) o;
+
+            if ( targetNamespace != null ? !targetNamespace.equals( tnsKey.targetNamespace ) : tnsKey.targetNamespace != null )
+                return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return targetNamespace != null ? targetNamespace.hashCode() : 0;
+        }
+    }
 }
