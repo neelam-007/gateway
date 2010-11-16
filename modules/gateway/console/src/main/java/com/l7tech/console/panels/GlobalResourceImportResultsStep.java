@@ -207,7 +207,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
         final JPanel systemIdPanel = new JPanel();
         systemIdPanel.setLayout( new BoxLayout( systemIdPanel, BoxLayout.Y_AXIS ) );
 
-        final JLabel optionLabel = new JLabel( "Enter the current and updated System Identifier prefixes:" );
+        final JLabel optionLabel = new JLabel( "<html>Update the system identifiers of any matching resources.<br/><br/>Enter the current and updated System Identifier prefixes:</html>" );
         optionLabel.setAlignmentX( JComponent.LEFT_ALIGNMENT );
         systemIdPanel.add( optionLabel );
 
@@ -215,6 +215,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
         currentUriComboBox.setAlignmentX( JComponent.LEFT_ALIGNMENT );
         currentUriComboBox.setEditable( true );
         currentUriComboBox.setModel( new DefaultComboBoxModel( resourceUris.toArray() ) );
+        currentUriComboBox.setSelectedItem( "" );
 
         systemIdPanel.add( Box.createVerticalStrut( 4 ) );
         systemIdPanel.add( currentUriComboBox );
