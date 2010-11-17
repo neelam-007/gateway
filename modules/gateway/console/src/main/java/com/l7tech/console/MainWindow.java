@@ -721,7 +721,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         ret.setEnabled(false);
         int mnemonic = ret.getText().toCharArray()[0];
         ret.setMnemonic(mnemonic);
-        ret.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         migrateNamespacesMenuItem = ret;
 
         return ret;
