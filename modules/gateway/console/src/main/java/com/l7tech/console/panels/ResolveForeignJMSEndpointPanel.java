@@ -93,6 +93,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         jmsConnection.setDestinationFactoryUrl(foreignRef.getDestinationFactoryUrl());
         JmsEndpoint jmsEndpoint = new JmsEndpoint();
         jmsEndpoint.setName(foreignRef.getName());
+        jmsEndpoint.setQueue(foreignRef.isQueue());
         jmsEndpoint.setTemplate(foreignRef.isEndpointTemplate());
         jmsEndpoint.setDestinationName(foreignRef.getDestinationName());
 

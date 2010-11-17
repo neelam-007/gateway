@@ -39,6 +39,7 @@ public class JMSEndpointReference extends ExternalReference {
             JmsEndpoint jmsEndpoint = getFinder().findEndpointByPrimaryKey(endpointOid);
             if (jmsEndpoint != null) {
                 name = jmsEndpoint.getName();
+                type = jmsEndpoint.isQueue() ? TYPE_QUEUE : TYPE_TOPIC;
                 destinationName = jmsEndpoint.getDestinationName();
                 endpointTemplate = jmsEndpoint.isTemplate();
                 jmsConnection = getFinder().findConnectionByPrimaryKey(jmsEndpoint.getConnectionOid());
@@ -72,6 +73,7 @@ public class JMSEndpointReference extends ExternalReference {
             output.oid = Long.parseLong(val);
         }
         output.name = getParamFromEl(el, NAME_EL_NAME);
+        output.type = getParamFromEl(el, TYPE_EL_NAME);
         output.connectionTemplate = Boolean.parseBoolean(getParamFromEl(el, CONNECTION_TEMPLATE_EL_NAME));
         output.endpointTemplate = Boolean.parseBoolean(getParamFromEl(el, ENDPOINT_TEMPLATE_EL_NAME));
         output.destinationName = getParamFromEl(el, DESTINATION_EL_NAME);
@@ -113,6 +115,15 @@ public class JMSEndpointReference extends ExternalReference {
      */
     public String getName() {
         return name;
+    }
+
+    /**
+     * Is this JMS Endpoint a Queue (rather than a Topic)
+     *
+     * @return True for a Queue, False for a Topic
+     */
+    public boolean isQueue() {
+        return !TYPE_TOPIC.equals( type );
     }
 
     public boolean isConnectionTemplate() {
@@ -181,6 +192,7 @@ public class JMSEndpointReference extends ExternalReference {
         addElement( refEl, DESTINATIONURL_EL_NAME, destinationFactoryUrl );
         addElement( refEl, NAME_EL_NAME, name );
         addElement( refEl, DESTINATION_EL_NAME, destinationName );
+        addElement( refEl, TYPE_EL_NAME, type );
     }
 
     private void addElement( final Element parent,
@@ -344,9 +356,13 @@ public class JMSEndpointReference extends ExternalReference {
 
     private final Logger logger = Logger.getLogger(JMSEndpointReference.class.getName());
 
+    private static final String TYPE_QUEUE = "Queue";
+    private static final String TYPE_TOPIC = "Topic";
+
     private long oid;
     private long localEndpointId;
     private String name; // Added in 5.3, will be null in earlier exports
+    private String type; // Added in 5.4, will be null in earlier exports
     private boolean connectionTemplate;
     private boolean endpointTemplate;
     private String destinationName;
@@ -361,6 +377,7 @@ public class JMSEndpointReference extends ExternalReference {
     public static final String CONNECTION_TEMPLATE_EL_NAME = "ConnectionTemplate";
     public static final String ENDPOINT_TEMPLATE_EL_NAME = "EndpointTemplate";
     public static final String NAME_EL_NAME = "Name";
+    public static final String TYPE_EL_NAME = "Type";
     public static final String DESTINATION_EL_NAME = "DestinationName";
     public static final String EPNAME_EL_NAME = "EndpointName"; // used in pre 5.3 exports, value was the "Queue Name"
     public static final String CONTEXT_EL_NAME = "InitialContextFactoryClassname";
