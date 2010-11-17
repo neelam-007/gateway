@@ -301,7 +301,8 @@ public class JmsQueuesWindow extends JDialog {
 
                             Object[] options = {"Remove", "Cancel"};
 
-                            int result = JOptionPane.showOptionDialog(null,
+                            int result = JOptionPane.showOptionDialog(
+                              JmsQueuesWindow.this,
                               "<HTML>Are you sure you want to remove the " +
                               "registration for the JMS Destination " +
                               name + "?<br>" +
