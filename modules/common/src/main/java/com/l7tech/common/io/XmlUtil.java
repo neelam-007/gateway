@@ -954,12 +954,15 @@ public class XmlUtil extends DomUtils {
     /**
      * Get the targetNamespace from a Schema. This also does some validation on the entire schema.
      *
-     * @param schemaSrc String schema xml
+     * @param schemaUri The uri for the schema (may be null)
+     * @param schemaSrc String schema xml (required)
+     * @param entityResolver the entity resolver to use (may be null)
      * @return String the target namespace, null if none declared
      * @throws BadSchemaException if the schema is not valid
      */
     @SuppressWarnings({"unchecked", "ForLoopReplaceableByForEach"})
-    public static String getSchemaTNS( final String schemaSrc,
+    public static String getSchemaTNS( final String schemaUri,
+                                       final String schemaSrc,
                                        final EntityResolver entityResolver ) throws BadSchemaException {
         if (schemaSrc == null) {
             throw new BadSchemaException("no xml");
@@ -993,7 +996,10 @@ public class XmlUtil extends DomUtils {
             final DocumentBuilder builder = configureDocumentBuilder( dbfAllowingDoctype.newDocumentBuilder() );
             builder.setErrorHandler( STRICT_ERROR_HANDLER );
             builder.setEntityResolver( safeResolver( entityResolver ) );
-            final Document schemaDocument = builder.parse(new InputSource(new StringReader(schemaSrc)));
+            final InputSource schemaInput = new InputSource();
+            schemaInput.setSystemId( schemaUri );
+            schemaInput.setCharacterStream( new StringReader(schemaSrc) );
+            final Document schemaDocument = builder.parse( schemaInput );
 
             String tns = schemaDocument.getDocumentElement().getAttribute("targetNamespace");
 

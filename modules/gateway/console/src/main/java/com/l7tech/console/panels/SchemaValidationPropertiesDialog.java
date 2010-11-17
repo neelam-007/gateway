@@ -757,7 +757,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         }
 
         try {
-            XmlUtil.getSchemaTNS(contents, schemaEntityResolver);
+            XmlUtil.getSchemaTNS(uri, contents, schemaEntityResolver);
         } catch (XmlUtil.BadSchemaException e) {
             log.log(Level.WARNING, "issue with schema at hand", e);
             String errMsg = ExceptionUtils.getMessage(e);

@@ -460,7 +460,7 @@ public class ResourceEntryEditor extends JDialog {
 
             // save it
             if ( (resourceEntry.getType() == ResourceType.DTD && setDTDProperties( resourceEntry )) ||
-                 (resourceEntry.getType() == ResourceType.XML_SCHEMA && setSchemaProperties( resourceEntry, contents )) ) {
+                 (resourceEntry.getType() == ResourceType.XML_SCHEMA && setSchemaProperties( resourceEntry, systemId.trim(), contents )) ) {
                 resourceEntry.setUri( systemId.trim() );
                 if ( descriptionTextField.getText() != null && descriptionTextField.getText().length() > 0 ) {
                     resourceEntry.setDescription( descriptionTextField.getText() );
@@ -505,10 +505,11 @@ public class ResourceEntryEditor extends JDialog {
     }
 
     private boolean setSchemaProperties( final ResourceEntry resourceEntry,
+                                         final String uri,
                                          final String contents ) {
         String tns;
         try {
-            tns = XmlUtil.getSchemaTNS(contents, entityResolver);
+            tns = XmlUtil.getSchemaTNS(uri, contents, entityResolver);
         } catch (XmlUtil.BadSchemaException e) {
             logger.log( Level.WARNING, "Error parsing schema", e);
             displayError( "This is not a valid xml schema: " + ExceptionUtils.getMessage(e),

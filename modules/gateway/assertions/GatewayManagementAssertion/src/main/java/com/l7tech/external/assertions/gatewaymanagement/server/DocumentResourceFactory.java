@@ -102,7 +102,7 @@ public class DocumentResourceFactory extends EntityManagerResourceFactory<Resour
         } else if ( ResourceHelper.SCHEMA_TYPE.equals( resourceResource.getType() )) {
             resourceEntry.setType( XML_SCHEMA );
             resourceEntry.setContentType( XML_SCHEMA.getMimeType() );
-            resourceEntry.setResourceKey1( getTns(resourceResource.getContent()) );
+            resourceEntry.setResourceKey1( getTns(resourceResource.getSourceUrl(), resourceResource.getContent()) );
         } else {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES,
                     "resource type '"+ResourceHelper.DTD_TYPE+"' or '"+ResourceHelper.SCHEMA_TYPE+"', expected");
@@ -140,10 +140,11 @@ public class DocumentResourceFactory extends EntityManagerResourceFactory<Resour
 
     private final EntityResolver entityResolver;
 
-    private String getTns( final String contents ) throws InvalidResourceException {
+    private String getTns( final String uri,
+                           final String contents ) throws InvalidResourceException {
         String tns;
         try {
-            tns = XmlUtil.getSchemaTNS(contents, entityResolver);
+            tns = XmlUtil.getSchemaTNS(uri, contents, entityResolver);
         } catch (XmlUtil.BadSchemaException e) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "invalid XML Schema '" + ExceptionUtils.getMessage(e) + "'");
         }

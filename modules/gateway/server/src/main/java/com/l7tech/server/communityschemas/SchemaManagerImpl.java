@@ -1293,7 +1293,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         boolean success = false;
         try {
             final Schema softwareSchema = sf.newSchema(schemaSourceTransformerRef.get().makeSource(source));
-            final String tns = XmlUtil.getSchemaTNS(schemaDoc, entityResolverRef.get());
+            final String tns = XmlUtil.getSchemaTNS(systemId, schemaDoc, entityResolverRef.get());
             final Element mangledElement = DomUtils.normalizeNamespaces(schema.getDocumentElement());
             final CompiledSchema newSchema =
                     new CompiledSchema(tns, systemId, schemaDoc, source.getResolverId(), mangledElement, softwareSchema, this,

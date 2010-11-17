@@ -931,7 +931,7 @@ class GlobalResourceImportContext {
 
                 if ( resolved != null && resolved == external && resourceType == ResourceType.XML_SCHEMA ) {
                     try {
-                        XmlUtil.getSchemaTNS( resolved.getContent(), new ResourceHolderEntityResolver(GlobalResourceImportContext.this.getCurrentResourceHolders(),true) );
+                        XmlUtil.getSchemaTNS( resolved.getUri().toString(), resolved.getContent(), new ResourceHolderEntityResolver(GlobalResourceImportContext.this.getCurrentResourceHolders(),true) );
                     } catch ( XmlUtil.BadSchemaException e ) {
                         final String fullDetail;
                         switch ( option ) {

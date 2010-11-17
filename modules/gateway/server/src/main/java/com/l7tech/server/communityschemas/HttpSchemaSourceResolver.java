@@ -146,7 +146,7 @@ public class HttpSchemaSourceResolver implements ApplicationListener, SchemaSour
         Exception schemaException = null;
         if ( content != null ) {
             try {
-                XmlUtil.getSchemaTNS( content, entityResolver );
+                XmlUtil.getSchemaTNS( url, content, entityResolver );
             } catch ( XmlUtil.BadSchemaException e ) {
                 schemaException = e;
             }
