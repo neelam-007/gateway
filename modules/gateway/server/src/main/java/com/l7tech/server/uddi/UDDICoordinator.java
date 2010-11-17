@@ -24,11 +24,14 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.wsdl.Wsdl;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
@@ -38,6 +41,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.BeansException;
 import org.springframework.context.event.ApplicationEventMulticaster;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.TransactionException;
@@ -1134,7 +1139,14 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
 
         @Override
         public void flushSession() {
-            coordinator.sessionFactory.getCurrentSession().flush();
+            new HibernateTemplate(coordinator.sessionFactory, false).execute(
+                    new HibernateCallback<Void>(){
+                        @Override
+                        public Void doInHibernate(Session session) throws HibernateException, SQLException {
+                            session.flush();
+                            return null;
+                        }
+                    });
         }
     }
 }
