@@ -138,13 +138,13 @@ public class JmsAdminImpl implements JmsAdmin {
         try {
             JmsUtil.connect(connection).close();
         } catch (JMSException e) {
-            logger.log(Level.INFO, "Caught JMSException while testing connection", e);
+            logger.log(Level.INFO, "Caught JMSException while testing connection '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.toString());
         } catch (NamingException e) {
-            logger.log(Level.INFO, "Caught NamingException while testing connection", e);
+            logger.log(Level.INFO, "Caught NamingException while testing connection '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.toString());
         } catch (JmsConfigException e) {
-            logger.log(Level.INFO, "Caught JmsConfigException while testing connection", e);
+            logger.log(Level.INFO, "Caught JmsConfigException while testing connection '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.toString());
         }
     }
@@ -205,11 +205,7 @@ public class JmsAdminImpl implements JmsAdmin {
                         logger.fine("Unable to receive with this queue, will try to open a sender");
                         jmsQueueSender = qs.createSender(q);
                     } catch (JMSException e) {
-                        if (ExceptionUtils.causedBy(e, InvalidDestinationException.class)) {
-                            logger.log(Level.INFO, "This queue cannot be opened for sending nor receiving", ExceptionUtils.getDebugException(e));
-                        } else {
-                            logger.log(Level.INFO, "This queue cannot be opened for sending nor receiving", e);
-                        }
+                        logger.log(Level.INFO, "This queue cannot be opened for sending nor receiving: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         if (laste != null) throw laste;
                         else throw e;
                     }
@@ -254,11 +250,7 @@ public class JmsAdminImpl implements JmsAdmin {
                         logger.fine("Unable to subscribe with this topic, will try to open a publisher");
                         jmsTopicPublisher = ts.createPublisher(t);
                     } catch (JMSException e) {
-                        if (ExceptionUtils.causedBy(e, InvalidDestinationException.class)) {
-                            logger.log(Level.INFO, "This topic cannot be opened for publishing nor subscribing", ExceptionUtils.getDebugException(e));
-                        } else {
-                            logger.log(Level.INFO, "This topic cannot be opened for publishing nor subscribing", e);
-                        }
+                        logger.log(Level.INFO, "This topic cannot be opened for publishing nor subscribing: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         if (laste != null) throw laste;
                         else throw e;
                     }
@@ -267,16 +259,16 @@ public class JmsAdminImpl implements JmsAdmin {
                 throw new JMSException("Unknown JMS session.");
             }
         } catch (JMSException e) {
-            logger.log(Level.INFO, "Caught JMSException while testing endpoint" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+            logger.log(Level.INFO, "Caught JMSException while testing endpoint '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.toString());
         } catch (NamingException e) {
-            logger.log(Level.INFO, "Caught NamingException while testing endpoint" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+            logger.log(Level.INFO, "Caught NamingException while testing endpoint '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.toString());
         } catch (JmsConfigException e) {
-            logger.log(Level.INFO, "Caught JmsConfigException while testing endpoint" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+            logger.log(Level.INFO, "Caught JmsConfigException while testing endpoint '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.toString());
         } catch (Throwable t) {
-            logger.log(Level.INFO, "Caught Throwable while testing endpoint" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
+            logger.log(Level.INFO, "Caught Throwable while testing endpoint '" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
             throw new JmsTestException(t.toString());
         } finally {
             JmsUtil.closeQuietly(jmsQueueSender);
