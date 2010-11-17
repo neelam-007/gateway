@@ -132,7 +132,11 @@ public class ServiceResolutionManager {
     public void notifyServiceCreated( final Audit auditor, final PublishedService service ) {
         for ( final ServiceResolver resolver : allResolvers ) {
             try {
-                resolver.serviceCreated(service);
+                if (service.isDisabled()) {
+                    resolver.serviceDeleted(service);
+                } else {
+                    resolver.serviceCreated(service);
+                }
             } catch (ServiceResolutionException sre) {
                 auditor.logAndAudit(SystemMessages.SERVICE_WSDL_ERROR,
                         new String[]{service.displayName(), sre.getMessage()}, sre);
@@ -149,7 +153,11 @@ public class ServiceResolutionManager {
     public void notifyServiceUpdated( final Audit auditor, final PublishedService service ) {
         for ( final ServiceResolver resolver : allResolvers ) {
             try {
-                resolver.serviceUpdated(service);
+                if (service.isDisabled()) {
+                    resolver.serviceDeleted(service);
+                } else {
+                    resolver.serviceUpdated(service);
+                }
             } catch (ServiceResolutionException sre) {
                 auditor.logAndAudit( SystemMessages.SERVICE_WSDL_ERROR,
                         new String[]{service.displayName(), sre.getMessage()}, sre);
