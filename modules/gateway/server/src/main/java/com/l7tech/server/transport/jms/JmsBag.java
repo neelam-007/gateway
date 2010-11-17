@@ -1,10 +1,6 @@
-/*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.server.transport.jms;
+
+import com.l7tech.util.ExceptionUtils;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -48,40 +44,50 @@ public class JmsBag implements Closeable {
         return jndiContext;
     }
 
+    @Override
     public void close() {
-        try {
-            if ( session != null ) {
-                try {
-                    session.close();
-                } catch ( Exception e ) {
-                    logger.log(Level.WARNING, "Exception while closing JmsBag (session)", e);
-                }
-            }
-
-            if ( connection != null ) {
-                try {
-                     connection.stop();
-                } catch ( Exception e ) {
-                    logger.log(Level.WARNING, "Exception while closing JmsBag (stop connection)", e);
+        if ( !closed ) {
+            try {
+                if ( session != null ) {
+                    try {
+                        session.close();
+                    } catch ( Exception e ) {
+                        handleCloseError( "session", e );
+                    }
                 }
 
-                try {
-                    connection.close();
-                } catch ( Exception e ) {
-                    logger.log(Level.WARNING, "Exception while closing JmsBag (connection)", e);
-                }
-            }
+                if ( connection != null ) {
+                    try {
+                         connection.stop();
+                    } catch ( Exception e ) {
+                        handleCloseError( "stop connection", e );
+                    }
 
-            if ( jndiContext != null ) {
-                try {
-                     jndiContext.close();
-                } catch ( Exception e ) {
-                    logger.log(Level.WARNING, "Exception while closing JmsBag (jndi)", e);
+                    try {
+                        connection.close();
+                    } catch ( Exception e ) {
+                        handleCloseError( "connection", e );
+                    }
                 }
+
+                if ( jndiContext != null ) {
+                    try {
+                         jndiContext.close();
+                    } catch ( Exception e ) {
+                        handleCloseError( "jndi", e );
+                    }
+                }
+            } finally {
+                closed = true;
             }
-        } finally {
-            closed = true;
         }
+    }
+
+    private void handleCloseError( final String detail, final Exception exception ) {
+        logger.log(
+                Level.WARNING,
+                "Error closing JmsBag ("+detail+"): " + ExceptionUtils.getMessage( exception ),
+                ExceptionUtils.getDebugException(exception) );
     }
 
     private void check() {
