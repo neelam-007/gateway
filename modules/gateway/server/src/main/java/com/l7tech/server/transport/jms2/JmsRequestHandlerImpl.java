@@ -425,9 +425,9 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
                 // bug #5415 - we will close the MessageProducer only after a transaction is committed
                 Session session = bag.getSession();
-                if ( session instanceof QueueSession ) {
+                if ( session instanceof QueueSession && jmsReplyDest instanceof Queue ) {
                     responseProducer = ((QueueSession)session).createSender( (Queue)jmsReplyDest );
-                } else if ( session instanceof TopicSession ) {
+                } else if ( session instanceof TopicSession && jmsReplyDest instanceof Topic ) {
                     responseProducer = ((TopicSession)session).createPublisher( (Topic)jmsReplyDest );
                 } else {
                     responseProducer = session.createProducer( jmsReplyDest );
