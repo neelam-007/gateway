@@ -480,7 +480,7 @@ class GlobalResourceImportContext {
             final String path = uri.getRawPath();
 
             int dirIndex = basePath.lastIndexOf( '/' );
-            while ( dirIndex >= 0 && !path.startsWith(basePath.substring( 0, dirIndex+1 )) && (dirIndex = basePath.lastIndexOf( '/', dirIndex-1 )) > 0 ) {
+            while ( dirIndex >= 0 && !path.startsWith(basePath.substring( 0, dirIndex+1 )) && (dirIndex = basePath.lastIndexOf( '/', dirIndex-1 )) >= 0 ) {
                 dirs++;
                 relativePath += "../";
             }

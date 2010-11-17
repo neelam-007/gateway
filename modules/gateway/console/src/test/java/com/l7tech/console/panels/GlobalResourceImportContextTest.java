@@ -28,6 +28,7 @@ public class GlobalResourceImportContextTest {
         testRelativizeUri( "https relativize", "https://host/1/2/3/4/file.txt", "https://host/1/2/3/4/file2.txt", "file2.txt" );
         testRelativizeUri( "distinct relativize", "http://host/1/2/3/4/file.txt", "https://host/1/2/3/4/file2.txt", "https://host/1/2/3/4/file2.txt" );
         testRelativizeUri( "distinct relativize 2", "file:/home/steve/www/warehouse_schema_include_parent.xsd", "http://localhost:8888/warehouse_schema_include_child.xsd", "http://localhost:8888/warehouse_schema_include_child.xsd");
+        testRelativizeUri( "bug 9437", "http://localhost:8888/path/to/schema/schema_dtd_abs.xsd", "http://localhost:8888/dtds/dtd1.dtd", "../../../dtds/dtd1.dtd" );
     }
 
     private void testRelativizeUri( final String description,

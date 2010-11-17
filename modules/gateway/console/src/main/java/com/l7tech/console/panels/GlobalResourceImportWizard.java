@@ -889,7 +889,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                     resourceHolder.addDependency( dependency.uri, dependency.uri );
 
                     if ( processDependencies.isProcess() && schemaDoc!=null && schemaDoc.getDoctype()!=null && schemaDoc.getDoctype().getSystemId()!=null &&
-                         absoluteUri!=null && dependency.originalReferenceUri!=null && dependency.originalReferenceUri.equals(schemaDoc.getDoctype().getSystemId()) ) {
+                         absoluteUri!=null && dependency.originalReferenceUri!=null && dependency.originalReferenceUri.equals(schemaDoc.getDoctype().getSystemId()) &&
+                         !absoluteUri.toString().equals(schemaDoc.getDoctype().getSystemId())) {
 
                         // Update the reference to point to the resolved document
                         final String dependencyReference = relativizeUri( resourceDocument.getUri(), absoluteUri ).toString();

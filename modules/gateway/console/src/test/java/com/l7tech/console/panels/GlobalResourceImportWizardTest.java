@@ -403,6 +403,54 @@ public class GlobalResourceImportWizardTest {
         assertFalse( "Imported resource error", confirmedResources.get(0).isError() );
     }
 
+    @BugNumber(9437) // Global Resources: Import updates incorrectly the System ID for DTD
+    @Test
+    public void testDependencyImportExistingDTD() throws Exception {
+        final GlobalResourceImportContext context = new GlobalResourceImportContext();
+        final ResourceEntry resourceEntry1 = resource( "http://localhost:8888/dtds/dtd1.dtd", DTD1, "dtd1" );
+        final ResourceEntry resourceEntry2 = resource( "http://localhost:8888/dtds/dtd_partial1.dtd", DTD_PARTIAL1, "partial1" );
+        final ResourceAdminStub resourceAdmin = new ResourceAdminStub( Arrays.asList( resourceEntry1, resourceEntry2 ));
+        resourceAdmin.setResolver( new Functions.UnaryThrows<String,String,IOException>(){
+            @Override
+            public String call( final String uri ) throws IOException {
+                if ( uri.equals( "http://localhost:8888/dtds/dtd_partial1.dtd" ) ) {
+                    return DTD_PARTIAL1;
+                } else if ( uri.equals( "http://localhost:8888/dtds/dtd1.dtd" ) ) {
+                    return DTD1;
+                }
+                throw new IOException("Cannot find resource : " + uri);
+            }
+        } );
+        final boolean[] importConfirmed = {false};
+        final List<ResourceHolder> confirmedResources = new ArrayList<ResourceHolder>();
+        final ImportAdvisor advisor = buildAdvisor( DependencyImportChoice.IMPORT, DependencyImportChoice.IMPORT, importConfirmed, confirmedResources );
+        final ChoiceSelector choiceSelector = new ChoiceSelector(){
+            @Override
+            public ImportChoice selectChoice( final ImportOption option, final String optionDetail, final ImportChoice defaultChoice, final String conflictDetail, final String resourceUri, final String resourceDescription ) {
+                ImportChoice choice = null;
+                switch( option ) {
+                    case CONFLICTING_URI:
+                        choice = ImportChoice.EXISTING;
+                        break;
+                    default:
+                        fail("Unexpected option: " + option);
+                }
+                return choice;
+            }
+        };
+        final Functions.UnaryThrows<ResourceEntryHeader, Collection<ResourceEntryHeader>, IOException> entitySelector = buildEntitySelector();
+        final ResourceTherapist resourceTherapist = buildResourceTherapist();
+
+        // Since the dependencies are already present (we select use existing resource) it
+        // is expected that no changes are made to the content and no dependencies are added.
+        // The DTD reference in the schema should not be updated since the existing URI will
+        // work.
+        boolean proceed = importDependencies( context, "http://localhost:8888/path/to/schema/schema_dtd_abs.xsd", ResourceType.XML_SCHEMA, SCHEMA_DTD_ABS, resourceAdmin, null, advisor, null, getLoggingErrorListener(), choiceSelector, entitySelector, resourceTherapist );
+        assertTrue( "Import success", proceed );
+        assertFalse( "Dependency import confirmed", importConfirmed[0] );
+        assertEquals( "Imported resource count", 0, confirmedResources.size() );
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( GlobalResourceImportWizardTest.class.getName() );
@@ -497,6 +545,7 @@ public class GlobalResourceImportWizardTest {
     private static final String SCHEMA1 = "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:schema1\"/>";
     private static final String SCHEMA2 = "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:schema2\"><import schemaLocation=\"schema1.xsd\" namespace=\"urn:schema1\"/></schema>";
     private static final String SCHEMA_DTD = "<!DOCTYPE schema PUBLIC \"dtd1\" \"dtd1.dtd\"><schema xmlns=\"http://www.w3.org/2001/XMLSchema\"/>";
+    private static final String SCHEMA_DTD_ABS = "<!DOCTYPE schema\nPUBLIC \"dtd1\" \"http://localhost:8888/dtds/dtd1.dtd\"\n[\n]><schema xmlns=\"http://www.w3.org/2001/XMLSchema\"/>";
     private static final String SCHEMA_INVALID = "invalid xml schema content";
 
     private static final String DTD1 = "<!ENTITY % partial1 PUBLIC 'partial1' 'dtd_partial1.dtd' >\n<!ENTITY % p1 'element'>\n%partial1;";
