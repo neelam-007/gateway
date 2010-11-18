@@ -662,9 +662,21 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
      */
     private DependencyInfo validateSchemaDependencies( final String systemId,
                                                        final String schemaDoc ) throws ObjectModelException, IOException, SAXException  {
+        Document schemaDocument;
+        try {
+            schemaDocument = parseSchema(systemId, schemaDoc);
+        } catch ( IOException e ) {
+            final String errorMessage = ExceptionUtils.getMessage(e);
+            if ( errorMessage.startsWith( "Could not resolve '" ) && errorMessage.endsWith("'") ) {
+                return new DependencyInfo( null, errorMessage.substring( 19, errorMessage.length()-1 ), false, null );    
+            } else {
+                throw e;
+            }
+        }
+
         final java.util.List<Element> dependencyElements = new ArrayList<Element>();
         final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
-        schemaReferenceProcessor.processDocumentReferences( parseSchema(systemId, schemaDoc), new DocumentReferenceProcessor.ReferenceCustomizer(){
+        schemaReferenceProcessor.processDocumentReferences( schemaDocument, new DocumentReferenceProcessor.ReferenceCustomizer(){
             @Override
             public String customize( final Document document,
                                      final Node node,
@@ -757,32 +769,33 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         }
 
         try {
-            XmlUtil.getSchemaTNS(uri, contents, schemaEntityResolver);
-        } catch (XmlUtil.BadSchemaException e) {
-            log.log(Level.WARNING, "issue with schema at hand", e);
-            String errMsg = ExceptionUtils.getMessage(e);
-            if (e.getCause() instanceof SAXException) {
-                errMsg = "A schema-parsing error occurred.\n" + errMsg + "\nPlease correct the invalid content in the schema.";
-            } else if (e.getCause() instanceof IOException) {
-                errMsg = "An IO error occurred.\n" + errMsg + "\nPlease try it again.";
-            }
-            displayError(errMsg, null);
-            return false;
-        }
-        try {
             if ( hasUnresolvedDependencies(uri, contents))
                 return false;
         } catch ( IOException e ) {
-            log.log(Level.WARNING, "issue with xml document", e);
+            log.log(Level.WARNING, "Error checking schema dependencies.", e);
             displayError("Error processing schema : " + e.getMessage(), null);
             return false;
          } catch (SAXException e) {
-            log.log(Level.WARNING, "issue with xml document", e);
+            log.log(Level.WARNING, "Error checking schema dependencies.", e);
             displayError("The schema is not formatted properly : " + e.getMessage(), null);
             return false;
         } catch ( ObjectModelException e ) {
             String errMsg = "Error processing schema: " + ExceptionUtils.getMessage(e);
             log.log(Level.WARNING, errMsg, ExceptionUtils.getDebugException(e));
+            displayError(errMsg, null);
+            return false;
+        }
+
+        try {
+            XmlUtil.getSchemaTNS(uri, contents, schemaEntityResolver);
+        } catch (XmlUtil.BadSchemaException e) {
+            log.log(Level.WARNING, "Error processing schema.", e);
+            String errMsg = ExceptionUtils.getMessage(e);
+            if (e.getCause() instanceof SAXException) {
+                errMsg = "A schema-parsing error occurred.\n" + errMsg + "\nPlease correct the invalid content in the schema.";
+            } else if (e.getCause() instanceof IOException) {
+                errMsg = "Error processing schema:\n" + errMsg;
+            }
             displayError(errMsg, null);
             return false;
         }
@@ -884,9 +897,15 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
     private Document parseSchema( final String schemaUri,
                                   final String schemaText ) throws SAXException, IOException {
+        return parseSchema( schemaUri, schemaText, schemaEntityResolver );
+    }
+
+    private Document parseSchema( final String schemaUri,
+                                  final String schemaText,
+                                  final EntityResolver entityResolver ) throws SAXException, IOException {
         final InputSource inputSource = new InputSource( schemaUri );
         inputSource.setCharacterStream( new StringReader( schemaText ) );
-        return XmlUtil.parse( inputSource, schemaEntityResolver );
+        return XmlUtil.parse( inputSource, entityResolver );
     }
 
     private void cancel() {
@@ -1003,32 +1022,20 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         final String schemaContent;
 
         // try to get document
-        Document doc;
         try {
             schemaContent = new String( schemaData, encoding );
-            doc = XmlUtil.parse(new InputSource(new StringReader(schemaContent)), schemaEntityResolver );
-        } catch (SAXException e) {
-            displayError(resources.getString("error.noxmlaturl") + " " + file.getAbsolutePath(), null);
-            log.log(Level.FINE, "cannot parse " + file.getAbsolutePath(), e);
-            return;
         } catch (IOException e) {
             displayError(resources.getString("error.noxmlaturl") + " " + file.getAbsolutePath(), null);
             log.log(Level.FINE, "cannot parse " + file.getAbsolutePath(), e);
             return;
         }
 
-        // check if it's a schema
-        if (docIsSchema(doc)) {
-            // set the new schema
-            importSchemaContent( file.toURI().toString(), schemaContent );
-        } else {
-            displayError(resources.getString("error.urlnoschema") + " " + file.getAbsolutePath(), null);
-        }
+        importSchemaContent( file.toURI().toString(), schemaContent );
     }
 
     private void readFromUrl(String url) {
         // get the schema
-        final String schema = fetchSchemaFromUrl(url, true);
+        final String schema = fetchSchemaFromUrl(url);
         
         // set the schema
         if ( schema != null ) {
@@ -1040,13 +1047,12 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
      * Fetch a schema by using the URL of a schema location.
      *
      * @param url the URL of the schema location
-     * @param reportErrorEnabled a flag indicating if an error dialog pops up if some errors occur.
      *
      * @return the schema XML content
      */
-    private String fetchSchemaFromUrl( final String url, final boolean reportErrorEnabled ) {
+    private String fetchSchemaFromUrl( final String url ) {
         if (url == null || url.length() < 1) {
-            if (reportErrorEnabled) displayError(resources.getString("error.nourl"), null);
+            displayError(resources.getString("error.nourl"), null);
             return null;
         }
 
@@ -1066,35 +1072,12 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         } catch (IOException e) {
             //this is likely to be a GenericHttpException
             final String errorMsg = "Cannot download document: " + ExceptionUtils.getMessage(e);
-            if (reportErrorEnabled) {
-                displayError(errorMsg, "Errors downloading file");
-            }
+            displayError(errorMsg, "Errors downloading file");
             log.log(Level.FINE, errorMsg, e);
             return null;
         }
 
-        final Document doc;
-        try {
-            doc = parseSchema(null, schemaXml);
-        } catch (SAXException e) {
-            if (reportErrorEnabled) displayError(resources.getString("error.noxmlaturl") + " " + url, null);
-            log.log(Level.FINE, "cannot parse " + url, e);
-            return null;
-        } catch ( IOException e ) {
-            if (reportErrorEnabled) displayError(resources.getString("error.noxmlaturl") + " " + url, null);
-            log.log(Level.FINE, "cannot process " + url, e);
-            return null;
-        }
-
-        // check if it's a schema
-        if (docIsSchema(doc)) {
-            // set the new schema
-            return schemaXml;
-        } else {
-            if (reportErrorEnabled) displayError(resources.getString("error.urlnoschema") + " " + url, null);
-        }
-
-        return null;
+        return schemaXml;
     }
 
     private void importSchemaContent( final String uri,
@@ -1105,6 +1088,25 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     private void importSchemaContent( final String uri,
                                       final String content,
                                       final Collection<ResourceDocumentResolver> resolvers ) {
+
+        final Document doc;
+        try {
+            doc = parseSchema( uri, content, new ResourceAdminEntityResolver(getResourceAdmin(), true));
+        } catch (SAXException e) {
+            displayError(resources.getString("error.noxmlaturl") + " " + uri, null);
+            log.log(Level.FINE, "cannot parse " + uri, e);
+            return;
+        } catch ( IOException e ) {
+            displayError(resources.getString("error.noxmlaturl") + " " + uri, null);
+            log.log(Level.FINE, "cannot process " + uri, e);
+            return;
+        }
+
+        // check if it's a schema
+        if (!docIsSchema(doc)) {
+            displayError(resources.getString("error.urlnoschema") + " " + uri, null);
+            return;
+        }
 
         final String[] contentHolder = new String[]{ content };
         final boolean update = GlobalResourceImportWizard.importDependencies(

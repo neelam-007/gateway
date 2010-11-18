@@ -52,16 +52,19 @@ class GlobalResourceImportContext {
         private final URI uri;
         private final File file;
         private final String content;
+        private final ResourceType type;
         private final ResourceDocumentResolver resolver;
 
         private ResourceInputSource( final File file,
                                      final URI uri,
                                      final String content,
+                                     final ResourceType type,
                                      final ResourceDocumentResolver resolver ) {
             if ( file == null && uri == null) throw new IllegalArgumentException("file or url is required.");
             if ( content == null && resolver == null) throw new IllegalArgumentException("content or resolver is required.");
             this.file = file;
             this.content = content;
+            this.type = type;
             this.resolver = resolver;
             this.uri = file!=null ? file.toURI() : uri;
         }
@@ -72,6 +75,10 @@ class GlobalResourceImportContext {
 
         public String getUriString() {
             return uri.toString();
+        }
+
+        public ResourceType getType() {
+            return type;
         }
 
         /**
@@ -425,16 +432,22 @@ class GlobalResourceImportContext {
     }
 
     ResourceInputSource newResourceInputSource( final File file ) {
-        return new ResourceInputSource( file, null, null, getResourceDocumentResolverForType(null) );
+        return new ResourceInputSource( file, null, null, null, getResourceDocumentResolverForType(null) );
     }
 
     ResourceInputSource newResourceInputSource( final URI uri, final ResourceType type ) {
-        return new ResourceInputSource( null, uri, null, getResourceDocumentResolverForType(type) );
+        return new ResourceInputSource( null, uri, null, type, getResourceDocumentResolverForType(type) );
     }
 
     ResourceInputSource newResourceInputSource( final URI uri,
                                                 final String content ) {
-        return new ResourceInputSource( null, uri, content, null );
+        return newResourceInputSource( uri, content, null );
+    }
+
+    ResourceInputSource newResourceInputSource( final URI uri,
+                                                final String content,
+                                                final ResourceType type ) {
+        return new ResourceInputSource( null, uri, content, type, null );
     }
 
     ResourceHolder newSchemaResourceHolder( final ResourceDocument resourceDocument,

@@ -287,7 +287,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         context.setResourceDocumentResolverForType( ResourceType.XML_SCHEMA, context.buildSmartResolver(  ResourceType.XML_SCHEMA, resourceAdmin, resolvers, choiceSelector, entitySelector, resourceTherapist ));
         context.setResourceDocumentResolverForType( ResourceType.DTD, context.buildSmartResolver(  ResourceType.DTD, resourceAdmin, resolvers, choiceSelector, entitySelector, resourceTherapist ));
         final Map<String,ResourceHolder> processedResources =
-                processResources( context, Collections.singleton( context.newResourceInputSource( uri, content ) ) );
+                processResources( context, Collections.singleton( context.newResourceInputSource( uri, content, type ) ) );
 
         for ( final ResourceHolder resourceHolder : processedResources.values() ) {
             if ( resourceHolder.isError() ) {
@@ -781,7 +781,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         ResourceDocument resourceDocument = null;
         try {
             resourceDocument = resourceInputSource.asResourceDocument();
-            processResource( context, resourceDocument, null, resourceType, null, processDependencies, processedResources );
+            processResource( context, resourceDocument, resourceInputSource.getType(), resourceType, null, processDependencies, processedResources );
         } catch ( SAXException e ) {
             handleResourceError( context, resourceInputSource.getUri(), resourceDocument, e, processedResources );
         } catch ( IOException e ) {

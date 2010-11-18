@@ -23,7 +23,13 @@ public class ResourceAdminEntityResolver implements EntityResolver2 {
     //- PUBLIC
 
     public ResourceAdminEntityResolver( final ResourceAdmin resourceAdmin ) {
+        this( resourceAdmin, false );
+    }
+
+    public ResourceAdminEntityResolver( final ResourceAdmin resourceAdmin,
+                                        final boolean allowRemote ) {
         this.resourceAdmin = resourceAdmin;
+        this.allowRemote = allowRemote;
     }
 
     @Override
@@ -45,6 +51,7 @@ public class ResourceAdminEntityResolver implements EntityResolver2 {
     //- PRIVATE
 
     private final ResourceAdmin resourceAdmin;
+    private final boolean allowRemote;
 
     private InputSource doResolve( final String publicId, final String baseURI, final String systemId ) throws IOException {
         InputSource inputSource = null;
@@ -57,21 +64,32 @@ public class ResourceAdminEntityResolver implements EntityResolver2 {
                 entry = resourceAdmin.findResourceEntryByUriAndType( systemId, ResourceType.DTD );
             }
 
+            String absoluteUri = null;
             if ( entry == null && baseURI != null ) {
                 // try by resolved URI
                 final URI uri = new URI( systemId );
                 if ( !uri.isAbsolute() ) {
                     final URI base = new URI(baseURI);
                     if ( base.isAbsolute() ) {
-                        entry = resourceAdmin.findResourceEntryByUriAndType( base.resolve( uri ).toString(), ResourceType.DTD );
+                        absoluteUri = base.resolve( uri ).toString();
+                        entry = resourceAdmin.findResourceEntryByUriAndType( absoluteUri, ResourceType.DTD );
                     }
+                } else {
+                    absoluteUri = systemId;
                 }
+            } else {
+                absoluteUri = systemId;
             }
 
             if ( entry != null ) {
                 inputSource = new InputSource();
                 inputSource.setSystemId( entry.getUri() );
                 inputSource.setCharacterStream( new StringReader( entry.getContent() ) );
+            } else if ( allowRemote && absoluteUri != null && (absoluteUri.toLowerCase().startsWith("http:") || absoluteUri.toLowerCase().startsWith("https:")) ) {
+                final String content = resourceAdmin.resolveResource( absoluteUri );
+                inputSource = new InputSource();
+                inputSource.setSystemId( absoluteUri );
+                inputSource.setCharacterStream( new StringReader( content ) );
             }
         } catch ( FindException e ) {
             // The schema could be from another source, but we cannot be sure it
