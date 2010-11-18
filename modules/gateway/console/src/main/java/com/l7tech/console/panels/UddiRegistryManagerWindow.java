@@ -185,23 +185,28 @@ public class UddiRegistryManagerWindow extends JDialog {
     }
 
     private void editAndSave(final UDDIRegistry uddiRegistry) {
-        final Runnable errorFunction = new Runnable() {
-            @Override
-            public void run() {
-                showErrorMessage("UDDIRegistry not found", "UDDI Registry no longer exists. Please reopen dialog.", null);
-            }
-        };
-        try {
-            final UDDIRegistry reg = getUDDIRegistryAdmin().findByPrimaryKey(uddiRegistry.getOid());
-            if(reg == null){
+        //Safely check for UDDIRegistry existence when it has a non default OID.
+        if(uddiRegistry.getOid() != UDDIRegistry.DEFAULT_OID){
+            final Runnable errorFunction = new Runnable() {
+                @Override
+                public void run() {
+                    showErrorMessage("UDDIRegistry not found", "UDDI Registry no longer exists. Please reopen dialog.", null);
+                }
+            };
+            
+            try {
+                final UDDIRegistry reg = getUDDIRegistryAdmin().findByPrimaryKey(uddiRegistry.getOid());
+                if (reg == null) {
+                    //if the registry is not found and has a non default id, then it was deleted by another manager
+                    errorFunction.run();
+                    return;
+                }
+
+            } catch (FindException e) {
+                //FindException is only thrown for a db exception, not for the entity not being found.
                 errorFunction.run();
                 return;
             }
-
-        } catch (FindException e) {
-            //UDDIRegistry no longer exists
-            errorFunction.run();
-            return;
         }
 
         final UddiRegistryPropertiesDialog dlg = new UddiRegistryPropertiesDialog(this, uddiRegistry, flags.canUpdateAll());

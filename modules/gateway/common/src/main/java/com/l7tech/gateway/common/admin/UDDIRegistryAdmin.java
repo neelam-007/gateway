@@ -43,6 +43,13 @@ public interface UDDIRegistryAdmin {
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=FIND_ENTITIES)
     Collection<UDDIRegistry> findAllUDDIRegistries() throws FindException;
 
+    /**
+     * Find a UDDIRegistry with by it's primary key
+     *
+     * @param registryOid long id of registry to find
+     * @return UDDIRegistry. Null if not found e.g. does not exist.
+     * @throws FindException Never thrown for the entity not existing. Any db exception is wrapped in a FindException.
+     */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.UDDI_REGISTRY, stereotype=MethodStereotype.FIND_ENTITY)
     UDDIRegistry findByPrimaryKey(long registryOid) throws FindException;
