@@ -28,11 +28,15 @@ import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Wizard that guides the administrator through the publication of a non-soap service.
  */
 public class PublishNonSoapServiceWizard extends Wizard {
+    private static final Logger logger = Logger.getLogger(PublishNonSoapServiceWizard.class.getName());
+
     public static PublishNonSoapServiceWizard getInstance(Frame parent) {
         IdentityProviderWizardPanel panel2 = null;
         NonSoapServicePanel panel1 = new NonSoapServicePanel(null);
@@ -85,16 +89,17 @@ public class PublishNonSoapServiceWizard extends Wizard {
             service.setOid(oid);
             PublishNonSoapServiceWizard.this.notify(new ServiceHeader(service));
         } catch (Exception e) {
+            final String message = "Unable to save the service '" + service.getName() + "'\n";
             if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                 JOptionPane.showMessageDialog(this,
-                  "Unable to save the service '" + service.getName() + "'\n" +
+                  message +
                   "because an existing service is already using the URI " + service.getRoutingUri(),
                   "Service already exists",
                   JOptionPane.ERROR_MESSAGE);
             } else {
-                e.printStackTrace();
+                logger.log(Level.INFO, message, e);
                 JOptionPane.showMessageDialog(this,
-                  "Unable to save the service '" + service.getName() + "'\n",
+                  message,
                   "Error",
                   JOptionPane.ERROR_MESSAGE);
             }
