@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.transport.jms2;
 
 import com.l7tech.common.io.XmlUtil;
@@ -13,6 +10,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -43,7 +41,7 @@ import java.util.logging.Logger;
 import static com.l7tech.server.ServerConfig.PARAM_JMS_MESSAGE_MAX_BYTES;
 
 /**
- * The JmsRequestHandler is responsible for processing inbound Jms request messages and prvoiding
+ * The JmsRequestHandler is responsible for processing inbound Jms request messages and providing
  * the appropriate response (or error handling).  This is the place in the JMS subsystem that hooks
  * into the SSG via the MessageProcessor.
  *
@@ -56,11 +54,10 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
     private MessageProducer responseProducer;
     private final ApplicationEventPublisher messageProcessingEventChannel;
     private final ServerConfig serverConfig;
-
+    private final ClusterMaster clusterMaster;
+    private static final boolean topicMasterOnly = SyspropUtil.getBoolean( "com.l7tech.server.transport.jms.topicMasterOnly", true );
 
     public JmsRequestHandlerImpl(ApplicationContext ctx) {
-
-//        this.springContext = ctx;
         if (ctx == null) {
             throw new IllegalArgumentException("Spring Context is required");
         }
@@ -68,6 +65,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         serverConfig = ctx.getBean("serverConfig", ServerConfig.class);
         stashManagerFactory = ctx.getBean("stashManagerFactory", StashManagerFactory.class);
         messageProcessingEventChannel = ctx.getBean("messageProcessingEventChannel", EventChannel.class);
+        clusterMaster = ctx.getBean("clusterMaster", ClusterMaster.class);
     }
 
 
@@ -87,7 +85,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                            final boolean transacted,
                            final QueueSender failureQueue,
                            final Message jmsRequest ) throws JmsRuntimeException {
-
         final Message jmsResponse;
         final InputStream requestStream;
         final ContentTypeHeader ctype;
@@ -99,6 +96,13 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         boolean messageTooLarge = false;
         Properties props = endpointCfg.getConnection().properties();
         try {
+            if ( topicMasterOnly && !endpointCfg.isQueue() && !clusterMaster.isMaster() ) {
+                status = AssertionStatus.NONE;
+                responseSuccess = true;
+                _logger.fine( "Not processing message from topic (node is not master)" );
+                return;
+            }
+
             try {
                 // Init content and type
                 long size = 0;
@@ -134,7 +138,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
                 // Gets the JMS message property to use as SOAPAction, if present.
                 String soapActionValue = null;
-                final String jmsMsgPropWithSoapAction = (String)endpointCfg.getConnection().properties().get(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION);
+                final String jmsMsgPropWithSoapAction = endpointCfg.getConnection().properties().getProperty(JmsConnection.JMS_MSG_PROP_WITH_SOAPACTION);
                 if (jmsMsgPropWithSoapAction != null) {
                     soapActionValue = (String)reqJmsMsgProps.get(jmsMsgPropWithSoapAction);
                     if (_logger.isLoggable(Level.FINER))
@@ -346,7 +350,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
     private ContentTypeHeader getContentType(Message jmsRequest, Properties props)
             throws JmsRuntimeException, JMSException, IOException {
-        ContentTypeHeader ctype = null;
+        ContentTypeHeader ctype;
         String requestCtype = null;
 
         if (jmsRequest instanceof TextMessage) return ContentTypeHeader.XML_DEFAULT;
