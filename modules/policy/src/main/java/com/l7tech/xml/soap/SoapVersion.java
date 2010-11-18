@@ -95,6 +95,25 @@ public enum SoapVersion {
     }
 
     /**
+     * Get the SoapVersion for the given version text.
+     *
+     * @param versionNumber The version number, e.g. "1.1"
+     * @return The soap version that matches or UNKNOWN
+     */
+    public static SoapVersion versionNumberToSoapVersion( final String versionNumber ) {
+        SoapVersion soapVersion = SoapVersion.UNKNOWN;
+
+        for ( final SoapVersion version : values() ) {
+            if ( version.getVersionNumber().equals( versionNumber )) {
+                soapVersion = version;
+                break;
+            }
+        }
+
+        return soapVersion;
+    }
+
+    /**
      * Lookup a SoapVersion by its content type header.
      *
      * @param contentTypeBase a base content type, ie just "text/xml" or "application/soap+xml".  Required.

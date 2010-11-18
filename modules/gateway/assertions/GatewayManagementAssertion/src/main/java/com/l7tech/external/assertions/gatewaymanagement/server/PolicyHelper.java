@@ -71,6 +71,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Triple;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.soap.SoapVersion;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -236,6 +237,7 @@ public class PolicyHelper {
         PolicyType policyType = getPolicyType( policyValidationContext.getPolicyType() );
         String policyInternalTag = null;
         boolean soap = isSoap( policyValidationContext.getProperties() );
+        SoapVersion soapVersion = soap ? getSoapVersion( policyValidationContext.getProperties() ) : null;
         final Map<String, ResourceSet> resourceSetMap = resourceHelper.getResourceSetMap( policyValidationContext.getResourceSets() );
         Wsdl wsdl = getWsdl( resourceHelper.getResources( resourceSetMap, ResourceHelper.WSDL_TAG, false, null ) );
         Assertion assertion = getAssertion( resourceHelper.getResources( resourceSetMap, ResourceHelper.POLICY_TAG, false, null ));
@@ -253,12 +255,13 @@ public class PolicyHelper {
             policyInternalTag = policy.getInternalTag();
             soap = policy.isSoap();
             wsdl = resolver.resolveWsdl();
+            soapVersion = resolver.resolveSoapVersion();
         }
 
         // Run the validator
         final PolicyValidatorResult result;
         try {
-            result = policyValidator.validate( assertion, new com.l7tech.policy.validator.PolicyValidationContext(policyType, policyInternalTag, wsdl, soap, null), licenseManager );
+            result = policyValidator.validate( assertion, new com.l7tech.policy.validator.PolicyValidationContext(policyType, policyInternalTag, wsdl, soap, soapVersion), licenseManager );
         } catch ( InterruptedException e ) {
             Thread.currentThread().interrupt();
             throw new ResourceFactory.ResourceAccessException(e);
@@ -575,6 +578,7 @@ public class PolicyHelper {
     interface PolicyResolver {
         Policy resolve() throws ResourceFactory.ResourceNotFoundException;
         Wsdl resolveWsdl() throws ResourceFactory.ResourceNotFoundException;
+        SoapVersion resolveSoapVersion() throws ResourceFactory.ResourceNotFoundException;
     }
 
     //- PRIVATE
@@ -598,6 +602,19 @@ public class PolicyHelper {
         }
 
         return soap;
+    }
+
+    private SoapVersion getSoapVersion( final Map<String,Object> properties ) {
+        SoapVersion soapVersion = null;
+
+        if ( properties != null && properties.get( "soapVersion" ) != null ) {
+            final String soapVersionText = properties.get( "soapVersion" ).toString().trim();
+            if ( soapVersionText != null ) {
+                soapVersion = SoapVersion.versionNumberToSoapVersion( soapVersionText );
+            }
+        }
+
+        return soapVersion;
     }
 
     private PolicyType getPolicyType( final PolicyDetail.PolicyType policyType ) {

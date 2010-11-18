@@ -365,6 +365,20 @@ public class GatewayManagementClientTest {
         setResponse( "Service_ValidatePolicy_Response.xml" );
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final GatewayManagementClient gmc = new GatewayManagementClient(
+                new String[]{ "gateway", "validate", "-type", "service", "-in", "<Service xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"21\" id=\"17268736\"><ServiceDetail version=\"21\" id=\"17268736\"><Name>Warehouse</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/wex</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping><SoapMapping><Lax>true</Lax></SoapMapping></ServiceMappings><Properties><Property key=\"wssProcessingEnabled\"><BooleanValue>true</BooleanValue></Property><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property><Property key=\"soapVersion\"><StringValue>1.1</StringValue></Property><Property key=\"internal\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;&lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;&lt;L7p:EchoRoutingAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;</Resource></ResourceSet></Resources></Service>" },
+                out,
+                out );
+        int exitCode = gmc.run();
+        String output = out.toString();
+        assertEquals( "Exit code", 0, exitCode );
+        assertTrue( "Expected validation result:\n" + output , output.contains("<PolicyValidationResult") && output.contains( "Credentials are collected but not authenticated." ));
+    }
+
+    @Test
+    public void testValidatePolicyInputNoSoapVersion() throws Exception {
+        setResponse( "Service_ValidatePolicy_Response.xml" );
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final GatewayManagementClient gmc = new GatewayManagementClient(
                 new String[]{ "gateway", "validate", "-type", "service", "-in", "<Service xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"21\" id=\"17268736\"><ServiceDetail version=\"21\" id=\"17268736\"><Name>Warehouse</Name><Enabled>true</Enabled><ServiceMappings><HttpMapping><UrlPattern>/wex</UrlPattern><Verbs><Verb>POST</Verb></Verbs></HttpMapping><SoapMapping><Lax>true</Lax></SoapMapping></ServiceMappings><Properties><Property key=\"wssProcessingEnabled\"><BooleanValue>true</BooleanValue></Property><Property key=\"soap\"><BooleanValue>true</BooleanValue></Property><Property key=\"internal\"><BooleanValue>false</BooleanValue></Property></Properties></ServiceDetail><Resources><ResourceSet tag=\"policy\"><Resource type=\"policy\">&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;&lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;&lt;L7p:EchoRoutingAssertion/&gt;&lt;/wsp:All&gt;&lt;/wsp:Policy&gt;</Resource></ResourceSet></Resources></Service>" },
                 out,
                 out );

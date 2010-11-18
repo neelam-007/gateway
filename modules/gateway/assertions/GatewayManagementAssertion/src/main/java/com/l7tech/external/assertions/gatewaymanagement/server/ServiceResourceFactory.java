@@ -132,6 +132,10 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
                             throw new ResourceAccessException("Invalid WSDL");
                         }
                     }
+                    @Override
+                    public SoapVersion resolveSoapVersion() throws ResourceNotFoundException {
+                        return getService().getSoapVersion();
+                    }
                 } );
             }
         }, true, ResourceNotFoundException.class, InvalidResourceException.class );

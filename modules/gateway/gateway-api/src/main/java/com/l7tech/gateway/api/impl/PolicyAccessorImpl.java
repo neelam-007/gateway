@@ -134,7 +134,7 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
             ServiceMO service = (ServiceMO) managedObject;
             require( "serviceDetail", service.getServiceDetail() );
             require( "resourceSets", service.getResourceSets() );
-            context.setProperties( Collections.<String,Object>singletonMap( "soap", isSoap(service.getServiceDetail().getProperties()) ));
+            context.setProperties( buildServicePropertiesMap( service ) );
             context.setResourceSets( combineResourceSets( service.getResourceSets(), resourceSets ) );
         } else {
             throw new AccessorException("Policy validation does not support '"+(managedObject==null ? "<null>" : managedObject.getClass().getName())+"'");
@@ -202,6 +202,26 @@ class PolicyAccessorImpl<AO extends AccessibleObject> extends AccessorImpl<AO> i
         }
 
         return soap;
+    }
+
+    private String getSoapVersion( final Map<String,Object> properties ) {
+        String soapVersion = null;
+
+        if ( properties != null && properties.get( "soapVersion" ) instanceof String ) {
+            soapVersion = (String) properties.get( "soapVersion" );
+        }
+
+        return soapVersion;
+    }
+
+    private Map<String, Object> buildServicePropertiesMap( final ServiceMO service ) {
+        final Map<String, Object> properties = new HashMap<String,Object>();
+        properties.put(  "soap", isSoap(service.getServiceDetail().getProperties()) );
+        final String soapVersion = getSoapVersion(service.getServiceDetail().getProperties());
+        if ( soapVersion != null ) {
+            properties.put(  "soapVersion", soapVersion );
+        }
+        return properties;
     }
 
     /**

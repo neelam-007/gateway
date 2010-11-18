@@ -5,6 +5,9 @@
         <Property key="soap">
             <BooleanValue>true</BooleanValue>
         </Property>
+        <Property key="soapVersion">
+            <StringValue>1.1</StringValue>
+        </Property>
     </Properties>
     <Resources>
         <ResourceSet tag="policy" rootUrl="#1">

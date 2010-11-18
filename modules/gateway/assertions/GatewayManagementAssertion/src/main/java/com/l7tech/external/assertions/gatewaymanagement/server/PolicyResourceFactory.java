@@ -20,6 +20,7 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.ArrayList;
@@ -90,6 +91,10 @@ public class PolicyResourceFactory extends EntityManagerResourceFactory<PolicyMO
                     }
                     @Override
                     public Wsdl resolveWsdl() throws ResourceNotFoundException {
+                        return null;
+                    }
+                    @Override
+                    public SoapVersion resolveSoapVersion() throws ResourceNotFoundException {
                         return null;
                     }
                 } );
