@@ -416,15 +416,17 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
         ResourceHolder resource = null;
 
         // check for exact URI match
-        for ( final ResourceHolder resourceHolder : resources ) {
-            if ( resourceHolder.getType()==resourceType && resourceHolder.getSystemId().equals( uri ) ) {
-                resource = resourceHolder;
-                break;
+        if ( uri != null ) {
+            for ( final ResourceHolder resourceHolder : resources ) {
+                if ( resourceHolder.getType()==resourceType && resourceHolder.getSystemId().equals( uri ) ) {
+                    resource = resourceHolder;
+                    break;
+                }
             }
         }
 
         // check for resolved URI match
-        if ( resource == null && baseUri != null ) {
+        if ( resource == null && baseUri != null && uri != null ) {
             try {
                 final String resolvedUri = new URI(baseUri).resolve( uri ).toString();
                 for ( final ResourceHolder resourceHolder : resources ) {
