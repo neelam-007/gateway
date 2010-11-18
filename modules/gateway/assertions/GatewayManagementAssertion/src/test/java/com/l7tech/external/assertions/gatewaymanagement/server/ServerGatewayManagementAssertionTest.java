@@ -213,8 +213,10 @@ public class ServerGatewayManagementAssertionTest {
         final Element serviceContainer = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Service");
         final Element service = XmlUtil.findExactlyOneChildElementByName(serviceContainer, NS_GATEWAY_MANAGEMENT, "ServiceDetail");
         final Element name = XmlUtil.findExactlyOneChildElementByName(service, NS_GATEWAY_MANAGEMENT, "Name");
+        final Element properties = XmlUtil.findExactlyOneChildElementByName(service, NS_GATEWAY_MANAGEMENT, "Properties");
 
         assertEquals("Service name", "Test Service 2", XmlUtil.getTextValue(name));
+        assertEquals("Service soapVersion", "unspecified", getPropertyValue(properties, "soapVersion"));
     }
 
     @Test
@@ -567,6 +569,9 @@ public class ServerGatewayManagementAssertionTest {
                 "                    <l7:Property key=\"soap\">\n" +
                 "                        <l7:BooleanValue>true</l7:BooleanValue>\n" +
                 "                    </l7:Property>\n" +
+                "                    <l7:Property key=\"soapVersion\">\n" +
+                "                        <l7:StringValue>1.2</l7:StringValue>\n" +
+                "                    </l7:Property>\n" +
                 "                    <l7:Property key=\"internal\">\n" +
                 "                        <l7:BooleanValue>false</l7:BooleanValue>\n" +
                 "                    </l7:Property>\n" +
@@ -595,12 +600,14 @@ public class ServerGatewayManagementAssertionTest {
         final Element service = XmlUtil.findExactlyOneChildElementByName(soapBody, NS_GATEWAY_MANAGEMENT, "Service");
         final Element serviceDetail = XmlUtil.findExactlyOneChildElementByName(service, NS_GATEWAY_MANAGEMENT, "ServiceDetail");
         final Element serviceDetailName = XmlUtil.findExactlyOneChildElementByName(serviceDetail, NS_GATEWAY_MANAGEMENT, "Name");
+        final Element properties = XmlUtil.findExactlyOneChildElementByName(serviceDetail, NS_GATEWAY_MANAGEMENT, "Properties");
 
         assertEquals("Service id", "2", service.getAttribute( "id" ));
         assertEquals("Service version", "1", service.getAttribute( "version" ));
         assertEquals("Service detail id", "2", serviceDetail.getAttribute( "id" ));
         assertEquals("Service detail version", "1", serviceDetail.getAttribute( "version" ));
         assertEquals("Service detail name", "Test Service 2", XmlUtil.getTextValue(serviceDetailName));
+        assertEquals("Service soapVersion", "1.2", getPropertyValue(properties, "soapVersion"));
     }
 
     @Test
@@ -1563,6 +1570,23 @@ public class ServerGatewayManagementAssertionTest {
         } finally {
             ResourceUtils.closeQuietly( context );
         }
+    }
+
+    private String getPropertyValue( final Element propertiesElement,
+                                     final String propertyName ) {
+        String value = null;
+
+        for ( final Element propertyElement : XmlUtil.findChildElementsByName( propertiesElement, NS_GATEWAY_MANAGEMENT, "Property" ) ) {
+            if ( propertyName.equals(propertyElement.getAttributeNS( null, "key" )) ) {
+                final Element valueElement = XmlUtil.findFirstChildElement( propertyElement );
+                if ( valueElement != null ) {
+                    value = XmlUtil.getTextValue( valueElement );
+                }
+                break;
+            }
+        }
+
+        return value;
     }
 
     private static class MockServiceManager extends EntityManagerStub<PublishedService,ServiceHeader> implements ServiceManager {

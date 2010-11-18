@@ -25,6 +25,9 @@
             <Property key="soap">
                 <BooleanValue>true</BooleanValue>
             </Property>
+            <Property key="soapVersion">
+                <StringValue>unspecified</StringValue>
+            </Property>
             <Property key="internal">
                 <BooleanValue>false</BooleanValue>
             </Property>

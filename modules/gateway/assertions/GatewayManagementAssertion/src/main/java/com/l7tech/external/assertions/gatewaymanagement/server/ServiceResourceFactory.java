@@ -30,6 +30,7 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
 import com.l7tech.util.Functions;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.wsdl.WSDLException;
@@ -53,6 +54,8 @@ import java.util.UUID;
 public class ServiceResourceFactory extends EntityManagerResourceFactory<ServiceMO, PublishedService, ServiceHeader> {
 
     //- PUBLIC
+
+    public static final String UNKNOWN_SOAP_VERSION = "unspecified";
 
     public ServiceResourceFactory( final RbacServices services,
                                    final SecurityFilter securityFilter,
@@ -163,6 +166,9 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         serviceDetail.setServiceMappings( buildServiceMappings(publishedService) );
         final Map<String,Object> properties = getProperties( publishedService, PublishedService.class );
         properties.put( "policyRevision", policy.getVersionOrdinal() );
+        if ( publishedService.isSoap() ) {
+            properties.put( "soapVersion", soapVersionToString(publishedService.getSoapVersion()) );
+        }
         serviceDetail.setProperties( properties );
 
         return service;
@@ -202,6 +208,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         service.setLaxResolution( isLaxResolution( getServiceMapping(serviceDetail.getServiceMappings(), ServiceDetail.SoapMapping.class) ) );
         service.getPolicy().setXml( policyHelper.validatePolicySyntax(policyResource.getContent()) );
         setProperties( service, serviceDetail.getProperties(), PublishedService.class );
+        setSoapVersion( service, serviceDetail.getProperties().get( "soapVersion" ) );
         addWsdl( service, serviceDocuments, wsdlResources );
         service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
 
@@ -228,6 +235,9 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         oldPublishedService.setHttpMethods( newPublishedService.getHttpMethodsReadOnly() );
         oldPublishedService.setLaxResolution( newPublishedService.isLaxResolution() );
         oldPublishedService.setWssProcessingEnabled( newPublishedService.isWssProcessingEnabled() );
+        if ( newPublishedService.soapVersionSet() ) {
+            oldPublishedService.setSoapVersion( newPublishedService.getSoapVersion() );
+        }
         oldPublishedService.getPolicy().setXml( newPublishedService.getPolicy().getXml() );
 
         final boolean wsdlUpdated = isWsdlUpdated(oldEntityBag, newEntityBag);
@@ -570,4 +580,45 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         return documents;
     }
 
+    private void setSoapVersion( final PublishedService service,
+                                 final Object soapVersionObject ) throws InvalidResourceException {
+        if ( service.isSoap() ) {
+            final SoapVersion soapVersion = soapVersionFromString( soapVersionObject==null ? null : soapVersionObject.toString().trim() );
+            if ( soapVersion != null ) {
+                service.setSoapVersion( soapVersion );
+            }
+        }
+    }
+    
+    private String soapVersionToString( final SoapVersion soapVersion ) {
+        String soapVersionText = soapVersion != null ? soapVersion.getVersionNumber() : "";
+        if ( soapVersionText.isEmpty() ) {
+            soapVersionText = UNKNOWN_SOAP_VERSION;
+        }
+        return soapVersionText;
+    }
+
+    private SoapVersion soapVersionFromString( final String soapVersionText ) throws InvalidResourceException {
+        SoapVersion soapVersion = null;
+
+        if ( soapVersionText != null ) {
+            if ( UNKNOWN_SOAP_VERSION.equals( soapVersionText ) ) {
+                soapVersion = SoapVersion.UNKNOWN;
+            } else {
+                for ( final SoapVersion candidateVersion : SoapVersion.values() ) {
+                    if ( !candidateVersion.getVersionNumber().isEmpty() &&
+                         candidateVersion.getVersionNumber().equals( soapVersionText ) ) {
+                        soapVersion = candidateVersion;
+                        break;
+                    }
+                }
+            }
+
+            if ( soapVersion == null ) {
+                throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "unknown soapVersion");
+            }
+        }
+
+        return soapVersion;
+    }
 }

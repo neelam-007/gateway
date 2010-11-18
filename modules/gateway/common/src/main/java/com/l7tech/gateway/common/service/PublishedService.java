@@ -210,6 +210,10 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
         _soapVersion = soapVersion;        
     }
 
+    public boolean soapVersionSet() {
+        return _soapVersion!=null;
+    }
+
     /**
      * get base URI
      *

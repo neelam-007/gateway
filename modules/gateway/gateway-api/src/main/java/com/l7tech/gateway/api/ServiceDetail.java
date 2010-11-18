@@ -20,6 +20,7 @@ import java.util.Map;
  *   <li><code>internal</code> (read only): True for internal services.</li>
  *   <li><code>policyRevision</code> (read only): The policy revision number.</li>
  *   <li><code>soap</code>: True if the policy is for SOAP message processing.</li>
+ *   <li><code>soapVersion</code>: The SOAP version for the service (e.g. "1.1", "1.2", "unspecified"), since v5.4</li>
  *   <li><code>wssProcessingEnabled</code>: True if WS-Security processing is enabled for the service.</li>
  * </ul>
  * </p>
