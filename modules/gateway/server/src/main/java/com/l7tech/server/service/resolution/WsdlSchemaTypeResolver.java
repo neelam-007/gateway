@@ -57,7 +57,7 @@ class WsdlSchemaTypeResolver implements SoapUtil.SchemaTypeResolver {
             Element seqElement = XmlUtil.findFirstChildElementByName( typeElement, XMLConstants.W3C_XML_SCHEMA_NS_URI, "sequence" );
             if ( seqElement != null ) {
                 Element anyElement = XmlUtil.findFirstChildElementByName( seqElement, XMLConstants.W3C_XML_SCHEMA_NS_URI, "any" );
-                if ( XmlUtil.findNextElementSibling( anyElement ) == null ) {
+                if ( anyElement != null && XmlUtil.findNextElementSibling( anyElement ) == null ) {
                     Collection<QName> names = findAllElementQNames( typesCollection, new HashSet<Element>() );
                     if ( "0".equals( anyElement.getAttribute( "minOccurs" ) ) ) {
                         names.add( null ); // no payload is permitted
