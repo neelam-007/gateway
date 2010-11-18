@@ -283,6 +283,11 @@ public class ServerGatewayManagementAssertionTest {
                 "        <DestinationName>QueueName</DestinationName>\n" +
                 "        <Inbound>false</Inbound>\n" +
                 "        <Enabled>true</Enabled>\n" +
+                "        <Properties>\n"+
+                "            <Property key=\"type\">\n" +
+                "                <StringValue>Topic</StringValue>\n" +
+                "            </Property>\n" +
+                "        </Properties>\n"+
                 "    </JMSDestinationDetail>\n" +
                 "    <JMSConnection>\n" +
                 "        <Properties>\n" +
@@ -298,7 +303,35 @@ public class ServerGatewayManagementAssertionTest {
                 "        </Properties>\n" +
                 "    </JMSConnection>\n" +
                 "</JMSDestination>";
-        doCreate( resourceUri, payload, "2", "3" );
+        doCreate( resourceUri, payload, "2", "3", "4" );
+    }
+
+    @Test
+    public void testCreateJMSDestinationNoDetailProperties() throws Exception {
+        String resourceUri = "http://ns.l7tech.com/2010/04/gateway-management/jmsDestinations";
+        String payload =
+                "<JMSDestination xmlns=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
+                "    <JMSDestinationDetail version=\"0\" id=\"48037888\">\n" +
+                "        <Name>QueueName</Name>\n" +
+                "        <DestinationName>QueueName</DestinationName>\n" +
+                "        <Inbound>false</Inbound>\n" +
+                "        <Enabled>true</Enabled>\n" +
+                "    </JMSDestinationDetail>\n" +
+                "    <JMSConnection>\n" +
+                "        <Properties>\n" +
+                "            <Property key=\"jndi.initialContextFactoryClassname\">\n" +
+                "                <StringValue>com.sun.jndi.ldap.LdapCtxFactory</StringValue>\n" +
+                "            </Property>\n" +
+                "            <Property key=\"jndi.providerUrl\">\n" +
+                "                <StringValue>ldap://127.0.0.1/</StringValue>\n" +
+                "            </Property>\n" +
+                "            <Property key=\"queue.connectionFactoryName\">\n" +
+                "                <StringValue>cn=QueueConnectionFactory</StringValue>\n" +
+                "            </Property>\n" +
+                "        </Properties>\n" +
+                "    </JMSConnection>\n" +
+                "</JMSDestination>";
+        doCreate( resourceUri, payload, "2", "3", "4" );
     }
 
     @Test
@@ -317,7 +350,7 @@ public class ServerGatewayManagementAssertionTest {
                 "        <Template>true</Template>\n" +
                 "    </JMSConnection>\n" +
                 "</JMSDestination>";
-        doCreate( resourceUri, payload, "2", "3"  );
+        doCreate( resourceUri, payload, "2", "3", "4"  );
     }
 
     @Test

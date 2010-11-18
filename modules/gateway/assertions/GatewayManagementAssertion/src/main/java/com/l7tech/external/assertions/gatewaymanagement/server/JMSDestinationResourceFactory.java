@@ -69,7 +69,9 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         jmsDetails.setEnabled( !jmsEndpoint.isDisabled() );
         jmsDetails.setTemplate( jmsEndpoint.isTemplate() );
         jmsDetails.setInbound( jmsEndpoint.isMessageSource() );
-        jmsDetails.setProperties( getProperties( jmsEndpoint, JmsEndpoint.class ) );
+        final Map<String,Object> properties = getProperties( jmsEndpoint, JmsEndpoint.class );
+        properties.put( "type", jmsEndpoint.isQueue() ? JMSDestinationDetail.TYPE_QUEUE : JMSDestinationDetail.TYPE_TOPIC );
+        jmsDetails.setProperties( properties );
 
         final JMSConnection jmsConnection = ManagedObjectFactory.createJMSConnection();
         jmsConnection.setId( jmsConnectionEntity.getId() );
@@ -105,6 +107,7 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         final JmsEndpoint jmsEndpoint = new JmsEndpoint();
         jmsEndpoint.setName( jmsDestinationDetails.getName() );
         jmsEndpoint.setDestinationName( jmsDestinationDetails.getDestinationName() );
+        jmsEndpoint.setQueue( isQueue( jmsDestinationDetails.getProperties() ) );
         jmsEndpoint.setDisabled( !jmsDestinationDetails.isEnabled() );
         if ( jmsDestinationDetails.isTemplate() != null ) {
             jmsEndpoint.setTemplate( jmsDestinationDetails.isTemplate() );   
@@ -149,6 +152,7 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         // Copy endpoint properties that allow update
         oldJmsEndpoint.setName( newJmsEndpoint.getName() );
         oldJmsEndpoint.setDestinationName( newJmsEndpoint.getDestinationName() );
+        oldJmsEndpoint.setQueue( newJmsEndpoint.isQueue() );
         oldJmsEndpoint.setDisabled( newJmsEndpoint.isDisabled() );
         oldJmsEndpoint.setTemplate( newJmsEndpoint.isTemplate() );
         oldJmsEndpoint.setMessageSource( newJmsEndpoint.isMessageSource() );
@@ -230,6 +234,23 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
     //- PRIVATE
 
     private final JmsConnectionManager jmsConnectionManager;
+
+    private boolean isQueue( final Map<String,Object> properties ) throws InvalidResourceException {
+        boolean queue = true;
+
+        if ( properties != null && properties.get("type") instanceof String ) {
+            final String type = ((String) properties.get("type")).trim();
+            if ( JMSDestinationDetail.TYPE_QUEUE.equals( type ) ) {
+                queue = true;
+            } else if ( JMSDestinationDetail.TYPE_TOPIC.equals( type ) ) {
+                queue = false;
+            } else {
+                throw new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Invalid type '"+type+"'" );
+            }
+        }
+
+        return queue;
+    }
 
     private JmsProviderType providerType( final JMSConnection.JMSProviderType providerType ) throws InvalidResourceException {
         JmsProviderType type = null;

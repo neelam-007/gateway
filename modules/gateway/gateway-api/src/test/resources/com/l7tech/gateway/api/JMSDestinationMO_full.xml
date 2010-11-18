@@ -7,6 +7,9 @@
         <Enabled other:extendedAttribute="extension" xmlns:other="urn:othernamespace">true</Enabled>
         <Template other:extendedAttribute="extension" xmlns:other="urn:othernamespace">false</Template>
         <Properties extendedAttribute="extension">
+            <Property key="type"  extendedAttribute="extension">
+                <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">Queue</StringValue>
+            </Property>
             <Property key="replyType"  extendedAttribute="extension">
                 <StringValue other:extendedAttribute="extension" xmlns:other="urn:othernamespace">AUTOMATIC</StringValue>
             </Property>

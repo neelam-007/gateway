@@ -26,6 +26,16 @@ public class JMSDestinationDetail {
     //- PUBLIC
 
     /**
+     * Property value for Queue destination "type" property.
+     */
+    public static final String TYPE_QUEUE = "Queue";
+
+    /**
+     * Property value for Topic destination "type" property.
+     */
+    public static final String TYPE_TOPIC = "Topic";
+
+    /**
      * The identifier for the details.
      *
      * @return The identifier or null
