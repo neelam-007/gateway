@@ -541,7 +541,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                                                 final boolean policyOk,
                                                 final boolean remoteOk,
                                                 final boolean remoteForbidden ) throws IOException {
-        if (!policyOk && (uri.trim().toLowerCase().startsWith("policy:") || uri.contains( "policy:assertion:schemaval:sa" )))
+        if (!policyOk && isPolicySchemaUri( uri ) )
             throw new IOException("Schema URI not permitted in this context: " + uri );
 
         // Find a local schema by exact uri
@@ -575,6 +575,10 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
 
         throw new IOException("Unable to resolve schema " + describeResource( baseUri, uri ));
+    }
+
+    private boolean isPolicySchemaUri( final String uri ) {
+        return uri.trim().toLowerCase().startsWith("policy:") || uri.contains( "policy:assertion:schemaval:sa" );
     }
 
     private void validateRemoteSchemaUrl( final String url ) throws IOException {
@@ -848,7 +852,10 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         // registered by schema validation policy assertions (when only the dependencies
         // are global schemas)
         for ( final Map.Entry<String,SchemaResource> uriAndResource : registeredSchemasByUri.entrySet() ) {
-            requiredUris.add( uriAndResource.getKey() );
+            final String uri = uriAndResource.getKey();
+            if ( !isPolicySchemaUri( uri ) ) {
+                requiredUris.add( uri );
+            }
 
             boolean dependenciesHandled = false;
             final SchemaHandle handle = schemasBySystemId.get( uriAndResource.getKey() );
@@ -900,13 +907,15 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
        final Set<String> requiredTargetNamespaces = new HashSet<String>();
 
         for ( final Map.Entry<String,SchemaResource> uriAndResource : registeredSchemasByUri.entrySet() ) {
+            final boolean isPolicySchema = isPolicySchemaUri( uriAndResource.getKey() );
+
             boolean dependenciesHandled = false;
             final SchemaHandle handle = schemasBySystemId.get( uriAndResource.getKey() );
             if ( handle != null ) {
                 final CompiledSchema schema = handle.getTarget();
                 if ( schema != null ) {
                     dependenciesHandled = true;
-                    requiredTargetNamespaces.add( schema.getTargetNamespace() );
+                    if (!isPolicySchema) requiredTargetNamespaces.add( schema.getTargetNamespace() );
                     for ( final String uri : schema.getDependencies().keySet() ) {
                         final SchemaHandle dependencyHandle = schemasBySystemId.get( uri );
                         if ( dependencyHandle != null ) {
@@ -922,7 +931,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
             if ( !dependenciesHandled ) { // the registered schema is not compiled, so find the dependencies now
                 final SchemaResource schemaResource = uriAndResource.getValue();
                 try {
-                    requiredTargetNamespaces.add( XmlUtil.getSchemaTNS( schemaResource.getContent() ) );
+                    if (!isPolicySchema) requiredTargetNamespaces.add( XmlUtil.getSchemaTNS( schemaResource.getContent() ) );
 
                     // parse and permit registered DTDs, we still want the dependency
                     // information even if the schema is invalid due to DTDs being disabled
