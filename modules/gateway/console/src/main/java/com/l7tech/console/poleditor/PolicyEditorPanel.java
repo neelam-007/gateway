@@ -1349,7 +1349,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             EditorKit editorKit = messagesTextPane.getEditorKit();
             editorKit.read(sr, messagesTextPane.getDocument(), pos);
         } catch (Exception e) {
-            e.printStackTrace();
+            //noinspection ThrowableResultOfMethodCallIgnored
+            log.log(Level.INFO, "Unable to append message: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 
