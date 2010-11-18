@@ -69,7 +69,10 @@ public class ServerVariables {
 
         if (!name.startsWith(prefix)) throw new IllegalArgumentException("HTTP Param Getter can't handle variable named '" + name + "'!");
         String suffix = name.substring(prefix.length());
-        if (!suffix.startsWith(".")) throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the parameter name.");
+        if (!suffix.startsWith(".")){
+            logger.warning("Variable '" + name + "' does not have a period before the parameter name.");
+            return null;
+        }
         String hname = name.substring(prefix.length()+1);
         return hrk.getParameterValues(hname);
     }
