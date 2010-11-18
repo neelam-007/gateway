@@ -18,6 +18,7 @@ import com.l7tech.console.util.WsdlDependenciesResolver;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
@@ -30,6 +31,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.uddi.WsdlPortInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
 import org.w3c.dom.Document;
@@ -56,10 +58,12 @@ import java.util.regex.Pattern;
  * @author flascell<br/>
  */
 public class ServicePropertiesDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(ServicePropertiesDialog.class.getName());
+    private static final String PROP_ALLOW_DUPLICATE_LAX_URI = "com.l7tech.console.service.soap.allowDuplicateLaxUri";
+
     private final PublishedService subject;
     private final boolean wasTracingEnabled;
     private XMLEditor editor;
-    private final Logger logger = Logger.getLogger(ServicePropertiesDialog.class.getName());
     private Collection<ServiceDocument> newWsdlDocuments;
     private Document newWSDL = null;
     private String newWSDLUrl = null;
@@ -746,6 +750,19 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
 
+        // Warn if we are trying to save a SOAP service in lax mode with the same URI as another service (Bug #9316)
+        if (subject.isSoap() && laxResolutionCheckbox.isSelected() && newURI != null && !SyspropUtil.getBoolean(PROP_ALLOW_DUPLICATE_LAX_URI, false)) {
+            if (checkForDuplicateUri(subject.getOid(), newURI)) {
+                JOptionPane.showMessageDialog(this,
+                        "Unable to save the service '" + name + "'\n" +
+                                "because it is configured to allow requests for operations not supported by the WSDL\n" +
+                                "and another service is already using the URI " + newURI,
+                        "Service already exists",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+
         if (!getCheck.isSelected() && !putCheck.isSelected() && !postCheck.isSelected() && !deleteCheck.isSelected() && !headCheck.isSelected()) {
             int res = JOptionPane.showConfirmDialog(this, "Because no HTTP methods are selected, this service will " +
                                                           "not be accessible through HTTP. Are you sure you want to " +
@@ -879,6 +896,33 @@ public class ServicePropertiesDialog extends JDialog {
             if (errorMessage != null) msg += ":\n" + errorMessage;
             JOptionPane.showMessageDialog(this, msg);
         }
+    }
+
+    /**
+     * Check if an existing service with a different OID is using the same routing URI as the current service.
+     *
+     * @param serviceOid the current service's service OID
+     * @param routingUri the current service's routing URI
+     * @return true if an existing service with a different OID is using the same routing URI as the current service.
+     */
+    private static boolean checkForDuplicateUri(long serviceOid, String routingUri) {
+        boolean sawCollision = false;
+
+        try {
+            ServiceHeader[] servs = Registry.getDefault().getServiceManager().findAllPublishedServices(false);
+            for (ServiceHeader sh : Arrays.asList(servs)) {
+                if (sh.getOid() == serviceOid)
+                    continue;
+                if (routingUri.equals(sh.getRoutingUri())) {
+                    sawCollision = true;
+                    break;
+                }
+            }
+
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to check for URI collision with lax SOAP service: " + ExceptionUtils.getMessage(e), e);
+        }
+        return sawCollision;
     }
 
     private boolean uriConflictsWithServiceOIDResolver(String newURI) {

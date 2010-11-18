@@ -7,10 +7,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.message.SoapKnob;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Resolves messages to services.
@@ -84,43 +81,85 @@ public class ServiceResolutionManager {
         if (serviceSet.isEmpty()) {
             auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NO_MATCH);
             return null;
-        } else if (serviceSet.size() == 1) {
-            PublishedService service = serviceSet.iterator().next();
+        }
 
-            if (!service.isSoap() || service.isLaxResolution()) {
-                return service;
-            }
-
+        if (serviceSet.size() > 1) {
+            // Try one last filtering pass before giving up - we'll throw out strict SOAP services if the request is not SOAP (Bug #9316)
+            // XXX This may be a lot of effort to go to just in order to support mixing SOAP and non-SOAP services on the same URI
             if (rl != null && !notified) {
+                notified = true;
                 if (!rl.notifyMessageBodyAccess(req, serviceSet))
                     return null;
             }
 
-            // If this service is set to strict mode, validate that the message is soap, and that it matches an
-            // operation supported in the WSDL.
-            if (req.getKnob( SoapKnob.class) == null) {
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NOT_SOAP);
-                return null;
-            } else {
-                if ( rl != null ) {
-                    rl.notifyMessageValidation( req, service );
-                }
-
-                for ( final ServiceResolver resolver : validationResolvers ) {
-                    final Result services = resolver.resolve( req, serviceSet );
-                    if ( services.getMatches().isEmpty() ) {
-                        auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_OPERATION_MISMATCH, service.getName(), service.getId());
-                        return null;
-                    }
-                }
-
-                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED, service.getName(), service.getId());
-                return service;
+            if (!isSoap(req)) {
+                serviceSet = filterOutStrictSoapServices(serviceSet);
             }
-        } else {
+        }
+
+        if (serviceSet.size() != 1) {
             auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_MULTI);
             return null;
         }
+
+        PublishedService service = serviceSet.iterator().next();
+
+        if (!service.isSoap() || service.isLaxResolution()) {
+            return service;
+        }
+
+        if (rl != null && !notified) {
+            if (!rl.notifyMessageBodyAccess(req, serviceSet))
+                return null;
+        }
+
+        // If this service is set to strict mode, validate that the message is soap, and that it matches an
+        // operation supported in the WSDL.
+        if (req.getKnob( SoapKnob.class) == null) {
+            auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_NOT_SOAP);
+            return null;
+        }
+
+        if ( rl != null ) {
+            rl.notifyMessageValidation( req, service );
+        }
+
+        for ( final ServiceResolver resolver : validationResolvers ) {
+            final Result services = resolver.resolve( req, serviceSet );
+            if ( services.getMatches().isEmpty() ) {
+                auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_OPERATION_MISMATCH, service.getName(), service.getId());
+                return null;
+            }
+        }
+
+        auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED, service.getName(), service.getId());
+        return service;
+    }
+
+    private static boolean isSoap(Message req) throws ServiceResolutionException {
+        try {
+            return req.isSoap();
+        } catch (Exception e) {
+            throw new ServiceResolutionException("Unable to determine whether message is SOAP", e);
+        }
+    }
+
+    /**
+     * Remove any services from the specified collection that require SOAP and are not in lax mode.
+     *
+     * @param serviceSet the service list to filter.  Required, but may be empty.
+     * @return the filtered list.  May be empty, but never null.
+     */
+    private static Collection<PublishedService> filterOutStrictSoapServices(Collection<PublishedService> serviceSet) {
+        serviceSet = new HashSet<PublishedService>(serviceSet);
+        final Iterator<PublishedService> ssit = serviceSet.iterator();
+        while (ssit.hasNext()) {
+            PublishedService service = ssit.next();
+            if (service.isSoap() && !service.isLaxResolution()) {
+                ssit.remove();
+            }
+        }
+        return serviceSet;
     }
 
     /**

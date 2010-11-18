@@ -85,7 +85,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
         }
 
         // If it is an HTTP/XML service it should have been resolved by now.
-        if ( (isHttp && !isXml) || (!isHttp && !soapActionAvailable) ) {
+        if ( (isHttp && !isXml) || (!soapActionAvailable) ) {
             auditor.logAndAudit(MessageProcessingMessages.SR_SOAPACTION_NOT_HTTP_OR_SOAP);
             return false;
         } else {
