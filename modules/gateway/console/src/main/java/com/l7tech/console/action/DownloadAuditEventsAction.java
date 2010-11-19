@@ -4,6 +4,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.DownloadAuditEventsWindow;
+import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
+import com.l7tech.objectmodel.EntityType;
 
 import java.awt.*;
 
@@ -13,7 +15,7 @@ import java.awt.*;
 public class DownloadAuditEventsAction extends SecureAction {
 
     public DownloadAuditEventsAction() {
-        super(null);
+        super(new AttemptedReadAll(EntityType.AUDIT_RECORD));
     }
 
     public String getName() {
