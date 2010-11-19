@@ -604,7 +604,24 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             StringBuilder messageBuilder = new StringBuilder();
             messageBuilder.append("A dependency of the schema was not found:\n\n");
             messageBuilder.append(info.toString());
-            messageBuilder.append("\nWould you like to import or manually add missing schema dependencies?");
+
+            final int importChoice;
+            final int manualChoice;
+            final Object[] options;
+            final Object defaultOption;
+            if ( info.matchedByNamespace ) {
+                importChoice = Integer.MIN_VALUE;
+                manualChoice = JOptionPane.YES_OPTION;
+                options = new Object[]{"Update","Cancel"};
+                defaultOption = "Update";
+                messageBuilder.append("\nA global schema matches by namespace, select 'Update' to access global schemas\nor 'Cancel' to fix the schemaLocation or System ID.");                    
+            } else {
+                importChoice = JOptionPane.YES_OPTION;
+                manualChoice = JOptionPane.NO_OPTION;
+                options = new Object[]{"Import","Add","Cancel"};
+                defaultOption = "Import";
+                messageBuilder.append("\nWould you like to import or manually add missing schema dependencies?");
+            }
             String msg = messageBuilder.toString();
 
             final int width = Utilities.computeStringWidth(this.getFontMetrics(this.getFont()), msg);
@@ -622,9 +639,9 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                     JOptionPane.YES_NO_CANCEL_OPTION,
                     JOptionPane.WARNING_MESSAGE,
                     null,
-                    new Object[]{"Import","Add","Cancel"},
-                    "Import" );
-            if ( choice == JOptionPane.YES_OPTION ) {
+                    options,
+                    defaultOption );
+            if ( choice == importChoice ) {
                 final String wsdlUrl = service==null ? "" : service.getWsdlUrl();
                 final Collection<ResourceDocumentResolver> resolvers = !wsdlUrl.isEmpty() && schemaUri!=null && schemaUri.startsWith( wsdlUrl ) ?
                         Collections.<ResourceDocumentResolver>singleton( new WsdlSchemaResourceDocumentResolver(fullSchemas) ) :
@@ -647,7 +664,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                         }
                     },
                     GlobalResourceImportWizard.getUIErrorListener( this ));
-            } else if ( choice == JOptionPane.NO_OPTION  ) {
+            } else if ( choice == manualChoice ) {
                 DialogDisplayer.display(new GlobalResourcesDialog(this));
             }
 
@@ -668,7 +685,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         } catch ( IOException e ) {
             final String errorMessage = ExceptionUtils.getMessage(e);
             if ( errorMessage.startsWith( "Could not resolve '" ) && errorMessage.endsWith("'") ) {
-                return new DependencyInfo( null, errorMessage.substring( 19, errorMessage.length()-1 ), false, null );    
+                return new DependencyInfo( null, errorMessage.substring( 19, errorMessage.length()-1 ), false, null, false );
             } else {
                 throw e;
             }
@@ -725,17 +742,22 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             }
         }
 
-        // Only resolve by targetNamespace if there is no schemaLocation
-        // If there is a schemaLocation but it does not match a global schema we want
-        // to fix the reference.
-        if ( entryHeader == null && dependencyLocation.isEmpty() && dependencyNamespaceSet ) {
+        boolean matchedByNamespaceOnly = false;
+        if ( entryHeader == null && dependencyNamespaceSet ) {
             final Collection<ResourceEntryHeader> entries = resourceAdmin.findResourceHeadersByTargetNamespace(dependencyNamespace);
             if ( entries != null && !entries.isEmpty()) {
-                entryHeader = entries.iterator().next();
+                // Only resolve by targetNamespace if there is no schemaLocation
+                // If there is a schemaLocation but it does not match a global schema we want
+                // to fix the reference.
+                if ( !dependencyLocation.isEmpty() ) {
+                    matchedByNamespaceOnly = true;
+                } else {
+                    entryHeader = entries.iterator().next();
+                }
             }
         }
 
-        return entryHeader!=null ? null : new DependencyInfo( baseUri, dependencyLocation, dependencyNamespaceSet, dependencyNamespace );
+        return entryHeader!=null ? null : new DependencyInfo( baseUri, dependencyLocation, dependencyNamespaceSet, dependencyNamespace, matchedByNamespaceOnly );
     }
 
     /** @return true iff. info was committed successfully */
@@ -1207,15 +1229,18 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         private final String schemaLocation;
         private final boolean targetNamespaceSet;
         private final String targetNamespace;
+        private final boolean matchedByNamespace;
 
         private DependencyInfo( final String baseUri,
                                 final String schemaLocation,
                                 final boolean targetNamespaceSet,
-                                final String targetNamespace ) {
+                                final String targetNamespace,
+                                final boolean matchedByNamespace ) {
             this.baseUri = baseUri;
             this.schemaLocation = schemaLocation;
             this.targetNamespaceSet = targetNamespaceSet;
             this.targetNamespace = targetNamespace;
+            this.matchedByNamespace = matchedByNamespace;
         }
 
         public String toString() {
