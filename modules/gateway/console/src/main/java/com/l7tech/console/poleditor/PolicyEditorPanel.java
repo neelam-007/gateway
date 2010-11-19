@@ -1914,9 +1914,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             };
         }
-        // Set the mnemonic and accelerator key
-        exportPolicyAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_E);
-        exportPolicyAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_E, ActionEvent.ALT_MASK));
+        // Set the mnemonic
+        exportPolicyAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_R);
         return exportPolicyAction;
     }
 
@@ -2077,6 +2076,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             return migrateNamespacesAction;
 
         migrateNamespacesAction = new MigrateNamespacesAction();
+        migrateNamespacesAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_M);
 
         getPolicyTree().getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
             @Override
