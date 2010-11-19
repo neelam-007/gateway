@@ -28,7 +28,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * @author flascelles@layer7-tech.com
  */
 public class ThroughputQuota extends Assertion implements UsesVariables, SetsVariables {
-    public static final int TIME_UNIT_UNDEFINED = 0;
+    public static final int MAX_THROUGHPUT_QUOTA = 100000;
     public static final int PER_SECOND = 1;
     public static final int PER_MINUTE = 2;
     public static final int PER_HOUR = 3;
@@ -134,7 +134,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
 
     /**
      * Provided for backwards compatability for policies before bug5043 was fixed
-     * @param maxRequestsPerSecond int
+     * @param quota int
      */
     @SuppressWarnings({"UnusedDeclaration"})
     public void setQuota(long quota) {
@@ -273,8 +273,8 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
     public static String validateQuota(String quota) {
         String error = null;
         final String[] varsUsed = Syntax.getReferencedNames(quota);
-        if ( varsUsed.length==0 && !ValidationUtils.isValidLong(quota, false, 1, Long.MAX_VALUE) ) {
-            error = "Throughput quota must be a long value no less than " + 1;
+        if (varsUsed.length == 0 && !ValidationUtils.isValidLong(quota, false, 1, MAX_THROUGHPUT_QUOTA)) {
+            error = "Throughput quota must be an integer between 1 and " + MAX_THROUGHPUT_QUOTA;
         }
         return error;
     }
