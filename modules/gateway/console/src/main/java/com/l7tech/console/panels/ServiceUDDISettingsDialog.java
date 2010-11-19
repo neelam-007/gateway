@@ -80,15 +80,6 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
     private String selectedBusinessKey;
     private UDDIPublishStatus publishStatus;
 
-
-    /**
-     * DialogDisplayer is used in pop up messages originating from calls to viewToModel. Many of the actions which
-     * can be taken required user confirmation. In the SSM these pop up messages run sequentially, however in the
-     * Applet they do not. This dialog is a short cut to use to close a dialog when desired from a callback given to
-     * a DialogDisplayer method for correct Applet support, as a result all logic in viewToModel must maintain two
-     * methods of disposing, this could be refactored.
-     */
-    private Runnable disposeSettingsDialogCallback;
     private boolean isSystinet;
     private final Set<UDDIKeyedReference> keyedReferenceSet = new HashSet<UDDIKeyedReference>();
     private UDDIRegistryAdmin.EndpointScheme gifEndpointScheme;
@@ -204,13 +195,6 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
         publishFullPolicyCheckBox.addActionListener( enableDisableChangeListener );
         gifPublishCheckBox.addActionListener(enableDisableChangeListener);
         removeExistingBindingsCheckBox.addActionListener(enableDisableChangeListener);
-
-        disposeSettingsDialogCallback = new Runnable() {
-            @Override
-            public void run() {
-                ServiceUDDISettingsDialog.this.dispose();
-            }
-        };
 
         //Populate registry drop down
         loadUddiRegistries();
@@ -553,14 +537,40 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
     /**
      * Validate the view and update model if valid.
      *
-     * Warning: See disposeSettingsDialogCallback javadoc. All logic here must support sequential SSM flow control
-     * and flow control in the applet which makes use of disposeSettingsDialogCallback
+     * Warning: Do not use DialogDisplayer in this method without thinking about how it will affect usage in the Applet.
      * 
-     * @return true if view is valid and can be converted to model, false otherwise
+     * @return true if view is valid and can be converted to model, false otherwise. Return false to not dismiss the dialog.
      */
     private boolean viewToModel(){
         final UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
 
+        //PROCESS TABS OTHER THAN SERVICE
+        if ( uddiServiceControl != null ) {
+            final UDDIServiceControl test = UDDIServiceControl.copyFrom(uddiServiceControl);
+            if ( isPublishWsPolicyEnabled() ) {
+                uddiServiceControl.setPublishWsPolicyEnabled( true );
+                uddiServiceControl.setPublishWsPolicyFull( publishFullPolicyCheckBox.isSelected() );
+                uddiServiceControl.setPublishWsPolicyInlined( publishFullPolicyCheckBox.isSelected() && inlinePolicyIncludesCheckBox.isSelected() );
+            } else {
+                uddiServiceControl.setPublishWsPolicyEnabled( false );
+                uddiServiceControl.setPublishWsPolicyFull( false );
+                uddiServiceControl.setPublishWsPolicyInlined( false );
+            }
+            if(!test.equals(uddiServiceControl)){
+                try {
+                    uddiRegistryAdmin.saveUDDIServiceControlOnly( uddiServiceControl, null, null);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Error saving UDDIServiceControl '" + ExceptionUtils.getMessage(e) + "'.", e);
+                    JOptionPane.showMessageDialog(this, "Error saving UDDI settings: " + ExceptionUtils.getMessage(e)
+                            , "Error saving settings", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+            //note: if a rule is broken in any of these tabs, return false here so that the user can fix it.
+        }
+
+        //Process the SERVICE tab
+        //All actions in the publish tab are mutually exclusive. It is only possible to take a single action
+        //e.g. a single publish option. Following a publish an unpublish is the only option etc.
         if(publishProxiedWsdlRadioButton.isSelected()){
             if(uddiProxyServiceInfo == null){
                 if(publishWsdlValidators.validateWithDialog()){
@@ -637,7 +647,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
                         showErrorMessage("Cannot Update UDDI", "Publishing to UDDI in progress. Please close dialog and try again in a few minutes", null, false);
                         return false;
                     case PUBLISH_FAILED:
-                        DialogDisplayer.showMessageDialog(this, "Previous UDDI publishing attempts have failed; data may be orphaned in UDDI.", "UDDI Publish Errors", JOptionPane.WARNING_MESSAGE, null);
+                        JOptionPane.showMessageDialog(this, "Previous UDDI publishing attempts have failed; data may be orphaned in UDDI.", "UDDI Publish Errors", JOptionPane.WARNING_MESSAGE);
                         break;
                 }
 
@@ -656,28 +666,8 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
             }
         }
 
-        //nothing below here should stop the dialog from dismissing if execution reaches here
-        //above we have updated the state of the gateway so the dialog must dismiss.
-        //todo refactor so this constraint is removed
-        if ( uddiServiceControl != null ) {
-            if ( isPublishWsPolicyEnabled() ) {
-                uddiServiceControl.setPublishWsPolicyEnabled( true );
-                uddiServiceControl.setPublishWsPolicyFull( publishFullPolicyCheckBox.isSelected() );
-                uddiServiceControl.setPublishWsPolicyInlined( publishFullPolicyCheckBox.isSelected() && inlinePolicyIncludesCheckBox.isSelected() );
-            } else {
-                uddiServiceControl.setPublishWsPolicyEnabled( false );
-                uddiServiceControl.setPublishWsPolicyFull( false );
-                uddiServiceControl.setPublishWsPolicyInlined( false );
-            }
-            try {
-                uddiRegistryAdmin.saveUDDIServiceControlOnly( uddiServiceControl, null, null);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Error saving UDDIServiceControl '" + ExceptionUtils.getMessage(e) + "'.", e);
-                DialogDisplayer.showMessageDialog(this, "Error saving UDDI settings: " + ExceptionUtils.getMessage(e)
-                        , "Error saving settings", JOptionPane.ERROR_MESSAGE, null);
-            }
-        }
-
+        //The above processing of the SERVICE tab may have triggered an update to UDDI, in which case the dialog should dismiss.
+        //Nothing below here should return false.
         return true;
     }
 
@@ -685,36 +675,29 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
         try {
             uddiRegistryAdmin.updateProxiedServiceOnly(uddiProxyServiceInfo);
         } catch (UpdateException e) {
-            logger.log(Level.WARNING, "Problem updating UDDIProxiedService: " + e.getMessage());
-            DialogDisplayer.showMessageDialog(this, "Problem updating Gateway: " + e.getMessage()
-                    , "Problem updating", JOptionPane.ERROR_MESSAGE, null);
+            showErrorMessage("Problem updating", "Problem updating UDDIProxiedService: " + e.getMessage(), e, true);
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Problem finding UDDIProxiedService: " + e.getMessage());
-            DialogDisplayer.showMessageDialog(this, "Problem finding UDDIProxiedService: " + e.getMessage()
-                    , "Problem finding", JOptionPane.ERROR_MESSAGE, null);
+            showErrorMessage("Problem finding", "Problem finding UDDIProxiedService: " + e.getMessage(), e, true);
         }
     }
 
-    private boolean doShowDeleteWarningBeforeTakingAction(final Callable callable) {
-        final boolean [] choice = new boolean[1];
-        DialogDisplayer.showConfirmDialog(this,
-                                                   "UDDI information failed to delete and is waiting to retry. Do you want to continue and possibly leave data in UDDI?",
-                                                   "Confirm Removal from UDDI",
-                                                   JOptionPane.YES_NO_OPTION,
-                                                   JOptionPane.WARNING_MESSAGE, new DialogDisplayer.OptionListener() {
-                    @Override
-                    public void reportResult(int option) {
-                        if (option == JOptionPane.YES_OPTION){
-                            try {
-                                choice[0] = (Boolean) callable.call();
-                            } catch (Exception e) {
-                                //all callable implementations must catch and handle their errors correctly. This should not happen
-                                logger.log(Level.WARNING, "Error attempting delete from UDDI: " + ExceptionUtils.getMessage(e));
-                            }
-                        }
-                    }
-                });
-        return choice[0];
+    private boolean doShowDeleteWarningBeforeTakingAction(final Callable<Boolean> callable) {
+        final int proceed = JOptionPane.showConfirmDialog(this,
+                "UDDI information failed to delete and is waiting to retry. Do you want to continue and possibly leave data in UDDI?",
+                "Confirm Removal from UDDI",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        if(proceed == JOptionPane.YES_OPTION){
+            try {
+                return callable.call();
+            } catch (Exception e) {
+                //all callable implementations must catch and handle their errors correctly. This should not happen
+                logger.log(Level.WARNING, "Error attempting delete from UDDI: " + ExceptionUtils.getMessage(e));
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -723,9 +706,9 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
      */
     private boolean removeUDDIProxiedEndpoint(){
         if( publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED ){
-            Callable callable = new Callable() {
+            final Callable<Boolean> callable = new Callable<Boolean>() {
                 @Override
-                public Object call() throws Exception {
+                public Boolean call() throws Exception {
                     return doRemoveProxiedEndpoint();
                 }
             };
@@ -737,42 +720,37 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
 
     private boolean doRemoveProxiedEndpoint(){
         final boolean isGif = gifPublishCheckBox.isSelected();
-        final boolean [] choice = new boolean[1];
-        DialogDisplayer.showConfirmDialog(this,
+        final int proceed = JOptionPane.showConfirmDialog(this,
                 "Remove published Gateway " + ((isGif) ? "GIF " : "") + "endpoint from UDDI Registry?",
                 "Confirm Removal from UDDI",
                 JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
-                    @Override
-                    public void reportResult(int option) {
-                        if (option == JOptionPane.YES_OPTION) {
-                            choice[0] = true;
-                            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
-                            try {
-                                uddiRegistryAdmin.deleteGatewayEndpointFromUDDI(uddiProxyServiceInfo);
-                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to remove Gateway " + ((isGif) ? "GIF " : "") +
-                                                "endpoint from UDDI created successful",
-                                        "Successful Task Creation",
-                                        JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
-                            } catch (Exception ex) {
-                                final String msg = "Problem deleting published Gateway " + ((isGif) ? "GIF " : "") +
-                                        "endpoint from UDDI: " + ExceptionUtils.getMessage(ex);
-                                logger.log(Level.WARNING, msg);
-                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, msg
-                                        , "Error deleting from UDDI", JOptionPane.ERROR_MESSAGE, null);
-                            }
-                        }
-                    }
-                });
-        return choice[0];
+                JOptionPane.QUESTION_MESSAGE);
+
+        if(proceed == JOptionPane.YES_OPTION){
+            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+            try {
+                uddiRegistryAdmin.deleteGatewayEndpointFromUDDI(uddiProxyServiceInfo);
+                JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this,
+                        "Task to remove Gateway " + ((isGif) ? "GIF " : "") +
+                                "endpoint from UDDI created successful",
+                        "Successful Task Creation",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                final String msg = "Problem deleting published Gateway " + ((isGif) ? "GIF " : "") +
+                        "endpoint from UDDI: " + ExceptionUtils.getMessage(ex);
+                showErrorMessage("Error deleting from UDDI", msg, ex, true);
+            }
+            return true;
+        }
+
+        return false;
     }
 
     private boolean removeUDDIOverwrittenProxiedService(){
         if( publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED ){
-            Callable callable = new Callable() {
+            final Callable<Boolean> callable = new Callable<Boolean>() {
                 @Override
-                public Object call() throws Exception {
+                public Boolean call() {
                     return doDeleteOverwrittenService();
                 }
             };
@@ -783,38 +761,34 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
     }
 
     private boolean doDeleteOverwrittenService() {
-        final boolean [] choice = new boolean[1];
-        DialogDisplayer.showConfirmDialog(this,
-                                                   "Remove gateway bindingTemplates from overwritten BusinessService in UDDI Registry?",
-                                                   "Confirm Removal from UDDI",
-                                                   JOptionPane.YES_NO_OPTION,
-                                                   JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
-                    @Override
-                    public void reportResult(int option) {
-                        if (option == JOptionPane.YES_OPTION){
-                            choice[0] = true;
-                            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
-                            try {
-                                uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
-                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to remove gateway bindingTemplates from overwritten BusinessService in UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
+        final int proceed = JOptionPane.showConfirmDialog(this,
+                "Remove gateway bindingTemplates from overwritten BusinessService in UDDI Registry?",
+                "Confirm Removal from UDDI",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
 
-                            } catch (Exception ex) {
-                                logger.log(Level.WARNING, "Problem deleting overwritten BusinessService UDDI: " + ex.getMessage());
-                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, "Problem deleting overwritten BusinessService from UDDI Registry: " + ex.getMessage()
-                                        , "Error deleting from UDDI", JOptionPane.ERROR_MESSAGE, null);
-                            }
-                        }
-                    }
-                });
-        return choice[0];
+        if(proceed == JOptionPane.YES_OPTION){
+            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+            try {
+                uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
+                JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this,
+                        "Task to remove gateway bindingTemplates from overwritten BusinessService in UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (Exception ex) {
+                logger.log(Level.WARNING, "Problem deleting overwritten BusinessService UDDI: " + ex.getMessage());
+                JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this, "Problem deleting overwritten BusinessService from UDDI Registry: " + ex.getMessage()
+                        , "Error deleting from UDDI", JOptionPane.ERROR_MESSAGE);
+            }
+            return true;
+        }
+        return false;
     }
 
     private boolean removeUDDIProxiedService(){
         if( publishStatus.getPublishStatus() == UDDIPublishStatus.PublishStatus.DELETE_FAILED ){
-            Callable callable = new Callable() {
+            final Callable<Boolean> callable = new Callable<Boolean>() {
                 @Override
-                public Object call() throws Exception {
+                public Boolean call() throws Exception {
                     return doRemoveUDDIProxiedService();
                 }
             };
@@ -825,114 +799,85 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
     }
 
     private boolean doRemoveUDDIProxiedService(){
-        final boolean [] choice = new boolean[1];
-        DialogDisplayer.showConfirmDialog(this,
-                                                   "Remove published Gateway WSDL from UDDI Registry?",
-                                                   "Confirm Removal from UDDI",
-                                                   JOptionPane.YES_NO_OPTION,
-                                                   JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
-                    @Override
-                    public void reportResult(int option) {
-                        if (option == JOptionPane.YES_OPTION){
-                            choice[0] = true;
-                            final UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
-                            try {
-                                uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
-                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                        "Task to remove Gateway WSDL from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
+        final int proceed = JOptionPane.showConfirmDialog(this,
+                "Remove published Gateway WSDL from UDDI Registry?",
+                "Confirm Removal from UDDI",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
 
-                            } catch (Exception ex) {
-                                logger.log(Level.WARNING, "Problem deleting pubished Gateway WSDL from UDDI: " + ex.getMessage());
-                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, "Problem deleting Gateway WSDL from UDDI Registry: " + ex.getMessage()
-                                        , "Error deleting from UDDI", JOptionPane.ERROR_MESSAGE, null);
-                            }
-                        }
-                    }
-                });
-        return choice[0];
+        if(proceed == JOptionPane.YES_OPTION){
+            final UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+            try {
+                uddiRegistryAdmin.deleteGatewayWsdlFromUDDI(uddiProxyServiceInfo);
+                JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this,
+                        "Task to remove Gateway WSDL from UDDI created successful", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                showErrorMessage("Error deleting from UDDI",
+                        "Problem deleting pubished Gateway WSDL from UDDI: " + ExceptionUtils.getMessage(ex),
+                        ex, true);
+            }
+
+            return true;
+        }
+        return false;
     }
 
     private boolean publishUDDIProxiedService(){
-        final boolean [] choice = new boolean[1];
-        DialogDisplayer.showConfirmDialog(this,
-                                                   "Publish Gateway WSDL to UDDI Registry?",
-                                                   "Confirm Publish to UDDI Task",
-                                                   JOptionPane.YES_NO_OPTION,
-                                                   JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
-                    @Override
-                    public void reportResult(int option) {
-                        if (option == JOptionPane.YES_OPTION){
-                            choice[0] = true;
-                            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
-                            UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
-                            try {
-                                uddiRegistryAdmin.publishGatewayWsdl(service, uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected());
+        final int result = JOptionPane.showConfirmDialog(this,
+                "Publish Gateway WSDL to UDDI Registry?",
+                "Confirm Publish to UDDI Task",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
 
-                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                    "Task to publish Gateway WSDL to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
-                            } catch (Exception ex) {
-                                final String msg = "Could not create publish gateway WSDL to UDDI task: " + ExceptionUtils.getMessage(ex);
-                                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(ex));
-                                DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, msg,
-                                        "Error publishing to UDDI", JOptionPane.ERROR_MESSAGE, null);
-                            }
-                        }
-                    }
-                });
-        return choice[0];
+        if(result == JOptionPane.YES_OPTION){
+            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+            UDDIRegistry uddiRegistry = allRegistries.get(uddiRegistriesComboBox.getSelectedItem().toString());
+            try {
+                uddiRegistryAdmin.publishGatewayWsdl(service, uddiRegistry.getOid(), selectedBusinessKey, selectedBusinessName, updateWhenGatewayWSDLCheckBox.isSelected());
+
+                JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this,
+                    "Task to publish Gateway WSDL to UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                final String msg = "Could not create publish gateway WSDL to UDDI task: " + ExceptionUtils.getMessage(ex);
+                showErrorMessage("Error publishing to UDDI", msg, ex, true);
+            }
+            return true;
+        }
+        return false;
     }
 
-    private boolean overwriteExistingService(){
-        final boolean [] choice = new boolean[1];
+    private boolean overwriteExistingService() {
 
-        final Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                DialogDisplayer.showConfirmDialog(ServiceUDDISettingsDialog.this,
-                        "Overwrite existing BusinessService in UDDI with corresponding Gateway WSDL information?",
-                        "Confirm UDDI Overwrite Task",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE, new DialogDisplayer.OptionListener() {
-                            @Override
-                            public void reportResult(int option) {
-                                if (option == JOptionPane.YES_OPTION) {
-                                    UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
-                                    try {
-                                        uddiRegistryAdmin.overwriteBusinessServiceInUDDI(service, updateWhenGatewayWSDLCheckBoxOverwrite.isSelected());
-                                        choice[0] = true;
-                                        DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                                "Task to overwrite BusinessService in UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
-
-                                    } catch (Exception ex) {
-                                        final String msg = "Could not create overwrite BusinessService in UDDI task: " + ExceptionUtils.getMessage(ex);
-                                        logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(ex));
-                                        DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, msg,
-                                                "Error overwriting UDDI", JOptionPane.ERROR_MESSAGE, null);
-                                    }
-                                }
-                            }
-                        });
-            }
-        };
-
-        final boolean othersAffected = othersAffectedByModifyingOriginal();
-        if(othersAffected) {
-            DialogDisplayer.showConfirmDialog(this,
+        if (othersAffectedByModifyingOriginal()) {
+            final int proceed = JOptionPane.showConfirmDialog(this,
                     "Other published services have the same original service from UDDI. Modifying the original may cause problems. Continue?",
                     "Confirm modification of original business service",
-                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, new DialogDisplayer.OptionListener() {
-                        @Override
-                        public void reportResult(int option) {
-                            if(option == JOptionPane.YES_OPTION){
-                                runnable.run();
-                            }
-                        }
-                    });
-        } else{
-            runnable.run();
+                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (proceed != JOptionPane.YES_OPTION) {
+                return false;
+            }
         }
-        
-        return choice[0];
+
+        final int result = JOptionPane.showConfirmDialog(ServiceUDDISettingsDialog.this,
+                "Overwrite existing BusinessService in UDDI with corresponding Gateway WSDL information?",
+                "Confirm UDDI Overwrite Task",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (result == JOptionPane.YES_OPTION) {
+            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+            try {
+                uddiRegistryAdmin.overwriteBusinessServiceInUDDI(service, updateWhenGatewayWSDLCheckBoxOverwrite.isSelected());
+                JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this,
+                        "Task to overwrite BusinessService in UDDI created successfully", "Successful Task Creation", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (Exception ex) {
+                final String msg = "Could not create overwrite BusinessService in UDDI task: " + ExceptionUtils.getMessage(ex);
+                showErrorMessage("Error overwriting UDDI", msg, ex, true);
+            }
+            return true;
+        }
+        return false;
     }
 
     private boolean publishEndpointToBusinessService() {
@@ -948,67 +893,47 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
             messageType = JOptionPane.QUESTION_MESSAGE;
         }
 
-        final boolean [] choice = new boolean[1];
-
-        final Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                DialogDisplayer.showConfirmDialog(ServiceUDDISettingsDialog.this,
-                        msg,
-                        "Confirm Publish Endpoint to UDDI Task",
-                        JOptionPane.YES_NO_OPTION,
-                        messageType, new DialogDisplayer.OptionListener() {
-                            @Override
-                            public void reportResult(int option) {
-                                if (option == JOptionPane.YES_OPTION) {
-                                    choice[0] = true;
-                                    UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
-                                    try {
-                                        final Map<String, Object> props = new HashMap<String, Object>();
-                                        props.put(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG, keyedReferenceSet);//ok if null
-                                        if(isGif){
-                                            props.put(UDDIProxiedServiceInfo.GIF_SCHEME, endPointTypeComboBox.getSelectedItem());
-                                            uddiRegistryAdmin.publishGatewayEndpointGif(service, props);
-                                        } else {
-                                            uddiRegistryAdmin.publishGatewayEndpoint(service, removeExistingBindingsCheckBox.isSelected(), props);
-                                        }
-
-                                        DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this,
-                                                "Task to publish Gateway " + ((isGif) ? "GIF " : "") +
-                                                        "endpoint to UDDI created successfully",
-                                                "Successful Task Creation",
-                                                JOptionPane.INFORMATION_MESSAGE, disposeSettingsDialogCallback);
-                                    } catch (Exception ex) {
-                                        final String msg = "Could not create publish gateway " + ((isGif) ? "GIF " : "")
-                                                + "endpoint to UDDI task: " + ExceptionUtils.getMessage(ex);
-                                        logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(ex));
-                                        DialogDisplayer.showMessageDialog(ServiceUDDISettingsDialog.this, msg,
-                                                "Error publishing to UDDI", JOptionPane.ERROR_MESSAGE, null);
-                                    }
-                                }
-                            }
-                        });
-            }
-        };
-
-        final boolean othersAffected = othersAffectedByModifyingOriginal();
-        if(othersAffected) {
-            DialogDisplayer.showConfirmDialog(this,
+        if(othersAffectedByModifyingOriginal()) {
+            final int proceed = JOptionPane.showConfirmDialog(this,
                     "Other published services have the same original service from UDDI. Modifying the original may cause problems. Continue?",
                     "Confirm modification of original business service",
-                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, new DialogDisplayer.OptionListener() {
-                        @Override
-                        public void reportResult(int option) {
-                            if(option == JOptionPane.YES_OPTION){
-                                runnable.run();
-                            }
-                        }
-                    });
-        } else{
-            runnable.run();
+                    JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if(proceed != JOptionPane.YES_OPTION){
+                return false;
+            }
         }
 
-        return choice[0];
+        final int result = JOptionPane.showConfirmDialog(ServiceUDDISettingsDialog.this,
+                msg,
+                "Confirm Publish Endpoint to UDDI Task",
+                JOptionPane.YES_NO_OPTION,
+                messageType);
+
+        if(result == JOptionPane.YES_OPTION){
+            UDDIRegistryAdmin uddiRegistryAdmin = Registry.getDefault().getUDDIRegistryAdmin();
+            try {
+                final Map<String, Object> props = new HashMap<String, Object>();
+                props.put(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG, keyedReferenceSet);//ok if null
+                if(isGif){
+                    props.put(UDDIProxiedServiceInfo.GIF_SCHEME, endPointTypeComboBox.getSelectedItem());
+                    uddiRegistryAdmin.publishGatewayEndpointGif(service, props);
+                } else {
+                    uddiRegistryAdmin.publishGatewayEndpoint(service, removeExistingBindingsCheckBox.isSelected(), props);
+                }
+
+                JOptionPane.showMessageDialog(ServiceUDDISettingsDialog.this,
+                        "Task to publish Gateway " + ((isGif) ? "GIF " : "") +
+                                "endpoint to UDDI created successfully",
+                        "Successful Task Creation",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                final String msg1 = "Could not create publish gateway " + ((isGif) ? "GIF " : "")
+                        + "endpoint to UDDI task: " + ExceptionUtils.getMessage(ex);
+                showErrorMessage("Error publishing to UDDI", msg1, ex, true);
+            }
+            return true;
+        }
+        return false;
     }
 
     private boolean othersAffectedByModifyingOriginal(){
@@ -1131,12 +1056,8 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
 
 
     private void showErrorMessage(String title, String msg, Throwable e, boolean log) {
-        showErrorMessage(title, msg, e, null, log);
-    }
-
-    private void showErrorMessage(String title, String msg, Throwable e, Runnable continuation, boolean log) {
-        if(log) logger.log(Level.WARNING, msg, e);
-        DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, continuation);
+        if(log) logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+        JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
     }
 
     /** @return the UDDIRegistryAdmin interface*/

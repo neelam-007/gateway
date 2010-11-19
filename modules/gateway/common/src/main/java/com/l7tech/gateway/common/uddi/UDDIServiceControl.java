@@ -1,13 +1,12 @@
 package com.l7tech.gateway.common.uddi;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
-import com.l7tech.uddi.WsdlPortInfo;
-
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Version;
 import javax.persistence.Column;
 
+import com.l7tech.util.BeanUtils;
 import org.hibernate.annotations.Proxy;
 /**
  * Represents the UDDI location from which a published service was created. 
@@ -242,6 +241,75 @@ public class UDDIServiceControl extends PersistentEntityImp {
     @Column(name = "version")
     public int getVersion() {
         return super.getVersion();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        UDDIServiceControl that = (UDDIServiceControl) o;
+
+        if (disableServiceOnChange != that.disableServiceOnChange) return false;
+        if (hasBeenOverwritten != that.hasBeenOverwritten) return false;
+        if (hasHadEndpointRemoved != that.hasHadEndpointRemoved) return false;
+        if (metricsEnabled != that.metricsEnabled) return false;
+        if (monitoringEnabled != that.monitoringEnabled) return false;
+        if (publishWsPolicyEnabled != that.publishWsPolicyEnabled) return false;
+        if (publishWsPolicyFull != that.publishWsPolicyFull) return false;
+        if (publishWsPolicyInlined != that.publishWsPolicyInlined) return false;
+        if (publishedServiceOid != that.publishedServiceOid) return false;
+        if (uddiRegistryOid != that.uddiRegistryOid) return false;
+        if (underUddiControl != that.underUddiControl) return false;
+        if (updateWsdlOnChange != that.updateWsdlOnChange) return false;
+        if (!uddiBusinessKey.equals(that.uddiBusinessKey)) return false;
+        if (!uddiBusinessName.equals(that.uddiBusinessName)) return false;
+        if (!uddiServiceKey.equals(that.uddiServiceKey)) return false;
+        if (!uddiServiceName.equals(that.uddiServiceName)) return false;
+        if (!wsdlPortBinding.equals(that.wsdlPortBinding)) return false;
+        if (wsdlPortBindingNamespace != null ? !wsdlPortBindingNamespace.equals(that.wsdlPortBindingNamespace) : that.wsdlPortBindingNamespace != null)
+            return false;
+        if (!wsdlPortName.equals(that.wsdlPortName)) return false;
+        if (!wsdlServiceName.equals(that.wsdlServiceName)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (int) (publishedServiceOid ^ (publishedServiceOid >>> 32));
+        result = 31 * result + (int) (uddiRegistryOid ^ (uddiRegistryOid >>> 32));
+        result = 31 * result + uddiBusinessKey.hashCode();
+        result = 31 * result + uddiBusinessName.hashCode();
+        result = 31 * result + uddiServiceKey.hashCode();
+        result = 31 * result + uddiServiceName.hashCode();
+        result = 31 * result + wsdlServiceName.hashCode();
+        result = 31 * result + wsdlPortName.hashCode();
+        result = 31 * result + wsdlPortBinding.hashCode();
+        result = 31 * result + (underUddiControl ? 1 : 0);
+        result = 31 * result + (monitoringEnabled ? 1 : 0);
+        result = 31 * result + (updateWsdlOnChange ? 1 : 0);
+        result = 31 * result + (disableServiceOnChange ? 1 : 0);
+        result = 31 * result + (metricsEnabled ? 1 : 0);
+        result = 31 * result + (publishWsPolicyEnabled ? 1 : 0);
+        result = 31 * result + (publishWsPolicyFull ? 1 : 0);
+        result = 31 * result + (publishWsPolicyInlined ? 1 : 0);
+        result = 31 * result + (hasHadEndpointRemoved ? 1 : 0);
+        result = 31 * result + (hasBeenOverwritten ? 1 : 0);
+        result = 31 * result + (wsdlPortBindingNamespace != null ? wsdlPortBindingNamespace.hashCode() : 0);
+        return result;
+    }
+
+    public static UDDIServiceControl copyFrom(UDDIServiceControl toCopy){
+        final UDDIServiceControl copy = new UDDIServiceControl();
+        try {
+            BeanUtils.copyProperties(toCopy, copy);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return copy;
     }
 
     //- PRIVATE

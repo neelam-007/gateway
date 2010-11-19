@@ -256,6 +256,8 @@ public interface UDDIRegistryAdmin {
     /**
      * Save / Update UDDIServiceControl without changes to related UDDI.
      *
+     * If the incoming UDDIServiceControl has not been modified, no update is performed. (version will not increment)
+     *
      * @param uddiServiceControl the updated UDDIServiceControl
      * @param serviceEndPoint String endpoint of the protected service. If the entity is being saved for the first time
      * it must not be null, empty or contain only spaces. If the entity already exists, this parameter is ignored.

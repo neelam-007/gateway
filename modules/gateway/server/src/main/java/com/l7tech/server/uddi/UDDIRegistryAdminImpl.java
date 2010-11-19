@@ -359,6 +359,11 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             UDDIServiceControl original = uddiServiceControlManager.findByPrimaryKey(uddiServiceControl.getOid());
             if(original == null) throw new FindException("Cannot find UDDIServiceControl with oid: " + uddiServiceControl.getOid());
 
+            //do not save if nothing has changed
+            if(original.equals(uddiServiceControl)) {
+                return uddiServiceControl.getOid();
+            }
+
             final String wsdlRefreshRequiredMessage = isWsdlRefreshRequired(original, uddiServiceControl);
             final boolean clearServiceDefaultURL = original.isUnderUddiControl() && !uddiServiceControl.isUnderUddiControl();
 

@@ -2164,7 +2164,7 @@ public class BusinessServicePublisher implements Closeable {
      * were changed by user configuration, then those keyName changes will be persisted in UDDI (unless UDDI changed
      * the same keyName, which takes precedence).
      * 
-     * @param configKeyedReferences user configuraion of KeyedReferences to publish
+     * @param configKeyedReferences user configuration of KeyedReferences to publish
      * @param runtimeKeyedReferences previously published KeyedReferences
      * @param toPublishTemplate BindingTemplate to publish
      */
