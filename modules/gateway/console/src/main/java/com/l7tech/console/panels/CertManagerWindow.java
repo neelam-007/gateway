@@ -3,24 +3,23 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.GuiCertUtil;
-import com.l7tech.gui.util.GuiPasswordCallbackHandler;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.RevocationCheckPolicy;
-import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
-import com.l7tech.console.event.CertListener;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.console.event.CertEvent;
+import com.l7tech.console.event.CertListener;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.GuiCertUtil;
+import com.l7tech.gui.util.GuiPasswordCallbackHandler;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
-import com.l7tech.util.Functions;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -28,16 +27,18 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.NoSuchAlgorithmException;
-import java.lang.reflect.InvocationTargetException;
+
+import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
 
 /**
  * This class is the main window of the trusted certificate manager
@@ -151,6 +152,14 @@ public class CertManagerWindow extends JDialog {
                 // retrieve the latest version
                 try {
                     TrustedCert updatedTrustedCert = getTrustedCertAdmin().findCertByPrimaryKey(tc.getOid());
+                    if (updatedTrustedCert == null) {
+                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.deleted.error"),
+                                                      resources.getString("view.error.title"),
+                                                      JOptionPane.ERROR_MESSAGE);
+                        loadTrustedCerts();
+                        return;
+                    }
+
                     trustedCertTable.getTableSorter().updateData(sr, updatedTrustedCert);
                     CertPropertiesWindow cpw =
                             new CertPropertiesWindow(
