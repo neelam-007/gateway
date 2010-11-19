@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.common.http.prov.apache;
 
 import com.l7tech.common.http.*;
@@ -209,20 +206,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             throws GenericHttpException
     {
         stampBindingIdentity();
-        final HostConfiguration hconf;
         final URL targetUrl = params.getTargetUrl();
         final String virtualHost = params.getVirtualHost();
-        final String targetProto = targetUrl.getProtocol();
-        if ("https".equals(targetProto)) {
-            final SSLSocketFactory sockFac = params.getSslSocketFactory();
-            final HostnameVerifier hostVerifier = params.getHostnameVerifier();
-            if (sockFac != null) {
-                hconf = getHostConfig(targetUrl, sockFac, hostVerifier);
-            } else
-                hconf = null;
-        } else
-            hconf = null;
-
         final HttpClient client = new HttpClient(cman);
 
         final HttpClientParams clientParams = client.getParams();
@@ -248,13 +233,12 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         // NOTE: Use the FILE part of the url here (path + query string), if we use the full URL then
         //       we end up with the default socket factory for the protocol
         org.apache.commons.httpclient.HttpMethod clientMethod;
-        try{
+        try {
             switch (method) {
                 case POST:
-    //                httpMethod = new PostMethod(encodePathAndQuery(targetUrl.getFile()));
                     clientMethod = new PostMethod(encodePathAndQuery(targetUrl.getFile())) {
                         @Override
-                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException, HttpException {
+                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException {
                             if (virtualHost != null && virtualHost.length() > 0)
                                 setRequestHeader("Host", virtualHost);
                             else
@@ -265,7 +249,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 case GET:
                     clientMethod = new GetMethod(encodePathAndQuery(targetUrl.getFile())) {
                         @Override
-                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException, HttpException {
+                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException {
                             if (virtualHost != null && virtualHost.length() > 0)
                                 setRequestHeader("Host", virtualHost);
                             else
@@ -276,7 +260,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 case PUT:
                     clientMethod = new PutMethod(encodePathAndQuery(targetUrl.getFile())) {
                         @Override
-                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException, HttpException {
+                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException {
                             if (virtualHost != null && virtualHost.length() > 0)
                                 setRequestHeader("Host", virtualHost);
                             else
@@ -287,7 +271,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 case DELETE:
                     clientMethod = new DeleteMethod(encodePathAndQuery(targetUrl.getFile())) {
                         @Override
-                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException, HttpException {
+                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException {
                             if (virtualHost != null && virtualHost.length() > 0)
                                 setRequestHeader("Host", virtualHost);
                             else
@@ -298,7 +282,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 case HEAD:
                     clientMethod = new HeadMethod(encodePathAndQuery(targetUrl.getFile())) {
                         @Override
-                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException, HttpException {
+                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException {
                             if (virtualHost != null && virtualHost.length() > 0)
                                 setRequestHeader("Host", virtualHost);
                             else
@@ -341,6 +325,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
             httpMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, rct.getFullValue());
         }
 
+        final HostConfiguration hconf = getHostConfig( targetUrl, params, clientParams, state, httpMethod );
         return new RerunnableHttpRequest() {
             private org.apache.commons.httpclient.HttpMethod method = httpMethod;
             private boolean requestEntitySet = false;
@@ -403,16 +388,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 final ContentTypeHeader contentType;
                 final Long contentLength;
                 try {
-                    if (hconf == null) {
-                        HostConfiguration hc = new HostConfiguration(client.getHostConfiguration());
-                        hc.setHost(targetUrl.getHost(), targetUrl.getPort());
-                        if (proxyHost != null)
-                            hc.setProxy(proxyHost, proxyPort);
-                        status = client.executeMethod(hc, method, state);
-                    }
-                    else {
-                        status = client.executeMethod(hconf, method, state);
-                    }
+                    status = client.executeMethod(hconf, method, state);
                     Header cth = method.getResponseHeader(MimeUtil.CONTENT_TYPE);
                     contentType = cth == null || cth.getValue() == null ? null : ContentTypeHeader.parseValue(cth.getValue());
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);
@@ -632,73 +608,37 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         return defaultParams;
     }
 
-    private HostConfiguration getHostConfig(final URL targetUrl, final SSLSocketFactory sockFac, final HostnameVerifier hostVerifier) {
-        HostConfiguration hconf;
-        Protocol protocol = protoBySockFac.get(sockFac);
-
-        if (protocol == null) {
-            logger.finer("Creating new commons Protocol for https");
-            protocol = new Protocol("https", (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
-                @Override
-                public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
-                    return verify(sockFac.createSocket(socket, host, port, autoClose), host);
-                }
-                @Override
-                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
-                    return verify(sockFac.createSocket(host, port, clientAddress, clientPort), host);
-                }
-                @Override
-                public Socket createSocket(String host, int port) throws IOException {
-                    return verify(sockFac.createSocket(host, port), host);
-                }
-                @Override
-                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
-                    Socket socket = sockFac.createSocket();
-                    int connectTimeout = httpConnectionParams.getConnectionTimeout();
-
-                    socket.bind(new InetSocketAddress(clientAddress, clientPort));
-
-                    try {
-                        socket.connect(new InetSocketAddress(host, port), connectTimeout);
-                    }
-                    catch(SocketTimeoutException ste) {
-                        throw new ConnectTimeoutException("Timeout when connecting to host '"+host+"'.", ste);
-                    }
-
-                    return verify(socket, host);
-                }
-                private Socket verify(Socket socket, String host) throws IOException {
-                    if (socket instanceof SSLSocket) {
-                        configureEnabledProtocolsAndCiphers((SSLSocket) socket);
-
-                        if (hostVerifier != null) {
-                            SSLSocket sslSocket = (SSLSocket) socket;
-
-                            // must start handshake or any exception can be lost when
-                            // getSession() is called
-                            sslSocket.startHandshake();
-                            
-                            if (!hostVerifier.verify(host, sslSocket.getSession())) {
-                                ResourceUtils.closeQuietly(socket);
-                                throw new CausedIOException("Host name does not match certificate '" + host + "'.");
-                            }
-                        }
-                    }
-                    return socket;
-                }
-            }, 443);
-            protoBySockFac.put(sockFac, protocol);
-        }
+    private HostConfiguration getHostConfig( final URL targetUrl,
+                                             final GenericHttpRequestParams params,
+                                             final HttpClientParams clientParams,
+                                             final HttpState state,
+                                             final org.apache.commons.httpclient.HttpMethod httpMethod ) {
+        final String urlProtocol = targetUrl.getProtocol();
+        final SSLSocketFactory socketFactory = params.getSslSocketFactory();
+        final HostnameVerifier hostVerifier = params.getHostnameVerifier();
+        final Protocol protocol = getProtocol( urlProtocol, socketFactory, hostVerifier );
         final HttpHost httpHost = new HttpHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
-        hconf = new HostConfiguration(){
+        final HostConfiguration hostConfiguration = new HostConfiguration(){
             @Override
-                public void setHost( final org.apache.commons.httpclient.URI uri ) {
+            public void setHost( final org.apache.commons.httpclient.URI uri ) {
+                GenericHttpRequestParams resolvedParams;
+                try {
+                    resolvedParams = params.resolve( new URL(uri.toString()) );
+                } catch ( MalformedURLException e ) {
+                    logger.fine( "Unable to generate URL for '"+uri+"'" );
+                    resolvedParams = params;
+                }
+
+                configureParameters( clientParams, state, httpMethod, resolvedParams );
+                configureProxy( this, resolvedParams );
+
                 // This prevents our SSL settings being lost on redirects (bug 9063)
-                if ( "https".equalsIgnoreCase( uri.getScheme() ) ) {
+                if ( PROTOCOL_HTTPS.equalsIgnoreCase( uri.getScheme() ) ) {
+                    final Protocol protocol = CommonsHttpClient.this.getProtocol( PROTOCOL_HTTPS, resolvedParams.getSslSocketFactory(), hostVerifier );
                     try {
-                        super.setHost( new HttpHost(uri.getHost(), uri.getPort(), httpHost.getProtocol() ));
+                        super.setHost( new HttpHost(uri.getHost(), uri.getPort(), protocol ));
                     } catch(URIException e) {
-                    // This is how HTTPClient handles this condition
+                        // This is how HTTPClient handles this condition
                         throw new IllegalArgumentException(e.toString());
                     }
                 } else {
@@ -706,11 +646,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 }
             }
         };
-
-        hconf.setHost(httpHost);
-        if (proxyHost != null)
-            hconf.setProxy(proxyHost, proxyPort);
-        return hconf;
+        hostConfiguration.setHost(httpHost);
+        configureProxy( hostConfiguration, params );
+        return hostConfiguration;
     }
 
     private Protocol getProtocol( final String urlProtocol,
