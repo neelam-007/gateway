@@ -179,7 +179,6 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
     @Override
     public String[] getVariablesUsed() {
         List<String> vars = new ArrayList<String>();
-        vars.addAll(Arrays.asList(super.getVariablesUsed()));
 
         StringBuilder builder = new StringBuilder();
         builder.append(getStatusMessage());
