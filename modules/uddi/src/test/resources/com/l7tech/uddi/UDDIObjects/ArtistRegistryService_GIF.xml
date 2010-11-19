@@ -37,7 +37,8 @@
                 <ns4:keyedReference tModelKey="uddi:systinet.com:management:system" keyName="Management System" keyValue="Layer7 WSMS"/>
                 <ns4:keyedReference tModelKey="uddi:systinet.com:management:state" keyName="Governance state" keyValue="managed"/>
                 <ns4:keyedReference tModelKey="uddi:systinet.com:management:url" keyName="URL from AccessPoint" keyValue="http://ssghost:8080/3828382"/>
-                <ns4:keyedReference tModelKey="uddi:systinet.com:management:server-reference" keyName="WSMS Business Service" keyValue="uddi:key_of_wsms_bs"/>                
+                <ns4:keyedReference tModelKey="uddi:systinet.com:management:server-reference" keyName="WSMS Business Service" keyValue="uddi:key_of_wsms_bs"/>
+                <ns4:keyedReference tModelKey="uddi:297aaa47-2de3-4454-a04a-cf38e889d0c4" keyName="" keyValue="value" />
             </ns4:categoryBag>
         </ns4:bindingTemplate>
     </ns4:bindingTemplates>

@@ -582,9 +582,9 @@ public class BusinessServicePublisherTest {
 
         //test that there is only one url reference on the proxy - the old one should have been removed
         final List<KeyedReference> proxyReferences = proxyTemplate.getCategoryBag().getKeyedReference();
-        Assert.assertEquals("Incorrect number of proxy references found", 6, proxyReferences.size());
+        Assert.assertEquals("Incorrect number of proxy references found", 7, proxyReferences.size());
 
-        validateProxyGifReferences(endpointPair, proxyReferences, 6);
+        validateProxyGifReferences(endpointPair, proxyReferences, 7);
 
         int numUrlRefsFound = 0;
         KeyedReference urlRef = new KeyedReference();
@@ -630,7 +630,7 @@ public class BusinessServicePublisherTest {
 
     /**
      * Tests updating a BusinessService's proxy bindingTemplate once it has been published following GIF.
-     * The only thing that needs to change at all in an update is the gateway's URLs and the URL refernece on the proxy.
+     * The only thing that needs to change at all in an update is the gateway's URLs and the URL reference on the proxy.
      * The functional bindingTemplate should not be published during the update as nothing on it has changed.
      * @throws Exception
      */
@@ -690,12 +690,151 @@ public class BusinessServicePublisherTest {
 
         //test that there is only one url reference on the proxy - the old one should have been removed
         final List<KeyedReference> proxyReferences = proxyTemplate.getCategoryBag().getKeyedReference();
-        Assert.assertEquals("Incorrect number of proxy references found", 6, proxyReferences.size());
+        Assert.assertEquals("Incorrect number of proxy references found", 7, proxyReferences.size());
 
         //validate the keyed reference was updated
         final Set<UDDIKeyedReference> allRefs = convertToBeans(proxyReferences);
         Assert.assertTrue("Reference should have been found", allRefs.contains(metaData));
         Assert.assertTrue("Old reference should not be found", !allRefs.contains(runtimeMetaData));
+    }
+
+    /**
+     * Tests that changing the keyName in a piece of meta data correctly updates in UDDI.
+     * @throws Exception
+     */
+    @BugNumber(9462)
+    @Test
+    public void testUpdatePublishOfGifEndPoint_WithMetaUserKeyNameChange() throws Exception {
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
+
+        final String gatewayWsdlUrl = "http://ssghost:8081/3828382?wsdl"; //this is a different port than what is currently published (in the test objects)
+        final String gatewayURL = "http://ssghost:8081/3828382"; //this is a different port than what is currently published (in the test objects)
+        final EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryService_GIF.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_Binding_GIF.xml");
+        final TModel bindingTModelGif = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_PortType_GIF.xml");
+        final TModel portTypeTModelGif = JAXB.unmarshal(stream, TModel.class);
+
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+
+        final int serviceOid = 3828382;
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModelGif, portTypeTModelGif, bindingTModel, portTypeTModel));
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        final String proxyBindingKey = "uddi:ad36b520-d229-11df-a331-7bda57c0a325";
+        final String functionalBindingKey = "uddi:c70283ce-c113-493f-b576-957a94dd1e70";
+        final Set<UDDIKeyedReference> configRefs = new HashSet<UDDIKeyedReference>();
+        final UDDIKeyedReference metaData = new UDDIKeyedReference("uddi:systinet.com:management:server-reference",
+                "WSMS Business Service UPDATED", "uddi:key_of_wsms_bs");
+        configRefs.add(metaData);
+
+        final Set<UDDIKeyedReference> runtimeRefs = new HashSet<UDDIKeyedReference>();
+        final UDDIKeyedReference runtimeMetaData = new UDDIKeyedReference("uddi:systinet.com:management:server-reference",
+                "WSMS Business Service", "uddi:key_of_wsms_bs");
+        runtimeRefs.add(runtimeMetaData);
+
+        servicePublisher.publishBindingTemplateGif(
+                "uddi:ad3618e0-d229-11df-a331-7bda57c0a325",
+                "YessoTestWebServicesPort",
+                "YessoTestWebServicesPortBinding",
+                "http://samples.soamoa.yesso.eu/",
+                endpointPair,
+                proxyBindingKey,
+                functionalBindingKey,
+                "Layer7 WSMS",
+                configRefs,
+                runtimeRefs);
+
+        //test functional endpoint was not published - no updates were necessary
+        final List<BindingTemplate> publishedTemplates = uddiClient.getPublishedBindingTemplates();
+        final BindingTemplate proxyTemplate = publishedTemplates.get(0);
+        Assert.assertEquals("Incorrect template published", proxyBindingKey, proxyTemplate.getBindingKey());
+
+        //test that there is only one url reference on the proxy - the old one should have been removed
+        final List<KeyedReference> proxyReferences = proxyTemplate.getCategoryBag().getKeyedReference();
+        Assert.assertEquals("Incorrect number of proxy references found", 7, proxyReferences.size());
+
+        //validate the keyed reference was updated
+        final Set<UDDIKeyedReference> allRefs = convertToBeans(proxyReferences);
+        Assert.assertTrue("Reference should have been found", allRefs.contains(metaData));
+        Assert.assertEquals("Updated keyName should have been persisted", "WSMS Business Service UPDATED", metaData.getKeyName());
+        Assert.assertTrue("Old reference should be found", allRefs.contains(runtimeMetaData));
+    }
+
+    /**
+     * UDDI has a keyedReference added with a null value. Gateway then publishes the same with a key value.
+     * Uddi value should not be updated as the value from UDDI takes precedence.
+     * @throws Exception
+     */
+    @BugNumber(9462)
+    @Test
+    public void testUpdatePublishOfGifEndPoint_NullUddiValue() throws Exception {
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTUDDIModelConverterTest.getWsdlReader("com/l7tech/uddi/artistregistry.wsdl"));
+
+        final String gatewayWsdlUrl = "http://ssghost:8081/3828382?wsdl"; //this is a different port than what is currently published (in the test objects)
+        final String gatewayURL = "http://ssghost:8081/3828382"; //this is a different port than what is currently published (in the test objects)
+        final EndpointPair endpointPair = new EndpointPair(gatewayURL, gatewayWsdlUrl);
+
+        InputStream stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryService_GIF.xml");
+        final BusinessService businessService = JAXB.unmarshal(stream, BusinessService.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_Binding_GIF.xml");
+        final TModel bindingTModelGif = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_PortType_GIF.xml");
+        final TModel portTypeTModelGif = JAXB.unmarshal(stream, TModel.class);
+
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_Binding.xml");
+        final TModel bindingTModel = JAXB.unmarshal(stream, TModel.class);
+        stream = UDDIUtilitiesTest.class.getClassLoader().getResourceAsStream("com/l7tech/uddi/UDDIObjects/ArtistRegistryServiceTModel_PortType.xml");
+        final TModel portTypeTModel = JAXB.unmarshal(stream, TModel.class);
+
+        final int serviceOid = 3828382;
+        TestUddiClient uddiClient = new TestUddiClient(businessService, Arrays.asList(bindingTModelGif, portTypeTModelGif, bindingTModel, portTypeTModel));
+        BusinessServicePublisher servicePublisher = new BusinessServicePublisher(wsdl, serviceOid, uddiClient);
+
+        final String proxyBindingKey = "uddi:ad36b520-d229-11df-a331-7bda57c0a325";
+        final String functionalBindingKey = "uddi:c70283ce-c113-493f-b576-957a94dd1e70";
+        final Set<UDDIKeyedReference> configRefs = new HashSet<UDDIKeyedReference>();
+        final UDDIKeyedReference metaData = new UDDIKeyedReference("uddi:297aaa47-2de3-4454-a04a-cf38e889d0c4",
+                "client", "value");
+        configRefs.add(metaData);
+
+        final Set<UDDIKeyedReference> runtimeRefs = new HashSet<UDDIKeyedReference>();
+        final UDDIKeyedReference runtimeMetaData = new UDDIKeyedReference("uddi:systinet.com:management:server-reference",
+                "client", "value");
+        runtimeRefs.add(runtimeMetaData);
+
+        servicePublisher.publishBindingTemplateGif(
+                "uddi:ad3618e0-d229-11df-a331-7bda57c0a325",
+                "YessoTestWebServicesPort",
+                "YessoTestWebServicesPortBinding",
+                "http://samples.soamoa.yesso.eu/",
+                endpointPair,
+                proxyBindingKey,
+                functionalBindingKey,
+                "Layer7 WSMS",
+                configRefs,
+                runtimeRefs);
+
+        final List<BindingTemplate> publishedTemplates = uddiClient.getPublishedBindingTemplates();
+        final BindingTemplate proxyTemplate = publishedTemplates.get(0);
+        Assert.assertEquals("Incorrect template published", proxyBindingKey, proxyTemplate.getBindingKey());
+
+        final List<KeyedReference> proxyReferences = proxyTemplate.getCategoryBag().getKeyedReference();
+        final Set<UDDIKeyedReference> allRefs = convertToBeans(proxyReferences);
+        Map<UDDIKeyedReference, UDDIKeyedReference> refToRef = new HashMap<UDDIKeyedReference, UDDIKeyedReference>();
+        for (UDDIKeyedReference allRef : allRefs) {
+            refToRef.put(allRef, allRef);
+        }
+        //validate the keyed reference continues to have the value from UDDI
+        Assert.assertTrue("Reference should have been found", refToRef.containsKey(metaData));
+        final UDDIKeyedReference actualRef = refToRef.get(metaData);
+        Assert.assertEquals("Updated keyName should have been ignored, as UDDI has a different value", "", actualRef.getKeyName());
     }
 
     /**

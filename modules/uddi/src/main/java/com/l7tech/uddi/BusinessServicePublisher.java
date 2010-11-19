@@ -324,7 +324,7 @@ public class BusinessServicePublisher implements Closeable {
 
             //clean up any required UDDI references
             if (runtimeKeyedReferences != null) {
-                removeOldKeyedReferences(configKeyedReferences, runtimeKeyedReferences, toPublishTemplate);
+                manageKeyedReferences(configKeyedReferences, runtimeKeyedReferences, toPublishTemplate);
             }
 
             //confirm the keys were transferred
@@ -651,6 +651,14 @@ public class BusinessServicePublisher implements Closeable {
 
         UDDIUtilities.validateAllEndpointPairs(allEndpointPairs);
 
+        //fail early if problem with the WSDL
+        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
+        try {
+            modelConverter.convertWsdlToUDDIModel(allEndpointPairs, null, null);
+        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
+            throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid + ") into UDDI object model.", e);
+        }
+
         final UDDIBusinessServiceDownloader serviceDownloader = new UDDIBusinessServiceDownloader(jaxWsUDDIClient);
         final Set<String> serviceKeys = new HashSet<String>();
         serviceKeys.add(serviceKey);
@@ -661,6 +669,14 @@ public class BusinessServicePublisher implements Closeable {
         final Pair<BusinessService, Map<String, TModel>> serviceToDependentTModels = uddiServicesToDependentTModelsPairs.iterator().next();
 
         BusinessService overwriteService = serviceToDependentTModels.left;//not final as we will update it's reference
+        //fail early if problem with the business service.
+        //extract the service's local name from it's keyed references - it must exist to be valid
+        if (overwriteService.getCategoryBag() == null) {
+            throw new UDDIException("Invalid BusinessService. It does not contain a CategoryBag. serviceKey: " + overwriteService.getServiceKey());
+        }
+        //we must find both the service name and the correct namespace in the Gateway's WSDL, otherwise we are mis configured
+        final Pair<String, String> serviceNameAndNameSpace = getServiceNameAndNameSpace(overwriteService);
+
         final BindingTemplates templates = overwriteService.getBindingTemplates();
         if (templates == null) {
             //we can work with this, we don't care as were going to be uploading our own bindingTemplates
@@ -675,33 +691,17 @@ public class BusinessServicePublisher implements Closeable {
         final Pair<Set<String>, Set<String>> deleteAndKeep = getBindingsToDeleteAndKeep(overwriteService.getBindingTemplates().getBindingTemplate(), allDependentTModels);
         final Set<String> deleteSet = deleteAndKeep.left;
 
+        final List<Pair<BusinessService, Map<String, TModel>>> wsdlBusinessServicesToDependentTModels = modelConverter.getServicesAndDependentTModels();
+        //fail early before updating UDDI
+        final List<Pair<BusinessService, Map<String, TModel>>> pairToUseList =
+                extractSingleService(serviceNameAndNameSpace.left, serviceNameAndNameSpace.right, wsdlBusinessServicesToDependentTModels);
+
+        //Delete existing bindingTemplates from UDDI. Do this before trying to publish to ensure user has permissions
+        //do not want to successfully publish and then find that we cannot remove the bindingTemplates. If that is the
+        //case then the normal publish can be done.
         for (String bindingKey : deleteSet) {
             uddiClient.deleteBindingTemplate(bindingKey);
         }
-        //Redownload the service
-        overwriteService = jaxWsUDDIClient.getBusinessService(overwriteService.getServiceKey());
-
-        //extract the service's local name from it's keyed references - it must exist to be valid
-        if (overwriteService.getCategoryBag() == null) {
-            throw new UDDIException("Invalid BusinessService. It does not contain a CategoryBag. serviceKey: " + overwriteService.getServiceKey());
-        }
-
-        final Pair<String, String> serviceNameAndNameSpace = getServiceNameAndNameSpace(overwriteService);
-
-        //we must find both the service name and the correct namespace in the Gateway's WSDL, otherwise we are mis configured
-
-        //Now work with the WSDL, the information we will publish comes from the Gateway's WSDL
-        final WsdlToUDDIModelConverter modelConverter = new WsdlToUDDIModelConverter(wsdl, businessKey);
-        try {
-            modelConverter.convertWsdlToUDDIModel(allEndpointPairs, null, null);
-        } catch (WsdlToUDDIModelConverter.MissingWsdlReferenceException e) {
-            throw new UDDIException("Unable to convert WSDL from service (#" + serviceOid + ") into UDDI object model.", e);
-        }
-
-        final List<Pair<BusinessService, Map<String, TModel>>> wsdlBusinessServicesToDependentTModels = modelConverter.getServicesAndDependentTModels();
-
-        final List<Pair<BusinessService, Map<String, TModel>>> pairToUseList =
-                extractSingleService(serviceNameAndNameSpace.left, serviceNameAndNameSpace.right, wsdlBusinessServicesToDependentTModels);
 
         //now we are ready to work with this service. We will publish all soap bindings found and leave any others on
         //the original service in UDDI intact - this will likely be a configurable option in the future
@@ -944,7 +944,7 @@ public class BusinessServicePublisher implements Closeable {
 
             //clean up any required UDDI references
             if (runtimeKeyedReferences != null && !runtimeKeyedReferences.isEmpty()) {
-                removeOldKeyedReferences(configKeyedReferences, runtimeKeyedReferences, toPublishTemplate);
+                manageKeyedReferences(configKeyedReferences, runtimeKeyedReferences, toPublishTemplate);
             }
         }
 
@@ -1980,9 +1980,15 @@ public class BusinessServicePublisher implements Closeable {
             if(!toPubRef.getTModelKey().equals(UDDIKeyedReference.GENERAL_KEYWORDS) && refsToCompareTo.contains(toPubRef)){
                 //match, are the names the same?
                 final UDDIKeyedReference publishedRef = pubRefToPubRef.get(toPubRef);//the equality is the same as the name is not part of equals
-                if(!(publishedRef.getKeyName().equals(toPubRef.getKeyName()))){
-                    final KeyedReference keyedReference = beanToKeyedRef.get(toPubRef);
-                    keyedReference.setKeyName(publishedRef.getKeyName());
+                final String publishedRefKeyName = publishedRef.getKeyName();
+                final KeyedReference keyedReference = beanToKeyedRef.get(toPubRef);
+                if(publishedRefKeyName != null){
+                    if(!(publishedRefKeyName.equals(toPubRef.getKeyName()))){
+                        keyedReference.setKeyName(publishedRef.getKeyName());
+                    }
+                } else {
+                    //if it's null in UDDI, then keep it null
+                    keyedReference.setKeyName(null);
                 }
             }
         }
@@ -2151,15 +2157,55 @@ public class BusinessServicePublisher implements Closeable {
         return Arrays.asList(funcEndpoint, proxyRef);
     }
 
-    private void removeOldKeyedReferences(Set<UDDIKeyedReference> configKeyedReferences, Set<UDDIKeyedReference> runtimeKeyedReferences, BindingTemplate toPublishTemplate) {
+    /**
+     * Manage the keyedReferences published by the Gateway. After this operation any references on toPublishTemplate
+     * which were previously published by the gateway but were removed via user configuration, will be removed.
+     * In addition, if any keyName's were changed in UDDI, then those key names will be maintained. If any keyNames
+     * were changed by user configuration, then those keyName changes will be persisted in UDDI (unless UDDI changed
+     * the same keyName, which takes precedence).
+     * 
+     * @param configKeyedReferences user configuraion of KeyedReferences to publish
+     * @param runtimeKeyedReferences previously published KeyedReferences
+     * @param toPublishTemplate BindingTemplate to publish
+     */
+    private void manageKeyedReferences(final Set<UDDIKeyedReference> configKeyedReferences,
+                                       final Set<UDDIKeyedReference> runtimeKeyedReferences,
+                                       final BindingTemplate toPublishTemplate) {
         final CategoryBag categoryBag = toPublishTemplate.getCategoryBag();
         if(categoryBag == null) return;
 
         final List<KeyedReference> toPubRefs = categoryBag.getKeyedReference();
         final List<UDDIKeyedReference> refBeans = convertToBeans(toPubRefs);
+        final Map<UDDIKeyedReference, UDDIKeyedReference> refBeansToRefBeans =
+                new HashMap<UDDIKeyedReference, UDDIKeyedReference>();
+        for (UDDIKeyedReference refBean : refBeans) {
+            refBeansToRefBeans.put(refBean, refBean);
+        }
+        final Map<UDDIKeyedReference, UDDIKeyedReference> configToConfigRefs =
+                new HashMap<UDDIKeyedReference, UDDIKeyedReference>();
+        if(configKeyedReferences != null){
+            for (UDDIKeyedReference configRef : configKeyedReferences) {
+                configToConfigRefs.put(configRef, configRef);
+            }
+        }
         for (UDDIKeyedReference runtimeRef : runtimeKeyedReferences) {
             if (configKeyedReferences == null || !configKeyedReferences.contains(runtimeRef)) {
                 refBeans.remove(runtimeRef);
+            } else {
+                //Has the keyName of one of our references changed?
+                final UDDIKeyedReference configRef = configToConfigRefs.get(runtimeRef);
+                final boolean namesDifferent = UDDIUtilities.areNamesDifferent(configRef.getKeyName(), runtimeRef.getKeyName());
+                if(namesDifferent){
+                    //are the names different because of a user modification or a UDDI modification? UDDI takes precedence over user modifications.
+                    final UDDIKeyedReference toPubRef = refBeansToRefBeans.get(runtimeRef);
+                    //if the topublish is the same as the runtime ref, then UDDI holds the same value as previously published
+                    final boolean different = UDDIUtilities.areNamesDifferent(toPubRef.getKeyName(), runtimeRef.getKeyName());
+                    if(!different){
+                        //user modification, not UDDI, so ensure it's kept
+                        toPubRef.setKeyName(configRef.getKeyName());
+                    }
+                }
+
             }
         }
         toPubRefs.clear();

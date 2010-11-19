@@ -491,6 +491,16 @@ public class UDDIUtilities {
         }
     }
 
+    public static boolean areNamesDifferent(String origKeyName, String newKeyName){
+        boolean namesAreDifferent = false;
+        if (!(origKeyName == null && newKeyName == null)) {
+            if (origKeyName == null) namesAreDifferent = true;
+            else if (newKeyName == null) namesAreDifferent = true;
+            else if (!origKeyName.equals(newKeyName)) namesAreDifferent = true;
+        }
+
+        return namesAreDifferent;
+    }
     //- PROTECTED
 
     /**

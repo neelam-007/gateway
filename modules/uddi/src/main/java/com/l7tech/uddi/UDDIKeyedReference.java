@@ -86,7 +86,7 @@ public class UDDIKeyedReference implements Serializable {
 
     @Override
     public int hashCode() {
-        int result = tModelKey.hashCode();
+        int result = tModelKey.toLowerCase().hashCode();
         result = 31 * result + keyValue.hashCode();
         if(tModelKey.equals(GENERAL_KEYWORDS)){
             result = 31 * result + (keyName != null ? keyName.hashCode() : 0);

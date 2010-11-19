@@ -9,6 +9,7 @@ import javax.persistence.Table;
 import javax.persistence.CascadeType;
 
 import com.l7tech.uddi.UDDIKeyedReference;
+import com.l7tech.uddi.UDDIUtilities;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
@@ -208,10 +209,23 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
     public boolean areKeyedReferencesDifferent(final Set<UDDIKeyedReference> incomingRefs){
         final Set<UDDIKeyedReference> origRefs = this.getProperty(UDDIProxiedServiceInfo.KEYED_REFERENCES_CONFIG);
 
-        final boolean refsHaveChanged;
+        boolean refsHaveChanged;
 
         if (incomingRefs != null && origRefs != null) {
             refsHaveChanged = !origRefs.containsAll(incomingRefs) || origRefs.size() != incomingRefs.size();
+            if(!refsHaveChanged) {
+                Map<UDDIKeyedReference, UDDIKeyedReference> origRefMap = new HashMap<UDDIKeyedReference, UDDIKeyedReference>();
+                for (UDDIKeyedReference origRef : origRefs) {
+                    origRefMap.put(origRef, origRef);
+                }
+                //see if any keyNames were changed. They are not part of the equality test used in the above containsAll check
+                for (UDDIKeyedReference incomingRef : incomingRefs) {
+                    if (origRefMap.containsKey(incomingRef)) {
+                        final UDDIKeyedReference origRef = origRefMap.get(incomingRef);
+                        refsHaveChanged = UDDIUtilities.areNamesDifferent(origRef.getKeyName(), incomingRef.getKeyName());
+                    }
+                }
+            }
         } else {
             final boolean noIncoming = incomingRefs == null;
             final boolean noOrig = origRefs == null;

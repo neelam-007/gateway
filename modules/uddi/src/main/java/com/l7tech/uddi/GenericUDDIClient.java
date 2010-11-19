@@ -580,12 +580,14 @@ public class GenericUDDIClient implements UDDIClient, JaxWsUDDIClient {
 
         final Set<String> referencedTModels = new HashSet<String>();
 
-        for(BindingTemplate bindingTemplate: bindingTemplates.getBindingTemplate()){
+        if(bindingTemplates != null) {
+            for(BindingTemplate bindingTemplate: bindingTemplates.getBindingTemplate()){
 
-            //the binding template references both the wsdl:portType and wsdl:binding tModels
-            TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
-            for(TModelInstanceInfo tModelInstanceInfo: tModelInstanceDetails.getTModelInstanceInfo()){
-                referencedTModels.add(tModelInstanceInfo.getTModelKey());
+                //the binding template references both the wsdl:portType and wsdl:binding tModels
+                TModelInstanceDetails tModelInstanceDetails = bindingTemplate.getTModelInstanceDetails();
+                for(TModelInstanceInfo tModelInstanceInfo: tModelInstanceDetails.getTModelInstanceInfo()){
+                    referencedTModels.add(tModelInstanceInfo.getTModelKey());
+                }
             }
         }
 
