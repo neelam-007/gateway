@@ -246,6 +246,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     //- PRIVATE
 
     private static final String PROP_IP_ADDRESS = "com.l7tech.cluster.ipAddress";
+    private static final String NODE_CLUSTER_IP_ADDRESS = "node.cluster.ip";
 
     private static final String TABLE_NAME = "cluster_info";
     private static final String NODEID_COLUMN_NAME = "nodeIdentifier";
@@ -464,7 +465,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     }
 
     /**
-     * Get the IP address from the system property (if any)
+     * Get the IP address from the system property (if any), then falls back to cluster.node.ip from node.properties.
      *
      * @return The property or null if not set
      */
@@ -475,10 +476,13 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             if (configuredIp!=null && !isValidIPAddress(InetAddress.getByName(configuredIp))) {
                 logger.log(Level.WARNING, "IP address '"+configuredIp+"', is not present.");
             }
-        }
-        catch(UnknownHostException uhe) {
+        } catch (UnknownHostException uhe) {
             logger.log(Level.WARNING, "Invalid IP address configured '"+configuredIp+"', ignoring.", uhe);
             configuredIp = null;
+        }
+
+        if (configuredIp == null) {
+            configuredIp = ClusterIDManager.loadNodeProperty(NODE_CLUSTER_IP_ADDRESS);
         }
 
         return configuredIp;

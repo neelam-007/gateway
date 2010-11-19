@@ -32,6 +32,13 @@ launch(){
     return $?
 }
 
+launchRoot(){
+    if [ "${USERID}" = "0" ]; then
+        ${JAVA_HOME}/bin/java ${OPTIONS} -jar ${1}.jar
+    fi
+    return $?
+}
+
 if [ "${1}" == "-changeMasterPassphrase" ] ; then
   launch "ConfigMasterPassphrase" "$*"
 elif [ "${1}" == "-changeClusterPassphrase" ] ; then
@@ -45,5 +52,6 @@ elif [ "${1}" == "-keystoreProperty" ] ; then
   launch "ConfigKeystoreFileProperty" "$*"
 else
   launch "ConfigWizard" "$*"
+  launchRoot "ConfigClusterAddress"
 fi
 

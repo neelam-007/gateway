@@ -588,6 +588,18 @@ public class InetAddressUtil {
         }
     }
 
+    public static String formatMac( final byte[] macAddr ) {
+        String hex = HexUtils.hexDump(macAddr).toUpperCase();
+        StringBuilder hexBuilder = new StringBuilder();
+        for ( int i=0; i < hex.length(); i++ ) {
+            if ( i>0 && i%2==0 ) {
+                hexBuilder.append(':');
+            }
+            hexBuilder.append(hex.charAt(i));
+        }
+        return hexBuilder.toString();
+    }
+
     private static String getHostAddress(String maybeIpAddress) {
         if (isValidIpv4Address(maybeIpAddress)) return maybeIpAddress;
         if (maybeIpAddress != null && maybeIpAddress.length() > 2 &&
@@ -605,4 +617,5 @@ public class InetAddressUtil {
     private static boolean isEqualIgnoreCaseString(String s1, String s2) {
         return s1 == null ? s2 == null : s1.equalsIgnoreCase(s2);
     }
+
 }

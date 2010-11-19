@@ -1,11 +1,8 @@
 package com.l7tech.server.cluster;
 
-import com.l7tech.util.IOUtils;
+import com.l7tech.util.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.hibernate.HibernateException;
@@ -37,7 +34,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
     public String thisNodeId() {
         if (selfId != null) return selfId;
 
-        String propertiesNodeId = loadNodeIdProperty();
+        String propertiesNodeId = loadNodeProperty(NODE_ID_PROPERTY);
         if ( propertiesNodeId != null ) {
             logger.config("Loaded node identifier is '"+propertiesNodeId+"'.");
         }
@@ -107,6 +104,14 @@ public class ClusterIDManager extends HibernateDaoSupport {
             logger.fine("Cannot get mac address from system property ('"+PROP_MAC_ADDRESS+"').");
         }
 
+        // try node.properties
+        if (output.isEmpty()) {
+            output.add(loadNodeProperty(NODE_CLUSTER_MAC_PROPERTY));
+            if (output.isEmpty()) {
+                logger.fine("Node mac address node defined in node.properties, skipping this source.");
+            }
+        }
+
         // try to get mac from ifconfig
         if (output.isEmpty()) {
             output.addAll(getIfconfigMac());
@@ -148,7 +153,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
             for ( NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces()) ) {
                 byte[] macAddr = networkInterface.getHardwareAddress();
                 if ( macAddr != null ) {
-                    if ( mac==null || mac.equalsIgnoreCase(formatMac(macAddr)) ) {
+                    if ( mac==null || mac.equalsIgnoreCase(InetAddressUtil.formatMac(macAddr)) ) {
                         Collection<InetAddress> addresses = Collections.list(networkInterface.getInetAddresses());
                         if ( !addresses.isEmpty() ) {
                             ip = addresses.iterator().next().getHostAddress();
@@ -174,6 +179,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
     private static final String SYSPROP_CONFIG_HOME = "com.l7tech.server.configDirectory";
     private static final String NODE_ID_FILE = "node.properties";
     private static final String NODE_ID_PROPERTY = "node.id";    
+    private static final String NODE_CLUSTER_MAC_PROPERTY = "node.cluster.mac";
 
     private static final String PROP_MAC_ADDRESS = "com.l7tech.cluster.macAddress";
     private static Pattern ifconfigMacPattern = Pattern.compile(".*HWaddr\\s+(\\w\\w.\\w\\w.\\w\\w." +
@@ -329,9 +335,15 @@ public class ClusterIDManager extends HibernateDaoSupport {
 
         try {
             for ( NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces()) ) {
-                byte[] macAddr = networkInterface.getHardwareAddress();
-                if ( macAddr != null ) {
-                    output.add(formatMac(macAddr));
+                NetworkInterface ni = networkInterface;
+                if (ni != null) {
+                    while (ni.isVirtual() && ni.getParent() != null) {
+                        ni = ni.getParent();
+                    }
+                    byte[] macAddr = ni.getHardwareAddress();
+                    if (macAddr != null) {
+                        output.add(InetAddressUtil.formatMac(macAddr));
+                    }
                 }
             }
         } catch (SocketException e) {
@@ -341,23 +353,11 @@ public class ClusterIDManager extends HibernateDaoSupport {
         return output;
     }
 
-    private static String formatMac( final byte[] macAddr ) {
-        String hex = HexUtils.hexDump(macAddr).toUpperCase();
-        StringBuilder hexBuilder = new StringBuilder();
-        for ( int i=0; i < hex.length(); i++ ) {
-            if ( i>0 && i%2==0 ) {
-                hexBuilder.append(':');
-            }
-            hexBuilder.append(hex.charAt(i));
-        }
-        return hexBuilder.toString();
-    }
-
     /**
      * Load the nodes id from the properties file
      */
-    private String loadNodeIdProperty() {
-        String nodeid = null;
+    static String loadNodeProperty(String propertyName) {
+        String propertyValue = null;
         String configDirectory = System.getProperty(SYSPROP_CONFIG_HOME);
         if ( configDirectory != null ) {
             File configDir = new File( configDirectory );
@@ -367,7 +367,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
                 InputStream in = null;
                 try {
                     properties.load( in = new FileInputStream(configProps) );
-                    nodeid = properties.getProperty( NODE_ID_PROPERTY );
+                    propertyValue = properties.getProperty( propertyName );
                 } catch ( IOException ioe ) {
                     logger.log( Level.WARNING, "Error loading node properties.", ioe);
                 } finally {
@@ -378,7 +378,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
             logger.warning("Could not determine configuration directory.");
         }
 
-        return nodeid;
+        return propertyValue;
     }
 
     /**
@@ -416,5 +416,5 @@ public class ClusterIDManager extends HibernateDaoSupport {
         } else {
             logger.warning("Could not determine configuration directory to save nodeid.");
         }
-    }    
+    }
 }
