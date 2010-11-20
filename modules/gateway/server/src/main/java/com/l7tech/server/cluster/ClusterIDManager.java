@@ -29,7 +29,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
     //- PUBLIC
 
     /**
-     * returns the node id to which this server applies to
+     * returns the node id to which this server applies to  
      */
     public String thisNodeId() {
         if (selfId != null) return selfId;
@@ -106,8 +106,10 @@ public class ClusterIDManager extends HibernateDaoSupport {
 
         // try node.properties
         if (output.isEmpty()) {
-            output.add(loadNodeProperty(NODE_CLUSTER_MAC_PROPERTY));
-            if (output.isEmpty()) {
+            final String mac = loadNodeProperty(NODE_CLUSTER_MAC_PROPERTY);
+            if (mac != null && mac.length() > 0) {
+                output.add(mac);
+            } else {
                 logger.fine("Node mac address node defined in node.properties, skipping this source.");
             }
         }
