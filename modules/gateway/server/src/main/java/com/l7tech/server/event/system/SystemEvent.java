@@ -52,7 +52,7 @@ public abstract class SystemEvent extends ApplicationEvent {
         this.level = level;
         if (ipAddress == null) ipAddress = MY_IP;
         this.ipAddress = ipAddress;
-        this.message = message != null ? message : component.getName() + " " + getAction();
+        this.message = message;
         this.identityProviderOid = identityProviderOid;
         this.userName = userName;
         this.userId = userId;
@@ -61,7 +61,7 @@ public abstract class SystemEvent extends ApplicationEvent {
     public abstract String getAction();
 
     public String getMessage() {
-        return message;
+        return message != null ? message : component.getName() + " " + getAction();
     }
 
     public Component getComponent() {

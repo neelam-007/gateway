@@ -8,18 +8,36 @@ import com.l7tech.gateway.common.Component;
 public class UDDISystemEvent extends SystemEvent implements RoutineSystemEvent {
 
     //- PUBLIC
+    public enum Action {
+        REGISTRY_UPDATE("Registry Update"), CHECKING_ENDPOINTS("Checking Endpoints");
+
+        Action(String action) {
+            this.action = action;
+        }
+
+        @Override
+        public String toString() {
+            return action.toString();
+        }
+
+        //- PRIVATE
+        private final String action;
+    }
 
     public UDDISystemEvent( final Object source,
-                            final Component component ) {
+                            final Component component,
+                            final Action action) {
         super( source, component );
+        this.action = action;
     }
+
 
     @Override
     public String getAction() {
-        return action;
+        return action.toString();
     }
 
     //- PRIVATE
 
-    private static final String action = "Registry Update";
+    private final Action action;
 }

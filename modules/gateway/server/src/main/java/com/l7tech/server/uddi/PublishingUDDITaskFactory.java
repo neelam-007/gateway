@@ -370,7 +370,14 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             "' not found in UDDIProxiedServiceInfo #(" + uddiProxiedServiceInfo.getId() + ")");
                 }
 
-                final EndpointPair endPointPair = factory.uddiHelper.getEndpointForScheme(endpointScheme, publishedService.getOid());
+                final EndpointPair endPointPair;
+                try {
+                    endPointPair = factory.uddiHelper.getEndpointForScheme(endpointScheme, publishedService.getOid());
+                } catch (UDDIHelper.EndpointNotDefinedException e) {
+                    PublishingUDDITaskFactory.handleUddiPublishFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
+                    context.logAndAudit(SystemMessages.UDDI_PUBLISH_ENDPOINT_FAILED, ExceptionUtils.getDebugException(e), ExceptionUtils.getMessage(e));
+                    return;
+                }
 
                 //this will be null on first publish
                 final Set<EndpointPair> persistedEndpoints = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.ALL_ENDPOINT_PAIRS_KEY);

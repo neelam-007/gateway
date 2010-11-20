@@ -1,6 +1,7 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.uddi.*;
@@ -522,7 +523,13 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                                 "published service #("+serviceInfo.getPublishedServiceOid()+"). ");
                         continue;
                     }
-                    final EndpointPair endPointPair = uddiHelper.getEndpointForScheme(endpointScheme, serviceInfo.getPublishedServiceOid());
+                    final EndpointPair endPointPair;
+                    try {
+                        endPointPair = uddiHelper.getEndpointForScheme(endpointScheme, serviceInfo.getPublishedServiceOid());
+                    } catch (UDDIHelper.EndpointNotDefinedException e) {
+                        auditor.logAndAudit(SystemMessages.UDDI_GIF_SCHEME_NOT_AVAILABLE, endpointScheme.toString(), ExceptionUtils.getMessage(e));
+                        continue;
+                    }
                     allEndpointPairs = new HashSet<EndpointPair>(Arrays.asList(endPointPair));
                 } else {
                     allEndpointPairs = uddiHelper.getAllExternalEndpointAndWsdlUrls(serviceInfo.getPublishedServiceOid());
@@ -536,6 +543,11 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
                     uddiPublishStatusManager.update(publishStatus);
                 }
             }
+        }
+
+        ApplicationEventPublisher publisher = eventPublisher;
+        if ( publisher != null ) {
+            publisher.publishEvent( new UDDISystemEvent( this, Component.GW_UDDI_SERVICE, UDDISystemEvent.Action.CHECKING_ENDPOINTS ) );
         }
     }
 
@@ -934,7 +946,7 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
 
                         ApplicationEventPublisher publisher = coordinator.eventPublisher;
                         if ( publisher != null ) {
-                            publisher.publishEvent( new UDDISystemEvent( coordinator, Component.GW_UDDI_SERVICE ) );
+                            publisher.publishEvent( new UDDISystemEvent( coordinator, Component.GW_UDDI_SERVICE, UDDISystemEvent.Action.REGISTRY_UPDATE ) );
                         }
                     }
                 } );

@@ -83,12 +83,13 @@ public class UDDIHelper implements SsgConnectorActivationListener {
 
     /**
      * Get a single cluster endpoint pair.
-     * @param scheme
-     * @param serviceOid
-     * @return
+     * @param scheme HTTP or HTTPS
+     * @param serviceOid oid of the Published Service
+     * @return EndpointPair containing the service consumption URL and WSDL URL
+     * @throws com.l7tech.server.uddi.UDDIHelper.EndpointNotDefinedException if no endpoint for the request scheme exists.
      */
     public EndpointPair getEndpointForScheme(final UDDIRegistryAdmin.EndpointScheme scheme,
-                                             final long serviceOid){
+                                             final long serviceOid) throws EndpointNotDefinedException{
         final Map<Long,String> connectorProtocols;
         synchronized (activeConnectorProtocols) {
             connectorProtocols = new HashMap<Long,String>( activeConnectorProtocols );
@@ -97,21 +98,28 @@ public class UDDIHelper implements SsgConnectorActivationListener {
         switch (scheme){
             case HTTP:
                 if(!connectorProtocols.values().contains("HTTP"))
-                    throw new IllegalStateException("Cannot get endpoint for HTTP as no HTTP listener is defined.");
+                    throw new EndpointNotDefinedException("Cannot get endpoint for HTTP as no HTTP listener is defined.");
                 return new EndpointPair(
                         doGetExternalUrlForService(serviceOid, false),
                         doGetExternalWsdlUrlForService(serviceOid, false));
             case HTTPS:
                 if(!connectorProtocols.values().contains("HTTPS"))
-                    throw new IllegalStateException("Cannot get endpoint for HTTPS as no HTTPS listener is defined.");
+                    throw new EndpointNotDefinedException("Cannot get endpoint for HTTPS as no HTTPS listener is defined.");
                 return new EndpointPair(
                         doGetExternalUrlForService(serviceOid, true),
                         doGetExternalWsdlUrlForService(serviceOid, false));
             default:
-                throw new IllegalStateException("Unknown scheme: " + scheme.toString());
+                throw new EndpointNotDefinedException("Unknown scheme: " + scheme.toString());
 
         }
     }
+
+    public static class EndpointNotDefinedException extends Exception{
+        public EndpointNotDefinedException(String message) {
+            super(message);
+        }
+    }
+
     /**
      * For a cluster, this should return a pair for each configured http(s) listener configured on the cluster.
      *

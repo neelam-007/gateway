@@ -136,6 +136,7 @@ public class SystemMessages extends Messages {
     public static final M UDDI_NOTIFICATION_ENDPOINT_UPDATED    = m(2294, Level.INFO, "Updated endpoint from UDDI ''{0}'' for business service ''{1}'', wsdl:port ''{2}'' for UDDI registry ''{3}''.");
     public static final M UDDI_NOTIFICATION_TRIGGERING_FAILED   = m(2295, Level.WARNING, "Error firing monitoring update events for UDDI Registry with id#({0}).");
     public static final M UDDI_ORIGINAL_SERVICE_INVALIDATED     = m(2296, Level.WARNING, "Original Business Service in UDDI can no longer be monitored. serviceKey: {0} UDDI Registry with id#({1}).");
+    public static final M UDDI_GIF_SCHEME_NOT_AVAILABLE         = m(2297, Level.WARNING, "Service is configured to publish a GIF ''{0}'' endpoint which is no longer available on the Gateway. UDDI is now out of date. To fix either add / enable the listener or republish the GIF endpoint.");
 
     // MAX -                                      m(2999
 }
