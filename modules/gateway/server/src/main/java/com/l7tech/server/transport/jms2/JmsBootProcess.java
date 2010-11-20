@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id: JmsBootProcess.java 18643 2008-04-17 20:50:15Z megery $
- */
-
 package com.l7tech.server.transport.jms2;
 
 import com.l7tech.objectmodel.EntityHeader;
@@ -52,7 +46,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
     /** Mutex */
     private final Object listenerLock = new Object();
     /** Factory used to instantiate new JmsEndpointListeners */
-    private JmsEndpointListenerFactory jmsEndpointListenerFactory;
+    private final JmsEndpointListenerFactory jmsEndpointListenerFactory;
     /** Set of all active inbound JMS listeners */
     private Set<JmsEndpointListener> activeListeners = new HashSet<JmsEndpointListener>();
     /** Background timer used to check for connection/endpoint updates */
@@ -65,22 +59,23 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
     private EndpointVersionChecker endpointChecker;
 
     /**
-     * Constructor.  Remains unchanged from original constructor to us to swap between
-     * the "legacy" and new JMS implementations.
+     * Constructor.
      *
      * @param threadPoolBean thread pool to manage. This class will start and stop this thread pool bean appropriately.
      * @param licenseManager licence manager
      * @param connectionManager Persisted JMS connection manager
      * @param endpointManager Persisted JMS endpoint manager
      * @param jmsPropertyMapper Jms initial context properties
+     * @param jmsEndpointListenerFactory The factory for endpoint listeners
      * @param timer timer object used by the connection/endpoint update checker
      */
-    public JmsBootProcess(final ThreadPoolBean threadPoolBean,
-                          LicenseManager licenseManager,
-                          JmsConnectionManager connectionManager,
-                          JmsEndpointManager endpointManager,
-                          JmsPropertyMapper jmsPropertyMapper,
-                          Timer timer)
+    public JmsBootProcess( final ThreadPoolBean threadPoolBean,
+                           final LicenseManager licenseManager,
+                           final JmsConnectionManager connectionManager,
+                           final JmsEndpointManager endpointManager,
+                           final JmsPropertyMapper jmsPropertyMapper,
+                           final JmsEndpointListenerFactory jmsEndpointListenerFactory,
+                           final Timer timer )
     {
         super("JMS Boot Process", logger, GatewayFeatureSets.SERVICE_JMS_MESSAGE_INPUT, licenseManager);
 
@@ -88,6 +83,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
         this.connectionManager = connectionManager;
         this.endpointManager = endpointManager;
         this.jmsPropertyMapper = jmsPropertyMapper;
+        this.jmsEndpointListenerFactory = jmsEndpointListenerFactory;
 
         // create a timer if one is not supplied
         if (timer == null)
@@ -115,13 +111,14 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
         if(threadPoolBean == null) throw new IllegalStateException("threadPoolBean is required.");
         if(connectionManager == null) throw new IllegalStateException("connectionManager is required.");
         if(endpointManager == null) throw new IllegalStateException("endpointManager is required.");
+        if(jmsEndpointListenerFactory == null) throw new IllegalStateException("jmsEndpointListenerFactory is required.");
     }
 
     /**
-     * Starts {@link com.l7tech.server.transport.jms.JmsReceiver}s for the initial configuration.  Also starts the EndpointVersionChecker and ConnectionVersionChecker to periodically
+     * Starts {@link JmsEndpointListener}s for the initial configuration.  Also starts the EndpointVersionChecker and ConnectionVersionChecker to periodically
      * check whether endpoints or connections have been created, updated or deleted.
      * <p/>
-     * Any exception that is thrown in a JmsReceiver's start() method will be logged but not propagated.
+     * Any exception that is thrown in a JmsEndpointListener's start() method will be logged but not propagated.
      */
     @Override
     protected void doStart() throws LifecycleException {
@@ -157,8 +154,6 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
 
                             endpointCfg = new JmsEndpointConfig(connection, endpoint, this.jmsPropertyMapper, getApplicationContext());
 
-//                            JmsReceiver receiver = new JmsReceiver(connection, endpoint, endpoint.getReplyType(), jmsPropertyMapper, getApplicationContext());
-                            // need to check to see if it's Queue-based or pub/sub (topic)?
                             JmsEndpointListener qListener = jmsEndpointListenerFactory.createListener(endpointCfg);
 
                             try {
@@ -213,7 +208,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
 
         if (applicationEvent instanceof ReadyForMessages) {
             try {
-                threadPoolBean.start();
+                threadPoolBean.start(); //TODO [steve] need to start this if license added later
                 startListeners();
             } catch (LifecycleException e) {
                 logger.log(Level.SEVERE, "Unable to start JMS EndpointListener", e);
@@ -326,8 +321,7 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
         // Stop any existing receivers for this endpoint
         endpointDeleted( updatedEndpoint.getOid() );
 
-        if (updatedEndpoint.isMessageSource()) {
-            if (updatedEndpoint.isDisabled()) return;
+        if (updatedEndpoint.isMessageSource() && !updatedEndpoint.isDisabled()) {
             JmsEndpointListener newListener = null;
             try {
                 JmsConnection connection = connectionManager.findByPrimaryKey( updatedEndpoint.getConnectionOid() );
@@ -352,17 +346,6 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
             }
         }
     }
-
-
-    /**
-     * Sets the JmsEndpointListenerFactory.
-     *
-     * @param newFactory the new factory
-     */
-    public void setJmsEndpointListenerFactory(JmsEndpointListenerFactory newFactory) {
-        this.jmsEndpointListenerFactory = newFactory;
-    }
-
 
     /**
      * Periodically checks for new, updated or deleted JMS endpoints

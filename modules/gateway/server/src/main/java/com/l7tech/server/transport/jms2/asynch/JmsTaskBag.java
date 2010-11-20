@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id: JmsBag.java 18643 2008-04-17 20:50:15Z megery $
- */
-
 package com.l7tech.server.transport.jms2.asynch;
 
 import com.l7tech.server.transport.jms.JmsBag;
@@ -20,22 +14,29 @@ import java.util.logging.Logger;
  */
 public class JmsTaskBag extends JmsBag {
     
-    public JmsTaskBag( Context context, ConnectionFactory factory, Connection conn, Session sess ) {
-        super(context, factory, conn, sess);
+    public JmsTaskBag( final Context context,
+                       final ConnectionFactory factory,
+                       final Connection connection,
+                       final Session session ) {
+        super(context, factory, connection, session);
     }
 
+    @Override
     public ConnectionFactory getConnectionFactory() {
         return super.getConnectionFactory();
     }
 
+    @Override
     public Connection getConnection() {
         return super.getConnection();
     }
 
+    @Override
     public Session getSession() {
         return super.getSession();
     }
 
+    @Override
     public Context getJndiContext() {
         return super.getJndiContext();
     }
@@ -44,6 +45,7 @@ public class JmsTaskBag extends JmsBag {
         return closed;
     }
 
+    @Override
     public void close() {
         try {
             if ( !isClosed() && getSession() != null ) {

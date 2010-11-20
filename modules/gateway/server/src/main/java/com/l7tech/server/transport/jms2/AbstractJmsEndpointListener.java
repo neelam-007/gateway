@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.jms2;
 
+import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.server.LifecycleException;
@@ -9,9 +10,13 @@ import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 
 import javax.jms.Connection;
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.naming.Context;
 import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
 import java.util.concurrent.RejectedExecutionException;
@@ -34,11 +39,8 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractJmsEndpointListener implements JmsEndpointListener {
 
-    private static final Logger _logger = Logger.getLogger(AbstractJmsEndpointListener.class.getName());
+    private final Logger _logger;
 
-    /*
-     * Is there a better place for these properties?
-     */
     protected static final String PROPERTY_ERROR_SLEEP = "ioJmsErrorSleep";
     protected static final String PROPERTY_MAX_SIZE = "ioJmsMessageMaxBytes";
     protected static final int MAXIMUM_OOPSES = 5;
@@ -49,7 +51,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
     protected static final int DEFAULT_OOPS_SLEEP = 60 * 1000; // One minute
     protected static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
     protected static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
-    protected static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
+    protected static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 minutes;
 
     /** The amount of time the thread sleeps when the MAXIMUM_OOPSES limit is reached */
     private final AtomicInteger oopsSleep = new AtomicInteger(DEFAULT_OOPS_SLEEP);
@@ -64,8 +66,12 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
     private boolean _started;
 
     // Runtime stuff
+    protected final Object sync = new Object();
+    protected JmsBag _jmsBag;
+    protected MessageConsumer _consumer;
+    private Destination _destination;
+    private Queue _failureQueue;
     private boolean _stop;
-    private final Object sync = new Object();
     private Thread _thread;
     private long lastStopRequestedTime;
     private long lastAuditErrorTime;
@@ -75,9 +81,10 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      *
      * @param endpointCfg
      */
-    public AbstractJmsEndpointListener(final JmsEndpointConfig endpointCfg) {
+    public AbstractJmsEndpointListener(final JmsEndpointConfig endpointCfg, final Logger logger) {
 
         this._endpointCfg = endpointCfg;
+        this._logger = logger;
 
         // create the ListenerThread
         this._listener = new ListenerThread();
@@ -90,20 +97,89 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      * <li>In multi-threaded mode, each messaging processing thread will need to have it's own session.
      * Created from a single connection</li>
      * </ul>
-     *
-     * @return
-     * @throws JMSException
-     * @throws NamingException
-     * @throws JmsConfigException
      */
-    protected abstract JmsBag getJmsBag() throws JMSException, NamingException, JmsConfigException;
+    protected JmsBag getJmsBag() throws JMSException, NamingException, JmsConfigException {
+        JmsBag bag;
+
+        synchronized(sync) {
+            bag = _jmsBag;
+            if ( bag == null ) {
+                _logger.finest( "Getting new JmsBag" );
+                bag = JmsUtil.connect(_endpointCfg, _endpointCfg.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
+                _jmsBag = bag;
+            }
+        }
+
+        return bag;
+    }
 
     /**
      * Return a consumer that can read messages on the inbound Jms destination.
      *
      * @return JMS MessageConsumer for the inbound destination
      */
-    protected abstract MessageConsumer getConsumer() throws JMSException, NamingException, JmsConfigException;
+    protected MessageConsumer getConsumer() throws JMSException, NamingException, JmsConfigException {
+        synchronized(sync) {
+            if ( _consumer == null ) {
+                _logger.finest( "Getting new MessageConsumer" );
+                boolean ok = false;
+                String message = null;
+                try {
+                    final JmsBag bag = getJmsBag();
+                    final Session session = bag.getSession();
+                    final Destination destination = getDestination();
+                    _consumer = JmsUtil.createMessageConsumer( session, destination );
+                    ok = true;
+                } catch (JMSException e) {
+                    message = ExceptionUtils.getMessage(e);
+                    throw e;
+                } catch (NamingException e) {
+                    message = ExceptionUtils.getMessage(e);
+                    throw e;
+                } catch (JmsConfigException e) {
+                    message = ExceptionUtils.getMessage(e);
+                    throw e;
+                } catch (RuntimeException e) {
+                    message = ExceptionUtils.getMessage(e);
+                    throw e;
+                } finally {
+                    if (!ok) {
+                        fireConnectError(message);
+                    }
+                }
+            }
+            return _consumer;
+        }
+    }
+
+    protected Destination getDestination() throws NamingException, JmsConfigException, JMSException {
+        synchronized(sync) {
+            if ( _destination == null ) {
+                _logger.finest( "Getting new destination" );
+                final JmsBag bag = getJmsBag();
+                final Context context = bag.getJndiContext();
+                final String destinationName = _endpointCfg.getEndpoint().getDestinationName();
+                _destination = JmsUtil.cast( context.lookup( destinationName ), Destination.class );
+            }
+            return _destination;
+        }
+    }
+
+    protected Queue getFailureQueue() throws NamingException, JmsConfigException, JMSException {
+        synchronized(sync) {
+            if ( _failureQueue == null &&
+                    _endpointCfg.isTransactional() &&
+                    _endpointCfg.getEndpoint().getFailureDestinationName() != null)
+            {
+                _logger.finest( "Getting new FailureQueue" );
+                final JmsBag bag = getJmsBag();
+                final Context context = bag.getJndiContext();
+                final String failureDestinationName = _endpointCfg.getEndpoint().getFailureDestinationName();
+                _failureQueue = JmsUtil.cast( context.lookup( failureDestinationName ), Queue.class );
+            }
+            return _failureQueue;
+        }
+    }
 
     /**
      * Method used to ensure that the connection (javax.jms.Connection) used to communicate with the endpoint
@@ -149,8 +225,22 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
 
     @Override
     public String toString() {
-        StringBuffer s = new StringBuffer("jms-listener-");
-        s.append(_endpointCfg.getDisplayName());
+        StringBuilder s = new StringBuilder("jms-listener-");
+        s.append(identify());
+        return s.toString();
+    }
+
+    private String identify() {
+        StringBuilder s = new StringBuilder(_endpointCfg.getDisplayName());
+        s.append("[");
+        s.append(_endpointCfg.getEndpoint().getOid());
+        s.append("v");
+        s.append(_endpointCfg.getEndpoint().getVersion());
+        s.append(",");
+        s.append(_endpointCfg.getConnection().getOid());
+        s.append("v");
+        s.append(_endpointCfg.getConnection().getVersion());
+        s.append("]");
         return s.toString();
     }
 
@@ -210,9 +300,27 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      * Perform cleanup of resources and reset the listener status.
      */
     protected void cleanup() {
-        /*
-         * Moved responsibility for cleanup to implementation class
-         */
+        // close the consumer
+        if ( _consumer != null ) {
+            try {
+                _consumer.close();
+            } catch ( JMSException e ) {
+                _logger.log( Level.INFO, "Caught JMSException during cleanup", e );
+            }
+            _consumer = null;
+        }
+
+        _destination = null;
+
+        _failureQueue = null;
+
+        // close the Jms connection artifacts
+        if ( _jmsBag != null ) {
+            // this will close the session and cause rollback if transacted
+            _jmsBag.close();
+            _jmsBag = null;
+        }
+
         _started = false;
     }
 
@@ -281,13 +389,13 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
     protected void fireConnected() {
         lastAuditErrorTime = 0L;
         fireEvent(new JMSEvent(this, Level.INFO, null,
-                formatMessage(JmsMessages.INFO_EVENT_CONNECT_SUCCESS, _endpointCfg.getDisplayName())));
+                formatMessage(JmsMessages.INFO_EVENT_CONNECT_SUCCESS, identify())));
     }
 
     protected void fireConnectError(String message) {
         fireEvent(new JMSEvent(this, Level.WARNING,  null, formatMessage(
                         JmsMessages.INFO_EVENT_CONNECT_FAIL,
-                        new Object[] {_endpointCfg.getDisplayName(), message}))
+                        new Object[] {identify(), message}))
         );
     }
 
@@ -358,7 +466,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         public final void run() {
 
             int oopses = 0;
-            log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_START, _endpointCfg.getEndpoint().getDestinationName());
+            log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_START, identify());
 
             try {
                 Message jmsMessage;
@@ -367,7 +475,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
                         jmsMessage = receiveMessage();
 
                         log(Level.FINE, JmsMessages.INFO_LISTENER_RECEIVE_MSG,
-                            new Object[]{_endpointCfg.getEndpoint().getDestinationName(), jmsMessage == null ? null : jmsMessage.getJMSMessageID()});
+                            new Object[]{identify(), jmsMessage == null ? null : jmsMessage.getJMSMessageID()});
 
                         if ( jmsMessage != null && !isStop() ) {
 
@@ -386,7 +494,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
                         if (!ExceptionUtils.causedBy(e, RejectedExecutionException.class)) {
                             log(Level.WARNING, formatMessage(
                                     JmsMessages.WARN_LISTENER_RECEIVE_ERROR,
-                                    _endpointCfg.getEndpoint().getDestinationName()),
+                                    identify()),
                                     ExceptionUtils.getDebugException(e));
 
                             cleanup();
@@ -414,7 +522,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
                     }
                 }
             } finally {
-                log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_STOP, _endpointCfg.getEndpoint().getDestinationName());
+                log(Level.INFO, JmsMessages.INFO_LISTENER_POLLING_STOP, identify());
                 cleanup();
             }
         }

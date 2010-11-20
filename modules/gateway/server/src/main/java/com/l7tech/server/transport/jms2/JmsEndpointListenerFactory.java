@@ -5,8 +5,12 @@ package com.l7tech.server.transport.jms2;
  */
 public interface JmsEndpointListenerFactory {
 
-
-    public JmsEndpointListener createListener(JmsEndpointConfig endpointConfig);
-
+    /**
+     * Create an endpoint listener for the given configuration.
+     *
+     * @param endpointConfig The configuration for the endpoint.
+     * @return The endpoint to use
+     */
+    JmsEndpointListener createListener(JmsEndpointConfig endpointConfig);
 
 }

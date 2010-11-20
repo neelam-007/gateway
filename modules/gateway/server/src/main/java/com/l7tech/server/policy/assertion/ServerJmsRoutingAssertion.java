@@ -35,7 +35,6 @@ import org.xml.sax.SAXException;
 
 import javax.jms.*;
 import javax.jms.Message;
-import javax.jms.Queue;
 import javax.naming.CommunicationException;
 import javax.naming.NamingException;
 import java.io.IOException;
@@ -334,19 +333,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                 MessageProducer jmsProducer = null;
                 try {
-                    if ( cfg.isQueue() && jmsSession instanceof QueueSession ) {
-                        if ( !(jmsOutboundDestination instanceof Queue ) ) {
-                            auditor.logAndAudit( AssertionMessages.JMS_ROUTING_DESTINATION_SESSION_MISMATCH );
-                            throw new AssertionStatusException(AssertionStatus.FAILED);
-                        }
-                        // the reason for this distinction is that IBM throws java.lang.AbstractMethodError: com.ibm.mq.jms.MQQueueSession.createProducer(Ljavax/jms/Destination;)Ljavax/jms/MessageProducer;
-                        jmsProducer = ((QueueSession)jmsSession).createSender( (Queue)jmsOutboundDestination );
-//                    } else if ( jmsSession instanceof TopicSession && cfg.getEndpoint().getReplyType() != JmsReplyType.NO_REPLY) {
-//                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_TOPIC_WITH_REPLY);
-//                        throw new AssertionStatusException(AssertionStatus.NOT_APPLICABLE);
-                    } else {
-                        jmsProducer = jmsSession.createProducer( jmsOutboundDestination );
-                    }
+                    jmsProducer = JmsUtil.createMessageProducer( jmsSession, jmsOutboundDestination );
 
                     context.routingStarted();
 
@@ -402,11 +389,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     MessageConsumer jmsConsumer = null;
                     final Message jmsResponse;
                     try {
-                        if ( cfg.isQueue() && jmsSession instanceof QueueSession ) {
-                            jmsConsumer = ((QueueSession)jmsSession).createReceiver((Queue)jmsInboundDestination, selector);
-                        } else {
-                            jmsConsumer = jmsSession.createConsumer(jmsInboundDestination, selector);
-                        }
+                        jmsConsumer = JmsUtil.createMessageConsumer( jmsSession, jmsInboundDestination, selector );
 
                         auditor.logAndAudit(AssertionMessages.JMS_ROUTING_GETTING_RESPONSE);
                         jmsResponse = jmsConsumer.receive( timeout );
@@ -573,7 +556,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         javax.jms.Message outboundRequestMsg;
         BufferPoolByteArrayOutputStream outputStream = new BufferPoolByteArrayOutputStream();
         final byte[] outboundRequestBytes;
-        com.l7tech.message.Message requestMessage = null;
+        com.l7tech.message.Message requestMessage;
         try {
             requestMessage = context.getTargetMessage(assertion.getRequestTarget());
         } catch (NoSuchVariableException e) {
@@ -623,7 +606,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 String replyToQueueName = outboundRequestEndpoint.getReplyToQueueName();
                 if (replyToQueueName == null || replyToQueueName.length() == 0)
                     throw new IllegalStateException("REPLY_TO_OTHER was selected, but no reply-to queue name was specified");
-                outboundRequestMsg.setJMSReplyTo((Destination)jndiContextProvider.lookup(replyToQueueName));
+                outboundRequestMsg.setJMSReplyTo( JmsUtil.cast( jndiContextProvider.lookup(replyToQueueName), Destination.class) );
 
                 if (!endpointCfg.getEndpoint().isUseMessageIdForCorrelation()) {
                     final String id = "L7_REQ_ID:" + context.getRequestId().toString();
@@ -636,8 +619,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     }
 
     private Destination getRoutedRequestDestination( final JmsResourceManager.JndiContextProvider jndiContextProvider,
-                                                     final JmsEndpointConfig cfg) throws NamingException {
-        return (Destination)jndiContextProvider.lookup(cfg.getEndpoint().getDestinationName());
+                                                     final JmsEndpointConfig cfg) throws JMSException, NamingException {
+        return JmsUtil.cast( jndiContextProvider.lookup(cfg.getEndpoint().getDestinationName()), Destination.class );
     }
 
     private String getSelector( final Message jmsOutboundRequest,

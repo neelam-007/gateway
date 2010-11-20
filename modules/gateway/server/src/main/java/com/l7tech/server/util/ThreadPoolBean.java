@@ -1,10 +1,5 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.server.util;
 
-import com.l7tech.server.ServerConfig;
 import com.l7tech.util.Config;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ThreadPool;
@@ -24,7 +19,7 @@ import java.util.logging.Logger;
  *
  */
 public class ThreadPoolBean implements PropertyChangeListener {
-    public ThreadPoolBean(final ServerConfig serverConfig,
+    public ThreadPoolBean(final Config config,
                           final String poolName,
                           final String maxPoolSizeClusterPropName,
                           final String maxPoolSizeClusterPropUiName,
@@ -33,7 +28,7 @@ public class ThreadPoolBean implements PropertyChangeListener {
         this.maxPoolSizeClusterPropName = maxPoolSizeClusterPropName;
         this.maxPoolSizeClusterPropUiName = maxPoolSizeClusterPropUiName;
         this.maxPoolSizeEmergencyDefault = maxPoolSizeEmergencyDefault;
-        this.validatedConfig = validated(serverConfig);
+        this.validatedConfig = validated(config);
         threadPool = new ThreadPool(poolName, CORE_SIZE, getMaxPoolSize());
     }
 

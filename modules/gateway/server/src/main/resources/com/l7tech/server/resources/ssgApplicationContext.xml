@@ -121,7 +121,7 @@
     <bean id="ssgShutdown" class="com.l7tech.server.boot.ShutdownWatcher"/>
 
     <bean id="jmsThreadPool" class="com.l7tech.server.util.ThreadPoolBean">
-        <constructor-arg type="com.l7tech.server.ServerConfig" ref="serverConfig" />
+        <constructor-arg index="0"  ref="serverConfig" />
         <constructor-arg index="1" value="JMS Thread Pool" />
         <constructor-arg index="2" value="jmsListenerThreadLimit" />
         <constructor-arg index="3" value="jms.listenerThreadLimit" />
@@ -130,21 +130,34 @@
 
     <!-- JMS boot process  -->
     <bean id="jmsBootProcess" class="com.l7tech.server.transport.jms2.JmsBootProcess">
-        <constructor-arg type="com.l7tech.server.util.ThreadPoolBean" ref="jmsThreadPool" />
-        <constructor-arg type="com.l7tech.gateway.common.LicenseManager" ref="licenseManager"/>
-        <constructor-arg type="com.l7tech.server.transport.jms.JmsConnectionManager" ref="jmsConnectionManager"/>
-        <constructor-arg type="com.l7tech.server.transport.jms.JmsEndpointManager" ref="jmsEndpointManager"/>
-        <constructor-arg type="com.l7tech.server.transport.jms.JmsPropertyMapper" ref="jmsPropertyMapper"/>
-        <constructor-arg type="java.util.Timer"><null/></constructor-arg>
-        <property name="jmsEndpointListenerFactory">
-            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory">
-                <constructor-arg type="com.l7tech.server.util.ThreadPoolBean" ref="jmsThreadPool" />
+        <constructor-arg index="0" ref="jmsThreadPool" />
+        <constructor-arg index="1" ref="licenseManager"/>
+        <constructor-arg index="2" ref="jmsConnectionManager"/>
+        <constructor-arg index="3" ref="jmsEndpointManager"/>
+        <constructor-arg index="4" ref="jmsPropertyMapper"/>
+        <constructor-arg index="5">
+            <bean class="com.l7tech.server.transport.jms2.ConfigurableJmsEndpointListenerFactory">
+                <constructor-arg index="0"  ref="serverConfig" />
+                <constructor-arg index="1"  value="Pooled" />
+                <constructor-arg index="2">
+                    <map>
+                        <entry key="Pooled">
+                            <bean class="com.l7tech.server.transport.jms2.asynch.PooledJmsEndpointListenerFactory">
+                                <constructor-arg type="com.l7tech.server.util.ThreadPoolBean" ref="jmsThreadPool" />
+                            </bean>
+                        </entry>
+                        <entry key="Simple">
+                            <bean class="com.l7tech.server.transport.jms2.synch.LegacyJmsEndpointListenerFactory"/>
+                        </entry>
+                    </map>
+                </constructor-arg>                
             </bean>
-        </property>
+        </constructor-arg>
+        <constructor-arg index="6"><null/></constructor-arg>
     </bean>
 
     <bean id="emailListenerThreadPool" class="com.l7tech.server.util.ThreadPoolBean">
-        <constructor-arg type="com.l7tech.server.ServerConfig" ref="serverConfig" />
+        <constructor-arg index="0" ref="serverConfig" />
         <constructor-arg index="1" value="Email Listener Thread Pool" />
         <constructor-arg index="2" value="emailListenerThreadLimit" />
         <constructor-arg index="3" value="email.listenerThreadLimit" />

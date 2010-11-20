@@ -68,11 +68,8 @@ public class JmsBootProcessTest extends JmsTestCase {
             endptMgr.connMgr = connMgr;
             ThreadPoolBean jmsThreadPool = new ThreadPoolBean(serverConfig, "JMS Thread Pool", "jmsListenerThreadLimit",
                     "jms.listenerThreadLimit", 25);
-            bootProcess = new JmsBootProcess(jmsThreadPool, licenseManager, connMgr, endptMgr, mapper, null);
+            bootProcess = new JmsBootProcess(jmsThreadPool, licenseManager, connMgr, endptMgr, mapper, new PooledJmsEndpointListenerFactory(jmsThreadPool), null);
             bootProcess.setApplicationContext(appCtx);
-
-            // choose the jms listener factory
-            bootProcess.setJmsEndpointListenerFactory(new PooledJmsEndpointListenerFactory(jmsThreadPool));
 
             // add data to queue
             populateQueues(createEndpoints(connMgr, endptMgr), 15);
@@ -97,7 +94,6 @@ public class JmsBootProcessTest extends JmsTestCase {
     private void startBootProcess() throws LifecycleException {
 
         bootProcess.start();
-//        bootProcess.onApplicationEvent(new LicenseEvent(this, Level.INFO, "Updated", "JUnit Test License"));
         bootProcess.onApplicationEvent(new ReadyForMessages(this, Component.GW_SERVER, "192.168.1.123"));
     }
 

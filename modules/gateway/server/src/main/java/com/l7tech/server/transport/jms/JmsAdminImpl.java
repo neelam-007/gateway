@@ -171,7 +171,7 @@ public class JmsAdminImpl implements JmsAdmin {
         try {
             logger.finer("Connecting to connection " + conn);
             bag = JmsUtil.connect(conn, endpoint.getPasswordAuthentication(),
-                    jmsPropertyMapper, endpoint.getAcknowledgementType()==JmsAcknowledgementType.ON_COMPLETION, Session.AUTO_ACKNOWLEDGE);
+                    jmsPropertyMapper, endpoint.getAcknowledgementType()==JmsAcknowledgementType.ON_COMPLETION, true, endpoint.isQueue(), Session.AUTO_ACKNOWLEDGE);
 
             Context jndiContext = bag.getJndiContext();
             jmsConnection = bag.getConnection();
@@ -271,10 +271,10 @@ public class JmsAdminImpl implements JmsAdmin {
             logger.log(Level.INFO, "Caught Throwable while testing endpoint '" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
             throw new JmsTestException(t.toString());
         } finally {
-            JmsUtil.closeQuietly(jmsQueueSender);
-            JmsUtil.closeQuietly(jmsQueueReceiver);
-            JmsUtil.closeQuietly(jmsTopicSubscriber);
-            JmsUtil.closeQuietly(jmsTopicPublisher);
+            close(jmsQueueSender);
+            close(jmsQueueReceiver);
+            close(jmsTopicSubscriber);
+            close(jmsTopicPublisher);
             if (bag != null) bag.close();
         }
     }
@@ -326,4 +326,29 @@ public class JmsAdminImpl implements JmsAdmin {
             throw new IllegalArgumentException("jms connection manager is required");
         }
     }
+
+    private void close( final MessageConsumer consumer ) {
+        if (consumer == null) return;
+        try {
+            consumer.close();
+        } catch (Exception e) {
+            logger.log(
+                    Level.WARNING,
+                    "Couldn't close Message Consumer '"+ExceptionUtils.getMessage(e)+"'.",
+                    ExceptionUtils.getDebugException(e));
+        }
+    }
+
+    private void close( final MessageProducer mp ) {
+        if (mp == null) return;
+        try {
+            mp.close();
+        } catch (Exception e) {
+            logger.log(
+                    Level.WARNING,
+                    "Couldn't close Message Producer '"+ExceptionUtils.getMessage(e)+"'.",
+                    ExceptionUtils.getDebugException(e));
+        }
+    }
+
 }

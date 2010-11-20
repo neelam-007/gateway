@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsPropertyMapper;
+import com.l7tech.server.transport.jms.JmsUtil;
 import org.springframework.context.ApplicationContext;
 
 import javax.jms.Destination;
@@ -21,9 +22,6 @@ import javax.naming.NamingException;
  * @author: vchan
  */
 public class JmsEndpointConfig {
-
-    /** Separator used in the endpoint DisplayName */
-    private static final String SEPARATOR = "/";
 
     /** Configured Jms connection attributes */
     private final JmsConnection conn;
@@ -92,7 +90,7 @@ public class JmsEndpointConfig {
         this.propertyMapper = propertyMapper;
         this.appContext = appContext;
 
-        StringBuilder sb = new StringBuilder(getConnection().getJndiUrl()).append(SEPARATOR).append(getConnection().getName());
+        StringBuilder sb = new StringBuilder(getEndpoint().getName()).append(",").append(getConnection().getJndiUrl()).append("/").append(getEndpoint().getDestinationName());
         this.displayName =  sb.toString();
     }
 
@@ -149,7 +147,7 @@ public class JmsEndpointConfig {
             return request.getJMSReplyTo();
         } else if (JmsReplyType.REPLY_TO_OTHER.equals(getReplyType())) {
             String replyToQueueName = endpoint.getReplyToQueueName();
-            return (Destination)jndiContext.lookup(replyToQueueName);
+            return JmsUtil.cast(jndiContext.lookup(replyToQueueName), Destination.class);
         } else {
             // This should never occur!
             String msg = "Unknown JmsReplyType " + getReplyType().toString();
@@ -199,14 +197,19 @@ public class JmsEndpointConfig {
     }
 
     /**
-    * Is the destination a Queue?
-    *
-    * @return True for a Queue, False for a Topic
-    */
+     * Is the destination a Queue?
+     *
+     * @return True for a Queue, False for a Topic
+     */
     public boolean isQueue() {
         return endpoint.isQueue();
     }
- 	 
+
+    /**
+     * Validate this endpoint configuration.
+     *
+     * @throws JmsConfigException If the configuration is invalid. 
+     */
     public void validate() throws JmsConfigException {
         if ( conn.getInitialContextFactoryClassname() == null || "".equals(conn.getInitialContextFactoryClassname()) ) {
             throw new JmsConfigException( "Initial context factory class name is required" );

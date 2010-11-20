@@ -8,7 +8,6 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.event.FaultProcessed;
@@ -29,7 +28,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
 
 import javax.jms.*;
-import javax.jms.Queue;
 import javax.naming.NamingException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -45,24 +43,29 @@ import static com.l7tech.server.ServerConfig.PARAM_JMS_MESSAGE_MAX_BYTES;
  * the appropriate response (or error handling).  This is the place in the JMS subsystem that hooks
  * into the SSG via the MessageProcessor.
  *
+ * This class is for use from a single thread.
+ *
  * Note: this class is largely unchanged from the original Jms implementation.
  */
 public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
-    private MessageProcessor messageProcessor;
-    private StashManagerFactory stashManagerFactory;
-    private MessageProducer responseProducer;
-    private final ApplicationEventPublisher messageProcessingEventChannel;
-    private final ServerConfig serverConfig;
-    private final ClusterMaster clusterMaster;
+    private static final Logger _logger = Logger.getLogger(JmsRequestHandlerImpl.class.getName());
     private static final boolean topicMasterOnly = SyspropUtil.getBoolean( "com.l7tech.server.transport.jms.topicMasterOnly", true );
 
-    public JmsRequestHandlerImpl(ApplicationContext ctx) {
+    private final Config config;
+    private final MessageProcessor messageProcessor;
+    private final StashManagerFactory stashManagerFactory;
+    private final ApplicationEventPublisher messageProcessingEventChannel;
+    private final ClusterMaster clusterMaster;
+
+    private MessageProducer responseProducer;
+
+    public JmsRequestHandlerImpl( final ApplicationContext ctx ) {
         if (ctx == null) {
             throw new IllegalArgumentException("Spring Context is required");
         }
+        config = ctx.getBean("serverConfig", Config.class);
         messageProcessor = ctx.getBean("messageProcessor", MessageProcessor.class);
-        serverConfig = ctx.getBean("serverConfig", ServerConfig.class);
         stashManagerFactory = ctx.getBean("stashManagerFactory", StashManagerFactory.class);
         messageProcessingEventChannel = ctx.getBean("messageProcessingEventChannel", EventChannel.class);
         clusterMaster = ctx.getBean("clusterMaster", ClusterMaster.class);
@@ -75,7 +78,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
      * @param endpointCfg The Jms endpoint configuration that this handler operates on
      * @param bag The JMS context
      * @param transacted True is the session is transactional (so commit when done)
-     * @param failureQueue The queue for failed messages (may be null)
+     * @param failureProducer The producer for failed messages (may be null)
      * @param jmsRequest The request message to process
      * @throws com.l7tech.server.transport.jms.JmsRuntimeException if an error occurs
      */
@@ -83,7 +86,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
     public void onMessage( final JmsEndpointConfig endpointCfg,
                            final JmsBag bag,
                            final boolean transacted,
-                           final QueueSender failureQueue,
+                           final MessageProducer failureProducer,
                            final Message jmsRequest ) throws JmsRuntimeException {
         final Message jmsResponse;
         final InputStream requestStream;
@@ -122,7 +125,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                 }
 
                 // enforce size restriction
-                int sizeLimit = serverConfig.getIntProperty(PARAM_JMS_MESSAGE_MAX_BYTES, 5242880);
+                int sizeLimit = config.getIntProperty(PARAM_JMS_MESSAGE_MAX_BYTES, 5242880);
                 if ( sizeLimit > 0 && size > sizeLimit ) {
                     messageTooLarge = true;
                 }
@@ -219,7 +222,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                                     stealthMode = true;
                                 } else {
                                     // add more detailed diagnosis message
- 	 	                            if (!context.getResponse().isXml()) {
+                                    if (!context.getResponse().isXml()) {
                                           _logger.log(Level.WARNING, "Response message is non-XML, the ContentType is: {0}", context.getRequest().getMimeKnob().getOuterContentType());
                                     }
                                     responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
@@ -300,7 +303,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                             }
                         }
 
-                        responseSuccess = sendResponse( jmsRequest, jmsResponse, bag, endpointCfg, status );
+                        responseSuccess = sendResponse( jmsRequest, jmsResponse, bag, endpointCfg );
                     } else { // is stealth mode
                         responseSuccess = true;
                     }
@@ -317,7 +320,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         } finally {
             if ( transacted ) {
                 boolean handledAnyFailure;
-                handledAnyFailure = status == AssertionStatus.NONE || failureQueue != null && postMessageToFailureQueue(jmsRequest, failureQueue);
+                handledAnyFailure = status == AssertionStatus.NONE || failureProducer != null && sendFailureRequest(jmsRequest, failureProducer);
 
                 Session session = bag.getSession();
                 if ( responseSuccess && handledAnyFailure ) {
@@ -359,33 +362,33 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         String val = props.getProperty(JmsConnection.PROP_CONTENT_TYPE_VAL);
 
         try {
- 	 	    if ( (null == source) || "".equals(source) ) {
- 	 	        _logger.warning ("no content type specified for this message, attempting to find one using Content-Type property");
- 	 	        requestCtype = jmsRequest.getStringProperty("Content-Type");
- 	 	        if (requestCtype != null) {
- 	 	            _logger.info("found a content type of " + requestCtype);
- 	 	            ctype = ContentTypeHeader.parseValue(requestCtype);
- 	 	        } else {
- 	 	            _logger.info("Didn't find a content type. Using " + ContentTypeHeader.XML_DEFAULT.toString());
- 	 	            ctype = ContentTypeHeader.XML_DEFAULT;
-	            }
- 	        } else {
+            if ( (null == source) || "".equals(source) ) {
+                _logger.warning ("no content type specified for this message, attempting to find one using Content-Type property");
+                requestCtype = jmsRequest.getStringProperty("Content-Type");
+                if (requestCtype != null) {
+                    _logger.info("found a content type of " + requestCtype);
+                    ctype = ContentTypeHeader.parseValue(requestCtype);
+                } else {
+                    _logger.info("Didn't find a content type. Using " + ContentTypeHeader.XML_DEFAULT.toString());
+                    ctype = ContentTypeHeader.XML_DEFAULT;
+                }
+            } else {
                 if (JmsConnection.CONTENT_TYPE_SOURCE_HEADER.equals(source)) {
- 	 	            requestCtype = jmsRequest.getStringProperty(val);
- 	 	            // more informative diagnosis message
- 	 	            if (requestCtype == null || requestCtype.isEmpty()) {
- 	 	                throw new JmsRuntimeException("Expected ContentType JMS property not set: " + val);
- 	 	            }
+                    requestCtype = jmsRequest.getStringProperty(val);
+                    // more informative diagnosis message
+                    if (requestCtype == null || requestCtype.isEmpty()) {
+                        throw new JmsRuntimeException("Expected ContentType JMS property not set: " + val);
+                    }
                 } else {
                     requestCtype = val;
- 	 	        }
- 	 	        ctype = ContentTypeHeader.parseValue(requestCtype);
+                }
+                ctype = ContentTypeHeader.parseValue(requestCtype);
 
- 	 	        // log warning for unrecognized content type
- 	 	        if (ctype != null && !ctype.matches("text", "xml") && !ctype.matches("text", "plain") && !ctype.matches("application", "*")) {
- 	 	            _logger.log(Level.WARNING, "ContentType from JMS property not recognized, may cause policy to fail: {0}", ctype.toString());
- 	 	        }
-	        }
+                // log warning for unrecognized content type
+                if (ctype != null && !ctype.matches("text", "xml") && !ctype.matches("text", "plain") && !ctype.matches("application", "*")) {
+                    _logger.log(Level.WARNING, "ContentType from JMS property not recognized, may cause policy to fail: {0}", ctype.toString());
+                }
+            }
         } catch (IOException ioex) {
             _logger.log(Level.WARNING, "Bad ContentType encountered={0}, error message: {1}", new String[] {requestCtype, ioex.getMessage()});
             throw ioex;
@@ -414,28 +417,21 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         return message;
     }
 
-    private boolean sendResponse(Message jmsRequestMsg, Message jmsResponseMsg, JmsBag bag, JmsEndpointConfig endpointCfg, AssertionStatus status ) {
+    private boolean sendResponse( final Message jmsRequestMsg,
+                                  final Message jmsResponseMsg,
+                                  final JmsBag bag,
+                                  final JmsEndpointConfig endpointCfg ) {
         boolean sent = false;
         try {
-            Destination jmsReplyDest = endpointCfg.getResponseDestination(jmsRequestMsg, bag.getJndiContext());
-            if ( status != AssertionStatus.NONE ) {
-                // TODO send response to failure endpoint if defined
-            }
-
+            final Destination jmsReplyDest = endpointCfg.getResponseDestination(jmsRequestMsg, bag.getJndiContext());
             if ( jmsReplyDest == null ) {
                 _logger.fine( "No response will be sent!" );
             } else {
                 _logger.fine( "Sending response to " + jmsReplyDest );
 
                 // bug #5415 - we will close the MessageProducer only after a transaction is committed
-                Session session = bag.getSession();
-                if ( session instanceof QueueSession && jmsReplyDest instanceof Queue ) {
-                    responseProducer = ((QueueSession)session).createSender( (Queue)jmsReplyDest );
-                } else if ( session instanceof TopicSession && jmsReplyDest instanceof Topic ) {
-                    responseProducer = ((TopicSession)session).createPublisher( (Topic)jmsReplyDest );
-                } else {
-                    responseProducer = session.createProducer( jmsReplyDest );
-                }
+                final Session session = bag.getSession();
+                responseProducer = JmsUtil.createMessageProducer( session, jmsReplyDest );
 
                 final String newCorrId = endpointCfg.getEndpoint().isUseMessageIdForCorrelation() ?
                         jmsRequestMsg.getJMSMessageID() :
@@ -453,29 +449,17 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         return sent;
     }
 
-    private boolean postMessageToFailureQueue(Message message, QueueSender sender) {
-        boolean posted = false;
+    private boolean sendFailureRequest( final Message message,
+                                        final MessageProducer producer) {
+        boolean sent = false;
 
         try {
-            sender.send(message);
-            posted = true;
-        } catch (JMSException jmse) {
-            _logger.log( Level.WARNING, "Error sending message to failure queue", jmse);
+            producer.send(message);
+            sent = true;
+        } catch (JMSException e) {
+            _logger.log( Level.WARNING, "Error sending failure message.", e);
         }
 
-        return posted;
-    }
-
-    private static final Logger _logger = Logger.getLogger(JmsRequestHandlerImpl.class.getName());
-
-
-    /* New setters for spring initialization */
-
-    public void setMessageProcessor(MessageProcessor messageProcessor) {
-        this.messageProcessor = messageProcessor;
-    }
-
-    public void setStashManagerFactory(StashManagerFactory stashManagerFactory) {
-        this.stashManagerFactory = stashManagerFactory;
+        return sent;
     }
 }

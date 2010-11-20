@@ -12,7 +12,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ThreadPool;
 
 import javax.jms.*;
-import javax.naming.Context;
 import javax.naming.NamingException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
@@ -25,17 +24,6 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
     private static final Logger _logger = Logger.getLogger(PooledJmsEndpointListenerImpl.class.getName());
 
-    /** JmsBag that holds A Connection for the jms endpoint */
-    private JmsBag _connBag;
-    /** Inbound queue receiver */
-    private MessageConsumer _consumer;
-    /** Inbound jms queue */
-    private Destination _queue;
-    /** The failure queue */
-    private Queue _failureQueue;
-    /** Mutex object */
-    private final Object sync = new Object();
-
     private final ThreadPoolBean threadPoolBean;
 
     /**
@@ -45,43 +33,27 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
      * @param threadPoolBean Thread pool bean which JmsTasks can be submitted to.
      */
     public PooledJmsEndpointListenerImpl(final JmsEndpointConfig endpointConfig, final ThreadPoolBean threadPoolBean) {
-        super(endpointConfig);
+        super(endpointConfig, _logger);
         this.threadPoolBean = threadPoolBean;
     }
 
     /**
-     * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#getJmsBag()
-     */
-    @Override
-    protected JmsBag getJmsBag() throws JMSException, NamingException, JmsConfigException {
-
-        synchronized(sync) {
-            if (_connBag == null) {
-                _logger.finest( "Getting new JmsBag" );
-                _connBag = JmsUtil.connect(_endpointCfg, _endpointCfg.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
-            }
-        }
-        return _connBag;
-    }
-
-    /**
      *
-     * @param bag
-     * @return
-     * @throws JMSException
-     * @throws NamingException
-     * @throws JmsConfigException
      */
-    protected JmsTaskBag handOffJmsBag(JmsBag bag)  throws JMSException, NamingException, JmsConfigException {
+    protected JmsTaskBag handOffJmsBag(JmsBag bag)  throws JMSException {
 
         synchronized (sync) {
             JmsTaskBag handOff = new JmsTaskBag(bag.getJndiContext(), bag.getConnectionFactory(), bag.getConnection(), bag.getSession());
 
             // replace the jms connection bag with a new session
-            _connBag = null;
-            _connBag = JmsUtil.connect(handOff.getJndiContext(),
-                    handOff.getConnection(), handOff.getConnectionFactory(),
-                    _endpointCfg.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
+            _jmsBag = null;
+            _jmsBag = JmsUtil.connect(
+                    handOff.getJndiContext(),
+                    handOff.getConnection(),
+                    handOff.getConnectionFactory(),
+                    _endpointCfg.isQueue(),
+                    _endpointCfg.isTransactional(),
+                    Session.CLIENT_ACKNOWLEDGE);
 
             return handOff;
         }
@@ -130,7 +102,11 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
             // create the work task
             taskBag = handOffJmsBag(getJmsBag());
-            return new JmsTask(getEndpointConfig(), taskBag, jmsMessage, getFailureQueue(), _consumer);
+            MessageConsumer consumer;
+            synchronized(sync) {
+                consumer = _consumer;
+            }
+            return new JmsTask(getEndpointConfig(), taskBag, jmsMessage, getFailureQueue(), consumer);
 
         } catch (JMSException jex) {
             ok = false;
@@ -146,108 +122,14 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
         } finally {
             if (ok) {
-                // sinse the consumer (QueueReceiver) is associated with the previous session,
+                // since the consumer is associated with the previous session,
                 // remove it so that the next read will create a new one
-                _consumer = null;
+                synchronized(sync) {
+                    _consumer = null;
+                }
             } else if (taskBag != null) {
                 taskBag.close();
             }
         }
     }
-
-    /**
-     * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#getConsumer()
-     */
-    @Override
-    protected MessageConsumer getConsumer() throws JMSException, NamingException, JmsConfigException {
-        synchronized(sync) {
-            if ( _consumer == null ) {
-                _logger.finest( "Getting new MessageConsumer" );
-                boolean ok = false;
-                String message = null;
-                try {
-                    JmsBag bag = getJmsBag();
-                    Session s = bag.getSession();
-                    Destination d = getDestination();
-                    _consumer = s.createConsumer( d );
-                    ok = true;
-                } catch (JMSException e) {
-                    message = ExceptionUtils.getMessage(e);
-                    throw e;
-                } catch (NamingException e) {
-                    message = ExceptionUtils.getMessage(e);
-                    throw e;
-                } catch (JmsConfigException e) {
-                    message = ExceptionUtils.getMessage(e);
-                    throw e;
-                } catch (RuntimeException e) {
-                    message = ExceptionUtils.getMessage(e);
-                    throw e;
-                } finally {
-                    if (!ok) {
-                        fireConnectError(message);
-                    }
-                }
-            }
-            return _consumer;
-        }
-    }
-
-    protected Destination getDestination() throws NamingException, JmsConfigException, JMSException {
-        synchronized(sync) {
-            if ( _queue == null ) {
-                _logger.finest( "Getting new Destination" );
-                JmsBag bag = getJmsBag();
-                Context context = bag.getJndiContext();
-                String qname = _endpointCfg.getEndpoint().getDestinationName();
-                _queue = (Destination)context.lookup( qname );
-            }
-            return _queue;
-        }
-    }
-
-    protected Queue getFailureQueue() throws NamingException, JmsConfigException, JMSException {
-        synchronized(sync) {
-            if ( _failureQueue == null &&
-                    _endpointCfg.isTransactional() &&
-                    _endpointCfg.getEndpoint().getFailureDestinationName() != null)
-            {
-                _logger.finest( "Getting new FailureQueue" );
-                JmsBag bag = getJmsBag();
-                Context context = bag.getJndiContext();
-                String qname = _endpointCfg.getEndpoint().getFailureDestinationName();
-                _failureQueue = (Queue)context.lookup( qname );
-            }
-            return _failureQueue;
-        }
-    }
-
-    /**
-     * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#cleanup()
-     */
-    @Override
-    protected void cleanup() {
-        
-        // close the consumer
-        if ( _consumer != null ) {
-            try {
-                _consumer.close();
-            } catch ( JMSException e ) {
-                _logger.log( Level.INFO, "Caught JMSException during cleanup", e );
-            }
-            _consumer = null;
-        }
-
-        _queue = null;
-        _failureQueue = null;
-
-        super.cleanup();
-
-        if ( _connBag != null ) {
-            // this will close the session and cause rollback if transacted
-            _connBag.close();
-            _connBag = null;
-        }
-    }
-
 }
