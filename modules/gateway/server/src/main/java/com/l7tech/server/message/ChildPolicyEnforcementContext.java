@@ -1,29 +1,23 @@
 package com.l7tech.server.message;
 
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.message.Message;
+import org.xml.sax.SAXException;
 
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
-import java.util.Collection;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.List;
-import java.net.URL;
 import java.io.IOException;
-
-import org.xml.sax.SAXException;
+import java.net.URL;
+import java.util.*;
 
 /**
  * A PEC that is split between parent/child contexts.
@@ -108,17 +102,39 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
 
     @Override
     public void setVariable( final String name, final Object value ) throws VariableNotSettableException {
-        context.setVariable( name, value );
+        if (isParentVariable(name)) {
+            super.setVariable(name, value);
+        } else {
+            context.setVariable( name, value );
+        }
     }
 
     @Override
     public Object getVariable( final String name ) throws NoSuchVariableException {
-        return context.getVariable( name );
+        if (isParentVariable(name)) {
+            return super.getVariable(name);
+        } else {
+            return context.getVariable(name);
+        }
     }
 
     @Override
     public Map<String, Object> getVariableMap( final String[] names, final Audit auditor ) {
-        return context.getVariableMap( names, auditor );
+        List<String> forChild = new ArrayList<String>();
+        List<String> forParent = new ArrayList<String>();
+
+        for (String name : names) {
+            if (isParentVariable(name)) {
+                forParent.add(name);
+            } else {
+                forChild.add(name);
+            }
+        }
+
+        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        vars.putAll(context.getVariableMap(forChild.toArray(new String[forChild.size()]), auditor));
+        vars.putAll(super.getVariableMap(forParent.toArray(new String[forParent.size()]), auditor));
+        return vars;
     }
 
     @Override
@@ -251,6 +267,18 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
     }
 
     //- PRIVATE
+
+    private boolean isParentVariable(String name) {
+        if (name == null)
+            return false;
+
+        // TODO move this hardcoded config somewhere more appropriate (get from variable metadata, perhaps)
+        final String lcname = name.toLowerCase();
+        return "request".equals(lcname) ||
+                "response".equals(lcname) ||
+                lcname.startsWith("request.") ||
+                lcname.startsWith("response.");
+    }
 
     private final PolicyEnforcementContext context;
 }
