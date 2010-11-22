@@ -4,6 +4,7 @@ import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
@@ -55,7 +56,7 @@ public class MonitorUrlPanel extends JPanel {
         String url = urlField.getText();
         if (url != null && !url.trim().isEmpty() ) {
             if ( Syntax.getReferencedNames( url, false ).length==0 &&
-                 !ValidationUtils.isValidUrl(url.trim()) ) {
+                 !ValidationUtils.isValidUrl(url.trim(), false, CollectionUtils.caseInsensitiveSet( "http", "https" )) ) {
                 return resourceBundle.getString("error.badurl");
             }
             return null;

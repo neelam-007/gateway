@@ -383,6 +383,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 if (method == null)
                     throw new IllegalStateException("This request has already been closed");
 
+                checkProtocol( targetUrl );
                 stampBindingIdentity();
                 final int status;
                 final ContentTypeHeader contentType;
@@ -472,6 +473,14 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 return target;
             }
         };
+    }
+
+    private void checkProtocol( final URL targetUrl ) throws GenericHttpException {
+        String protocol = targetUrl.getProtocol() == null ? null : targetUrl.getProtocol().toLowerCase();
+        if ( protocol == null ||
+             (!protocol.equals( "http" ) && !protocol.equals( "https" ) ) ) {
+            throw new GenericHttpException( "Unsupported protocol: " + protocol );
+        }
     }
 
     /**

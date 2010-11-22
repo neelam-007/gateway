@@ -3,7 +3,10 @@
  */
 package com.l7tech.util;
 
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.TreeSet;
 
 public final class CollectionUtils {
     private static final Functions.Unary<String,Object> defaultStringer = new Functions.Unary<String, Object>() {
@@ -45,6 +48,12 @@ public final class CollectionUtils {
 
     public static <T> String mkString(Iterable<T> iterable, String prefix, String delimiter, String suffix) {
         return mkString(iterable, prefix, delimiter, suffix, (Functions.Unary<String,T>) defaultStringer);
+    }
+
+    public static Set<String> caseInsensitiveSet( String... values ) {
+        final Set<String> set = new TreeSet<String>( String.CASE_INSENSITIVE_ORDER );
+        set.addAll( Arrays.asList( values ) );
+        return set;
     }
 
     /**

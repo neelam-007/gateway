@@ -16,7 +16,9 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.variable.*;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.ValidationUtils;
 import com.l7tech.wsdl.Wsdl;
 
 import javax.swing.*;
@@ -597,17 +599,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             if (url == null || url.length() < 1) {
                 url = "<empty>";
                 bad = true;
-            }
-            try {
-                new URL(url);
-            } catch (MalformedURLException e1) {
+            } else if ( url.indexOf("${") < 0 && !ValidationUtils.isValidUrl( url, false, CollectionUtils.caseInsensitiveSet( "http", "https" ) )) {
                 bad = true;
-                // check if the url has context variables
-                if (url.indexOf("${") > -1) {
-                    // a url may appear to be malformed simply because it relies
-                    // on the runtime resolution of a context variable
-                    bad = false;
-                }
             }
         }
         // If the "Use multiple URLs" option is chosen, but the URL list is empty.  We need to give a warning. 
