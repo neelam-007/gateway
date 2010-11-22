@@ -108,7 +108,7 @@ public class JmsQueuesWindow extends JDialog {
         Container p = getContentPane();
         p.setLayout(new GridBagLayout());
 
-        p.add(new JLabel("Known JMS Queues:"),
+        p.add(new JLabel("Known JMS Destinations:"),
           new GridBagConstraints(0, 0, 2, 1, 0.0, 0.0,
             GridBagConstraints.WEST,
             GridBagConstraints.NONE,
