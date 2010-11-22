@@ -53,6 +53,8 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
     private final Timer backgroundTimer;
     /** Boolean flag specifying whether the Jms listeners have been started */
     private boolean started = false;
+    /** Is the Gateway ready to process messages */
+    private volatile boolean readyForMessages = false;
 
     // it is expected that these checkers are run on the same thread
     private ConnectionVersionChecker connectionChecker;
@@ -122,9 +124,9 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
      */
     @Override
     protected void doStart() throws LifecycleException {
-        if (isStarted())
-            return;
-        logger.info("The JMS subsystem will not start until the gateway is ready to process messages.");
+        if ( !isStarted() ) {
+            checkStarted();
+        }
     }
 
     /**
@@ -203,16 +205,9 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
 
         super.onApplicationEvent(applicationEvent);
 
-        if (!isStarted())
-            return;
-
         if (applicationEvent instanceof ReadyForMessages) {
-            try {
-                threadPoolBean.start(); //TODO [steve] need to start this if license added later
-                startListeners();
-            } catch (LifecycleException e) {
-                logger.log(Level.SEVERE, "Unable to start JMS EndpointListener", e);
-            }
+            readyForMessages = true;
+            checkStarted();
         }
     }
 
@@ -241,6 +236,26 @@ public class JmsBootProcess extends LifecycleBean implements PropertyChangeListe
             activeListeners.clear();
 
             threadPoolBean.shutdown();
+        }
+    }
+
+    private void checkStarted() {
+        boolean started;
+        synchronized(listenerLock) {
+            started = this.started;
+        }
+
+        if ( !started ) {
+            if ( !readyForMessages ) {
+                logger.info("The JMS subsystem will not start until the gateway is ready to process messages.");
+            } else if ( isLicensed() ) {
+                try {
+                    threadPoolBean.start();
+                    startListeners();
+                } catch (LifecycleException e) {
+                    logger.log(Level.SEVERE, "Unable to start JMS EndpointListener", e);
+                }
+            }
         }
     }
 
