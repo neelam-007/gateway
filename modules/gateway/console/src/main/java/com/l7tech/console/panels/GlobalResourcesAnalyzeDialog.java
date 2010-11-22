@@ -445,7 +445,7 @@ public class GlobalResourcesAnalyzeDialog extends JDialog {
         // check for public identifier match
         if ( resource == null && publicId != null && resourceType == ResourceType.DTD ) {
             for ( final ResourceHolder resourceHolder : resources ) {
-                if ( resourceHolder.getType()==ResourceType.DTD && publicId.equals( resourceHolder.getPublicId() ) ) {
+                if ( resourceHolder.getType()==ResourceType.DTD && publicId.equalsIgnoreCase( resourceHolder.getPublicId() ) ) {
                     resource = resourceHolder;
                     break;
                 }

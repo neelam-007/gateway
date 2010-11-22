@@ -138,7 +138,7 @@ public class ResourceAdminStub implements ResourceAdmin {
             @Override
             public Boolean call( final ResourceEntryHeader resourceEntryHeader ) {
                 return resourceEntryHeader.getResourceType()==ResourceType.DTD &&
-                        (publicIdentifier!=null && publicIdentifier.equals( resourceEntryHeader.getResourceKey1() ));
+                        (publicIdentifier!=null && publicIdentifier.equalsIgnoreCase( resourceEntryHeader.getResourceKey1() ));
             }
         } );
     }

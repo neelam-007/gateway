@@ -60,7 +60,7 @@ public class ResourceEntryManagerStub extends EntityManagerStub<ResourceEntry, R
             public Boolean call( final ResourceEntryHeader resourceEntry ) {
                 return resourceEntry.getResourceType() == ResourceType.XML_SCHEMA &&
                        resourceEntry.getResourceKey1() != null &&
-                       resourceEntry.getResourceKey1().equalsIgnoreCase( targetNamespace );
+                       resourceEntry.getResourceKey1().equals( targetNamespace );
             }
         });
     }
