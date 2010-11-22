@@ -341,11 +341,13 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
      */
     protected static Map<String,ResourceHolder> processResources( final GlobalResourceImportContext context,
                                                                   final Collection<ResourceInputSource> resourceInputSources ) {
-        Map<String, ResourceHolder> processedResources = new LinkedHashMap<String, ResourceHolder>();
+        final Map<String, ResourceHolder> processedResources = new LinkedHashMap<String, ResourceHolder>();
         context.setCurrentResourceHolders( processedResources.values() );
 
+        final Map<URI,ResourceDocument> resolvedResources = new HashMap<URI,ResourceDocument>();
+
         for ( final ResourceInputSource resourceInputSource : resourceInputSources ) {
-            processResource( context, resourceInputSource, ResourceType.XML_SCHEMA, DependencyProcessing.ON, processedResources );
+            processResource( context, resourceInputSource, resolvedResources, ResourceType.XML_SCHEMA, DependencyProcessing.ON, processedResources );
         }
 
         // DTDs used from schemas will already have been processed, this will process
@@ -353,7 +355,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         // cannot be processed since we can't tell if the DTD is supposed to be a "full"
         // DTD or not.
         for ( final ResourceInputSource resourceInputSource : resourceInputSources ) {
-            processResource( context, resourceInputSource, ResourceType.DTD, DependencyProcessing.AUTO, processedResources );
+            processResource( context, resourceInputSource, resolvedResources, ResourceType.DTD, DependencyProcessing.AUTO, processedResources );
         }
 
         context.setCurrentResourceHolders( Collections.<ResourceHolder>emptyList() );
@@ -775,12 +777,17 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
     private static void processResource( final GlobalResourceImportContext context,
                                          final ResourceInputSource resourceInputSource,
+                                         final Map<URI,ResourceDocument> resolvedResources,
                                          final ResourceType resourceType,
                                          final DependencyProcessing processDependencies,
                                          final Map<String, ResourceHolder> processedResources) {
         ResourceDocument resourceDocument = null;
         try {
-            resourceDocument = resourceInputSource.asResourceDocument();
+            resourceDocument = resolvedResources.get( resourceInputSource.getUri() );
+            if ( resourceDocument == null ) {
+                resourceDocument = resourceInputSource.asResourceDocument();
+                resolvedResources.put( resourceInputSource.getUri(), resourceDocument );
+            }
             processResource( context, resourceDocument, resourceInputSource.getType(), resourceType, null, processDependencies, processedResources );
         } catch ( SAXException e ) {
             handleResourceError( context, resourceInputSource.getUri(), resourceDocument, e, processedResources );
