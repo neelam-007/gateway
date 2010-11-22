@@ -395,9 +395,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);
                     contentLength = clh == null || clh.getValue() == null ? null : MimeHeader.parseNumericValue(clh.getValue());
                 } catch (IOException e) {
-                    throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(method, " from ") + ": " + ExceptionUtils.getMessage(e), e);
+                    throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ": " + ExceptionUtils.getMessage(e), e);
                 } catch (NumberFormatException e) {
-                    throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(method, " from ") + ", invalid content length: " + ExceptionUtils.getMessage(e), e);
+                    throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ", invalid content length: " + ExceptionUtils.getMessage(e), e);
                 }
 
                 final GenericHttpResponse genericHttpResponse = new GenericHttpResponse() {
@@ -462,15 +462,24 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 }
             }
 
-            private String getTargetDescription( final org.apache.commons.httpclient.HttpMethod method,
+            private String getTargetDescription( final HostConfiguration hostConfiguration,
+                                                 final org.apache.commons.httpclient.HttpMethod method,
                                                  final String prefix ) {
-                String target = "";
-                try {
-                    target = prefix + method.getURI().toString();
-                } catch ( URIException e1) {
-                    // unknown target
+                final StringBuilder targetBuilder = new StringBuilder( 256 );
+
+                targetBuilder.append( prefix );
+
+                // include host info if available
+                if ( hostConfiguration != null && hostConfiguration.getHost()!=null ) {
+                    targetBuilder.append( hostConfiguration.getHostURL() );
                 }
-                return target;
+
+                targetBuilder.append( method.getPath() );
+                if ( method.getQueryString() != null ) {
+                    targetBuilder.append("?").append(method.getQueryString());
+                }
+
+                return targetBuilder.toString();
             }
         };
     }
