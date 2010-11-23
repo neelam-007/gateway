@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.AssertionNodeNameFactory;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 
@@ -55,6 +56,19 @@ public class XpathCredentialSource extends XpathBasedAssertion {
 
     public void setRemovePasswordElement(boolean removePasswordElement) {
         this.removePasswordElement = removePasswordElement;
+    }
+
+    @Override
+    public XpathExpression createDefaultXpathExpression(boolean soapPolicy, SoapVersion soapVersion) {
+        return createDefaultLoginOrPasswordExpression(soapPolicy, soapVersion, false);
+    }
+
+    public XpathExpression createDefaultLoginOrPasswordExpression(boolean soapPolicy, SoapVersion soapVersion, boolean forPassword) {
+        XpathExpression x = super.createDefaultXpathExpression(soapPolicy, soapVersion);
+        final String prefix = soapPolicy ? x.getExpression() : "";
+        final String suffix = forPassword ? "//Password" : "//Username";
+        x.setExpression(prefix + suffix);
+        return x;
     }
 
     @Override
