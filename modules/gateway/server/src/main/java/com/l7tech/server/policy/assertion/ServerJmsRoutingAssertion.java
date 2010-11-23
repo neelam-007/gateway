@@ -219,11 +219,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
             return AssertionStatus.NONE;
         } catch ( JMSException e ) {
-            if (ExceptionUtils.causedBy(e, InvalidDestinationException.class)) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error outbound JMS request processing"}, ExceptionUtils.getDebugException(e) );
-            } else {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error outbound JMS request processing"}, e );
-            }
+            auditException( "Error in outbound JMS request processing", e );
             if (cfg!=null) jmsResourceManager.invalidate(cfg);
             return AssertionStatus.FAILED;
         } catch ( FindException e ) {
@@ -238,17 +234,27 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         } catch ( AssertionStatusException e ) {
             throw e;
         } catch ( Throwable t ) {
-            if (ExceptionUtils.causedBy(t, InvalidDestinationException.class)) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, "Caught unexpected Throwable in outbound JMS request processing: " + ExceptionUtils.getMessage(t));
-            } else {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound JMS request processing: " + ExceptionUtils.getMessage(t)}, ExceptionUtils.getDebugException(t) );
-            }
-
+            auditException( "Caught unexpected Throwable in outbound JMS request processing", t );
             if (cfg!=null) jmsResourceManager.invalidate(cfg);
             return AssertionStatus.SERVER_ERROR;
         } finally {
             if (context.getRoutingEndTime() == 0) context.routingFinished();
         }
+    }
+
+    private void auditException( final String description, final Throwable throwable ) {
+        final Throwable auditException = JmsUtil.isCausedByExpectedJMSException( throwable ) ? null : throwable;
+        final JMSException jmsException = ExceptionUtils.getCauseIfCausedBy( throwable, JMSException.class );
+
+        String exceptionMessage = jmsException==null ?
+            ExceptionUtils.getMessage( throwable ) :
+            JmsUtil.getJMSErrorMessage( jmsException );
+
+        if ( throwable != jmsException ) {
+            exceptionMessage = ExceptionUtils.getMessage( throwable ) + "; " + exceptionMessage;    
+        }
+
+        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{ description + ": " + exceptionMessage }, auditException );
     }
 
     private final class JmsRoutingCallback implements JmsResourceManager.JmsResourceCallback {

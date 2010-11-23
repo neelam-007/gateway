@@ -13,6 +13,9 @@ import javax.naming.NoInitialContextException;
 import javax.naming.Reference;
 import javax.rmi.PortableRemoteObject;
 import java.net.PasswordAuthentication;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,6 +26,7 @@ import java.util.logging.Logger;
 public class JmsUtil {
     private static final Logger logger = Logger.getLogger(JmsUtil.class.getName());
     public static final String DEFAULT_ENCODING = "UTF-8";
+    private static final int MAX_CAUSE_DEPTH = 25;
     public static final boolean detectTypes = SyspropUtil.getBoolean( "com.l7tech.server.transport.jms.detectJmsTypes", true );
 
     private static ClassLoader contextClassLoader;
@@ -349,5 +353,100 @@ public class JmsUtil {
         } catch ( ClassCastException cce ) {
             throw (JMSException) new JMSException( "Unable to cast object to target " + targetClass.getName() ).initCause( cce );
         }
+    }
+
+    /**
+     * Get the cause of an exception.
+     *
+     * <p>This has special support for JMS Exceptions linked exception.</p>
+     *
+     * @return The cause or null.
+     */
+    public static Throwable getCause( final Throwable throwable ) {
+        Throwable cause = null;
+
+        if ( throwable instanceof JMSException ) {
+            cause = ((JMSException) throwable).getLinkedException();
+        }
+
+        if ( cause == null ) {
+            cause = throwable.getCause();
+        }
+
+        return cause;
+    }
+
+    /**
+     * Is the given exception caused by an "expected" JMS exception.
+     *
+     * <p>An expected exception is one with a well known cause for which
+     * additional information (such as a stack trace) is not useful.</p>
+     *
+     * @param throwable The throwable to test
+     * @return true if the throwable or a cause is an expected JMS exception.
+     */
+    public static boolean isCausedByExpectedJMSException( final Throwable throwable ) {
+        boolean expected = false;
+
+        int count = 0;
+        Throwable cause = throwable;
+        while ( cause != null && count++ < MAX_CAUSE_DEPTH ) {
+            if ( cause instanceof InvalidClientIDException ||
+                 cause instanceof InvalidDestinationException ||
+                 cause instanceof JMSSecurityException ||
+                 cause instanceof ResourceAllocationException ) {
+                expected = true;
+                break;
+            }
+
+            final boolean isJmsException = cause instanceof JMSException;
+            cause = getCause( cause );
+
+            if ( isJmsException &&
+                 ( cause instanceof UnknownHostException ||
+                   cause instanceof SocketException ||
+                   cause instanceof SocketTimeoutException ) )  {
+                expected = true;
+            }
+        }
+
+        return expected;
+    }
+
+    /**
+     * Get the error message for the given JMS exception.
+     *
+     * @param exception The JMS Exception
+     * @return The error message including error code and any cause(s)
+     */
+    public static String getJMSErrorMessage( final JMSException exception ) {
+        final StringBuilder builder = new StringBuilder();
+
+        if ( exception instanceof InvalidClientIDException ) {
+            builder.append( "Invalid client identifier; " );
+        } else if ( exception instanceof InvalidDestinationException ) {
+            builder.append( "Invalid destination; " );
+        } else if ( exception instanceof JMSSecurityException ) {
+            builder.append( "Security error; " );
+        } else if ( exception instanceof ResourceAllocationException ) {
+            builder.append( "Resource allocation error; " );
+        }
+
+        builder.append( ExceptionUtils.getMessage( exception ) );
+
+        if ( exception.getErrorCode() != null ) {
+            builder.append( ", error code: " );
+            builder.append( exception.getErrorCode() );
+        }
+
+        int count = 0;
+        Throwable cause = getCause( exception );
+        while ( cause != null && count++ < MAX_CAUSE_DEPTH ) {
+            builder.append( ", caused by " );
+            builder.append( ExceptionUtils.getMessage( cause ) );
+            cause = getCause( cause );
+        }
+
+        return builder.toString();
     }
 }
