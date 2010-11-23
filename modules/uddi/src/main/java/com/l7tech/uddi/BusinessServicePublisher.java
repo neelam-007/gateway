@@ -675,7 +675,7 @@ public class BusinessServicePublisher implements Closeable {
             throw new UDDIException("Invalid BusinessService. It does not contain a CategoryBag. serviceKey: " + overwriteService.getServiceKey());
         }
         //we must find both the service name and the correct namespace in the Gateway's WSDL, otherwise we are mis configured
-        final Pair<String, String> serviceNameAndNameSpace = getServiceNameAndNameSpace(overwriteService);
+        final Pair<String, String> wsdlServiceNameAndNameSpace = getServiceNameAndNameSpace(overwriteService);
 
         final BindingTemplates templates = overwriteService.getBindingTemplates();
         if (templates == null) {
@@ -694,7 +694,7 @@ public class BusinessServicePublisher implements Closeable {
         final List<Pair<BusinessService, Map<String, TModel>>> wsdlBusinessServicesToDependentTModels = modelConverter.getServicesAndDependentTModels();
         //fail early before updating UDDI
         final List<Pair<BusinessService, Map<String, TModel>>> pairToUseList =
-                extractSingleService(serviceNameAndNameSpace.left, serviceNameAndNameSpace.right, wsdlBusinessServicesToDependentTModels);
+                extractSingleService(wsdlServiceNameAndNameSpace.left, wsdlServiceNameAndNameSpace.right, wsdlBusinessServicesToDependentTModels);
 
         //Delete existing bindingTemplates from UDDI. Do this before trying to publish to ensure user has permissions
         //do not want to successfully publish and then find that we cannot remove the bindingTemplates. If that is the
@@ -703,11 +703,16 @@ public class BusinessServicePublisher implements Closeable {
             uddiClient.deleteBindingTemplate(bindingKey);
         }
 
+        //Wsdl name to service name is a 1 to M relationship. A service in a WSDL has a single value, but a business
+        //service in UDDI can have multiple names. This map allows the various service names to look up the wsdl name.
+        final Map<String, String> serviceNameToWsdlNameMap = new HashMap<String, String>();
+        for (Name name : overwriteService.getName()) {
+            serviceNameToWsdlNameMap.put(name.getValue(), wsdlServiceNameAndNameSpace.left);
+        }
+
         //now we are ready to work with this service. We will publish all soap bindings found and leave any others on
         //the original service in UDDI intact - this will likely be a configurable option in the future
-        final Map<String, String> serviceNameToWsdlNameMap = new HashMap<String, String>();
 
-        serviceNameToWsdlNameMap.put(overwriteService.getName().get(0).getValue(), serviceNameAndNameSpace.left);
         //true here means that we will keep any existing bindings found on the BusinessService
         publishToUDDI(serviceKeys,
                 pairToUseList,
@@ -1126,7 +1131,7 @@ public class BusinessServicePublisher implements Closeable {
     }
 
     /**
-     * From a Collection of BusinessServices, extract a single BusinessService who's name matches the requiredNameSpace
+     * From a Collection of BusinessServices, extract a single BusinessService who's name matches the requiredServiceName
      * parameter and if requiredNameSpace is not null, who's namespace matches this parameter.
      *
      * @param requiredServiceName String service name. Required.
@@ -1282,7 +1287,7 @@ public class BusinessServicePublisher implements Closeable {
                             getBindingsToDeleteAndKeep(uddiPublishedService.getBindingTemplates().getBindingTemplate(),
                                     uddiServicesToDependentModels.iterator().next().right);
 
-                    //only keep the bindings which are not soap / http - add them onto the BusinessService created from the WSDLll
+                    //only keep the bindings which are not soap / http - add them onto the BusinessService created from the WSDL
                     for (BindingTemplate bt : uddiPublishedService.getBindingTemplates().getBindingTemplate()) {
                         if (!deleteAndKeep.right.contains(bt.getBindingKey())) continue;
                         businessService.getBindingTemplates().getBindingTemplate().add(bt);
@@ -1363,11 +1368,11 @@ public class BusinessServicePublisher implements Closeable {
         final Set<UDDIBusinessService> newlyCreatedSet = new HashSet<UDDIBusinessService>();
         for (Pair<String, BusinessService> serviceKeyToObject : newlyPublishedServices) {
             final BusinessService bs = serviceKeyToObject.right;
-            final String wsdlServiceName = bs.getName().get(0).getValue();
+            final String uddiServiceName = bs.getName().get(0).getValue();
             final UDDIBusinessService uddiBs = new UDDIBusinessService(
                     bs.getName().get(0).getValue(),
                     bs.getServiceKey(),
-                    serviceToWsdlServiceName.get(wsdlServiceName),
+                    serviceToWsdlServiceName.get(uddiServiceName),
                     UDDIUtilities.extractNamespace(bs),
                     UDDIUtilities.getAllBindingAndTModelKeys(bs));
 
@@ -1395,9 +1400,16 @@ public class BusinessServicePublisher implements Closeable {
         return new Pair<Set<String>, Set<UDDIBusinessService>>(Collections.unmodifiableSet(servicesToDelete), Collections.unmodifiableSet(newlyCreatedSet));
     }
 
+    /**
+     * Get a unique key for a BusinessService. This will return the concatanation of the wsdl:service's local name and
+     * namespace, if it is not null. A BusinessService itself may have multiple names, but it should only have a single
+     * wsdl localname in it's categoryBag.
+     * @param bs BusinessService to generate unique value for
+     * @return unique String representing this BusinessService.
+     */
     private String getUniqueKeyForService(BusinessService bs) {
         final String nameSpace = UDDIUtilities.extractNamespace(bs);
-        final String serviceName = bs.getName().get(0).getValue();
+        final String serviceName = UDDIUtilities.extractWsdlLocalName(bs);
         return (nameSpace == null) ? serviceName : serviceName + "_" + nameSpace;
     }
 
