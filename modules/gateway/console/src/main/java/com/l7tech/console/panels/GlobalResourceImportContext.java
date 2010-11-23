@@ -714,10 +714,23 @@ class GlobalResourceImportContext {
                             }
                         }
 
-                        if ( headers.size() > 1 && resourceDocument == null && entrySelector != null ) {
-                            final ResourceEntryHeader selectedHeader = entrySelector.call( headers );
-                            if ( selectedHeader != null ) {
-                                resourceDocument = new ResourceEntryResourceDocument( selectedHeader, resourceAdmin );
+                        if ( headers.size() > 1 && resourceDocument == null ) {
+                            if ( entrySelector != null ) {
+                                final ResourceEntryHeader selectedHeader = entrySelector.call( headers );
+                                if ( selectedHeader != null ) {
+                                    resourceDocument = new ResourceEntryResourceDocument( selectedHeader, resourceAdmin );
+                                }
+                            }
+
+                            if ( resourceDocument == null ) {
+                                final Set<String> uris = Functions.reduce( headers, new TreeSet<String>(), new Functions.Binary<Set<String>,Set<String>,ResourceEntryHeader>(){
+                                    @Override
+                                    public Set<String> call( final Set<String> uris, final ResourceEntryHeader resourceEntryHeader ) {
+                                        uris.add( resourceEntryHeader.getUri() );
+                                        return uris;
+                                    }
+                                } );
+                                throw new IOException( "Multiple schemas found for target namespace, system identifiers are " + uris );
                             }
                         }
 

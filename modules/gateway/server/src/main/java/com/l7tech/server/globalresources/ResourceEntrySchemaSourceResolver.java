@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -63,6 +64,15 @@ public class ResourceEntrySchemaSourceResolver implements ApplicationListener, E
             if ( resourceHeaders.size() == 1 ) {
                 final ResourceEntry entry = resourceEntryManager.findByPrimaryKey( resourceHeaders.iterator().next().getOid() );
                 schema = resolved( entry );
+            } else if ( !resourceHeaders.isEmpty() ) {
+                final Set<String> uris = Functions.reduce( resourceHeaders, new TreeSet<String>(), new Functions.Binary<Set<String>,Set<String>,ResourceEntryHeader>(){
+                    @Override
+                    public Set<String> call( final Set<String> uris, final ResourceEntryHeader resourceEntryHeader ) {
+                        uris.add( resourceEntryHeader.getUri() );
+                        return uris;
+                    }
+                } );
+                throw new IOException( "Multiple schemas found for target namespace, system identifiers are " + uris );
             }
         } catch ( FindException e ) {
             // The schema could be from another source, but we cannot be sure it

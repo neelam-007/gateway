@@ -1830,9 +1830,26 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
 
         @Override
-        public SchemaSource getSchemaByTargetNamespace( final String targetNamespace ) {
+        public SchemaSource getSchemaByTargetNamespace( final String targetNamespace ) throws IOException {
+            final SchemaSource schemaSource;
             final Set<SchemaResource> schemas = registeredSchemasByTargetNamespace.get( targetNamespace==null ? "" : targetNamespace );
-            return schemas != null && schemas.size()==1 ? asSource(schemas.iterator().next()) : null;
+            if ( schemas != null && !schemas.isEmpty() ) {
+                if ( schemas.size() == 1 ) {
+                    schemaSource = asSource(schemas.iterator().next());
+                } else {
+                    final Set<String> uris = Functions.reduce( schemas, new TreeSet<String>(), new Functions.Binary<Set<String>,Set<String>,SchemaResource>(){
+                        @Override
+                        public Set<String> call( final Set<String> uris, final SchemaResource schemaResource ) {
+                            uris.add( schemaResource.getUri() );
+                            return uris;
+                        }
+                    } );
+                    throw new IOException( "Multiple schemas found for target namespace, system identifiers are " + uris );
+                }
+            } else {
+                schemaSource = null;
+            }
+            return schemaSource;
         }
 
         @Override

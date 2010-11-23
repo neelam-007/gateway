@@ -614,7 +614,13 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 manualChoice = JOptionPane.YES_OPTION;
                 options = new Object[]{"Update","Cancel"};
                 defaultOption = "Update";
-                messageBuilder.append("\nA global schema matches by namespace, select 'Update' to access global schemas\nor 'Cancel' to fix the schemaLocation or System ID.");                    
+                messageBuilder.append("\nA global schema matches by namespace, select 'Update' to access global schemas\nor 'Cancel' to fix the schemaLocation or System ID.");
+            } else if ( info.ambiguousNamespace ) {
+                importChoice = Integer.MIN_VALUE;
+                manualChoice = JOptionPane.YES_OPTION;
+                options = new Object[]{"Update","Cancel"};
+                defaultOption = "Update";
+                messageBuilder.append("\nMultiple global schemas matched by namespace, select 'Update' to access global schemas\nor 'Cancel' to add a schemaLocation for the import.");
             } else {
                 importChoice = JOptionPane.YES_OPTION;
                 manualChoice = JOptionPane.NO_OPTION;
@@ -685,7 +691,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         } catch ( IOException e ) {
             final String errorMessage = ExceptionUtils.getMessage(e);
             if ( errorMessage.startsWith( "Could not resolve '" ) && errorMessage.endsWith("'") ) {
-                return new DependencyInfo( null, errorMessage.substring( 19, errorMessage.length()-1 ), false, null, false );
+                return new DependencyInfo( null, errorMessage.substring( 19, errorMessage.length()-1 ), false, null, false, false );
             } else {
                 throw e;
             }
@@ -742,22 +748,27 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             }
         }
 
+        boolean ambiguousNamespace = false;
         boolean matchedByNamespaceOnly = false;
         if ( entryHeader == null && dependencyNamespaceSet ) {
             final Collection<ResourceEntryHeader> entries = resourceAdmin.findResourceHeadersByTargetNamespace(dependencyNamespace);
-            if ( entries != null && !entries.isEmpty()) {
+            if ( entries != null && !entries.isEmpty() ) {
                 // Only resolve by targetNamespace if there is no schemaLocation
                 // If there is a schemaLocation but it does not match a global schema we want
                 // to fix the reference.
                 if ( !dependencyLocation.isEmpty() ) {
                     matchedByNamespaceOnly = true;
                 } else {
-                    entryHeader = entries.iterator().next();
+                    if ( entries.size() == 1 ) {
+                        entryHeader = entries.iterator().next();
+                    } else {
+                        ambiguousNamespace = true;
+                    }
                 }
             }
         }
 
-        return entryHeader!=null ? null : new DependencyInfo( baseUri, dependencyLocation, dependencyNamespaceSet, dependencyNamespace, matchedByNamespaceOnly );
+        return entryHeader!=null ? null : new DependencyInfo( baseUri, dependencyLocation, dependencyNamespaceSet, dependencyNamespace, matchedByNamespaceOnly, ambiguousNamespace );
     }
 
     /** @return true iff. info was committed successfully */
@@ -1245,17 +1256,20 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
         private final boolean targetNamespaceSet;
         private final String targetNamespace;
         private final boolean matchedByNamespace;
+        private final boolean ambiguousNamespace;
 
         private DependencyInfo( final String baseUri,
                                 final String schemaLocation,
                                 final boolean targetNamespaceSet,
                                 final String targetNamespace,
-                                final boolean matchedByNamespace ) {
+                                final boolean matchedByNamespace,
+                                final boolean ambiguousNamespace ) {
             this.baseUri = baseUri;
             this.schemaLocation = schemaLocation;
             this.targetNamespaceSet = targetNamespaceSet;
             this.targetNamespace = targetNamespace;
             this.matchedByNamespace = matchedByNamespace;
+            this.ambiguousNamespace = ambiguousNamespace;
         }
 
         public String toString() {
