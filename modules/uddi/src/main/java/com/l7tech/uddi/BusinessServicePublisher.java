@@ -578,15 +578,15 @@ public class BusinessServicePublisher implements Closeable {
         final BindingTemplate functionalTemplate = keyToTemplate.get(functionalBindingKey);
 
         if (proxyTemplate == null) {
-            final String msg = "Cannot find the proxy GIF endpoint to delete with bindingKey #(" + proxyBindingKey + ")";
+            final String msg = "Cannot find the proxy GIF endpoint to delete with bindingKey #(" + proxyBindingKey + ").";
             logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg);
+            throw new UDDIUnpublishException(msg);
         }
 
         if (functionalTemplate == null) {
-            final String msg = "Cannot find the functional template with bindingKey #(" + functionalBindingKey + ")";
+            final String msg = "Cannot find the functional template with bindingKey #(" + functionalBindingKey + ").";
             logger.log(Level.WARNING, msg);
-            throw new UDDIException(msg);
+            throw new UDDIUnpublishException(msg);
         }
 
         //fix the functional template - back to it's state before it was proxied

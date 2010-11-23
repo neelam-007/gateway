@@ -915,11 +915,17 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     publisher.deleteGatewayGifBindingTemplates(serviceControl.getUddiServiceKey(), proxyBindingKeys.iterator().next(), functionalBindingKey);
                     logger.log(Level.FINE, "GIF endpoint successfully deleted");
                 } catch (UDDIException e) {
-                    context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
-                            ExceptionUtils.getDebugException(e),
-                            serviceControl.getUddiServiceKey(), ExceptionUtils.getMessage(e));
-                    PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
-                    return;
+                    if (e instanceof UDDIInvalidKeyException) {
+                        logger.log(Level.FINE, "BusinessService that endpoints were published to was not found #(" + serviceControl.getUddiServiceKey() + "). Cannot delete from UDDI Registry.");
+                    } else if (e instanceof  UDDIUnpublishException){
+                        logger.log(Level.FINE, e.getMessage() + " Cannot undo GIF publish.");
+                    } else {
+                        context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
+                                ExceptionUtils.getDebugException(e),
+                                serviceControl.getUddiServiceKey(), ExceptionUtils.getMessage(e));
+                        PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
+                        return;
+                    }
                 } finally {
                     ResourceUtils.closeQuietly( publisher );
                 }
@@ -1004,11 +1010,15 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             uddiProxiedServiceInfo.<Set<String>>getProperty(UDDIProxiedServiceInfo.ALL_BINDING_TEMPLATE_KEYS));
                     logger.log(Level.FINE, "Endpoints successfully deleted");
                 } catch (UDDIException e) {
-                    context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
-                            ExceptionUtils.getDebugException(e),
-                            serviceControl.getUddiServiceKey(), ExceptionUtils.getMessage(e));
-                    PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
-                    return;
+                    if (e instanceof UDDIInvalidKeyException) {
+                        logger.log(Level.FINE, "BusinessService that endpoints were published to was not found #(" + serviceControl.getUddiServiceKey() + "). Cannot delete from UDDI Registry.");
+                    } else {
+                        context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
+                                ExceptionUtils.getDebugException(e),
+                                serviceControl.getUddiServiceKey(), ExceptionUtils.getMessage(e));
+                        PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
+                        return;
+                    }
                 } finally {
                     ResourceUtils.closeQuietly( publisher );
                 }
