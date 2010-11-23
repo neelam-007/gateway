@@ -9,6 +9,7 @@ import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.naming.NoInitialContextException;
 import javax.naming.Reference;
 import javax.rmi.PortableRemoteObject;
 import java.net.PasswordAuthentication;
@@ -199,6 +200,8 @@ public class JmsUtil {
             logger.fine( "Connected to " + connection.toString() );
 
             return result;
+        } catch ( NoInitialContextException e ) {
+            throw new JmsConfigException("Error connecting to JMS, could not create initial context : " + ExceptionUtils.getMessage(e), e);
         } catch ( RuntimeException rte ) {
             throw new JmsConfigException("Error connecting to JMS : " + ExceptionUtils.getMessage(rte), rte);
         } finally {
