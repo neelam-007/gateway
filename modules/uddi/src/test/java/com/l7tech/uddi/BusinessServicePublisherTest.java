@@ -1313,6 +1313,12 @@ public class BusinessServicePublisherTest {
 
         final Set<String> wsdlUrls = uddiClient.getUniqueWsdlUrls();
         Assert.assertTrue("Incorrect unique WSDL URLs found", new HashSet<String>(Arrays.asList(gatewayWsdlUrl)).containsAll(wsdlUrls));
+
+        final BusinessService service = uddiClient.getBusinessService("uddi:e3544a00-2234-11df-acce-251c32a0acbe");
+        Assert.assertNotNull(service);
+        Assert.assertEquals("Incorrect number of names found", 2, service.getName().size());
+        Assert.assertEquals("Incorrect number of descriptions found", 1, service.getDescription().size());
+
     }
 
     /**

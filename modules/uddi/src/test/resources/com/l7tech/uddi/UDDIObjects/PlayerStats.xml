@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <businessService xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" xmlns:ns3="urn:uddi-org:sub_v3" xmlns:ns4="urn:uddi-org:api_v3" businessKey="uddi:systinet.com:demo:it" serviceKey="uddi:e3544a00-2234-11df-acce-251c32a0acbe">
     <ns4:name>PlayerStatsServiceBug8147</ns4:name>
+    <ns4:name>New name for bug 9481</ns4:name>
     <ns4:description>wsdl:type representing service</ns4:description>
     <ns4:bindingTemplates>
         <ns4:bindingTemplate serviceKey="uddi:e3544a00-2234-11df-acce-251c32a0acbe" bindingKey="uddi:e3549820-2234-11df-acce-251c32a0acbe">

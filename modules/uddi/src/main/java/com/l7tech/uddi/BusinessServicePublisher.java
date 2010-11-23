@@ -1401,7 +1401,7 @@ public class BusinessServicePublisher implements Closeable {
     }
 
     /**
-     * Get a unique key for a BusinessService. This will return the concatanation of the wsdl:service's local name and
+     * Get a unique key for a BusinessService. This will return the concatenation of the wsdl:service's local name and
      * namespace, if it is not null. A BusinessService itself may have multiple names, but it should only have a single
      * wsdl localname in it's categoryBag.
      * @param bs BusinessService to generate unique value for
@@ -1440,6 +1440,11 @@ public class BusinessServicePublisher implements Closeable {
             final Map<String, TModel> publishedTModels) {
 
         toPublish.setServiceKey(published.getServiceKey());
+        toPublish.getName().clear();
+        toPublish.getName().addAll(published.getName());
+        toPublish.getDescription().clear();
+        toPublish.getDescription().addAll(published.getDescription());
+        
         //maintain any meta data added by 3rd parties
         final CategoryBag publishedCategoryBag = published.getCategoryBag();
         if(publishedCategoryBag != null){//it should never be null as it's always required
