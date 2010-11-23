@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  *
  * @author: vchan
  */
-public class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
+class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
     private static final Logger _logger = Logger.getLogger(LegacyJmsEndpointListenerImpl.class.getName());
 
@@ -28,9 +28,9 @@ public class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     private MessageProducer _failureProducer;
 
     /**
-     * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#AbstractJmsEndpointListener(com.l7tech.server.transport.jms2.JmsEndpointConfig)
+     * @see com.l7tech.server.transport.jms2.AbstractJmsEndpointListener#AbstractJmsEndpointListener(com.l7tech.server.transport.jms2.JmsEndpointConfig,java.util.logging.Logger)
      */
-    public LegacyJmsEndpointListenerImpl(final JmsEndpointConfig endpointConfig) {
+    LegacyJmsEndpointListenerImpl(final JmsEndpointConfig endpointConfig) {
         super(endpointConfig, _logger);
 
         // changed back to constructor init
@@ -63,7 +63,7 @@ public class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
         }
     }
 
-    protected MessageProducer getFailureProducer() throws JMSException, NamingException, JmsConfigException {
+    MessageProducer getFailureProducer() throws JMSException, NamingException, JmsConfigException {
         synchronized(sync) {
             if ( _failureProducer == null &&
                  _endpointCfg.isTransactional() &&

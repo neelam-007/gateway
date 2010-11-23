@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * @see com.l7tech.server.transport.email.asynch.PooledPollingEmailListenerImpl
  * @author: vchan
  */
-public class JmsTask implements Runnable {
+class JmsTask implements Runnable {
 
     private static final Logger _logger = Logger.getLogger(JmsTask.class.getName());
 
@@ -40,11 +40,11 @@ public class JmsTask implements Runnable {
     /**
      * Constructor.
      */
-    public JmsTask(final JmsEndpointConfig endpointCfg,
-                   final JmsTaskBag jmsBag,
-                   final Message jmsMessage,
-                   final Queue failureQ,
-                   final MessageConsumer consumer)
+    JmsTask( final JmsEndpointConfig endpointCfg,
+             final JmsTaskBag jmsBag,
+             final Message jmsMessage,
+             final Queue failureQ,
+             final MessageConsumer consumer )
     {
         this.endpointCfg = endpointCfg;
         this.consumer = consumer;
@@ -69,14 +69,15 @@ public class JmsTask implements Runnable {
                 jmsMessage.acknowledge();
 
             handleMessage();
-
-        } catch (JMSException jex) {
-            _logger.warning("Error encountered while acknowledging message: " + ExceptionUtils.getMessage(jex));
-
-        } catch (JmsRuntimeException ex) {
-
-            _logger.info("Runtime exception encountered: " + ex);
-
+        } catch (JMSException e) {
+            _logger.log( Level.WARNING, "Error acknowledging message: " + JmsUtil.getJMSErrorMessage(e), ExceptionUtils.getDebugException( e ) );
+        } catch (JmsRuntimeException e) {
+            final JMSException jmsException = e.getCause() instanceof JMSException ? (JMSException) e.getCause() : null;
+            String detail = "";
+            if ( jmsException != null ) {
+                detail = ", due to " + JmsUtil.getJMSErrorMessage(jmsException);
+            }
+            _logger.log( Level.WARNING, "Error handling message: " + ExceptionUtils.getMessage( e ) + detail, ExceptionUtils.getDebugException( e ) );
         } finally {
             cleanup();
         }
@@ -87,7 +88,7 @@ public class JmsTask implements Runnable {
      *
      * @throws JmsRuntimeException when the RequestHandler encounters errors while processing the message
      */
-    protected void handleMessage() throws JmsRuntimeException {
+    void handleMessage() throws JmsRuntimeException {
 
         // call the request handler to invoke the MessageProcessor
         handler.onMessage(endpointCfg, jmsBag, endpointCfg.isTransactional(), createFailureProducer(), jmsMessage);
@@ -115,7 +116,7 @@ public class JmsTask implements Runnable {
     /**
      * Cleanup object references so resources can be GC'd.
      */
-    protected void cleanup() {
+    void cleanup() {
 
         this.handler = null;
 

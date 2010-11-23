@@ -12,12 +12,12 @@ import java.util.logging.Logger;
 /**
  *
  */
-public class JmsTaskBag extends JmsBag {
+class JmsTaskBag extends JmsBag {
     
-    public JmsTaskBag( final Context context,
-                       final ConnectionFactory factory,
-                       final Connection connection,
-                       final Session session ) {
+    JmsTaskBag( final Context context,
+                final ConnectionFactory factory,
+                final Connection connection,
+                final Session session ) {
         super(context, factory, connection, session);
     }
 

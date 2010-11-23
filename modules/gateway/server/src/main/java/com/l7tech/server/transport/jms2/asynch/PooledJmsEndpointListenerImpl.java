@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 /**
  * @author vchan
  */
-public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
+class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
 
     private static final Logger _logger = Logger.getLogger(PooledJmsEndpointListenerImpl.class.getName());
 
@@ -32,7 +32,7 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
      * @param endpointConfig attributes for the Jms endpoint to listen to
      * @param threadPoolBean Thread pool bean which JmsTasks can be submitted to.
      */
-    public PooledJmsEndpointListenerImpl(final JmsEndpointConfig endpointConfig, final ThreadPoolBean threadPoolBean) {
+    PooledJmsEndpointListenerImpl(final JmsEndpointConfig endpointConfig, final ThreadPoolBean threadPoolBean) {
         super(endpointConfig, _logger);
         this.threadPoolBean = threadPoolBean;
     }
@@ -40,7 +40,7 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
     /**
      *
      */
-    protected JmsTaskBag handOffJmsBag(JmsBag bag)  throws JMSException {
+    JmsTaskBag handOffJmsBag(JmsBag bag)  throws JMSException {
 
         synchronized (sync) {
             JmsTaskBag handOff = new JmsTaskBag(bag.getJndiContext(), bag.getConnectionFactory(), bag.getConnection(), bag.getSession());
@@ -94,7 +94,7 @@ public class PooledJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
      * @return new JmsTask instance for the given request
      * @throws JmsRuntimeException
      */
-    protected JmsTask newJmsTask(Message jmsMessage) throws JmsRuntimeException {
+    JmsTask newJmsTask(Message jmsMessage) throws JmsRuntimeException {
 
         boolean ok = true;
         JmsTaskBag taskBag = null;

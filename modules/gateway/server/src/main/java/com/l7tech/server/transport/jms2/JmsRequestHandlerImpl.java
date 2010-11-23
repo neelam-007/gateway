@@ -344,9 +344,9 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
             if (responseProducer != null) {
                 try {
                     responseProducer.close();
-                } catch (JMSException jex) {
-                    // ignore at this point
-                } 
+                } catch (JMSException e) {
+                    _logger.log( Level.FINE, "Error closing response producer: " + JmsUtil.getJMSErrorMessage(e), ExceptionUtils.getDebugException(e) );
+                }
             }
         }
     }
@@ -442,7 +442,8 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
             }
             sent = true;
         } catch ( JMSException e ) {
-            _logger.log( Level.WARNING, "Caught JMS exception while sending response", e );
+            final Throwable logException = JmsUtil.isCausedByExpectedJMSException( e ) ? null : e;
+            _logger.log( Level.WARNING, "Error sending response: " + JmsUtil.getJMSErrorMessage(e), logException );
         } catch (NamingException e ) {
             _logger.log(Level.WARNING, "Error trying to lookup the destination endpoint from preset reply-to queue name", e );
         }
@@ -450,14 +451,15 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
     }
 
     private boolean sendFailureRequest( final Message message,
-                                        final MessageProducer producer) {
+                                        final MessageProducer producer ) {
         boolean sent = false;
 
         try {
             producer.send(message);
             sent = true;
         } catch (JMSException e) {
-            _logger.log( Level.WARNING, "Error sending failure message.", e);
+            final Throwable logException = JmsUtil.isCausedByExpectedJMSException( e ) ? null : e;
+            _logger.log( Level.WARNING, "Error sending request to failure destination: " + JmsUtil.getJMSErrorMessage(e), logException);
         }
 
         return sent;

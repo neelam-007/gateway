@@ -28,6 +28,7 @@ public class JmsUtil {
     public static final String DEFAULT_ENCODING = "UTF-8";
     private static final int MAX_CAUSE_DEPTH = 25;
     public static final boolean detectTypes = SyspropUtil.getBoolean( "com.l7tech.server.transport.jms.detectJmsTypes", true );
+    public static final boolean useTopicTypes = SyspropUtil.getBoolean( "com.l7tech.server.transport.jms.useTopicTypes", false );
 
     private static ClassLoader contextClassLoader;
 
@@ -170,7 +171,7 @@ public class JmsUtil {
             if ( username != null && password != null ) {
                 if ( preferQueue && detectTypes && connFactory instanceof QueueConnectionFactory ) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection(username, password);
-                } else if ( !preferQueue && detectTypes && connFactory instanceof TopicConnectionFactory ) {
+                } else if ( !preferQueue && detectTypes && useTopicTypes && connFactory instanceof TopicConnectionFactory ) {
                     conn = ((TopicConnectionFactory)connFactory).createTopicConnection(username, password);
                 } else {
                     conn = connFactory.createConnection( username, password );
@@ -178,7 +179,7 @@ public class JmsUtil {
             } else {
                 if ( preferQueue && detectTypes && connFactory instanceof QueueConnectionFactory ) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection();
-                } else if ( !preferQueue && detectTypes && connFactory instanceof TopicConnectionFactory ) {
+                } else if ( !preferQueue && detectTypes && useTopicTypes && connFactory instanceof TopicConnectionFactory ) {
                     conn = ((TopicConnectionFactory)connFactory).createTopicConnection();
                 } else {
                     conn = connFactory.createConnection( username, password );
@@ -188,7 +189,7 @@ public class JmsUtil {
             if ( createSession ) {
                 if ( preferQueue && detectTypes && connFactory instanceof QueueConnectionFactory ) {
                     session = ((QueueConnection)conn).createQueueSession( transactional, acknowledgeMode );
-                } else if ( !preferQueue && detectTypes && connFactory instanceof TopicConnectionFactory ) {
+                } else if ( !preferQueue && detectTypes && useTopicTypes && connFactory instanceof TopicConnectionFactory ) {
                     session = ((TopicConnection)conn).createTopicSession( transactional, acknowledgeMode );
                 } else {
                     session = conn.createSession( transactional, acknowledgeMode );
@@ -280,7 +281,7 @@ public class JmsUtil {
         if ( preferQueue && detectTypes && factory instanceof QueueConnectionFactory ) {
             session = ((QueueConnection)conn).createQueueSession(transactional, acknowledgementMode);
 
-        } else if ( !preferQueue && detectTypes && factory instanceof TopicConnectionFactory ) {
+        } else if ( !preferQueue && detectTypes && useTopicTypes && factory instanceof TopicConnectionFactory ) {
             session = ((TopicConnection)conn).createTopicSession(transactional, acknowledgementMode);
 
         } else {
@@ -296,7 +297,7 @@ public class JmsUtil {
 
         if ( detectTypes && session instanceof QueueSession && destination instanceof Queue ) {
             consumer = ((QueueSession)session).createReceiver( (Queue)destination );
-        } else if ( detectTypes && session instanceof TopicSession && destination instanceof Topic ) {
+        } else if ( detectTypes && useTopicTypes && session instanceof TopicSession && destination instanceof Topic ) {
             consumer = ((TopicSession)session).createSubscriber( (Topic)destination );
         } else {
             consumer = session.createConsumer( destination );
@@ -312,7 +313,7 @@ public class JmsUtil {
 
         if ( detectTypes && session instanceof QueueSession && destination instanceof Queue ) {
             consumer = ((QueueSession)session).createReceiver( (Queue)destination, selector );
-        } else if ( detectTypes && session instanceof TopicSession && destination instanceof Topic ) {
+        } else if ( detectTypes && useTopicTypes && session instanceof TopicSession && destination instanceof Topic ) {
             consumer = ((TopicSession)session).createSubscriber( (Topic)destination, selector, false );
         } else {
             consumer = session.createConsumer( destination, selector );
@@ -329,7 +330,7 @@ public class JmsUtil {
             // the reason for this distinction is that IBM throws java.lang.AbstractMethodError:
             // com.ibm.mq.jms.MQQueueSession.createProducer(Ljavax/jms/Destination;)Ljavax/jms/MessageProducer;
             producer = ((QueueSession)session).createSender( (Queue)destination );
-        } else if ( detectTypes && session instanceof TopicSession && destination instanceof Topic ) {
+        } else if ( detectTypes && useTopicTypes && session instanceof TopicSession && destination instanceof Topic ) {
             producer = ((TopicSession)session).createPublisher( (Topic)destination );
         } else {
             producer = session.createProducer( destination );

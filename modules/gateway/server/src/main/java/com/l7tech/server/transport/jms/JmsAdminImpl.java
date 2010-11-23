@@ -162,23 +162,20 @@ public class JmsAdminImpl implements JmsAdmin {
     @Override
     public void testEndpoint(JmsConnection conn, JmsEndpoint endpoint) throws FindException, JmsTestException {
         JmsBag bag = null;
-        MessageConsumer jmsQueueReceiver = null;
-        QueueSender jmsQueueSender = null;
-        TopicSubscriber jmsTopicSubscriber = null;
-        TopicPublisher jmsTopicPublisher = null;
-        Connection jmsConnection;
+        final Collection<MessageProducer> producers = new ArrayList<MessageProducer>();
+        final Collection<MessageConsumer> consumers = new ArrayList<MessageConsumer>();
 
         try {
             logger.finer("Connecting to connection " + conn);
             bag = JmsUtil.connect(conn, endpoint.getPasswordAuthentication(),
-                    jmsPropertyMapper, endpoint.getAcknowledgementType()==JmsAcknowledgementType.ON_COMPLETION, true, endpoint.isQueue(), Session.AUTO_ACKNOWLEDGE);
+                    jmsPropertyMapper, true, endpoint.isQueue(), endpoint.getAcknowledgementType()==JmsAcknowledgementType.ON_COMPLETION, Session.AUTO_ACKNOWLEDGE);
 
-            Context jndiContext = bag.getJndiContext();
-            jmsConnection = bag.getConnection();
+            final Context jndiContext = bag.getJndiContext();
+            final Connection jmsConnection = bag.getConnection();
             jmsConnection.start();
 
             logger.finer("Connected, getting Session...");
-            Session jmsSession = bag.getSession();
+            final Session jmsSession = bag.getSession();
             logger.finer("Got Session...");
             if ( endpoint.isQueue() && jmsSession instanceof QueueSession) {
                 QueueSession qs = ((QueueSession)jmsSession);
@@ -194,7 +191,7 @@ public class JmsAdminImpl implements JmsAdmin {
                 try {
                     // if this is outbound, we should NOT create a receiver
                     logger.fine("Creating queue receiver for " + q);
-                    jmsQueueReceiver = qs.createReceiver(q);
+                    consumers.add( qs.createReceiver(q) );
                     canreceive = true;
                 } catch (JMSException e) {
                     logger.info("This queue cannot be opened for receiving, will test for sending");
@@ -203,9 +200,9 @@ public class JmsAdminImpl implements JmsAdmin {
                 if (!canreceive) {
                     try {
                         logger.fine("Unable to receive with this queue, will try to open a sender");
-                        jmsQueueSender = qs.createSender(q);
+                        producers.add( qs.createSender(q) );
                     } catch (JMSException e) {
-                        logger.log(Level.INFO, "This queue cannot be opened for sending nor receiving: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        logger.log(Level.INFO, "This queue cannot be opened for sending nor receiving: " + JmsUtil.getJMSErrorMessage(e), ExceptionUtils.getDebugException(e));
                         if (laste != null) throw laste;
                         else throw e;
                     }
@@ -216,8 +213,8 @@ public class JmsAdminImpl implements JmsAdmin {
                     if (!(rq instanceof Queue))
                         throw new JmsTestException(endpoint.getReplyToQueueName() + " is not a Queue");
                     Queue fq = (Queue)rq;
-                    logger.fine("Creating queue receiver for " + fq);
-                    jmsQueueSender = qs.createSender(fq);
+                    logger.fine("Creating queue sender for " + fq);
+                    producers.add( qs.createSender(fq) );
                 }
                 // failure queue
                 if (endpoint.getFailureDestinationName() != null) {
@@ -225,8 +222,8 @@ public class JmsAdminImpl implements JmsAdmin {
                     if (!(fo instanceof Queue))
                         throw new JmsTestException(endpoint.getFailureDestinationName() + " is not a Queue");
                     Queue fq = (Queue)fo;
-                    logger.fine("Creating queue receiver for " + fq);
-                    jmsQueueSender = qs.createSender(fq);
+                    logger.fine("Creating queue sender for " + fq);
+                    producers.add(  qs.createSender(fq) );
                 }
             } else if (!endpoint.isQueue() && jmsSession instanceof TopicSession) {
                 TopicSession ts = ((TopicSession)jmsSession);
@@ -239,7 +236,7 @@ public class JmsAdminImpl implements JmsAdmin {
                 JMSException laste = null;
                 try {
                     logger.fine("Creating topic subscriber for " + t);
-                    jmsTopicSubscriber = ts.createSubscriber(t);
+                    consumers.add( ts.createSubscriber(t) );
                     canreceive = true;
                 } catch (JMSException e) {
                     logger.info("This topic cannot be opened for subscribing, will test for publishing");
@@ -248,18 +245,61 @@ public class JmsAdminImpl implements JmsAdmin {
                 if (!canreceive) {
                     try {
                         logger.fine("Unable to subscribe with this topic, will try to open a publisher");
-                        jmsTopicPublisher = ts.createPublisher(t);
+                        producers.add( ts.createPublisher(t) );
                     } catch (JMSException e) {
-                        logger.log(Level.INFO, "This topic cannot be opened for publishing nor subscribing: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        logger.log(Level.INFO, "This topic cannot be opened for publishing nor subscribing: " + JmsUtil.getJMSErrorMessage(e), ExceptionUtils.getDebugException(e));
                         if (laste != null) throw laste;
                         else throw e;
                     }
                 }
             } else {
-                throw new JMSException("Unknown JMS session.");
+                Object o = jndiContext.lookup(endpoint.getDestinationName());
+                if ( endpoint.isQueue() && !(o instanceof Queue) ) throw new JmsTestException(endpoint.getDestinationName() + " is not a Queue");
+                if ( !endpoint.isQueue() && !(o instanceof Topic) ) throw new JmsTestException(endpoint.getDestinationName() + " is not a Topic");
+
+                boolean canreceive = false;
+                JMSException laste = null;
+                try {
+                    logger.fine("Creating consumer for " + o);
+                    consumers.add( jmsSession.createConsumer((Destination) o) );
+                    canreceive = true;
+                } catch (JMSException e) {
+                    logger.info("This destination cannot be opened for consuming, will test for producing");
+                    laste = e;
+                }
+                if (!canreceive) {
+                    try {
+                        logger.fine("Unable to consume with this destination, will try to open a producer");
+                        producers.add( jmsSession.createProducer((Destination) o) );
+                    } catch (JMSException e) {
+                        logger.log(Level.INFO, "This destination cannot be opened for producing nor consuming: " + JmsUtil.getJMSErrorMessage(e), ExceptionUtils.getDebugException(e));
+                        if (laste != null) throw laste;
+                        else throw e;
+                    }
+                }
+
+                // Reply to the specified queue
+                if (endpoint.getReplyToQueueName() != null) {
+                    Object rq = jndiContext.lookup(endpoint.getReplyToQueueName());
+                    if (!(rq instanceof Queue))
+                        throw new JmsTestException(endpoint.getReplyToQueueName() + " is not a Queue");
+                    Queue fq = (Queue)rq;
+                    logger.fine("Creating producer for " + fq);
+                    producers.add( jmsSession.createProducer(fq) );
+                }
+
+                // failure queue
+                if (endpoint.getFailureDestinationName() != null) {
+                    Object fo = jndiContext.lookup(endpoint.getFailureDestinationName());
+                    if (!(fo instanceof Queue))
+                        throw new JmsTestException(endpoint.getFailureDestinationName() + " is not a Queue");
+                    Queue fq = (Queue)fo;
+                    logger.fine("Creating producer for " + fq);
+                    producers.add( jmsSession.createProducer(fq) );
+                }
             }
         } catch (JMSException e) {
-            logger.log(Level.INFO, "Caught JMSException while testing endpoint '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+            logger.log(Level.INFO, "Caught JMSException while testing endpoint '" + JmsUtil.getJMSErrorMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             throw new JmsTestException(e.toString());
         } catch (NamingException e) {
             logger.log(Level.INFO, "Caught NamingException while testing endpoint '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
@@ -271,10 +311,8 @@ public class JmsAdminImpl implements JmsAdmin {
             logger.log(Level.INFO, "Caught Throwable while testing endpoint '" + ExceptionUtils.getMessage(t) + "'.", ExceptionUtils.getDebugException(t));
             throw new JmsTestException(t.toString());
         } finally {
-            close(jmsQueueSender);
-            close(jmsQueueReceiver);
-            close(jmsTopicSubscriber);
-            close(jmsTopicPublisher);
+            for ( final MessageProducer producer : producers ) close(producer);
+            for ( final MessageConsumer consumer : consumers ) close(consumer);
             if (bag != null) bag.close();
         }
     }
