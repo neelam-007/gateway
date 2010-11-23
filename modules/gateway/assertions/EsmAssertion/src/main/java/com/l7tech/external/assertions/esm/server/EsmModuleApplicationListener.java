@@ -3,6 +3,7 @@
  */
 package com.l7tech.external.assertions.esm.server;
 
+import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.external.assertions.esm.EsmConstants;
 import com.l7tech.external.assertions.esm.EsmMetricsAssertion;
 import com.l7tech.external.assertions.esm.EsmSubscriptionAssertion;
@@ -25,7 +26,6 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
-import com.l7tech.common.io.DocumentReferenceProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -33,6 +33,7 @@ import org.springframework.context.ApplicationListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,6 +56,7 @@ public class EsmModuleApplicationListener implements ApplicationListener {
     ServiceTemplate subscriptionsTemplate;
 
     private EsmApplicationContext esmSpring;
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     /*
      * Called by the ServerAssertionRegistry when the module containing this class is first loaded
@@ -136,6 +138,9 @@ public class EsmModuleApplicationListener implements ApplicationListener {
     }
 
     private void initialize() {
+        if (initialized.getAndSet(true))
+            return;
+        
         this.esmSpring = EsmApplicationContext.getInstance(spring);
 
         if (!isLicensed()) {
