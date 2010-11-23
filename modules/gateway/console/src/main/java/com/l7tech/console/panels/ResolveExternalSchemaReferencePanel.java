@@ -111,7 +111,7 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
                 boolean fixed;
                 String fixedUri = null;
                 try {
-                    fixed = reg.getResourceAdmin().findResourceHeaderByUriAndType(foreignRef.getName(), ResourceType.XML_SCHEMA) != null;
+                    fixed = foreignRef.getName()!=null && reg.getResourceAdmin().findResourceHeaderByUriAndType(foreignRef.getName(), ResourceType.XML_SCHEMA) != null;
                     if (!fixed) {
                         final Collection<ResourceEntryHeader> headers = reg.getResourceAdmin().findResourceHeadersByTargetNamespace(foreignRef.getTns());
                         if ( headers.size() == 1 ) {
