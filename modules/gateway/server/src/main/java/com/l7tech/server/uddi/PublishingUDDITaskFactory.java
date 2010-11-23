@@ -1148,11 +1148,16 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                                     uddiProxiedServiceInfo.<Set<String>>getProperty(UDDIProxiedServiceInfo.ALL_BINDING_TEMPLATE_KEYS));
                             logger.log(Level.FINE, "Successfully deleted overwritten endpoints from UDDI Registry");
                         } catch (UDDIException e) {
-                            context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
-                                    ExceptionUtils.getDebugException(e),
-                                    serviceControl.getUddiServiceKey(), ExceptionUtils.getMessage(e));
-                            PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
-                            return;
+                            if (e instanceof UDDIInvalidKeyException) {
+                                logger.log(Level.FINE, "Overwritten serviceKey not found #(" + serviceControl.getUddiServiceKey() + "). Cannot delete from UDDI Registry.");
+                            } else {
+                                context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
+                                        ExceptionUtils.getDebugException(e),
+                                        serviceControl.getUddiServiceKey(), ExceptionUtils.getMessage(e));
+                                PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
+                                return;
+                            }
+
                         }  finally {
                            ResourceUtils.closeQuietly( publisher );
                         }
