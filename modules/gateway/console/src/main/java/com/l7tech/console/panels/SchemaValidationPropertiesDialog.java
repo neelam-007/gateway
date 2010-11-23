@@ -822,6 +822,21 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             return false;
         }
 
+        if ( !getResourceAdmin().allowSchemaDoctype() && XmlUtil.hasDoctype( contents ) ) {
+            final int choice = JOptionPane.showOptionDialog(
+                    this,
+                    "The schema has a document type declaration and support is currently\ndisabled (schema.allowDoctype cluster property)",
+                    "Schema Warning",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    null,
+                    new String[]{ "Save", "Cancel" },
+                    "Cancel");
+            if ( choice == JOptionPane.NO_OPTION ) {
+                return false;
+            }
+        }
+
         // Checks pass, commit it
         StaticResourceInfo sri = new StaticResourceInfo();
         sri.setOriginalUrl( uri );
