@@ -509,6 +509,10 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 if ( "1.0".equals(ServerConfig.getInstance().getPropertyCached("ioHttpVersion")) ) {
                     params.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
                 }
+                if ( assertion.getMaxRetries() >= 0 ) {
+                    params.setMaxRetries( assertion.getMaxRetries() );
+                }
+
                 return super.createRequest(method, params);
             }
         };

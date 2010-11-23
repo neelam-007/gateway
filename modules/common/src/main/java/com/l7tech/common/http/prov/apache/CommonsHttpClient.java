@@ -517,6 +517,9 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         final HttpMethodParams methodParams = httpMethod.getParams();
         methodParams.setSoTimeout(params.getReadTimeout()>=0 ? params.getReadTimeout() : timeout);
         clientParams.setConnectionManagerTimeout(params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout );
+        if (params.getMaxRetries() >= 0) {
+            methodParams.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler( params.getMaxRetries(), false ));                        
+        }
 
         final PasswordAuthentication pw = params.getPasswordAuthentication();
         final NtlmAuthentication ntlm = params.getNtlmAuthentication();

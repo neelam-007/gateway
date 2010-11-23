@@ -72,6 +72,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     private boolean taiCredentialChaining = false;
     protected Integer connectionTimeout;
     protected Integer timeout;
+    protected int maxRetries = -1;
     protected String requestMsgSrc;
     protected String responseMsgDest;
     protected HttpPassthroughRuleSet responseHeaderRules = new HttpPassthroughRuleSet(false,
@@ -137,6 +138,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setNtlmHost(source.getNtlmHost());
         this.setConnectionTimeout(source.getConnectionTimeout());
         this.setTimeout(source.getTimeout());
+        this.setMaxRetries(source.getMaxRetries());
         this.setRequestMsgSrc(source.getRequestMsgSrc());
         this.setRequestHeaderRules(source.getRequestHeaderRules());
         this.setRequestParamRules(source.getRequestParamRules());
@@ -210,6 +212,19 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
     public void setTimeout(Integer timeout) {
         this.timeout = timeout;
+    }
+
+    /**
+     * Get the maximum number of retries (-1 if not specified)
+     *
+     * @return The maximum number of retries.
+     */
+    public int getMaxRetries() {
+        return maxRetries;
+    }
+
+    public void setMaxRetries( final int maxRetries ) {
+        this.maxRetries = maxRetries;
     }
 
     public boolean isFailOnErrorStatus() {

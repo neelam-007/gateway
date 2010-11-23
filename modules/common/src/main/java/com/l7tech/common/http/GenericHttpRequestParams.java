@@ -37,6 +37,7 @@ public class GenericHttpRequestParams {
     private String virtualHost;
     private int connectionTimeout = -1;
     private int readTimeout = -1;
+    private int maxRetries = -1;
     private String proxyHost;
     private int proxyPort;
     private PasswordAuthentication proxyAuthentication;
@@ -88,6 +89,7 @@ public class GenericHttpRequestParams {
         httpVersion = template.httpVersion;
         connectionTimeout = template.connectionTimeout;
         readTimeout = template.readTimeout;
+        maxRetries = template.maxRetries;
         proxyHost = template.proxyHost;
         proxyPort = template.proxyPort;
         proxyAuthentication = template.proxyAuthentication;
@@ -377,6 +379,27 @@ public class GenericHttpRequestParams {
 
     public void setReadTimeout( final int readTimeout ) {
         this.readTimeout = readTimeout;
+    }
+
+    /**
+     * Get the maximum number of times the request may be retried.
+     *
+     * <p>This is not for redirects, only for retries on (for example)
+     * connection failure.</p>
+     *
+     * @return The maximum retry count (0 for no retries).
+     */
+    public int getMaxRetries() {
+        return maxRetries;
+    }
+
+    /**
+     * Set the maximum number of times a request can be retried.
+     *
+     * @param maxRetries
+     */
+    public void setMaxRetries( final int maxRetries ) {
+        this.maxRetries = maxRetries;
     }
 
     /**

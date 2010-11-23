@@ -30,8 +30,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
@@ -50,7 +48,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private static class MsgSrcComboBoxItem {
         private final String _variableName;
         private final String _displayName;
-        public MsgSrcComboBoxItem(String variableName, String displayName) {
+        private MsgSrcComboBoxItem(String variableName, String displayName) {
             _variableName = variableName;
             _displayName = displayName;
         }
@@ -98,6 +96,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JCheckBox connectTimeoutDefaultCheckBox;
     private JSpinner readTimeoutSpinner;
     private JCheckBox readTimeoutDefaultCheckBox;
+    private JSpinner maxRetriesSpinner;
+    private JCheckBox maxRetriesDefaultCheckBox;
     private JRadioButton resHeadersAll;
     private JRadioButton resHeadersCustomize;
     private JTable resHeadersTable;
@@ -273,6 +273,9 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         readTimeoutSpinner.setModel(new SpinnerNumberModel(1,1,86400,1));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(readTimeoutSpinner, "Read timeout"));
 
+        maxRetriesSpinner.setModel(new SpinnerNumberModel(3,0,100,1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxRetriesSpinner, "Maximum retries"));
+
         inputValidator.constrainTextFieldToNumberRange("proxy port", proxyPortField, -1, 65535);
         inputValidator.constrainTextFieldToBeNonEmpty("proxy host", proxyHostField, null);
 
@@ -281,10 +284,12 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             public void actionPerformed(ActionEvent e) {
                 connectTimeoutSpinner.setEnabled(!connectTimeoutDefaultCheckBox.isSelected());
                 readTimeoutSpinner.setEnabled(!readTimeoutDefaultCheckBox.isSelected());
+                maxRetriesSpinner.setEnabled(!maxRetriesDefaultCheckBox.isSelected());
             }
         };
         connectTimeoutDefaultCheckBox.addActionListener(enableSpinners);
         readTimeoutDefaultCheckBox.addActionListener(enableSpinners);
+        maxRetriesDefaultCheckBox.addActionListener(enableSpinners);
 
         ActionListener enablePassThroughFaults = new ActionListener() {
             @Override
@@ -677,6 +682,10 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             assertion.setTimeout(null);
         else
             assertion.setTimeout((Integer)readTimeoutSpinner.getValue()*1000);
+        if (maxRetriesDefaultCheckBox.isSelected())
+            assertion.setMaxRetries(-1);
+        else
+            assertion.setMaxRetries((Integer)maxRetriesSpinner.getValue());
 
         RoutingDialogUtils.configSecurityHeaderHandling(assertion, -1, secHdrButtons);
         if (RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER == assertion.getCurrentSecurityHeaderHandling())
@@ -788,6 +797,15 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             readTimeoutDefaultCheckBox.setSelected(false);
         }
         readTimeoutSpinner.setEnabled(!readTimeoutDefaultCheckBox.isSelected());
+        int maxRetries = assertion.getMaxRetries();
+        if (maxRetries == -1) {
+            maxRetriesSpinner.setValue(3);
+            maxRetriesDefaultCheckBox.setSelected(true);
+        } else {
+            maxRetriesSpinner.setValue(maxRetries);
+            maxRetriesDefaultCheckBox.setSelected(false);
+        }
+        maxRetriesSpinner.setEnabled(!maxRetriesDefaultCheckBox.isSelected());
 
         // read actor promotion information
         java.util.List<String> existingActors = listExistingXmlSecurityRecipientContextFromPolicy();
