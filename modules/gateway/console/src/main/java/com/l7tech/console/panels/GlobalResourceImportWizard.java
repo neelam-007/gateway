@@ -9,6 +9,7 @@ import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.URIResourceDocument;
 import com.l7tech.common.io.XmlUtil;
 import static com.l7tech.console.panels.GlobalResourceImportContext.*;
+import com.l7tech.console.util.ResourceAdminEntityResolver;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryBag;
@@ -1199,7 +1200,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                                               resourceType!=null ? resourceType : ResourceType.DTD,
                                               uri,
                                               content,
-                                              new ResourceHolderEntityResolver( context.getCurrentResourceHolders(), true),
+                                              new ResourceHolderEntityResolver( context.getCurrentResourceHolders(), new ResourceAdminEntityResolver(resourceAdmin,true), null),
                                               !resourceAdmin.allowSchemaDoctype() );
                         if ( resourceUriAndContent == null ) {
                             break; // manual import cancelled

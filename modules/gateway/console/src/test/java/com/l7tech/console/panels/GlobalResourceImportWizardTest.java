@@ -451,6 +451,74 @@ public class GlobalResourceImportWizardTest {
         assertEquals( "Imported resource count", 0, confirmedResources.size() );
     }
 
+    @BugNumber(9475) // Global Resources: Validate assertion unable to import schema that refers to DTDs
+    @Test
+    public void testDependencyImportDependencyExistingDTD() throws Exception {
+        final GlobalResourceImportContext context = new GlobalResourceImportContext();
+        final ResourceEntry resourceEntry1 = resource( "http://localhost:8888/dtd1.dtd", DTD1, "dtd1" );
+        final ResourceEntry resourceEntry2 = resource( "http://localhost:8888/dtd_partial1.dtd", DTD_PARTIAL1, "partial1" );
+        final ResourceAdminStub resourceAdmin = new ResourceAdminStub( Arrays.asList( resourceEntry1, resourceEntry2 ));
+        resourceAdmin.setResolver( new Functions.UnaryThrows<String,String,IOException>(){
+            @Override
+            public String call( final String uri ) throws IOException {
+                if ( uri.equals( "http://localhost:8888/dtd_partial1.dtd" ) ) {
+                    return DTD_PARTIAL1;
+                } else if ( uri.equals( "http://localhost:8888/dtd1.dtd" ) ) {
+                    return DTD1;
+                } else if ( uri.equals( "http://localhost:8888/schema.xsd" ) ) {
+                    return SCHEMA_DTD;
+                }
+                throw new IOException("Cannot find resource : " + uri);
+            }
+        } );
+        final boolean[] importConfirmed = {false};
+        final List<ResourceHolder> confirmedResources = new ArrayList<ResourceHolder>();
+        final ImportAdvisor advisor = buildAdvisor( DependencyImportChoice.IMPORT, DependencyImportChoice.IMPORT, importConfirmed, confirmedResources );
+        final ChoiceSelector choiceSelector = new ChoiceSelector(){
+            @Override
+            public ImportChoice selectChoice( final ImportOption option, final String optionDetail, final ImportChoice defaultChoice, final String conflictDetail, final String resourceUri, final String resourceDescription ) {
+                ImportChoice choice = null;
+                switch( option ) {
+                    case CONFLICTING_URI:
+                        choice = ImportChoice.EXISTING;
+                        break;
+                    default:
+                        fail("Unexpected option: " + option);
+                }
+                return choice;
+            }
+        };
+        final Functions.UnaryThrows<ResourceEntryHeader, Collection<ResourceEntryHeader>, IOException> entitySelector = buildEntitySelector();
+        final ResourceTherapist resourceTherapist = buildResourceTherapist();
+
+        boolean proceed = importDependencies( context, "http://localhost:8888/schema_import_dtd.xsd", ResourceType.XML_SCHEMA, SCHEMA_IMPORT_DTD, resourceAdmin, null, advisor, null, getLoggingErrorListener(), choiceSelector, entitySelector, resourceTherapist );
+        assertTrue( "Import success", proceed );
+        assertTrue( "Dependency import confirmed", importConfirmed[0] );
+        assertEquals( "Imported resource count", 3, confirmedResources.size() );
+
+        assertEquals( "Imported resource uri [0]", "http://localhost:8888/schema.xsd", confirmedResources.get(0).getSystemId() );
+        assertEquals( "Imported resource type [0]", ResourceType.XML_SCHEMA, confirmedResources.get(0).getType() );
+        assertEquals( "Imported resource target namespace [0]", null, confirmedResources.get(0).getTargetNamespace() );
+        assertTrue( "Imported resource persist [0]", confirmedResources.get(0).isPersist() );
+        assertTrue( "Imported resource xml [0]", confirmedResources.get(0).isXml() );
+        assertFalse( "Imported resource error [0]", confirmedResources.get(0).isError() );
+
+        assertEquals( "Imported resource uri [1]", "http://localhost:8888/dtd1.dtd", confirmedResources.get(1).getSystemId() );
+        assertEquals( "Imported resource type [1]", ResourceType.DTD, confirmedResources.get(1).getType() );
+        assertEquals( "Imported resource public id [1]", "dtd1", confirmedResources.get(1).getPublicId() );
+        assertFalse( "Imported resource persist [1]", confirmedResources.get(1).isPersist() );
+        assertFalse( "Imported resource xml [1]", confirmedResources.get(1).isXml() );
+        assertFalse( "Imported resource error [1]", confirmedResources.get(1).isError() );
+
+        assertEquals( "Imported resource uri [2]", "http://localhost:8888/dtd_partial1.dtd", confirmedResources.get(2).getSystemId() );
+        assertEquals( "Imported resource type [2]", ResourceType.DTD, confirmedResources.get(2).getType() );
+        assertEquals( "Imported resource public id [2]", "partial1", confirmedResources.get(2).getPublicId() );
+        assertFalse( "Imported resource persist [2]", confirmedResources.get(2).isPersist() );
+        assertFalse( "Imported resource xml [2]", confirmedResources.get(2).isXml() );
+        assertFalse( "Imported resource error [2]", confirmedResources.get(2).isError() );
+
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( GlobalResourceImportWizardTest.class.getName() );
@@ -545,6 +613,7 @@ public class GlobalResourceImportWizardTest {
     private static final String SCHEMA1 = "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:schema1\"/>";
     private static final String SCHEMA2 = "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:schema2\"><import schemaLocation=\"schema1.xsd\" namespace=\"urn:schema1\"/></schema>";
     private static final String SCHEMA_DTD = "<!DOCTYPE schema PUBLIC \"dtd1\" \"dtd1.dtd\"><schema xmlns=\"http://www.w3.org/2001/XMLSchema\"/>";
+    private static final String SCHEMA_IMPORT_DTD = "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:schema1\"><import schemaLocation=\"schema.xsd\"/></schema>";
     private static final String SCHEMA_DTD_ABS = "<!DOCTYPE schema\nPUBLIC \"dtd1\" \"http://localhost:8888/dtds/dtd1.dtd\"\n[\n]><schema xmlns=\"http://www.w3.org/2001/XMLSchema\"/>";
     private static final String SCHEMA_INVALID = "invalid xml schema content";
 

@@ -819,6 +819,7 @@ class GlobalResourceImportContext {
             private final ResourceType resourceType = type;
             private final ResourceDocumentResolver resourceEntityResolver = buildResourceEntryResolver( resourceAdmin, entitySelector );
             private final ResourceDocumentResolver externalResolver = GlobalResourceImportContext.this.getResolver( externalResolvers );
+            private final ResourceDocumentResolver fullResolver = GlobalResourceImportContext.this.getResolver( Arrays.asList( resourceEntityResolver, externalResolver ) );
             private final ChoiceSelector choiceSelector = selector;
             private final ResourceTherapist manualResourceTherapist = resourceTherapist;
 
@@ -944,7 +945,10 @@ class GlobalResourceImportContext {
 
                 if ( resolved != null && resolved == external && resourceType == ResourceType.XML_SCHEMA ) {
                     try {
-                        XmlUtil.getSchemaTNS( resolved.getUri().toString(), resolved.getContent(), new ResourceHolderEntityResolver(GlobalResourceImportContext.this.getCurrentResourceHolders(),true) );
+                        XmlUtil.getSchemaTNS( 
+                                resolved.getUri().toString(),
+                                resolved.getContent(),
+                                new ResourceHolderEntityResolver(GlobalResourceImportContext.this.getCurrentResourceHolders(),null,fullResolver) );
                     } catch ( XmlUtil.BadSchemaException e ) {
                         final String fullDetail;
                         switch ( option ) {
@@ -985,22 +989,32 @@ class GlobalResourceImportContext {
 
     static class ResourceHolderEntityResolver implements EntityResolver {
         private final Collection<ResourceHolder> resourceHolders;
-        private final boolean allowDefaultResolution;
+        private final EntityResolver parentEntityResolver;
+        private final ResourceDocumentResolver parentDocumentResolver;
 
         ResourceHolderEntityResolver( final Collection<ResourceHolder> resourceHolders ) {
-            this( resourceHolders, false );
+            this( resourceHolders, null, null );
         }
 
         ResourceHolderEntityResolver( final Collection<ResourceHolder> resourceHolders,
-                                      final boolean allowDefaultResolution ) {
+                                      final EntityResolver parentEntityResolver,
+                                      final ResourceDocumentResolver parentDocumentResolver ) {
             this.resourceHolders = resourceHolders;
-            this.allowDefaultResolution = allowDefaultResolution;
+            this.parentEntityResolver = parentEntityResolver;
+            this.parentDocumentResolver = parentDocumentResolver;
         }
 
         private InputSource asInputSource( final ResourceHolder resourceHolder ) throws IOException {
             final InputSource inputSource = new InputSource();
             inputSource.setSystemId( resourceHolder.getSystemId() );
             inputSource.setCharacterStream( new StringReader( resourceHolder.getContent() ) );
+            return inputSource;
+        }
+
+        private InputSource asInputSource( final ResourceDocument resourceDocument ) throws IOException {
+            final InputSource inputSource = new InputSource();
+            inputSource.setSystemId( resourceDocument.getUri().toString() );
+            inputSource.setCharacterStream( new StringReader( resourceDocument.getContent() ) );
             return inputSource;
         }
 
@@ -1026,7 +1040,18 @@ class GlobalResourceImportContext {
                 }
             }
 
-            if ( inputSource == null && !allowDefaultResolution ) {
+            if ( inputSource == null && parentEntityResolver != null ) {
+                inputSource = parentEntityResolver.resolveEntity( publicId, systemId );
+            }
+
+            if ( inputSource == null && parentDocumentResolver != null ) {
+                final ResourceDocument resourceDocument = parentDocumentResolver.resolveByPublicId( systemId, publicId );
+                if ( resourceDocument != null ) {
+                    inputSource = asInputSource(resourceDocument);
+                }
+            }
+
+            if ( inputSource == null ) {
                 throw new IOException( "Resource not found '"+systemId+"', public identifier '"+publicId+"'" );
             }
 
