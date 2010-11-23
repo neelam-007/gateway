@@ -2,11 +2,13 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.exporter.ExternalSchemaReference;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions;
+import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -51,7 +53,10 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
         setLayout(new BorderLayout());
         add(mainPanel);
         nameField.setText(foreignRef.getName());
+        nameField.setCaretPosition( 0 );
         tnsField.setText(foreignRef.getTns());
+        tnsField.setCaretPosition( 0 );
+        schemaSelectionComboBox.setRenderer( new TextListCellRenderer<String>( truncatingAccessor(0, 80), truncatingAccessor(80, 4096), false ) );
         addSchemaButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -185,16 +190,12 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
 
     @Override
     public String getDescription() {
-        return getStepLabel();
+        return describe( 1024 );
     }
 
     @Override
     public String getStepLabel() {
-        String ref = foreignRef.getName();
-        if (ref == null) {
-            ref = foreignRef.getTns();
-        }
-        return "Unresolved external schema " + ref;
+        return describe( 40 );
     }
 
     @Override
@@ -202,4 +203,20 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
         return !hasNextPanel();
     }
 
+    private String describe( final int detailLengthRestriction ) {
+        String ref =  TextUtils.truncStringMiddleExact( foreignRef.getName(), detailLengthRestriction );
+        if (ref == null) {
+            ref = TextUtils.truncStringMiddleExact( foreignRef.getTns(), detailLengthRestriction );
+        }
+        return "Unresolved external schema " + ref;
+    }
+
+    private Functions.Unary<String,String> truncatingAccessor( final int minLength, final int maxLength ) {
+        return new Functions.Unary<String,String>(){
+            @Override
+            public String call( final String s ) {
+                return s.length() > minLength ? TextUtils.truncStringMiddleExact( s, maxLength ) : null;
+            }
+        };
+    }
 }
