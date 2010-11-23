@@ -27,7 +27,7 @@ import java.util.logging.Level;
 final class OSConfigManager {
     private static final Logger logger = Logger.getLogger(OSConfigManager.class.getName());
     static final String BACKUP_MANIFEST = "config/backup/cfg/backup_manifest";
-    private static final String INTERNAL_CONFIG_FILES_FOLDER = "config/backup/configfiles";
+    private static final String INTERNAL_CONFIG_FILES_FOLDER = "config/backup/cfg/configfiles";
 
     private final File backUpManifest;
     private final boolean isVerbose;
