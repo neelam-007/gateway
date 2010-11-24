@@ -1006,7 +1006,7 @@ public class LogonDialog extends JDialog {
                 showInvalidCredentialsMessage();
             }
         }
-        else if (cause instanceof MalformedURLException) {
+        else if (ExceptionUtils.causedBy(cause, MalformedURLException.class) || ExceptionUtils.causedBy(cause, NumberFormatException.class)) {
             String msg = resources.getString("logon.invalid.service.url");
             JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.WARNING_MESSAGE);
         }

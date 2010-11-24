@@ -31,7 +31,7 @@ import org.springframework.remoting.RemoteAccessException;
 import javax.security.auth.login.LoginException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
-import java.net.URI;
+import java.net.URL;
 import java.security.AccessControlException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -216,7 +216,12 @@ public class SecurityProviderImpl extends SecurityProvider
 
         this.sessionCookie = sessionCookie;
         this.sessionHost = remoteHost;
-        TopComponents.getInstance().setSsgURL(URI.create("http://" + remoteHost));
+
+        try {
+            TopComponents.getInstance().setSsgURL(new URL("http://" + remoteHost));
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Invalid SSG host or URL: " + remoteHost, e);
+        }
 
         AdminContextFactory factory = applicationContext.getBean("adminContextFactory", AdminContextFactory.class);
         Pair<String, Integer> hostAndPort = getHostAndPort(remoteHost);
@@ -426,7 +431,7 @@ public class SecurityProviderImpl extends SecurityProvider
         try {
             port = Integer.valueOf(hostAndPort.right);
         } catch (NumberFormatException e) {
-            port = DEFAULT_PORT;
+            throw new IllegalArgumentException("Invalid port: " + hostAndPort.right, e);
         }
         return new Pair<String, Integer>(hostAndPort.left, port);
     }

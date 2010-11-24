@@ -19,10 +19,10 @@ import org.springframework.context.ApplicationContextException;
 import javax.swing.*;
 import java.awt.*;
 import java.lang.ref.WeakReference;
+import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
-import java.net.URI;
 
 /**
  * The class is Central UI component registry in the SSM.
@@ -35,7 +35,7 @@ import java.net.URI;
 public class TopComponents {
     private static final TopComponents instance = new TopComponents();
     private boolean connectionLost = false;
-    private URI ssgURL;
+    private URL ssgURL;
     private String logonWarningBanner;
     private SsmPreferences preferences;
 
@@ -67,11 +67,11 @@ public class TopComponents {
         this.connectionLost = connectionLost;
     }
 
-    public URI ssgURL() {
+    public URL ssgURL() {
         return ssgURL;
     }
 
-    public void setSsgURL(URI url) {
+    public void setSsgURL(URL url) {
         ssgURL = url;
     }
 
