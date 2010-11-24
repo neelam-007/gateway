@@ -50,9 +50,9 @@ public class ValidationUtils {
     }
 
     /**
-     * Check if a domain name is (syntactically) valid.
+     * Check if a domain name is (syntactically) valid. Literal IP addresses are also considered valid.
      *
-     * @param domain the domain name
+     * @param domain the domain name or IP address literal
      * @param allowEmpty true to treat an empty string as valid
      * @return true if valid
      */
@@ -79,7 +79,7 @@ public class ValidationUtils {
             ok = true;
         }
 
-        return ok;
+        return ok || InetAddressUtil.isValidIpv6Address(domain);
     }
 
     /**
