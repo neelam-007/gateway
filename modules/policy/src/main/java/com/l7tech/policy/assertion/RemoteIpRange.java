@@ -33,7 +33,7 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
      * fully descriptive constructor
      *
      * @param startIp the start ip address of the range specified by this assertion
-     * @param networkPrefix the network prefix; valid values are 0..32 for IPv4 address ranges, 0..64 for IPv6 address ranges
+     * @param networkPrefix the network prefix; valid values are 0..32 for IPv4 address ranges, 0..128 for IPv6 address ranges
      * @param allowRange true if addresses is this range are authorised, false if they are unauthorized
      */
     public RemoteIpRange(String startIp, int networkPrefix, boolean allowRange) {
@@ -184,7 +184,7 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
     private static final String DEFAULT_START_IP = "192.168.1.0";
     private static final int DEFAULT_NETWORK_PREFIX = 24;
     private static final int IPV4_MAX_PREFIX = 32;
-    private static final int IPV6_MAX_PREFIX = 64;
+    private static final int IPV6_MAX_PREFIX = 128;
 
     private String startIp;
     private int networkMask;
