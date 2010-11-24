@@ -442,10 +442,11 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
             }
             sent = true;
         } catch ( JMSException e ) {
-            final Throwable logException = JmsUtil.isCausedByExpectedJMSException( e ) ? null : e;
+            final JMSException logException = JmsUtil.isCausedByExpectedJMSException( e ) ? null : e;
             _logger.log( Level.WARNING, "Error sending response: " + JmsUtil.getJMSErrorMessage(e), logException );
         } catch (NamingException e ) {
-            _logger.log(Level.WARNING, "Error trying to lookup the destination endpoint from preset reply-to queue name", e );
+            final NamingException logException = JmsUtil.isCausedByExpectedNamingException( e ) ? null : e;
+            _logger.log(Level.WARNING, "Error trying to lookup the destination endpoint from preset reply-to queue name: " + JmsUtil.getJNDIErrorMessage( e ), logException );
         }
         return sent;
     }

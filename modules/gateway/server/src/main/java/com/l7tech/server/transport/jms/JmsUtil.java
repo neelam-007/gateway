@@ -6,11 +6,18 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 
 import javax.jms.*;
+import javax.naming.CommunicationException;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import javax.naming.InsufficientResourcesException;
+import javax.naming.InvalidNameException;
+import javax.naming.LimitExceededException;
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
+import javax.naming.NamingSecurityException;
 import javax.naming.NoInitialContextException;
 import javax.naming.Reference;
+import javax.naming.ServiceUnavailableException;
 import javax.rmi.PortableRemoteObject;
 import java.net.PasswordAuthentication;
 import java.net.SocketException;
@@ -415,6 +422,39 @@ public class JmsUtil {
     }
 
     /**
+     * Is the given exception caused by an "expected" JNDI exception.
+     *
+     * <p>An expected exception is one with a well known cause for which
+     * additional information (such as a stack trace) is not useful.</p>
+     *
+     * @param throwable The throwable to test
+     * @return true if the throwable or a cause is an expected JNDI exception.
+     */
+    public static boolean isCausedByExpectedNamingException( final Throwable throwable ) {
+        boolean expected = false;
+
+        int count = 0;
+        Throwable cause = throwable;
+        while ( cause != null && count++ < MAX_CAUSE_DEPTH ) {
+            if ( cause instanceof CommunicationException ||
+                 cause instanceof InsufficientResourcesException ||
+                 cause instanceof InvalidNameException ||
+                 cause instanceof LimitExceededException ||
+                 cause instanceof NameNotFoundException ||
+                 cause instanceof NamingSecurityException ||
+                 cause instanceof NoInitialContextException ||
+                 cause instanceof ServiceUnavailableException ) {
+                expected = true;
+                break;
+            }
+
+            cause = getCause( cause );
+        }
+
+        return expected;
+    }
+
+    /**
      * Get the error message for the given JMS exception.
      *
      * @param exception The JMS Exception
@@ -440,6 +480,56 @@ public class JmsUtil {
             builder.append( exception.getErrorCode() );
         }
 
+        appendCauses( exception, builder );
+
+        return builder.toString();
+    }
+
+    /**
+     * Get an error message for the given naming exception.
+     *
+     * @param exception The throwable
+     * @return The error message including error code and any cause(s)
+     */
+    public static String getJNDIErrorMessage( final NamingException exception ) {
+        final StringBuilder builder = new StringBuilder();
+
+        if ( exception instanceof CommunicationException ) {
+            builder.append( "Communication error; " );
+        } else if ( exception instanceof InsufficientResourcesException ) {
+            builder.append( "Insufficient resources; " );
+        } else if ( exception instanceof InvalidNameException ) {
+            builder.append( "Invalid name; " );
+        } else if ( exception instanceof LimitExceededException ) {
+            builder.append( "Limit exceeded; " );
+        } else if ( exception instanceof NameNotFoundException ) {
+            builder.append( "Name not found; " );
+        }else if ( exception instanceof NamingSecurityException ) {
+            builder.append( "Security error; " );
+        }else if ( exception instanceof NoInitialContextException ) {
+            builder.append( "No initial context; " );
+        }else if ( exception instanceof ServiceUnavailableException ) {
+            builder.append( "Service unavailable; " );
+        }
+
+        builder.append( ExceptionUtils.getMessage( exception ) );
+
+        if ( exception.getResolvedName() != null ) {
+            builder.append( ", resolved name: " );
+            builder.append( exception.getResolvedName() );
+        }
+
+        if ( exception.getRemainingName() != null ) {
+            builder.append( ", remaining name: " );
+            builder.append( exception.getRemainingName() );
+        }
+
+        appendCauses( exception, builder );
+
+        return builder.toString();
+    }
+
+    private static void appendCauses( final Exception exception, final StringBuilder builder ) {
         int count = 0;
         Throwable cause = getCause( exception );
         while ( cause != null && count++ < MAX_CAUSE_DEPTH ) {
@@ -447,7 +537,5 @@ public class JmsUtil {
             builder.append( ExceptionUtils.getMessage( cause ) );
             cause = getCause( cause );
         }
-
-        return builder.toString();
     }
 }

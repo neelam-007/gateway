@@ -211,7 +211,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     } else {
                         if (oopses >= MAX_OOPSES)
                             auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(MAX_OOPSES));
-                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error in outbound JMS request processing"}, nex );
+                        final NamingException auditException = JmsUtil.isCausedByExpectedNamingException( nex ) ? null : nex;
+                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error in outbound JMS request processing: " + JmsUtil.getJNDIErrorMessage( nex )}, auditException );
                         return AssertionStatus.FAILED;
                     }
                 }
