@@ -432,10 +432,10 @@ public class InetAddressUtil {
             return null;
         }
 
-        if (InetAddressUtil.isValidIpv6Address(addrAndPrefix[0])) return pattern;
+        if (InetAddressUtil.isValidIpv6Address(addrAndPrefix[0])) return addrAndPrefix[0];
 
         String patternAddress = addrAndPrefix[0] + (addrAndPrefix[0].charAt(addrAndPrefix[0].length()-1)==':' ? ":" : "::"); // fill with zeroes
-        return isValidIpv6Address(patternAddress) ? patternAddress + (addrAndPrefix.length > 1 ? "/" + addrAndPrefix[1] : "") : null;
+        return isValidIpv6Address(patternAddress) ? patternAddress : null;
     }
 
     public static byte[] getNetworkPrefix(Inet6Address ipv6addr, short prefixLength) {
