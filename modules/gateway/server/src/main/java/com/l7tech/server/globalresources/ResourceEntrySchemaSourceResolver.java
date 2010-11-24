@@ -1,5 +1,6 @@
 package com.l7tech.server.globalresources;
 
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
@@ -56,7 +57,8 @@ public class ResourceEntrySchemaSourceResolver implements ApplicationListener, E
     }
 
     @Override
-    public SchemaSource getSchemaByTargetNamespace( final String targetNamespace ) throws IOException {
+    public SchemaSource getSchemaByTargetNamespace( final Audit audit,
+                                                    final String targetNamespace ) throws IOException {
         SchemaSource schema = null;
 
         try {
@@ -84,7 +86,8 @@ public class ResourceEntrySchemaSourceResolver implements ApplicationListener, E
     }
 
     @Override
-    public SchemaSource getSchemaByUri( final String uri ) throws IOException {
+    public SchemaSource getSchemaByUri( final Audit audit,
+                                        final String uri ) throws IOException {
         SchemaSource schema;
 
         try {
@@ -100,7 +103,8 @@ public class ResourceEntrySchemaSourceResolver implements ApplicationListener, E
     }
 
     @Override
-    public void refreshSchemaByUri( final String uri ) throws IOException {
+    public void refreshSchemaByUri( final Audit audit,
+                                    final String uri ) throws IOException {
         // invalidation occurs at any time due to entity invalidation
     }
 

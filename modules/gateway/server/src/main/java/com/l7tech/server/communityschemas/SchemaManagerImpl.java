@@ -5,6 +5,8 @@ import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.ResourceReference;
 import com.l7tech.common.io.SchemaUtil;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.util.*;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.TarariSchemaHandler;
@@ -384,7 +386,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                 try {
                     for ( final SchemaSourceResolver source : schemaSourceResolvers ) {
                         if ( source.getId().equals( schema.getSchemaSourceResolverId() ) ) {
-                            source.refreshSchemaByUri( uri );
+                            source.refreshSchemaByUri( new LogOnlyAuditor(logger), uri );
                         }
                     }
                 } catch ( IOException e ) {
@@ -472,7 +474,8 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
      *         This is a new handle duped just for the caller; caller must close it when they are finished with it.
      */
     @Override
-    public SchemaHandle getSchemaByUri( final String uri ) throws IOException, SAXException {
+    public SchemaHandle getSchemaByUri( final Audit audit,
+                                        final String uri ) throws IOException, SAXException {
         cacheLock.readLock().lock();
         try {
             final SchemaHandle ret = getSchemaByUriNoCompile(uri);
@@ -482,7 +485,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
 
         // Cache miss.  We'll need to compile a new instance of this schema.
-        final SchemaSource schemaSource = getSchemaStringForUri(uri, uri, true, true, false);
+        final SchemaSource schemaSource = getSchemaStringForUri(audit, uri, uri, true, true, false);
         assert schemaSource.getContent() != null;
 
         // We'll prevent other threads from compiling new schemas concurrently, to avoid complications with other
@@ -497,7 +500,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
             final SchemaHandle ret = getSchemaByUriNoCompile(uri);
             if (ret != null) return ret;
 
-            return compileAndCache(uri, schemaSource);
+            return compileAndCache(audit, uri, schemaSource);
         } finally {
             cacheLock.writeLock().unlock();
         }
@@ -536,7 +539,8 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
      * @return as LSInput that contains both StringData and a SystemId.  Never null.
      * @throws IOException  if schema text could not be fetched for the specified URI.
      */
-    private SchemaSource getSchemaStringForUri( final String baseUri,
+    private SchemaSource getSchemaStringForUri( final Audit audit,
+                                                final String baseUri,
                                                 String uri,
                                                 final boolean policyOk,
                                                 final boolean remoteOk,
@@ -547,7 +551,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         // Find a local schema by exact uri
         for ( final SchemaSourceResolver source : schemaSourceResolvers ) {
             if ( !source.isRemote() ) {
-                final SchemaSource schemaSource = source.getSchemaByUri( uri );
+                final SchemaSource schemaSource = source.getSchemaByUri( audit, uri );
                 if ( schemaSource != null ) return schemaSource;
             }
         }
@@ -556,7 +560,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         uri = computeEffectiveUrl( baseUri, uri );
         for ( final SchemaSourceResolver source : schemaSourceResolvers ) {
             if ( !source.isRemote() ) {
-                final SchemaSource schemaSource = source.getSchemaByUri( uri );
+                final SchemaSource schemaSource = source.getSchemaByUri( audit, uri );
                 if ( schemaSource != null ) return schemaSource;
             }
         }
@@ -568,7 +572,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
             }
             for ( final SchemaSourceResolver source : schemaSourceResolvers ) {
                 if ( source.isRemote() ) {
-                    final SchemaSource schemaSource = source.getSchemaByUri( uri );
+                    final SchemaSource schemaSource = source.getSchemaByUri( audit, uri );
                     if ( schemaSource != null ) return schemaSource;
                 }
             }
@@ -1085,7 +1089,8 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
      * @throws SAXException if a schema is not valid
      * @throws IOException if a remote schema cannot be fetched
      */
-    private Set<String> preCacheSchemaDependencies( final SchemaSource source ) throws SAXException, IOException {
+    private Set<String> preCacheSchemaDependencies( final Audit audit,
+                                                    final SchemaSource source ) throws SAXException, IOException {
         final Set<String> dependencies = new HashSet<String>();
 
         final Set<String> localDependencies = new HashSet<String>();
@@ -1107,14 +1112,14 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                 } else {
                     try {
                         if (systemId == null) {
-                            final String resolvedSystemId = findUriForTargetNamespace( namespaceURI );
+                            final String resolvedSystemId = findUriForTargetNamespace( audit, namespaceURI );
                             if ( resolvedSystemId != null ) {
                                 systemId = resolvedSystemId;
                             } else {
                                 throw new CausedIOException("No systemId, cannot resolve resource");
                             }
                         }
-                        final SchemaSource dependencySource = getSchemaStringForUri(baseURI, systemId, false, false, localDependencies.contains(baseURI));
+                        final SchemaSource dependencySource = getSchemaStringForUri(audit, baseURI, systemId, false, false, localDependencies.contains(baseURI));
                         assert dependencySource != null;
                         if ( !isRemoteSource( dependencySource.getResolverId() ) ) {
                             localDependencies.add( source.getUri() );
@@ -1142,11 +1147,12 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
     }
 
-    private String findUriForTargetNamespace( final String targetNamespace ) throws IOException {
+    private String findUriForTargetNamespace( final Audit audit,
+                                              final String targetNamespace ) throws IOException {
         // Find a local schema by targetNamespace
         for ( final SchemaSourceResolver source : schemaSourceResolvers ) {
             if ( !source.isRemote() ) {
-                final SchemaSource schemaSource = source.getSchemaByTargetNamespace( targetNamespace );
+                final SchemaSource schemaSource = source.getSchemaByTargetNamespace( audit, targetNamespace );
                 if ( schemaSource != null ) return schemaSource.getUri();
             }
         }
@@ -1197,15 +1203,17 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
      * @return a new handle, duped just for the caller.  Caller must close it when they are finished with it.
      * @throws SAXException
      */
-    private SchemaHandle compileAndCache( final String systemId, final SchemaSource source )
+    private SchemaHandle compileAndCache( final Audit audit,
+                                          final String systemId,
+                                          final SchemaSource source )
             throws SAXException, IOException
     {
         // Do initial parse and get dependencies (strings are all hot in the HTTP cache after this)
-        preCacheSchemaDependencies(source);
+        preCacheSchemaDependencies(audit, source);
 
         invalidateParentsOfRecentlySupersededSchemas();
 
-        SchemaHandle schemaHandle = compileAndCacheRecursive(systemId, source, new HashSet<String>());
+        SchemaHandle schemaHandle = compileAndCacheRecursive(audit, systemId, source, new HashSet<String>());
         maybeEnableHardwareForNewSchema(schemaHandle.getTarget());
         return schemaHandle;
     }
@@ -1242,7 +1250,8 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
      * @return a SchemaHandle to a new CompiledSchema instance, already duplicated for the caller.  Caller must close
      *         this handle when they are finished with it.
      */
-    private SchemaHandle compileAndCacheRecursive( final String systemId,
+    private SchemaHandle compileAndCacheRecursive( final Audit audit,
+                                                   final String systemId,
                                                    final SchemaSource source,
                                                    final Set<String> seenSystemIds ) throws SAXException, IOException {
         if (seenSystemIds.contains(systemId)) {
@@ -1288,7 +1297,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                 } else {
                     Map<String,SchemaHandle> dependencyMap = includes.contains(systemId) ? directIncludes : directImports;
                     try {
-                        return schemaSourceTransformerRef.get().makeLsInput(resolveSchema( namespaceURI, systemId, baseURI, seenSystemIds, dependencyMap ));
+                        return schemaSourceTransformerRef.get().makeLsInput(resolveSchema( audit, namespaceURI, systemId, baseURI, seenSystemIds, dependencyMap ));
                     } catch (IOException e) {
                         throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                     } catch (SAXException e) {
@@ -1337,27 +1346,28 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
     }
 
-    private SchemaSource resolveSchema( final String namespaceURI,
+    private SchemaSource resolveSchema( final Audit audit,
+                                        final String namespaceURI,
                                         String systemId,
                                         final String baseURI,
                                         final Set<String> seenSystemIds,
                                         final Map<String, SchemaHandle> dependencyMap ) throws IOException, SAXException {
         if (systemId == null) {
-            String resolvedSystemId = findUriForTargetNamespace(namespaceURI);
+            String resolvedSystemId = findUriForTargetNamespace(audit, namespaceURI);
             if ( resolvedSystemId != null ) {
                 systemId = resolvedSystemId;
             } else {
                 throw new CausedIOException("No systemId, cannot resolve resource");
             }
         }
-        final SchemaSource source = getSchemaStringForUri(baseURI, systemId, false, false, false);
+        final SchemaSource source = getSchemaStringForUri(audit, baseURI, systemId, false, false, false);
         assert source != null;
 
         SchemaHandle handle = schemasBySystemId.get(source.getUri());
 
         if (handle == null) {
             // Have to compile a new one
-            handle = compileAndCacheRecursive(source.getUri(), source, seenSystemIds);
+            handle = compileAndCacheRecursive(audit, source.getUri(), source, seenSystemIds);
         } else {
             // Can't give it away while it remains in the cache -- need to dupe it (Bug #2926)
             handle = handle.getCompiledSchema().ref();
@@ -1830,7 +1840,8 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
 
         @Override
-        public SchemaSource getSchemaByTargetNamespace( final String targetNamespace ) throws IOException {
+        public SchemaSource getSchemaByTargetNamespace( final Audit audit,
+                                                        final String targetNamespace ) throws IOException {
             final SchemaSource schemaSource;
             final Set<SchemaResource> schemas = registeredSchemasByTargetNamespace.get( targetNamespace==null ? "" : targetNamespace );
             if ( schemas != null && !schemas.isEmpty() ) {
@@ -1853,13 +1864,15 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
 
         @Override
-        public SchemaSource getSchemaByUri( final String uri ) {
+        public SchemaSource getSchemaByUri( final Audit audit,
+                                            final String uri ) {
             final SchemaResource schema = registeredSchemasByUri.get( uri );
             return schema != null ? asSource(schema) : null;
         }
 
         @Override
-        public void refreshSchemaByUri( final String uri ) {
+        public void refreshSchemaByUri( final Audit audit,
+                                        final String uri ) {
         }
 
         @Override

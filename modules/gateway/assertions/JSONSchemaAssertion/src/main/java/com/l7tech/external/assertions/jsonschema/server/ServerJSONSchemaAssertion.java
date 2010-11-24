@@ -219,6 +219,7 @@ public class ServerJSONSchemaAssertion extends AbstractServerAssertion<JSONSchem
 
         Config config = validated( ServerConfig.getInstance() );
         httpObjectCache = new HttpObjectCache<JSONSchema>(
+                "JSON Schema",
                 config.getIntProperty(JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_ENTRIES, 100),
                 config.getIntProperty(JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_AGE, 300000),
                 config.getIntProperty(JSONSchemaAssertion.PARAM_JSON_SCHEMA_CACHE_MAX_STALE_AGE, -1),

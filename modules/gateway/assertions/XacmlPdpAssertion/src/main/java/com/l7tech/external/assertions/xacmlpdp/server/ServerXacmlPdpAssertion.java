@@ -329,7 +329,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         return policyFinder;
     }
 
-    private static synchronized HttpObjectCache<PolicyFinder> getCache(BeanFactory spring) {
+    private static synchronized HttpObjectCache<PolicyFinder> getCache( BeanFactory spring ) {
         if (httpObjectCache != null)
             return httpObjectCache;
 
@@ -338,6 +338,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
 
         Config config = validated( ServerConfig.getInstance() );
         httpObjectCache = new HttpObjectCache<PolicyFinder>(
+                "XACML Policy",
                 config.getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_ENTRIES, 100),
                 config.getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_AGE, 300000),
                 config.getIntProperty(XacmlPdpAssertion.PARAM_XACML_POLICY_CACHE_MAX_STALE_AGE, -1),

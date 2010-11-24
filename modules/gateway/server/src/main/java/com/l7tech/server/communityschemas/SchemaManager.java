@@ -1,5 +1,6 @@
 package com.l7tech.server.communityschemas;
 
+import com.l7tech.gateway.common.audit.Audit;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -60,13 +61,14 @@ public interface SchemaManager {
      * periods of time, since it is a handle to the version of the schema that was known when this method was
      * called.
      *
+     * @param audit the audit to use. Must not be null.
      * @param uri The URI for the schema to load (e.g. "policy:123" for a policy schema). Must not be null.
      * @return  a SchemaHandle for the given document.  Never null.  Caller should close this handle when they
      *          no longer need the schema.
      * @throws IOException  if a remote resource could not be accessed
      * @throws  SAXException if the schema or a dependent could not be compiled
      */
-    SchemaHandle getSchemaByUri(String uri) throws IOException, SAXException;
+    SchemaHandle getSchemaByUri(Audit audit, String uri) throws IOException, SAXException;
 
     /**
      * Check if the schema for the URI is currently registered.

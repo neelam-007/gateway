@@ -5,6 +5,8 @@
 
 package com.l7tech.server.url;
 
+import com.l7tech.gateway.common.audit.Audit;
+
 import java.io.IOException;
 import java.text.ParseException;
 
@@ -16,6 +18,7 @@ public interface UrlResolver<UT> {
      * Resolve the specified URL to an object.  The precise details of how this is done (examples: network fetch every
      * time, lookup from map or config file, caching or non-caching) will depend on the specific implementation.
      *
+     * @param audit the audit to use. Must be non-null.
      * @param url  the URL to resolve, as a string.  Must be non-null.
      * @return the resolved user object.  An implementation must not return null; it must instead throw an exception.
      * @throws IOException     if an object could not be created because the specified resource did not exist
@@ -23,5 +26,5 @@ public interface UrlResolver<UT> {
      * @throws ParseException  if the URL was found, but what we fetched could not be converted into a user object
      *                         of the required type.
      */
-    UT resolveUrl(String url) throws IOException, ParseException;
+    UT resolveUrl( Audit audit, String url ) throws IOException, ParseException;
 }

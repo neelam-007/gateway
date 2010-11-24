@@ -138,5 +138,8 @@ public class SystemMessages extends Messages {
     public static final M UDDI_ORIGINAL_SERVICE_INVALIDATED     = m(2296, Level.WARNING, "Original Business Service in UDDI can no longer be monitored. serviceKey: {0} UDDI Registry with id#({1}).");
     public static final M UDDI_GIF_SCHEME_NOT_AVAILABLE         = m(2297, Level.WARNING, "Service is configured to publish a GIF ''{0}'' endpoint which is no longer available on the Gateway. UDDI is now out of date. To fix either add / enable the listener or republish the GIF endpoint.");
 
+    // Caches
+    public static final M URL_OBJECT_CACHE_REUSE = m( 2320, Level.WARNING, "Reusing previously-cached copy of remote {0}: URL {1}: {2}" );
+
     // MAX -                                      m(2999
 }

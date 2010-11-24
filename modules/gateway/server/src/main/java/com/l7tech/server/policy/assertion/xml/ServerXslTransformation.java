@@ -196,6 +196,7 @@ public class ServerXslTransformation
 
             Config config = validated( ServerConfig.getInstance() );
             httpObjectCache = new HttpObjectCache<CompiledStylesheet>(
+                        "XSL-T",
                         config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
                         config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000),
                         config.getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_STALE_AGE, -1),

@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
@@ -232,7 +233,7 @@ public class XslTransformationTest {
             protected UrlResolver<CompiledStylesheet> getCache( final HttpObjectCache.UserObjectFactory<CompiledStylesheet> cacheObjectFactory,
                                                                 final BeanFactory spring) {
                 return new UrlResolver<CompiledStylesheet>(){
-                    public CompiledStylesheet resolveUrl(String url) throws IOException, ParseException {
+                    public CompiledStylesheet resolveUrl(Audit audit,String url) throws IOException, ParseException {
                         return cacheObjectFactory.createUserObject(url, new AbstractUrlObjectCache.UserObjectSource(){
                             public ContentTypeHeader getContentType() {return ContentTypeHeader.TEXT_DEFAULT;}
                             public String getString(boolean isXml) throws IOException {return ECF_MDE_ID_XSL;}

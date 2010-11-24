@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.resources.ResourceEntry;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.communityschemas.SchemaHandle;
 import com.l7tech.server.communityschemas.SchemaManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -290,7 +291,7 @@ public class SchemaResourceManager implements ApplicationListener, InitializingB
             for ( final String uri : hardwareSchemas ) {
                 SchemaHandle handle = null;
                 try {
-                    handle = schemaManager.getSchemaByUri(  uri );
+                    handle = schemaManager.getSchemaByUri( new LogOnlyAuditor(logger), uri );
                 } catch ( SAXException e ) {
                     logger.log( Level.WARNING,
                             "Invalid XML Schema '"+uri+"' (when registering for hardware): " + ExceptionUtils.getMessage(e),

@@ -37,15 +37,16 @@ public class LdapUrlObjectCache<PT> extends AbstractUrlObjectCache<LdapUrlObject
 
     /**
      * Construct a new AbstractUrlObjectCache.
-     *
-     * @param maxCacheAge
-     * @param defaultWaitMode
-     * @param interestingAttributeIsBinary
-     * @param readTimeout
      */
-    public LdapUrlObjectCache(long maxCacheAge, WaitMode defaultWaitMode, String login, String pass,
-                              long connectTimeout, long readTimeout, boolean interestingAttributeIsBinary) {
-        super(maxCacheAge, defaultWaitMode);
+    public LdapUrlObjectCache(final String resourceDescription,
+                              final long maxCacheAge,
+                              final WaitMode defaultWaitMode,
+                              final String login,
+                              final String pass,
+                              final long connectTimeout,
+                              final long readTimeout,
+                              final boolean interestingAttributeIsBinary) {
+        super(resourceDescription, maxCacheAge, defaultWaitMode);
         this.bindDn = login;
         this.bindPassword = pass;
         this.connectTimeout = connectTimeout;

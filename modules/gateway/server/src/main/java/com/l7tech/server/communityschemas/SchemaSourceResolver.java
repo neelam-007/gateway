@@ -1,5 +1,7 @@
 package com.l7tech.server.communityschemas;
 
+import com.l7tech.gateway.common.audit.Audit;
+
 import java.io.IOException;
 
 /**
@@ -31,18 +33,20 @@ public interface SchemaSourceResolver {
     /**
      * Access an XML Schema by target namespace.
      *
+     * @param audit the audit to use (required)
      * @param targetNamespace The target namespace of the schema (may be null)
      * @return The (unique) schema for the target namespace or null.
      */
-    SchemaSource getSchemaByTargetNamespace( String targetNamespace ) throws IOException;
+    SchemaSource getSchemaByTargetNamespace( Audit audit, String targetNamespace ) throws IOException;
 
     /**
      * Access an XML Schema by URI.
      *
+     * @param audit the audit to use (required)
      * @param uri The uri, which may be relative (required)
      * @return The schema for the URI or null.
      */
-    SchemaSource getSchemaByUri( String uri ) throws IOException;
+    SchemaSource getSchemaByUri(  Audit audit, String uri ) throws IOException;
 
     /**
      * Refresh Schema by URI.
@@ -50,9 +54,10 @@ public interface SchemaSourceResolver {
      * <p>This may be called periodically to check if the schema is up to date.
      * If a refresh is required the invalidation listener should be notified.</p>
      *
+     * @param audit the audit to use (required)
      * @param uri The uri, which may be relative (required)
      */
-    void refreshSchemaByUri( String uri ) throws IOException;
+    void refreshSchemaByUri(  Audit audit, String uri ) throws IOException;
 
     /**
      * Register the listener for invalidation of schemas from this source.

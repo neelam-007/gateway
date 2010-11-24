@@ -3,7 +3,9 @@ package com.l7tech.server.communityschemas;
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.security.MockGenericHttpClient;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MockConfig;
@@ -23,17 +25,21 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  *
  */
 public class SchemaManagerImplTest {
 
+    private static final Logger logger = Logger.getLogger( SchemaManagerImplTest.class.getName() );
+    private static final Audit audit = new LogOnlyAuditor( logger );
+
     @Test
     public void testHttpFail() throws Exception {
         try {
             final SchemaManager manager = getTestSchemaManager( null );
-            manager.getSchemaByUri( "http://bad" ).close();
+            manager.getSchemaByUri( audit, "http://bad" ).close();
         } catch ( IOException ioe ) {
             ioe.printStackTrace();
             assertTrue( "404 error", ioe.getMessage().contains( "404" ));
@@ -44,7 +50,7 @@ public class SchemaManagerImplTest {
     public void testParseFail() throws Exception {
         final SchemaManager manager = getTestSchemaManager( null );
         manager.registerSchema( "http://bad/html.html", null, "<html><body>HTML content<br></body></html>" );
-        manager.getSchemaByUri( "http://bad/html.html" ).close();
+        manager.getSchemaByUri( audit, "http://bad/html.html" ).close();
     }
 
     /**
@@ -55,7 +61,7 @@ public class SchemaManagerImplTest {
         final Map<String,TarariSchemaSource> hardwareSchemas = new HashMap<String,TarariSchemaSource>();
         final SchemaManager manager = getTestSchemaManager( hardwareSchemas );
         manager.registerSchema( "http://host/schema.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"/>" );
-        manager.getSchemaByUri( "http://host/schema.xsd" ).close();
+        manager.getSchemaByUri( audit, "http://host/schema.xsd" ).close();
         assertTrue( "Hardware loaded", !hardwareSchemas.isEmpty() );
     }
 
@@ -68,7 +74,7 @@ public class SchemaManagerImplTest {
         final SchemaManager manager = getTestSchemaManager( hardwareSchemas );
         manager.registerSchema( "http://host/schema_child.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"/>" );
         manager.registerSchema( "http://host/schema_parent.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"><include schemaLocation=\"schema_child.xsd\"/></schema>" );
-        manager.getSchemaByUri( "http://host/schema_parent.xsd" ).close();
+        manager.getSchemaByUri( audit, "http://host/schema_parent.xsd" ).close();
 
         assertFalse( "Hardware loaded", hardwareSchemas.isEmpty() );
         assertNotNull( "Hardware loaded child", hardwareSchemas.get("http://host/schema_child.xsd") );
@@ -86,7 +92,7 @@ public class SchemaManagerImplTest {
         final SchemaManager manager = getTestSchemaManager( hardwareSchemas );
         manager.registerSchema( "http://host/schema_child.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
         manager.registerSchema( "http://host/schema_parent.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test\"><include schemaLocation=\"schema_child.xsd\"/></schema>" );
-        manager.getSchemaByUri( "http://host/schema_parent.xsd" ).close();
+        manager.getSchemaByUri( audit, "http://host/schema_parent.xsd" ).close();
 
         assertFalse( "Hardware loaded", hardwareSchemas.isEmpty() );
         assertNotNull( "Hardware loaded child", hardwareSchemas.get("http://host/schema_child.xsd") );
@@ -106,8 +112,8 @@ public class SchemaManagerImplTest {
         manager.registerSchema( "http://host/schema_child.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
         manager.registerSchema( "http://host/schema_includer.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test\"><include schemaLocation=\"schema_child.xsd\"/></schema>" );
         manager.registerSchema( "http://host/schema_importer.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test2\"><import schemaLocation=\"schema_child.xsd\" namespace=\"urn:test\"/></schema>" );
-        manager.getSchemaByUri( "http://host/schema_includer.xsd" ).close();
-        manager.getSchemaByUri( "http://host/schema_importer.xsd" ).close();
+        manager.getSchemaByUri( audit, "http://host/schema_includer.xsd" ).close();
+        manager.getSchemaByUri( audit, "http://host/schema_importer.xsd" ).close();
 
         assertTrue( "Not hardware loaded", hardwareSchemas.isEmpty() );
     }
@@ -131,7 +137,7 @@ public class SchemaManagerImplTest {
                 "<include schemaLocation=\"schema_child4.xsd\"/>\n" +
                 "<include schemaLocation=\"schema_child5.xsd\"/>\n" +
                 "</schema>" );
-        manager.getSchemaByUri( "http://host/schema_parent.xsd" ).close();
+        manager.getSchemaByUri( audit, "http://host/schema_parent.xsd" ).close();
 
         assertFalse( "Hardware loaded", hardwareSchemas.isEmpty() );
         assertNotNull( "Hardware loaded child 1", hardwareSchemas.get("http://host/schema_child1.xsd") );
@@ -161,9 +167,9 @@ public class SchemaManagerImplTest {
         manager.registerSchema( "http://host/schema_parent1.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test1\"><include schemaLocation=\"schema_child1.xsd\"/></schema>" );
         manager.registerSchema( "http://host/schema_parent2.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test2\"><include schemaLocation=\"schema_child2.xsd\"/></schema>" );
         manager.registerSchema( "http://host/schema_parent3.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test3\"><include schemaLocation=\"schema_child3.xsd\"/></schema>" );
-        manager.getSchemaByUri( "http://host/schema_parent1.xsd" ).close();
-        manager.getSchemaByUri( "http://host/schema_parent2.xsd" ).close();
-        manager.getSchemaByUri( "http://host/schema_parent3.xsd" ).close();
+        manager.getSchemaByUri( audit, "http://host/schema_parent1.xsd" ).close();
+        manager.getSchemaByUri( audit, "http://host/schema_parent2.xsd" ).close();
+        manager.getSchemaByUri( audit, "http://host/schema_parent3.xsd" ).close();
 
         assertFalse( "Hardware loaded", hardwareSchemas.isEmpty() );
         assertNotNull( "Hardware loaded child 1", hardwareSchemas.get("http://host/schema_child1.xsd") );
@@ -189,7 +195,7 @@ public class SchemaManagerImplTest {
         final SchemaManager manager = getTestSchemaManager( hardwareSchemas );
         manager.registerSchema( "http://host/schema_child.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\" targetNamespace=\"urn:test\"/>" );
         manager.registerSchema( "http://host/schema_parent.xsd", null, "<schema xmlns=\"http://www.w3.org/2001/XMLSchema\"  targetNamespace=\"urn:test\"><redefine schemaLocation=\"schema_child.xsd\"/></schema>" );
-        manager.getSchemaByUri( "http://host/schema_parent.xsd" ).close();
+        manager.getSchemaByUri( audit, "http://host/schema_parent.xsd" ).close();
 
         assertFalse( "Hardware loaded", hardwareSchemas.isEmpty() );
         assertNotNull( "Hardware loaded child", hardwareSchemas.get("http://host/schema_child.xsd") );
@@ -245,8 +251,8 @@ public class SchemaManagerImplTest {
                 XmlUtil.getSafeEntityResolver()
                 ){
             @Override
-            public SchemaHandle getSchemaByUri( final String url ) throws IOException, SAXException {
-                final SchemaHandle handle = super.getSchemaByUri( url );
+            public SchemaHandle getSchemaByUri( final Audit audit, final String url ) throws IOException, SAXException {
+                final SchemaHandle handle = super.getSchemaByUri( audit, url );
                 maybeRebuildHardwareCache(0);
                 return handle;
             }

@@ -6,6 +6,7 @@ package com.l7tech.server.url;
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.io.ByteLimitInputStream;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.IOUtils;
@@ -47,6 +48,7 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
     /**
      * Create a cache that will keep user objects associated with URLs.
      *
+     * @param resourceDescription     a description of the cached resources (e.g. "CRL" or "resource")
      * @param maxCachedObjects        maximum number of objects that can be cached.  The cache will periodically remove
      *                                the least recently used objects as needed to keep the size below this limit.
      * @param recheckAge              if a cached object (or cached error message) is more than this many milliseconds old
@@ -57,17 +59,19 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
      * @param userObjectFactory       strategy for converting the HTTP body into an application-level object.
      *                                The returned object will be cached and returned to other fetchers of this URL
      *                                but is otherwise opaque to HttpObjectCache.
-     * @param defaultWaitMode         default {@link com.l7tech.server.url.AbstractUrlObjectCache.WaitMode WaitMode} when using {@link #resolveUrl(String) resolveUrl}.  If null, will use {@link com.l7tech.server.url.AbstractUrlObjectCache#WAIT_INITIAL}.
+     * @param defaultWaitMode         default {@link com.l7tech.server.url.AbstractUrlObjectCache.WaitMode WaitMode} when using {@link #resolveUrl(Audit,String) resolveUrl}.  If null, will use {@link com.l7tech.server.url.AbstractUrlObjectCache#WAIT_INITIAL}.
      * @param maxDownloadSizeProperty String the cluster property to retrieve the download limit from
      */
-    public HttpObjectCache(int maxCachedObjects,
-                           long recheckAge,
-                           long staleAge,
-                           GenericHttpClientFactory httpClientFactory,
-                           UserObjectFactory<UT> userObjectFactory,
-                           WaitMode defaultWaitMode,
-                           String maxDownloadSizeProperty) {
-        this(maxCachedObjects,
+    public HttpObjectCache(final String resourceDescription,
+                           final int maxCachedObjects,
+                           final long recheckAge,
+                           final long staleAge,
+                           final GenericHttpClientFactory httpClientFactory,
+                           final UserObjectFactory<UT> userObjectFactory,
+                           final WaitMode defaultWaitMode,
+                           final String maxDownloadSizeProperty) {
+        this(resourceDescription,
+                maxCachedObjects,
                 recheckAge,
                 staleAge,
                 httpClientFactory,
@@ -80,6 +84,7 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
     /**
      * Create a cache that will keep user objects associated with URLs.
      *
+     * @param resourceDescription     a description of the cached resources (e.g. "CRL" or "resource")
      * @param maxCachedObjects        maximum number of objects that can be cached.  The cache will periodically remove
      *                                the least recently used objects as needed to keep the size below this limit.
      * @param recheckAge              if a cached object (or cached error message) is more than this many milliseconds old
@@ -90,20 +95,21 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
      * @param userObjectFactory       strategy for converting the HTTP body into an application-level object.
      *                                The returned object will be cached and returned to other fetchers of this URL
      *                                but is otherwise opaque to HttpObjectCache.
-     * @param defaultWaitMode         default {@link com.l7tech.server.url.AbstractUrlObjectCache.WaitMode WaitMode} when using {@link #resolveUrl(String) resolveUrl}.  If null, will use {@link com.l7tech.server.url.AbstractUrlObjectCache#WAIT_INITIAL}.
+     * @param defaultWaitMode         default {@link com.l7tech.server.url.AbstractUrlObjectCache.WaitMode WaitMode} when using {@link #resolveUrl(Audit,String) resolveUrl}.  If null, will use {@link com.l7tech.server.url.AbstractUrlObjectCache#WAIT_INITIAL}.
      * @param maxDownloadSizeProperty String the cluster property to retrieve the download limit from
      * @param emergencyDownloadSize   int emergency value to use for the max download size, when the cluster property
-     * referneced in maxDownloadSizeProperty provides an invalid numeric value
+     * referenced in maxDownloadSizeProperty provides an invalid numeric value
      */
-    public HttpObjectCache(int maxCachedObjects,
-                           long recheckAge,
-                           long staleAge,
-                           GenericHttpClientFactory httpClientFactory,
-                           UserObjectFactory<UT> userObjectFactory,
-                           WaitMode defaultWaitMode,
-                           String maxDownloadSizeProperty,
-                           int emergencyDownloadSize) {
-        super(recheckAge, staleAge ,defaultWaitMode);
+    public HttpObjectCache(final String resourceDescription,
+                           final int maxCachedObjects,
+                           final long recheckAge,
+                           final long staleAge,
+                           final GenericHttpClientFactory httpClientFactory,
+                           final UserObjectFactory<UT> userObjectFactory,
+                           final WaitMode defaultWaitMode,
+                           final String maxDownloadSizeProperty,
+                           final int emergencyDownloadSize) {
+        super(resourceDescription, recheckAge, staleAge ,defaultWaitMode);
         this.httpClientFactory = httpClientFactory;
         this.userObjectFactory = userObjectFactory;
         this.cache = maxCachedObjects <= 0 ? null : new LRUMap(maxCachedObjects);

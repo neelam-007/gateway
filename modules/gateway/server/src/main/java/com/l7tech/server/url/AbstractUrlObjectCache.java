@@ -3,6 +3,8 @@
  */
 package com.l7tech.server.url;
 
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeSource;
 import com.l7tech.util.TimeUnit;
@@ -27,6 +29,7 @@ import java.util.*;
  * <p/>
  * The services provided by the abstract class are restricted synchronization and WaitMode behavior.
  */
+@SuppressWarnings({ "SynchronizationOnLocalVariableOrMethodParameter" })
 public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
@@ -56,6 +59,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
 
     // -- Instance fields --
     protected TimeSource clock = new TimeSource();
+    protected final String resourceDescription;
     protected final long maxCacheAge;
     protected final long maxStaleCacheAge;
     protected final WaitMode defaultWaitMode;
@@ -66,9 +70,10 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
      * @param maxCacheAge Threshold for resource refresh
      * @param defaultWaitMode The wait mode to use by default
      */
-    protected AbstractUrlObjectCache( final long maxCacheAge,
+    protected AbstractUrlObjectCache( final String resourceDescription,
+                                      final long maxCacheAge,
                                       final WaitMode defaultWaitMode ) {
-        this( maxCacheAge, STALE_CACHE_NO_EXPIRY, defaultWaitMode );
+        this( resourceDescription, maxCacheAge, STALE_CACHE_NO_EXPIRY, defaultWaitMode );
     }
 
     /**
@@ -78,9 +83,11 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
      * @param maxStaleCacheAge Threshold for resource "eviction"
      * @param defaultWaitMode The wait mode to use by default
      */
-    protected AbstractUrlObjectCache( final long maxCacheAge,
+    protected AbstractUrlObjectCache( final String resourceDescription,
+                                      final long maxCacheAge,
                                       final long maxStaleCacheAge,
                                       final WaitMode defaultWaitMode ) {
+        this.resourceDescription = resourceDescription;
         this.maxCacheAge = maxCacheAge;
         this.maxStaleCacheAge = maxStaleCacheAge;
         this.defaultWaitMode = defaultWaitMode == null ? WAIT_INITIAL : defaultWaitMode;
@@ -342,7 +349,8 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
     }
 
     @Override
-    public UT resolveUrl(String url) throws IOException, ParseException {
+    public UT resolveUrl( final Audit audit,
+                          final String url ) throws IOException, ParseException {
         final FetchResult<UT> result = fetchCached(url, defaultWaitMode);
 
         final UT obj = result.getUserObject();
@@ -353,10 +361,10 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
             if ( e != null ) {
                 if ( maxStaleCacheAge == STALE_CACHE_NO_EXPIRY ||
                      (clock.currentTimeMillis() - result.getUserObjectCreated()) <= maxStaleCacheAge ) {
-                    if (logger.isLoggable(Level.WARNING))
-                        logger.log(Level.WARNING,
-                                   "Reusing previously-cached copy of remote resource: URL: " + url + ": " +
-                                           ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        audit.logAndAudit(
+                                SystemMessages.URL_OBJECT_CACHE_REUSE,
+                                new String[]{ resourceDescription, url, ExceptionUtils.getMessage(e) },
+                                ExceptionUtils.getDebugException(e) );
                     return obj;
                 }
             } else {
@@ -577,7 +585,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
      * in another thread.  The other requests can choose either to wait for the new value to finish downloading;
      * to wait if this is the first fetch of the URL to otherwise to immediately return the previous result;
      * or to always return immediately even if there is no previous result (in which case the results will be blank,
-     * containing netiehr an object nor an error message).
+     * containing neither an object nor an error message).
      *
      * @see AbstractUrlObjectCache#WAIT_NEVER
      * @see AbstractUrlObjectCache#WAIT_INITIAL

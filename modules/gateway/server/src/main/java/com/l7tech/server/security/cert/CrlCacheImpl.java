@@ -86,7 +86,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         // TODO support configuration of login, password
         long connectTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
         long readTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_READ_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
-        ldapUrlObjectCache = new LdapUrlObjectCache<X509CRL>(maxCacheAge, AbstractUrlObjectCache.WAIT_LATEST, null, null, connectTimeout, readTimeout, true);
+        ldapUrlObjectCache = new LdapUrlObjectCache<X509CRL>( "CRL", maxCacheAge, AbstractUrlObjectCache.WAIT_LATEST, null, null, connectTimeout, readTimeout, true);
 
         int httpObjectCacheSize = SyspropUtil.getIntegerCached(MAX_HTTP_CACHE_OBJECTS_PROP, DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) ;
         if (httpObjectCacheSize <= 0 || httpObjectCacheSize < DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) {
@@ -97,6 +97,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         }
 
         this.httpObjectCache = new HttpObjectCache<X509CRL>(
+                "CRL",
                 httpObjectCacheSize,
                 maxCacheAge,
                 AbstractUrlObjectCache.STALE_CACHE_NO_EXPIRY,

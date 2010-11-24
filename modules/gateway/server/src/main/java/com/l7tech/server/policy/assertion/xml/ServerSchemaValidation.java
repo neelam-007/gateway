@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.AssertionResourceInfo;
@@ -112,7 +113,7 @@ public class ServerSchemaValidation
 
         final UrlResolver<String> urlResolver = new UrlResolver<String>() {
             @Override
-            public String resolveUrl(String url) {
+            public String resolveUrl(Audit audit,String url) {
                 return url;
             }
         };
@@ -193,7 +194,7 @@ public class ServerSchemaValidation
 
             if ( globalSchemaUri != null) {
                 try {
-                    ps = schemaManager.getSchemaByUri( globalSchemaUri );
+                    ps = schemaManager.getSchemaByUri( auditor, globalSchemaUri );
                 } catch (MalformedURLException e) {
                     auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_GLOBALREF_BROKEN, globalSchemaUri );
                     return AssertionStatus.SERVER_ERROR;
@@ -208,7 +209,7 @@ public class ServerSchemaValidation
                     //fyi xmlKnob.getElementCursor() is in support of MessageUrlResourceGetter's which are not currently supported by this assertion. See constructor.
                     //xmlKnob.getElementCursor() is not needed, but will be used if support for MessageUrlResourceInfo's are allowed in this server assertion.
                     schemaUrl = resourceGetter.getResource(xmlKnob.getElementCursor(), vars);
-                    ps = schemaManager.getSchemaByUri(schemaUrl);
+                    ps = schemaManager.getSchemaByUri( auditor, schemaUrl );
                 } catch (IOException e) {
                     auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_IO_ERROR, new String[] { "schema URL: " + schemaUrl + ": " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
                     return AssertionStatus.SERVER_ERROR;

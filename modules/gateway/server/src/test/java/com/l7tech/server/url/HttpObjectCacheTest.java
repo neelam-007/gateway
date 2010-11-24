@@ -7,7 +7,9 @@ package com.l7tech.server.url;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.TestTimeSource;
 import com.l7tech.security.MockGenericHttpClient;
@@ -24,6 +26,7 @@ import java.util.logging.Logger;
  */
 public class HttpObjectCacheTest {
     private static Logger log = Logger.getLogger(HttpObjectCacheTest.class.getName());
+    private static Audit audit = new LogOnlyAuditor( log );
 
     private static final long TEST_POLL_AGE = 500; // in ms
     private static final long TEST_POLL_STALE = -1; // in ms
@@ -98,7 +101,8 @@ public class HttpObjectCacheTest {
 
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
         final HttpObjectCache<UserObj> httpObjectCache =
-                new HttpObjectCache<UserObj>(500,
+                new HttpObjectCache<UserObj>("resource",
+                        500,
                         TEST_POLL_AGE,
                         TEST_POLL_STALE,
                         clientFactory,
@@ -115,7 +119,7 @@ public class HttpObjectCacheTest {
                                                                                      "blarglebliff")}));
 
         hc.clearResponseCount();
-        UserObj result = httpObjectCache.resolveUrl( url );
+        UserObj result = httpObjectCache.resolveUrl( audit, url );
         assertTrue(hc.getResponseCount() == 1);
         assertNotNull(result);
         final UserObj firstUo = result;
@@ -123,7 +127,7 @@ public class HttpObjectCacheTest {
         // Wait long enough to trigger a poll, then try another request.
         clock.sleep(POLL_DELAY, 0);
         responseError[0] = true;
-        result = httpObjectCache.resolveUrl(url);
+        result = httpObjectCache.resolveUrl(audit, url);
         assertTrue(hc.getResponseCount() == 2);
         assertNotNull(result);
         assertTrue(result == firstUo); // must not have replaced the object
@@ -169,7 +173,8 @@ public class HttpObjectCacheTest {
 
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
         final HttpObjectCache<UserObj> httpObjectCache =
-                new HttpObjectCache<UserObj>(500,
+                new HttpObjectCache<UserObj>("resource",
+                        500,
                         TEST_POLL_AGE,
                         TEST_POLL_AGE * 3,
                         clientFactory,
@@ -186,7 +191,7 @@ public class HttpObjectCacheTest {
                                                                                      "blarglebliff")}));
 
         hc.clearResponseCount();
-        UserObj result = httpObjectCache.resolveUrl( url );
+        UserObj result = httpObjectCache.resolveUrl( audit, url );
         assertTrue(hc.getResponseCount() == 1);
         assertNotNull(result);
         final UserObj firstUo = result;
@@ -194,7 +199,7 @@ public class HttpObjectCacheTest {
         // Wait long enough to trigger a poll, then try another request.
         clock.sleep(POLL_DELAY, 0);
         responseError[0] = true;
-        result = httpObjectCache.resolveUrl(url);
+        result = httpObjectCache.resolveUrl(audit, url);
         assertTrue(hc.getResponseCount() == 2);
         assertNotNull(result);
         assertTrue(result == firstUo); // must not have replaced the object
@@ -202,7 +207,7 @@ public class HttpObjectCacheTest {
         // Wait long enough to trigger another poll, then try another request.
         clock.sleep(POLL_DELAY, 0);
         try {
-            httpObjectCache.resolveUrl(url);
+            httpObjectCache.resolveUrl(audit, url);
             fail("Expected IOException");
         } catch ( IOException e ) {
             // success
@@ -240,7 +245,8 @@ public class HttpObjectCacheTest {
 
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
         HttpObjectCache<UserObj> httpObjectCache =
-                new HttpObjectCache<UserObj>(500,
+                new HttpObjectCache<UserObj>("resource",
+                        500,
                         TEST_POLL_AGE,
                         TEST_POLL_STALE,
                         clientFactory,
@@ -333,7 +339,8 @@ public class HttpObjectCacheTest {
 
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
         HttpObjectCache<UserObj> httpObjectCache =
-                new HttpObjectCache<UserObj>(0,
+                new HttpObjectCache<UserObj>("resource",
+                        0,
                         TEST_POLL_AGE,
                         TEST_POLL_STALE,
                         clientFactory,
@@ -541,7 +548,8 @@ public class HttpObjectCacheTest {
 
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
         HttpObjectCache<UserObj> httpObjectCache =
-                new HttpObjectCache<UserObj>(500,
+                new HttpObjectCache<UserObj>("resource",
+                        500,
                         TEST_POLL_AGE,
                         TEST_POLL_STALE,
                         clientFactory,
@@ -599,7 +607,8 @@ public class HttpObjectCacheTest {
 
         // Use accelerated time while testing with mock http client: poll if data more than TEST_POLL_AGE ms old
         HttpObjectCache<UserObj> httpObjectCache =
-                new HttpObjectCache<UserObj>(0,
+                new HttpObjectCache<UserObj>("resource",
+                        0,
                         TEST_POLL_AGE,
                         TEST_POLL_STALE,
                         clientFactory,

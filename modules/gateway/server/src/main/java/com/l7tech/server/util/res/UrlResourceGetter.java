@@ -43,6 +43,6 @@ abstract class UrlResourceGetter<R, M> extends ResourceGetter<R, M> {
      *                         of the required type.
      */
     protected R fetchObject(final String url) throws IOException, ParseException {
-        return urlResolver.resolveUrl(url);
+        return urlResolver.resolveUrl(audit, url);
     }
 }

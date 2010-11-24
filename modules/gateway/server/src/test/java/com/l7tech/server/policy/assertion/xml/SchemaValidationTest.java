@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.message.ValidationTarget;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.wsdl.WsdlSchemaAnalizer;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
@@ -153,7 +154,7 @@ public class SchemaValidationTest {
     @Ignore("Developer only test")
     public void testReutersUrlSchemaHttpObjectCache() throws Exception {
         SchemaManager sm = (SchemaManager)testApplicationContext.getBean("schemaManager");
-        SchemaHandle handle = sm.getSchemaByUri(REUTERS_SCHEMA_URL);
+        SchemaHandle handle = sm.getSchemaByUri(new LogOnlyAuditor(logger), REUTERS_SCHEMA_URL);
         Document requestDoc = XmlUtil.parse(new URL(REUTERS_REQUEST_URL).openStream());
         Message request = new Message(requestDoc);
 

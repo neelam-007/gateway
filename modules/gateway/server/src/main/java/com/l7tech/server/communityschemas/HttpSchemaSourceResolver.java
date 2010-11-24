@@ -11,6 +11,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
@@ -60,17 +61,19 @@ public class HttpSchemaSourceResolver implements ApplicationListener, SchemaSour
     }
 
     @Override
-    public SchemaSource getSchemaByTargetNamespace( final String targetNamespace ) {
+    public SchemaSource getSchemaByTargetNamespace( final Audit audit,
+                                                    final String targetNamespace ) {
         return null;
     }
 
     @Override
-    public SchemaSource getSchemaByUri( final String uri ) throws IOException {
+    public SchemaSource getSchemaByUri( final Audit audit,
+                                        final String uri ) throws IOException {
         String schemaDoc = null;
 
         if ( uri.startsWith( "http:" ) || uri.startsWith( "https:" ) ) {
             try {
-                schemaDoc = httpStringCache.get().resolveUrl( uri );
+                schemaDoc = httpStringCache.get().resolveUrl( audit, uri );
             } catch ( ParseException e ) {
                 throw new CausedIOException("Unable to download remote schema " + uri +  " : " + ExceptionUtils.getMessage(e), e);
             }
@@ -80,8 +83,9 @@ public class HttpSchemaSourceResolver implements ApplicationListener, SchemaSour
     }
 
     @Override
-    public void refreshSchemaByUri( final String uri ) throws IOException {
-        getSchemaByUri( uri );
+    public void refreshSchemaByUri( final Audit audit,
+                                    final String uri ) throws IOException {
+        getSchemaByUri( audit, uri );
     }
 
     @Override
@@ -124,6 +128,7 @@ public class HttpSchemaSourceResolver implements ApplicationListener, SchemaSour
         };
 
         httpStringCache.set( new HttpObjectCache<String>(
+                                                      "XML Schema",
                                                       schemaConfiguration.getMaxCacheEntries(),
                                                       schemaConfiguration.getMaxCacheAge(),
                                                       schemaConfiguration.getMaxStaleAge(),
