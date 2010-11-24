@@ -13,13 +13,11 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.tree.TransferableTreePaths;
 import com.l7tech.console.tree.TreeNodeHidingTransferHandler;
-import com.l7tech.console.util.ArrowImage;
-import com.l7tech.console.util.PopUpMouseListener;
-import com.l7tech.console.util.Refreshable;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.ClipboardActions;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.Policy;
@@ -1248,6 +1246,22 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 boolean dropAsFirstContainerChild = false;
                 log.fine("DROPPING assertion: " + transferData);
                 AbstractTreeNode[] nodes = (AbstractTreeNode[])transferData;
+
+                // Check for JDK bug 6945178  (Bug #8874)
+                if (nodes == null) {
+                    DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                            "<html>Unable to accept drag and drop using installed version of the Java plug-in when applet is running in untrusted mode." +
+                                    "<p>Please try one of the following: " +
+                                    "<ul><li>Upgrade to latest version of Java plug-in; or," +
+                                    "<li>Run the applet in trusted mode; or," +
+                                    "<li>Use the toolbar buttons instead.</ul>",
+                            "Drag and Drop Failed",
+                            JOptionPane.WARNING_MESSAGE,
+                            null);
+                    return;
+                }
+
+
                 TreePath path = getSelectionPath();
                 final Object root = getModel().getRoot();
                 if (path == null) {
