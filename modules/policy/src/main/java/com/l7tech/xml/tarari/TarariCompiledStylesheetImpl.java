@@ -43,6 +43,7 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\"></xsl:stylesheet>".getBytes(Charsets.UTF8);
 
     private static final UriResolver NON_FETCHING_URI_RESOLVER = new UriResolver() {
+        @Override
         public XmlSource resolveUri(String s, String s1) throws java.io.IOException {
             return new XmlSource(s, EMPTY_XSL_BYTES);
         }
@@ -50,6 +51,7 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
 
     // Thread-local XmlSource for transformations.
     private static final ThreadLocal xmlSource = new ThreadLocal() {
+        @Override
         protected Object initialValue() {
             return new XmlSource(new EmptyInputStream());
         }
@@ -86,6 +88,7 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
         }
     }
 
+    @Override
     public void transform( final TarariMessageContext input,
                            final OutputStream output,
                            final String[] varsUsed,
@@ -97,6 +100,7 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
         transform(source, output, varsUsed, variableGetter, errorListener);
     }
 
+    @Override
     public void transform( final InputStream input,
                            final OutputStream output,
                            final String[] varsUsed,
@@ -119,6 +123,7 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
             }
         }
         transformer.setMessageListener( new MessageListener() {
+            @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
             @Override
             public void message( String s ) {
                 if ( errorListener != null ) {
@@ -134,9 +139,11 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
         try {
             transformer.transform(source, result);
         } catch (XmlParseException e) {
-            throw new SAXException(e);
+            throw new SAXException(ExceptionUtils.getMessage( e ), e);
         } catch ( XmlException xe ) {
-            throw new TransformerException(xe);
+            throw new TransformerException(ExceptionUtils.getMessage( xe ), xe);
+        } catch (SecurityException se) {
+            throw new TransformerException(ExceptionUtils.getMessage( se ), se);
         }
     }
 }

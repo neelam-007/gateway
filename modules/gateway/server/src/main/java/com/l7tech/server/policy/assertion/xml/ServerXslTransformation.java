@@ -405,7 +405,7 @@ public class ServerXslTransformation
                  (cause == null && "Stylesheet directed termination".equals(e.getMessage())) ) {
                 status = AssertionStatus.FALSIFIED; // Stylesheet directed termination, already audited
             } else {
-                String msg = "error transforming document";
+                String msg = "Error transforming document: " + ExceptionUtils.getMessage( e );
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, ExceptionUtils.getDebugException(e));
                 // bug #6486 - Do not re-throw transform exception as a PolicyAssertionException
             }
