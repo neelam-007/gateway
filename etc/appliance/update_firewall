@@ -1,4 +1,4 @@
 #!/bin/sh
 . /opt/SecureSpan/Appliance/libexec/envclean
 
-/opt/SecureSpan/Appliance/bin/firewall_control.sh $1 $2
+/opt/SecureSpan/Appliance/bin/firewall_control.sh $1 $2 $3

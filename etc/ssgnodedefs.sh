@@ -39,7 +39,7 @@ if [ ! -z "${SSGNODE}" ] ; then
         fi
 
         if [ ! -z "${NODE_INIT_LISTEN_ADDR}" ] && [ ! -z "${NODE_INIT_LISTEN_PORT}" ] ; then
-            if [ ! -z "${NODE_INIT_LISTEN_ADDR}" ] && [ "${NODE_INIT_LISTEN_ADDR}" != "*" ] && [ "${NODE_INIT_LISTEN_ADDR}" != "0.0.0.0" ]; then
+            if [ ! -z "${NODE_INIT_LISTEN_ADDR}" ] && [ "${NODE_INIT_LISTEN_ADDR}" != "*" ] && [ "${NODE_INIT_LISTEN_ADDR}" != "0.0.0.0" ] && [ "${NODE_INIT_LISTEN_ADDR}" != "::" ] && [ "${NODE_INIT_LISTEN_ADDR}" != "0:0:0:0:0:0:0:0" ]; then
                 NODE_OPTS="${NODE_OPTS} -Dcom.l7tech.server.listener.initaddr=${NODE_INIT_LISTEN_ADDR}"            
             fi
 

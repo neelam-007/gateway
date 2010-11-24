@@ -1,7 +1,7 @@
 package com.l7tech.server.util;
 
 import com.l7tech.common.io.PortRange;
-import com.l7tech.util.InetAddressUtil;
+import com.l7tech.server.config.systemconfig.IpProtocol;
 import com.l7tech.util.*;
 import com.l7tech.gateway.common.transport.SsgConnector;
 
@@ -23,12 +23,14 @@ public class FirewallRules {
      *
      * @param pathToWrite  the path to the firewall_rules file to create or overwrite. Required.
      * @param connectors  all SsgConnector instances to include in the written-out firewall rules.  May be empty but mustn't be null.
+     * @param ipProtocol  determines which connectors' bind addresses will be used to write the firewall rules, based on their IP protocol (IPv4 or IPv6)
      * @throws java.io.IOException if there is a problem writing out the firewall rules file.
      */
-    public static void writeFirewallDropfile(String pathToWrite, final Collection<SsgConnector> connectors) throws IOException {
+    public static void writeFirewallDropfile(String pathToWrite, final Collection<SsgConnector> connectors, final IpProtocol ipProtocol) throws IOException {
         FileUtils.saveFileSafely(pathToWrite,  new FileUtils.Saver() {
+            @Override
             public void doSave(FileOutputStream fos) throws IOException {
-                writeFirewallRules(fos, connectors);
+                writeFirewallRules(fos, connectors, ipProtocol);
             }
         });
     }
@@ -36,19 +38,19 @@ public class FirewallRules {
     /**
      * [0:0] -A INPUT -i INTERFACE -p tcp -m tcp --dport 22:23 -j ACCEPT
      */
-    static void writeFirewallRules(OutputStream fos, Collection<SsgConnector> connectors) throws IOException
+    static void writeFirewallRules(OutputStream fos, Collection<SsgConnector> connectors, final IpProtocol ipProtocol) throws IOException
     {
         PrintStream ps = new PrintStream(fos);
         try {
             final ArrayList<SsgConnector> list = new ArrayList<SsgConnector>(connectors);
 
             for (SsgConnector connector : list) {
-                String device = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+                String bindAddress = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
                 String interfaceName = null;
-                if ( InetAddressUtil.isValidIpv4Address(device) ) {
-                    interfaceName = getInterfaceForIP(device);
+                if ( bindAddress != null && ipProtocol.validateAddress(bindAddress).isEmpty() ) {
+                    interfaceName = getInterfaceForIP(bindAddress);
                     if ( interfaceName == null ) {
-                        logger.log( Level.WARNING, "Could not determine interface for IP address ''{0}'', this connector will be inaccessible.", device);
+                        logger.log( Level.WARNING, "Could not determine interface for IP address ''{0}'', this connector will be inaccessible.", bindAddress);
                         continue; // fail closed
                     }
                 }

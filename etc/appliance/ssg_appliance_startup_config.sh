@@ -17,6 +17,7 @@ cd
 /sbin/chkconfig acpid on
 /sbin/chkconfig cpuspeed on
 /sbin/chkconfig iptables on
+/sbin/chkconfig ip6tables on
 /sbin/chkconfig syslog on
 # lm_sensors currently hates IBM gear
 # /sbin/chkconfig lm_sensors on

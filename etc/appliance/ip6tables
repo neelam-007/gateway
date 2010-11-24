@@ -1,0 +1,111 @@
+# Layer 7 supplied ip6tables config for the SecureSpan Gateway Appliance
+# /etc/sysconfig/ip6tables
+# Modification of this file is not recommended 
+# as our system manipulates these rules live
+# 
+# Design:
+# This is a drop all system
+#
+# If the port and/or interface doesn't explicity allow the packet
+# the packet is dropped.
+#
+# Network Design:
+# In a single network installation, all communication is via eth0
+# In a double network ETH1 is PUBLIC side and ETH0 is PRIVATE side
+# In a triple network ETH1 is PUBLIC side, ETH0 is MANAGEMENT network, ETH2 is PRIVATE side
+# DNS, NTP must be on one of MANAGMENT or PRIVATE networks
+#
+# Almost all dropped packets are logged as Badflags: in syslog, but this
+# is also rate limited to prevent filling the hard disk
+
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:badflags6 - [0:0]
+:portdrop6 - [0:0]
+
+# fast forward established connections, no need to 
+# traverse the rules every packet
+
+# allow all on localhost
+[0:0] -A INPUT -s ::1/128 -j ACCEPT
+[0:0] -A OUTPUT -d ::1/128 -j ACCEPT
+[0:0] -A FORWARD -d ::1/128 -j ACCEPT
+
+# Block bad tcp flags on all interfaces
+[0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG -j badflags6
+[0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG -j badflags6 
+[0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,ACK,URG -j badflags6 
+[0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j badflags6 
+[0:0] -A INPUT -p tcp -m tcp --tcp-flags SYN,RST SYN,RST -j badflags6 
+[0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -j badflags6 
+
+# allow good icmpv6 on all interfaces
+[0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 1 -j ACCEPT
+[0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 3 -j ACCEPT
+[0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 129 -j ACCEPT
+
+# rate limit ping on all interfaces
+[0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 8 -m limit --limit 2/sec -j ACCEPT
+
+# drop the rest on all interfaces
+[0:0] -A INPUT -p icmpv6 -j badflags6
+
+# DNS, ALLOWED on private networks eth0 and eth2 
+[0:0] -A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT
+[0:0] -A INPUT -i eth2 -p udp -m udp --dport 53 -j ACCEPT
+[0:0] -A INPUT -i eth3 -p udp -m udp --dport 53 -j ACCEPT
+# NTP. ALLOWED on private networks eth0 and eth2 
+[0:0] -A INPUT -i eth0 -p udp -m udp --dport 123 -j ACCEPT
+[0:0] -A INPUT -i eth2 -p udp -m udp --dport 123 -j ACCEPT
+[0:0] -A INPUT -i eth3 -p udp -m udp --dport 123 -j ACCEPT
+# By exclusion, not allowed on eth1
+
+# Remote Assertion Server (uses loopback)
+[0:0] -A INPUT -i ! lo -p tcp -m tcp --dport 7001 -j portdrop6
+[0:0] -A INPUT -i ! lo -p tcp -m tcp --dport 7100 -j portdrop6
+
+# Allow in the cluster protocol, only for multicast destinations
+# ONLY on eth0. This means that you MUST use eth0 when running
+# in a cluster
+[0:0] -A INPUT  -i eth0 -d FF00::/8 -p udp -m udp --dport 8777 -j ACCEPT
+# Allow Multicast UDP output on eth0
+[0:0] -A OUTPUT -d FF00::/8 -p udp -m udp --dport 8777 -j ACCEPT
+# Allow inbound UDP on port 7001-7100 on eth0/private side
+[0:0] -A INPUT -i eth0 -p udp -m udp --dport 7001:7100 -j ACCEPT
+#
+# ADD CUSTOM ALLOW RULES HERE
+#
+# open on eth0/private even if SSG's are  not up
+[0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 3306 -j ACCEPT
+[0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 22 -j ACCEPT
+# Actional agent port
+# [0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 4041 -j ACCEPT
+#
+# DO NOT ADD ANY CUSTOM RULES HERE
+# Any rules between the above rule and the below rule
+# will be overwritten by partition rules whenever a partition
+# is started or stopped, or whenever a partition's listen ports
+# are reconfigured.
+#
+# Finally, drop all other TCP and UDP on all interfaces 
+[0:0] -A INPUT -p tcp -m tcp --dport 1:65535 -j portdrop6
+[0:0] -A INPUT -p udp -m udp --dport 1:65535 -j portdrop6
+
+# Portdrop rule: 
+# Drop TCP with a tcp reset (as in "I'm not listening on this port)
+[0:0] -A portdrop6 -m limit --limit 15/min -j LOG --log-prefix "Portdrop6:"
+[0:0] -A portdrop6 -p tcp -m tcp -j REJECT --reject-with tcp-reset
+# any thing else just gets discarded
+# That means udp, icmpv6 etc.
+[0:0] -A portdrop6 -j DROP
+
+# Badflags rule
+# Limit logging to 15 per minute, so we don't DOS the logfiles
+# Anything that gets logged with badflags6 is LIKELY a port scan or attack attempt.
+
+[0:0] -A badflags6 -m limit --limit 15/min -j LOG --log-prefix "Badflags6:"
+[0:0] -A badflags6 -j DROP 
+
+COMMIT

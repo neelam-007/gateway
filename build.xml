@@ -2935,6 +2935,7 @@
             <mkdir dir="@{dir}/${install.src.app.bin}" />
             <mkdir dir="@{dir}/${install.src.app.etc}" />
             <mkdir dir="@{dir}/${install.src.app.firewall}" />
+            <mkdir dir="@{dir}/${install.src.app.firewall6}" />
             <mkdir dir="@{dir}/${install.src.app.backuprestore.cfg}"/>
             <mkdir dir="@{dir}/${install.src.app.libexec}"/>
             <mkdir dir="@{dir}/${install.src.app.ssgconfig}"/>
@@ -2965,6 +2966,7 @@
             <copy file="${src.root}/etc/appliance/ssgenv.sh" tofile="@{dir}/etc/profile.d/ssgenv.sh"/>
             <copy file="${src.root}/etc/appliance/snmpd.conf" tofile="@{dir}/etc/snmp/snmpd.conf_example"/>
             <copy file="${src.root}/etc/appliance/iptables" tofile="@{dir}/etc/sysconfig/iptables"/>
+            <copy file="${src.root}/etc/appliance/ip6tables" tofile="@{dir}/etc/sysconfig/ip6tables"/>
             <copy file="${src.root}/etc/appliance/configuser_profile" tofile="@{dir}/${install.src.app.ssgconfig}/.bash_profile"/>
 
             <copy todir="@{dir}/${install.src.app.libexec}">

@@ -12,26 +12,39 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-enum IpProtocol {
+public enum IpProtocol {
 
     IPv4 {
         @Override
-        List<String> validateAddress(String address) {
+        public List<String> validateAddress(String address) {
             return validateIpv4Address(address);
         }
-    },
+
+        @Override
+        public boolean isEnabled() {
+            return InetAddressUtil.isIpv4Enabled();
+        }},
 
     IPv6 {
         @Override
-        List<String> validateAddress(String address) {
+        public List<String> validateAddress(String address) {
             return validateIpv6Address(address);
         }
-    };
+
+        @Override
+        public boolean isEnabled() {
+            return InetAddressUtil.isIpv6Enabled();
+        }};
 
     /**
      * @return list of validation errors, or empty list if address is valid; never null. 
      */
-    abstract List<String> validateAddress(String address);
+    public abstract List<String> validateAddress(String address);
+
+    /**
+     * @return true if the IP protocol is enabled, false otherwise
+     */
+    public abstract boolean isEnabled();
 
     String getConfigureDefaultGatewayPrompt() {
         return MessageFormat.format(CONFIGURE_GATEWAY_PROMPT, this);

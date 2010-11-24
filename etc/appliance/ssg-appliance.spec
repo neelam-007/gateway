@@ -66,6 +66,7 @@ sed -i -e "s/^\(jvmarch=\).*$/\1i386/" %{buildroot}/opt/SecureSpan/Gateway/runti
 # Config components, owned by root
 %defattr(0644,root,root)
 %config(noreplace) /etc/sysconfig/iptables
+%config(noreplace) /etc/sysconfig/ip6tables
 %defattr(0644,root,sys)
 /etc/snmp/snmpd.conf_example
 /etc/my.cnf.ssg

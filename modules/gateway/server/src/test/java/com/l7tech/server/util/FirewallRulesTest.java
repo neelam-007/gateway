@@ -1,17 +1,14 @@
 package com.l7tech.server.util;
 
+import com.l7tech.server.config.systemconfig.IpProtocol;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import junit.framework.Test;
 
-import java.util.logging.Logger;
 import java.util.List;
 import java.util.ArrayList;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.net.InetAddress;
 
-import com.l7tech.common.io.PortRange;
 import com.l7tech.gateway.common.transport.SsgConnector;
 
 /**
@@ -91,7 +88,7 @@ public class FirewallRulesTest extends TestCase {
         List<SsgConnector> lc = createTestConnectors();
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        FirewallRules.writeFirewallRules(os, lc);
+        FirewallRules.writeFirewallRules(os, lc, IpProtocol.IPv4);
 
         String got = os.toString();
         got = got.replaceAll("\r\n", "\n");

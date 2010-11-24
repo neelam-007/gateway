@@ -1,5 +1,6 @@
 package com.l7tech.server.util;
 
+import com.l7tech.server.config.systemconfig.IpProtocol;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SudoUtils;
@@ -20,10 +21,13 @@ public class FirewallUtils {
     private static final Logger logger = Logger.getLogger( FirewallUtils.class.getName() );
 
     private static final String SYSPROP_FIREWALL_RULES_FILENAME = "com.l7tech.server.firewall.rules.filename";
+    private static final String SYSPROP_FIREWALL6_RULES_FILENAME = "com.l7tech.server.firewall6.rules.filename";
+
+    private static final String FIREWALL_RULES_FILENAME = SyspropUtil.getString(SYSPROP_FIREWALL_RULES_FILENAME, "firewall_rules");
+    private static final String FIREWALL6_RULES_FILENAME = SyspropUtil.getString(SYSPROP_FIREWALL6_RULES_FILENAME, "firewall6_rules");
+
     private static final String SYSPROP_FIREWALL_UPDATE_PROGRAM = "com.l7tech.server.firewall.update.program";
     private static final String DEFAULT_FIREWALL_UPDATE_PROGRAM = "/opt/SecureSpan/Appliance/libexec/update_firewall";
-    private static final String FIREWALL_RULES_FILENAME = SyspropUtil.getString(SYSPROP_FIREWALL_RULES_FILENAME,
-                                                                                "firewall_rules");
 
     /**
      * Initialize the firewall.
@@ -31,7 +35,8 @@ public class FirewallUtils {
      * <p>This should be called on startup before any connections are made.</p>
      */
     public static void initializeFirewall() {
-        runFirewallUpdater( "-", false );
+        runFirewallUpdater( "-", IpProtocol.IPv4, false );
+        runFirewallUpdater( "-", IpProtocol.IPv6, false );
     }
 
     /**
@@ -42,14 +47,22 @@ public class FirewallUtils {
      */
     public static void openFirewallForConnectors( final File rulesDirectory, final Collection<SsgConnector> connectors ) {
         String firewallRules = new File(rulesDirectory, FIREWALL_RULES_FILENAME).getPath();
+        String firewall6Rules = new File(rulesDirectory, FIREWALL6_RULES_FILENAME).getPath();
 
         try {
-            FirewallRules.writeFirewallDropfile( firewallRules, connectors );
+            FirewallRules.writeFirewallDropfile( firewallRules, connectors, IpProtocol.IPv4 );
         } catch (IOException e) {
             logger.log(Level.WARNING, "Unable to update port list dropfile " + FIREWALL_RULES_FILENAME + ": " + ExceptionUtils.getMessage(e), e);
         }
 
-        runFirewallUpdater( firewallRules, true );
+        try {
+            FirewallRules.writeFirewallDropfile( firewall6Rules, connectors, IpProtocol.IPv6 );
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to update port list dropfile " + FIREWALL6_RULES_FILENAME + ": " + ExceptionUtils.getMessage(e), e);
+        }
+
+        runFirewallUpdater( firewallRules, IpProtocol.IPv4, true );
+        runFirewallUpdater( firewall6Rules, IpProtocol.IPv6, true );
     }
 
     /**
@@ -59,19 +72,24 @@ public class FirewallUtils {
      */
     public static void closeFirewallForConnectors( final File rulesDirectory ) {
         String firewallRules = new File(rulesDirectory, FIREWALL_RULES_FILENAME).getPath();
-        runFirewallUpdater( firewallRules, false );
+        String firewall6Rules = new File(rulesDirectory, FIREWALL6_RULES_FILENAME).getPath();
+        runFirewallUpdater( firewallRules, IpProtocol.IPv4, false );
+        runFirewallUpdater( firewall6Rules, IpProtocol.IPv6, false );
     }
 
     /**
      * Passes the specified firewall rules file to the firewall updater program, if one is configured.
      */
-    private static void runFirewallUpdater( final String firewallRules, boolean start ) {
+    private static void runFirewallUpdater( final String firewallRules, IpProtocol ipProtocol, boolean start ) {
         File sudo = null;
         try {
             sudo = SudoUtils.findSudo();
         } catch (IOException e) {
             /* FALLTHROUGH and do without */
         }
+
+        if (! ipProtocol.isEnabled() )
+            return;
 
         if (sudo == null)
             return;
@@ -83,7 +101,7 @@ public class FirewallUtils {
         logger.log(Level.FINE, "Using firewall rules updater program: sudo " + program);
 
         try {
-            ProcUtils.exec(null, sudo, new String[] { program.getAbsolutePath(), firewallRules, start ? "start" : "stop" }, (byte[])null, false);
+            ProcUtils.exec(null, sudo, new String[] { program.getAbsolutePath(), ipProtocol.name().toLowerCase(), firewallRules, start ? "start" : "stop" }, (byte[])null, false);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Unable to execute firewall rules program: " + program + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
         }
