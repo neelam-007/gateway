@@ -19,6 +19,7 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -37,9 +38,18 @@ import java.util.logging.Logger;
 public class PolicyExporter {
     private final Logger logger = Logger.getLogger(PolicyExporter.class.getName());
     private final ExternalReferenceFinder finder;
+    private final EntityResolver entityResolver;
 
-    public PolicyExporter( final ExternalReferenceFinder finder ) {
+    /**
+     * Create a new policy exporter.
+     *
+     * @param finder The reference finder to use (required)
+     * @param entityResolver The entity resolver to use if parsing XML that permits document type declarations (optional)
+     */
+    public PolicyExporter( final ExternalReferenceFinder finder,
+                           final EntityResolver entityResolver ) {
         this.finder = finder;
+        this.entityResolver = entityResolver;
     }
 
     public Document exportToDocument(Assertion rootAssertion) throws IOException, SAXException {
@@ -106,22 +116,25 @@ public class PolicyExporter {
             AssertionResourceInfo schemaResource = sva.getResourceInfo();
             if (schemaResource instanceof StaticResourceInfo) {
                 try {
-                    schema = XmlUtil.stringToDocument(((StaticResourceInfo) sva.getResourceInfo()).getDocument());
+                    schema = XmlUtil.parse(ExternalSchemaReference.asInputSource(((StaticResourceInfo) sva.getResourceInfo())), entityResolver);
                 } catch (SAXException e) {
-                    logger.log(Level.WARNING, "Error parsing external schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, "Error parsing schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     // fallthrough since it's possible this assertion is just badly configured in which case we wont care
                     // about external references
+                } catch ( IOException e ) {
+                    logger.log(Level.WARNING, "Error parsing schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    // fallthrough
                 }
             } else if (schemaResource instanceof GlobalResourceInfo) {
                 String globalSchemaName = ((GlobalResourceInfo) schemaResource).getId();
-                addReference( new ExternalSchemaReference( finder, globalSchemaName, null), refs);
+                addReference( new ExternalSchemaReference( finder, entityResolver, globalSchemaName, null), refs);
             }
 
             // process external schema imports, if any
             if (schema != null) {
                 ArrayList<ExternalSchemaReference.ListedImport> listOfImports = ExternalSchemaReference.listImports(schema);
                 for (ExternalSchemaReference.ListedImport unresolvedImport : listOfImports) {
-                    addReference( new ExternalSchemaReference( finder, unresolvedImport.name, unresolvedImport.tns), refs );
+                    addReference( new ExternalSchemaReference( finder, entityResolver, unresolvedImport.name, unresolvedImport.tns), refs );
                 }
             }
         }

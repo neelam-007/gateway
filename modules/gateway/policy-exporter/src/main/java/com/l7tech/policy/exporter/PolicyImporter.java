@@ -14,6 +14,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.EntityResolver;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -63,6 +64,7 @@ public class PolicyImporter {
                                                      final Document policyExport,
                                                      final WspReader wspReader,
                                                      final ExternalReferenceFinder finder,
+                                                     final EntityResolver entityResolver,
                                                      final ExternalReferenceErrorListener errorListener,
                                                      final PolicyImporterAdvisor advisor ) throws InvalidPolicyStreamException, PolicyImportCancelledException {
         // Import policy references first
@@ -70,13 +72,13 @@ public class PolicyImporter {
                                                                  ExporterConstants.EXPORTED_POL_NS,
                                                                  ExporterConstants.EXPORTED_REFERENCES_ELNAME);
 
-        ExternalReferenceResolver resolver = new ExternalReferenceResolver( wspReader, advisor );
+        ExternalReferenceResolver resolver = new ExternalReferenceResolver( wspReader, advisor, entityResolver );
         Collection<ExternalReference> references = new ArrayList<ExternalReference>();
         HashMap<String, Policy> fragments = new HashMap<String, Policy>();
         HashMap<Long, String> fragmentOidToNameMap = new HashMap<Long, String>();
         if (referencesEl != null) {
             try {
-                references = ExternalReference.parseReferences(finder, referencesEl);
+                references = ExternalReference.parseReferences(finder, entityResolver, referencesEl);
 
                 for(ExternalReference reference : references) {
                     reference.setExternalReferenceErrorListener(errorListener);

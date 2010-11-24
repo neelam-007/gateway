@@ -11,12 +11,17 @@ import com.l7tech.policy.wsp.PolicyConflictException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.util.ExceptionUtils;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class takes a set of external references that were exported with a policy
@@ -34,9 +39,11 @@ class ExternalReferenceResolver {
     //- PACKAGE
 
     ExternalReferenceResolver( final WspReader wspReader,
-                               final PolicyImporter.PolicyImporterAdvisor advisor ) {
+                               final PolicyImporter.PolicyImporterAdvisor advisor,
+                               final EntityResolver entityResolver ) {
         this.wspReader = wspReader;
         this.advisor = advisor;
+        this.entityResolver = entityResolver;
     }
 
     /**
@@ -93,8 +100,11 @@ class ExternalReferenceResolver {
 
     //- PRIVATE
 
+    private static final Logger logger = Logger.getLogger( ExternalReferenceResolver.class.getName() );
+
     private final WspReader wspReader;
     private final PolicyImporter.PolicyImporterAdvisor advisor;
+    private final EntityResolver entityResolver;
     private Collection<ExternalReference> resolvedReferences = new ArrayList<ExternalReference>();
 
     private boolean traverseAssertionTreeForLocalization(Assertion rootAssertion) {
@@ -309,7 +319,8 @@ class ExternalReferenceResolver {
                         StaticResourceInfo sri = (StaticResourceInfo)sva.getResourceInfo();
                         boolean found = false;
                         try {
-                            List<ExternalSchemaReference.ListedImport> listOfImports = ExternalSchemaReference.listImports(XmlUtil.stringToDocument(sri.getDocument()));
+                            final Document schema = XmlUtil.parse(ExternalSchemaReference.asInputSource(sri),entityResolver);
+                            List<ExternalSchemaReference.ListedImport> listOfImports = ExternalSchemaReference.listImports(schema);
                             for (ExternalSchemaReference.ListedImport unresolvedImport : listOfImports) {
                                 if (schemaRef.getName() != null && schemaRef.getName().equals(unresolvedImport.name) &&
                                     schemaRef.getTns() != null && schemaRef.getTns().equals(unresolvedImport.tns)) {
@@ -319,7 +330,9 @@ class ExternalReferenceResolver {
                                 }
                             }
                         } catch (SAXException e) {
-                            // do nothing
+                            logger.log( Level.INFO, "Cannot parse schema to process references: " + ExceptionUtils.getMessage( e ));
+                        } catch ( IOException e ) {
+                            logger.log( Level.INFO, "Cannot parse schema to process references: " + ExceptionUtils.getMessage( e ));
                         }
                         if (found) break;
                     }

@@ -71,7 +71,7 @@ public class PolicyExporterTest {
         Element referencesEl = DomUtils.findOnlyOneChildElementByName(exportedPolicy.getDocumentElement(),
                                                                      ExporterConstants.EXPORTED_POL_NS,
                                                                      ExporterConstants.EXPORTED_REFERENCES_ELNAME);
-        Collection<ExternalReference> refs = ExternalReference.parseReferences(getExternalReferenceFinder(), referencesEl);
+        Collection<ExternalReference> refs = ExternalReference.parseReferences(getExternalReferenceFinder(), null, referencesEl);
         Set<String> referenceTypes = new HashSet<String>();
         for ( ExternalReference ref : refs) {
             System.out.println("Found ref of type " + ref.getRefType());
@@ -91,7 +91,7 @@ public class PolicyExporterTest {
     }
 
     private Document exportToDocument() throws Exception {
-        PolicyExporter exporter = new PolicyExporter(getExternalReferenceFinder());
+        PolicyExporter exporter = new PolicyExporter(getExternalReferenceFinder(), null);
         Assertion testPolicy = createTestPolicy();
         return exporter.exportToDocument(testPolicy);
     }

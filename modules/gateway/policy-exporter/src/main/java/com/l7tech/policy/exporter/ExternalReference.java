@@ -13,6 +13,7 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.DomUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import org.xml.sax.EntityResolver;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -202,6 +203,7 @@ public abstract class ExternalReference {
      * @param refElements an ExporterConstants.EXPORTED_REFERENCES_ELNAME element
      */
     static Collection<ExternalReference> parseReferences(final ExternalReferenceFinder finder,
+                                                         final EntityResolver entityResolver,
                                                          final Element refElements) throws InvalidDocumentFormatException {
         // Verify that the passed element is what is expected
         if (!refElements.getLocalName().equals(ExporterConstants.EXPORTED_REFERENCES_ELNAME)) {
@@ -230,7 +232,7 @@ public abstract class ExternalReference {
                 } else if (refType.equals(getReferenceType(CustomAssertionReference.class))) {
                     references.add(CustomAssertionReference.parseFromElement(finder, refEl));
                 } else if (refType.equals(getReferenceType(ExternalSchemaReference.class))) {
-                    references.add(ExternalSchemaReference.parseFromElement(finder, refEl));
+                    references.add(ExternalSchemaReference.parseFromElement(finder, entityResolver, refEl));
                 } else if (refType.equals(getReferenceType(IncludedPolicyReference.class))) {
                     references.add(IncludedPolicyReference.parseFromElement(finder, refEl));
                 } else if (refType.equals(getReferenceType(TrustedCertReference.class))) {

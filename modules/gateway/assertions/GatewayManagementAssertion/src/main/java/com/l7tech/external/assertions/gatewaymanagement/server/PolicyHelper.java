@@ -73,6 +73,7 @@ import com.l7tech.util.Triple;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
 import org.w3c.dom.Document;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.WSDLException;
@@ -99,11 +100,13 @@ public class PolicyHelper {
     public PolicyHelper( final AssertionLicense licenseManager,
                          final PolicyValidator policyValidator,
                          final WspReader wspReader,
-                         final GatewayExternalReferenceFinder referenceFinder ) {
+                         final GatewayExternalReferenceFinder referenceFinder,
+                         final EntityResolver entityResolver ) {
         this.licenseManager = licenseManager;
         this.policyValidator = policyValidator;
         this.wspReader = wspReader;
         this.referenceFinder = referenceFinder;
+        this.entityResolver = entityResolver;
     }
 
     /**
@@ -114,7 +117,7 @@ public class PolicyHelper {
      */
     public PolicyExportResult exportPolicy( final Policy policy ) {
         try {
-            final PolicyExporter exporter = new PolicyExporter( referenceFinder );
+            final PolicyExporter exporter = new PolicyExporter( referenceFinder, entityResolver );
             final Document exportDoc = exporter.exportToDocument( policy.getAssertion() );
             final PolicyExportResult policyExportResult = ManagedObjectFactory.createPolicyExportResult();
             final Resource resource = ManagedObjectFactory.createResource();
@@ -165,6 +168,7 @@ public class PolicyHelper {
                             exportDoc,
                             wspReader,
                             referenceFinder,
+                            entityResolver,
                             buildErrorListener( warnings ),
                             buildPolicyImportAdvisor( policyImportContext, references, conflictingPolicies, unresolvedReferences ) );
 
@@ -592,6 +596,7 @@ public class PolicyHelper {
     private final PolicyValidator policyValidator;
     private final WspReader wspReader;
     private final GatewayExternalReferenceFinder referenceFinder;
+    private final EntityResolver entityResolver;
     private final ResourceHelper resourceHelper = new ResourceHelper();
 
     private boolean isSoap( final Map<String,Object> properties ) {

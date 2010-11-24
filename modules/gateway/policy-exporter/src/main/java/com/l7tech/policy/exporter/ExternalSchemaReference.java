@@ -13,9 +13,12 @@ import com.l7tech.objectmodel.FindException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
@@ -34,14 +37,17 @@ public class ExternalSchemaReference extends ExternalReference {
     private final Logger logger = Logger.getLogger(ExternalSchemaReference.class.getName());
 
     public ExternalSchemaReference( final ExternalReferenceFinder finder,
+                                    final EntityResolver entityResolver,
                                     final String name,
                                     final String tns ) {
         super(finder);
+        this.entityResolver = entityResolver;
         this.name = name;
         this.tns = tns;
     }
 
     public static ExternalSchemaReference parseFromElement( final ExternalReferenceFinder finder,
+                                                            final EntityResolver entityResolver,
                                                             final Element el ) throws InvalidDocumentFormatException {
         if (!el.getNodeName().equals(TOPEL_NAME)) {
             throw new InvalidDocumentFormatException("Expecting element of name " + TOPEL_NAME);
@@ -54,7 +60,7 @@ public class ExternalSchemaReference extends ExternalReference {
         if (el.hasAttribute(TNS_ATTR_NAME)) {
             tns = el.getAttribute(TNS_ATTR_NAME);
         }
-        return new ExternalSchemaReference(finder, name, tns);
+        return new ExternalSchemaReference(finder, entityResolver, name, tns);
     }
 
     public String getName() {
@@ -106,7 +112,7 @@ public class ExternalSchemaReference extends ExternalReference {
                 if (schemaResource instanceof StaticResourceInfo) {
                     if ( name != null || tns != null ) {
                         try {
-                            final Document schema = XmlUtil.stringToDocument(((StaticResourceInfo) schemaResource).getDocument());
+                            final Document schema = XmlUtil.parse(asInputSource((StaticResourceInfo) schemaResource), entityResolver);
 
                             // check schema imports, if any
                             for (ExternalSchemaReference.ListedImport listedImport : listImports(schema)) {
@@ -114,7 +120,9 @@ public class ExternalSchemaReference extends ExternalReference {
                                 if (listedImport.tns!=null && listedImport.tns.equals(tns)) return false;
                             }
                         } catch (SAXException e) {
-                            logger.log(Level.SEVERE, "Cannot parse schema: " + ExceptionUtils.getMessage( e ));
+                            logger.log(Level.WARNING, "Cannot parse schema: " + ExceptionUtils.getMessage( e ));
+                        } catch ( IOException e ) {
+                            logger.log(Level.WARNING, "Cannot parse schema: " + ExceptionUtils.getMessage( e ));
                         }
                     }
                 } else if (schemaResource instanceof GlobalResourceInfo && name != null) {
@@ -131,7 +139,7 @@ public class ExternalSchemaReference extends ExternalReference {
                 } else if (schemaResource instanceof StaticResourceInfo) {
                     StaticResourceInfo resourceInfo = (StaticResourceInfo) schemaResource;
                     try {
-                        final Document schema = XmlUtil.stringToDocument(resourceInfo.getDocument());
+                        final Document schema = XmlUtil.parse(asInputSource(resourceInfo), entityResolver);
                         final boolean[] updated = new boolean[]{false};
                         DocumentReferenceProcessor processor = DocumentReferenceProcessor.schemaProcessor();
                         processor.processDocumentReferences( schema, new DocumentReferenceProcessor.ReferenceCustomizer(){
@@ -152,9 +160,9 @@ public class ExternalSchemaReference extends ExternalReference {
                             resourceInfo.setDocument( XmlUtil.nodeToString(schema) );
                         }
                     } catch (SAXException e) {
-                        logger.log(Level.SEVERE, "Cannot parse schema: " + ExceptionUtils.getMessage( e ));
+                        logger.log(Level.WARNING, "Cannot parse schema: " + ExceptionUtils.getMessage( e ));
                     } catch ( IOException e) {
-                        logger.log(Level.SEVERE, "Cannot update schema: " + ExceptionUtils.getMessage( e ));
+                        logger.log(Level.WARNING, "Cannot update schema: " + ExceptionUtils.getMessage( e ));
                     }
                 }
             }
@@ -170,6 +178,15 @@ public class ExternalSchemaReference extends ExternalReference {
         }
         public String name;
         public String tns;
+    }
+
+    static InputSource asInputSource( final StaticResourceInfo staticResourceInfo ) {
+        final InputSource inputSource = new InputSource();
+        if ( staticResourceInfo.getOriginalUrl() != null ) {
+            inputSource.setSystemId( staticResourceInfo.getOriginalUrl() );
+        }
+        inputSource.setCharacterStream( new StringReader( staticResourceInfo.getDocument() ) );
+        return inputSource;
     }
 
     /**
@@ -244,8 +261,9 @@ public class ExternalSchemaReference extends ExternalReference {
         return true;
     }
 
-    private String name;
-    private String tns;
+    private final EntityResolver entityResolver;
+    private final String name;
+    private final String tns;
     private String localName;
     private LocalizeAction localizeType = LocalizeAction.IGNORE;
     private static final String TOPEL_NAME = "ExternalSchema";

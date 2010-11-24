@@ -59,6 +59,7 @@
                 <constructor-arg index="11" ref="trustedCertManager"/>
             </bean>
         </constructor-arg>
+        <constructor-arg index="4" ref="resourceEntrySchemaSourceResolver"/>
     </bean>
 
     <bean id="resourceFactoryParent" abstract="true">

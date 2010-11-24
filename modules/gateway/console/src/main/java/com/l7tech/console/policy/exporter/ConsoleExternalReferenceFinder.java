@@ -3,6 +3,7 @@ package com.l7tech.console.policy.exporter;
 import com.l7tech.console.panels.ResolveExternalPolicyReferencesWizard;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.ResourceAdminEntityResolver;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
@@ -35,9 +36,12 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 import java.security.KeyStoreException;
 import java.util.Collection;
 import java.util.Collections;
@@ -52,7 +56,7 @@ import java.util.logging.Logger;
  * <p>This class also acts as an import advisor with the advice being provided
  * by the user via the external references wizard.</p>
  */
-class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, ExternalReferenceErrorListener, PolicyImporter.PolicyImporterAdvisor {
+class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, ExternalReferenceErrorListener, PolicyImporter.PolicyImporterAdvisor, EntityResolver {
 
     //- PUBLIC
 
@@ -239,6 +243,13 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
                 "<center>This policy importer will use the already existing policy fragment in place of the embedded fragment.</center></html>",
             "Resolving Policy Fragment Conflict", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
         return result == JOptionPane.OK_OPTION;
+    }
+
+    @Override
+    public InputSource resolveEntity( final String publicId, final String systemId ) throws IOException {
+        ResourceAdmin resourceAdmin = Registry.getDefault().getResourceAdmin();
+        if ( resourceAdmin==null ) throw new IOException("Error accessing gateway.");
+        return new ResourceAdminEntityResolver( resourceAdmin ).resolveEntity( publicId, systemId );
     }
 
     //- PRIVATE

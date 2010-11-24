@@ -60,7 +60,7 @@ public class PolicyExportUtils {
 
             final WspReader wspReader = TopComponents.getInstance().getApplicationContext().getBean("wspReader", WspReader.class);
             final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
-            final PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, readDoc, wspReader, finder, finder, finder );
+            final PolicyImporter.PolicyImporterResult result = PolicyImporter.importPolicy(policy, readDoc, wspReader, finder, finder, finder, finder );
             final Assertion newRoot = (result != null) ? result.assertion : null;
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML
@@ -113,7 +113,8 @@ public class PolicyExportUtils {
      */
     public static boolean exportPolicyToFile( final Assertion assertion,
                                               final File exportFile ) throws IOException, SAXException {
-        PolicyExporter exporter = new PolicyExporter( new ConsoleExternalReferenceFinder() );
+        final ConsoleExternalReferenceFinder finder = new ConsoleExternalReferenceFinder();
+        PolicyExporter exporter = new PolicyExporter( finder, finder );
         exporter.exportToFile(assertion, exportFile);
         return true;
     }
