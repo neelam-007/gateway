@@ -16,6 +16,11 @@ public enum IpProtocol {
         }
 
         @Override
+        public String getLocalHostAddress() {
+            return InetAddressUtil.getLocalHostAddress4();
+        }
+
+        @Override
         public boolean isEnabled() {
             return InetAddressUtil.isIpv4Enabled();
         }},
@@ -24,6 +29,11 @@ public enum IpProtocol {
         @Override
         public List<String> validateAddress(String address) {
             return validateIpv6Address(address);
+        }
+
+        @Override
+        public String getLocalHostAddress() {
+            return InetAddressUtil.getLocalHostAddress6();
         }
 
         @Override
@@ -40,6 +50,11 @@ public enum IpProtocol {
      * @return true if the IP protocol is enabled, false otherwise
      */
     public abstract boolean isEnabled();
+
+    /**
+     * @return the protocol specific address of the localhost interface
+     */
+    public abstract String getLocalHostAddress();
 
     public String getConfigureDefaultGatewayPrompt() {
         return MessageFormat.format(CONFIGURE_GATEWAY_PROMPT, this);

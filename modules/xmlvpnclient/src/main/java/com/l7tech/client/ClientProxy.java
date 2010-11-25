@@ -6,13 +6,14 @@ import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.JceUtil;
 import com.l7tech.security.prov.StrongCryptoNotAvailableException;
-import org.mortbay.jetty.Connector;
+import com.l7tech.util.IpProtocol;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.thread.QueuedThreadPool;
 
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.GeneralSecurityException;
@@ -125,10 +126,19 @@ public class ClientProxy {
             threadPool.setMaxThreads(maxThreads);
             httpServer.setThreadPool(threadPool);
 
-            Connector socketListener = new SocketConnector();
-            socketListener.setHost(InetAddressUtil.getLocalHostAddress());
-            socketListener.setPort(bindPort);
-            httpServer.addConnector(socketListener);
+            boolean hasIp = false;
+            for(final IpProtocol ipProtocol : EnumSet.allOf(IpProtocol.class))  {
+                if (ipProtocol.isEnabled()) {
+                    hasIp = true;
+                    httpServer.addConnector(new SocketConnector() {{
+                        setHost(ipProtocol.getLocalHostAddress());
+                        setPort(bindPort);
+                    }});
+                }
+            }
+
+            if (! hasIp)
+                throw new IllegalStateException("No IP protocols enabled.");
 
             httpServer.addHandler(getRequestHandler());
         }
