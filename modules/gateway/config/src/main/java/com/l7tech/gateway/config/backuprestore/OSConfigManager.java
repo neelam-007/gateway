@@ -137,22 +137,25 @@ final class OSConfigManager {
      * Do not call if the OSConfigManager is in the reboot state
      *
      * @param source the directory containing the files to copy. Must exist and be a directory
+     * @return true if files were copied
      */
-    void copyFilesToInternalFolderPriorToReboot(final File source){
+    boolean copyFilesToInternalFolderPriorToReboot(final File source){
         if(isReboot)
             throw new IllegalStateException("Method cannot be called when OSConfigManager is in the reboot state");
 
         //we must be able to empty or create this folder if this method is called
-        emptyCreateOrThrowInternalFolder(true);
+        emptyCreateOrThrowInternalFolder(false);
 
         if(source == null) throw new NullPointerException("source cannot be null");
         if(!source.exists()) throw new IllegalArgumentException("source does not exist");
         if(!source.isDirectory()) throw new IllegalArgumentException("source is not a directory");
 
-        if(!copyFilesFromSource(source)){
+        final boolean filesWereCopied = copyFilesFromSource(source);
+        if(!filesWereCopied){
             final String msg = "No files were copied from source '" + source.getAbsolutePath()+"'";
             ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
         }
+        return filesWereCopied;
     }
 
     /**
@@ -202,18 +205,60 @@ final class OSConfigManager {
      * @param fileToCopy
      * @throws IOException
      */
-    void copyFileToInternalFolder(final File fileToCopy) throws IOException{
+    void copyFileToInternalFolder(final File fileToCopy, final File destinationFile) throws IOException{
 
         emptyCreateOrThrowInternalFolder(false);
-        final File targetRoot = new File(internalOsFolder.getParentFile().getAbsolutePath());
-        final File targetFile = new File(targetRoot, fileToCopy.getAbsolutePath());
+        final File targetRoot = new File(internalOsFolder.getAbsolutePath());
+        final File targetFile = new File(targetRoot, destinationFile.getAbsolutePath());
         FileUtils.ensurePath(targetFile.getParentFile());
         FileUtils.copyFile(fileToCopy, targetFile);
-        final String msg = "File '" + fileToCopy.getAbsolutePath()+"' is set to be overwritten the next time the Gateway " +
+        final String msg = "File '" + destinationFile.getAbsolutePath()+"' is set to be overwritten the next time the Gateway " +
                 "host is restarted, if this has been configured on host startup";
         ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
     }
 
+    /**
+     * Ensure the internal folder exists. If it doesn't, it's created. If it can not be created an exception will
+     * be thrown
+     * @param deleteIfFound if true, the internal folder will be emptied. An individual component being restored should
+     * not pass a value of true, as this may overwrite any files copied by another component.
+     */
+    void emptyCreateOrThrowInternalFolder(final boolean deleteIfFound) {
+        if (!internalOsFolder.exists()) {
+            boolean success = internalOsFolder.mkdir();
+            if (!success)
+                throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");
+        } else {
+            //were going to delete it, if somehow it got turned into a file
+            if(internalOsFolder.isFile()){
+                final boolean fileDeleted = internalOsFolder.delete();
+                if(!fileDeleted) throw new RuntimeException("Could not delete file " + internalOsFolder.getAbsolutePath());
+                boolean success = internalOsFolder.mkdir();
+                if (!success)
+                    throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");
+            }
+            else {
+                if(deleteIfFound){
+                    //if it exists, then just empty the contents, this will allow this to work as the gateway user
+                    //as it doesn't have permissions to delete and recreate the directory
+                    final String msg = "Deleting contents of folder for temp os files storage: " +
+                            internalOsFolder.getAbsolutePath();
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+                    
+                    if(FileUtils.deleteDirContents(internalOsFolder)){
+                        final String msg1="Successfully deleted contents of folder for temp os files storage: "
+                                + internalOsFolder.getAbsolutePath();
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
+                    }else{
+                        final String msg1="Could not delete contents of folder for temp os files storage: "
+                                + internalOsFolder.getAbsolutePath();
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg1, isVerbose, printStream);
+                    }
+                }
+            }
+        }
+    }
+    
     /**
      * This can also be used to copy files like my.cnf which are restored outside of the os backup component
      *
@@ -270,7 +315,7 @@ final class OSConfigManager {
 
     /**
      * Get a list of the absolute paths of each file in a directory, regardless of the depth of child folders.
-     * Empty directorys will not be included
+     * Empty directories will not be included
      * @param dir the folder to get the list of files from
      * @return list of strings, one for each file found in any directory or directory of dir. Never null, but can be
      * empty if no files were found
@@ -292,45 +337,4 @@ final class OSConfigManager {
             return output;
         } else return Collections.emptyList();
     }
-
-    /**
-     * Ensure the internal folder exists. If it doesn't, it's created. If it can not be created an exception will
-     * be thrown
-     * @param deleteIfFound if true, the internal folder will be emptied
-     */
-    private void emptyCreateOrThrowInternalFolder(final boolean deleteIfFound) {
-        if (!internalOsFolder.exists()) {
-            boolean success = internalOsFolder.mkdir();
-            if (!success)
-                throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");
-        } else {
-            //were going to delete it, if somehow it got turned into a file
-            if(internalOsFolder.isFile()){
-                final boolean fileDeleted = internalOsFolder.delete();
-                if(!fileDeleted) throw new RuntimeException("Could not delete file " + internalOsFolder.getAbsolutePath());
-                boolean success = internalOsFolder.mkdir();
-                if (!success)
-                    throw new IllegalStateException("Could not create folder '" + internalOsFolder.getAbsolutePath() + "'");
-            }
-            else {
-                //if it exists, then just empty the contents, this will allow this to work as the gateway user
-                //as it doesn't have permissions to delete and recreate the directory
-                final String msg = "Deleting contents of folder for temp os files storage: " +
-                        internalOsFolder.getAbsolutePath();
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                if(deleteIfFound){
-                    if(FileUtils.deleteDirContents(internalOsFolder)){
-                        final String msg1="Successfully deleted contents of folder for temp os files storage: "
-                                + internalOsFolder.getAbsolutePath();
-                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
-                    }else{
-                        final String msg1="Could not delete contents of folder for temp os files storage: "
-                                + internalOsFolder.getAbsolutePath();
-                        ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg1, isVerbose, printStream);
-                    }
-                }
-            }
-        }
-    }
-    
 }

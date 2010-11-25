@@ -17,14 +17,29 @@ public class ComponentResult {
 
     private final String notApplicableMessage;
     private final Result result;
+    private final boolean restartMaybeRequired;
 
     public ComponentResult(final Result result, final String notApplicableMessage) {
         this.notApplicableMessage = notApplicableMessage;
         this.result = result;
+        this.restartMaybeRequired = false;
+    }
+
+    public ComponentResult(final Result result, final String notApplicableMessage, boolean restartMaybeRequired) {
+        this.notApplicableMessage = notApplicableMessage;
+        this.result = result;
+        this.restartMaybeRequired = restartMaybeRequired;
     }
 
     public ComponentResult(Result result) {
         this.result = result;
+        this.restartMaybeRequired = false;
+        notApplicableMessage = null;
+    }
+
+    public ComponentResult(Result result, boolean restartMaybeRequired) {
+        this.result = result;
+        this.restartMaybeRequired = restartMaybeRequired;
         notApplicableMessage = null;
     }
 
@@ -34,5 +49,9 @@ public class ComponentResult {
 
     public Result getResult() {
         return result;
+    }
+
+    public boolean isRestartMaybeRequired() {
+        return restartMaybeRequired;
     }
 }

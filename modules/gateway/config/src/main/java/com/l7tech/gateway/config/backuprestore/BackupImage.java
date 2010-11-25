@@ -47,7 +47,7 @@ public final class BackupImage {
     static final String AUDIT_BACKUP_FILENAME = "audits.gz";
     private final File versionFile;
 
-    private static final String MY_CNF = "my.cnf";
+    static final String MY_CNF = "my.cnf";
 
     /**
      * my.cnf makes up part of a database backup. This is the current known path to this file

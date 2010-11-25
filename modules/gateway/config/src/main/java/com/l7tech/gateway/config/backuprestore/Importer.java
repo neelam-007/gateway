@@ -232,6 +232,7 @@ public final class Importer{
         wereCompleteDbParamsSupplied(true);
 
         //what ever happens we need to delete any unzipped directory no matter what the outcome
+        final boolean restartMaybeRequired;
         try {
             backupImage = new BackupImage(imageFile.getAbsolutePath(), printStream, isVerbose);
 
@@ -251,7 +252,7 @@ public final class Importer{
             }
 
             //build list of components and filter appropriately
-            performRestoreSteps();
+            restartMaybeRequired = performRestoreSteps();
 
         } catch (Restore.RestoreException e) {
             return new ImportExportUtilities.UtilityResult(FAILURE, null, e);
@@ -265,7 +266,7 @@ public final class Importer{
             return new ImportExportUtilities.UtilityResult(PARTIAL_SUCCESS, failedComponents, null);
         }
 
-        return new ImportExportUtilities.UtilityResult(SUCCESS);
+        return new ImportExportUtilities.UtilityResult(SUCCESS, restartMaybeRequired);
     }
 
     private ImportExportUtilities.UtilityResult performRestore(final String [] args)
@@ -298,6 +299,7 @@ public final class Importer{
 
         preBackupImageInitialization(programFlagsAndValues);
         //what ever happens we need to delete any unzipped directory no matter what the outcome
+        final boolean restartMaybeRequired;
         try {
             validArgList.clear();
             if(ftpCheck){
@@ -316,7 +318,7 @@ public final class Importer{
             initialize(programFlagsAndValues);
 
             //build list of components and filter appropriately
-            performRestoreSteps();
+            restartMaybeRequired = performRestoreSteps();
 
         } catch (Restore.RestoreException e) {
             return new ImportExportUtilities.UtilityResult(FAILURE, null, e);
@@ -330,19 +332,21 @@ public final class Importer{
             return new ImportExportUtilities.UtilityResult(PARTIAL_SUCCESS, failedComponents, null);
         }
 
-        return new ImportExportUtilities.UtilityResult(SUCCESS);
+        return new ImportExportUtilities.UtilityResult(SUCCESS, restartMaybeRequired);
     }
 
     /**
      * Carry out all restore / migrate steps. Manages the -halt option
-     * @throws Exception
+     * @throws Restore.RestoreException if either a selective restore is being carried out and a selected component
+     * is not applicable, or if a compoment fails to restore and the restore is configured to halt on first failure.
      */
-    private void performRestoreSteps() throws Restore.RestoreException {
+    private boolean performRestoreSteps() throws Restore.RestoreException {
         final String msg = "Performing " + ((isMigrate) ? "migrate" : "restore") + " ...";
         ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
         
         final String mappingFile = programFlagsAndValues.get(MAPPING_PATH.getName());
         final List<RestoreComponent> allComponents = getComponentsForRestore(mappingFile);
+        boolean restartMaybeRequired = false;
         for (RestoreComponent component : allComponents) {
             try {
                 final ComponentResult result = component.doRestore();
@@ -351,6 +355,9 @@ public final class Importer{
                 }else if (result.getResult() == ComponentResult.Result.NOT_APPLICABLE) {
                     final String msg1 = "Not applicable for this backup image";
                     ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg1, isVerbose, printStream);
+                }
+                if(result.isRestartMaybeRequired()){
+                    restartMaybeRequired = true;
                 }
             } catch (Restore.RestoreException e) {
                 final String msg1 =  "Could not restore component '" +
@@ -366,6 +373,8 @@ public final class Importer{
                 failedComponents.add(component.getComponentType().getComponentName());
             }
         }
+
+        return restartMaybeRequired;
     }
 
     private File getAndValidateImageExists(final String imagePath) throws InvalidProgramArgumentException {
@@ -415,6 +424,12 @@ public final class Importer{
             ConfigurationException {
         if(isDbComponent){
             initializeDatabaseConfiguration(args);
+        }
+
+        if(isDbComponent || args.containsKey(CommonCommandLineOptions.OS_OPTION.getName())){
+            //if we know that OS or db (my.cnf) components will be restored, then make sure the internal folder can be created
+            //to fail fast, and to remove any dependency between the ordering of restored components.
+            new OSConfigManager(ssgHome, false, isVerbose, printStream).emptyCreateOrThrowInternalFolder(true);
         }
 
         if(args.containsKey(CommonCommandLineOptions.HALT_ON_FIRST_FAILURE.getName())) isHaltOnFirstFailure = true;
@@ -961,6 +976,7 @@ public final class Importer{
         final String taskVerb = (isMigrate) ? "Migrating" : "Restoring";
 
         componentList.add(new RestoreComponent(){
+            @Override
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
@@ -971,66 +987,77 @@ public final class Importer{
                 return restore.restoreComponentConfig(isMigrate, isDbComponent);
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.CONFIG;
             }
         });
 
         componentList.add(new RestoreComponent(){
+            @Override
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentMainDb(isMigrate, canCreateNewDb, mappingFile);
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.MAINDB;
             }
         });
 
         componentList.add(new RestoreComponent(){
+            @Override
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentAudits(isMigrate);
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.AUDITS;
             }
         });
 
         componentList.add(new RestoreComponent(){
+            @Override
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentOS();
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.OS;
             }
         });
 
         componentList.add(new RestoreComponent(){
+            @Override
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentCA();
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.CA;
             }
         });
 
         componentList.add(new RestoreComponent(){
+            @Override
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
                 return restore.restoreComponentMA();
             }
 
+            @Override
             public ImportExportUtilities.ComponentType getComponentType() {
                 return ImportExportUtilities.ComponentType.MA;
             }

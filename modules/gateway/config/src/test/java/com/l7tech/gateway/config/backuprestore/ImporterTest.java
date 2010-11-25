@@ -170,6 +170,58 @@ public class ImporterTest {
     }
 
     /**
+     * Tests that my.cnf is correctly extracted from the backup image and placed into the temporary folder prior to reboot.
+     * Also tests that after reboot my.cnf is copied to it's correct location.
+     * @throws Exception
+     */
+    @BugNumber(9501)
+    @Test
+    public void testMyCnfRestoreRoundTrip() throws Exception{
+        final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_no_OS.zip");
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
+        final String [] args = new String[]{"import",
+                "-image", buzzcutImage.getPath(),
+                "-dbu","root",
+                "-dbp","7layer",
+                "-v"
+        };
+
+        //this test validtes of files too
+        //=> make the appliance direcotry
+        final File applianceFolder = new File(tmpSecureSpanHome, ImportExportUtilities.APPLIANCE);
+        applianceFolder.mkdir();
+
+        final ImportExportUtilities.UtilityResult result = importer.restoreOrMigrateBackupImage(args);
+        Assert.assertNotNull("result should not be null", result);
+
+        Assert.assertTrue("A reboot should be required", result.isRebootMaybeRequired());
+
+        Assert.assertEquals("result should be success", ImportExportUtilities.UtilityResult.Status.SUCCESS, result.getStatus());
+
+        //confirm that my.cnf exists in the correct location
+        File testMyCnf = new File(tmpSsgHome +"/config/backup/cfg/configfiles/etc", "my.cnf");
+        Assert.assertTrue("my.cnf incorrectly copied. File not found.", testMyCnf.exists());
+
+        final OSConfigManager osConfigManager =
+                new OSConfigManager(tmpSsgHome, true, true, System.out);
+
+        final String tempDirectory = ImportExportUtilities.createTmpDirectory();
+        try {
+            //modify the root folder of where files are copied to
+            System.setProperty("com.l7tech.config.backuprestore.osrootdir", tempDirectory);
+            final boolean filesCopied = osConfigManager.finishRestoreOfFilesOnReboot();
+            Assert.assertTrue("Files should have been copied", filesCopied);
+
+            //confirm my.cnf was copied
+            File checkMyCnf = new File(tempDirectory+"/etc", "my.cnf");
+            Assert.assertTrue("my.cnf was not restored to /etc/my.cnf", checkMyCnf.exists());
+        } finally{
+            FileUtils.deleteDir(new File(tempDirectory));
+            System.clearProperty("com.l7tech.config.backuprestore.osrootdir");
+        }
+    }
+
+    /**
      * Test the entire process of restoring os files. This will 1) retore files and 2) mimic the gateway restart
      * Also tests the buzzcut image
      * @throws Exception

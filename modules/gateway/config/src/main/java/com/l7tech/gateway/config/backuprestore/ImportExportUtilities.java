@@ -192,6 +192,7 @@ public class ImportExportUtilities {
             loader = new URLClassLoader(new URL[]{gatewayJar}, null);
         }
 
+        @Override
         public Class<?> loadClass(final String name) throws ClassNotFoundException {
             if(name.equals("com.l7tech.util.BuildInfo")){
                 return loader.loadClass(name);
@@ -1171,6 +1172,7 @@ public class ImportExportUtilities {
         private final Status status;
         private final List<String> failedComponents;
         private final Exception exception;
+        private final boolean rebootMaybeRequired;
 
         public enum Status{
             SUCCESS(),
@@ -1179,15 +1181,24 @@ public class ImportExportUtilities {
         }
 
         UtilityResult(final Status status,
-                                     final List<String> failedComponents,
-                                     final Exception exception){
+                      final List<String> failedComponents,
+                      final Exception exception) {
             this.status = status;
             this.failedComponents = failedComponents;
             this.exception = exception;
+            this.rebootMaybeRequired = false;
         }
 
         UtilityResult(final Status status){
             this.status = status;
+            this.rebootMaybeRequired = false;
+            this.failedComponents = null;
+            this.exception = null;
+        }
+
+        UtilityResult(final Status status, boolean rebootMaybeRequired){
+            this.status = status;
+            this.rebootMaybeRequired = rebootMaybeRequired;
             this.failedComponents = null;
             this.exception = null;
         }
@@ -1202,6 +1213,10 @@ public class ImportExportUtilities {
 
         public Exception getException() {
             return exception;
+        }
+
+        public boolean isRebootMaybeRequired() {
+            return rebootMaybeRequired;
         }
     }
 }

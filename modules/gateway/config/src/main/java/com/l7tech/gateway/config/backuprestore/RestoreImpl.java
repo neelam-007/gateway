@@ -362,8 +362,8 @@ final class RestoreImpl implements Restore{
                 final String msg = "No Operating System backup found in image";
                 return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
             }
-            osConfigManager.copyFilesToInternalFolderPriorToReboot(osFolder);
-            return new ComponentResult(ComponentResult.Result.SUCCESS);
+            final boolean restartIsRequired = osConfigManager.copyFilesToInternalFolderPriorToReboot(osFolder);
+            return new ComponentResult(ComponentResult.Result.SUCCESS, restartIsRequired);
         }else{
             final String msg = "Operating System restore is not applicable for this host";
             return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
@@ -526,6 +526,39 @@ final class RestoreImpl implements Restore{
     public ComponentResult restoreComponentMainDb(final boolean isMigrate,
                                                   final boolean newDatabaseIsRequired,
                                                   final String pathToMappingFile) throws RestoreException {
+        //can restore my.cnf without the database contents restore
+        boolean restartMaybeRequired = false;
+        //See if my.cnf needs to be copied
+        if (image.getImageVersion() == BackupImage.ImageVersion.AFTER_FIVE_O) {
+            final File myCnf = image.getDatabaseConfiguration();
+            if (!myCnf.exists() || !myCnf.isFile()) {
+                final String msg = "my.cnf is not contained in the backup image";
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
+            } else {
+                //copy file
+                //FileUtils.copyFile(file, new File(dir.getAbsolutePath() + File.separator + file.getName()));
+                final String etcFolder = SyspropUtil.getString("com.l7tech.config.backuprestore.mycnfdir", "/etc");
+                final File etcDir = new File(etcFolder);
+                if (!etcDir.exists() && !etcDir.isDirectory()) {
+                    final String msg = "Cannot copy my.cnf as '" + etcFolder + "' folder not found";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                } else {
+                    try {
+                        if (osConfigManager == null) {
+                            final String msg = "my.cnf will not be restored as the Appliance is not installed";
+                            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                        } else {
+                            osConfigManager.copyFileToInternalFolder(myCnf, new File(etcDir, BackupImage.MY_CNF));
+                            restartMaybeRequired = true;
+                        }
+                    } catch (IOException e) {
+                        final String msg = "Cannot copy my.cnf: " + e.getMessage();
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                    }
+                }
+            }
+        }
+
         if (this.dbRestorer == null) {
             //We have been asked to restore the main database component. We cannot as it is not local
             //or the system property to bypass this has not been set
@@ -533,17 +566,17 @@ final class RestoreImpl implements Restore{
             if (backupFile.exists() && !backupFile.isDirectory()) {
                 final String msg = "Ignoring main database backup as either the target database is remote " +
                         "or the configuration is invalid";
-                return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
+                return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg, restartMaybeRequired);
             } else {
                 String msg = "No database backup found in image";
-                return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
+                return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg, restartMaybeRequired);
             }
         }
 
         final File dbFolder = image.getMainDbBackupFolder();
         if (dbFolder == null || !dbFolder.exists() || !dbFolder.isDirectory()) {
             final String msg = "No database backup found in image";
-            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
+            return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg, restartMaybeRequired);
         }
 
         final File dbSql = new File(dbFolder, BackupImage.MAINDB_BACKUP_FILENAME);
@@ -638,37 +671,7 @@ final class RestoreImpl implements Restore{
             }
         }
 
-        //See if my.cnf needs to be copied
-        if (image.getImageVersion() == BackupImage.ImageVersion.AFTER_FIVE_O) {
-            final File myCnf = image.getDatabaseConfiguration();
-            if (!myCnf.exists() || !myCnf.isFile()) {
-                final String msg = "my.cnf is not contained in the backup image";
-                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
-            } else {
-                //copy file
-                //FileUtils.copyFile(file, new File(dir.getAbsolutePath() + File.separator + file.getName()));
-                String etcFolder = SyspropUtil.getString("com.l7tech.config.backuprestore.mycnfdir", "/etc");
-                final File etcDir = new File(etcFolder);
-                if (!etcDir.exists() && !etcDir.isDirectory()) {
-                    final String msg = "Cannot copy my.cnf as '" + etcFolder + "' folder not found";
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                } else {
-                    try {
-                        if (osConfigManager == null) {
-                            final String msg = "my.cnf will not be restored as the Appliance is not installed";
-                            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                        } else {
-                            osConfigManager.copyFileToInternalFolder(myCnf);
-                        }
-                    } catch (IOException e) {
-                        final String msg = "Cannot copy my.cnf: " + e.getMessage();
-                        ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                    }
-                }
-            }
-        }
-
-        return new ComponentResult(ComponentResult.Result.SUCCESS);
+        return new ComponentResult(ComponentResult.Result.SUCCESS, restartMaybeRequired);
     }
 
     @Override
