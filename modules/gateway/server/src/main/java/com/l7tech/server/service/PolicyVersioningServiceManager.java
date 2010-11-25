@@ -52,6 +52,11 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
+    public Collection<PublishedService> findByRoutingUri(String routingUri) throws FindException {
+        return serviceManager.findByRoutingUri(routingUri);
+    }
+
+    @Override
     public String resolveWsdlTarget(String url) {
         return serviceManager.resolveWsdlTarget(url);
     }

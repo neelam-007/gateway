@@ -3,40 +3,43 @@
  */
 package com.l7tech.server.service;
 
-import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
-import static com.l7tech.objectmodel.EntityType.*;
-import static com.l7tech.gateway.common.security.rbac.OperationType.*;
+import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.util.TextUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.server.util.JaasUtils;
-import com.l7tech.policy.Policy;
+import com.l7tech.gateway.common.service.*;
+import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.gateway.common.uddi.UDDIServiceControl;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.Policy;
+import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.event.system.ServiceCacheEvent;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.resolution.ResolutionManager;
-import com.l7tech.server.FolderSupportHibernateEntityManager;
-import com.l7tech.gateway.common.service.*;
-import com.l7tech.gateway.common.uddi.UDDIServiceControl;
-import com.l7tech.gateway.common.uddi.UDDIProxiedServiceInfo;
+import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TextUtils;
+import org.hibernate.StaleObjectStateException;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 import org.springframework.transaction.annotation.Transactional;
-import org.hibernate.StaleObjectStateException;
 
 import java.text.MessageFormat;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.*;
+
+import static com.l7tech.gateway.common.security.rbac.OperationType.*;
+import static com.l7tech.objectmodel.EntityType.*;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
 
 /**
  * Manages {@link PublishedService} instances.
@@ -81,6 +84,11 @@ public class ServiceManagerImp
         if(!includeAliases) return origHeaders;
 
         return serviceAliasManager.expandEntityWithAliases(origHeaders);
+    }
+
+    @Override
+    public Collection<PublishedService> findByRoutingUri(String routingUri) throws FindException {
+        return findByPropertyMaybeNull("routingUri", routingUri);
     }
 
     @Override

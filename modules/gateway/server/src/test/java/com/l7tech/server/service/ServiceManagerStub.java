@@ -16,6 +16,7 @@ import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -92,6 +93,17 @@ public class ServiceManagerStub extends EntityManagerStub<PublishedService, Serv
      */
     public Collection<ServiceHeader> findAllHeaders(boolean includeAliases) throws FindException {
         return super.findAllHeaders();
+    }
+
+    @Override
+    public Collection<PublishedService> findByRoutingUri(String routingUri) throws FindException {
+        Collection<PublishedService> ret = new ArrayList<PublishedService>();
+        for (PublishedService et : entities.values()) {
+            if (routingUri.equals(et.getRoutingUri()))
+                ret.add(et);
+
+        }
+        return ret;
     }
 
     /**

@@ -42,6 +42,7 @@ import java.util.logging.Logger;
  * @noinspection OverloadedMethodsWithSameNumberOfParameters,ValidExternallyBoundObject,NonJaxWsWebServices
  */
 public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
+    private static final String PROP_ALLOW_DUPLICATE_LAX_URI = "com.l7tech.server.service.soap.allowDuplicateLaxUri";
     private static final ServiceHeader[] EMPTY_ENTITY_HEADER_ARRAY = new ServiceHeader[0];
 
     private final AssertionLicense licenseManager;
@@ -263,6 +264,10 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
         long oid;
         try {
+            if (service.getRoutingUri() != null && (!service.isSoap() || service.isLaxResolution()) && !SyspropUtil.getBoolean(PROP_ALLOW_DUPLICATE_LAX_URI, false)) {
+                checkLaxSoapServiceUriCollision(service);
+            }
+
             if (!isDefaultOid(service)) {
                 // UPDATING EXISTING SERVICE
                 oid = service.getOid();
@@ -308,6 +313,26 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             throw new SaveException(e);
         }
         return oid;
+    }
+
+    private void checkLaxSoapServiceUriCollision(PublishedService subject) throws FindException, DuplicateObjectException {
+        final String routingUri = subject.getRoutingUri();
+        if (routingUri == null)
+            return;
+
+        Collection<PublishedService> servs = serviceManager.findByRoutingUri(routingUri);
+        for (PublishedService serv : servs) {
+            // Can't collide with yourself
+            if (serv.getOid() == subject.getOid())
+                continue;
+
+            // SOAP services in strict mode will be caught by the usual service resolution collision checking
+            if (serv.isSoap() && !serv.isLaxResolution())
+                continue;
+
+            if (routingUri.equals(serv.getRoutingUri()))
+                throw new DuplicateObjectException("The routing URI is the same as that used by another non-SOAP or lax SOAP service.");
+        }
     }
 
     @Override

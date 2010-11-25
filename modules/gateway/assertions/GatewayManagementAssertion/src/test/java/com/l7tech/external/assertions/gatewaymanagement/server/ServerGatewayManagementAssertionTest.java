@@ -1641,6 +1641,11 @@ public class ServerGatewayManagementAssertionTest {
         public Collection<ServiceHeader> findAllHeaders( final boolean includeAliases ) throws FindException {
             throw new FindException("Not implemented");
         }
+
+        @Override
+        public Collection<PublishedService> findByRoutingUri(String routingUri) throws FindException {
+            throw new FindException("Not implemented");
+        }
     }
 
 }

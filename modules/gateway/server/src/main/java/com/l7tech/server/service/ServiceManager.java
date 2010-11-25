@@ -37,7 +37,17 @@ public interface ServiceManager extends PropertySearchableEntityManager<ServiceH
      * @param includeAliases true if the returned Collection should contain aliases or not
      * @return Collection<PublishedService> if true was specified for includeAliases then the Collection
      * returned will contain aliases if any exist. To determine call isAlias on each ServiceHeader
+     * @throws FindException if there is a problem accessing the information.
      */
     public Collection<ServiceHeader> findAllHeaders(boolean includeAliases) throws FindException;
+
+    /**
+     * Finds all published services that use the specified routing URI.
+     *
+     * @param routingUri the routing URI to search for.  Required.
+     * @return all published services that use the specified routing URI.  May be empty, but never null.
+     * @throws FindException if there is a problem accessing the information.
+     */
+    public Collection<PublishedService> findByRoutingUri(String routingUri) throws FindException;
 
 }
