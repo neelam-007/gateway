@@ -4,6 +4,7 @@ import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.wizard.BaseConsoleStep;
 import com.l7tech.server.config.wizard.ConfigurationWizard;
 import com.l7tech.util.InetAddressUtil;
+import com.l7tech.util.IpProtocol;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;

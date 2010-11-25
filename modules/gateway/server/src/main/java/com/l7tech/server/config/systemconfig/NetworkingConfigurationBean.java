@@ -2,6 +2,7 @@ package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.beans.BaseConfigurationBean;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.util.IpProtocol;
 import org.apache.commons.lang.StringUtils;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;

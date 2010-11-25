@@ -1,6 +1,6 @@
 package com.l7tech.server.util;
 
-import com.l7tech.server.config.systemconfig.IpProtocol;
+import com.l7tech.util.IpProtocol;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SudoUtils;

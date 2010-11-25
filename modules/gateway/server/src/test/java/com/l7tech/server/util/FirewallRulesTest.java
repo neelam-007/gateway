@@ -1,6 +1,6 @@
 package com.l7tech.server.util;
 
-import com.l7tech.server.config.systemconfig.IpProtocol;
+import com.l7tech.util.IpProtocol;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import junit.framework.Test;

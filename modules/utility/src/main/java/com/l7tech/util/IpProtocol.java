@@ -1,9 +1,4 @@
-package com.l7tech.server.config.systemconfig;
-
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.server.config.beans.BaseConfigurationBean;
-import com.l7tech.util.ExceptionUtils;
-import org.apache.commons.lang.StringUtils;
+package com.l7tech.util;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -46,15 +41,15 @@ public enum IpProtocol {
      */
     public abstract boolean isEnabled();
 
-    String getConfigureDefaultGatewayPrompt() {
+    public String getConfigureDefaultGatewayPrompt() {
         return MessageFormat.format(CONFIGURE_GATEWAY_PROMPT, this);
     }
 
-    String getDefaultGatewayPrompt() {
+    public String getDefaultGatewayPrompt() {
         return MessageFormat.format(DEFAULT_GATEWAY_PROMPT, this);
     }
 
-    String getDefaultGatewayDevicePrompt() {
+    public String getDefaultGatewayDevicePrompt() {
         return MessageFormat.format(DEFAULT_GATEWAY_INTERFACE_PROMPT, this);
     }
 
@@ -65,17 +60,19 @@ public enum IpProtocol {
     private static final String DEFAULT_GATEWAY_INTERFACE_PROMPT = "Select the Interface you wish to use as the {0} gateway device: ";
     private static final String MISSING_IP_ADDRESS_MSG = "Missing IP Address";
 
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
     private static List<String> validateIpv4Address(String ipAddress) {
         List<String> errors = new ArrayList<String>();
 
         String message = null;
-        if (StringUtils.isEmpty(ipAddress))
+        if (ipAddress == null || ipAddress.trim().length() == 0)
             message = MISSING_IP_ADDRESS_MSG;
         else if (!InetAddressUtil.isValidIpv4Address(ipAddress))
             message = "Invalid IPv4 address: " + ipAddress;
 
         if (message != null)
-            errors.add("*** " + message + " ***" + BaseConfigurationBean.EOL);
+            errors.add("*** " + message + " ***" + LINE_SEPARATOR);
 
         return errors;
     }

@@ -1,7 +1,7 @@
 package com.l7tech.server.util;
 
 import com.l7tech.common.io.PortRange;
-import com.l7tech.server.config.systemconfig.IpProtocol;
+import com.l7tech.util.IpProtocol;
 import com.l7tech.util.*;
 import com.l7tech.gateway.common.transport.SsgConnector;
 
