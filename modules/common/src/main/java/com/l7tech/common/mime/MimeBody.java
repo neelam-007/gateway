@@ -4,22 +4,14 @@
 
 package com.l7tech.common.mime;
 
-import com.l7tech.common.io.*;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.CausedIllegalStateException;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.SyspropUtil;
+ import com.l7tech.common.io.*;
+ import com.l7tech.util.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.SequenceInputStream;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+ import java.io.*;
+ import java.util.*;
+ import java.util.concurrent.atomic.AtomicLong;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
 
 /**
  * Encapsulates the body of a message that might be multipart/related.
@@ -41,11 +33,11 @@ import java.util.logging.Logger;
  * MimeBody.</p>
  * @noinspection ForLoopReplaceableByForEach,unchecked
  */
-public class MimeBody implements Iterable<PartInfo> {
+public class MimeBody implements Iterable<PartInfo>, Closeable {
     private static final Logger logger = Logger.getLogger(MimeBody.class.getName());
     private static final int BLOCKSIZE = 4096;
 
-    private static final AtomicLong firstPartXmlMaxBytes = new AtomicLong(0);
+    private static final AtomicLong firstPartMaxBytes = new AtomicLong(0);
 
     private static final long PREAMBLE_MAX_SIZE = SyspropUtil.getLong( "com.l7tech.common.mime.preambleMaxSize", 1024 * 32 );
     private static final long HEADERS_MAX_SIZE = SyspropUtil.getLong( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
@@ -103,7 +95,7 @@ public class MimeBody implements Iterable<PartInfo> {
             this.stashManager = stashManager;
             String start = outerContentType.getParam("start");
             if (start != null && start.length() < 1) throw new IOException("Multipart content type has a \"start\" parameter but it is empty");
-            long firstPartXmlMaxBytes = MimeBody.firstPartXmlMaxBytes.get();
+            long firstPartMaxBytes = MimeBody.firstPartMaxBytes.get();
 
             if (outerContentType.isMultipart()) {
                 // Multipart message.  Prepare the first part for reading.
@@ -119,19 +111,16 @@ public class MimeBody implements Iterable<PartInfo> {
                 firstPart = (PartInfoImpl)partInfos.get(0);
                 if (start != null && !(start.equals(firstPart.getContentId(false))))
                     throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
-                if (firstPartXmlMaxBytes > 0) {
-                    ContentTypeHeader firstCt = firstPart.getContentType();
-                    if (firstCt != null && firstCt.isXml()) {
-                        this.mainInputStream.setSizeLimitNonFlagging(firstPartXmlMaxBytes);
-                    }
-                }
+                if (firstPartMaxBytes > 0)
+                    this.mainInputStream.setSizeLimitNonFlagging(firstPartMaxBytes);
             } else {
                 // Single-part message.  Configure first and only part accordingly.
                 boundaryStr = null;
                 boundary = null;
                 pushbackSize = BLOCKSIZE;
                 this.mainInputStream = new FlaggingByteLimitInputStream(mainInputStream, pushbackSize);
-                if (firstPartXmlMaxBytes > 0) this.mainInputStream.setSizeLimitNonFlagging(firstPartXmlMaxBytes);
+                if (firstPartMaxBytes > 0)
+                    this.mainInputStream.setSizeLimitNonFlagging(firstPartMaxBytes);
                 final MimeHeaders outerHeaders = new MimeHeaders();
                 outerHeaders.add(outerContentType);
                 final PartInfoImpl mainPartInfo = new PartInfoImpl(0, outerHeaders) {
@@ -190,10 +179,10 @@ public class MimeBody implements Iterable<PartInfo> {
     }
 
     /**
-    * @param firstPartXmlMaxBytes  size limit to enforce for the first part if its type is text/xml, or zero for no limit
+    * @param firstPartMaxBytes  size limit to enforce for the first part for new MimeBody instances created from now on, or zero for no limit
     */
-    public static void setFirstPartXmlMaxBytes(long firstPartXmlMaxBytes) {
-        MimeBody.firstPartXmlMaxBytes.set(firstPartXmlMaxBytes);
+    public static void setFirstPartMaxBytes(long firstPartMaxBytes) {
+        MimeBody.firstPartMaxBytes.set(firstPartMaxBytes);
     }
 
 

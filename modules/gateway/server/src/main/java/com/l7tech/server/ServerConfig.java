@@ -126,7 +126,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_IO_HOST_ALLOW_WILDCARD = "ioHttpsHostAllowWildcard";
     public static final String PARAM_IO_STALE_CHECK_PER_INTERVAL = "ioStaleCheckCount";
     public static final String PARAM_IO_STALE_MAX_HOSTS = "ioStaleCheckHosts";
-    public static final String PARAM_IO_XML_PART_MAX_BYTES = "ioXmlPartMaxBytes";
+    public static final String PARAM_IO_FIRST_PART_MAX_BYTES = "ioXmlPartMaxBytes";
     public static final String PARAM_SIGNED_PART_MAX_BYTES = "ioAttachmentSignedMaxBytes";
 
     public static final String PARAM_XSLT_CACHE_MAX_ENTRIES = "xsltMaxCacheEntries";

@@ -4,6 +4,7 @@
 
 package com.l7tech.common.mime;
 
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.NullOutputStream;
@@ -11,6 +12,7 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
@@ -26,6 +28,11 @@ import static org.junit.Assert.*;
  */
 public class MimeBodyTest {
     private static Logger log = Logger.getLogger(MimeBodyTest.class.getName());
+
+    @Before
+    public void beforeTest() {
+        MimeBody.setFirstPartMaxBytes(0);
+    }
 
     @Test
     public void testEmptySinglePartMessage() throws Exception {
@@ -169,8 +176,7 @@ public class MimeBodyTest {
         InputStream mess = new ByteArrayInputStream(message.getBytes());
         ContentTypeHeader mr = ContentTypeHeader.parseValue(contentTypeValue);
         StashManager sm = new ByteArrayStashManager();
-        MimeBody mm = new MimeBody(sm, mr, mess);
-        return mm;
+        return new MimeBody(sm, mr, mess);
     }
 
     @Test
@@ -522,6 +528,64 @@ public class MimeBodyTest {
         }
     }
 
+    @BugNumber(9505)
+    @Test
+    public void testSizeLimitSinglePartNonXml() throws Exception {
+        final String body = "non-xml blah blah blah blah blah";
+        final String ctype = "application/x-whatever";
+        doTestSizeLimit("Should enforce and fail limit", body, ctype, 12, true);
+        doTestSizeLimit("Should not fail limit; body too small", body, ctype, 64, false);
+        doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0, false);
+    }
+
+    @BugNumber(9505)
+    @Test
+    public void testSizeLimitSinglePartXml() throws Exception {
+        final String body = SOAP;
+        final String ctype = "text/xml";
+        doTestSizeLimit("Should enforce and fail limit", body, ctype, 256, true);
+        doTestSizeLimit("Should not fail limit; body too small", body, ctype, 4096, false);
+        doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0, false);
+    }
+
+    @BugNumber(9505)
+    @Test
+    public void testSizeLimitMultiPartNonXml() throws Exception {
+        final String body = MESS_NONXML;
+        final String ctype = MESS_NONXML_CONTENT_TYPE;
+        doTestSizeLimit("Should enforce and fail limit", body, ctype, 512, true);
+        doTestSizeLimit("Should not fail limit; body too small", body, ctype, 8192, false);
+        doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0, false);
+    }
+
+    @BugNumber(9505)
+    @Test
+    public void testSizeLimitMultiPartXml() throws Exception {
+        final String body = MESS;
+        final String ctype = MESS_CONTENT_TYPE;
+        doTestSizeLimit("Should enforce and fail limit", body, ctype, 512, true);
+        doTestSizeLimit("Should not fail limit; body too small", body, ctype, 8192, false);
+        doTestSizeLimit("Should not fail limit; no limit", body, ctype, 0, false);
+    }
+
+    private void doTestSizeLimit(String msg, String body, String ctype, int limit, boolean expectSizeFailure) throws IOException, NoSuchPartException {
+        MimeBody m = null;
+        InputStream s = null;
+        try {
+            MimeBody.setFirstPartMaxBytes(limit);
+            m = makeMessage(body, ctype);
+            IOUtils.copyStream(s = m.getPart(0).getInputStream(true), new NullOutputStream());
+            if (expectSizeFailure)
+                fail(msg);
+        } catch (ByteLimitInputStream.DataSizeLimitExceededException e) {
+            if (!expectSizeFailure)
+                fail(msg);
+        } finally {
+            ResourceUtils.closeQuietly(s);
+            ResourceUtils.closeQuietly(m);
+        }
+    }
+
     private static String encode( final String text, final String encoding ) {
         try {
             return new String( IOUtils.slurpStream( MimeUtil.getEncodingInputStream( text.getBytes(), encoding )));
@@ -574,6 +638,24 @@ public class MimeBodyTest {
             "Content-ID: -76394136.15558\r\n" +
             "\r\n" +
             SOAP +
+            "\r\n" +
+            "------=Part_-763936460.407197826076299\r\n" +
+            "Content-Transfer-Encoding: 8bit\r\n" +
+            "Content-Type: application/octet-stream\r\n" +
+            "Content-ID: <-76392836.15558>\r\n" +
+            "\r\n" +
+             RUBY +
+            "\r\n" +
+            "------=Part_-763936460.407197826076299--\r\n";
+
+    public static final String MESS_NONXML_CONTENT_TYPE = "multipart/related; type=\"application/x-rubything\"; boundary=\"" +
+            MESS_BOUNDARY+ "\"; start=\"-76394136.15558\"";
+    public static final String MESS_NONXML = "------=Part_-763936460.407197826076299\r\n" +
+            "Content-Transfer-Encoding: 8bit\r\n" +
+            "Content-Type: application/x-rubything; charset=utf-8\r\n" +
+            "Content-ID: -76394136.15558\r\n" +
+            "\r\n" +
+            RUBY +
             "\r\n" +
             "------=Part_-763936460.407197826076299\r\n" +
             "Content-Transfer-Encoding: 8bit\r\n" +
