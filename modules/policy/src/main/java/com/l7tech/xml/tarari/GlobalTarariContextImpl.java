@@ -219,10 +219,6 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         }
     }
 
-    public static void main( String[] args ) throws Exception {
-        System.out.println(new URI("file://host/asdf").resolve( "e#blah" ));        
-    }
-
     @Override
     public Map<TarariSchemaSource,Exception>  setHardwareSchemas( final HashMap<String,? extends TarariSchemaSource> hardwareSchemas )
     {
@@ -296,7 +292,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
 
                 triedLoading.clear();
                 byte[] bytes = schema.getNamespaceNormalizedSchemaDocument();
-                String systemId = schema.getSystemId();
+                String systemId = tarariNormalizeUri( schema.getSystemId() );
 
                 Exception failure = null;
                 try {
@@ -326,6 +322,25 @@ public class GlobalTarariContextImpl implements GlobalTarariContext, TarariSchem
         } finally {
             tarariLock.writeLock().unlock();
         }
+    }
+
+    /**
+     * Converts URLs (URIs) to Tarari format.
+     *
+     * <p>Current this translates "file:/path/..." to "file:///path/...", see bug 9375
+     * for an issue that occurs when not normalized.</p>
+     */
+    private String tarariNormalizeUri( final String uri ) {
+        String normalized = uri;
+
+        if ( uri != null ) {
+            final String lowerUri = uri.toLowerCase();
+            if ( lowerUri.startsWith( "file:/" ) && !lowerUri.startsWith( "file://" )) {
+                normalized = uri.substring( 0, 4 ) + ":///" + uri.substring( 6 );
+            }
+        }
+
+        return normalized;
     }
 
     /**
