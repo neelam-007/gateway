@@ -14,6 +14,8 @@ DBUSER="repluser"
 DBPWD="replpass"
 ROOT="root"
 ROOT_PWD=""
+MYSQL_SVCCTL="/etc/init.d/mysql"
+[ -x "/etc/init.d/mysqld" ] && MYSQL_SVCCTL="/etc/init.d/mysqld"
 
 ################################################# End configurable settings
 
@@ -109,7 +111,7 @@ configure_my_cnf() {
 	fi
 
 	echo "Restarting the database"
-	service mysqld restart
+	$MYSQL_SVCCTL restart
 }
 
 ######################################################
