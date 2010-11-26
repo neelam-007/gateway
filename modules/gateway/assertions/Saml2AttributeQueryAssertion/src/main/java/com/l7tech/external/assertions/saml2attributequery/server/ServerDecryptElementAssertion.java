@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.saml2attributequery.server;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.audit.Auditor;

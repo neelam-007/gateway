@@ -197,6 +197,15 @@ public class AssertionMessages extends Messages {
     public static final M WSS_X509_TOO_MANY_VALID_SIG_IDENTITY    = m(4811, Level.WARNING, true, false, "{0} presented more than one valid signature for {1}.");
     public static final M WSS_X509_NO_PROVEN_CERT                 = m(4812, Level.INFO, "No proven {0} X.509 certificate to use as credentials - returning {1}");
 
+    // Saml2AttributeQuery modular assertion messages
+    public static final M SAML2_AQ_REQUEST_DIGSIG_NO_SIG = m(4850, Level.WARNING, "No signature found for element.");
+    public static final M SAML2_AQ_REQUEST_DIGSIG_VAR_UNUSABLE = m(4851, Level.WARNING, "The input variable was not set properly.");
+    public static final M SAML2_AQ_REQUEST_SAML_ATTR_FORBIDDEN = m(4852, Level.WARNING, "Requester tried to access a forbidden attribute");
+    public static final M SAML2_AQ_REQUEST_SAML_ATTR_UNKNOWN = m(4853, Level.WARNING, "Requester tried to access an unknown attribute");
+    public static final M SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_VAR_UNUSABLE = m(4854, Level.WARNING, "The variable saml2.encrypt.cert.subjectDN was not set properly.");
+    public static final M SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_CERT_NOT_FOUND = m(4855, Level.WARNING, "The certificate \"{0}\" was not found.");
+    public static final M SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_PK_NOT_FOUND = m(4856, Level.WARNING, "The private key \"{0}\" was not found.");
+
     // ServerRequestWssReplayProtection messages
     public static final M REQUEST_WSS_REPLAY_NON_SOAP                       = m(4900, Level.INFO, "{0} not SOAP; cannot check for replayed signed WS-Security message");
     public static final M REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY          = m(4901, Level.INFO, "{0} did not contain any WSS level security");

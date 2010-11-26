@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.saml2attributequery.server;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.audit.Auditor;
@@ -55,7 +56,7 @@ public class ServerValidateSignatureAssertion extends AbstractServerAssertion<Va
         try {
             Object obj = context.getVariable(assertion.getVariableName());
             if(obj == null || !(obj instanceof Element[]) || ((Element[])obj).length < 1) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_DIGSIG_VAR_UNUSABLE);
+                auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_VAR_UNUSABLE );
                 return AssertionStatus.FALSIFIED;
             }
 
@@ -72,7 +73,7 @@ public class ServerValidateSignatureAssertion extends AbstractServerAssertion<Va
             }
 
             if(signatureElement == null) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_DIGSIG_NO_SIG);
+                auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_NO_SIG );
                 return AssertionStatus.FALSIFIED;
             }
 
@@ -86,13 +87,13 @@ public class ServerValidateSignatureAssertion extends AbstractServerAssertion<Va
                 }
             }
             if(!signatureFound) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_DIGSIG_NO_SIG);
+                auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_NO_SIG );
                 return AssertionStatus.FALSIFIED;
             }
 
             return AssertionStatus.NONE;
         } catch(NoSuchVariableException nsve) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_DIGSIG_VAR_UNUSABLE);
+            auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_VAR_UNUSABLE );
         } catch(SAXException se) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO);
         } catch(ProcessorException pe) {

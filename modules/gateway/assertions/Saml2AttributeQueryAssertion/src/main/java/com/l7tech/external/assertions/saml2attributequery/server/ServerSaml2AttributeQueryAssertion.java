@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.saml2attributequery.server;
 
 import com.l7tech.external.assertions.saml2attributequery.Saml2AttributeQueryAssertion;
 import com.l7tech.external.assertions.saml2attributequery.SamlToLdapMap;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.UserMappingConfig;
@@ -155,7 +156,7 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
             } catch(SamlAttributeNotMappedException sanme) {
                 context.getResponse().initialize(createErrorResponse(Saml2AttributeQuery.getQueryId(root), Saml2AttributeQuery.getQueriedAttributes(root)));
                 context.setRoutingStatus(RoutingStatus.ROUTED);
-                auditor.logAndAudit(AssertionMessages.REQUEST_SAML_ATTR_UNKNOWN);
+                auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_SAML_ATTR_UNKNOWN );
 
                 return status;
             }
@@ -163,7 +164,7 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
             if(!verifyAttributePermissions(attributeQuery)) {
                 context.getResponse().initialize(createErrorResponse(Saml2AttributeQuery.getQueryId(root), Saml2AttributeQuery.getQueriedAttributes(root)));
                 context.setRoutingStatus(RoutingStatus.ROUTED);
-                auditor.logAndAudit(AssertionMessages.REQUEST_SAML_ATTR_FORBIDDEN);
+                auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_SAML_ATTR_FORBIDDEN );
             } else {
                 HashMap<String, Object> values = retrieveAttributeValues(attributeQuery, idValue);
                 attributeQuery.filterValues(values);

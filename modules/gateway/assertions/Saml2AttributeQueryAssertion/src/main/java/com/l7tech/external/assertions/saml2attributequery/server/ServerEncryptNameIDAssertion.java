@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.saml2attributequery.server;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.external.assertions.saml2attributequery.EncryptSamlAssertionAssertion;
 import com.l7tech.external.assertions.saml2attributequery.EncryptNameIDAssertion;
@@ -47,7 +48,7 @@ public class ServerEncryptNameIDAssertion extends ServerEncryptElementAssertionB
         try {
             Object obj = context.getVariable(EncryptSamlAssertionAssertion.VARIABLE_NAME);
             if(!(obj instanceof String)) {
-                getAuditor().logAndAudit(AssertionMessages.RESPONSE_ENCRYPT_SAML_ASSERTION_VAR_UNUSABLE);
+                getAuditor().logAndAudit(AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_VAR_UNUSABLE );
                 return AssertionStatus.FAILED;
             }
 
@@ -55,15 +56,15 @@ public class ServerEncryptNameIDAssertion extends ServerEncryptElementAssertionB
             Collection<TrustedCert> certs = getTrustedCertManager().findAll();
             certs = getTrustedCertManager().findBySubjectDn(subjectDN);
             if(certs == null || certs.size() != 1) {
-                getAuditor().logAndAudit(AssertionMessages.RESPONSE_ENCRYPT_SAML_ASSERTION_CERT_NOT_FOUND, subjectDN);
+                getAuditor().logAndAudit(AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_CERT_NOT_FOUND, subjectDN);
                 return AssertionStatus.FAILED;
             }
             cert = certs.iterator().next().getCertificate();
         } catch(NoSuchVariableException nsve) {
-            getAuditor().logAndAudit(AssertionMessages.RESPONSE_ENCRYPT_SAML_ASSERTION_VAR_UNUSABLE);
+            getAuditor().logAndAudit(AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_VAR_UNUSABLE );
             return AssertionStatus.FAILED;
         } catch(FindException fe) {
-            getAuditor().logAndAudit(AssertionMessages.RESPONSE_ENCRYPT_SAML_ASSERTION_CERT_NOT_FOUND, subjectDN);
+            getAuditor().logAndAudit(AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_CERT_NOT_FOUND, subjectDN);
             return AssertionStatus.FAILED;
         }
 

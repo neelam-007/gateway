@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.saml2attributequery.server;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.audit.Auditor;
@@ -68,7 +69,7 @@ public class ServerSignResponseElementAssertion extends AbstractServerAssertion<
                     auditor.logAndAudit(AssertionMessages.MCM_VARIABLE_NOT_FOUND, assertion.getInputMessageVariableName());
                     return AssertionStatus.FAILED;
                 } else if(!(obj instanceof Message)) {
-                    auditor.logAndAudit(AssertionMessages.REQUEST_DIGSIG_VAR_UNUSABLE);
+                    auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_DIGSIG_VAR_UNUSABLE );
                     return AssertionStatus.FAILED;
                 }
                 doc = ((Message)obj).getXmlKnob().getDocumentWritable();
@@ -91,7 +92,7 @@ public class ServerSignResponseElementAssertion extends AbstractServerAssertion<
             SignerInfo si = securityTokenResolver.lookupPrivateKeyByKeyName(certificateDN);
 
             if(si == null) {
-                auditor.logAndAudit(AssertionMessages.RESPONSE_ENCRYPT_SAML_ASSERTION_PK_NOT_FOUND, certificateDN);
+                auditor.logAndAudit(AssertionMessages.SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_PK_NOT_FOUND, certificateDN);
                 return AssertionStatus.FAILED;
             }
 
