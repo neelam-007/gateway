@@ -621,9 +621,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/saveTemplate.gif"));
             exportMenuItem.setIcon(icon);
             exportMenuItem.setText("Export Policy");
-            int mnemonic = exportMenuItem.getText().toCharArray()[0];
-            exportMenuItem.setMnemonic(mnemonic);
-            exportMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+            exportMenuItem.setMnemonic(KeyEvent.VK_R);
+            exportMenuItem.setDisplayedMnemonicIndex(4);
+            exportMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.ALT_MASK));
         }
         return exportMenuItem;
     }

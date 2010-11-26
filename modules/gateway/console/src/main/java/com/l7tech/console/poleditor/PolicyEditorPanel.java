@@ -1916,6 +1916,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
         // Set the mnemonic
         exportPolicyAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_R);
+        exportPolicyAction.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.ALT_MASK));
         return exportPolicyAction;
     }
 
