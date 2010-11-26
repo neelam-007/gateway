@@ -485,7 +485,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         }
 
         // Cache miss.  We'll need to compile a new instance of this schema.
-        final SchemaSource schemaSource = getSchemaStringForUri(audit, uri, uri, true, true, false);
+        final SchemaSource schemaSource = getSchemaSourceForUri(audit, uri, uri, true, true, false, true);
         assert schemaSource.getContent() != null;
 
         // We'll prevent other threads from compiling new schemas concurrently, to avoid complications with other
@@ -528,6 +528,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
     /**
      * Get the schema text for the specified URI.  This may require a network fetch if the schema is remote.
      *
+     * @param audit         the audit to use
      * @param baseUri       the base URI, for resolving uri if it is relative.  Must not be null -- if there's no base URI,
      *                      pass uri as the base uri.
      * @param uri           the URI to resolve.  Must not be null.  May be relative to baseUri.  If it's not relative,
@@ -536,15 +537,18 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
      *                      only if this is a top-level fetch; otherwise, policies can import each others static schemas,
      *                      possibly in violation of access control partitions.
      * @param remoteOk      true to allow any remote URLs, false to verify remote URLs
+     * @param remoteForbidden true if remote access is forbidden for the source.
+     * @param requireSource true if a schema source is required, false to allow a null return.
      * @return as LSInput that contains both StringData and a SystemId.  Never null.
-     * @throws IOException  if schema text could not be fetched for the specified URI.
+     * @throws IOException  if schema source could not be found for the specified URI.
      */
-    private SchemaSource getSchemaStringForUri( final Audit audit,
+    private SchemaSource getSchemaSourceForUri( final Audit audit,
                                                 final String baseUri,
                                                 String uri,
                                                 final boolean policyOk,
                                                 final boolean remoteOk,
-                                                final boolean remoteForbidden ) throws IOException {
+                                                final boolean remoteForbidden,
+                                                final boolean requireSource ) throws IOException {
         if (!policyOk && isPolicySchemaUri( uri ) )
             throw new IOException("Schema URI not permitted in this context: " + uri );
 
@@ -578,7 +582,39 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
             }
         }
 
-        throw new IOException("Unable to resolve schema " + describeResource( baseUri, uri ));
+        if ( requireSource )
+            throw new IOException("Unable to resolve schema " + describeResource( baseUri, uri ));
+
+        return null;
+    }
+
+    /**
+      * Get the schema text for the specified namespace.
+      *
+      * @param audit         the audit to use
+      * @param baseUri       the base URI, for resolving uri if it is relative.  Must not be null -- if there's no base URI,
+      *                      pass uri as the base uri.
+      * @param namespaceUri  the namespace to resolve, which may be null.  
+      * @param policyOk      if true, uris of the form "policy:whatever" will be allowed.  This should be allowed
+      *                      only if this is a top-level fetch; otherwise, policies can import each others static schemas,
+      *                      possibly in violation of access control partitions.
+      * @param remoteOk      true to allow any remote URLs, false to verify remote URLs
+      * @param remoteForbidden true if remote access is forbidden for the source.
+      * @return as LSInput that contains both StringData and a SystemId.  Never null.
+      * @throws IOException  if schema source could not be found for the specified URI.
+      */
+    private SchemaSource getSchemaSourceForNamespace( final Audit audit,
+                                                      final String baseUri,
+                                                      final String namespaceUri,
+                                                      final boolean policyOk,
+                                                      final boolean remoteOk,
+                                                      final boolean remoteForbidden ) throws IOException {
+        final String resolvedSystemId = findUriForTargetNamespace( audit, namespaceUri );
+        if ( resolvedSystemId != null ) {
+            return getSchemaSourceForUri( audit, baseUri, resolvedSystemId, policyOk, remoteOk, remoteForbidden, true );
+        } else {
+            throw new CausedIOException("Unable to resolve schema for namespace: " + namespaceUri);
+        }
     }
 
     private boolean isPolicySchemaUri( final String uri ) {
@@ -1101,25 +1137,25 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
         final SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
         final LSResourceResolver resolver = new LSResourceResolver() {
             @Override
-            public LSInput resolveResource(String type,
-                                           String namespaceURI,
-                                           String publicId,
-                                           String systemId,
-                                           String baseURI)
+            public LSInput resolveResource(final String type,
+                                           final String namespaceURI,
+                                           final String publicId,
+                                           final String systemId,
+                                           final String baseURI)
             {
                 if ( XMLConstants.XML_DTD_NS_URI.equals( type )) {
                     return resolveEntity( publicId, systemId, baseURI );
                 } else {
                     try {
-                        if (systemId == null) {
-                            final String resolvedSystemId = findUriForTargetNamespace( audit, namespaceURI );
-                            if ( resolvedSystemId != null ) {
-                                systemId = resolvedSystemId;
-                            } else {
-                                throw new CausedIOException("No systemId, cannot resolve resource");
-                            }
+                        SchemaSource dependencySource = null;
+                        final boolean remoteForbidden = localDependencies.contains(baseURI);
+                        if ( systemId != null ) {
+                            dependencySource = getSchemaSourceForUri(audit, baseURI, systemId, false, false, remoteForbidden, false );
                         }
-                        final SchemaSource dependencySource = getSchemaStringForUri(audit, baseURI, systemId, false, false, localDependencies.contains(baseURI));
+                        if ( dependencySource == null ) {
+                            dependencySource = getSchemaSourceForNamespace( audit, baseURI, namespaceURI, false, false, remoteForbidden);
+                        }
+
                         assert dependencySource != null;
                         if ( !isRemoteSource( dependencySource.getResolverId() ) ) {
                             localDependencies.add( source.getUri() );
@@ -1348,19 +1384,17 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
 
     private SchemaSource resolveSchema( final Audit audit,
                                         final String namespaceURI,
-                                        String systemId,
+                                        final String systemId,
                                         final String baseURI,
                                         final Set<String> seenSystemIds,
                                         final Map<String, SchemaHandle> dependencyMap ) throws IOException, SAXException {
-        if (systemId == null) {
-            String resolvedSystemId = findUriForTargetNamespace(audit, namespaceURI);
-            if ( resolvedSystemId != null ) {
-                systemId = resolvedSystemId;
-            } else {
-                throw new CausedIOException("No systemId, cannot resolve resource");
-            }
+        SchemaSource source = null;
+        if ( systemId != null ) {
+            source = getSchemaSourceForUri(audit, baseURI, systemId, false, false, false, false);
         }
-        final SchemaSource source = getSchemaStringForUri(audit, baseURI, systemId, false, false, false);
+        if ( source == null ) {
+            source = getSchemaSourceForNamespace( audit, baseURI, namespaceURI, false, false, false);
+        }
         assert source != null;
 
         SchemaHandle handle = schemasBySystemId.get(source.getUri());
