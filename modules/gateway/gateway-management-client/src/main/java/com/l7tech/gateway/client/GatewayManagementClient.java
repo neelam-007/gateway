@@ -518,6 +518,10 @@ public class GatewayManagementClient {
             return arguments.force;
         }
 
+        protected final boolean isSafe() {
+            return arguments.safe;
+        }
+
         protected final List<String> getExtraArguments() {
             return extraArguments;
         }
@@ -582,6 +586,9 @@ public class GatewayManagementClient {
                 OutputStream out = null;
                 try {
                     if ( outFile != null ) {
+                        if ( isSafe() && outFile.exists() ) {
+                            throw new CommandException( "Output file already exists, not overwriting : " + outFile.getAbsolutePath() );
+                        }
                         out = new FileOutputStream( outFile );
                     } else {
                         out = new FilterOutputStream( defaultOut ){
@@ -996,6 +1003,9 @@ public class GatewayManagementClient {
 
         @Cli.Arg(name="-help", description="Show help for the command or global help if no\ncommand is specified", value="true")
         private boolean help = false;
+
+        @Cli.Arg(name="-safe", description="Do not overwrite files", value="true")
+        private boolean safe = false;
 
         @Cli.Arg(name="-password", description="The password to use", required=false)
         private String password;
