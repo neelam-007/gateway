@@ -867,7 +867,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
 
         if ( Syntax.getReferencedNames( url, false ).length==0 &&
              !ValidationUtils.isValidUrl(url.trim(), false, CollectionUtils.caseInsensitiveSet( "http", "https" )) ) {
-            displayError(resources.getString("error.badurl"), null);
+            displayError(resources.getString("error.badhttpurl"), null);
             return false;
         }
 

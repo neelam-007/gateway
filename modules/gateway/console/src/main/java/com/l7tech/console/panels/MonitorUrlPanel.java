@@ -28,7 +28,7 @@ public class MonitorUrlPanel extends JPanel {
      * The following keys are required in the resource bundle:
      * fetchUrlTextBox.description
      * fetchUrlTextBox.label
-     * error.badurl
+     * error.badhttpurl
      * error.nourl
      *
      * @param assertion UsesResourceInfo assertion bean
@@ -57,7 +57,7 @@ public class MonitorUrlPanel extends JPanel {
         if (url != null && !url.trim().isEmpty() ) {
             if ( Syntax.getReferencedNames( url, false ).length==0 &&
                  !ValidationUtils.isValidUrl(url.trim(), false, CollectionUtils.caseInsensitiveSet( "http", "https" )) ) {
-                return resourceBundle.getString("error.badurl");
+                return resourceBundle.getString("error.badhttpurl");
             }
             return null;
         }
