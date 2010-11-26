@@ -79,7 +79,7 @@ public class HttpSchemaSourceResolver implements ApplicationListener, SchemaSour
             }
         }
 
-        return new DefaultSchemaSource( uri, schemaDoc, this );
+        return schemaDoc == null ? null : new DefaultSchemaSource( uri, schemaDoc, this );
     }
 
     @Override
