@@ -35,7 +35,7 @@ public class ResourceEntrySchemaSourceResolver implements ApplicationListener, E
 
     //- PUBLIC
 
-    public static String RESOLVER_ID = "Global Resource Resolver";
+    public static final String RESOLVER_ID = "Global Resource Resolver";
 
     public ResourceEntrySchemaSourceResolver( final ResourceEntryManager resourceEntryManager ) {
         this.resourceEntryManager = resourceEntryManager;

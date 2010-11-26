@@ -758,7 +758,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
         if ( !handled ) {
             if ( resourceType == null ) {
-                resourceType = resourceUri!=null && resourceUri.toString().endsWith( ResourceType.DTD.getFilenameSuffix() ) ?
+                resourceType = resourceUri.toString().endsWith( ResourceType.DTD.getFilenameSuffix() ) ?
                         ResourceType.DTD :
                         ResourceType.XML_SCHEMA;
             }
@@ -832,7 +832,6 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                             new DefaultHandler2(){
                                 @Override
                                 public InputSource resolveEntity( final String name, final String publicId, final String baseURI, final String systemId ) throws SAXException, IOException {
-                                    //TODO [steve] this is not correct, it will miss some non-parsed external entities
                                     final Pair<String,String> resolved =
                                             GlobalResourceImportWizard.resolveEntity( context, baseURI, systemId, publicId, processedResources, dependencies );
                                     final InputSource entitySource = new InputSource( resolved.left );
@@ -1115,7 +1114,6 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                         @Override
                         public Object resolveEntity( final String publicID, final String systemID, final String baseURI, final String namespace ) throws XMLStreamException {
                             try {
-                                //TODO [steve] this is not correct, it will miss some non-parsed external entities
                                 final Pair<String,String> resolved = GlobalResourceImportWizard.resolveEntity( context, baseURI, systemID, publicID, processedResources, dependencies );
                                 return new ByteArrayInputStream( resolved.right.getBytes( Charsets.UTF8 ));
                             } catch ( SAXException e ) {
