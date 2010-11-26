@@ -16,6 +16,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 
 import java.io.*;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,18 +41,22 @@ final class RestoreImpl implements Restore{
     private final File ssgConfigDir;
     private final OSConfigManager osConfigManager;
     private final File ssgHome;
-    private static final String EXCLUDE_FILES_PATH = "config/backup/cfg/exclude_files";
+    private final boolean isMigrate;
 
     /**
      * @param verbose boolean, if true print messages to the supplied printStream
      * @param printStream PrintStream if not null and verbose is true, this is where messages will be written to
+     * @param isMigrate          if true, the file /config/backup/cfg/exclude_files will be consulted and any files
+     *                           listed will be ignored during the restore. If true, then node.properties and omp.dat
+     *                           will never be restored
      */
     RestoreImpl(final File secureSpanHome,
                 final BackupImage image,
                 final DatabaseConfig dbConfig,
                 final String clusterPassphrase,
                 final boolean verbose,
-                final PrintStream printStream) throws RestoreException {
+                final PrintStream printStream,
+                final boolean isMigrate)  {
         if (secureSpanHome == null) throw new NullPointerException("secureSpanHome cannot be null");
         if (!secureSpanHome.exists()) throw new IllegalArgumentException("secureSpanHome directory does not exist");
         if (!secureSpanHome.isDirectory()) throw new IllegalArgumentException("secureSpanHome must be a directory");
@@ -81,8 +86,8 @@ final class RestoreImpl implements Restore{
         this.image = image;
         isVerbose = verbose;
 
-        applianceHome = new File(secureSpanHome, ImportExportUtilities.APPLIANCE);//may not exist, thats ok
-        esmHome = new File(secureSpanHome, ImportExportUtilities.ENTERPRISE_SERVICE_MANAGER);//may not exist, thats ok
+        applianceHome = new File(secureSpanHome, ImportExportUtilities.APPLIANCE);//may not exist, that's ok
+        esmHome = new File(secureSpanHome, ImportExportUtilities.ENTERPRISE_SERVICE_MANAGER);//may not exist, that's ok
 
         this.printStream = printStream;
         if((new File(ssgHome, OSConfigManager.BACKUP_MANIFEST).exists())){
@@ -90,6 +95,8 @@ final class RestoreImpl implements Restore{
         }else{
             osConfigManager = null;
         }
+
+        this.isMigrate = isMigrate;
     }
 
     /**
@@ -173,10 +180,10 @@ final class RestoreImpl implements Restore{
 
         try {
             //We want to restore only modular assertions which do not exist on the target system.
-            //As back up backes up each assertion found, we need to check to see if a modular assertion
+            //As back up backs up each assertion found, we need to check to see if a modular assertion
             //exists on the target, and if so, don't copy it
 
-            //first build up the list of modular assertsions on the target system
+            //first build up the list of modular assertions on the target system
             final File ssgMaFolder = new File(ssgHome, ImportExportUtilities.MA_AAR_DIR);
             if(!ssgMaFolder.exists() || !ssgMaFolder.isDirectory())
                 throw new IllegalStateException("Modular assertion folder not found");
@@ -276,8 +283,7 @@ final class RestoreImpl implements Restore{
     }
 
     @Override
-    public ComponentResult restoreComponentConfig(final boolean isMigrate,
-                                                  final boolean ignoreNodeIdentity) throws RestoreException {
+    public ComponentResult restoreComponentConfig(final boolean ignoreNodeIdentity) throws RestoreException {
         final File imageConfigDir = image.getConfigFolder();
         if(imageConfigDir == null){
             final String msg = "No config folder found. No ssg configuration can be restored";
@@ -287,35 +293,18 @@ final class RestoreImpl implements Restore{
         try {
             final List<String> ssgConfigFilesToExclude;
             if(isMigrate){
-                final File excludeFile = new File(ssgHome, EXCLUDE_FILES_PATH);
-                if(!excludeFile.exists() || !excludeFile.isFile()){
-                    final String msg = "File '" + excludeFile.getAbsolutePath()
-                            +"' was not found. No ssg configuration files will be excluded";
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                    ssgConfigFilesToExclude = null;
-                }else{
-                    ssgConfigFilesToExclude = ImportExportUtilities.processFile(excludeFile);
-                    if(!ssgConfigFilesToExclude.isEmpty()){
-                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
-                                "\tThe following ssg configuration files will not be overwritten: ", isVerbose,
-                                printStream, false);
-
-                        for(String s: ssgConfigFilesToExclude){
-                            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, s+" ",
-                                    isVerbose, printStream, false);
-                        }
-                        //just for pretty formatting
-                        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, "", isVerbose, printStream);
-                    }else{
-                        //this is a warning, as with migrate, you would expect that some tables will be excluded
-                        ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING,
-                                "No ssg configuration files will be excluded", isVerbose, printStream);
+                ssgConfigFilesToExclude = ImportExportUtilities.getExcludedFiles(ssgHome, EXCLUDE_FILES_PATH);
+                if(ssgConfigFilesToExclude.isEmpty()){
+                    String msg = "";
+                    if(!new File(ssgHome, EXCLUDE_FILES_PATH).exists()){
+                        msg = "File '" + new File(ssgHome, EXCLUDE_FILES_PATH).getAbsolutePath()
+                                +"' was not found. ";
                     }
-
+                    msg = msg + "No ssg configuration files will be excluded.";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
                 }
-                
             }else{
-                ssgConfigFilesToExclude = null;
+                ssgConfigFilesToExclude = Collections.emptyList();
             }
 
             //copy all ssg config property files from the config folder to the ssg config folder
@@ -324,11 +313,16 @@ final class RestoreImpl implements Restore{
                 public boolean accept(File dir, String name) {
 
                     //has this file being excluded during a migrate?
-                    if(isMigrate && ssgConfigFilesToExclude != null){
-                        if(ssgConfigFilesToExclude.contains(name)) return false;                        
+                    if (isMigrate) {
+                        if (ssgConfigFilesToExclude.contains(name)) {
+                            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
+                                    "\tThe following ssg configuration files will not be overwritten: " + name, isVerbose,
+                                    printStream, false);
+                            return false;
+                        }
                     }
-                    
-                    //this is not necessary, however it a safeguard against copying config files accidently
+
+                    //this is not necessary, however it a safeguard against copying config files accidentally
                     //we are explicitly only copying files we know about
                     for (String ssgFile : ImportExportUtilities.CONFIG_FILES) {
                         if ((ignoreNodeIdentity || isMigrate) && ssgFile.equals(ImportExportUtilities.NODE_PROPERTIES))
@@ -362,7 +356,24 @@ final class RestoreImpl implements Restore{
                 final String msg = "No Operating System backup found in image";
                 return new ComponentResult(ComponentResult.Result.NOT_APPLICABLE, msg);
             }
-            final boolean restartIsRequired = osConfigManager.copyFilesToInternalFolderPriorToReboot(osFolder);
+
+            final List<String> excludedFiles;
+            if(isMigrate){
+                excludedFiles = ImportExportUtilities.getExcludedFiles(ssgHome, Restore.EXCLUDE_FILES_PATH);
+                if(excludedFiles.isEmpty()){
+                    String msg = "";
+                    if(!new File(ssgHome, EXCLUDE_FILES_PATH).exists()){
+                        msg = "File '" + new File(ssgHome, EXCLUDE_FILES_PATH).getAbsolutePath()
+                                +"' was not found. ";
+                    }
+                    msg = msg + "No OS files will be excluded.";
+                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                }
+            } else {
+                excludedFiles = Collections.emptyList();
+            }
+
+            final boolean restartIsRequired = osConfigManager.copyFilesToInternalFolderPriorToReboot(osFolder, excludedFiles);
             return new ComponentResult(ComponentResult.Result.SUCCESS, restartIsRequired);
         }else{
             final String msg = "Operating System restore is not applicable for this host";
@@ -433,7 +444,7 @@ final class RestoreImpl implements Restore{
     }
 
     @Override
-    public ComponentResult restoreComponentAudits(final boolean isMigrate)
+    public ComponentResult restoreComponentAudits()
             throws RestoreException {
         final File auditsFile = image.getAuditsBackupFile();
 
@@ -523,8 +534,7 @@ final class RestoreImpl implements Restore{
     }
 
     @Override
-    public ComponentResult restoreComponentMainDb(final boolean isMigrate,
-                                                  final boolean newDatabaseIsRequired,
+    public ComponentResult restoreComponentMainDb(final boolean newDatabaseIsRequired,
                                                   final String pathToMappingFile) throws RestoreException {
         //can restore my.cnf without the database contents restore
         boolean restartMaybeRequired = false;
@@ -539,21 +549,35 @@ final class RestoreImpl implements Restore{
                 //FileUtils.copyFile(file, new File(dir.getAbsolutePath() + File.separator + file.getName()));
                 final String etcFolder = SyspropUtil.getString("com.l7tech.config.backuprestore.mycnfdir", "/etc");
                 final File etcDir = new File(etcFolder);
-                if (!etcDir.exists() && !etcDir.isDirectory()) {
-                    final String msg = "Cannot copy my.cnf as '" + etcFolder + "' folder not found";
-                    ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                } else {
-                    try {
-                        if (osConfigManager == null) {
-                            final String msg = "my.cnf will not be restored as the Appliance is not installed";
-                            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
-                        } else {
-                            osConfigManager.copyFileToInternalFolder(myCnf, new File(etcDir, BackupImage.MY_CNF));
-                            restartMaybeRequired = true;
-                        }
-                    } catch (IOException e) {
-                        final String msg = "Cannot copy my.cnf: " + e.getMessage();
+                boolean dontCopy = false;
+                if(isMigrate){
+                    final List<String> excludedFiles =
+                            ImportExportUtilities.getExcludedFiles(ssgHome, Restore.EXCLUDE_FILES_PATH);
+                    final File testMyCnf = new File(etcDir, BackupImage.MY_CNF);
+                    if(excludedFiles.contains(testMyCnf.getAbsolutePath())){
+                        final String msg = "Not copying file '" + testMyCnf +"' as it has been excluded.";
                         ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                        dontCopy = true;
+                    }
+                }
+
+                if(!dontCopy){
+                    if (!etcDir.exists() && !etcDir.isDirectory()) {
+                        final String msg = "Cannot copy my.cnf as '" + etcFolder + "' folder not found";
+                        ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                    } else {
+                        try {
+                            if (osConfigManager == null) {
+                                final String msg = "my.cnf will not be restored as the Appliance is not installed";
+                                ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                            } else {
+                                osConfigManager.copyFileToInternalFolder(myCnf, new File(etcDir, BackupImage.MY_CNF));
+                                restartMaybeRequired = true;
+                            }
+                        } catch (IOException e) {
+                            final String msg = "Cannot copy my.cnf: " + e.getMessage();
+                            ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
+                        }
                     }
                 }
             }
@@ -631,7 +655,7 @@ final class RestoreImpl implements Restore{
             throw new RestoreException(msg);
         }
 
-        //if it's a migrate, we may need to udpate the oid of the license on the target system
+        //if it's a migrate, we may need to update the oid of the license on the target system
         //we may also need to load mappings
         if (isMigrate) {
             if (!wasNewDbCreated) {
@@ -675,8 +699,7 @@ final class RestoreImpl implements Restore{
     }
 
     @Override
-    public ComponentResult restoreNodeIdentity(final boolean isMigrate,
-                                               final PropertiesConfiguration propertiesConfiguration,
+    public ComponentResult restoreNodeIdentity(final PropertiesConfiguration propertiesConfiguration,
                                                final File ompDatFile) throws RestoreException {
 
         if (ompDatFile != null && propertiesConfiguration == null)

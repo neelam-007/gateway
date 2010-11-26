@@ -27,7 +27,7 @@ import java.util.logging.Level;
 final class OSConfigManager {
     private static final Logger logger = Logger.getLogger(OSConfigManager.class.getName());
     static final String BACKUP_MANIFEST = "config/backup/cfg/backup_manifest";
-    private static final String INTERNAL_CONFIG_FILES_FOLDER = "config/backup/cfg/configfiles";
+    static final String INTERNAL_CONFIG_FILES_FOLDER = "config/backup/cfg/configfiles";
 
     private final File backUpManifest;
     private final boolean isVerbose;
@@ -55,7 +55,7 @@ final class OSConfigManager {
         if(!ssgHome.exists()) throw new IllegalArgumentException("ssgHome does not exist");
         if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome is not a directory");
 
-        //OS files can only be restored on an appliance. Any appliance installation contians backup_manifest
+        //OS files can only be restored on an appliance. Any appliance installation contains backup_manifest
         //if this file does not exist it's a much stronger indicator that this is not an appliance
         //=> this file is a hard requirement, regardless of what ever the caller thinks
         backUpManifest = new File(ssgHome, BACKUP_MANIFEST);
@@ -65,7 +65,7 @@ final class OSConfigManager {
         if(!backUpManifest.isFile())
             throw new IllegalStateException("backup_manifest is not a regular file");
 
-        internalOsFolder = new File(ssgHome, INTERNAL_CONFIG_FILES_FOLDER);//this may not exist and thats ok
+        internalOsFolder = new File(ssgHome, INTERNAL_CONFIG_FILES_FOLDER);//this may not exist and that's ok
 
         this.isReboot = isReboot;
         this.isVerbose = isVerbose;
@@ -130,7 +130,7 @@ final class OSConfigManager {
     /**
      * Copy files from a source folder into our internal folder where they will be stored while the system
      * reboots. On reboot, if the host is so configured, this internal folder will be searched and files found
-     * will be copied to their ultimate destination with root priviledes. If this 'hook' is not configured, then
+     * will be copied to their ultimate destination with root privileges. If this 'hook' is not configured, then
      * the files will just sit in our internal folder. Calling this method will always delete all files found
      * in our internal folder
      *
@@ -139,7 +139,7 @@ final class OSConfigManager {
      * @param source the directory containing the files to copy. Must exist and be a directory
      * @return true if files were copied
      */
-    boolean copyFilesToInternalFolderPriorToReboot(final File source){
+    boolean copyFilesToInternalFolderPriorToReboot(final File source, final List<String> excludedFiles){
         if(isReboot)
             throw new IllegalStateException("Method cannot be called when OSConfigManager is in the reboot state");
 
@@ -150,7 +150,7 @@ final class OSConfigManager {
         if(!source.exists()) throw new IllegalArgumentException("source does not exist");
         if(!source.isDirectory()) throw new IllegalArgumentException("source is not a directory");
 
-        final boolean filesWereCopied = copyFilesFromSource(source);
+        final boolean filesWereCopied = copyFilesFromSource(source, excludedFiles);
         if(!filesWereCopied){
             final String msg = "No files were copied from source '" + source.getAbsolutePath()+"'";
             ImportExportUtilities.logAndPrintMessage(logger, Level.WARNING, msg, isVerbose, printStream);
@@ -258,6 +258,10 @@ final class OSConfigManager {
             }
         }
     }
+
+    private boolean copyFilesFromSource(final File source) {
+        return copyFilesFromSource(source, Collections.<String>emptyList());
+    }
     
     /**
      * This can also be used to copy files like my.cnf which are restored outside of the os backup component
@@ -266,7 +270,7 @@ final class OSConfigManager {
      * @param source is either our internal folder or a directory where a backup image was unzipped to
      * @return true if some files were copied from the source, false otherwise
      */
-    private boolean copyFilesFromSource(final File source){
+    private boolean copyFilesFromSource(final File source, final List<String> excludedFiles){
         final List<String> allFiles = getFlattenedDirectoryForFilesOnly(source);
         final String sourceRoot = source.getAbsolutePath();
 
@@ -284,9 +288,16 @@ final class OSConfigManager {
         for (String osFile : allFiles) {
             //the source folder contains files with each file having a full path structure
             //for each file, we need to copy it to the appropriate target, removing all of source's file
-            //structure  so that source/etc/a.txt ends up in target/etc/a.txt
+            //structure so that source/etc/a.txt ends up in target/etc/a.txt
 
             final String rawFilePath = osFile.substring(sourceRoot.length());
+
+            if(excludedFiles.contains(rawFilePath)) {
+                ImportExportUtilities.logAndPrintMessage(logger, Level.INFO,
+                        "Ignored file '" + rawFilePath + "' from backup image as it was excluded.", isVerbose,
+                        printStream);
+                continue;
+            }
 
             final File sourceFile = new File(osFile);
             final File targetFile = new File(targetRoot, rawFilePath);

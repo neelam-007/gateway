@@ -12,6 +12,7 @@ import java.io.File;
  * Public api for Restore functionality
  */
 public interface Restore {
+    String EXCLUDE_FILES_PATH = "config/backup/cfg/exclude_files";
 
     /**
      * <p>
@@ -26,19 +27,19 @@ public interface Restore {
      * The restore of /etc/my.cnf is a two step process and works just how the os files are restored. When this
      * method is called, if my.cnf is found in the backup, its copied into an internal folder to the SSG. When
      * the SSG's host restarts, if it's configured, my.cnf will be copied from this internal folder to its correct
-     * folder. This has to be done to ensure the procedure to copy my.cnf has the correct privileges
+     * folder. This has to be done to ensure the procedure to copy my.cnf has the correct privileges.
      * </p>
+     * If a migrate is being performed, then my.cnf may be excluded by listing it in exclude_files.
      *
      * @param pathToMappingFile     String path to any mapping file, if a migrate is happening. Can be null
-     * @param isMigrate             boolean whether this restore is a migrate
      * @param newDatabaseIsRequired when isMigrate true, if newDatabaseIsRequired is true, then a new database
      *                              must be created. This is an instruction to create a new database
      * @return ComponentResult who's getResult is either success or not applicable. Not applicable can happen if the
      *         DatabaseConfig represents a remote database or no database data is contained in the backup image
-     * @throws com.l7tech.gateway.config.backuprestore.Restore.RestoreException if main db cannot be restored
+     * @throws com.l7tech.gateway.config.backuprestore.Restore.RestoreException
+     *          if main db cannot be restored
      */
-    public ComponentResult restoreComponentMainDb(final boolean isMigrate,
-                                                  final boolean newDatabaseIsRequired,
+    public ComponentResult restoreComponentMainDb(final boolean newDatabaseIsRequired,
                                                   final String pathToMappingFile) throws RestoreException;
 
 
@@ -46,13 +47,13 @@ public interface Restore {
      * Restore database audits. The audit tables must exist in the database for this to be successful. Restoring of
      * audits will not create the audit tables, it will just populate them with data from the backup image.
      *
-     * @param isMigrate used to advise the Restore instance that a migrate is being done. If no audits are in the image
-     * then the ComponentResult will contain SUCCESS, which would normally be NOT_APPLICABLE.
+     * If a migrate is being performed, then if no audits are in the image then the ComponentResult will contain SUCCESS
+     * , which would normally be NOT_APPLICABLE.
      * @return ComponentResult whos getResult is either success or not applicable. Not applicable can happen if the
      *         DatabaseConfig represents a remote database or no audit data is contained in the backup image
      * @throws com.l7tech.gateway.config.backuprestore.Restore.RestoreException if audits cannot be restored
      */
-    public ComponentResult restoreComponentAudits(final boolean isMigrate) throws RestoreException;
+    public ComponentResult restoreComponentAudits() throws RestoreException;
 
     /**
      * Restore OS configuration files. These files will only ever be copied if the Appliance is installed on the restore
@@ -83,19 +84,16 @@ public interface Restore {
      * <p/>
      * 5.0 does not back up any files which represent the nodes identity (node.properties or omp.dat)
      *
-     * @param isMigrate          if true, the file /config/backup/cfg/exclude_files will be consulted and any files
-     *                           listed will be ignored during the restore. If true, then node.properties and omp.dat
-     *                           will never be restored, regardless of the value of ignoreNodeIdentity
      * @param ignoreNodeIdentity if true, then node.properties and omp.dat will not be restored. This happens when the
      *                           restore process creates node.properties due to all database information having been
-     *                           supplied during the restore
+     *                           supplied during the restore. If a migrate is being performed, then these files will
+     *                           never be restored, regardless of the value of ignoreNodeIdentity.
      *                           process, when false, node.properties will be restored, if it's found in the backup image
      * @return ComponentResult who's getResult is either success or not applicable, which happens when no configuration
      *         data is found in the backup image
      * @throws RestoreException if config cannot be restored.
      */
-    public ComponentResult restoreComponentConfig(final boolean isMigrate,
-                                                  final boolean ignoreNodeIdentity) throws RestoreException;
+    public ComponentResult restoreComponentConfig(final boolean ignoreNodeIdentity) throws RestoreException;
 
     /**
      * Restore any found modular assertions from the ma folder of the image. The modular assertion component
@@ -145,7 +143,6 @@ public interface Restore {
      * Note: Both parameters can be null however ompDatFile cannot be null, unless propertiesConfiguration is also
      * null
      *
-     * @param isMigrate               simply used for log messages
      * @param propertiesConfiguration the configuration to write to node.properties. If not null, this will overwrite
      *                                the hosts node.properties. Any elements in this configuration which should be
      *                                encrypted, should be encrypted
@@ -159,8 +156,7 @@ public interface Restore {
      * @return ComponentResult who's getResult will be Success or else an exception will be thrown
      * @throws RestoreException if node identity cannot be restored.
      */
-    public ComponentResult restoreNodeIdentity(final boolean isMigrate,
-                                               final PropertiesConfiguration propertiesConfiguration,
+    public ComponentResult restoreNodeIdentity(final PropertiesConfiguration propertiesConfiguration,
                                                final File ompDatFile)
             throws RestoreException;
 

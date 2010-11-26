@@ -236,8 +236,8 @@ public class ImporterTest {
                 "-v"
         };
 
-        //this test validtes of files too
-        //=> make the appliance direcotry
+        //this test validates of files too
+        //=> make the appliance directory
         final File applianceFolder = new File(tmpSecureSpanHome, ImportExportUtilities.APPLIANCE);
         applianceFolder.mkdir();
         
@@ -481,7 +481,7 @@ public class ImporterTest {
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
         final BackupImage image = new BackupImage(buzzcutImage.getPath(), System.out, true);
         final Restore restore =
-                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out);
+                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out, false);
 
         //delete all the config files that were created as part of this test set up
 
@@ -490,7 +490,7 @@ public class ImporterTest {
             configFile.delete();
         }
 
-        restore.restoreComponentConfig(false, false);
+        restore.restoreComponentConfig(false);
 
         for(String fileName: ImportExportUtilities.CONFIG_FILES){
             final File configFile = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR + File.separator + fileName);
@@ -508,7 +508,7 @@ public class ImporterTest {
      * <p/>
      * Ensures that node.identity files - node.properties and omp.dat are not copied when doing a migrate
      * <p/>
-     * The test resouce exclude_files lists ssglog.properties, as isMigrate is true in this test, this file is
+     * The test resource exclude_files lists ssglog.properties, as isMigrate is true in this test, this file is
      * not copied and is excluded
      *
      * @throws Exception
@@ -519,7 +519,7 @@ public class ImporterTest {
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
         final BackupImage image = new BackupImage(buzzcutImage.getPath(), System.out, true);
         final Restore restore =
-                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out);
+                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out, true);
 
         //delete all the config files that were created as part of this test set up
 
@@ -528,8 +528,7 @@ public class ImporterTest {
             configFile.delete();
         }
 
-        //true for migrate
-        restore.restoreComponentConfig(true, false);
+        restore.restoreComponentConfig(false);
 
         //node.properties should not exist
 
@@ -552,6 +551,42 @@ public class ImporterTest {
         }
     }
 
+    @Test
+    @BugNumber(9102)
+    public void testOsRestoreWithMigrateAndExcludeFile() throws Exception{
+        final URL resourceUrl = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
+        final Importer importer = new Importer(tmpSecureSpanHome, System.out);
+
+        final File applianceFolder = new File(tmpSecureSpanHome, ImportExportUtilities.APPLIANCE);
+        applianceFolder.mkdir();
+
+        final BackupImage image = new BackupImage(resourceUrl.getPath(), System.out, true);
+        //changing the final parameter from true to false will break this test, this is because the exclude_files file
+        //only applies to a migrate.
+        final Restore restore =
+                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out, true);
+
+        ComponentResult result = restore.restoreComponentOS();
+        Assert.assertNotNull("result should not be null", result);
+
+        Assert.assertEquals("result should be success", ComponentResult.Result.SUCCESS, result.getResult());
+
+        final File configFiles = new File(tmpSsgHome, OSConfigManager.INTERNAL_CONFIG_FILES_FOLDER);
+
+        //confirm the excluded files are not there - /etc/hosts
+        final File etcHosts = new File(configFiles + "/etc", "hosts");
+        Assert.assertFalse("File '"+etcHosts.getAbsolutePath()+"' should not have been copied.", etcHosts.exists());
+
+        result = restore.restoreComponentMainDb(false, null);
+        Assert.assertNotNull("result should not be null", result);
+
+        Assert.assertEquals("result should be not applicable", ComponentResult.Result.NOT_APPLICABLE, result.getResult());
+
+        //confirm the excluded files are not there - /etc/my.cnf
+        final File myCnf = new File(configFiles + "/etc", "my.cnf");
+        Assert.assertFalse("File '"+myCnf.getAbsolutePath()+"' should not have been copied.", myCnf.exists());
+    }
+    
     /**
      * Tests that when a migrate is done with -config, that the db command line params are always written to the
      * migrate hosts node.properties
@@ -604,7 +639,7 @@ public class ImporterTest {
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
         final BackupImage image = new BackupImage(buzzcutImage.getPath(), System.out, true);
         final Restore restore =
-                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out);
+                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out, false);
 
         final ComponentResult result = restore.restoreComponentESM();
         Assert.assertEquals("Incorrect result found", ComponentResult.Result.SUCCESS, result.getResult());
@@ -617,7 +652,7 @@ public class ImporterTest {
         final URL buzzcutImage = this.getClass().getClassLoader().getResource("image_buzzcut_with_audits.zip");
         final BackupImage image = new BackupImage(buzzcutImage.getPath(), System.out, true);
         final Restore restore =
-                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out);
+                BackupRestoreFactory.getRestoreInstance(tmpSecureSpanHome, image, null, "notused", true, System.out, false);
 
         final ComponentResult result = restore.restoreComponentEXT();
         Assert.assertEquals("Incorrect result found", ComponentResult.Result.SUCCESS, result.getResult());

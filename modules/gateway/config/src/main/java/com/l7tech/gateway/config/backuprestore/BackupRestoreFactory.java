@@ -19,35 +19,37 @@ public class BackupRestoreFactory {
 
     /**
      * Get an instance of a Restore
-     * @param secureSpanHome base instalation of Secure Span products e.g. /opt/SecureSpan
+     * @param secureSpanHome base installation of Secure Span products e.g. /opt/SecureSpan
      * @param backupImage the BackupImage to restore
      * @param dbConfig if not null, will be used to restore database components if requested
      * @param clusterPassphrase the cluster passphrase of the system being restored
      * @param verbose print progress information
      * @param printStream where to send verbose output to, can be null
+     * @param isMigrate true if a migrate is being done.
      * @return Restore an instance of Restore
-     * @throws Restore.RestoreException
      */
     public static Restore getRestoreInstance(final File secureSpanHome,
                                              final BackupImage backupImage,
                                              final DatabaseConfig dbConfig,
                                              final String clusterPassphrase,
                                              final boolean verbose,
-                                             final PrintStream printStream) throws Restore.RestoreException {
+                                             final PrintStream printStream,
+                                             final boolean isMigrate) {
 
         return new RestoreImpl(secureSpanHome,
                 backupImage,
                 dbConfig,
                 clusterPassphrase,
                 verbose,
-                printStream);
+                printStream,
+                isMigrate);
     }
 
     /**
      * Get an instance of a Backup
      * @param secureSpanHome c
      * @param ftpConfig can be null, where and how to download the image, if required
-     * @param pathToImageZipFile can be to a local file, or relative to a log on directory on a ftp server. Cannnot
+     * @param pathToImageZipFile can be to a local file, or relative to a log on directory on a ftp server. Cannot
      * be null
      * @param isPostFiveO if true and pathToImageZipFile contains no path info, then the image will be placed into the
      * images folder in /opt/SecureSpan/Gateway/config/backup

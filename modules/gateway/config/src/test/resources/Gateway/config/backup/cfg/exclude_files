@@ -1,1 +1,4 @@
 ssglog.properties
+#bug 9102
+/etc/hosts
+/etc/my.cnf

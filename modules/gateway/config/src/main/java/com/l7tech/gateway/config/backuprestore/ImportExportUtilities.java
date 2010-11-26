@@ -181,6 +181,29 @@ public class ImportExportUtilities {
     }
 
     /**
+     * Get the list of excluded files. The file names returned are the absolute path file names extracted from the
+     * file excludeFilePath.
+     * @param ssgHome SSG installation directory
+     * @param excludeFilePath String path to file name which contains the list of files to exclude
+     * @return List of Strings, each is a file which should not be restored.
+     * @throws IOException if any file read errors.
+     */
+    static List<String> getExcludedFiles(final File ssgHome, final String excludeFilePath) {
+        final List<String> excludedFiles = new ArrayList<String>();
+        final File excludeFile = new File(ssgHome, excludeFilePath);
+        if(excludeFile.exists() && excludeFile.isFile()) {
+            try {
+                excludedFiles.addAll(ImportExportUtilities.processFile(excludeFile));
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Problem reading excluded file '" + excludeFile.getAbsolutePath()+"'. " +
+                        ExceptionUtils.getMessage(e));
+            }
+        }
+
+        return excludedFiles;
+    }
+
+    /**
      * Classloader designed to ONLY load BuildInfo from Gateway jar from the standard install directory of
      * /opt/SecureSpan/Gateway/runtime/Gateway.jar
      */
@@ -562,7 +585,7 @@ public class ImportExportUtilities {
     }
 
     /**
-     * This is indended pre any call to getAndValidateCommandLineOptions, where we need just one argument.
+     * This is intended pre any call to getAndValidateCommandLineOptions, where we need just one argument.
      * This is used to get the -image parameter during restore, as it's required
      * @param args
      * @param requiredOption
@@ -615,18 +638,18 @@ public class ImportExportUtilities {
      * it's value in the returned map.
      * validOptions lists which arguments to expect, each CommandLineOption within it, specifies whether or not it
      * must be followed by a parameter on the command line.
-     * ignoredOptions is provided for backwards comapability where an old script may supply a parameter which has been
+     * ignoredOptions is provided for backwards compatibility where an old script may supply a parameter which has been
      * removed, but for which we will not error out because of
      *
-     * If the value of a parameter represnts a file, this method does not validate that the file exists
+     * If the value of a parameter represents a file, this method does not validate that the file exists
      * 
      * @param args  The command line arguments. Cannot be null
-     * @param validOptions list of valid command line argument. Canot be null
+     * @param validOptions list of valid command line argument. Cannot be null
      * @param ignoredOptions list of arguments which are allowed, but will be ignored. Cannot be null
      * @param isVerbose if true and printStream is not null, any ignore options will be written to the printStream
      * @param printStream, if not null, any info messages will be written to this stream, only required to advise
      * of ignored options
-     * @return  A map of the command line argumetents to their values, if any
+     * @return  A map of the command line arguments to their values, if any
      * @throws InvalidProgramArgumentException if an unexpected arguments is found, or an argument is missing it's value
      */
     public static Map<String, String> getAndValidateCommandLineOptions(final String[] args,
@@ -683,7 +706,7 @@ public class ImportExportUtilities {
     /**
      * Verify that the given database configuration can be used to connect to a database
      *
-     * @param config    Database configuration informaiton. Cannot be null
+     * @param config    Database configuration information. Cannot be null
      * @param isRootAccount Flag to use as root account or gateway account
      * @throws NullPointerException if config is null
      * @throws java.sql.SQLException if any database access error occurs when trying to obtain a connection. This will
@@ -722,7 +745,7 @@ public class ImportExportUtilities {
      * @param fileName  The file to be created
      * @throws IOException
      * @throws NullPointerException if fileName is null
-     * @throws IllegalArgumentException if fileName alredy exists
+     * @throws IllegalArgumentException if fileName already exists
      */
     public static void verifyCanWriteFile(final String fileName) throws IOException {
         if(fileName == null) throw new NullPointerException("fileName cannot be null");
@@ -868,7 +891,7 @@ public class ImportExportUtilities {
         final File [] allFiles = sourceDir.listFiles(sourceFilter);
         for(final  File f: allFiles){
             if(f.isDirectory()) {
-                //not passing the source filter down, it's only for the intital directory, for now anyway
+                //not passing the source filter down, it's only for the initial directory, for now anyway
                 copyDir(f, new File(destDir, f.getName()), null, isVerbose, printStream);
             } else {
                 final File destFile = new File(destDir.getAbsolutePath() + File.separator + f.getName());
@@ -884,7 +907,7 @@ public class ImportExportUtilities {
      * The path information is optional
      *
      * This method supports both the unix / and the windows \ as the user may supply a unix or windows path name
-     * when the export / import is used in conjection with ftp
+     * when the export / import is used in conjunction with ftp
      * @param imageName The String name to extract the path information from
      * @return The path information not including the final / or \, null if no path information in the imageName.
      * @throws NullPointerException if imageName is null
@@ -911,7 +934,7 @@ public class ImportExportUtilities {
      * If the file name only contains a path ending in either / or \, then an empty string will be returned
      *
      * This method supports both the unix / and the windows \ as the user may supply a unix or windows path name
-     * when the export / import is used in conjection with ftp
+     * when the export / import is used in conjunction with ftp
      * @param imageName The String name to extract the file name information from
      * @return The file name, never null
      * @throws NullPointerException if imageName is null
@@ -935,13 +958,14 @@ public class ImportExportUtilities {
     /**
      * Determines if the provided CommandLineOption expects a value
      *
-     * @param optionName    The name of the CommandLineOPtions
-     * @param options       The list of options used to find the option if in the list
+     * @param optionName The name of the CommandLineOptions
+     * @param options    The list of options used to find the option if in the list
      * @return true, if the option name expects a value, false otherwise
-     * @throws InvalidProgramArgumentException if the option name is not found in options
+     * @throws InvalidProgramArgumentException
+     *          if the option name is not found in options
      */
     private static boolean optionHasValue(final String optionName,
-                                            final List<CommandLineOption> options)
+                                          final List<CommandLineOption> options)
             throws InvalidProgramArgumentException {
         for (CommandLineOption commandLineOption : options) {
             if (commandLineOption.getName().equals(optionName)) {
@@ -972,7 +996,7 @@ public class ImportExportUtilities {
      * Determine the argument type as either an option or a value to a particular option
      *
      * @param validOptions the list of allowed values
-     * @param ignoredOptions options which are not valid, but will be ignored, and their values if aplicable, if
+     * @param ignoredOptions options which are not valid, but will be ignored, and their values if applicable, if
      * supplied
      * @param argument  argument for comparison
      * @return  The ARGUMENT_TYPE of the parse argument.
@@ -996,7 +1020,7 @@ public class ImportExportUtilities {
      * Filter a list of components based on the presence of component names as keys in programFlagsAndValues
      *
      * This should only be called if you know a selective backup / restore is required as the return list will
-     * only contain components from allComponents which are explicitly supplied on the copmmand line
+     * only contain components from allComponents which are explicitly supplied on the command line
      * @param allComponents the list of components to filter
      * @param programFlagsAndValues the map of command line arguments, which may contain selective component flags
      * e.g. -maindb or -audits etc.

@@ -338,7 +338,8 @@ public final class Importer{
     /**
      * Carry out all restore / migrate steps. Manages the -halt option
      * @throws Restore.RestoreException if either a selective restore is being carried out and a selected component
-     * is not applicable, or if a compoment fails to restore and the restore is configured to halt on first failure.
+     * is not applicable, or if a component fails to restore and the restore is configured to halt on first failure.
+     * @return true if a restart may be required to complete the restore process.
      */
     private boolean performRestoreSteps() throws Restore.RestoreException {
         final String msg = "Performing " + ((isMigrate) ? "migrate" : "restore") + " ...";
@@ -960,15 +961,15 @@ public final class Importer{
      * @return list of applicable RestoreComponent's. Filtered for selective restore if applicable
      * @throws RestoreImpl.RestoreException
      */
-    private List<RestoreComponent> getComponentsForRestore(final String mappingFile)
-            throws Restore.RestoreException {
+    private List<RestoreComponent> getComponentsForRestore(final String mappingFile) {
 
         final Restore restore = BackupRestoreFactory.getRestoreInstance(this.secureSpanHome,
                 this.backupImage,
                 databaseConfig,
                 suppliedClusterPassphrase,
                 this.isVerbose,
-                this.printStream);
+                this.printStream,
+                isMigrate);
 
 
         final List<RestoreComponent> componentList = new ArrayList<RestoreComponent>();
@@ -984,7 +985,7 @@ public final class Importer{
                 //the node identity if found - node.properties and omp.dat
                 //if the db is part of the restore, then the restoreNodeIdentity task will ensure that node.properties
                 //and omp.dat are correctly written / updated on the restore host
-                return restore.restoreComponentConfig(isMigrate, isDbComponent);
+                return restore.restoreComponentConfig(isDbComponent);
             }
 
             @Override
@@ -998,7 +999,7 @@ public final class Importer{
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                return restore.restoreComponentMainDb(isMigrate, canCreateNewDb, mappingFile);
+                return restore.restoreComponentMainDb(canCreateNewDb, mappingFile);
             }
 
             @Override
@@ -1012,7 +1013,7 @@ public final class Importer{
             public ComponentResult doRestore() throws Restore.RestoreException {
                 final String msg = taskVerb + " component " + getComponentType().getComponentName();
                 ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
-                return restore.restoreComponentAudits(isMigrate);
+                return restore.restoreComponentAudits();
             }
 
             @Override
@@ -1119,7 +1120,7 @@ public final class Importer{
                     ImportExportUtilities.logAndPrintMajorMessage(logger, Level.INFO, msg, isVerbose, printStream);
 
                     //both of these can be null or ompDatToMatchNodePropertyConfig can be null
-                    return restore.restoreNodeIdentity(isMigrate, nodePropertyConfig, ompDatToMatchNodePropertyConfig);
+                    return restore.restoreNodeIdentity(nodePropertyConfig, ompDatToMatchNodePropertyConfig);
                 }
 
                 @Override
