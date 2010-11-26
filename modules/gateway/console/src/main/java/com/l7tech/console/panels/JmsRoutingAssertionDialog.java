@@ -28,7 +28,6 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.*;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -618,6 +617,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         requestMsgPropsPanel.setData(assertion.getRequestJmsMessagePropertyRuleSet());
         responseMsgPropsPanel.setData(assertion.getResponseJmsMessagePropertyRuleSet());
         jmsResponseTimeout.setText(assertion.getResponseTimeout()==null ? "":assertion.getResponseTimeout());
+        jmsResponseTimeout.setCaretPosition( 0 );
     }
 
     /**
