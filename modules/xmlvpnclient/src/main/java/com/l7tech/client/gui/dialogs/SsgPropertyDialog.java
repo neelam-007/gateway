@@ -412,20 +412,20 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         };
         fc.setFileFilter(fileFilter);
         fc.setMultiSelectionEnabled(false);
-        int r = fc.showDialog(Gui.getInstance().getFrame(), "Import certificate");
+        int r = fc.showDialog(this, "Import certificate");
         if (r != JFileChooser.APPROVE_OPTION)
             return;
         File certFile = fc.getSelectedFile();
         if (certFile == null)
             return;
-        char[] pass = PasswordDoubleEntryDialog.getPassword(Gui.getInstance().getFrame(),
+        char[] pass = PasswordDoubleEntryDialog.getPassword(this,
                                                  "Enter pass phrase for this PKCS#12 file",
                                                  256,
                                                  true);
 
         char[] ssgPass = trustPane.getUserPasswordField().getPassword();
         if (ssgPass == null || ssgPass.length < 1) {
-            ssgPass = PasswordDoubleEntryDialog.getPassword(Gui.getInstance().getFrame(),
+            ssgPass = PasswordDoubleEntryDialog.getPassword(this,
                                                  "Enter new password for " + serverName(), 256);
             if (ssgPass == null)
                 return;
