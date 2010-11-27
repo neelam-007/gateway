@@ -234,11 +234,27 @@ public class PrivateKeyManagerWindow extends JDialog {
         loadPrivateKeys();
     }
 
-    private void showImportErrorMessage(Throwable e) {
+    private boolean showImportErrorMessage( final Throwable e,
+                                            final boolean allowRetry ) {
+        boolean retry = false;
         String msg = ExceptionUtils.getMessage(e);
         int dupePos = msg.indexOf("Keystore already contains an entry with the alias");
         if (dupePos > 0) msg = msg.substring(dupePos);
-        showErrorMessage("Import Failed", "Import failed: " + msg, e);
+        if ( !allowRetry ) {
+            showErrorMessage("Import Failed", "Import failed: " + msg, e);
+        } else {
+            final int choice = JOptionPane.showOptionDialog(
+                    this,
+                    "Import failed: " + msg + "\n\nDo you want to try again?",
+                    "Import Failed",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    null,
+                    new Object[]{ "Import", "Cancel" },
+                    "Import" );
+            retry = choice == JOptionPane.YES_OPTION;
+        }
+        return retry;
     }
 
     private void showErrorMessage(String title, String msg, Throwable e) {
@@ -408,54 +424,65 @@ public class PrivateKeyManagerWindow extends JDialog {
 
 
     private SsgKeyEntry performImport(long keystoreId, String alias) {
-        Throwable err;
-        try {
-            JFileChooser fc = GuiCertUtil.createFileChooser(true);
-            int r = fc.showDialog(this, "Load");
-            if (r != JFileChooser.APPROVE_OPTION)
-                return null;
-            File file = fc.getSelectedFile();
-            if (file == null)
-                return null;
+        byte[] pkcs12bytes = null;
+        String pkcs12alias = null;
 
-            byte[] pkcs12bytes = IOUtils.slurpFile(file);
-
-            char[] pkcs12pass = PasswordEntryDialog.promptForPassword(this, "Enter pass phrase for PKCS#12 file");
-            if (pkcs12pass == null)
-                return null;
-            
+        while ( true ) {
+            boolean passwordError = false;
+            Throwable err;
             try {
-                return Registry.getDefault().getTrustedCertManager().importKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, null);
-            } catch (MultipleAliasesException e) {
-                Object defaultOptionPaneUI = UIManager.get("OptionPaneUI");
-                UIManager.put("OptionPaneUI", ComboBoxOptionPaneUI.class.getName());  // Let JOptionPane use JCombobox rather than JList to display aliases
-                String pkcs12alias = (String) JOptionPane.showInputDialog(this, "Select alias to import", "Select Alias", JOptionPane.QUESTION_MESSAGE, null, e.getAliases(), null);
-                UIManager.put("OptionPaneUI", defaultOptionPaneUI);
+                if ( pkcs12bytes == null ) {
+                    JFileChooser fc = GuiCertUtil.createFileChooser(true);
+                    int r = fc.showDialog(this, "Load");
+                    if (r != JFileChooser.APPROVE_OPTION)
+                        return null;
+                    File file = fc.getSelectedFile();
+                    if (file == null)
+                        return null;
 
-                if (pkcs12alias == null)
+                    pkcs12bytes = IOUtils.slurpFile(file);
+                }
+
+                final char[] pkcs12pass = PasswordEntryDialog.promptForPassword(this, "Enter pass phrase for PKCS#12 file");
+                if (pkcs12pass == null)
                     return null;
-                return Registry.getDefault().getTrustedCertManager().importKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias);
+
+                try {
+                    return Registry.getDefault().getTrustedCertManager().importKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias);
+                } catch (MultipleAliasesException e) {
+                    Object defaultOptionPaneUI = UIManager.get("OptionPaneUI");
+                    UIManager.put("OptionPaneUI", ComboBoxOptionPaneUI.class.getName());  // Let JOptionPane use JCombobox rather than JList to display aliases
+                    pkcs12alias = (String) JOptionPane.showInputDialog(this, "Select alias to import", "Select Alias", JOptionPane.QUESTION_MESSAGE, null, e.getAliases(), null);
+                    UIManager.put("OptionPaneUI", defaultOptionPaneUI);
+
+                    if (pkcs12alias == null)
+                        return null;
+                    return Registry.getDefault().getTrustedCertManager().importKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias);
+                }
+
+            } catch (AccessControlException ace) {
+                TopComponents.getInstance().showNoPrivilegesErrorMessage();
+                return null;
+            } catch (AliasNotFoundException e) {
+                err = ExceptionUtils.getDebugException(e);
+            } catch (FindException e) {
+                err = e;
+            } catch (IOException e) {
+                err = e;
+            } catch (KeyStoreException e) {
+                err = e;
+                if ( ExceptionUtils.getMessage( e ).toLowerCase().contains( "password" )) {
+                    passwordError = true;
+                }
+            } catch (MultipleAliasesException e) {
+                // Can't happen; we pass an alias the second time
+                err = e;
+            } catch (SaveException e) {
+                err = e;
             }
 
-        } catch (AccessControlException ace) {
-            TopComponents.getInstance().showNoPrivilegesErrorMessage();
-            return null;
-        } catch (AliasNotFoundException e) {
-            err = ExceptionUtils.getDebugException(e);
-        } catch (FindException e) {
-            err = e;
-        } catch (IOException e) {
-            err = e;
-        } catch (KeyStoreException e) {
-            err = e;
-        } catch (MultipleAliasesException e) {
-            // Can't happen; we pass an alias the second time
-            err = e;
-        } catch (SaveException e) {
-            err = e;
+            if ( !showImportErrorMessage(err,passwordError) ) break;
         }
-
-        showImportErrorMessage(err);
 
         return null;
     }

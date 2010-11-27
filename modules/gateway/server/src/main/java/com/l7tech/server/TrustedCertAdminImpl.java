@@ -539,7 +539,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             return doImportKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias);
 
         } catch (IOException e) {
-            throw new KeyStoreException(e);
+            throw new KeyStoreException(ExceptionUtils.getMessage( e ), e);
         } catch (NoSuchAlgorithmException e) {
             throw new KeyStoreException(e);
         } catch (CertificateException e) {
