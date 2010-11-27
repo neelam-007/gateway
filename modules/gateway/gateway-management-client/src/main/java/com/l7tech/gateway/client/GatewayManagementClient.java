@@ -541,6 +541,8 @@ public class GatewayManagementClient {
             try {
                 if ( inText != null ) {
                     return ManagedObjectFactory.read( inText, ManagedObject.class );
+                } else if ( inFile.getName().equals( "-" ) ) {
+                    return ManagedObjectFactory.read( System.in, ManagedObject.class );
                 } else {
                     InputStream in = null;
                     try {
