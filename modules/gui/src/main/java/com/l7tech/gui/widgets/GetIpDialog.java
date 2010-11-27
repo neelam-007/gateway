@@ -29,24 +29,30 @@ public class GetIpDialog extends JDialog {
     private JLabel mainLabel;
     private Functions.Unary<Boolean, String> contextVariableValidator; // to check if a URL contains context variable
 
-    /** Create modal dialog using the specified title. */
     public GetIpDialog(Frame owner, String title) {
         super(owner, title, true);
         init();
     }
 
-    /** Create modal dialog using the specified title. */
     public GetIpDialog(Dialog owner, String title) {
         super(owner, title, true);
         init();
     }
 
-    /** Create modal dialog using the title "Add IP Address". */
+    /**
+     * Create modal dialog using the title "Add IP Address".
+     *
+     * @param owner the <code>Frame</code> from which the dialog is displayed
+     */
     public GetIpDialog(Frame owner) {
         this(owner, ADD_IP);
     }
 
-    /** Create modal dialog using the title "Add IP Address". */
+    /**
+     * Create modal dialog using the title "Add IP Address".
+     *
+     * @param owner the <code>Frame</code> from which the dialog is displayed
+     */
     public GetIpDialog(Dialog owner) {
         this(owner, ADD_IP);
     }
@@ -124,6 +130,7 @@ public class GetIpDialog extends JDialog {
      * Check if the provided string is a valid IP address or URL based on the validateIPFormat member flag.
      * If invalid IP, attempts to determine the bad character range and accordingly squiggly-set the text field.
      *
+     * @param s the string to examine.  Required.
      * @return true if the the provided string is a valid IP or URL, false otherwise
      */
     private boolean isValidIp(String s) {
@@ -139,6 +146,7 @@ public class GetIpDialog extends JDialog {
     /**
      * Attempt to determine the bad character range that makes the provided string an invalid IP address.
      *
+     * @param s the string to examine.  Required.
      * @return null if the provided string is a valid IP address,
      *         the start and end positions of the detected invalid range, or
      *         Pair<-1,-1> if the invalid range could not be determined.
@@ -195,10 +203,6 @@ public class GetIpDialog extends JDialog {
         return true;
     }
 
-    public Functions.Unary<Boolean, String> getContextVariableValidator() {
-        return contextVariableValidator;
-    }
-
     public void setContextVariableValidator(Functions.Unary<Boolean, String> contextVariableValidator) {
         this.contextVariableValidator = contextVariableValidator;
     }
@@ -219,10 +223,6 @@ public class GetIpDialog extends JDialog {
 
         // The URL doesn't contain any context variables and check if the url is valid or not.
         return ValidationUtils.isValidUrl(s, false, CollectionUtils.caseInsensitiveSet( "http", "https" ));
-    }
-
-    private boolean isValidEntry() {
-        return isValidIp(getIpRangeTextField().getText());
     }
 
     private JTextField getIpRangeTextField() {
