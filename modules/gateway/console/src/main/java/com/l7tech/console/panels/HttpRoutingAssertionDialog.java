@@ -180,7 +180,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             }
         };
 
-        ipListPanel.alsoEnableDiffURLS();
+        if (!bra)
+            ipListPanel.alsoEnableDiffURLS();
 
         urlPanel.setShowManageHttpOptions( false );
         ipListPanel.registerStateCallback(new IpListPanel.StateCallback() {
