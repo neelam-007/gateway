@@ -5,12 +5,9 @@
 
 package com.l7tech.gui.widgets;
 
-import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.InetAddressUtil;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.util.*;
 
 import javax.swing.*;
 import javax.swing.event.UndoableEditEvent;
@@ -26,7 +23,7 @@ import java.util.regex.Pattern;
 public class GetIpDialog extends JDialog {
     private static final String ADD_IP = "Add IP Address";
     private String retval = null;
-    private SquigglyTextField ipRangeTextField = null;
+    private JTextField ipRangeTextField = null;
     private JButton okButton;
     private boolean validateIPFormat = true;
     private JLabel mainLabel;
@@ -64,15 +61,21 @@ public class GetIpDialog extends JDialog {
         p.setLayout(new GridBagLayout());
         mainLabel = new JLabel("IP Address: ");
         p.add(mainLabel,
-              new GridBagConstraints(0, 0, 3, 1, 1.0, 1.0,
+              new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
                                      GridBagConstraints.NORTHWEST,
-                                     GridBagConstraints.BOTH,
+                                     GridBagConstraints.HORIZONTAL,
                                      new Insets(5, 5, 5, 5), 0, 0));
         p.add(getIpRangeTextField(),
-              new GridBagConstraints(0, 1, 3, 1, 1.0, 1.0,
+              new GridBagConstraints(0, 1, 3, 1, 0.0, 0.0,
                                      GridBagConstraints.NORTHWEST,
-                                     GridBagConstraints.BOTH,
+                                     GridBagConstraints.HORIZONTAL,
                                      new Insets(0, 5, 0, 5), 0, 0));
+
+        p.add(Box.createGlue(),
+                new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0,
+                                       GridBagConstraints.NORTHWEST,
+                                       GridBagConstraints.BOTH,
+                                       new Insets(0, 0, 0, 0), 0, 0));
 
         okButton = new JButton("OK");
         JButton cancelButton = new JButton("Cancel");
@@ -81,8 +84,12 @@ public class GetIpDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 if (e.getSource() == okButton) {
                     String s = getIpRangeTextField().getText();
-                    if (isValidIp(s))
+                    if (isValidIp(s)) {
                         retval = s;
+                    } else {
+                        DialogDisplayer.showMessageDialog(GetIpDialog.this, "Please enter a valid address.", null);
+                        return;
+                    }
                 }
                 GetIpDialog.this.dispose();
             }
@@ -90,25 +97,24 @@ public class GetIpDialog extends JDialog {
         okButton.addActionListener(buttonAction);
         cancelButton.addActionListener(buttonAction);
         p.add(Box.createGlue(),
-              new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0,
+              new GridBagConstraints(0, 3, 1, 1, 1.0, 1.0,
                                      GridBagConstraints.EAST,
                                      GridBagConstraints.HORIZONTAL,
                                      new Insets(0, 20, 0, 0), 0, 0));
         Utilities.equalizeButtonSizes(okButton, cancelButton);
         p.add(okButton,
-              new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
-                                     GridBagConstraints.EAST,
+              new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
+                                     GridBagConstraints.SOUTHEAST,
                                      GridBagConstraints.NONE,
                                      new Insets(5, 0, 5, 0), 0, 0));
         p.add(cancelButton,
-              new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
-                                     GridBagConstraints.EAST,
+              new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0,
+                                     GridBagConstraints.SOUTHEAST,
                                      GridBagConstraints.NONE,
                                      new Insets(5, 5, 5, 5), 0, 0));
         Utilities.runActionOnEscapeKey(getIpRangeTextField(), buttonAction);
         getRootPane().setDefaultButton(okButton);
         pack();
-        checkValid();
     }
 
     private static final Pattern ipv4Pattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
@@ -123,26 +129,11 @@ public class GetIpDialog extends JDialog {
     private boolean isValidIp(String s) {
         if (!validateIPFormat) {
             // Check if it is a valid URL.
-            boolean isValidURL = validateUrl(s);
-            if (isValidURL) {
-                getIpRangeTextField().setNone();
-            } else {
-                getIpRangeTextField().setAll();
-            }
-            return isValidURL; 
+            return validateUrl(s); 
         }
 
         Pair<Integer,Integer> badRange = getBadRange(s);
-        if (badRange == null) {
-            getIpRangeTextField().setNone(); // valid IP
-            return true;
-        } else if (badRange.left == null || badRange.left < 0 || badRange.right == null || badRange.right < 0) {
-            getIpRangeTextField().setAll();
-            return false;
-        } else {
-            getIpRangeTextField().setRange(badRange.left, badRange.right);
-            return false;
-        }
+        return badRange == null;
     }
 
     /**
@@ -230,13 +221,13 @@ public class GetIpDialog extends JDialog {
         return ValidationUtils.isValidUrl(s, false, CollectionUtils.caseInsensitiveSet( "http", "https" ));
     }
 
-    private void checkValid() {
-        okButton.setEnabled(isValidIp(getIpRangeTextField().getText()));
+    private boolean isValidEntry() {
+        return isValidIp(getIpRangeTextField().getText());
     }
 
-    private SquigglyTextField getIpRangeTextField() {
+    private JTextField getIpRangeTextField() {
         if (ipRangeTextField == null) {
-            ipRangeTextField = new SquigglyTextField();
+            ipRangeTextField = new JTextField();
             // Block bad inserts immediately
             ipRangeTextField.getDocument().addUndoableEditListener(new UndoableEditListener() {
                 @Override
@@ -245,7 +236,6 @@ public class GetIpDialog extends JDialog {
                         if (badIpChars.matcher(ipRangeTextField.getText()).find())
                             e.getEdit().undo();
                     }
-                    checkValid();
                 }
             });
         }
@@ -264,6 +254,5 @@ public class GetIpDialog extends JDialog {
      */
     public void setTextField(String text) {
         ipRangeTextField.setText(text);
-        checkValid();
     }
 }
