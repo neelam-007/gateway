@@ -51,27 +51,21 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                                              String messageDescription,
                                              AuthenticationContext authContext) throws IOException, PolicyAssertionException {
 
-        AuthenticationResult lastAuthResult = authContext.getLastAuthenticationResult();
-        if (lastAuthResult == null) {
+        AuthenticationResult authenticationResult = authContext.getLastAuthenticationResult();
+        if (authenticationResult == null) {
             RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_authentication_result", "The target message does not provide an authentication info.");
             return AssertionStatus.AUTH_FAILED;
         }
 
-        User authenticatedUser = lastAuthResult.getUser();
-        if (authenticatedUser == null) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_authenticated_user", "The target message does not provide an authenticated user.");
-            return AssertionStatus.AUTH_FAILED;
-        }
-
-        List<LoginCredentials> credList = context.getDefaultAuthenticationContext().getCredentials();
-        boolean found = false;
-        for (LoginCredentials cred: credList) {
-            if (lastAuthResult.matchesSecurityToken(cred.getSecurityToken())) {
-                found = true;
+        LoginCredentials loginCredentials = null;
+        for (LoginCredentials cred: authContext.getCredentials()) {
+            if (authenticationResult.matchesSecurityToken(cred.getSecurityToken())) {
+                loginCredentials = cred;
                 break;
             }
         }
-        if (! found) {
+
+        if (loginCredentials == null) {
             RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_matched_credentials", "Credentials not found for the authenticated user.");
             return AssertionStatus.AUTH_FAILED;
         }
@@ -165,8 +159,8 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
         try {
             newSession = scContextManager.createContextForUser(
                 identifier,
-                authenticatedUser,
-                context.getDefaultAuthenticationContext().getLastCredentials(),
+                authenticationResult.getUser(),
+                loginCredentials,
                 rstParameters.get(RstSoapMessageProcessor.WSC_NS),
                 assertion.getLifetime()
             );
