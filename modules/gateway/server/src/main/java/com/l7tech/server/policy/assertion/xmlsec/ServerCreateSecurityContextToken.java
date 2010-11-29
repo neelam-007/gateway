@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.CreateSecurityContextToken;
+import com.l7tech.security.token.SecurityToken;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
@@ -22,6 +23,7 @@ import com.l7tech.util.SoapConstants;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -49,19 +51,30 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                                              String messageDescription,
                                              AuthenticationContext authContext) throws IOException, PolicyAssertionException {
 
-        LoginCredentials credentials = authContext.getLastCredentials();
-        if (credentials == null) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_credentials", "The request for a token has no credentials provided.");
+        AuthenticationResult lastAuthResult = authContext.getLastAuthenticationResult();
+        if (lastAuthResult == null) {
+            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_authentication_result", "The target message does not provide an authentication info.");
             return AssertionStatus.AUTH_FAILED;
         }
 
-        User authenticatedUser = authContext.getLastAuthenticatedUser();
+        User authenticatedUser = lastAuthResult.getUser();
         if (authenticatedUser == null) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_authentication", "The request for a token was not authenticated");
+            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_authenticated_user", "The target message does not provide an authenticated user.");
             return AssertionStatus.AUTH_FAILED;
         }
 
-        authContext.addAuthenticationResult(new AuthenticationResult(authenticatedUser, credentials.getSecurityTokens(), null, false));
+        List<LoginCredentials> credList = context.getDefaultAuthenticationContext().getCredentials();
+        boolean found = false;
+        for (LoginCredentials cred: credList) {
+            if (lastAuthResult.matchesSecurityToken(cred.getSecurityToken())) {
+                found = true;
+                break;
+            }
+        }
+        if (! found) {
+            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_matched_credentials", "Credentials not found for the authenticated user.");
+            return AssertionStatus.AUTH_FAILED;
+        }
 
         // Check if the RST SOAP message is a well-formatted or not
         Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message);
