@@ -65,7 +65,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
     private static final int DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE = 1000;
     private static final String MAX_HTTP_CACHE_OBJECTS_PROP = "com.l7tech.server.security.cert.crlCacheSize";
 
-    protected static final String SYSPROP_MAX_CRL_SIZE = "com.l7tech.server.pkix.crlMaxSize";
+    protected static final String PROP_MAX_CRL_SIZE = "pkixCRL.maxSize";
     protected static final int DEFAULT_MAX_CRL_SIZE = 1024 * 1024;
     
     public CrlCacheImpl( final GenericHttpClientFactory httpClientFactory,
@@ -104,7 +104,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
                 httpClientFactory,
                 new CrlHttpObjectFactory(),
                 AbstractUrlObjectCache.WAIT_INITIAL,
-                SYSPROP_MAX_CRL_SIZE,
+                PROP_MAX_CRL_SIZE,
                 DEFAULT_MAX_CRL_SIZE);
 
         executor = buildExecutor( cacheThreads );
