@@ -21,7 +21,6 @@ import com.l7tech.objectmodel.EntityUtil;
 import com.l7tech.common.io.DtdUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
 import org.w3c.dom.Document;
@@ -36,8 +35,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
@@ -349,57 +347,58 @@ public class ResourceEntryEditor extends JDialog {
             return;
         }
 
-        final String filename = dlg.getSelectedFile().getAbsolutePath();
+        final File file = dlg.getSelectedFile();
+        final String filename = file.getAbsolutePath();
         boolean contentUpdated = false;
-        FileInputStream fis = null;
+        final String content;
         try {
-            fis = new FileInputStream(dlg.getSelectedFile());
+            final byte[] data = IOUtils.slurpFile( file );
+            final String charset = XmlUtil.getEncoding( data );
+            content = new String( data, charset );
+        } catch (IOException e) {
+            displayError("Unable to read resource from:\n" + filename + "\n" + ExceptionUtils.getMessage( e ), "Error Accessing Resource");
+            logger.log(Level.FINE, "Error reading resource " + filename, e);
+            return;
+        }
 
-            if ( resourceEntry.getType() == ResourceType.XML_SCHEMA ) {
-                // try to get document
-                Document doc;
-                try {
-                    doc = XmlUtil.parse(new InputSource(fis), entityResolver);
-                } catch (SAXException e) {
-                    displayError("Error parsing schema from " + filename + ":\n" + ExceptionUtils.getMessage( e ), null);
-                    logger.log(Level.FINE, "cannot parse " + filename, e);
-                    return;
-                } catch (IOException e) {
-                    displayError("Error processing schema from " + filename + ":\n" + ExceptionUtils.getMessage( e ), null);
-                    logger.log(Level.FINE, "cannot parse " + filename, e);
-                    return;
-                }
-
-                // check if it's a schema
-                if (docIsSchema(doc)) {
-                    // set the new schema
-                    String printedSchema;
-                    try {
-                        printedSchema = XmlUtil.nodeToFormattedString(doc);
-                    } catch (IOException e) {
-                        String msg = "error serializing document";
-                        displayError(msg, null);
-                        logger.log(Level.FINE, msg, e);
-                        return;
-                    }
-                    setResourceContents(printedSchema);
-                    contentUpdated = true;
-                } else {
-                    displayError("An XML Schema could not be read from " + filename, null);
-                }
-            } else {
-                try {
-                    setResourceContents( new String( IOUtils.slurpStream( fis ) ) );
-                    contentUpdated = true;
-                } catch (IOException e) {
-                    displayError("Unable to read resource from:\n" + filename, "Error Accessing Resource");
-                    logger.log(Level.FINE, "Error reading resource " + filename, e);
-                }
+        if ( resourceEntry.getType() == ResourceType.XML_SCHEMA ) {
+            // try to get document
+            Document doc;
+            try {
+                InputSource inputSource = new InputSource();
+                inputSource.setSystemId( file.toURI().toString() );
+                inputSource.setCharacterStream( new StringReader( content ) );
+                doc = XmlUtil.parse(inputSource, entityResolver);
+            } catch (SAXException e) {
+                displayError("Error parsing schema from " + filename + ":\n" + ExceptionUtils.getMessage( e ), null);
+                logger.log(Level.FINE, "cannot parse " + filename, e);
+                return;
+            } catch (IOException e) {
+                displayError("Error processing schema from " + filename + ":\n" + ExceptionUtils.getMessage( e ), null);
+                logger.log(Level.FINE, "cannot parse " + filename, e);
+                return;
             }
-        } catch ( FileNotFoundException e) {
-            logger.log( Level.FINE, "cannot open resource file" + filename, e);
-        } finally {
-            ResourceUtils.closeQuietly( fis );
+
+            // check if it's a schema
+            if (docIsSchema(doc)) {
+                // set the new schema
+                String printedSchema;
+                try {
+                    printedSchema = XmlUtil.nodeToFormattedString(doc);
+                } catch (IOException e) {
+                    String msg = "error serializing document";
+                    displayError(msg, null);
+                    logger.log(Level.FINE, msg, e);
+                    return;
+                }
+                setResourceContents(printedSchema);
+                contentUpdated = true;
+            } else {
+                displayError("An XML Schema could not be read from " + filename, null);
+            }
+        } else {
+            setResourceContents( content );
+            contentUpdated = true;
         }
 
         if ( contentUpdated ) {
