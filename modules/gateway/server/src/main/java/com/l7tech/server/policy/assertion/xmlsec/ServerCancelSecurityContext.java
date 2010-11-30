@@ -45,19 +45,24 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
                                              AuthenticationContext authContext) throws IOException, PolicyAssertionException {
 
         // Check if the credentials are provided and proven in the message (request, response, or context variable).
-        LoginCredentials credentials = authContext.getLastCredentials();
-        if (credentials == null) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_credentials", "The request for a token has no credentials provided.");
+        AuthenticationResult authenticationResult = authContext.getLastAuthenticationResult();
+        if (authenticationResult == null) {
+            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_authentication_result", "The target message does not provide an authentication info.");
             return AssertionStatus.AUTH_FAILED;
         }
 
-        User authenticatedUser = authContext.getLastAuthenticatedUser();
-        if (authenticatedUser == null) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_authentication", "The request for a token was not authenticated");
-            return AssertionStatus.AUTH_FAILED;
+        LoginCredentials loginCredentials = null;
+        for (LoginCredentials cred: authContext.getCredentials()) {
+            if (authenticationResult.matchesSecurityToken(cred.getSecurityToken())) {
+                loginCredentials = cred;
+                break;
+            }
         }
 
-        authContext.addAuthenticationResult(new AuthenticationResult(authenticatedUser, credentials.getSecurityTokens(), null, false));
+        if (loginCredentials == null) {
+            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_matched_credentials", "Credentials not found for the authenticated user.");
+            return AssertionStatus.AUTH_FAILED;
+        }
 
         // From this point, start to check if the RST SOAP message is a well-formatted and its semantics are correct or not.
 

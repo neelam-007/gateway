@@ -51,6 +51,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                                              String messageDescription,
                                              AuthenticationContext authContext) throws IOException, PolicyAssertionException {
 
+        // Check if the credentials are provided and proven in the message (request, response, or context variable).
         AuthenticationResult authenticationResult = authContext.getLastAuthenticationResult();
         if (authenticationResult == null) {
             RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_authentication_result", "The target message does not provide an authentication info.");
