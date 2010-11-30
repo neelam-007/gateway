@@ -125,6 +125,9 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         } catch (SessionExpiredException e) {
             RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:session.expired", e.getMessage());
             return AssertionStatus.BAD_REQUEST;
+        } catch (ClassCastException e) {
+            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_security_token", "The security token provided has invalid semantics.");
+            return AssertionStatus.FAILED;
         }
 
         // Build a RSTR SOAP response message
