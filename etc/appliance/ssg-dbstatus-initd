@@ -28,6 +28,8 @@ TIME_DESIRED=15
 LOGGER="/usr/bin/logger"
 PID_FILE="/var/run/${PROG}.pid"
 IPTABLES="/sbin/iptables"
+IP6TABLES="/sbin/ip6tables"
+IP6TABLES_CHECK="/proc/net/if_inet6"
 IPTABLES_RULE="INPUT -m tcp -p tcp --dport 3306 -j REJECT --reject-with tcp-reset"
 
 if [ ! -f "${HOME}/.my.cnf" ] && [ -f "${MYSQL_DEFAULT_OPTIONS}" ] ; then
@@ -51,6 +53,10 @@ checkRequired() {
 checkConfigured() {
     if [ ! -f "${IPTABLES}" ] ; then
         echo "iptables [${IPTABLES}] not found."
+        return 1
+    fi
+    if [ -f "${IP6TABLES_CHECK}" -a ! -f "${IP6TABLES}" ]; then
+        echo "ip6tables [${IP6TABLES}] not found."
         return 1
     fi
     if [ ! -f "${MYSQL}" ] ; then
@@ -87,14 +93,38 @@ report() {
 disableTcpConnections() {
     # Insert iptables rule
     "${IPTABLES}" -I ${IPTABLES_RULE}
-    return ${?}
+    exit4=${?}
+    exit6=0
+    if [ -f "${IP6TABLES_CHECK}" ]; then
+        "${IP6TABLES}" -I ${IPTABLES_RULE}
+        exit6=${?}
+    fi
+    if [ "${exit4}" -ne "0" ]; then
+        return ${exit4}
+    fi
+    if [ "${exit6}" -ne "0" ]; then
+        return ${exit6}
+    fi
+    return 0
 }
 
 # Enable MySQl
 enableTcpConnections() {
     # Delete iptables rule
     "${IPTABLES}" -D ${IPTABLES_RULE}
-    return ${?}
+    exit4=${?}
+    exit6=0
+    if [ -f "${IP6TABLES_CHECK}" ]; then
+        "${IP6TABLES}" -D ${IPTABLES_RULE}
+        exit6=${?}
+    fi
+    if [ "${exit4}" -ne "0" ]; then
+        return ${exit4}
+    fi
+    if [ "${exit6}" -ne "0" ]; then
+        return ${exit6}
+    fi
+    return 0
 }
 
 # Service start
