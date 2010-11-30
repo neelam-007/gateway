@@ -210,8 +210,8 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             try {
                 sctWsuId = DomUtils.getElementIdValue(root, SoapUtil.getDefaultIdAttributeConfig());
             } catch (InvalidDocumentFormatException e) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:bad_token", "There are more than one attribute recognized as an ID attribute in the SecurityContextToken element.");
-                return AssertionStatus.BAD_TOKEN;
+                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_document", "There are more than one attribute recognized as an ID attribute in the SecurityContextToken element.");
+                return AssertionStatus.BAD_REQUEST;
             }
             tokenInfo.put(SCT_WSU_ID, sctWsuId);
 
@@ -219,11 +219,11 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 // Set Identifier
                 tokenInfo.put(SCT_IDENTIFIER, DomUtils.findExactlyOneChildElementByName(root, rootNS, "Identifier").getTextContent());
             } catch (TooManyChildElementsException e) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:bad_token", "There are more than one Identifier element in the SecurityContextToken element.");
-                return AssertionStatus.BAD_TOKEN;
+                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_document", "There are more than one Identifier element in the SecurityContextToken element.");
+                return AssertionStatus.BAD_REQUEST;
             } catch (MissingRequiredElementException e) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:bad_token", "There is no Identifier element in the SecurityContextToken element.");
-                return AssertionStatus.BAD_TOKEN;
+                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_document", "There is no Identifier element in the SecurityContextToken element.");
+                return AssertionStatus.BAD_REQUEST;
             }
         }
         // The token is a SAML token.
@@ -241,14 +241,14 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 // Set ValueType
                 tokenInfo.put(SAML_VALUE_TYPE, SoapConstants.VALUETYPE_SAML_ASSERTIONID3);
             } else {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:bad_token", "The SAML namespace is invalid.");
-                return AssertionStatus.BAD_TOKEN;
+                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_document", "The SAML namespace is invalid.");
+                return AssertionStatus.BAD_REQUEST;
             }
         }
         // The token is not recognizable.
         else {
             RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_token_type", "The token issued is neither a SecurityContextToken nor a SAML token.");
-            return AssertionStatus.BAD_TOKEN;
+            return AssertionStatus.BAD_REQUEST;
         }
 
         return AssertionStatus.NONE;
