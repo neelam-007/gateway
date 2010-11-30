@@ -1,13 +1,18 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
+import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gui.MaxLengthDocument;
+import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.CreateSecurityContextToken;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -114,12 +119,38 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
         });
 
         varPrefixTextField.setDocument(new MaxLengthDocument(128));
+        TextComponentPauseListenerManager.registerPauseListener(
+            varPrefixTextField,
+            new PauseListener() {
+                @Override
+                public void textEntryPaused(JTextComponent component, long msecs) {
+                    if(validateVariablePrefix()) {
+                        okButton.setEnabled(!isReadOnly());
+                    } else {
+                        okButton.setEnabled(false);
+
+                        // Check if the status label gets a long text to display.
+                        if (varPrefixStatusLabel.getMinimumSize().width + 30 > mainPanel.getMinimumSize().width) {
+                            setSize(varPrefixStatusLabel.getMinimumSize().width + 30, getSize().height);
+                        }
+                    }
+                }
+
+                @Override
+                public void textEntryResumed(JTextComponent component) {
+                    clearVariablePrefixStatus();
+                }
+            },
+            500
+        );
 
         modelToView();
     }
 
     private void modelToView() {
+        clearVariablePrefixStatus();
         varPrefixTextField.setText(assertion.getVariablePrefix());
+        validateVariablePrefix();
 
         TimeUnit timeUnit = assertion.getTimeUnit();
         Double lifetime = (double) assertion.getLifetime();
@@ -153,5 +184,17 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
 
     private void onCancel() {
         dispose();
+    }
+
+    private void clearVariablePrefixStatus() {
+        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
+    }
+
+    private boolean validateVariablePrefix() {
+        return VariablePrefixUtil.validateVariablePrefix(
+            varPrefixTextField.getText(),
+            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
+            assertion.getVariableSuffixes(),
+            varPrefixStatusLabel);
     }
 }

@@ -42,6 +42,12 @@ public class CreateSecurityContextToken extends MessageTargetableAssertion {
         this.variablePrefix = (variablePrefix == null)? DEFAULT_VARIABLE_PREFIX : variablePrefix;
     }
 
+    public String[] getVariableSuffixes() {
+        return new String[] {
+            VARIABLE_ISSUED_SCT,
+        };
+    }
+
     public TimeUnit getTimeUnit() {
         return timeUnit;
     }

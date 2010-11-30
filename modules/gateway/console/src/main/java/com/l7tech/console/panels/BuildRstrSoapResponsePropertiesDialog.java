@@ -1,7 +1,11 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.policy.SsmPolicyVariableUtils;
+import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gui.MaxLengthDocument;
+import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.BuildRstrSoapResponse;
 import com.l7tech.util.TimeUnit;
@@ -9,6 +13,7 @@ import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -36,6 +41,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
     private JTextField varPrefixTextField;
     private JCheckBox appliesToCheckBox;
     private JTextField addressTextField;
+    private JLabel varPrefixStatusLabel;
 
     private static final String AUTOMATIC_KEYSIZE_ITEM = "Automatic";
     private static final long MILLIS_100_YEARS = 100L * 365L * 86400L * 1000L;
@@ -183,6 +189,30 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         ((JTextField)keySizeComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(validationListener);
 
         varPrefixTextField.setDocument(new MaxLengthDocument(128));
+        TextComponentPauseListenerManager.registerPauseListener(
+            varPrefixTextField,
+            new PauseListener() {
+                @Override
+                public void textEntryPaused(JTextComponent component, long msecs) {
+                    if(validateVariablePrefix()) {
+                        okButton.setEnabled(!isReadOnly());
+                    } else {
+                        okButton.setEnabled(false);
+
+                        // Check if the status label gets a long text to display.
+                        if (varPrefixStatusLabel.getMinimumSize().width + 30 > mainPanel.getMinimumSize().width) {
+                            setSize(varPrefixStatusLabel.getMinimumSize().width + 30, getSize().height);
+                        }
+                    }
+                }
+
+                @Override
+                public void textEntryResumed(JTextComponent component) {
+                    clearVariablePrefixStatus();
+                }
+            },
+            500
+        );
 
         modelToView();
     }
@@ -207,7 +237,9 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
     }
 
     private void modelToView() {
+        clearVariablePrefixStatus();
         varPrefixTextField.setText(assertion.getVariablePrefix());
+        validateVariablePrefix();
 
         // Check if the response is for token issuance or token cancellation.
         if (assertion.isResponseForIssuance()) {
@@ -365,5 +397,17 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
 
     private void onCancel() {
         dispose();
+    }
+
+    private void clearVariablePrefixStatus() {
+        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
+    }
+
+    private boolean validateVariablePrefix() {
+        return VariablePrefixUtil.validateVariablePrefix(
+            varPrefixTextField.getText(),
+            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
+            assertion.getVariableSuffixes(),
+            varPrefixStatusLabel);
     }
 }

@@ -144,6 +144,14 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
         return variablePrefix;
     }
 
+    public String[] getVariableSuffixes() {
+        return new String[] {
+            VARIABLE_RSTR_RESPONSE,
+            VARIABLE_WSA_NAMESPACE,
+            VARIABLE_RSTR_WSA_ACTION,
+        };
+    }
+
     public void setVariablePrefix(String variablePrefix) {
         this.variablePrefix = (variablePrefix == null)? DEFAULT_VARIABLE_PREFIX : variablePrefix;
     }
