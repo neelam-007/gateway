@@ -141,7 +141,7 @@ public class PatchVerifier {
         // configure logging if the logs directory is found, else leave console output
         final File logsDir = new File("/opt/SecureSpan/Controller/var/logs");
         if ( logsDir.exists() && logsDir.canWrite() ) {
-            JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller.patching.verifier", "com/l7tech/server/processcontroller/patching/client/resources/logging.properties", "etc/conf/patchinglogging.properties", false, true);
+            JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller.patching.verifier", "com/l7tech/server/processcontroller/patching/resources/logging.properties", "etc/conf/patchinglogging.properties", false, true);
         }
         if ( SyspropUtil.getBoolean("com.l7tech.server.log.console") ) {
             Logger.getLogger("").addHandler( new ConsoleHandler() );

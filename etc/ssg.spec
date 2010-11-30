@@ -170,6 +170,8 @@ if [ -f /opt/SecureSpan/Gateway/config/config.log ]; then
  mv /opt/SecureSpan/Gateway/config/config.log /opt/SecureSpan/Gateway/config/logs/config.log 2>/dev/null
 fi
 
+find /opt/SecureSpan/Controller/var/logs/ -name "patch_cli_*" -not -user layer7 -exec chown layer7:layer7 '{}' \;
+
 %preun
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then
