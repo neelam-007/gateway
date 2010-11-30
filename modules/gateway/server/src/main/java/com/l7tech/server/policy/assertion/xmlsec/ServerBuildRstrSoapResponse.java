@@ -423,7 +423,17 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             if (Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_ENTROPY)) &&
                 Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_BINARY_SECRET)) &&
                 bsAttrType != null && bsAttrType.endsWith("Nonce")) {
-                rstrBuilder.append("<wst:ComputedKey>").append(SoapConstants.P_SHA1_ALG_URI).append("</wst:ComputedKey>\n");
+
+                String psha1AlgUri;
+                String wstNS = parameters.get(RstSoapMessageProcessor.WST_NS);  // wstNS must not be null, since it has been checked.
+                if (SoapConstants.WST_NAMESPACE1.equals(wstNS)) { // for WS-Trust pre 1.2
+                    psha1AlgUri = SoapConstants.P_SHA1_ALG_URI;
+                } else if (SoapConstants.WST_NAMESPACE2.equals(wstNS)) { // for WS-Trust 1.2
+                    psha1AlgUri = SoapConstants.P_SHA1_ALG_URI2;
+                } else { // SoapConstants.WST_NAMESPACE3.equals(wstNS) or SoapConstants.WST_NAMESPACE4.equals(wstNS))  // for WS-Trust 1.3 and post 1.3 
+                    psha1AlgUri = SoapConstants.P_SHA1_ALG_URI3;
+                }
+                rstrBuilder.append("<wst:ComputedKey>").append(psha1AlgUri).append("</wst:ComputedKey>\n");
             } else {
                 X509Certificate clientCert = getClientCert(targetMessage);
                 String secretXml;

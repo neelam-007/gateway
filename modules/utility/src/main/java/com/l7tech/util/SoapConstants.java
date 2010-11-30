@@ -351,5 +351,7 @@ public class SoapConstants {
     public static final String WSA_MSG_PROP_RELATES_TO_RELATIONSHIP_TYPE = "RelationshipType";
     public static final String WSA_MSG_PROP_RELATIONSHIP_REPLY_NAMESPACE = "http://www.w3.org/2005/08/addressing/reply";
 
-    public static final String P_SHA1_ALG_URI = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/CK/PSHA1";
+    public static final String P_SHA1_ALG_URI = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/CK/PSHA1";
+    public static final String P_SHA1_ALG_URI2 = "http://schemas.xmlsoap.org/ws/2005/02/trust/CK/PSHA1";
+    public static final String P_SHA1_ALG_URI3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/CK/PSHA1";
 }
