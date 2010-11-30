@@ -139,9 +139,13 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
     }
 
     public String getVariablePrefix() {
-        if (variablePrefix == null) variablePrefix = DEFAULT_VARIABLE_PREFIX;
+        if (variablePrefix == null || variablePrefix.trim().isEmpty()) variablePrefix = DEFAULT_VARIABLE_PREFIX;
 
         return variablePrefix;
+    }
+
+    public void setVariablePrefix(String variablePrefix) {
+        this.variablePrefix = (variablePrefix == null || variablePrefix.trim().isEmpty())? DEFAULT_VARIABLE_PREFIX : variablePrefix;
     }
 
     public String[] getVariableSuffixes() {
@@ -150,10 +154,6 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
             VARIABLE_WSA_NAMESPACE,
             VARIABLE_RSTR_WSA_ACTION,
         };
-    }
-
-    public void setVariablePrefix(String variablePrefix) {
-        this.variablePrefix = (variablePrefix == null)? DEFAULT_VARIABLE_PREFIX : variablePrefix;
     }
 
     @Override
@@ -200,6 +200,6 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames((variablePrefix == null? "" : variablePrefix) + (tokenIssued == null? "" : tokenIssued) + (addressOfEPR == null? "" : addressOfEPR));
+        return Syntax.getReferencedNames((tokenIssued == null? "" : tokenIssued) + (addressOfEPR == null? "" : addressOfEPR));
     }
 }

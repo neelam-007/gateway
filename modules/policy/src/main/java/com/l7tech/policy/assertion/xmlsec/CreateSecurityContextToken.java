@@ -1,18 +1,13 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.TimeUnit;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
 
 /**
@@ -33,13 +28,13 @@ public class CreateSecurityContextToken extends MessageTargetableAssertion {
     public CreateSecurityContextToken() {}
     
     public String getVariablePrefix() {
-        if (variablePrefix == null) variablePrefix = DEFAULT_VARIABLE_PREFIX;
+        if (variablePrefix == null || variablePrefix.trim().isEmpty()) variablePrefix = DEFAULT_VARIABLE_PREFIX;
 
         return variablePrefix;
     }
 
     public void setVariablePrefix(String variablePrefix) {
-        this.variablePrefix = (variablePrefix == null)? DEFAULT_VARIABLE_PREFIX : variablePrefix;
+        this.variablePrefix = (variablePrefix == null || variablePrefix.trim().isEmpty())? DEFAULT_VARIABLE_PREFIX : variablePrefix;
     }
 
     public String[] getVariableSuffixes() {
@@ -99,11 +94,5 @@ public class CreateSecurityContextToken extends MessageTargetableAssertion {
         return new VariableMetadata[] {
             new VariableMetadata(variablePrefix + "." + VARIABLE_ISSUED_SCT, false, false, null, false, DataType.STRING)
         };
-    }
-
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
-    @Override
-    public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames((variablePrefix == null? "" : variablePrefix));
     }
 }

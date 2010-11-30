@@ -1,19 +1,16 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.identity.User;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.CreateSecurityContextToken;
-import com.l7tech.security.token.SecurityToken;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
@@ -23,7 +20,6 @@ import com.l7tech.util.SoapConstants;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -36,12 +32,10 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
 
     private final SecureConversationContextManager scContextManager;
     private final Auditor auditor;
-    private final String[] variablesUsed;
 
     public ServerCreateSecurityContextToken(CreateSecurityContextToken assertion, ApplicationContext springContext) {
         super(assertion, assertion);
         auditor = new Auditor(this, springContext, logger);
-        variablesUsed = assertion.getVariablesUsed();
         scContextManager = springContext.getBean("secureConversationContextManager", SecureConversationContextManager.class);
     }
 
@@ -152,7 +146,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
         String tokenIssued = buildSCT(wscNS, wsuNS, wsuId, identifier);
 
         // Create a context variable, issuedSCT
-        String variableFullName = getVariablePrefix(context) + "." + CreateSecurityContextToken.VARIABLE_ISSUED_SCT;
+        String variableFullName = assertion.getVariablePrefix() + "." + CreateSecurityContextToken.VARIABLE_ISSUED_SCT;
         context.setVariable(variableFullName, tokenIssued);
 
         // Create a new sc session and cache it
@@ -236,18 +230,5 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
             .append("</wsc:SecurityContextToken>");
 
         return sb.toString();
-    }
-
-    private String getVariablePrefix(PolicyEnforcementContext context) {
-        if (context == null) throw new IllegalStateException("Policy Enforcement Context cannot be null.");
-
-        String prefix = assertion.getVariablePrefix();
-        prefix = ExpandVariables.process(prefix, context.getVariableMap(variablesUsed, auditor), auditor);
-
-        if (prefix == null || prefix.trim().isEmpty()) {
-            prefix = CreateSecurityContextToken.DEFAULT_VARIABLE_PREFIX;
-        }
-
-        return prefix;
     }
 }
