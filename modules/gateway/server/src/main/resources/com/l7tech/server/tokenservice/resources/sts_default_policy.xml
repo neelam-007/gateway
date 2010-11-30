@@ -7,7 +7,7 @@
             <OID>-2</OID>
             <Name>Internal Identity Provider</Name>
             <Props>PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4gCjxqYXZhIHZlcnNpb249IjEu&#xd;
-Ni4wXzE4IiBjbGFzcz0iamF2YS5iZWFucy5YTUxEZWNvZGVyIj4gCiA8b2JqZWN0IGNsYXNzPSJq&#xd;
+Ni4wXzIyIiBjbGFzcz0iamF2YS5iZWFucy5YTUxEZWNvZGVyIj4gCiA8b2JqZWN0IGNsYXNzPSJq&#xd;
 YXZhLnV0aWwuSGFzaE1hcCI+IAogIDx2b2lkIG1ldGhvZD0icHV0Ij4gCiAgIDxzdHJpbmc+YWRt&#xd;
 aW5FbmFibGVkPC9zdHJpbmc+IAogICA8Ym9vbGVhbj50cnVlPC9ib29sZWFuPiAKICA8L3ZvaWQ+&#xd;
 IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
@@ -142,24 +142,31 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                     </L7p:Properties>
                 </L7p:assertionComment>
             </wsp:OneOrMore>
-            <L7p:WsAddressing>
+            <L7p:RequestXpathAssertion>
                 <L7p:AssertionComment assertionComment="included">
                     <L7p:Properties mapValue="included">
                         <L7p:entry>
                             <L7p:key stringValue="LEFT.COMMENT"/>
-                            <L7p:value stringValue="WS-Addressing Action Retrieval"/>
+                            <L7p:value stringValue="RequestType Retrieval"/>
                         </L7p:entry>
                     </L7p:Properties>
                 </L7p:AssertionComment>
-                <L7p:EnableOtherNamespace stringValue="http://schemas.xmlsoap.org/ws/2004/03/addressing"/>
-                <L7p:EnableWsAddressing200408 booleanValue="true"/>
-                <L7p:VariablePrefix stringValue="rst"/>
-            </L7p:WsAddressing>
+                <L7p:VariablePrefix stringValue="requestType"/>
+                <L7p:XpathExpression xpathExpressionValue="included">
+                    <L7p:Expression stringValue="/*[local-name()='Envelope']/*[local-name()='Body']/*[local-name()='RequestSecurityToken']/*[local-name()='RequestType']"/>
+                    <L7p:Namespaces mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="s"/>
+                            <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                        </L7p:entry>
+                    </L7p:Namespaces>
+                </L7p:XpathExpression>
+            </L7p:RequestXpathAssertion>
             <wsp:OneOrMore wsp:Usage="Required">
                 <wsp:All wsp:Usage="Required">
                     <L7p:ComparisonAssertion>
                         <L7p:CaseSensitive booleanValue="false"/>
-                        <L7p:Expression1 stringValue="${rst.action}"/>
+                        <L7p:Expression1 stringValue="${requestType.result}"/>
                         <L7p:Operator operatorNull="null"/>
                         <L7p:Predicates predicates="included">
                             <L7p:item dataType="included">
@@ -167,7 +174,41 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                             </L7p:item>
                             <L7p:item binary="included">
                                 <L7p:Operator operator="CONTAINS"/>
-                                <L7p:RightValue stringValue="RST/Issue"/>
+                                <L7p:RightValue stringValue="/Issue"/>
+                            </L7p:item>
+                        </L7p:Predicates>
+                    </L7p:ComparisonAssertion>
+                    <L7p:RequestXpathAssertion>
+                        <L7p:AssertionComment assertionComment="included">
+                            <L7p:Properties mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="LEFT.COMMENT"/>
+                                    <L7p:value stringValue="TokenType Retrieval"/>
+                                </L7p:entry>
+                            </L7p:Properties>
+                        </L7p:AssertionComment>
+                        <L7p:VariablePrefix stringValue="tokenType"/>
+                        <L7p:XpathExpression xpathExpressionValue="included">
+                            <L7p:Expression stringValue="/*[local-name()='Envelope']/*[local-name()='Body']/*[local-name()='RequestSecurityToken']/*[local-name()='TokenType']"/>
+                            <L7p:Namespaces mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="s"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                                </L7p:entry>
+                            </L7p:Namespaces>
+                        </L7p:XpathExpression>
+                    </L7p:RequestXpathAssertion>
+                    <L7p:ComparisonAssertion>
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:Expression1 stringValue="${tokenType.result}"/>
+                        <L7p:Operator operatorNull="null"/>
+                        <L7p:Predicates predicates="included">
+                            <L7p:item dataType="included">
+                                <L7p:Type variableDataType="string"/>
+                            </L7p:item>
+                            <L7p:item binary="included">
+                                <L7p:Operator operator="CONTAINS"/>
+                                <L7p:RightValue stringValue="SAML"/>
                             </L7p:item>
                         </L7p:Predicates>
                     </L7p:ComparisonAssertion>
@@ -196,7 +237,7 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                 <wsp:All wsp:Usage="Required">
                     <L7p:ComparisonAssertion>
                         <L7p:CaseSensitive booleanValue="false"/>
-                        <L7p:Expression1 stringValue="${rst.action}"/>
+                        <L7p:Expression1 stringValue="${requestType.result}"/>
                         <L7p:Operator operatorNull="null"/>
                         <L7p:Predicates predicates="included">
                             <L7p:item dataType="included">
@@ -204,7 +245,41 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                             </L7p:item>
                             <L7p:item binary="included">
                                 <L7p:Operator operator="CONTAINS"/>
-                                <L7p:RightValue stringValue="RST/SCT"/>
+                                <L7p:RightValue stringValue="/Issue"/>
+                            </L7p:item>
+                        </L7p:Predicates>
+                    </L7p:ComparisonAssertion>
+                    <L7p:RequestXpathAssertion>
+                        <L7p:AssertionComment assertionComment="included">
+                            <L7p:Properties mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="LEFT.COMMENT"/>
+                                    <L7p:value stringValue="TokenType Retrieval"/>
+                                </L7p:entry>
+                            </L7p:Properties>
+                        </L7p:AssertionComment>
+                        <L7p:VariablePrefix stringValue="tokenType"/>
+                        <L7p:XpathExpression xpathExpressionValue="included">
+                            <L7p:Expression stringValue="/*[local-name()='Envelope']/*[local-name()='Body']/*[local-name()='RequestSecurityToken']/*[local-name()='TokenType']"/>
+                            <L7p:Namespaces mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="s"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                                </L7p:entry>
+                            </L7p:Namespaces>
+                        </L7p:XpathExpression>
+                    </L7p:RequestXpathAssertion>
+                    <L7p:ComparisonAssertion>
+                        <L7p:CaseSensitive booleanValue="false"/>
+                        <L7p:Expression1 stringValue="${tokenType.result}"/>
+                        <L7p:Operator operatorNull="null"/>
+                        <L7p:Predicates predicates="included">
+                            <L7p:item dataType="included">
+                                <L7p:Type variableDataType="string"/>
+                            </L7p:item>
+                            <L7p:item binary="included">
+                                <L7p:Operator operator="CONTAINS"/>
+                                <L7p:RightValue stringValue="/sct"/>
                             </L7p:item>
                         </L7p:Predicates>
                     </L7p:ComparisonAssertion>
@@ -228,7 +303,7 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                 <wsp:All wsp:Usage="Required">
                     <L7p:ComparisonAssertion>
                         <L7p:CaseSensitive booleanValue="false"/>
-                        <L7p:Expression1 stringValue="${rst.action}"/>
+                        <L7p:Expression1 stringValue="${requestType.result}"/>
                         <L7p:Operator operatorNull="null"/>
                         <L7p:Predicates predicates="included">
                             <L7p:item dataType="included">
@@ -236,7 +311,7 @@ IAogPC9vYmplY3Q+IAo8L2phdmE+IAo=</Props>
                             </L7p:item>
                             <L7p:item binary="included">
                                 <L7p:Operator operator="CONTAINS"/>
-                                <L7p:RightValue stringValue="RST/SCT/Cancel"/>
+                                <L7p:RightValue stringValue="/Cancel"/>
                             </L7p:item>
                         </L7p:Predicates>
                     </L7p:ComparisonAssertion>
