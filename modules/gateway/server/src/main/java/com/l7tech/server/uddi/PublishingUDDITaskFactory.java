@@ -913,12 +913,12 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     final String functionalBindingKey = uddiProxiedServiceInfo.getProperty(UDDIProxiedServiceInfo.FUNCTIONAL_ENDPOINT_KEY);
 
                     publisher.deleteGatewayGifBindingTemplates(serviceControl.getUddiServiceKey(), proxyBindingKeys.iterator().next(), functionalBindingKey);
-                    logger.log(Level.FINE, "GIF endpoint successfully deleted");
+                    logger.log(Level.INFO, "GIF endpoint successfully deleted");
                 } catch (UDDIException e) {
                     if (e instanceof UDDIInvalidKeyException) {
-                        logger.log(Level.FINE, "BusinessService that endpoints were published to was not found #(" + serviceControl.getUddiServiceKey() + "). Cannot delete from UDDI Registry.");
+                        logger.log(Level.INFO, "BusinessService that endpoints were published to was not found #(" + serviceControl.getUddiServiceKey() + "). Cannot delete from UDDI Registry.");
                     } else if (e instanceof  UDDIUnpublishException){
-                        logger.log(Level.FINE, e.getMessage() + " Cannot undo GIF publish.");
+                        logger.log(Level.INFO, e.getMessage() + " Cannot undo GIF publish.");
                     } else {
                         context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
                                 ExceptionUtils.getDebugException(e),
@@ -1008,10 +1008,10 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                     publisher.deleteGatewayBindingTemplates(serviceControl.getUddiServiceKey(),
                             uddiProxiedServiceInfo.<Set<EndpointPair>>getProperty(UDDIProxiedServiceInfo.ALL_ENDPOINT_PAIRS_KEY),
                             uddiProxiedServiceInfo.<Set<String>>getProperty(UDDIProxiedServiceInfo.ALL_BINDING_TEMPLATE_KEYS));
-                    logger.log(Level.FINE, "Endpoints successfully deleted");
+                    logger.log(Level.INFO, "Endpoints successfully deleted");
                 } catch (UDDIException e) {
                     if (e instanceof UDDIInvalidKeyException) {
-                        logger.log(Level.FINE, "BusinessService that endpoints were published to was not found #(" + serviceControl.getUddiServiceKey() + "). Cannot delete from UDDI Registry.");
+                        logger.log(Level.INFO, "BusinessService that endpoints were published to was not found #(" + serviceControl.getUddiServiceKey() + "). Cannot delete from UDDI Registry.");
                     } else {
                         context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
                                 ExceptionUtils.getDebugException(e),
@@ -1126,7 +1126,7 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                                     }
                                 }
                             }
-                            logger.log(Level.FINE, "Successfully deleted published Gateway WSDL from UDDI Registry");
+                            logger.log(Level.INFO, "Successfully deleted published Gateway WSDL from UDDI Registry");
                         } catch (UDDIException e) {
                             context.logAndAudit(SystemMessages.UDDI_REMOVE_SERVICE_FAILED, ExceptionUtils.getDebugException(e), ExceptionUtils.getMessage(e));
                             PublishingUDDITaskFactory.handleUddiDeleteFailure(uddiPublishStatus.getOid(), context, factory.uddiPublishStatusManager);
@@ -1156,10 +1156,10 @@ public class PublishingUDDITaskFactory extends UDDITaskFactory {
                             publisher.deleteGatewayBindingTemplates(serviceControl.getUddiServiceKey(),
                                     uddiProxiedServiceInfo.<Set<EndpointPair>>getProperty(UDDIProxiedServiceInfo.ALL_ENDPOINT_PAIRS_KEY),
                                     uddiProxiedServiceInfo.<Set<String>>getProperty(UDDIProxiedServiceInfo.ALL_BINDING_TEMPLATE_KEYS));
-                            logger.log(Level.FINE, "Successfully deleted overwritten endpoints from UDDI Registry");
+                            logger.log(Level.INFO, "Successfully deleted overwritten endpoints from UDDI Registry");
                         } catch (UDDIException e) {
                             if (e instanceof UDDIInvalidKeyException) {
-                                logger.log(Level.FINE, "Overwritten serviceKey not found #(" + serviceControl.getUddiServiceKey() + "). Cannot delete from UDDI Registry.");
+                                logger.log(Level.INFO, "Overwritten serviceKey not found #(" + serviceControl.getUddiServiceKey() + "). Cannot delete from UDDI Registry.");
                             } else {
                                 context.logAndAudit(SystemMessages.UDDI_PUBLISH_REMOVE_ENDPOINT_BINDING,
                                         ExceptionUtils.getDebugException(e),
