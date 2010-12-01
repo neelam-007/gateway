@@ -45,7 +45,7 @@ public class ServerCertUtils {
                     DEREncodable first = (DEREncodable)objs.nextElement();
                     if (first instanceof GeneralName) {
                         GeneralName generalName = (GeneralName) first;
-                        urls.add(generalName.getName().toString());
+                        urls.add(generalName.getName().toString().trim());
                     } else if (first instanceof ASN1Encodable) {
                         ASN1Encodable tag = (ASN1Encodable) first;
                         DERObject foo = tag.getDERObject().getDERObject();

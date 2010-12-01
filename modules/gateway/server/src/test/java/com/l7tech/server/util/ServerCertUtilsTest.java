@@ -44,6 +44,18 @@ public class ServerCertUtilsTest {
     }
 
     @Test
+    @BugNumber(9539)
+    public void testCRLURL_distPointPortal() throws Exception {
+        X509Certificate certificate = CertUtils.decodeCert(HexUtils.decodeBase64(BUG_9539_PORTAL_SPACES));
+
+        String[] crlUrls = ServerCertUtils.getCrlUrls(certificate);
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Wrong number of CRL urls", crlUrls.length == 2);
+        assertEquals("CRL url missing or invalid", "http://crl.disa.mil/getcrl?DOD%20CA-13", crlUrls[0]);
+        assertEquals("CRL url missing or invalid", "ldap://crl.gds.disa.mil/cn%3dDOD%20CA-13%2cou%3dPKI%2cou%3dDoD%2co%3dU.S.%20Government%2cc%3dUS?certificaterevocationlist;binary", crlUrls[1]);
+    }
+
+    @Test
     @BugNumber(9347)
     public void testCRLURL_oneDistPoint_twoUrls() throws Exception {
         TestCertificateGenerator gen = new TestCertificateGenerator().keySize(512);
@@ -163,6 +175,26 @@ public class ServerCertUtilsTest {
             "K9n5qaAQqZn3FUKSpVDXEQfxAtXgcORVbirOJfhdzQsvEGH49iBCzMOJ+IpPgiQS\n" +
             "zzl/IagsjVKXUsX3X0KlhwlmsMw=\n" +
             "-----END CERTIFICATE-----";
+
+    private static final String BUG_9539_PORTAL_SPACES =
+            "MIID3jCCA0egAwIBAgIDAMzBMA0GCSqGSIb3DQEBBQUAMFcxCzAJBgNVBAYTAlVTMRgwFgYDVQQK\n" +
+            "Ew9VLlMuIEdvdmVybm1lbnQxDDAKBgNVBAsTA0RvRDEMMAoGA1UECxMDUEtJMRIwEAYDVQQDEwlE\n" +
+            "T0QgQ0EtMTMwHhcNMDgwNDA4MTgxNjU0WhcNMTEwNDA5MTgxNjU0WjBwMQswCQYDVQQGEwJVUzEY\n" +
+            "MBYGA1UEChMPVS5TLiBHb3Zlcm5tZW50MQwwCgYDVQQLEwNEb0QxDDAKBgNVBAsTA1BLSTENMAsG\n" +
+            "A1UECxMERElTQTEcMBoGA1UEAxMTcG9ydGFsLnNvYWYuY2VzLm1pbDCBnzANBgkqhkiG9w0BAQEF\n" +
+            "AAOBjQAwgYkCgYEAuysRB2FGiZecD80rNHrhfM0QXnXfXqycqvskYXmR/Af9wOIyvg/65LH8xmmW\n" +
+            "2PTfa5EvHCVdH6ytdMPptaC5XVmGJKBGH1Q5xq53pPptBJlhB8IxEGRqU4UfYrPzCb1cs4MIMOXx\n" +
+            "9L8KAo1AZJ/RYZikdZmoUVSD/ZObcNxMaOcCAwEAAaOCAZ0wggGZMB8GA1UdIwQYMBaAFGRkQyWk\n" +
+            "bOcNIh1lrMDkdTfMBNraMB0GA1UdDgQWBBRvhzt8jTXNjfcRNJKMTbyQe8OHgTAOBgNVHQ8BAf8E\n" +
+            "BAMCBaAwgccGA1UdHwSBvzCBvDAtoCugKYYnIGh0dHA6Ly9jcmwuZGlzYS5taWwvZ2V0Y3JsP0RP\n" +
+            "RCUyMENBLTEzMIGKoIGHoIGEhoGBIGxkYXA6Ly9jcmwuZ2RzLmRpc2EubWlsL2NuJTNkRE9EJTIw\n" +
+            "Q0EtMTMlMmNvdSUzZFBLSSUyY291JTNkRG9EJTJjbyUzZFUuUy4lMjBHb3Zlcm5tZW50JTJjYyUz\n" +
+            "ZFVTP2NlcnRpZmljYXRlcmV2b2NhdGlvbmxpc3Q7YmluYXJ5MBYGA1UdIAQPMA0wCwYJYIZIAWUC\n" +
+            "AQsFMGUGCCsGAQUFBwEBBFkwVzAzBggrBgEFBQcwAoYnaHR0cDovL2NybC5kaXNhLm1pbC9nZXRz\n" +
+            "aWduP0RPRCUyMENBLTEzMCAGCCsGAQUFBzABhhRodHRwOi8vb2NzcC5kaXNhLm1pbDANBgkqhkiG\n" +
+            "9w0BAQUFAAOBgQA8oJ2sfVZhrD1sHTtUKZT2YAjY9hsjAKrVAgItVKD8sQorIN8bbc+via0UfXiP\n" +
+            "6OCUj1Ues6IDTEJ9z5hDewXYfyEgYEjImNxBFf889ndDzzYdoxyOLXEIwZlG1TxxZUuV+EMPkflZ\n" +
+            "ln93k/OYqL8Ux7knj/TERR5js+EhWpBVKg==";
 
     private static final String BUG_9347_CRL_DIST_MULTI_URL =
             "MIIFUDCCBDigAwIBAgIKLi6BKAAAAAAANjANBgkqhkiG9w0BAQUFADBJMRMwEQYK\n" +
