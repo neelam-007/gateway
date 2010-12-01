@@ -502,15 +502,11 @@ public class InetAddressUtil {
                 host = hostAndPossiblyPort;
             }
         } else {
-            if (InetAddressUtil.isValidIpv6Address(hostAndPossiblyPort)) {
-                host = "[" + hostAndPossiblyPort + "]";
-            } else {
-                host = hostAndPossiblyPort.substring(0, lastColon);
-                try {
-                    port = hostAndPossiblyPort.substring(lastColon+1, hostAndPossiblyPort.length());
-                } catch (ArrayIndexOutOfBoundsException e2) {
-                    // use default port
-                }
+            host = hostAndPossiblyPort.substring(0, lastColon);
+            try {
+                port = hostAndPossiblyPort.substring(lastColon + 1, hostAndPossiblyPort.length());
+            } catch (ArrayIndexOutOfBoundsException e2) {
+                // use default port
             }
         }
         return new Pair<String, String>(host, port);
