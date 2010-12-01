@@ -47,7 +47,7 @@
 [0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 129 -j ACCEPT
 
 # rate limit ping on all interfaces
-[0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 8 -m limit --limit 2/sec -j ACCEPT
+[0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 128 -m limit --limit 2/sec -j ACCEPT
 
 # drop the rest on all interfaces
 [0:0] -A INPUT -p icmpv6 -j badflags6
