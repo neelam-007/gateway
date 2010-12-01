@@ -49,6 +49,13 @@
 # rate limit ping on all interfaces
 [0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 128 -m limit --limit 2/sec -j ACCEPT
 
+# allow neighbor discovery
+[0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 133 -j ACCEPT
+[0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 134 -j ACCEPT
+[0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 135 -j ACCEPT
+[0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 136 -j ACCEPT
+[0:0] -A INPUT -p icmpv6 -m icmpv6 --icmpv6-type 137 -j ACCEPT
+
 # drop the rest on all interfaces
 [0:0] -A INPUT -p icmpv6 -j badflags6
 
