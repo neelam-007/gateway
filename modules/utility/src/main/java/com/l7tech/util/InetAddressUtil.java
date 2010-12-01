@@ -149,7 +149,17 @@ public class InetAddressUtil {
      * @return true if the provided string is a valid IPv6 address, false otherwise
      */
     public static boolean isValidIpv6Address(String address) {
-        return getIpv6Address(address) != null;
+        return hasAtLeastTwoColons(address) && getIpv6Address(address) != null;
+    }
+
+    private static boolean hasAtLeastTwoColons(String address) {
+        if (address == null) return false;
+        int colons = 0;
+        for(int i=0; i<address.length(); i++) {
+            if (address.charAt(i) == ':') colons++;
+            if (colons >= 2) return true;
+        }
+        return false;
     }
 
     /**
