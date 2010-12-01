@@ -146,16 +146,17 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
                 validateComponents();
             }
         });
+        
+        groupCacheSizeTextField.setDocument(new NumberField(Integer.MAX_VALUE));
+        groupMaximumNestingTextField.setDocument(new NumberField(Integer.MAX_VALUE));
+
         groupCacheSizeTextField.getDocument().addDocumentListener( validationListener );
         groupCacheHierarchyMaxAgeTextField.getDocument().addDocumentListener( validationListener );
         groupMaximumNestingTextField.getDocument().addDocumentListener( validationListener );
-        groupCacheSizeTextField.setDocument(new NumberField(Integer.MAX_VALUE));
-        groupMaximumNestingTextField.setDocument(new NumberField(Integer.MAX_VALUE));
 
         final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.####"));
         numberFormatter.setValueClass(Double.class);
         numberFormatter.setMinimum((double) 0);
-
         groupCacheHierarchyMaxAgeTextField.setFormatterFactory(new JFormattedTextField.AbstractFormatterFactory() {
             @Override
             public JFormattedTextField.AbstractFormatter getFormatter(JFormattedTextField tf) {
@@ -279,7 +280,8 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         boolean valid = true;
         int multiplier = ((TimeUnit)hierarchyUnitcomboBox.getSelectedItem()).getMultiplier();
 
-        maxAgeGreater100Years = !ValidationUtils.isValidDouble( groupCacheHierarchyMaxAgeTextField.getText(), false, 0, MILLIS_100_YEARS / multiplier  );
+        Object maxCache = groupCacheHierarchyMaxAgeTextField.getValue();
+        maxAgeGreater100Years = (maxCache==null?0.0:(Double)maxCache) > (MILLIS_100_YEARS / multiplier);
         boolean groupCacheSize = !ValidationUtils.isValidInteger(groupCacheSizeTextField.getText(), false, 0, Integer.MAX_VALUE);
         boolean nesting = !ValidationUtils.isValidInteger(groupMaximumNestingTextField.getText(), false, 0, Integer.MAX_VALUE);
         if ( groupCacheSize ||
@@ -288,7 +290,7 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
             valid = false;
         }
 
-         groupCacheHierarchyMaxAgeTextField.setToolTipText( maxAgeGreater100Years? resources.getString(RES_MAX_CACHE_AGE_ERROR) : "");
+        groupCacheHierarchyMaxAgeTextField.setToolTipText( maxAgeGreater100Years? resources.getString(RES_MAX_CACHE_AGE_ERROR) : null);
 
         if ( isValid != valid ) {
             isValid = valid;
