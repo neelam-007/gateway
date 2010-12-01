@@ -320,7 +320,9 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         if (assertion.isIncludeAppliesTo()) {
             String address = assertion.getAddressOfEPR();
             if (address != null) {
-                String addressContent = ExpandVariables.process(address, context.getVariableMap(variablesUsed, auditor), auditor);
+                String addressContent = TextUtils.escapeHtmlSpecialCharacters( // escape those special characters
+                    ExpandVariables.process(address, context.getVariableMap(variablesUsed, auditor), auditor)
+                );
 
                 if (assertion.isIncludeAppliesTo() && addressContent != null && !addressContent.trim().isEmpty()) {
                     String wsaNS = parameters.get(RstSoapMessageProcessor.WSA_NS);  // The WS-Addressing namespace must not be null.  It has been checked in doCheckRequest.
@@ -366,9 +368,9 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
                 rstrBuilder.append("<wsse:KeyIdentifier");
                 if (hasTokeType) {
-                    rstrBuilder.append(" ValueType=\"").append(valueType);
+                    rstrBuilder.append(" ValueType=\"").append(valueType).append("\"");
                 }
-                rstrBuilder.append("\">").append(assertionId).append("</wsse:KeyIdentifier>\n");
+                rstrBuilder.append(">").append(assertionId).append("</wsse:KeyIdentifier>\n");
             }
             rstrBuilder
                 .append("</wsse:SecurityTokenReference>\n")
@@ -395,9 +397,9 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
                 rstrBuilder.append("<wsse:KeyIdentifier");
                 if (hasTokeType) {
-                    rstrBuilder.append(" ValueType=\"").append(valueType);
+                    rstrBuilder.append(" ValueType=\"").append(valueType).append("\"");
                 }
-                rstrBuilder.append("\">").append(assertionId).append("</wsse:KeyIdentifier>\n");
+                rstrBuilder.append(">").append(assertionId).append("</wsse:KeyIdentifier>\n");
             }
             rstrBuilder
                 .append("</wsse:SecurityTokenReference>\n")
