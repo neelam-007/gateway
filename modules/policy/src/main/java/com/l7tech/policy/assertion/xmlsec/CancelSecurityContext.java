@@ -52,14 +52,6 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
         this.failIfNotExist = failIfNotExist;
     }
 
-    public boolean isFailIfExpired() {
-        return failIfExpired;
-    }
-
-    public void setFailIfExpired(boolean failIfExpired) {
-        this.failIfExpired = failIfExpired;
-    }
-
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -95,5 +87,4 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
 
     private AuthorizationType requiredAuthorization = AuthorizationType.TOKEN;
     private boolean failIfNotExist = true; // Default set as true.  If user wants to change to false, go to the assertion properties dialog to make change.
-    private boolean failIfExpired = true;  // Default set as true.  If user wants to change to false, go to the assertion properties dialog to make change.
 }

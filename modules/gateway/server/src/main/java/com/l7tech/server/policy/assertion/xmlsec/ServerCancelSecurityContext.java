@@ -17,7 +17,6 @@ import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.secureconversation.NoSuchSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.server.secureconversation.SessionExpiredException;
 import com.l7tech.server.util.RstSoapMessageProcessor;
 import com.l7tech.util.SoapConstants;
 import org.springframework.context.ApplicationContext;
@@ -156,14 +155,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
             } else {
                 logger.warning(e.getMessage());
             }
-        } catch (SessionExpiredException e) {
-            if (assertion.isFailIfExpired()) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:session_expired", e.getMessage());
-                return AssertionStatus.BAD_REQUEST;
-            } else {
-                logger.warning(e.getMessage());
-            }
-        }
+        } 
 
         return AssertionStatus.NONE;
     }

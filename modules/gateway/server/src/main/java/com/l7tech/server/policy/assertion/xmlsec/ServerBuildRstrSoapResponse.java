@@ -19,7 +19,6 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.secureconversation.NoSuchSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.server.secureconversation.SessionExpiredException;
 import com.l7tech.server.util.RstSoapMessageProcessor;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
@@ -121,9 +120,6 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             }
         } catch (NoSuchSessionException e) {
             RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:session.does.not.exist", e.getMessage());
-            return AssertionStatus.BAD_REQUEST;
-        } catch (SessionExpiredException e) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:session.expired", e.getMessage());
             return AssertionStatus.BAD_REQUEST;
         } catch (ClassCastException e) {
             RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_security_token", "The security token provided has invalid semantics.");
@@ -275,7 +271,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
     private String generateRstrElement(PolicyEnforcementContext context,
                                        Message targetMessage,
                                        Map<String, String> parameters,
-                                       Map<String, String> tokenInfo) throws NoSuchSessionException, SessionExpiredException {
+                                       Map<String, String> tokenInfo) throws NoSuchSessionException {
         StringBuilder rstrBuilder = new StringBuilder();
 
         // Build RequestSecurityTokenResponse
@@ -414,7 +410,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             // Check if the session does exist and is not expired before using it.
             sessionId = tokenInfo.get(SCT_IDENTIFIER);
             if (scContextManager.isExpiredSession(sessionId)) {
-                throw new SessionExpiredException("The session (identifier = " + sessionId + ") is expired.");
+                throw new NoSuchSessionException("The session (identifier = " + sessionId + ") is expired.");
             }
             
             //  The session validation is done, then get the session

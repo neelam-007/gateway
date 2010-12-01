@@ -86,10 +86,10 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         }
     }
 
-    public void cancelSession(String identifier) throws NoSuchSessionException, SessionExpiredException {
+    public void cancelSession(String identifier) throws NoSuchSessionException {
         // Check session first
         if (isExpiredSession(identifier)) {
-            throw new SessionExpiredException("The session (identifier = " + identifier + ") is expired.");
+            throw new NoSuchSessionException("The session (identifier = " + identifier + ") is expired.");
         }
 
         synchronized (sessions) {

@@ -22,7 +22,6 @@ public class CancelSecurityContextPropertiesDialog extends AssertionPropertiesEd
     private JButton okButton;
     private JButton cancelButton;
     private JCheckBox failIfNotExistCheckBox;
-    private JCheckBox failIfExpiredCheckBox;
     private JComboBox permitCancellationComboBox;
 
     private CancelSecurityContext assertion;
@@ -89,13 +88,11 @@ public class CancelSecurityContextPropertiesDialog extends AssertionPropertiesEd
             permitCancellationComboBox.setSelectedItem(assertion.getRequiredAuthorization());
         }
         failIfNotExistCheckBox.setSelected(assertion.isFailIfNotExist());
-        failIfExpiredCheckBox.setSelected(assertion.isFailIfExpired());
     }
 
     private void viewToModel(CancelSecurityContext assertion) {
         assertion.setRequiredAuthorization( (CancelSecurityContext.AuthorizationType)permitCancellationComboBox.getSelectedItem() );
         assertion.setFailIfNotExist(failIfNotExistCheckBox.isSelected());
-        assertion.setFailIfExpired(failIfExpiredCheckBox.isSelected());
     }
 
     private void onOK() {
