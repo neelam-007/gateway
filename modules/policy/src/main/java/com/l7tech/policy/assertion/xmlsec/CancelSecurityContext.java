@@ -1,24 +1,47 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
 
-import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * @author ghuang
  */
 public class CancelSecurityContext extends MessageTargetableAssertion {
 
-    private static final String ASSERTION_SHORT_NAME = "Cancel Security Context";
-    private static final String META_INITIALIZED = CancelSecurityContext.class.getName() + ".metadataInitialized";
+    //- PUBLIC
 
-    private boolean failIfNotExist = true; // Default set as true.  If user wants to change to false, go to the assertion properties dialog to make change.
-    private boolean failIfExpired = true;  // Default set as true.  If user wants to change to false, go to the assertion properties dialog to make change.
+    public enum AuthorizationType {
+        /**
+         * Any user can cancel the token (authorization not required)
+         */
+        NONE,
+
+        /**
+         * The token can only be cancelled by the owner
+         */
+        USER,
+
+        /**
+         * The token can only be cancelled by the owner when authenticated using the token
+         */
+        TOKEN
+    }
 
     public CancelSecurityContext() {
+    }
+
+    public AuthorizationType getRequiredAuthorization() {
+        return requiredAuthorization;
+    }
+
+    public void setRequiredAuthorization( final AuthorizationType requiredAuthorization ) {
+        this.requiredAuthorization = requiredAuthorization==null ? AuthorizationType.TOKEN : requiredAuthorization;
     }
 
     public boolean isFailIfNotExist() {
@@ -43,27 +66,34 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
-
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, ASSERTION_SHORT_NAME);
-        meta.put(AssertionMetadata.DESCRIPTION, "Cancel a security context associated with a secure conversation session.");
+        meta.put(SHORT_NAME, "Cancel Security Context");
+        meta.put(DESCRIPTION, "Cancel a security context associated with a secure conversation session.");
 
         // Add to palette folder(s)
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
+        meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
 
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/disconnect.gif");
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.CancelSecurityContextPropertiesDialog");
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.CancelSecurityContextPropertiesDialog");
         meta.put(PROPERTIES_ACTION_NAME, "Security Context Cancellation Properties");
+
+        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder( Arrays.<TypeMapping>asList(
+            new Java5EnumTypeMapping(AuthorizationType.class, "authorizationType")
+        )));
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
 
         return meta;
     }
+
+    //- PRIVATE
+
+    private static final String META_INITIALIZED = CancelSecurityContext.class.getName() + ".metadataInitialized";
+
+    private AuthorizationType requiredAuthorization = AuthorizationType.TOKEN;
+    private boolean failIfNotExist = true; // Default set as true.  If user wants to change to false, go to the assertion properties dialog to make change.
+    private boolean failIfExpired = true;  // Default set as true.  If user wants to change to false, go to the assertion properties dialog to make change.
 }
