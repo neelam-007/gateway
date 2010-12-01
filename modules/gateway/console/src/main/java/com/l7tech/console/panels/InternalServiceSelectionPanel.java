@@ -81,13 +81,18 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
                 final ServiceAdmin serviceAdmin = getServiceAdmin();
                 if (serviceAdmin == null) return;
 
+                String routingURI = serviceUri.getText();  // Preserve the routing URI, since the services combo box will be restructured.
+
                 ServiceTemplate newTemplate = serviceAdmin.createSecurityTokenServiceTemplate((String) wstNsComboBox.getSelectedItem());
                 ServiceTemplate selectedTemplate  = (ServiceTemplate) servicesChooser.getSelectedItem();
+                int selectedIndex = servicesChooser.getSelectedIndex();
 
                 DefaultComboBoxModel model = (DefaultComboBoxModel) servicesChooser.getModel();
                 model.removeElement(selectedTemplate);
-                model.addElement(newTemplate);
+                model.insertElementAt(newTemplate, selectedIndex); // Put a new STS Internal Service back into the list at the same position.
                 model.setSelectedItem(newTemplate);
+                
+                serviceUri.setText(routingURI);
             }
         });
 
