@@ -6,6 +6,7 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
@@ -112,7 +113,12 @@ public class XpathCredentialSourcePropertiesDialog extends LegacyAssertionProper
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final XpathBasedAssertion holder = new XpathBasedAssertion(){};
+                final XpathBasedAssertion holder = new XpathBasedAssertion(){
+                    @Override
+                    public CompositeAssertion getParent() {
+                        return xpathCredsAssertion.getParent();
+                    }
+                };
                 holder.setXpathExpression( new XpathExpression(xpathTextComponent.getText(), namespaces) );
                 final XpathBasedAssertionPropertiesDialog ape = new XpathBasedAssertionPropertiesDialog(XpathCredentialSourcePropertiesDialog.this, holder);
                 JDialog dlg = ape.getDialog();
