@@ -39,6 +39,9 @@ public abstract class UDDITaskFactory {
     }
 
     public static class UDDITaskException extends Exception{
+        public UDDITaskException() {
+        }
+
         public UDDITaskException(String message) {
             super(message);
         }
@@ -49,6 +52,10 @@ public abstract class UDDITaskFactory {
     }
 
     public static abstract class UDDIHandledTaskException extends UDDITaskException{
+
+        protected UDDIHandledTaskException() {
+        }
+
         public UDDIHandledTaskException(String message) {
             super(message);
         }

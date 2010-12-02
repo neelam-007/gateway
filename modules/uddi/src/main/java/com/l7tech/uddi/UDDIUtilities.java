@@ -197,21 +197,29 @@ public class UDDIUtilities {
         }
 
         //Get the binding TModel which will tell us the wsdl url
-        if (wsdlBindingTModelKey == null) throw new IllegalStateException("wsdl:binding tModelKey not found");
+        if (wsdlBindingTModelKey == null){
+            logger.log(Level.INFO, "wsdl:binding tModelKey not found");
+            return null;
+        }
+
         TModel wsdlBindingTModel = null;
         for (TModel tModel : allFoundModels) {
-            if (!tModel.getTModelKey().equals(wsdlBindingTModelKey)) continue;
+            if (!tModel.getTModelKey().equalsIgnoreCase(wsdlBindingTModelKey)) continue;
             wsdlBindingTModel = tModel;  //break required?
         }
 
-        if (wsdlBindingTModel == null) throw new IllegalStateException("wsdl:binding tModel not found");
+        if (wsdlBindingTModel == null){
+            logger.log(Level.INFO, "wsdl:binding tModel not found");
+            return null;
+        }
+
         final String wsdlUrl = extractWsdlUrl(wsdlBindingTModel);
         if (wsdlUrl == null || wsdlUrl.trim().isEmpty())
             throw new UDDIException("Invalid / Unsupported wsdl:binding tModel. No wsdlInterface overviewDoc found. tModelKey: " + wsdlBindingTModel.getTModelKey());
 
         final AccessPoint accessPoint = foundTemplate.getAccessPoint();
         if (accessPoint == null) {
-            logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " contians a bindingTemplate which maps to the wsdl:port with name: " + wsdlPortName +
+            logger.log(Level.INFO, "Service with serviceKey " + serviceKey + " contains a bindingTemplate which maps to the wsdl:port with name: " + wsdlPortName +
                     " but it does not contain an accessPoint element");
             return null;
         }

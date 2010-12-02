@@ -330,7 +330,7 @@ public class BusinessServicePublisher implements Closeable {
             //confirm the keys were transferred
             if (toPublishTemplate.getBindingKey() == null) {
                 throw new UDDIException("Previously published bindingTemplate with key #(" + publishedBindingKey + ")" +
-                        "does not match the service's WSDL. Cannot update.");
+                        " does not match the service's WSDL. Cannot update.");
             }
 
             //if this update was causes by a change that causes the external URL to change, then the URL keyedReference

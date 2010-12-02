@@ -344,15 +344,9 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             }
 
             if(uddiServiceControl.isUnderUddiControl()){
-                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                    @Override
-                    public void afterCompletion(int status) {
-                        if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                            logger.log(Level.FINE, "WSDL is now under UDDI control. Creating task to refresh gateway's WSDL");
-                            uddiCoordinator.notifyEvent(new BusinessServiceUpdateUDDIEvent(uddiRegistry.getOid(), uddiServiceControl.getUddiServiceKey(), false, true));
-                        }
-                    }
-                });
+                registerSynchronization(uddiServiceControl.getUddiRegistryOid(),
+                        uddiServiceControl.getUddiServiceKey(),
+                        "WSDL is now under UDDI control. Creating task to refresh gateway's WSDL");
             }
             return oid;
         }else{
@@ -388,18 +382,22 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
             }
 
             if(wsdlRefreshRequiredMessage != null){
-                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                    @Override
-                    public void afterCompletion(int status) {
-                        if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                            logger.log(Level.FINE, wsdlRefreshRequiredMessage);
-                            uddiCoordinator.notifyEvent(new BusinessServiceUpdateUDDIEvent(uddiServiceControl.getUddiRegistryOid(), uddiServiceControl.getUddiServiceKey(), false, true));
-                        }
-                    }
-                });
+                registerSynchronization(uddiServiceControl.getUddiRegistryOid(), uddiServiceControl.getUddiServiceKey(), wsdlRefreshRequiredMessage);
             }
             return uddiServiceControl.getOid();
         }
+    }
+
+    private void registerSynchronization(final long registryOid, final String serviceKey, final String logMessage){
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                    logger.log(Level.INFO, logMessage);
+                    uddiCoordinator.notifyEvent(new BusinessServiceUpdateUDDIEvent(registryOid, serviceKey, false, true));
+                }
+            }
+        });
     }
 
     /**
