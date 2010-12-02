@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.util.logging.Logger;
 
 /**
  * Wizard step panel for LDAP Identity Provider advanced configuration.
@@ -130,6 +131,7 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
     private TimeUnit oldTimeUnit;
     private boolean maxAgeGreater100Years = false;
 
+     private final Logger logger = Logger.getLogger(LdapAdvancedConfigurationPanel.class.getName());
     private void initComponents() {
         this.setLayout( new BorderLayout() );
         this.add( mainPanel, BorderLayout.CENTER );
@@ -150,19 +152,19 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         groupCacheSizeTextField.setDocument(new NumberField(Integer.MAX_VALUE));
         groupMaximumNestingTextField.setDocument(new NumberField(Integer.MAX_VALUE));
 
-        groupCacheSizeTextField.getDocument().addDocumentListener( validationListener );
-        groupCacheHierarchyMaxAgeTextField.getDocument().addDocumentListener( validationListener );
-        groupMaximumNestingTextField.getDocument().addDocumentListener( validationListener );
-
         final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.####"));
         numberFormatter.setValueClass(Double.class);
-        numberFormatter.setMinimum((double) 0);
+        numberFormatter.setMinimum(0.0);
         groupCacheHierarchyMaxAgeTextField.setFormatterFactory(new JFormattedTextField.AbstractFormatterFactory() {
             @Override
             public JFormattedTextField.AbstractFormatter getFormatter(JFormattedTextField tf) {
                 return numberFormatter;
             }
         });
+        
+        groupCacheSizeTextField.getDocument().addDocumentListener( validationListener );
+        groupCacheHierarchyMaxAgeTextField.getDocument().addDocumentListener( validationListener );
+        groupMaximumNestingTextField.getDocument().addDocumentListener( validationListener );
 
         oldTimeUnit = TimeUnit.MINUTES ;
         hierarchyUnitcomboBox.setModel( new DefaultComboBoxModel( TimeUnit.ALL ) );
@@ -280,8 +282,14 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         boolean valid = true;
         int multiplier = ((TimeUnit)hierarchyUnitcomboBox.getSelectedItem()).getMultiplier();
 
-        Object maxCache = groupCacheHierarchyMaxAgeTextField.getValue();
-        maxAgeGreater100Years = (maxCache==null?0.0:(Double)maxCache) > (MILLIS_100_YEARS / multiplier);
+        String maxCache = groupCacheHierarchyMaxAgeTextField.getText();         
+        Double maxCacheNum = 0.0;
+        if (maxCache!=null){
+            try{
+                maxCacheNum=Double.parseDouble(maxCache);
+            }catch(NumberFormatException e){maxCacheNum = MILLIS_100_YEARS+1.0;}
+        }
+        maxAgeGreater100Years = maxCacheNum > (MILLIS_100_YEARS / multiplier);
         boolean groupCacheSize = !ValidationUtils.isValidInteger(groupCacheSizeTextField.getText(), false, 0, Integer.MAX_VALUE);
         boolean nesting = !ValidationUtils.isValidInteger(groupMaximumNestingTextField.getText(), false, 0, Integer.MAX_VALUE);
         if ( groupCacheSize ||
