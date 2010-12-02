@@ -95,7 +95,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
         }
 
         // At this point, everything is fine since the validation is done.  It is ready to create a SecurityContextToken.
-        String wsuId = "uuid:" + UUID.randomUUID().toString();
+        String wsuId = "uuid-" + UUID.randomUUID().toString();
         String identifier = "urn:uuid:" + UUID.randomUUID().toString();
 
         String wscNS = rstParameters.get(RstSoapMessageProcessor.WSC_NS);

@@ -480,7 +480,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
             // Build Entropy
             if (Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_ENTROPY))) {
-                String wsuId = "uuid:" + UUID.randomUUID().toString();
+                String wsuId = "uuid-" + UUID.randomUUID().toString();
                 String secret = HexUtils.encodeBase64(session.getSharedSecret(), true);
                 rstrBuilder
                     .append("<wst:Entropy>\n")
@@ -570,7 +570,8 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
     private String produceEncryptedKeyXml(final byte[] sharedSecret, final X509Certificate requestorCert, final String wsseNS) throws GeneralSecurityException {
         StringBuilder encryptedKeyXml = new StringBuilder();
         // Key info and all
-        encryptedKeyXml.append("<xenc:EncryptedKey wsu:Id=\"newProof\" xmlns:xenc=\"").append(SoapConstants.XMLENC_NS)
+        String wsuId = "uuid-" + UUID.randomUUID().toString();
+        encryptedKeyXml.append("<xenc:EncryptedKey wsu:Id=\"").append(wsuId).append("\" xmlns:xenc=\"").append(SoapConstants.XMLENC_NS)
             .append("\"><xenc:EncryptionMethod Algorithm=\"").append(SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO).append("\" />");
 
         // append ski if applicable
