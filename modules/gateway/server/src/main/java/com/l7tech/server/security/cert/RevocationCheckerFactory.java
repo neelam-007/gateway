@@ -796,7 +796,8 @@ public class RevocationCheckerFactory {
             } catch (OCSPClient.OCSPClientStatusException ocse) {
                 auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_BAD_RESPONSE_STATUS, url, ExceptionUtils.getMessage(ocse));
             } catch (OCSPClient.OCSPClientException oce) {
-                auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_ERROR, new String[]{url, ExceptionUtils.getMessage(oce)}, oce);
+                //noinspection ThrowableResultOfMethodCallIgnored
+                auditor.logAndAudit(SystemMessages.CERTVAL_OCSP_ERROR, new String[]{url, ExceptionUtils.getMessage(oce)}, ExceptionUtils.getDebugException(oce));
                 result = onNetworkFailure;
             }
 
