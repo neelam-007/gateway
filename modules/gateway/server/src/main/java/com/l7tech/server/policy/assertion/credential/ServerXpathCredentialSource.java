@@ -14,6 +14,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathUtil;
 import com.l7tech.xml.xpath.XpathVariableContext;
@@ -142,7 +143,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                 // Make a dummy document
                 requestDoc = XmlUtil.createEmptyDocument();
             } else {
-                auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML, null, e);
+                auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML, null, ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
             }
         }
