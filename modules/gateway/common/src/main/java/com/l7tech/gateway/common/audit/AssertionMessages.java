@@ -757,5 +757,11 @@ public class AssertionMessages extends Messages {
     public static final M ADD_WS_ADDRESSING_NO_SOAP_ACTION       = m(9261, Level.WARNING, "Target message has no associated SOAPAction. Cannot automatically add the Action element.");
     public static final M ADD_WS_ADDRESSING_NO_ACTION_SUPPLIED   = m(9262, Level.WARNING, "Action is a required WS-Addressing messaging property. No value found at runtime.");
 
+    public static final M STS_INVALID_RST_REQUEST      = m(9290, Level.WARNING, "Invalid RST SOAP Request: {0}");
+    public static final M STS_INVALID_SECURITY_TOKEN  = m(9291, Level.WARNING, "Invalid Security Token: {0}");
+    public static final M STS_EXPIRED_SC_SESSION       = m(9292, Level.WARNING, "Expired Secure Conversation Session: {0}");
+    public static final M STS_AUTHENTICATION_FAILURE = m(9293, Level.WARNING, "Authentication Failure: {0}");
+    public static final M STS_AUTHORIZATION_FAILURE  = m(9294, Level.WARNING, "Authorization Failure: {0}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

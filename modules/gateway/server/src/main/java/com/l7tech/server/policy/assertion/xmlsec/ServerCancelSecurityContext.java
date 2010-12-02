@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.identity.User;
 import com.l7tech.message.Message;
@@ -33,6 +34,8 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
     private final SecureConversationContextManager secureConversationContextManager;
     private final Auditor auditor;
 
+    private String soapVersion;
+
     public ServerCancelSecurityContext( final CancelSecurityContext assertion,
                                         final ApplicationContext springContext ) {
         super(assertion, assertion);
@@ -48,8 +51,16 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
 
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
         Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, false);
+        soapVersion = RstSoapMessageProcessor.getSoapVersion(context, rstParameters);
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "wst:InvalidRequest", rstParameters.get(RstSoapMessageProcessor.ERROR));
+            RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                auditor,
+                context,
+                AssertionMessages.STS_INVALID_RST_REQUEST,
+                soapVersion,
+                RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
+                rstParameters.get(RstSoapMessageProcessor.ERROR)
+            );
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -71,7 +82,14 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
             secureConversationContextManager.cancelSession(targetIdentifier);
         } catch (NoSuchSessionException e) {
             if (assertion.isFailIfNotExist()) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no.such.session", e.getMessage());
+                RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                    auditor,
+                    context,
+                    AssertionMessages.STS_EXPIRED_SC_SESSION,
+                    soapVersion,
+                    RstSoapMessageProcessor.WST_FAULT_CODE_EXPIRED_DATA,
+                    e.getMessage()
+                );
                 return AssertionStatus.BAD_REQUEST;
             } else {
                 logger.warning(e.getMessage());
@@ -101,7 +119,14 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
 
         if ( !found ) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:not_authorized", "Not authorized.");
+            RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                auditor,
+                context,
+                AssertionMessages.STS_AUTHORIZATION_FAILURE,
+                soapVersion,
+                "l7:not_authorized",
+                "Not authorized."
+            );
             throw new AssertionStatusException(AssertionStatus.BAD_REQUEST);
         }
     }
@@ -130,7 +155,14 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
 
         if ( !found ) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:not_authorized", "Not authorized.");
+            RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                auditor,
+                context,
+                AssertionMessages.STS_AUTHORIZATION_FAILURE,
+                soapVersion,
+                "l7:not_authorized",
+                "Not authorized."
+            );
             throw new AssertionStatusException(AssertionStatus.BAD_REQUEST);
         }
     }

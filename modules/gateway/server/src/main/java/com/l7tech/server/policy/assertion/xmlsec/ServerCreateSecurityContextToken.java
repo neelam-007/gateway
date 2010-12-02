@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -47,15 +48,30 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
 
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
         Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, true);
+        String soapVersion = RstSoapMessageProcessor.getSoapVersion(context, rstParameters);
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "wst:InvalidRequest", rstParameters.get(RstSoapMessageProcessor.ERROR));
+            RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                auditor,
+                context,
+                AssertionMessages.STS_INVALID_RST_REQUEST,
+                soapVersion,
+                RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
+                rstParameters.get(RstSoapMessageProcessor.ERROR)
+            );
             return AssertionStatus.BAD_REQUEST;
         }
 
         // Check if the credentials are provided and proven in the message (request, response, or context variable).
         AuthenticationResult authenticationResult = authContext.getLastAuthenticationResult();
         if (authenticationResult == null) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_authentication_result", "The target message does not provide an authentication info.");
+            RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                auditor,
+                context,
+                AssertionMessages.STS_AUTHENTICATION_FAILURE,
+                soapVersion,
+                RstSoapMessageProcessor.WST_FAULT_CODE_FAILED_AUTHENTICATION,
+                "The target message does not contain any authentication information."
+            );
             return AssertionStatus.AUTH_FAILED;
         }
 
@@ -66,9 +82,15 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                 break;
             }
         }
-
         if (loginCredentials == null) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no_matched_credentials", "Credentials not found for the authenticated user.");
+            RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                auditor,
+                context,
+                AssertionMessages.STS_AUTHENTICATION_FAILURE,
+                soapVersion,
+                RstSoapMessageProcessor.WST_FAULT_CODE_FAILED_AUTHENTICATION,
+                "Credentials not found for the authenticated user."
+            );
             return AssertionStatus.AUTH_FAILED;
         }
 
@@ -78,15 +100,10 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
 
         String wscNS = rstParameters.get(RstSoapMessageProcessor.WSC_NS);
         if (wscNS == null || wscNS.trim().isEmpty()) {
-            // Get the namespace of WS-Trust first then retrieve the namespace of WS-Secure Conversation according to the namespace of WS-Trust.
+            // Get the namespace of WS-Trust and then retrieve the namespace of WS-Secure Conversation according to the namespace of WS-Trust.
             String wstNS = rstParameters.get(RstSoapMessageProcessor.WST_NS);
 
-            // Check if the namespace is specified in the RST/SCT request message.  If not specified, fail this assertion.
-            if (wstNS == null || wstNS.trim().isEmpty()) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:missing_ws-trust_namespace", "The namespace of WS-Trust is not specified in the RST/SCT request message.");
-                return AssertionStatus.BAD_REQUEST;
-            }
-
+            // Note: no need to check if the WS-Trust namespace is null, since it has been checked in RstSoapMessageProcessor.
             wscNS = deriveWscNamespace(wstNS);
         }
 

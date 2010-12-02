@@ -1,6 +1,8 @@
 package com.l7tech.server.util;
 
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.message.Message;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
@@ -16,7 +18,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * Process an inbound RST SOAP message and log/report errors.
@@ -24,7 +25,10 @@ import java.util.logging.Logger;
  * @author ghuang
  */
 public class RstSoapMessageProcessor {
-    private static final Logger logger = Logger.getLogger(RstSoapMessageProcessor.class.getName());
+    public static final String WST_FAULT_CODE_INVALID_REQUEST = "wst:InvalidRequest";
+    public static final String WST_FAULT_CODE_INVALID_SECURITY_TOKEN = "wst:InvalidSecurityToken";
+    public static final String WST_FAULT_CODE_EXPIRED_DATA = "wst:ExpiredData";
+    public static final String WST_FAULT_CODE_FAILED_AUTHENTICATION = "wst:FailedAuthentication";
 
     public final static String SOAP_VERSION = "soap_version";
     public final static String SOAP_ENVELOPE_NS = "soap_envelope_namespace";
@@ -120,6 +124,7 @@ public class RstSoapMessageProcessor {
                 break;
             }
         }
+        // Since WS-Trust namespace is mandatory, needs to check its existence.
         if (wstNS == null || wstNS.trim().isEmpty()) {
             parameters.put(ERROR, "The namespace of WS-Trust is not specified in the SOAP envelope.");
             return parameters;
@@ -184,7 +189,7 @@ public class RstSoapMessageProcessor {
                     !SoapConstants.WST_RST_ISSUE_ACTION_LIST.contains(actionValue) &&
                     !SoapConstants.WSC_RST_CANCEL_ACTION_LIST.contains(actionValue)) {
                     
-                    parameters.put(ERROR,  "The Action element of WS-Addressing has an unknown value in the SOAP Header.");
+                    parameters.put(ERROR, "The Action element of WS-Addressing has an unknown value in the SOAP Header.");
                     return parameters;
                 }
 
@@ -225,7 +230,7 @@ public class RstSoapMessageProcessor {
                     if (!SoapConstants.WSC_RST_SCT_TOKEN_TYPE_LIST.contains(tokenTypeValue) &&
                         !ArrayUtils.contains(SoapConstants.VALUETYPE_SAML_ARRAY, tokenTypeValue)) {
                         
-                        parameters.put(ERROR,  "The TokenType element in the RequestSecurityToken element has an unknown value in the SOAP envelope.");
+                        parameters.put(ERROR,  "The TokenType element in the RequestSecurityToken element has an unknown value in the SOAP Body.");
                         return parameters;
                     }
 
@@ -248,7 +253,7 @@ public class RstSoapMessageProcessor {
 
                 // Check if it is empty.
                 if (requestTypeValue == null || requestTypeValue.trim().isEmpty()) { // Actually requestType is never be null, since DomUtils.getTextValue(...) will not return null.
-                    parameters.put(ERROR,  "The value of the RequestType element is empty in the RequestSecurityToken element in the SOAP envelope.");
+                    parameters.put(ERROR,  "The value of the RequestType element is empty in the RequestSecurityToken element in the SOAP Body.");
                     return parameters;
                 }
 
@@ -256,13 +261,13 @@ public class RstSoapMessageProcessor {
                 if ((isForIssuance && !SoapConstants.WST_RST_ISSUE_REQUEST_TYPE_LIST.contains(requestTypeValue)) ||
                     (!isForIssuance && !SoapConstants.WST_RST_CANCEL_REQUEST_TYPE_LIST.contains(requestTypeValue))) {
 
-                    parameters.put(ERROR,  "The RequestType element in the RequestSecurityToken element has an unknown value in the SOAP envelope.");
+                    parameters.put(ERROR,  "The RequestType element in the RequestSecurityToken element has an unknown value in the SOAP Body.");
                     return parameters;
                 }
 
                 parameters.put(REQUEST_TYPE, requestTypeValue);
             } catch (MissingRequiredElementException e) {
-                parameters.put(ERROR,  "There is no RequestType element in the RequestSecurityToken element in the SOAP envelope.");
+                parameters.put(ERROR,  "There is no RequestType element in the RequestSecurityToken element in the SOAP Body.");
                 return parameters;
             }
 
@@ -326,7 +331,7 @@ public class RstSoapMessageProcessor {
                 try {
                     strEl = DomUtils.findExactlyOneChildElementByName(cancelTargetEl, parameters.get(WSSE_NS), SoapConstants.WSSE_SECURITY_TOKEN_REFERENCE);
                 } catch (MissingRequiredElementException e1) {
-                    parameters.put(ERROR,  "There is no SecurityTokenReference element in the CancelTarget element in the SOAP envelope.");
+                    parameters.put(ERROR,  "There is no SecurityTokenReference element in the CancelTarget element in the SOAP Body.");
                     return parameters;
                 }
 
@@ -336,7 +341,7 @@ public class RstSoapMessageProcessor {
                 try {
                     refEl = DomUtils.findExactlyOneChildElementByName(strEl, parameters.get(WSSE_NS), SoapConstants.WSSE_REFERENCE);
                 } catch (MissingRequiredElementException e1) {
-                    parameters.put(ERROR,  "There is no Reference element in the SecurityTokenReference element in the SOAP envelope.");
+                    parameters.put(ERROR,  "There is no Reference element in the SecurityTokenReference element in the SOAP Body.");
                     return parameters;
                 }
 
@@ -359,22 +364,33 @@ public class RstSoapMessageProcessor {
                     parameters.put(REFERENCE_ATTR_VALUE_TYPE, valueTypeValue);
                 }
             } catch (MissingRequiredElementException e) {
-                parameters.put(ERROR,  "There is no CancelTarget element in the RequestSecurityToken element in the SOAP envelope.");
+                parameters.put(ERROR,  "There is no CancelTarget element in the RequestSecurityToken element in the SOAP Body.");
                 return parameters;
             }
         } catch (TooManyChildElementsException e) {
-            parameters.put(ERROR, "There is more than one " + elementName + " element in the RequestSecurityToken element in the SOAP envelope.");
+            parameters.put(ERROR, "There is more than one " + elementName + " element in the RequestSecurityToken element in the SOAP Body.");
             return parameters;
         }
 
         return parameters;
     }
 
-    public static void setAndLogSoapFault(final PolicyEnforcementContext context, String faultCodeOrValue, String faultStringOrReason) {
+    public static void logAuditAndSetSoapFault(
+            final Auditor auditor,
+            final PolicyEnforcementContext context,
+            final AuditDetailMessage assertionMessage,
+            String soapVersion,
+            String faultCodeOrValue,
+            String faultStringOrReason) {
+
+        // Log and audit
+        auditor.logAndAudit(assertionMessage, faultStringOrReason);
+
+        // Set a SOAP fault
         SoapFaultLevel fault = new SoapFaultLevel();
         fault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
 
-        if(context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) {
+        if ("1.2".equals(soapVersion)) {
             fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\" " +
                 "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
@@ -392,7 +408,7 @@ public class RstSoapMessageProcessor {
                 "</soapenv:Envelope>");
         } else {
             fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
+                "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE + "\" " +
                 "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
                 "    <soapenv:Body>\n" +
                 "        <soapenv:Fault>\n" +
@@ -405,6 +421,21 @@ public class RstSoapMessageProcessor {
         }
 
         context.setFaultlevel(fault);
-        logger.warning(faultStringOrReason);
+    }
+
+    public static String getSoapVersion(final PolicyEnforcementContext context, final Map<String, String> parameters) {
+        // Get the SOAP version from the target message first.
+        String soapVersion = parameters.get(SOAP_VERSION);
+
+        // If the SOAP version is not ready, then use the SOAP version from the published service or use the default one, 1.1.
+        if (soapVersion == null) {
+            if (context.getService() != null) {
+                soapVersion = context.getService().getSoapVersion().getVersionNumber();
+            } else {
+                soapVersion = SoapVersion.SOAP_1_1.getVersionNumber();
+            }
+        }
+        
+        return soapVersion;
     }
 }

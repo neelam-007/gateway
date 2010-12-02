@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -25,7 +26,6 @@ import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -67,8 +67,16 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
         Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, assertion.isResponseForIssuance());
+        String soapVersion = RstSoapMessageProcessor.getSoapVersion(context, rstParameters);
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "wst:InvalidRequest", rstParameters.get(RstSoapMessageProcessor.ERROR));
+            RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                auditor,
+                context,
+                AssertionMessages.STS_INVALID_RST_REQUEST,
+                soapVersion,
+                RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
+                rstParameters.get(RstSoapMessageProcessor.ERROR)
+            );
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -77,19 +85,22 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         Map<String, String> tokenInfo = new HashMap<String, String>(6);
         try {
             if (assertion.isResponseForIssuance()) {
-                AssertionStatus status = getTokenInfo(context, tokenInfo);
-
+                AssertionStatus status = getTokenInfo(context, tokenInfo, soapVersion);
                 if (status != AssertionStatus.NONE) return status;
                 rstrXml = generateRstrElement(context, message, rstParameters, tokenInfo);
             } else {
                 rstrXml = generateRstrElement(context, message, rstParameters, null); // no need of token info
             }
         } catch (NoSuchSessionException e) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:session.does.not.exist", e.getMessage());
+            RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                auditor,
+                context,
+                AssertionMessages.STS_EXPIRED_SC_SESSION,
+                soapVersion,
+                RstSoapMessageProcessor.WST_FAULT_CODE_EXPIRED_DATA,
+                e.getMessage()
+            );
             return AssertionStatus.BAD_REQUEST;
-        } catch (ClassCastException e) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_security_token", "The security token provided has invalid semantics.");
-            return AssertionStatus.FAILED;
         }
 
         // Build a RSTR SOAP response message and set the context variable for rstrResponse
@@ -101,79 +112,83 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_WSA_NAMESPACE, (wsaNS == null)? "" : wsaNS);
 
         // Set the context variable for RSTR WS-Addressing Action (Optional)
-        String rstWsaAction = (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_WS_ADDRESSING_ACTION)))?
-            rstParameters.get(RstSoapMessageProcessor.WS_ADDRESSING_ACTION) : "";
-
         String rstrWsaAction = "";
-        if (assertion.isResponseForIssuance()) {
-            // Get the type of the token issued
-            boolean isSCT = Boolean.parseBoolean(tokenInfo.get(IS_SCT));
-            if (isSCT) { // SCT
-                if (SoapConstants.WSC_RST_SCT_ACTION.equals(rstWsaAction)) {
-                    rstrWsaAction = SoapConstants.WSC_RSTR_SCT_ACTION;
-                } else if (SoapConstants.WSC_RST_SCT_ACTION2.equals(rstWsaAction)) {
-                    rstrWsaAction = SoapConstants.WSC_RSTR_SCT_ACTION2;
-                } else if (SoapConstants.WSC_RST_SCT_ACTION3.equals(rstWsaAction)) {
-                    rstrWsaAction = SoapConstants.WSC_RSTR_SCT_ACTION3;
-                } else {
-                    // Should not reach here, since WS-Addressing Action has been validated in RstSoapMessageProcessor.
-                    // We just set the current latest WS-Addressing action in this case.
-                    if (SoapConstants.WSC_RSTR_SCT_ACTION_LIST.size() > 0) {
-                        rstrWsaAction = SoapConstants.WSC_RSTR_SCT_ACTION_LIST.get(SoapConstants.WSC_RSTR_SCT_ACTION_LIST.size() - 1);
+        if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_WS_ADDRESSING_ACTION))) {
+            String rstWsaAction = rstParameters.get(RstSoapMessageProcessor.WS_ADDRESSING_ACTION);
+
+            if (assertion.isResponseForIssuance()) {
+                // Get the type of the token issued
+                boolean isSCT = Boolean.parseBoolean(tokenInfo.get(IS_SCT));
+                if (isSCT) { // SCT
+                    if (SoapConstants.WSC_RST_SCT_ACTION.equals(rstWsaAction)) {
+                        rstrWsaAction = SoapConstants.WSC_RSTR_SCT_ACTION;
+                    } else if (SoapConstants.WSC_RST_SCT_ACTION2.equals(rstWsaAction)) {
+                        rstrWsaAction = SoapConstants.WSC_RSTR_SCT_ACTION2;
+                    } else if (SoapConstants.WSC_RST_SCT_ACTION3.equals(rstWsaAction)) {
+                        rstrWsaAction = SoapConstants.WSC_RSTR_SCT_ACTION3;
+                    } else {
+                        // Set the current latest WS-Addressing action in this case.
+                        if (SoapConstants.WSC_RSTR_SCT_ACTION_LIST.size() > 0) {
+                            rstrWsaAction = SoapConstants.WSC_RSTR_SCT_ACTION_LIST.get(SoapConstants.WSC_RSTR_SCT_ACTION_LIST.size() - 1);
+                        }
+                    }
+                } else { // SAML Token
+                    if (SoapConstants.WST_RST_ISSUE_ACTION.equals(rstWsaAction)) {
+                        rstrWsaAction = SoapConstants.WST_RSTR_ISSUE_ACTION;
+                    } else if (SoapConstants.WST_RST_ISSUE_ACTION2.equals(rstWsaAction)) {
+                        rstrWsaAction = SoapConstants.WST_RSTR_ISSUE_ACTION2;
+                    } else if (SoapConstants.WST_RST_ISSUE_ACTION3.equals(rstWsaAction)) {
+                        rstrWsaAction = SoapConstants.WST_RSTR_ISSUE_ACTION3;
+                    } else {
+                        // Set the current latest WS-Addressing action in this case.
+                        if (SoapConstants.WST_RSTR_ISSUE_ACTION_LIST.size() > 0) {
+                            rstrWsaAction = SoapConstants.WST_RSTR_ISSUE_ACTION_LIST.get(SoapConstants.WST_RSTR_ISSUE_ACTION_LIST.size() - 1);
+                        }
                     }
                 }
-            } else {     // SAML Token
-                if (SoapConstants.WST_RST_ISSUE_ACTION.equals(rstWsaAction)) {
-                    rstrWsaAction = SoapConstants.WST_RSTR_ISSUE_ACTION;
-                } else if (SoapConstants.WST_RST_ISSUE_ACTION2.equals(rstWsaAction)) {
-                    rstrWsaAction = SoapConstants.WST_RSTR_ISSUE_ACTION2;
-                } else if (SoapConstants.WST_RST_ISSUE_ACTION3.equals(rstWsaAction)) {
-                    rstrWsaAction = SoapConstants.WST_RSTR_ISSUE_ACTION3;
-                } else {
-                    // Should not reach here, since WS-Addressing Action has been validated in RstSoapMessageProcessor.
-                    // We just set the current latest WS-Addressing action in this case.
-                    if (SoapConstants.WST_RSTR_ISSUE_ACTION_LIST.size() > 0) {
-                        rstrWsaAction = SoapConstants.WST_RSTR_ISSUE_ACTION_LIST.get(SoapConstants.WST_RSTR_ISSUE_ACTION_LIST.size() - 1);
-                    }
-                }
-            }
-        } else {
-            if (SoapConstants.WSC_RST_CANCEL_ACTION.equals(rstWsaAction)) {
-                rstrWsaAction = SoapConstants.WSC_RSTR_CANCEL_ACTION;
-            } else if (SoapConstants.WSC_RST_CANCEL_ACTION2.equals(rstWsaAction)) {
-                rstrWsaAction = SoapConstants.WSC_RSTR_CANCEL_ACTION2;
             } else {
-                // Should not reach here, since WS-Addressing Action has been validated in RstSoapMessageProcessor.
-                // We just set the current latest WS-Addressing action in this case.
-                if (SoapConstants.WSC_RST_CANCEL_ACTION_LIST.size() > 0) {
-                    rstrWsaAction = SoapConstants.WSC_RST_CANCEL_ACTION_LIST.get(SoapConstants.WSC_RST_CANCEL_ACTION_LIST.size() - 1);
+                if (SoapConstants.WSC_RST_CANCEL_ACTION.equals(rstWsaAction)) {
+                    rstrWsaAction = SoapConstants.WSC_RSTR_CANCEL_ACTION;
+                } else if (SoapConstants.WSC_RST_CANCEL_ACTION2.equals(rstWsaAction)) {
+                    rstrWsaAction = SoapConstants.WSC_RSTR_CANCEL_ACTION2;
+                } else {
+                    // Set the current latest WS-Addressing action in this case.
+                    if (SoapConstants.WSC_RST_CANCEL_ACTION_LIST.size() > 0) {
+                        rstrWsaAction = SoapConstants.WSC_RST_CANCEL_ACTION_LIST.get(SoapConstants.WSC_RST_CANCEL_ACTION_LIST.size() - 1);
+                    }
                 }
             }
         }
         context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_RSTR_WSA_ACTION, rstrWsaAction);
 
-
         // End up with success
         return AssertionStatus.NONE;
     }
 
-    private AssertionStatus getTokenInfo(PolicyEnforcementContext context, Map<String, String> tokenInfo) {
+    private AssertionStatus getTokenInfo(PolicyEnforcementContext context, Map<String, String> tokenInfo, String soapVersion) {
         // Get the token issued
         String tokenVariable = assertion.getTokenIssued();
 
         // Get the XML content of the issued token
         String tokenXml = ExpandVariables.process(tokenVariable, context.getVariableMap(variablesUsed, auditor), auditor);
         tokenInfo.put(TOKEN_XML, tokenXml);
-        
-        Document tokenDoc;
+
+        Element root;
         try {
-            tokenDoc = XmlUtil.stringToDocument(tokenXml);
-        } catch (SAXException e) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_document", "The content of the issued token has invalid document format.");
+            Document tokenDoc = XmlUtil.stringToDocument(tokenXml);
+            root = (Element) tokenDoc.getFirstChild();
+        } catch (Throwable t) { // Such as SAXException, ClassCastException, etc.
+            RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                auditor,
+                context,
+                AssertionMessages.STS_INVALID_SECURITY_TOKEN,
+                soapVersion,
+                RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
+                "The security token used to generate a RSTR response is invalid or not well-formatted."
+            );
             return AssertionStatus.BAD_REQUEST;
         }
 
-        Element root = (Element) tokenDoc.getFirstChild();
         String rootNS = root.getNamespaceURI();
         String rootElmtName = root.getLocalName();
 
@@ -186,7 +201,14 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             try {
                 sctWsuId = DomUtils.getElementIdValue(root, SoapUtil.getDefaultIdAttributeConfig());
             } catch (InvalidDocumentFormatException e) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_document", "There are more than one attribute recognized as an ID attribute in the SecurityContextToken element.");
+                RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                    auditor,
+                    context,
+                    AssertionMessages.STS_INVALID_SECURITY_TOKEN,
+                    soapVersion,
+                    RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
+                    "There are more than one ID attribute in the SecurityContextToken element."
+                );
                 return AssertionStatus.BAD_REQUEST;
             }
             tokenInfo.put(SCT_WSU_ID, sctWsuId);
@@ -195,10 +217,24 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 // Set Identifier
                 tokenInfo.put(SCT_IDENTIFIER, DomUtils.findExactlyOneChildElementByName(root, rootNS, "Identifier").getTextContent());
             } catch (TooManyChildElementsException e) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_document", "There are more than one Identifier element in the SecurityContextToken element.");
+                RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                    auditor,
+                    context,
+                    AssertionMessages.STS_INVALID_SECURITY_TOKEN,
+                    soapVersion,
+                    RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
+                    "There are more than one Identifier element in the SecurityContextToken element."
+                );
                 return AssertionStatus.BAD_REQUEST;
             } catch (MissingRequiredElementException e) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_document", "There is no Identifier element in the SecurityContextToken element.");
+                RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                    auditor,
+                    context,
+                    AssertionMessages.STS_INVALID_SECURITY_TOKEN,
+                    soapVersion,
+                    RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
+                    "There is no Identifier element in the SecurityContextToken element."
+                );
                 return AssertionStatus.BAD_REQUEST;
             }
         }
@@ -217,13 +253,25 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 // Set ValueType
                 tokenInfo.put(SAML_VALUE_TYPE, SoapConstants.VALUETYPE_SAML_ASSERTIONID3);
             } else {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_document", "The SAML namespace is invalid.");
+                RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                    auditor,
+                    context,
+                    AssertionMessages.STS_INVALID_SECURITY_TOKEN,
+                    soapVersion,
+                    RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
+                    "The SAML namespace is invalid."
+                );
                 return AssertionStatus.BAD_REQUEST;
             }
-        }
-        // The token is not recognizable.
-        else {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_token_type", "The token issued is neither a SecurityContextToken nor a SAML token.");
+        } else { // The token is not recognizable.
+            RstSoapMessageProcessor.logAuditAndSetSoapFault(
+                auditor,
+                context,
+                AssertionMessages.STS_INVALID_SECURITY_TOKEN,
+                soapVersion,
+                RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
+                "The security token provided is neither a SecurityContextToken nor a SAML token."
+            );
             return AssertionStatus.BAD_REQUEST;
         }
 
