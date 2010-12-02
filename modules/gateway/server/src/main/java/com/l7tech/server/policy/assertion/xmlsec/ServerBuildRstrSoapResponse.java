@@ -30,10 +30,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -68,45 +65,14 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                                              String messageDescription,
                                              AuthenticationContext authContext) throws IOException, PolicyAssertionException {
 
-        // Check if the RST SOAP inbound message is a well-formatted or not and also get all namespaces if if is well-formatted message.
-        Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message);
+        // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
+        Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, assertion.isResponseForIssuance());
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_soap_message", rstParameters.get(RstSoapMessageProcessor.ERROR));
+            RstSoapMessageProcessor.setAndLogSoapFault(context, "wst:InvalidRequest", rstParameters.get(RstSoapMessageProcessor.ERROR));
             return AssertionStatus.BAD_REQUEST;
         }
 
-        // Check the semantics of the RST SOAP inbound message
-        // WS-Trust namespace is required
-        String wstNS = rstParameters.get(RstSoapMessageProcessor.WST_NS);
-        if (wstNS == null || wstNS.trim().isEmpty()) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:ws.trust_namespace.not.specified", "The namespace of WS-Trust is not specified in the RST message.");
-            return AssertionStatus.BAD_REQUEST;
-        }
-
-        // WS-Addressing namespace is required
-        String wsaNS = rstParameters.get(RstSoapMessageProcessor.WSA_NS);
-        if (wsaNS == null || wsaNS.trim().isEmpty()) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:ws.addressing_namespace.not.specified", "The namespace of WS-Addressing is not specified in the RST message.");
-            return AssertionStatus.BAD_REQUEST;
-        } else {
-            // Set the context variable for WS-Addressing namespace
-            context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_WSA_NAMESPACE, wsaNS);
-        }
-
-        // WS-Addressing Action is required.
-        String rstWsaAction;
-        if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_WS_ADDRESSING_ACTION))) {
-            rstWsaAction = rstParameters.get(RstSoapMessageProcessor.WS_ADDRESSING_ACTION);
-            if (rstWsaAction == null || rstWsaAction.trim().isEmpty()) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:ws.addressing.action.not.specified", "The value of WS-Addressing Action is not specified in the RST message.");
-                return AssertionStatus.BAD_REQUEST;
-            }
-        } else {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:no.ws.addressing.action", "There is no WS-Addressing Action in the RST message.");
-            return AssertionStatus.BAD_REQUEST;
-        }
-
-        // Get the RSTR content depending on Binding type such as Issuance Binding or Cancel Binding.
+        // At this point, everything is fine since the validation is done.  It is ready to generate the RSTR response content depending on Binding type such as Issuance Binding or Cancel Binding.
         String rstrXml;
         Map<String, String> tokenInfo = new HashMap<String, String>(6);
         try {
@@ -126,14 +92,19 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             return AssertionStatus.FAILED;
         }
 
-        // Build a RSTR SOAP response message
+        // Build a RSTR SOAP response message and set the context variable for rstrResponse
         String rstrSoapResponse = buildRstrSoapResponse(rstParameters.get(RstSoapMessageProcessor.SOAP_ENVELOPE_NS), rstrXml);
-
-        // Set the context variable for rstrResponse
         context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_RSTR_RESPONSE, new Message(XmlUtil.stringAsDocument(rstrSoapResponse)));
 
-        // Set the context variable for RSTR WS-Addressing Action
-        String rstrWsaAction;
+        // Set the context variable for WS-Addressing Namespace (Note: WS-Addressing Namespace is optional to have.)
+        String wsaNS = rstParameters.get(RstSoapMessageProcessor.WSA_NS);
+        context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_WSA_NAMESPACE, (wsaNS == null)? "" : wsaNS);
+
+        // Set the context variable for RSTR WS-Addressing Action (Optional)
+        String rstWsaAction = (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_WS_ADDRESSING_ACTION)))?
+            rstParameters.get(RstSoapMessageProcessor.WS_ADDRESSING_ACTION) : "";
+
+        String rstrWsaAction = "";
         if (assertion.isResponseForIssuance()) {
             // Get the type of the token issued
             boolean isSCT = Boolean.parseBoolean(tokenInfo.get(IS_SCT));
@@ -145,8 +116,11 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 } else if (SoapConstants.WSC_RST_SCT_ACTION3.equals(rstWsaAction)) {
                     rstrWsaAction = SoapConstants.WSC_RSTR_SCT_ACTION3;
                 } else {
-                    RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:ws.addressing_action.value.not.supported", "The value of WS-Addressing Action for SCT is not supported.");
-                    return AssertionStatus.BAD_REQUEST;
+                    // Should not reach here, since WS-Addressing Action has been validated in RstSoapMessageProcessor.
+                    // We just set the current latest WS-Addressing action in this case.
+                    if (SoapConstants.WSC_RSTR_SCT_ACTION_LIST.size() > 0) {
+                        rstrWsaAction = SoapConstants.WSC_RSTR_SCT_ACTION_LIST.get(SoapConstants.WSC_RSTR_SCT_ACTION_LIST.size() - 1);
+                    }
                 }
             } else {     // SAML Token
                 if (SoapConstants.WST_RST_ISSUE_ACTION.equals(rstWsaAction)) {
@@ -156,8 +130,11 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 } else if (SoapConstants.WST_RST_ISSUE_ACTION3.equals(rstWsaAction)) {
                     rstrWsaAction = SoapConstants.WST_RSTR_ISSUE_ACTION3;
                 } else {
-                    RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:ws.addressing_action.value.not.supported", "The value of WS-Addressing Action for Issue is not supported.");
-                    return AssertionStatus.BAD_REQUEST;
+                    // Should not reach here, since WS-Addressing Action has been validated in RstSoapMessageProcessor.
+                    // We just set the current latest WS-Addressing action in this case.
+                    if (SoapConstants.WST_RSTR_ISSUE_ACTION_LIST.size() > 0) {
+                        rstrWsaAction = SoapConstants.WST_RSTR_ISSUE_ACTION_LIST.get(SoapConstants.WST_RSTR_ISSUE_ACTION_LIST.size() - 1);
+                    }
                 }
             }
         } else {
@@ -166,8 +143,11 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             } else if (SoapConstants.WSC_RST_CANCEL_ACTION2.equals(rstWsaAction)) {
                 rstrWsaAction = SoapConstants.WSC_RSTR_CANCEL_ACTION2;
             } else {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:ws.addressing_action.value.not.supported", "The value of WS-Addressing Action for Cancel is not supported.");
-                return AssertionStatus.BAD_REQUEST;
+                // Should not reach here, since WS-Addressing Action has been validated in RstSoapMessageProcessor.
+                // We just set the current latest WS-Addressing action in this case.
+                if (SoapConstants.WSC_RST_CANCEL_ACTION_LIST.size() > 0) {
+                    rstrWsaAction = SoapConstants.WSC_RST_CANCEL_ACTION_LIST.get(SoapConstants.WSC_RST_CANCEL_ACTION_LIST.size() - 1);
+                }
             }
         }
         context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_RSTR_WSA_ACTION, rstrWsaAction);

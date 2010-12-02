@@ -45,6 +45,13 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                                              String messageDescription,
                                              AuthenticationContext authContext) throws IOException, PolicyAssertionException {
 
+        // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
+        Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, true);
+        if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
+            RstSoapMessageProcessor.setAndLogSoapFault(context, "wst:InvalidRequest", rstParameters.get(RstSoapMessageProcessor.ERROR));
+            return AssertionStatus.BAD_REQUEST;
+        }
+
         // Check if the credentials are provided and proven in the message (request, response, or context variable).
         AuthenticationResult authenticationResult = authContext.getLastAuthenticationResult();
         if (authenticationResult == null) {
@@ -65,62 +72,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
             return AssertionStatus.AUTH_FAILED;
         }
 
-        // Check if the RST SOAP message is a well-formatted or not
-        Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message);
-        if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_soap_message", rstParameters.get(RstSoapMessageProcessor.ERROR));
-            return AssertionStatus.BAD_REQUEST;
-        }
-
-        // Check if the message semantics are correct or not.
-        // First check WS-Addressing Action
-        if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_WS_ADDRESSING_ACTION))) {
-            String action = rstParameters.get(RstSoapMessageProcessor.WS_ADDRESSING_ACTION);
-            if (action == null || action.trim().isEmpty()) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wsa_action_value_not_specified", "The value of WS-Addressing Action is not specified in the RST/SCT request message.");
-                return AssertionStatus.BAD_REQUEST;
-            } else if (! SoapConstants.WSC_RST_SCT_ACTION_LIST.contains(action)) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wsa_action_value_not_supported", "The value of WS-Addressing Action is not supported.");
-                return AssertionStatus.BAD_REQUEST;
-            }
-        } else {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_wsa_action", "There is no WS-Addressing Action element in the RST/SCT request message.");
-            return AssertionStatus.BAD_REQUEST;
-        }
-
-        // Check RequestSecurityToken
-        if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_REQUEST_SECURITY_TOKEN))) {
-
-            //  Check RequestType (Note: RequestType is mandatory in WS-Trust.)
-            if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_REQUEST_TYPE))) {
-
-                String requestType = rstParameters.get(RstSoapMessageProcessor.REQUEST_TYPE);
-                if (requestType == null || requestType.trim().isEmpty()) {
-                    RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wst_issue_requesttype_value_not_specified", "The value of WS-Trust Issue RequestType is not specified.");
-                    return AssertionStatus.BAD_REQUEST;
-                } else if (! SoapConstants.WST_RST_ISSUE_REQUEST_TYPE_LIST.contains(requestType)) {
-                    RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wst_issue_requesttype_value_not_supported", "The value of WS-Trust Issue RequestType is not supported.");
-                    return AssertionStatus.BAD_REQUEST;
-                }
-
-                // Check TokenType (Note: TokenType is optional in WS-Trust)
-                String tokenType = rstParameters.get(RstSoapMessageProcessor.TOKEN_TYPE);
-                if (tokenType != null && !tokenType.trim().isEmpty() &&
-                    !SoapConstants.WSC_RST_SCT_TOKEN_TYPE_LIST.contains(tokenType)) {
-
-                    RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wst_tokentype_value_not_supported", "The value of WS-Trust TokenType is not supported.");
-                    return AssertionStatus.BAD_REQUEST;
-                }
-            } else {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_request_type", "There is no RequestToken element in the RST/SCT request message.");
-                return AssertionStatus.BAD_REQUEST;
-            }
-        } else {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_rst", "There is no RequestSecurityToken element in the RST/SCT request message.");
-            return AssertionStatus.BAD_REQUEST;
-        }
-
-        // At this point, everything is fine and ready to create a SecurityContextToken.
+        // At this point, everything is fine since the validation is done.  It is ready to create a SecurityContextToken.
         String wsuId = "uuid:" + UUID.randomUUID().toString();
         String identifier = "urn:uuid:" + UUID.randomUUID().toString();
 
@@ -175,17 +127,12 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
             }
         }
 
-        // Check if there exists Entropy in the RST message
+        // Check if there exists KeySize in the RST message
+        if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_KEY_SIZE))) {
+            String keySize =rstParameters.get(RstSoapMessageProcessor.KEY_SIZE);
 
-        String keySize =rstParameters.get(RstSoapMessageProcessor.KEY_SIZE);
-        if (keySize != null && !keySize.trim().isEmpty()) {
-            try {
-                int size = Integer.parseInt(keySize); // Unit: bits
-                newSession.setKeySize(size);
-            } catch (NumberFormatException e) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_key_size", "The key size is not a integer in the RST/SCT request message.");
-                return AssertionStatus.BAD_REQUEST;
-            }
+            // KeySize has been validated already in RstSoapMessageProcessor
+            newSession.setKeySize(Integer.parseInt(keySize)); // Unit: bits
         }
 
         return AssertionStatus.NONE;

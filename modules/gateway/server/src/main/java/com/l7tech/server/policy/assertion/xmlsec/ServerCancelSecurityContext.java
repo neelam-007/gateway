@@ -18,7 +18,6 @@ import com.l7tech.server.secureconversation.NoSuchSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.util.RstSoapMessageProcessor;
-import com.l7tech.util.SoapConstants;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -47,93 +46,15 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
                                               final String messageDescription,
                                               final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
 
-        // Check if the RST SOAP message is a well-formatted and its semantics are correct or not.
-        Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message);
+        // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
+        Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, false);
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:invalid_soap_message", rstParameters.get(RstSoapMessageProcessor.ERROR));
+            RstSoapMessageProcessor.setAndLogSoapFault(context, "wst:InvalidRequest", rstParameters.get(RstSoapMessageProcessor.ERROR));
             return AssertionStatus.BAD_REQUEST;
         }
 
-        // Check WS-Addressing Action
-        if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_WS_ADDRESSING_ACTION))) {
-            String action = rstParameters.get(RstSoapMessageProcessor.WS_ADDRESSING_ACTION);
-            if (action == null || action.trim().isEmpty()) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wsa_action_value_not_specified", "The value of WS-Addressing Action is not specified in the RST/Cancel message.");
-                return AssertionStatus.BAD_REQUEST;
-            } else if (! SoapConstants.WSC_RST_CANCEL_ACTION_LIST.contains(action)) {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wsa_action_value_not_supported", "The value of WS-Addressing Action is not supported.");
-                return AssertionStatus.BAD_REQUEST;
-            }
-        } else {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_wsa_action", "There is no WS-Addressing Action element in the RST/Cancel message.");
-            return AssertionStatus.BAD_REQUEST;
-        }
-
-        String targetIdentifier;
-
-        // Check RequestSecurityToken
-        if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_REQUEST_SECURITY_TOKEN))) {
-            //  Check RequestType (Note: RequestType is mandatory in WS-Trust.)
-            if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_REQUEST_TYPE))) {
-
-                String requestType = rstParameters.get(RstSoapMessageProcessor.REQUEST_TYPE);
-                if (requestType == null || requestType.trim().isEmpty()) {
-                    RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wst_cancel_requesttype_value_not_specified", "The value of WS-Trust Cancel RequestType is not specified.");
-                    return AssertionStatus.BAD_REQUEST;
-                } else if (! SoapConstants.WST_RST_CANCEL_REQUEST_TYPE_LIST.contains(requestType)) {
-                    RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wst_cancel_requesttype_value_not_supported", "The value of WS-Trust Cancel RequestType is not supported.");
-                    return AssertionStatus.BAD_REQUEST;
-                }
-
-                // Check TokenType (Note: TokenType is optional in WS-Trust)
-                String tokenType = rstParameters.get(RstSoapMessageProcessor.TOKEN_TYPE);
-                if (tokenType != null && !tokenType.trim().isEmpty() &&
-                    !SoapConstants.WSC_RST_SCT_TOKEN_TYPE_LIST.contains(tokenType)) {
-
-                    RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:wst_tokentype_value_not_supported", "The value of WS-Trust TokenType is not supported.");
-                    return AssertionStatus.BAD_REQUEST;
-                }
-            } else {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_request_type", "There is no RequestToken element in the RST/Cancel message.");
-                return AssertionStatus.BAD_REQUEST;
-            }
-
-            // Check CancelTarget (Note: CancelTarget is mandatory in WS-Trust.)
-            // If all validations passed, the target identifier will be obtained.
-            if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_CANCEL_TARGET))) {
-                // Check SecurityTokenReference
-                if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_SECURITY_TOKEN_REFERENCE))) {
-                    // Check Reference
-                    if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_REFERENCE))) {
-                        String valueType = rstParameters.get(RstSoapMessageProcessor.REFERENCE_ATTR_VALUE_TYPE);
-                        if (valueType != null && !valueType.isEmpty() && !SoapConstants.WSC_RST_SCT_TOKEN_TYPE_LIST.contains(valueType)) {
-                            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:canceled_token_type_not_supported", "The type of the canceled token is not supported.");
-                            return AssertionStatus.BAD_REQUEST;
-                        }
-
-                        targetIdentifier = rstParameters.get(RstSoapMessageProcessor.REFERENCE_ATTR_URI);
-                        if (targetIdentifier == null || targetIdentifier.trim().isEmpty()) {
-                            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:uri_in_reference_not_specified", "The attribute URI of Reference is not specified in SecurityTokenReference.");
-                            return AssertionStatus.BAD_REQUEST;
-                        }
-                    } else {
-                        RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_reference", "There is no Reference element in the RST/Cancel message.");
-                        return AssertionStatus.BAD_REQUEST;
-                    }
-                } else {
-                    RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_str", "There is no SecurityTokenReference element in the RST/Cancel message.");
-                    return AssertionStatus.BAD_REQUEST;
-                }
-            } else {
-                RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_cancel_target", "There is no CancelTarget element in the RST/Cancel message.");
-                return AssertionStatus.BAD_REQUEST;
-            }
-        } else {
-            RstSoapMessageProcessor.setAndLogSoapFault(context, "l7:rst_message_missing_rst", "There is no RequestSecurityToken element in the RST/Cancel message.");
-            return AssertionStatus.BAD_REQUEST;
-        }
-
-        // At this point, everything is fine and ready to cancel a SecurityContextToken.
+        // At this point, everything is fine since the validation is done.  It is ready to cancel a SecurityContextToken.
+        String targetIdentifier = rstParameters.get(RstSoapMessageProcessor.REFERENCE_ATTR_URI);
         try {
             switch ( assertion.getRequiredAuthorization() ) {
                 case USER:

@@ -1,7 +1,6 @@
 package com.l7tech.server.util;
 
 import com.l7tech.message.Message;
-import com.l7tech.message.XmlKnob;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
@@ -17,7 +16,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -28,6 +26,7 @@ import java.util.logging.Logger;
 public class RstSoapMessageProcessor {
     private static final Logger logger = Logger.getLogger(RstSoapMessageProcessor.class.getName());
 
+    public final static String SOAP_VERSION = "soap_version";
     public final static String SOAP_ENVELOPE_NS = "soap_envelope_namespace";
     public final static String WSSE_NS = "ws-security_namespace";
     public final static String WSC_NS = "ws_secure_conversation_namespace";
@@ -38,54 +37,59 @@ public class RstSoapMessageProcessor {
 
     public final static String HAS_WS_ADDRESSING_ACTION = "has_ws_addressing_action";
     public final static String WS_ADDRESSING_ACTION = "ws_addressing_action";
-    public final static String HAS_REQUEST_SECURITY_TOKEN = "has_request_security_token_element";
     public final static String HAS_TOKEN_TYPE = "has_rst_token_type";
     public final static String TOKEN_TYPE = "rst_token_type";
-    public final static String HAS_REQUEST_TYPE = "has_rst_request_type";
     public final static String REQUEST_TYPE = "rst_request_type";
-    public final static String HAS_CANCEL_TARGET = "has_cancel_target";
-    public final static String HAS_SECURITY_TOKEN_REFERENCE = "has_security_token_reference";
-    public final static String HAS_REFERENCE = "has_reference";
     public final static String REFERENCE_ATTR_URI = "reference_attribute_uri";
     public final static String REFERENCE_ATTR_VALUE_TYPE = "reference_attribute_value_type";
     public final static String HAS_ENTROPY = "has_entropy_element";
     public final static String HAS_BINARY_SECRET = "has_binary_secret_element";
     public final static String BINARY_SECRET_ATTR_TYPE = "binary_secret_type";
     public final static String BINARY_SECRET = "binary_secret";
+    public final static String HAS_KEY_SIZE = "has_key_size";
     public final static String KEY_SIZE = "key_size";
     public final static String ERROR = "parsing_error";
 
-    public static Map<String, String> getRstParameters(final Message message) {
+    /**
+     * Get all information from the RST SOAP message such as namespaces, element values, etc.
+     *
+     * @param message: the SOAP message to be processed.
+     * @param isForIssuance: A flag indicates if the SOAP message is for issuing a security token.  If it is false, it means it is for Security Token Cancellation.
+     * @return a map containing all info.  If an error occurs, then the map is returned immediately with the validation detail.
+     */
+    public static Map<String, String> getRstParameters(final Message message, final boolean isForIssuance) {
         Map<String, String> parameters = new HashMap<String, String>();
 
-        Document doc;
+        Document doc = null;
+        boolean validSoapXml = false;
         try {
-            XmlKnob knob = message.getXmlKnob();
-            doc = knob.getDocumentReadOnly();
-        } catch (SAXException e) {
-            reportAndLogError("The RST message content is not well-formatted.", e, parameters);
-            return parameters;
-        } catch (IOException e) {
-            reportAndLogError("Cannot get the RST message document", e, parameters);
-            return parameters;
-        }
-
-        // Find all namespaces
-        Collection<String> allNamespaces;
-        try {
-            allNamespaces = DomUtils.findAllNamespaces(SoapUtil.getEnvelopeElement(doc)).values();
-        } catch (MessageNotSoapException e) {
-            reportAndLogError("The RST message is not a SOAP message", e, parameters);
-            return parameters;
-        }
-
-        // Get the namespace of SOAP Envelope
-        for (String namespace: SoapConstants.ENVELOPE_URIS) {
-            if (allNamespaces.contains(namespace)) {
-                parameters.put(SOAP_ENVELOPE_NS, namespace);
-                break;
+            // First check if the message is a SOAP message.  If it is, get the SOAP Envelope URI (or namespace)
+            if (message.isSoap()) {
+                parameters.put(SOAP_ENVELOPE_NS, message.getSoapKnob().getSoapEnvelopeUri());
+                parameters.put(SOAP_VERSION, message.getSoapKnob().getSoapVersion().getVersionNumber());
             }
+
+            // Get the document associated with the SOAP message
+            doc = message.getXmlKnob().getDocumentReadOnly();
+
+            // The message is fine.
+            validSoapXml = true;
+        } catch (IOException e) {
+            parameters.put(ERROR, "Cannot read the XML associated with the SOAP message.");
+        } catch (SAXException e) {
+            parameters.put(ERROR, "The XML associated with the SOAP message is not well formatted.");
+        } catch (MessageNotSoapException e) {
+            parameters.put(ERROR, "The XML associated with the SOAP message does not have a valid SOAP envelope.");
+        } catch (Throwable t) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            parameters.put(ERROR, ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(t)));
         }
+
+        if (! validSoapXml) return parameters;
+
+        // Find other namespaces (Note: only WS-Trust Namespace is mandatory to have.)
+        Collection<String> allNamespaces = DomUtils.findAllNamespaces(doc.getDocumentElement()).values();
+
         // Get the namespace of WS Security
         for (String namespace: SoapConstants.WS_SECURITY_NAMESPACE_LIST) {
             if (allNamespaces.contains(namespace)) {
@@ -108,11 +112,17 @@ public class RstSoapMessageProcessor {
             }
         }
         // Get the namespace of WS-Trust
+        String wstNS = null;
         for (String namespace: SoapConstants.WST_NAMESPACE_ARRAY) {
             if (allNamespaces.contains(namespace)) {
                 parameters.put(WST_NS, namespace);
+                wstNS = namespace;
                 break;
             }
+        }
+        if (wstNS == null || wstNS.trim().isEmpty()) {
+            parameters.put(ERROR, "The namespace of WS-Trust is not specified in the SOAP envelope.");
+            return parameters;
         }
         // Get the namespace of WS-Addressing
         for (String namespace: SoapConstants.WSA_NAMESPACE_ARRAY) {
@@ -121,7 +131,6 @@ public class RstSoapMessageProcessor {
                 break;
             }
         }
-
         // Get the namespace of WS-Policy
         for (String namespace: SoapConstants.WSP_NAMESPACE_ARRAY) {
             if (allNamespaces.contains(namespace)) {
@@ -130,152 +139,235 @@ public class RstSoapMessageProcessor {
             }
         }
 
-        // Find header
+        // Find header (Note: it is mandatory to have.)
         Element header;
         try {
             header = SoapUtil.getHeaderElement(doc);
         } catch (InvalidDocumentFormatException e) {
-            reportAndLogError("The RST message is not SOAP or has more than one header.", e, parameters);
+            parameters.put(ERROR, "There is more than one Header element in the SOAP envelope."); // Checking SOAP is done already.
             return parameters;
         }
         if (header == null) {
-            reportAndLogError("The RST SOAP message has no header.", null, parameters);
+            parameters.put(ERROR, "There is no Header element in the SOAP envelope.");
             return parameters;
         }
 
-        // Find body
+        // Find body (Note: it is mandatory to have.)
         Element body;
         try {
             body = SoapUtil.getBodyElement(doc);
         } catch (InvalidDocumentFormatException e) {
-            reportAndLogError("The RST message is not SOAP or has more than one body.", e, parameters);
+            parameters.put(ERROR, "There is more than one Body element in the SOAP envelope."); // Checking SOAP is done already.
             return parameters;
         }
         if (body == null) {
-            reportAndLogError("The RST SOAP message has no body.", null, parameters);
+            parameters.put(ERROR, "There is no Body element in the SOAP envelope.");
             return parameters;
         }
 
-        // Find WS-Addressing Action
+        // Find WS-Addressing Action (Note: it is optional to have.)
         Element actionEl;
         try {
-            actionEl = DomUtils.findExactlyOneChildElementByName(header, parameters.get(WSA_NS), SoapConstants.WSA_ACTION);
-        } catch (InvalidDocumentFormatException e) {
-            reportAndLogError("The wsa:Action element is not well-formatted.", e, parameters);
+            actionEl = DomUtils.findOnlyOneChildElementByName(header, parameters.get(WSA_NS), SoapConstants.WSA_ACTION);
+        } catch (TooManyChildElementsException e) {
+            parameters.put(ERROR,  "There is more than one Action element of WS-Addressing in the SOAP Header.");
             return parameters;
         }
+
         if (actionEl != null) {
-            parameters.put(HAS_WS_ADDRESSING_ACTION, "true"); // "true" means there exists a ws-addressing action element.
-            parameters.put(WS_ADDRESSING_ACTION, DomUtils.getTextValue(actionEl));
+            String actionValue = DomUtils.getTextValue(actionEl);
+
+            // Check if the action value is empty or not.
+            if (actionValue != null && !actionValue.trim().isEmpty()) {
+                // Check if the action value is known.
+                if (!SoapConstants.WSC_RST_SCT_ACTION_LIST.contains(actionValue) &&
+                    !SoapConstants.WST_RST_ISSUE_ACTION_LIST.contains(actionValue) &&
+                    !SoapConstants.WSC_RST_CANCEL_ACTION_LIST.contains(actionValue)) {
+                    
+                    parameters.put(ERROR,  "The Action element of WS-Addressing has an unknown value in the SOAP Header.");
+                    return parameters;
+                }
+
+                parameters.put(HAS_WS_ADDRESSING_ACTION, "true"); // "true" means there exists a ws-addressing action element.
+                parameters.put(WS_ADDRESSING_ACTION, actionValue);
+            } else {
+                // If the Action value is empty, it is ok and we treat it as not specified.
+                parameters.put(HAS_WS_ADDRESSING_ACTION, "false");
+            }
         } else {
             parameters.put(HAS_WS_ADDRESSING_ACTION, "false");
         }
 
-        // Find RequestSecurityToken
+        // Find RequestSecurityToken (Note: it is mandatory to have.)
         Element rstEl;
         try {
             rstEl = DomUtils.findExactlyOneChildElementByName(body, parameters.get(WST_NS), SoapConstants.WST_REQUESTSECURITYTOKEN);
-        } catch (InvalidDocumentFormatException e) {
-            reportAndLogError("The RequestSecurityToken element is not well-formatted.", e, parameters);
+        } catch (TooManyChildElementsException e) {
+            parameters.put(ERROR,  "There is more than one RequestSecurityToken element of WS-Trust in the SOAP Body.");
+            return parameters;
+        } catch (MissingRequiredElementException e) {
+            parameters.put(ERROR,  "There is no RequestSecurityToken element of WS-Trust in the SOAP Body.");
             return parameters;
         }
 
-        if (rstEl != null) {
-            parameters.put(HAS_REQUEST_SECURITY_TOKEN, "true");  // "true" means there exits a RequestSecurityToken element.
+        // Find all elements in the RequestSecurityToken element
+        String elementName = null; // Just keep tracking the name of the element being processed.
+        try {
+            // Find TokenType (Note: it is optional to have.)
+            elementName = SoapConstants.WST_TOKENTYPE;
+            Element tokenTypeEl = DomUtils.findOnlyOneChildElementByName(rstEl, parameters.get(WST_NS), SoapConstants.WST_TOKENTYPE);
 
-            String elementName = null; // Just keep tracking the name of the element being processed.
-            try {
-                // Find TokenType (Optional)
-                elementName = SoapConstants.WST_TOKENTYPE;
-                Element tokenTypeEl = DomUtils.findOnlyOneChildElementByName(rstEl, parameters.get(WST_NS), SoapConstants.WST_TOKENTYPE);
-                if (tokenTypeEl != null) {
-                    String tokenTypeValue = DomUtils.getTextValue(tokenTypeEl);
-                    if (tokenTypeValue != null && !tokenTypeValue.trim().isEmpty()) {
-                        parameters.put(HAS_TOKEN_TYPE, "true");
-                        parameters.put(TOKEN_TYPE, DomUtils.getTextValue(tokenTypeEl));
-                    } else {
-                        parameters.put(HAS_TOKEN_TYPE, "false");
+            if (tokenTypeEl != null) {
+                String tokenTypeValue = DomUtils.getTextValue(tokenTypeEl);
+
+                // Check if the TokenType value is empty or not.
+                if (tokenTypeValue != null && !tokenTypeValue.trim().isEmpty()) {
+                    if (!SoapConstants.WSC_RST_SCT_TOKEN_TYPE_LIST.contains(tokenTypeValue) &&
+                        !ArrayUtils.contains(SoapConstants.VALUETYPE_SAML_ARRAY, tokenTypeValue)) {
+                        
+                        parameters.put(ERROR,  "The TokenType element in the RequestSecurityToken element has an unknown value in the SOAP envelope.");
+                        return parameters;
                     }
+
+                    parameters.put(HAS_TOKEN_TYPE, "true");
+                    parameters.put(TOKEN_TYPE, tokenTypeValue);
                 } else {
+                    // If the TokenType value is empty, it is ok and we treat it as not specified.
                     parameters.put(HAS_TOKEN_TYPE, "false");
                 }
+            } else {
+                parameters.put(HAS_TOKEN_TYPE, "false");
+            }
 
-                // Find RequestType (Required)
-                elementName = SoapConstants.WST_REQUESTTYPE;
-                Element requestTypeEl = DomUtils.findExactlyOneChildElementByName(rstEl, parameters.get(WST_NS), SoapConstants.WST_REQUESTTYPE);
-                if (requestTypeEl != null) {
-                    parameters.put(HAS_REQUEST_TYPE, "true"); // "true" means there is a RequestType element.
-                    parameters.put(REQUEST_TYPE, DomUtils.getTextValue(requestTypeEl));
-                } else {
-                    parameters.put(HAS_REQUEST_TYPE, "false");
+            // Find RequestType (Note: it is mandatory to have.)
+            elementName = SoapConstants.WST_REQUESTTYPE;
+            Element requestTypeEl;
+            try {
+                requestTypeEl = DomUtils.findExactlyOneChildElementByName(rstEl, parameters.get(WST_NS), SoapConstants.WST_REQUESTTYPE);
+                String requestTypeValue = DomUtils.getTextValue(requestTypeEl);
+
+                // Check if it is empty.
+                if (requestTypeValue == null || requestTypeValue.trim().isEmpty()) { // Actually requestType is never be null, since DomUtils.getTextValue(...) will not return null.
+                    parameters.put(ERROR,  "The value of the RequestType element is empty in the RequestSecurityToken element in the SOAP envelope.");
+                    return parameters;
                 }
 
-                // Find CancelTarget (Optional)
-                elementName = SoapConstants.WST_CANCELTARGET;
-                Element cancelTargetEl = DomUtils.findOnlyOneChildElementByName(rstEl, parameters.get(WST_NS), SoapConstants.WST_CANCELTARGET);
-                if (cancelTargetEl != null) {
-                    parameters.put(HAS_CANCEL_TARGET, "true"); // "true" means there exists a CancelTarget element.
+                // Check if it is a known RequestType.
+                if ((isForIssuance && !SoapConstants.WST_RST_ISSUE_REQUEST_TYPE_LIST.contains(requestTypeValue)) ||
+                    (!isForIssuance && !SoapConstants.WST_RST_CANCEL_REQUEST_TYPE_LIST.contains(requestTypeValue))) {
 
-                    // Find SecurityTokenReference
-                    elementName = SoapConstants.WSSE_SECURITY_TOKEN_REFERENCE;
-                    Element strEl = DomUtils.findOnlyOneChildElementByName(cancelTargetEl, parameters.get(WSSE_NS), SoapConstants.WSSE_SECURITY_TOKEN_REFERENCE);
-                    if (strEl != null) {
-                        parameters.put(HAS_SECURITY_TOKEN_REFERENCE, "true"); // "true" means there exists a SecurityTokenReference element.
-
-                        elementName = SoapConstants.WSSE_REFERENCE;
-                        Element refEl = DomUtils.findOnlyOneChildElementByName(strEl, parameters.get(WSSE_NS), SoapConstants.WSSE_REFERENCE);
-                        if (refEl != null) {
-                            parameters.put(HAS_REFERENCE, "true"); // "true" means there exists a Reference element.
-                            parameters.put(REFERENCE_ATTR_URI, refEl.getAttribute(SoapUtil.WSSE_REFERENCE_ATTR_URI));
-                            parameters.put(REFERENCE_ATTR_VALUE_TYPE, refEl.getAttribute(SoapUtil.WSSE_REFERENCE_ATTR_VALUE_TYPE));
-                        } else {
-                            parameters.put(HAS_REFERENCE, "false");
-                        }
-                    } else {
-                        parameters.put(HAS_SECURITY_TOKEN_REFERENCE, "false");
-                    }
-                } else {
-                    parameters.put(HAS_CANCEL_TARGET, "false");
+                    parameters.put(ERROR,  "The RequestType element in the RequestSecurityToken element has an unknown value in the SOAP envelope.");
+                    return parameters;
                 }
 
-                // Find Entropy
-                elementName = SoapConstants.ENTROPY;
-                Element entropyEl = DomUtils.findOnlyOneChildElementByName(rstEl, parameters.get(WST_NS), SoapConstants.ENTROPY);
-                if (entropyEl != null) {
-                    parameters.put(HAS_ENTROPY, "true"); // "true" means there exists an Entropy element.
-
-                    // Find BinarySecret
-                    elementName = SoapConstants.BINARY_SECRET;
-                    Element binarySecretEl = DomUtils.findOnlyOneChildElementByName(entropyEl, parameters.get(WST_NS), SoapConstants.BINARY_SECRET);
-                    if (binarySecretEl != null) {
-                        parameters.put(HAS_BINARY_SECRET, "true"); // "true" means there exists an BinarySecret element.
-                        parameters.put(BINARY_SECRET, DomUtils.getTextValue(binarySecretEl));
-                        parameters.put(BINARY_SECRET_ATTR_TYPE, binarySecretEl.getAttribute(SoapUtil.BINARY_SECRET_ATTR_TYPE));
-                    }
-                } else {
-                    parameters.put(HAS_ENTROPY, "false");
-                }
-
-                // Find KeySize
-                elementName = SoapConstants.KEY_SIZE;
-                Element keySizeEl = DomUtils.findOnlyOneChildElementByName(rstEl, parameters.get(WST_NS), SoapConstants.KEY_SIZE);
-                if (keySizeEl != null) {
-                    parameters.put(KEY_SIZE, DomUtils.getTextValue(keySizeEl));
-                }
-            } catch (InvalidDocumentFormatException e) {
-                reportAndLogError("The " + elementName + " element is not well-formatted in the SOAP message.", e, parameters);
+                parameters.put(REQUEST_TYPE, requestTypeValue);
+            } catch (MissingRequiredElementException e) {
+                parameters.put(ERROR,  "There is no RequestType element in the RequestSecurityToken element in the SOAP envelope.");
                 return parameters;
             }
-        } else {
-            parameters.put(HAS_REQUEST_SECURITY_TOKEN, "false");
+
+            // Find Entropy (Note: it is optional to have.)
+            elementName = SoapConstants.ENTROPY;
+            Element entropyEl = DomUtils.findOnlyOneChildElementByName(rstEl, parameters.get(WST_NS), SoapConstants.ENTROPY);
+            if (entropyEl != null) {
+                parameters.put(HAS_ENTROPY, "true"); // "true" means there exists an Entropy element.
+
+                // Find BinarySecret
+                elementName = SoapConstants.BINARY_SECRET;
+                Element binarySecretEl = DomUtils.findOnlyOneChildElementByName(entropyEl, parameters.get(WST_NS), SoapConstants.BINARY_SECRET);
+                if (binarySecretEl != null) {
+                    parameters.put(HAS_BINARY_SECRET, "true"); // "true" means there exists an BinarySecret element.
+                    parameters.put(BINARY_SECRET, DomUtils.getTextValue(binarySecretEl));
+                    parameters.put(BINARY_SECRET_ATTR_TYPE, binarySecretEl.getAttribute(SoapUtil.BINARY_SECRET_ATTR_TYPE));
+                }
+            } else {
+                parameters.put(HAS_ENTROPY, "false");
+            }
+
+            // Find KeySize (Note: it is optional to have.)
+            elementName = SoapConstants.KEY_SIZE;
+            Element keySizeEl = DomUtils.findOnlyOneChildElementByName(rstEl, parameters.get(WST_NS), SoapConstants.KEY_SIZE);
+            if (keySizeEl != null) {
+                String keySize = DomUtils.getTextValue(keySizeEl);
+                if (keySize == null || keySize.trim().isEmpty()) {
+                    parameters.put(HAS_KEY_SIZE, "false");
+                } else {
+                    try {
+                        // Check if it is a valid integer before saving it.
+                        int size = Integer.parseInt(keySize); // Unit: bits
+                        if (size < 0) {
+                            parameters.put(ERROR,  "The key size (" + size + ") in the RequestSecurityToken element is not a positive integer.");
+                            return parameters;
+                        }
+
+                        parameters.put(HAS_KEY_SIZE, "true");
+                        parameters.put(KEY_SIZE, keySize);
+                    } catch (NumberFormatException e) {
+                        parameters.put(ERROR,  "The key size (" + keySize + ") in the RequestSecurityToken element is not an integer.");
+                        return parameters;
+                    }
+                }
+            } else {
+                parameters.put(HAS_KEY_SIZE, "false");
+            }
+
+            // If the RST SOAP message is for security token issuance, then return the parameters and end up here
+            if (isForIssuance) return parameters;
+
+            // Find CancelTarget (Note: it is mandatory to have.)
+            elementName = SoapConstants.WST_CANCELTARGET;
+            Element cancelTargetEl;
+            try {
+                cancelTargetEl = DomUtils.findExactlyOneChildElementByName(rstEl, parameters.get(WST_NS), SoapConstants.WST_CANCELTARGET);
+
+                // Find SecurityTokenReference (Note: it is mandatory to have.)
+                elementName = SoapConstants.WSSE_SECURITY_TOKEN_REFERENCE;
+                Element strEl;
+                try {
+                    strEl = DomUtils.findExactlyOneChildElementByName(cancelTargetEl, parameters.get(WSSE_NS), SoapConstants.WSSE_SECURITY_TOKEN_REFERENCE);
+                } catch (MissingRequiredElementException e1) {
+                    parameters.put(ERROR,  "There is no SecurityTokenReference element in the CancelTarget element in the SOAP envelope.");
+                    return parameters;
+                }
+
+                // Find Reference (Note: it is mandatory to have.)
+                elementName = SoapConstants.WSSE_REFERENCE;
+                Element refEl;
+                try {
+                    refEl = DomUtils.findExactlyOneChildElementByName(strEl, parameters.get(WSSE_NS), SoapConstants.WSSE_REFERENCE);
+                } catch (MissingRequiredElementException e1) {
+                    parameters.put(ERROR,  "There is no Reference element in the SecurityTokenReference element in the SOAP envelope.");
+                    return parameters;
+                }
+
+                // Find URI (Note: it is mandatory to have.)
+                String targetUri = refEl.getAttribute(SoapUtil.WSSE_REFERENCE_ATTR_URI);
+                if (targetUri == null || targetUri.trim().isEmpty()) {
+                    parameters.put(ERROR,  "The URI of the cancelled target is not specified in the SecurityTokenReference element in the SOAP Body.");
+                    return parameters;
+                }
+                parameters.put(REFERENCE_ATTR_URI, targetUri);
+
+                // Find ValueType (Note: it is optional to have.)
+                String valueTypeValue = refEl.getAttribute(SoapUtil.WSSE_REFERENCE_ATTR_VALUE_TYPE);
+                if (valueTypeValue != null && !valueTypeValue.trim().isEmpty()) {
+                    if (! SoapConstants.WSC_RST_SCT_TOKEN_TYPE_LIST.contains(valueTypeValue)) {
+                        parameters.put(ERROR,  "The ValueType attribute in the Reference element has an unknown value in the SOAP Body.");
+                        return parameters;
+                    }
+
+                    parameters.put(REFERENCE_ATTR_VALUE_TYPE, valueTypeValue);
+                }
+            } catch (MissingRequiredElementException e) {
+                parameters.put(ERROR,  "There is no CancelTarget element in the RequestSecurityToken element in the SOAP envelope.");
+                return parameters;
+            }
+        } catch (TooManyChildElementsException e) {
+            parameters.put(ERROR, "There is more than one " + elementName + " element in the RequestSecurityToken element in the SOAP envelope.");
+            return parameters;
         }
 
         return parameters;
-    }
-
-    private static void reportAndLogError(String errorMessage, Throwable throwable, Map<String, String> parameters) {
-        logger.log(Level.WARNING, errorMessage, throwable);
-        parameters.put(ERROR, errorMessage);
     }
 
     public static void setAndLogSoapFault(final PolicyEnforcementContext context, String faultCodeOrValue, String faultStringOrReason) {
