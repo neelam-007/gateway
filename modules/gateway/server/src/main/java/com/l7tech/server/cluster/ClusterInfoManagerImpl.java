@@ -429,7 +429,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      */
     private synchronized String getIPAddress( final String mac ) {
         if (thisNodeIPAddress == null) {
-            thisNodeIPAddress = getConfiguredIPAddress();
+            thisNodeIPAddress = getSystemPropertyIPAddress();
 
             if (thisNodeIPAddress == null) {
                 thisNodeIPAddress = getIfConfigIpAddress();
@@ -445,6 +445,10 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
 
             if (thisNodeIPAddress == null) {
                 thisNodeIPAddress = getIpAddress(mac);
+            }
+
+            if (thisNodeIPAddress == null) {
+                thisNodeIPAddress = getNodePropertiesIPAddress(); // last resort
             }
 
         }
@@ -465,11 +469,11 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     }
 
     /**
-     * Get the IP address from the system property (if any), then falls back to cluster.node.ip from node.properties.
+     * Get the IP address from the system property (if any)
      *
      * @return The property or null if not set
      */
-    private String getConfiguredIPAddress() {
+    private String getSystemPropertyIPAddress() {
         String configuredIp = System.getProperty(PROP_IP_ADDRESS);
 
         try {
@@ -481,11 +485,14 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
             configuredIp = null;
         }
 
-        if (configuredIp == null) {
-            configuredIp = ClusterIDManager.loadNodeProperty(NODE_CLUSTER_IP_ADDRESS);
-        }
-
         return configuredIp;
+    }
+
+    /**
+     * Get the IP address from node.properties/cluster.node.ip.
+     */
+    private String getNodePropertiesIPAddress() {
+        return ClusterIDManager.loadNodeProperty(NODE_CLUSTER_IP_ADDRESS);
     }
 
     /**
@@ -516,7 +523,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
 
             if (hostAddress != null) {
                 boolean found = isValidIPAddress(hostAddress);
-                String configuredIp = getConfiguredIPAddress();
+                String configuredIp = getSystemPropertyIPAddress();
                 boolean configured = configuredIp != null;
                 boolean matchesConfig = configured && configuredIp.equals(address);
 
