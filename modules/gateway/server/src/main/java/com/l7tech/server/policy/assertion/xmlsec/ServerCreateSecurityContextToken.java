@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.CreateSecurityContextToken;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -18,6 +19,7 @@ import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.util.RstSoapMessageProcessor;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -34,10 +36,13 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
     private final SecureConversationContextManager scContextManager;
     private final Auditor auditor;
 
-    public ServerCreateSecurityContextToken(CreateSecurityContextToken assertion, ApplicationContext springContext) {
+    public ServerCreateSecurityContextToken( final CreateSecurityContextToken assertion,
+                                             final BeanFactory factory ) {
         super(assertion, assertion);
-        auditor = new Auditor(this, springContext, logger);
-        scContextManager = springContext.getBean("secureConversationContextManager", SecureConversationContextManager.class);
+        auditor = factory instanceof ApplicationContext?
+                new Auditor(this, (ApplicationContext)factory, logger) :
+                new LogOnlyAuditor(logger);
+        scContextManager = factory.getBean("secureConversationContextManager", SecureConversationContextManager.class);
     }
 
     @Override
