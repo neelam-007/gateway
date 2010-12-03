@@ -37,13 +37,11 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
     private JCheckBox attachedRefCheckBox;
     private JCheckBox unattachedRefCheckBox;
     private JCheckBox keySizeCheckBox;
-    private JComboBox keySizeComboBox;
     private JTextField varPrefixTextField;
     private JCheckBox appliesToCheckBox;
     private JTextField addressTextField;
     private JLabel varPrefixStatusLabel;
 
-    private static final String AUTOMATIC_KEYSIZE_ITEM = "Automatic";
     private static final long MILLIS_100_YEARS = 100L * 365L * 86400L * 1000L;
 
     private BuildRstrSoapResponse assertion;
@@ -153,6 +151,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         numberFormatter.setMinimum((double) 0);
 
         lifetimeTextField.setFormatterFactory(new JFormattedTextField.AbstractFormatterFactory() {
+            @Override
             public JFormattedTextField.AbstractFormatter getFormatter(JFormattedTextField tf) {
                 return numberFormatter;
             }
@@ -174,19 +173,6 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
                 oldTimeUnit = newTimeUnit;
             }
         });
-
-        keySizeCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                keySizeComboBox.setEnabled(keySizeCheckBox.isSelected());
-                enableOrDisableOkButton();
-            }
-        });
-
-        keySizeComboBox.setModel(new DefaultComboBoxModel(new Object[] {"", AUTOMATIC_KEYSIZE_ITEM, "128", "256", "512", "1024"}));
-        ((JTextField)keySizeComboBox.getEditor().getEditorComponent()).setHorizontalAlignment(JTextField.RIGHT);
-        ((JTextField)keySizeComboBox.getEditor().getEditorComponent()).setDocument(new MaxLengthDocument(10));
-        ((JTextField)keySizeComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(validationListener);
 
         varPrefixTextField.setDocument(new MaxLengthDocument(128));
         TextComponentPauseListenerManager.registerPauseListener(
@@ -231,9 +217,6 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         lifetimeCheckBox.setEnabled(enabled);
         lifetimeTextField.setEnabled(lifetimeCheckBox.isSelected() && enabled);
         lifetimeUnitComboBox.setEnabled(lifetimeCheckBox.isSelected() && enabled);
-
-        keySizeCheckBox.setEnabled(enabled);
-        keySizeComboBox.setEnabled(keySizeCheckBox.isSelected() && enabled);
     }
 
     private void modelToView() {
@@ -279,12 +262,6 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         oldTimeUnit = timeUnit;
 
         keySizeCheckBox.setSelected(assertion.isIncludeKeySize());
-        keySizeComboBox.setEnabled(assertion.isIncludeKeySize());
-        if (assertion.getKeySize() == BuildRstrSoapResponse.AUTOMATIC_KEY_SIZE) {
-            keySizeComboBox.setSelectedItem(AUTOMATIC_KEYSIZE_ITEM);
-        } else {
-            keySizeComboBox.setSelectedItem(Integer.toString(assertion.getKeySize()));
-        }
     }
 
     private void viewToModel(BuildRstrSoapResponse assertion) {
@@ -316,13 +293,6 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
             assertion.setIncludeKeySize(keySizeCheckBox.isSelected());
             if (keySizeCheckBox.isSelected()) {
                 assertion.setIncludeKeySize(true);
-
-                String value = (String) keySizeComboBox.getEditor().getItem();
-                if (AUTOMATIC_KEYSIZE_ITEM.equals(value)) {
-                    assertion.setKeySize(BuildRstrSoapResponse.AUTOMATIC_KEY_SIZE);
-                } else {
-                    assertion.setKeySize(Integer.parseInt(value));
-                }
             }
         }
     }
@@ -365,29 +335,6 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
             int multiplier = ((TimeUnit) lifetimeUnitComboBox.getSelectedItem()).getMultiplier();
             boolean lifetimeStatusOk = ValidationUtils.isValidDouble(lifetimeTextField.getText().trim(), false, 0, false, MILLIS_100_YEARS  / multiplier, true);
             if (! lifetimeStatusOk) {
-                okButton.setEnabled(false);
-                return;
-            }
-        }
-
-        // Check KeySize
-        if (keySizeCheckBox.isSelected()) {
-            boolean keySizeStatusOk;
-            try {
-                String value = ((JTextField) keySizeComboBox.getEditor().getEditorComponent()).getText();
-                if (value == null || value.trim().isEmpty()) {
-                    keySizeStatusOk = false;
-                } else if (AUTOMATIC_KEYSIZE_ITEM.equals(value)) {
-                    keySizeStatusOk = true;
-                } else {
-                    Integer.parseInt(value);
-                    keySizeStatusOk = true;
-                }
-            } catch (NumberFormatException e) {
-                keySizeStatusOk = false;
-            }
-
-            if (! keySizeStatusOk) {
                 okButton.setEnabled(false);
                 return;
             }

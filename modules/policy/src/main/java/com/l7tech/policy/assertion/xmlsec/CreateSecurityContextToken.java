@@ -27,6 +27,7 @@ public class CreateSecurityContextToken extends MessageTargetableAssertion {
     private String variablePrefix = DEFAULT_VARIABLE_PREFIX;
     private TimeUnit timeUnit = TimeUnit.MINUTES;
     private long lifetime = DEFAULT_SESSION_DURATION; // Unit: milliseconds.
+    private int keySize;
     private boolean useSystemDefaultSessionDuration = true;
 
     public CreateSecurityContextToken() {}
@@ -45,6 +46,16 @@ public class CreateSecurityContextToken extends MessageTargetableAssertion {
         return new String[] {
             VARIABLE_ISSUED_SCT,
         };
+    }
+
+    // Unit: bits
+    public int getKeySize() {
+        return keySize;
+    }
+
+    // Unit: bits
+    public void setKeySize(int keySize) {
+        this.keySize = keySize;
     }
 
     public TimeUnit getTimeUnit() {

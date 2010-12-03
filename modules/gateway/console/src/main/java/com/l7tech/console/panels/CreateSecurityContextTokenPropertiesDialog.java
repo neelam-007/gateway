@@ -23,6 +23,8 @@ import java.text.DecimalFormat;
  * @author ghuang
  */
 public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropertiesEditorSupport<CreateSecurityContextToken> {
+    private static final String AUTOMATIC_KEYSIZE_ITEM = "Automatic";
+
     private JPanel mainPanel;
     private JButton okButton;
     private JButton cancelButton;
@@ -31,6 +33,7 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
     private JTextField varPrefixTextField;
     private JLabel varPrefixStatusLabel;
     private JCheckBox useSystemDefaultCheckBox;
+    private JComboBox keySizeComboBox;
 
     private CreateSecurityContextToken assertion;
     private TimeUnit oldTimeUnit;
@@ -79,11 +82,16 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
             }
         });
 
+        keySizeComboBox.setModel(new DefaultComboBoxModel(new Object[] {AUTOMATIC_KEYSIZE_ITEM, "128", "256", "512", "1024"}));
+        ((JTextField)keySizeComboBox.getEditor().getEditorComponent()).setHorizontalAlignment(JTextField.RIGHT);
+        ((JTextField)keySizeComboBox.getEditor().getEditorComponent()).setDocument(new MaxLengthDocument(10));
+
         final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.#########"));
         numberFormatter.setValueClass(Double.class);
         numberFormatter.setMinimum((double) 0);
         
         lifetimeTextField.setFormatterFactory(new JFormattedTextField.AbstractFormatterFactory() {
+            @Override
             public JFormattedTextField.AbstractFormatter getFormatter(JFormattedTextField tf) {
                 return numberFormatter;
             }
@@ -103,6 +111,7 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
 
         lifetimeUnitComboBox.setModel(new DefaultComboBoxModel(TimeUnit.ALL));
         lifetimeUnitComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 TimeUnit newTimeUnit = (TimeUnit) lifetimeUnitComboBox.getSelectedItem();
                 Double time = (Double) lifetimeTextField.getValue();
@@ -160,6 +169,11 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
         varPrefixTextField.setText(assertion.getVariablePrefix());
         validateVariablePrefix();
 
+        keySizeComboBox.setSelectedItem(Integer.toString(assertion.getKeySize()));
+        if ( keySizeComboBox.getSelectedItem() == null ) {
+            keySizeComboBox.setSelectedItem(AUTOMATIC_KEYSIZE_ITEM);
+        }
+
         TimeUnit timeUnit = assertion.getTimeUnit();
         Double lifetime = (double) assertion.getLifetime();
         lifetimeTextField.setValue(lifetime / timeUnit.getMultiplier());
@@ -180,6 +194,13 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
             Double lifetime = (Double) lifetimeTextField.getValue();
             assertion.setTimeUnit(timeUnit);
             assertion.setLifetime((long)(lifetime * timeUnit.getMultiplier()));
+        }
+
+        String value = (String) keySizeComboBox.getSelectedItem();
+        if (AUTOMATIC_KEYSIZE_ITEM.equals(value)) {
+            assertion.setKeySize( 0 );
+        } else {
+            assertion.setKeySize(Integer.parseInt(value));
         }
 
         String prefix = varPrefixTextField.getText();

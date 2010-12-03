@@ -345,7 +345,6 @@ public class ServerBuildRstrSoapResponseTest {
         buildRstrSoapResponse.setVariablePrefix( "rstr" );
         buildRstrSoapResponse.setResponseForIssuance( true );
         buildRstrSoapResponse.setIncludeKeySize( true );
-        buildRstrSoapResponse.setKeySize( 256 );
         buildRstrSoapResponse.setIncludeAppliesTo( true );
         buildRstrSoapResponse.setAddressOfEPR( "http://gateway.l7tech.com/service" );
         buildRstrSoapResponse.setIncludeLifetime( true );

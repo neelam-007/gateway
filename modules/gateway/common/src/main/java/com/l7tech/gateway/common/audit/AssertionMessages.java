@@ -762,6 +762,7 @@ public class AssertionMessages extends Messages {
     public static final M STS_EXPIRED_SC_SESSION       = m(9292, Level.WARNING, "Expired Secure Conversation Session: {0}");
     public static final M STS_AUTHENTICATION_FAILURE = m(9293, Level.WARNING, "Authentication Failure: {0}");
     public static final M STS_AUTHORIZATION_FAILURE  = m(9294, Level.WARNING, "Authorization Failure: {0}");
+    public static final M STS_TOKEN_ISSUE_ERROR = m(9295, Level.WARNING, "Unable to issue token: {0}");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

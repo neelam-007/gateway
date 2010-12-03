@@ -20,7 +20,6 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.MockConfig;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.TooManyChildElementsException;
-import org.junit.Ignore;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -28,6 +27,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -55,7 +57,7 @@ public class ServerCreateSecurityContextTokenTest {
 
     @Test
     public void testCreateContextLifetime() throws Exception {
-        doCreateContext( true, 0, new Functions.UnaryVoid<Document>(){
+        doCreateContext( true, 0, null, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
                 final Element identifierElement = getSingleChildElement( document.getDocumentElement() );
@@ -69,7 +71,7 @@ public class ServerCreateSecurityContextTokenTest {
 
     @Test
     public void testCreateContextWithEntropy() throws Exception {
-        doCreateContext( true, 0, new Functions.UnaryVoid<Document>(){
+        doCreateContext( true, 0, null, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
                 final Element identifierElement = getSingleChildElement( document.getDocumentElement() );
@@ -82,10 +84,9 @@ public class ServerCreateSecurityContextTokenTest {
     }
 
     @BugNumber(9548)
-    @Ignore
     @Test
     public void testCreateContextWithKeySize() throws Exception {
-        doCreateContext( false, 512, new Functions.UnaryVoid<Document>(){
+        doCreateContext( false, 512, null, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
                 final Element identifierElement = getSingleChildElement( document.getDocumentElement() );
@@ -97,18 +98,64 @@ public class ServerCreateSecurityContextTokenTest {
             }
         } );
 
+        // ensure request value ignored if below configured size
+        doCreateContext( false, 128, null, new Functions.UnaryVoid<Document>(){
+            @Override
+            public void call( final Document document ) {
+                final Element identifierElement = getSingleChildElement( document.getDocumentElement() );
+                final String contextId = XmlUtil.getTextValue( identifierElement );
+                final SecureConversationSession session = contextManager.getSession( contextId );
+                assertNotNull( "Secure conversation context", session );
+                assertEquals( "Context key size", 256, session.getKeySize() );
+                assertEquals( "Context actual key size", 256, session.getSharedSecret().length * 8 );
+            }
+        } );
+    }
+
+    @Test
+    public void testIssuedTokenVersion() throws Exception {
+        // WS-SC map
+        final Map<String,String> secureConversationNsMap = new HashMap<String,String>(){{
+            put( SoapConstants.WST_NAMESPACE1, "http://schemas.xmlsoap.org/ws/2004/04/sc" );
+            put( SoapConstants.WST_NAMESPACE2, "http://schemas.xmlsoap.org/ws/2005/02/sc" );
+            put( SoapConstants.WST_NAMESPACE3, "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512" );
+        }};
+        
+        // Test supported ws-trust versions
+        for ( final String trustUri : Arrays.asList( SoapConstants.WST_NAMESPACE1, SoapConstants.WST_NAMESPACE2, SoapConstants.WST_NAMESPACE3 ) ) {
+            doCreateContext( false, 0, new Functions.Unary<String,String>(){
+                @Override
+                public String call( final String s ) {
+                    final String text = s.replace( "http://docs.oasis-open.org/ws-sx/ws-trust/200512", trustUri );
+                    assertTrue( "Request uses expected ws-trust NS", text.contains( trustUri ) );
+                    return text;
+                }
+            }, new Functions.UnaryVoid<Document>(){
+                @Override
+                public void call( final Document document ) {
+                    try {
+                        final String response = XmlUtil.nodeToFormattedString( document );
+                        assertTrue( "Response uses expected ws-secureconversation NS", response.contains( secureConversationNsMap.get(trustUri)));
+                    } catch ( IOException e ) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        }
     }
 
     private void doCreateContext( final boolean entropy,
                                   final int keySize ) throws Exception {
-        doCreateContext( entropy, keySize, null );
+        doCreateContext( entropy, keySize, null, null );
     }
 
     private void doCreateContext( final boolean entropy,
                                   final int keySize,
+                                  final Functions.Unary<String,String> requestCallback,
                                   final Functions.UnaryVoid<Document> validationCallback ) throws Exception {
         final CreateSecurityContextToken createSecurityContextToken = new CreateSecurityContextToken();
         createSecurityContextToken.setUseSystemDefaultSessionDuration(false);
+        createSecurityContextToken.setKeySize( 256 );
         createSecurityContextToken.setLifetime( 1000 );
         createSecurityContextToken.setVariablePrefix( "create" );
 
@@ -116,27 +163,34 @@ public class ServerCreateSecurityContextTokenTest {
 
         final String entropyText =
                 "            <wst:Entropy>\n" +
-                "                <wst:BinarySecret Type=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512/Nonce\">BXD+ruMMCmBeSkCshKtsFMtk1wbWwSVCWNW7FPJ+SyU=</wst:BinarySecret>\n" +
+                "                <wst:BinarySecret Type=\"http://schemas.xmlsoap.org/ws/2004/04/security/trust/Nonce\">BXD+ruMMCmBeSkCshKtsFMtk1wbWwSVCWNW7FPJ+SyU=</wst:BinarySecret>\n" +
                 "            </wst:Entropy>\n";
 
         final String keySizeText =
                 "            <wst:KeySize>"+keySize+"</wst:KeySize>\n";
 
-        final Message request = new Message( XmlUtil.parse(
-                "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
-                "    xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
-                "    <s:Header xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/03/addressing\">\n" +
+        String requestText =
+                "<s:Envelope \n" +
+                "    xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
+                "    xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/03/addressing\"\n" +
+                "    xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\"\n" +
+                "    >\n" +
+                "    <s:Header>\n" +
                 "        <wsa:MessageID>message1</wsa:MessageID>\n" +
                 "        <wsa:Action>http://schemas.xmlsoap.org/ws/2005/02/trust/RST/SCT</wsa:Action>\n" +
                 "    </s:Header>\n" +
                 "    <s:Body>\n" +
-                "        <wst:RequestSecurityToken xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\">\n" +
-                "            <wst:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</wst:RequestType>\n" +
-                        ( entropy ? entropyText : "" ) +
-                        ( keySize > 0 ? keySizeText : "" ) +
+                "        <wst:RequestSecurityToken>\n" +
+                "            <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>\n" +
+                ( entropy ? entropyText : "" ) +
+                ( keySize > 0 ? keySizeText : "" ) +
                 "        </wst:RequestSecurityToken>\n" +
                 "    </s:Body>\n" +
-                "</s:Envelope>" ));
+                "</s:Envelope>";
+
+        if ( requestCallback != null ) requestText = requestCallback.call( requestText );
+
+        final Message request = new Message( XmlUtil.parse( requestText ) );
         final Message response = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
 

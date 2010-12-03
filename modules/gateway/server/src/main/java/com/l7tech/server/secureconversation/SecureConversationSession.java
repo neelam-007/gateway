@@ -66,12 +66,13 @@ public class SecureConversationSession implements SecurityContext {
         return serverEntropy;
     }
 
+    /**
+     * Get the key size in bits.
+     *
+     * @return The size of the session key.
+     */
     public int getKeySize() {
-        return keySize;
-    }
-
-    public void setKeySize(int keySize) {
-        this.keySize = keySize;
+        return sharedSecret.length * 8;
     }
 
     @Override

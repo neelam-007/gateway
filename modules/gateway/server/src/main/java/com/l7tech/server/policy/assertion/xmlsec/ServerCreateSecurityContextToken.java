@@ -17,14 +17,15 @@ import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.server.util.RstSoapMessageProcessor;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
+import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
@@ -100,9 +101,6 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
         }
 
         // At this point, everything is fine since the validation is done.  It is ready to create a SecurityContextToken.
-        String wsuId = "uuid-" + UUID.randomUUID().toString();
-        String identifier = "urn:uuid:" + UUID.randomUUID().toString();
-
         String wscNS = rstParameters.get(RstSoapMessageProcessor.WSC_NS);
         if (wscNS == null || wscNS.trim().isEmpty()) {
             // Get the namespace of WS-Trust and then retrieve the namespace of WS-Secure Conversation according to the namespace of WS-Trust.
@@ -117,12 +115,6 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
             wsuNS = SoapConstants.WSU_NAMESPACE;
         }
 
-        String tokenIssued = buildSCT(wscNS, wsuNS, wsuId, identifier);
-
-        // Create a context variable, issuedSCT
-        String variableFullName = assertion.getVariablePrefix() + "." + CreateSecurityContextToken.VARIABLE_ISSUED_SCT;
-        context.setVariable(variableFullName, tokenIssued);
-
         // Check if there exists Entropy in the RST message
         byte[] clientEntropy = null;
         if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_ENTROPY))) {
@@ -136,28 +128,43 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
             }
         }
 
+        // Check if there exists KeySize in the RST message
+        int keySize = assertion.getKeySize();
+        if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_KEY_SIZE))) {
+            final String keySizeText =rstParameters.get(RstSoapMessageProcessor.KEY_SIZE);
+
+            // KeySize has been validated already in RstSoapMessageProcessor
+            try {
+                int requestKeySize = Integer.parseInt(keySizeText); // Unit: bits
+                if ( requestKeySize > keySize ) {
+                    keySize = requestKeySize;   
+                }
+            } catch ( NumberFormatException nfe ) {
+                logger.info( "Ignoring invalid key size '"+keySizeText+"'." );
+            }
+        }
+
         // Create a new sc session and cache it
-        SecureConversationSession newSession;
+        final SecureConversationSession newSession;
         try {
             newSession = scContextManager.createContextForUser(
-                identifier,
                 authenticationResult.getUser(),
                 loginCredentials,
                 rstParameters.get(RstSoapMessageProcessor.WSC_NS),
                 getSessionDuration(),
-                clientEntropy
+                clientEntropy,
+                keySize
             );
-        } catch (SessionCreationException e) {
-            throw new RuntimeException(e);
+        } catch ( SessionCreationException e ) {
+            auditor.logAndAudit( AssertionMessages.STS_TOKEN_ISSUE_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.FALSIFIED;
         }
 
-        // Check if there exists KeySize in the RST message
-        if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_KEY_SIZE))) {
-            String keySize =rstParameters.get(RstSoapMessageProcessor.KEY_SIZE);
+        final String tokenIssued = buildSCT(wscNS, wsuNS, newSession.getIdentifier());
 
-            // KeySize has been validated already in RstSoapMessageProcessor
-            newSession.setKeySize(Integer.parseInt(keySize)); // Unit: bits
-        }
+        // Create a context variable, issuedSCT
+        final String variableFullName = assertion.getVariablePrefix() + "." + CreateSecurityContextToken.VARIABLE_ISSUED_SCT;
+        context.setVariable(variableFullName, tokenIssued);
 
         return AssertionStatus.NONE;
     }
@@ -191,10 +198,12 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
         return auditor;
     }
 
-    private String buildSCT(String wscNS, String wsuNS, String wsuId, String identifier) {
+    private String buildSCT( final String wscNS,
+                             final String wsuNS,
+                             final String identifier ) {
         StringBuilder sb = new StringBuilder()
             .append("<wsc:SecurityContextToken ")
-            .append("wsu:Id=\"").append(wsuId).append("\" ")
+            .append("wsu:Id=\"").append( SoapUtil.generateUniqueId( "SecurityContextToken", 1 )).append("\" ")
             .append("xmlns:wsc=\"").append(wscNS).append("\" ")
             .append("xmlns:wsu=\"").append(wsuNS).append("\">\n")
             .append("\t<wsc:Identifier>").append(identifier).append("</wsc:Identifier>\n")

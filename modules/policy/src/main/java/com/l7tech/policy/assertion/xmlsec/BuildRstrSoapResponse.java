@@ -25,7 +25,6 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
     public static final String VARIABLE_RSTR_WSA_ACTION = "rstrWsaAction";
 
     public static final long DEFAULT_LIFETIME = 60 * 60 * 1000;  // Unit: milliseconds.  Set the default as 1 hours.
-    public static final int AUTOMATIC_KEY_SIZE = 0; // 0 means automatically retrieving the key size from the inbound RST message.
 
     private static final String ASSERTION_BASIC_NAME = "Build RSTR SOAP Response";
     private static final String META_INITIALIZED = BuildRstrSoapResponse.class.getName() + ".metadataInitialized";
@@ -41,7 +40,6 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
     private String addressOfEPR; // The address attribute of the endpoint reference
     private long lifetime = DEFAULT_LIFETIME; // Unit: milliseconds.
     private TimeUnit timeUnit = TimeUnit.MINUTES;
-    private int keySize = AUTOMATIC_KEY_SIZE; // Unit: bits. Default set as automatic key size.
     private String variablePrefix = DEFAULT_VARIABLE_PREFIX;
 
     public BuildRstrSoapResponse() {}
@@ -126,16 +124,6 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
 
     public void setTimeUnit(TimeUnit timeUnit) {
         this.timeUnit = timeUnit;
-    }
-
-    // Unit: bits
-    public int getKeySize() {
-        return keySize;
-    }
-
-    // Unit: bits
-    public void setKeySize(int keySize) {
-        this.keySize = keySize;
     }
 
     public String getVariablePrefix() {

@@ -16,6 +16,7 @@ import org.apache.commons.collections.map.LRUMap;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
@@ -118,54 +119,56 @@ public class SecureConversationContextManager implements SecurityContextFinder {
 
     /**
      * Creates a new session and saves it
-     * @param sessionOwner
-     * @param credentials
+     * @param sessionOwner The user for the session (required)
+     * @param credentials The credentials used to authenticate (required)
+     * @param namespace The WS-SecureConversation namespace in use (may be null)
      * @return the newly created session
      */
     public SecureConversationSession createContextForUser(User sessionOwner, LoginCredentials credentials, String namespace) throws SessionCreationException {
-        // make up a new session identifier and shared secret (using some random generator)
-        String newSessionIdentifier = "http://www.layer7tech.com/uuid/" + randomUuid();
-        return createContextForUser(newSessionIdentifier, sessionOwner, credentials, namespace, getDefaultSessionDuration(), null);
+        return createContextForUser(sessionOwner, credentials, namespace, getDefaultSessionDuration(), null, -1);
     }
 
     /**
-     * Creates a new session and saves it
-     * @param sessionIdentifier: either a new session id or an identifier matching to a security context token
-     * @param sessionOwner
-     * @param credentials
+     * Creates a new session and saves it.
+     *
+     * @param sessionOwner The user for the session (required)
+     * @param credentials The credentials used to authenticate
+     * @param namespace The WS-SecureConversation namespace in use (may be null)
      * @param sessionDuration: its unit is milliseconds.  It must be greater than 0.
+     * @param requestClientEntropy The request client entropy (may be null)
+     * @param requestKeySize The request key size in bits (values of 0 or less ignored)
      * @return the newly created session
      */
-    public SecureConversationSession createContextForUser( final String sessionIdentifier,
-                                                           final User sessionOwner,
+    public SecureConversationSession createContextForUser( final User sessionOwner,
                                                            final LoginCredentials credentials,
                                                            final String namespace,
                                                            final long sessionDuration,
-                                                           final byte[] requestClientEntropy ) throws SessionCreationException {
+                                                           final byte[] requestClientEntropy,
+                                                           final int requestKeySize ) throws SessionCreationException {
+        // make up a new session identifier
+        final String sessionIdentifier = "http://www.layer7tech.com/uuid/" + randomUuid();
         if (sessionDuration <= 0) {
             throw new IllegalArgumentException("Session duration must be greater than zero.");
         }
+        // generate the session key and server entropy (if required)
+        final int keySizeInBytes = calculateKeySize( requestKeySize, namespace );
         final byte[] clientEntropy;
         final byte[] serverEntropy;
         final byte[] sharedSecret;
         if ( requestClientEntropy != null && requestClientEntropy.length >= MIN_CLIENT_ENTROPY_BYTES && requestClientEntropy.length <= MAX_CLIENT_ENTROPY_BYTES ) {
             clientEntropy = requestClientEntropy;
-            serverEntropy = generateNewSecret(32);
+            serverEntropy = generateNewSecret( keySizeInBytes );
             try {
-                sharedSecret = SecureConversationKeyDeriver.pSHA1( clientEntropy, serverEntropy, 32 );
+                sharedSecret = SecureConversationKeyDeriver.pSHA1( clientEntropy, serverEntropy, keySizeInBytes );
             } catch ( NoSuchAlgorithmException e ) {
                 throw new SessionCreationException( "Unable to generate session key: " + ExceptionUtils.getMessage( e ), e);
             } catch ( InvalidKeyException e ) {
                 throw new SessionCreationException( "Unable to generate session key: " + ExceptionUtils.getMessage( e ), e);
             }
-        } else if (namespace != null && namespace.equals( SoapConstants.WSSC_NAMESPACE2)) {
-            clientEntropy = null;
-            serverEntropy = null;
-            sharedSecret = generateNewSecret(32);
         } else {
             clientEntropy = null;
             serverEntropy = null;
-            sharedSecret = generateNewSecret(SyspropUtil.getInteger("com.l7tech.security.secureconversation.defaultSecretLengthInBytes", 32));
+            sharedSecret = generateNewSecret( keySizeInBytes );
         }
 
         final long time = System.currentTimeMillis();
@@ -182,6 +185,33 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         );
         saveSession(session);
         return session;
+    }
+
+    private int calculateKeySize( final int requestedKeySize,
+                                  final String namespace ) {
+        final int size;
+
+        // allow default size to be overridden per namespace (by index) if desired
+        final int nsIndex = namespace==null? -1 : Arrays.asList( SoapConstants.WSSC_NAMESPACE_ARRAY ).indexOf( namespace );
+        final int defaultSize = nsIndex < 0 ?
+                SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE, 32) :
+                SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE + "." + nsIndex, SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE, 32) );
+
+        if ( requestedKeySize > 0 ) {
+            // convert to size in bytes rounding up
+            final int requestedKeySizeBytes = requestedKeySize / 8 + ( requestedKeySize % 8 > 0 ? 1 : 0 );
+            if ( requestedKeySizeBytes < MIN_KEY_SIZE ) {
+                size = MIN_KEY_SIZE;
+            } else if ( requestedKeySizeBytes > MAX_KEY_SIZE ) {
+                size = MAX_KEY_SIZE;
+            } else {
+                size = requestedKeySizeBytes;
+            }
+        } else {
+            size = defaultSize;
+        }
+
+        return size;
     }
 
     /**
@@ -275,6 +305,9 @@ public class SecureConversationContextManager implements SecurityContextFinder {
     private static final long SESSION_CHECK_INTERVAL = 1000*60*5; // check every 5 minutes
     private static final int MIN_CLIENT_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.clientEntropyMinBytes", 8 );
     private static final int MAX_CLIENT_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.clientEntropyMaxBytes", 1024 );
+    private static final int MIN_KEY_SIZE = SyspropUtil.getInteger("com.l7tech.security.wssc.minLength", 16);
+    private static final int MAX_KEY_SIZE = SyspropUtil.getInteger("com.l7tech.security.wssc.maxLength", 512);
+    private static final String PROP_DEFAULT_KEY_SIZE = "com.l7tech.security.secureconversation.defaultSecretLengthInBytes";
     private static final Random random = new SecureRandom();
 
     /**
