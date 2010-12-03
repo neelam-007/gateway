@@ -191,7 +191,7 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
     @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
-            new VariableMetadata(variablePrefix + "." + VARIABLE_RSTR_RESPONSE, false, false, null, false, DataType.STRING),
+            new VariableMetadata(variablePrefix + "." + VARIABLE_RSTR_RESPONSE, false, false, null, false, DataType.MESSAGE),
             new VariableMetadata(variablePrefix + "." + VARIABLE_WSA_NAMESPACE, false, false, null, false, DataType.STRING),
             new VariableMetadata(variablePrefix + "." + VARIABLE_RSTR_WSA_ACTION, false, false, null, false, DataType.STRING),
         };
