@@ -57,6 +57,33 @@ public class DomUtils {
     }
 
     /**
+     *  Finds the first descendant {@link Element} of an ancestor {@link Element}.
+     * @param ancestor the {@link Element} in which to search for descendant. Must be non-null.
+     * @param nsuri the URI of the namespace to which the descendant must belong, NOT THE PREFIX!  May be null, in which
+     *              case namespaces are not considered when checking for a match.
+     * @param elementName the name of the element to find. Should not be null.
+     * @return  First matching descendant {@link Element} or null if the specified ancestor contains no matching elements
+     */
+    public static Element findFirstDescendantElement(Element ancestor, String nsuri, String elementName) {
+        if (!(ancestor.hasChildNodes()) || elementName == null)
+            return null;
+
+        //Root has children, so continue searching for them
+        Node matchingNode = null;
+
+        NodeList childNodes = ancestor.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node n = childNodes.item(i);
+            if (n.getNodeType() == Node.ELEMENT_NODE) {
+                matchingNode = (elementName.equals(n.getLocalName()) && (nsuri == null || nsuri.equals(n.getNamespaceURI())))?
+                    n : findFirstDescendantElement((Element)n, nsuri, elementName);
+                if (matchingNode != null) break;
+            }
+        }
+        return (Element) matchingNode;
+    }
+
+    /**
      * Finds the first and only child Element of a parent Element, throwing if any extraneous additional
      * child elements are detected.  Child nodes other than elements (text nodes, processing instructions,
      * comments, etc) are ignored.

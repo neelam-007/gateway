@@ -40,6 +40,9 @@ public class SoapConstants {
     public static final String WSSE_REFERENCE_ATTR_URI = "URI";
     public static final String WSSE_REFERENCE_ATTR_VALUE_TYPE = "ValueType";
 
+    public static final String ENCRYPTION_METHOD = "EncryptionMethod";
+    public static final String ATTRIBUTE_ALGORITHM = "Algorithm";
+
     public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
     public static final String WSU_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";

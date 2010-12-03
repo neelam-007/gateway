@@ -41,6 +41,8 @@ public class RstSoapMessageProcessor {
 
     public final static String HAS_WS_ADDRESSING_ACTION = "has_ws_addressing_action";
     public final static String WS_ADDRESSING_ACTION = "ws_addressing_action";
+    public final static String HAS_KEY_ENCRYPTION_ALGORITHM = "has_key_encryption_algorithm";
+    public final static String KEY_ENCRYPTION_ALGORITHM = "key_encryption_algorithm";
     public final static String HAS_TOKEN_TYPE = "has_rst_token_type";
     public final static String TOKEN_TYPE = "rst_token_type";
     public final static String REQUEST_TYPE = "rst_request_type";
@@ -201,6 +203,20 @@ public class RstSoapMessageProcessor {
             }
         } else {
             parameters.put(HAS_WS_ADDRESSING_ACTION, "false");
+        }
+
+        // Find EncryptionMethod (Note: it is optional to have.)
+        Element encryptionMethodEl = DomUtils.findFirstDescendantElement(header, SoapConstants.XMLENC_NS, SoapConstants.ENCRYPTION_METHOD);
+        if (encryptionMethodEl != null) {
+            String alg = encryptionMethodEl.getAttribute(SoapUtil.ATTRIBUTE_ALGORITHM);
+            if (alg != null && !alg.trim().isEmpty()) {
+                parameters.put(HAS_KEY_ENCRYPTION_ALGORITHM, "true");
+                parameters.put(KEY_ENCRYPTION_ALGORITHM, alg);
+            } else {
+                parameters.put(HAS_KEY_ENCRYPTION_ALGORITHM, "false");
+            }
+        } else {
+            parameters.put(HAS_KEY_ENCRYPTION_ALGORITHM, "false");
         }
 
         // Find RequestSecurityToken (Note: it is mandatory to have.)

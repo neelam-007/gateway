@@ -467,8 +467,11 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 X509Certificate clientCert = getClientCert(targetMessage);
                 String secretXml;
                 try {
+                    String keyEncAlg = Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_KEY_ENCRYPTION_ALGORITHM))?
+                        parameters.get(RstSoapMessageProcessor.KEY_ENCRYPTION_ALGORITHM) : SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO;
+
                     secretXml = clientCert != null?
-                        produceEncryptedKeyXml(session.getSharedSecret(), clientCert, wsseNS) :
+                        produceEncryptedKeyXml(session.getSharedSecret(), clientCert, wsseNS, keyEncAlg) :
                         produceBinarySecretXml(session.getSharedSecret(), parameters.get(RstSoapMessageProcessor.WST_NS));
                 } catch (GeneralSecurityException e) {
                     throw new RuntimeException("Cannot produce an EncryptedKey for shared secret in a RSTR element.", e);
@@ -567,12 +570,12 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
     }
 
     // This method is modified from the method "produceEncryptedKeyXml" in TokenServiceImpl.
-    private String produceEncryptedKeyXml(final byte[] sharedSecret, final X509Certificate requestorCert, final String wsseNS) throws GeneralSecurityException {
+    private String produceEncryptedKeyXml(final byte[] sharedSecret, final X509Certificate requestorCert, String wsseNS, String keyEncryptionAlgorithm) throws GeneralSecurityException {
         StringBuilder encryptedKeyXml = new StringBuilder();
         // Key info and all
         String wsuId = "uuid-" + UUID.randomUUID().toString();
         encryptedKeyXml.append("<xenc:EncryptedKey wsu:Id=\"").append(wsuId).append("\" xmlns:xenc=\"").append(SoapConstants.XMLENC_NS)
-            .append("\"><xenc:EncryptionMethod Algorithm=\"").append(SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO).append("\" />");
+            .append("\"><xenc:EncryptionMethod Algorithm=\"").append(keyEncryptionAlgorithm).append("\" />");
 
         // append ski if applicable
         String recipSkiB64 = CertUtils.getSki(requestorCert);
