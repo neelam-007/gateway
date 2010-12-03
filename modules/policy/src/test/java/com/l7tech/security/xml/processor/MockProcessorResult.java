@@ -7,6 +7,7 @@ import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.token.SignatureConfirmation;
 import com.l7tech.security.xml.SecurityActor;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Element;
 
@@ -76,6 +77,11 @@ public class MockProcessorResult implements ProcessorResult {
     @Override
     public String getWSUNS() {
         return SoapUtil.WSU_NAMESPACE;
+    }
+
+    @Override
+    public String getWsscNS() {
+        return SoapConstants.WSSC_NAMESPACE;
     }
 
     @Override

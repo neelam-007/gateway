@@ -234,6 +234,11 @@ public class Saml2WssProcessorImpl {
                 return null;
             }
 
+            @Override
+            public String getWsscNS() {
+                return SoapConstants.WSSC_NAMESPACE;
+            }
+
             public SecurityActor getProcessedActor() {
                 return null;
             }

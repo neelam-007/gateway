@@ -58,6 +58,11 @@ public class ProcessorResultWrapper implements ProcessorResult {
     }
 
     @Override
+    public String getWsscNS() {
+        return delegate.getWsscNS();
+    }
+
+    @Override
     public SecurityActor getProcessedActor() {
         return delegate.getProcessedActor();
     }

@@ -1092,6 +1092,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                                 responseDecoReq.getNamespaceFactory().setWsseNs(wssOutput.getSecurityNS());
                             if (wssOutput.getWSUNS() != null)
                                 responseDecoReq.getNamespaceFactory().setWsuNs(wssOutput.getWSUNS());
+                            if (wssOutput.getWsscNS() != null)
+                                responseDecoReq.getNamespaceFactory().setWsscNs(wssOutput.getWsscNS());
                             if (wssOutput.isDerivedKeySeen())
                                 responseDecoReq.setUseDerivedKeys(true);
                         }

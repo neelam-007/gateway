@@ -30,6 +30,7 @@ public interface ProcessorResult {
     WssTimestamp getTimestamp();
     String getSecurityNS();
     String getWSUNS();
+    String getWsscNS();
 
     /**
      * Get the actor/role "type" of the security header that was processed.
