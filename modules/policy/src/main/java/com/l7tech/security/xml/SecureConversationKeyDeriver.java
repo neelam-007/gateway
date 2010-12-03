@@ -178,7 +178,7 @@ public class SecureConversationKeyDeriver {
      * @throws java.security.InvalidKeyException may occur if current crypto policy disallows HMac with long keys
      * @throws java.security.NoSuchAlgorithmException if no HMacSHA1 service available from current security providers
      */
-    public byte[] pSHA1(byte[] secret, byte[] seed, int requiredlength) throws NoSuchAlgorithmException, InvalidKeyException {
+    public static byte[] pSHA1(byte[] secret, byte[] seed, int requiredlength) throws NoSuchAlgorithmException, InvalidKeyException {
         // compute A(1)
         final SecretKeySpec key = new SecretKeySpec(secret, "HMacSHA1");
         byte[] ai = doHmac(key, seed);
@@ -213,7 +213,7 @@ public class SecureConversationKeyDeriver {
         return output;
     }
 
-    private byte[] doHmac(Key key, byte[] seed) throws NoSuchAlgorithmException, InvalidKeyException {
+    private static byte[] doHmac(Key key, byte[] seed) throws NoSuchAlgorithmException, InvalidKeyException {
         Mac hmac = SecureConversationKeyDeriver.hmac.get();
         hmac.reset();
         hmac.init(key);

@@ -46,9 +46,9 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -460,7 +460,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             newSession = secureConversationContextManager.createContextForUser(requestor,
                                                                                              context.getDefaultAuthenticationContext().getLastCredentials(),
                                                                                              scns);
-        } catch (DuplicateSessionException e) {
+        } catch (SessionCreationException e) {
             throw new TokenServiceException(e);
         }
 

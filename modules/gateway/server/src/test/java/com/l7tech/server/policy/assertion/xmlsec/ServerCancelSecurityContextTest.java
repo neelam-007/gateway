@@ -19,9 +19,9 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.util.Functions;
 import com.l7tech.util.MockConfig;
 import org.junit.Test;
@@ -185,7 +185,7 @@ public class ServerCancelSecurityContextTest {
         assertEquals( "AssertionStatus", expectedStatus, status );
     }
 
-    private SecureConversationSession generateContextToken() throws DuplicateSessionException {
+    private SecureConversationSession generateContextToken() throws SessionCreationException {
         return contextManager.createContextForUser(
                 user(1, "Alice"),
                 LoginCredentials.makeLoginCredentials( new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class ),

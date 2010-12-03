@@ -13,9 +13,9 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.server.util.RstSoapMessageProcessor;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
@@ -123,6 +123,19 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
         String variableFullName = assertion.getVariablePrefix() + "." + CreateSecurityContextToken.VARIABLE_ISSUED_SCT;
         context.setVariable(variableFullName, tokenIssued);
 
+        // Check if there exists Entropy in the RST message
+        byte[] clientEntropy = null;
+        if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_ENTROPY))) {
+            // todo: check if binary secret is only one element in entropy
+            if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_BINARY_SECRET))) {
+                String type = rstParameters.get(RstSoapMessageProcessor.BINARY_SECRET_ATTR_TYPE);
+                if (type != null && type.endsWith("Nonce")) {
+                    String nonce = rstParameters.get(RstSoapMessageProcessor.BINARY_SECRET);
+                    clientEntropy = HexUtils.decodeBase64(nonce);
+                }
+            }
+        }
+
         // Create a new sc session and cache it
         SecureConversationSession newSession;
         try {
@@ -131,22 +144,11 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                 authenticationResult.getUser(),
                 loginCredentials,
                 rstParameters.get(RstSoapMessageProcessor.WSC_NS),
-                getSessionDuration()
+                getSessionDuration(),
+                clientEntropy
             );
-        } catch (DuplicateSessionException e) {
+        } catch (SessionCreationException e) {
             throw new RuntimeException(e);
-        }
-
-        // Check if there exists Entropy in the RST message
-        if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_ENTROPY))) {
-            // todo: check if binary secret is only one element in entropy
-            if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_BINARY_SECRET))) {
-                String type = rstParameters.get(RstSoapMessageProcessor.BINARY_SECRET_ATTR_TYPE);
-                if (type != null && type.endsWith("Nonce")) {
-                    String nonce = rstParameters.get(RstSoapMessageProcessor.BINARY_SECRET);
-                    newSession.setClientEntropy(HexUtils.decodeBase64(nonce));
-                }
-            }
         }
 
         // Check if there exists KeySize in the RST message

@@ -2,15 +2,19 @@ package com.l7tech.server.secureconversation;
 
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.xml.processor.SecurityContextFinder;
 import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ValidatedConfig;
 import org.apache.commons.collections.map.LRUMap;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Iterator;
@@ -118,10 +122,10 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      * @param credentials
      * @return the newly created session
      */
-    public SecureConversationSession createContextForUser(User sessionOwner, LoginCredentials credentials, String namespace) throws DuplicateSessionException {
+    public SecureConversationSession createContextForUser(User sessionOwner, LoginCredentials credentials, String namespace) throws SessionCreationException {
         // make up a new session identifier and shared secret (using some random generator)
         String newSessionIdentifier = "http://www.layer7tech.com/uuid/" + randomUuid();
-        return createContextForUser(newSessionIdentifier, sessionOwner, credentials, namespace, getDefaultSessionDuration());
+        return createContextForUser(newSessionIdentifier, sessionOwner, credentials, namespace, getDefaultSessionDuration(), null);
     }
 
     /**
@@ -132,14 +136,35 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      * @param sessionDuration: its unit is milliseconds.  It must be greater than 0.
      * @return the newly created session
      */
-    public SecureConversationSession createContextForUser(String sessionIdentifier, User sessionOwner, LoginCredentials credentials, String namespace, long sessionDuration) throws DuplicateSessionException {
+    public SecureConversationSession createContextForUser( final String sessionIdentifier,
+                                                           final User sessionOwner,
+                                                           final LoginCredentials credentials,
+                                                           final String namespace,
+                                                           final long sessionDuration,
+                                                           final byte[] requestClientEntropy ) throws SessionCreationException {
         if (sessionDuration <= 0) {
             throw new IllegalArgumentException("Session duration must be greater than zero.");
         }
+        final byte[] clientEntropy;
+        final byte[] serverEntropy;
         final byte[] sharedSecret;
-        if (namespace != null && namespace.equals( SoapConstants.WSSC_NAMESPACE2)) {
+        if ( requestClientEntropy != null && requestClientEntropy.length >= MIN_CLIENT_ENTROPY_BYTES && requestClientEntropy.length <= MAX_CLIENT_ENTROPY_BYTES ) {
+            clientEntropy = requestClientEntropy;
+            serverEntropy = generateNewSecret(32);
+            try {
+                sharedSecret = SecureConversationKeyDeriver.pSHA1( clientEntropy, serverEntropy, 32 );
+            } catch ( NoSuchAlgorithmException e ) {
+                throw new SessionCreationException( "Unable to generate session key: " + ExceptionUtils.getMessage( e ), e);
+            } catch ( InvalidKeyException e ) {
+                throw new SessionCreationException( "Unable to generate session key: " + ExceptionUtils.getMessage( e ), e);
+            }
+        } else if (namespace != null && namespace.equals( SoapConstants.WSSC_NAMESPACE2)) {
+            clientEntropy = null;
+            serverEntropy = null;
             sharedSecret = generateNewSecret(32);
         } else {
+            clientEntropy = null;
+            serverEntropy = null;
             sharedSecret = generateNewSecret(SyspropUtil.getInteger("com.l7tech.security.secureconversation.defaultSecretLengthInBytes", 32));
         }
 
@@ -147,6 +172,8 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         final SecureConversationSession session = new SecureConversationSession(
             namespace,
             sessionIdentifier,
+            clientEntropy,
+            serverEntropy,
             sharedSecret,
             time,
             time  + sessionDuration,
@@ -246,6 +273,8 @@ public class SecureConversationContextManager implements SecurityContextFinder {
     private static final long MAX_SESSION_DURATION = 1000*60*60*24; // 24 hrs
     private static final long DEFAULT_SESSION_DURATION = 1000*60*60*2; // 2 hrs
     private static final long SESSION_CHECK_INTERVAL = 1000*60*5; // check every 5 minutes
+    private static final int MIN_CLIENT_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.clientEntropyMinBytes", 8 );
+    private static final int MAX_CLIENT_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.clientEntropyMaxBytes", 1024 );
     private static final Random random = new SecureRandom();
 
     /**

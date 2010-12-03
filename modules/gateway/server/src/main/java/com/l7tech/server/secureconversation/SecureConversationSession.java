@@ -22,8 +22,22 @@ public class SecureConversationSession implements SecurityContext {
                                       final long expiration,
                                       final User usedBy,
                                       final LoginCredentials credentials ) {
+        this( secConvNamespaceUsed, identifier, null, null, sharedSecret, creation, expiration, usedBy, credentials );
+    }
+
+    public SecureConversationSession( final String secConvNamespaceUsed,
+                                      final String identifier,
+                                      final byte[] clientEntropy,
+                                      final byte[] serverEntropy,
+                                      final byte[] sharedSecret,
+                                      final long creation,
+                                      final long expiration,
+                                      final User usedBy,
+                                      final LoginCredentials credentials ) {
         this.secConvNamespaceUsed = secConvNamespaceUsed;
         this.identifier = identifier;
+        this.clientEntropy = clientEntropy;
+        this.serverEntropy = serverEntropy;
         this.sharedSecret = sharedSecret;
         this.creation = creation;
         this.expiration = expiration;
@@ -40,12 +54,16 @@ public class SecureConversationSession implements SecurityContext {
         return sharedSecret;
     }
 
+    public boolean hasEntropy() {
+        return clientEntropy != null && serverEntropy != null;
+    }
+
     public byte[] getClientEntropy() {
         return clientEntropy;
     }
 
-    public void setClientEntropy(byte[] clientEntropy) {
-        this.clientEntropy = clientEntropy;
+    public byte[] getServerEntropy() {
+        return serverEntropy;
     }
 
     public int getKeySize() {
@@ -95,7 +113,8 @@ public class SecureConversationSession implements SecurityContext {
 
     private final String identifier;
     private final byte[] sharedSecret;
-    private byte[] clientEntropy;
+    private final byte[] clientEntropy;
+    private final byte[] serverEntropy;
     private int keySize;
     private final long expiration;
     private final long creation;

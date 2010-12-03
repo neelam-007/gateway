@@ -7,15 +7,11 @@ package com.l7tech.server.secureconversation;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Aug 3, 2004<br/>
- * $Id$<br/>
  */
-public class DuplicateSessionException extends Exception {
-    public DuplicateSessionException() {
-	    super();
-    }
+public class DuplicateSessionException extends SessionCreationException {
 
     public DuplicateSessionException(String message) {
-	    super(message);
+        super(message);
     }
 
     public DuplicateSessionException(String message, Throwable cause) {

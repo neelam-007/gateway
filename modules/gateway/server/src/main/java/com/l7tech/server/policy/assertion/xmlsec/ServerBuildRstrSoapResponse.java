@@ -13,6 +13,7 @@ import com.l7tech.security.xml.XencUtil;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -23,6 +24,7 @@ import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.util.RstSoapMessageProcessor;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -52,11 +54,14 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
     private final Auditor auditor;
     private final String[] variablesUsed;
 
-    public ServerBuildRstrSoapResponse(BuildRstrSoapResponse assertion, ApplicationContext springContext) {
+    public ServerBuildRstrSoapResponse( final BuildRstrSoapResponse assertion,
+                                        final BeanFactory factory ) {
         super(assertion, assertion);
-        auditor = new Auditor(this, springContext, logger);
+        auditor = factory instanceof ApplicationContext?
+                new Auditor(this, (ApplicationContext)factory, logger) :
+                new LogOnlyAuditor(logger);
         variablesUsed = assertion.getVariablesUsed();
-        scContextManager = springContext.getBean("secureConversationContextManager", SecureConversationContextManager.class);
+        scContextManager = factory.getBean("secureConversationContextManager", SecureConversationContextManager.class);
     }
 
     @Override
@@ -448,11 +453,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             rstrBuilder.append("<wst:RequestedProofToken>\n");
 
             // The shared secret in RequestedProofToken could be an EncryptedKey element, a BinarySecret element, or ComputedKey element
-            String bsAttrType = parameters.get(RstSoapMessageProcessor.BINARY_SECRET_ATTR_TYPE);
-            if (Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_ENTROPY)) &&
-                Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_BINARY_SECRET)) &&
-                bsAttrType != null && bsAttrType.endsWith("Nonce")) {
-
+            if ( session.hasEntropy() ) {
                 String psha1AlgUri;
                 String wstNS = parameters.get(RstSoapMessageProcessor.WST_NS);  // wstNS must not be null, since it has been checked.
                 if (SoapConstants.WST_NAMESPACE1.equals(wstNS)) { // for WS-Trust pre 1.2
@@ -482,12 +483,16 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             rstrBuilder.append("</wst:RequestedProofToken>\n");
 
             // Build Entropy
-            if (Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_ENTROPY))) {
+            if ( session.hasEntropy() ) {
                 String wsuId = "uuid-" + UUID.randomUUID().toString();
-                String secret = HexUtils.encodeBase64(session.getSharedSecret(), true);
+                String secret = HexUtils.encodeBase64(session.getServerEntropy(), true);
+                String typeNonce = parameters.get(RstSoapMessageProcessor.WST_NS) + "/Nonce";
+                if ( SoapUtil.WST_NAMESPACE1.equals( parameters.get(RstSoapMessageProcessor.WST_NS) ) ) {
+                    typeNonce = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Nonce";
+                }
                 rstrBuilder
                     .append("<wst:Entropy>\n")
-                    .append("<wst:BinarySecret Type=\"").append(bsAttrType).append("\" wsu:Id=\"").append(wsuId).append("\">")
+                    .append("<wst:BinarySecret Type=\"").append(typeNonce).append("\" wsu:Id=\"").append(wsuId).append("\">")
                     .append(secret).append("</wst:BinarySecret>\n")
                     .append("</wst:Entropy>\n");
             }
