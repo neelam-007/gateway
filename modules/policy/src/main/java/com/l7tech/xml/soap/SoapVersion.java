@@ -130,6 +130,14 @@ public enum SoapVersion {
         }
     }
 
+    /**
+     * @return the SoapVersion to use when no configured version is available, and no better way of picking
+     *         a version exists.
+     */
+    public static SoapVersion getDefaultSoapVersion() {
+        return SOAP_1_1;
+    }
+
     static Set<String> getOtherNamespaceUris(SoapVersion soapVersion) {
         // For now, there's only two, so we'll just hardcode it
         switch (soapVersion) {

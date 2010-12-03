@@ -6,6 +6,7 @@ package com.l7tech.server.policy.variable;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
@@ -382,14 +383,16 @@ public class ServerVariables {
         new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_NAME, new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                return context.getService().getName();
+                final PublishedService service = context.getService();
+                return service == null ? null : service.getName();
             }
         }),
 
         new Variable(BuiltinVariables.PREFIX_SERVICE+"."+BuiltinVariables.SERVICE_SUFFIX_OID, new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                return context.getService().getId();
+                final PublishedService service = context.getService();
+                return service == null ? null : service.getId();
             }
         }),
 
@@ -399,7 +402,10 @@ public class ServerVariables {
                 String routingUrl = null;
 
                 try {
-                    final URL url = context.getService().serviceUrl();
+                    final PublishedService service = context.getService();
+                    if (service == null)
+                        return null;
+                    final URL url = service.serviceUrl();
                     routingUrl = url==null ? null : url.toString();
                 } catch (WSDLException e) {
                     logger.log(

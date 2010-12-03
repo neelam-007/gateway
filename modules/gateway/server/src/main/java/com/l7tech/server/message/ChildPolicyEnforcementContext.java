@@ -276,8 +276,10 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper {
         final String lcname = name.toLowerCase();
         return "request".equals(lcname) ||
                 "response".equals(lcname) ||
+                "service".equals(lcname) ||
                 lcname.startsWith("request.") ||
-                lcname.startsWith("response.");
+                lcname.startsWith("response.") ||
+                lcname.startsWith("service.");
     }
 
     private final PolicyEnforcementContext context;

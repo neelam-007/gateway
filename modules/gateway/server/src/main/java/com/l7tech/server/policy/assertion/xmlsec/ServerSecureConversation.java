@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -25,6 +26,7 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -102,7 +104,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                     // here, we must override the soapfault detail in order to send the fault required by the spec
                     SoapFaultLevel cfault = new SoapFaultLevel();
                     cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
-                    cfault.setFaultTemplate(SoapFaultUtils.badContextTokenFault(context.getService().getSoapVersion(), getIncomingURL(context)));
+                    cfault.setFaultTemplate(SoapFaultUtils.badContextTokenFault(getSoapVersion(context), getIncomingURL(context)));
                     context.setFaultlevel(cfault);
                     return AssertionStatus.AUTH_FAILED;
                 }
@@ -133,6 +135,11 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
         context.setAuthenticationMissing();
         context.setRequestPolicyViolated();
         return AssertionStatus.AUTH_REQUIRED;
+    }
+
+    private static SoapVersion getSoapVersion(PolicyEnforcementContext context) {
+        final PublishedService service = context.getService();
+        return service != null ? service.getSoapVersion() : SoapVersion.getDefaultSoapVersion();
     }
 
     private ServerAssertion deferredSecureConversationResponseDecoration(final SecureConversationSession session) {
