@@ -564,15 +564,26 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
     }
 
     // This method is modified from the method "produceEncryptedKeyXml" in TokenServiceImpl.
-    private String produceEncryptedKeyXml(final byte[] sharedSecret, final X509Certificate requestorCert, String wsseNS, String keyEncryptionAlgorithm) throws GeneralSecurityException {
-        StringBuilder encryptedKeyXml = new StringBuilder();
+    private String produceEncryptedKeyXml( final byte[] sharedSecret,
+                                           final X509Certificate requestorCert,
+                                           final String wsseNS,
+                                           final String keyEncryptionAlgorithm ) throws GeneralSecurityException {
+        final StringBuilder encryptedKeyXml = new StringBuilder();
+        final boolean oaep = !SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO.equals(keyEncryptionAlgorithm);
         // Key info and all
-        String wsuId = "uuid-" + UUID.randomUUID().toString();
+        final String wsuId = "uuid-" + UUID.randomUUID().toString();
         encryptedKeyXml.append("<xenc:EncryptedKey wsu:Id=\"").append(wsuId).append("\" xmlns:xenc=\"").append(SoapConstants.XMLENC_NS)
-            .append("\"><xenc:EncryptionMethod Algorithm=\"").append(keyEncryptionAlgorithm).append("\" />");
+            .append("\"><xenc:EncryptionMethod Algorithm=\"").append(keyEncryptionAlgorithm).append("\"");
+
+        if ( oaep ) {
+            encryptedKeyXml.append( "><DigestMethod xmlns=\"" ).append(SoapConstants.DIGSIG_URI).append("\" Algorithm=\"")
+                    .append(SoapConstants.DIGSIG_URI).append("sha1").append("\"/></xenc:EncryptionMethod>");
+        } else {
+            encryptedKeyXml.append( "/>" );
+        }
 
         // append ski if applicable
-        String recipSkiB64 = CertUtils.getSki(requestorCert);
+        final String recipSkiB64 = CertUtils.getSki(requestorCert);
         if (recipSkiB64 != null) {
             // add the ski
             String skiRef = "<wsse:SecurityTokenReference xmlns:wsse=\"" + wsseNS + "\">" +
@@ -589,11 +600,15 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         }
         encryptedKeyXml.append("<xenc:CipherData>" +
             "<xenc:CipherValue>");
-        String encryptedKeyValue = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(sharedSecret, requestorCert, requestorCert.getPublicKey()), true);
+        final String encryptedKeyValue = oaep ?
+                HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaOaepMGF1SHA1(sharedSecret, requestorCert, requestorCert.getPublicKey(), new byte[0]), true) :
+                HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(sharedSecret, requestorCert, requestorCert.getPublicKey()), true);
+
         encryptedKeyXml.append(encryptedKeyValue);
         encryptedKeyXml.append("</xenc:CipherValue>" +
             "</xenc:CipherData>" +
             "</xenc:EncryptedKey>");
+
         return encryptedKeyXml.toString();
     }
 }
