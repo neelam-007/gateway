@@ -182,7 +182,7 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         return session;
     }
 
-    private long getDefaultSessionDuration() {
+    public long getDefaultSessionDuration() {
         return config.getTimeUnitProperty( "wss.secureConversation.defaultSessionDuration", DEFAULT_SESSION_DURATION );
     }
 

@@ -131,7 +131,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                 authenticationResult.getUser(),
                 loginCredentials,
                 rstParameters.get(RstSoapMessageProcessor.WSC_NS),
-                assertion.getLifetime()
+                getSessionDuration()
             );
         } catch (DuplicateSessionException e) {
             throw new RuntimeException(e);
@@ -199,5 +199,13 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
             .append("</wsc:SecurityContextToken>");
 
         return sb.toString();
+    }
+
+    private long getSessionDuration() {
+        if (assertion.isUseSystemDefaultSessionDuration()) {
+            return scContextManager.getDefaultSessionDuration();
+        } else {
+            return assertion.getLifetime();
+        }
     }
 }

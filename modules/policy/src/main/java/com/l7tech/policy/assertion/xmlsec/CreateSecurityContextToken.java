@@ -14,16 +14,20 @@ import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NA
  * @author ghuang
  */
 public class CreateSecurityContextToken extends MessageTargetableAssertion {
+    public static final long DEFAULT_SESSION_DURATION = 2*60*60*1000;  // Unit: milliseconds.  Set the default as 2 hours.
+    public static final long MIN_SESSION_DURATION = 60*1000; // 1 min
+    public static final long MAX_SESSION_DURATION = 24*60*60*1000; // 24 hrs
+
     public static final String DEFAULT_VARIABLE_PREFIX = "sctBuilder";
     public static final String VARIABLE_ISSUED_SCT = "issuedSCT";
-    public static final long DEFAULT_LIFETIME = 2 * 60 * 60 * 1000;  // Unit: milliseconds.  Set the default as 2 hours.
 
     private static final String ASSERTION_BASIC_NAME = "Create Security Context Token";
     private static final String META_INITIALIZED = CreateSecurityContextToken.class.getName() + ".metadataInitialized";
 
     private String variablePrefix = DEFAULT_VARIABLE_PREFIX;
     private TimeUnit timeUnit = TimeUnit.MINUTES;
-    private long lifetime = DEFAULT_LIFETIME; // Unit: milliseconds.
+    private long lifetime = DEFAULT_SESSION_DURATION; // Unit: milliseconds.
+    private boolean useSystemDefaultSessionDuration = true;
 
     public CreateSecurityContextToken() {}
     
@@ -57,6 +61,14 @@ public class CreateSecurityContextToken extends MessageTargetableAssertion {
 
     public void setLifetime(long lifetime) { // Unit: milliseconds.
         this.lifetime = lifetime;
+    }
+
+    public boolean isUseSystemDefaultSessionDuration() {
+        return useSystemDefaultSessionDuration;
+    }
+
+    public void setUseSystemDefaultSessionDuration(boolean useSystemDefaultSessionDuration) {
+        this.useSystemDefaultSessionDuration = useSystemDefaultSessionDuration;
     }
 
     @Override

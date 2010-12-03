@@ -30,8 +30,7 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
     private JComboBox lifetimeUnitComboBox;
     private JTextField varPrefixTextField;
     private JLabel varPrefixStatusLabel;
-
-    private static final long MILLIS_100_YEARS = 100L * 365L * 86400L * 1000L;
+    private JCheckBox useSystemDefaultCheckBox;
 
     private CreateSecurityContextToken assertion;
     private TimeUnit oldTimeUnit;
@@ -118,6 +117,15 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
             }
         });
 
+        useSystemDefaultCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                boolean defaultSelected = useSystemDefaultCheckBox.isSelected();
+                lifetimeTextField.setEnabled(! defaultSelected);
+                lifetimeUnitComboBox.setEnabled(! defaultSelected);
+            }
+        });
+
         varPrefixTextField.setDocument(new MaxLengthDocument(128));
         TextComponentPauseListenerManager.registerPauseListener(
             varPrefixTextField,
@@ -156,15 +164,23 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
         Double lifetime = (double) assertion.getLifetime();
         lifetimeTextField.setValue(lifetime / timeUnit.getMultiplier());
         lifetimeUnitComboBox.setSelectedItem(timeUnit);
-
         oldTimeUnit = timeUnit;
+
+        boolean defaultSelected = assertion.isUseSystemDefaultSessionDuration();
+        useSystemDefaultCheckBox.setSelected(defaultSelected);
+        lifetimeTextField.setEnabled(! defaultSelected);
+        lifetimeUnitComboBox.setEnabled(! defaultSelected);
     }
 
     private void viewToModel(CreateSecurityContextToken assertion) {
-        TimeUnit timeUnit = (TimeUnit) lifetimeUnitComboBox.getSelectedItem();
-        Double lifetime = (Double) lifetimeTextField.getValue();
-        assertion.setTimeUnit(timeUnit);
-        assertion.setLifetime((long)(lifetime * timeUnit.getMultiplier()));
+        boolean defaultSelected = useSystemDefaultCheckBox.isSelected();
+        assertion.setUseSystemDefaultSessionDuration(defaultSelected);
+        if (! defaultSelected) {
+            TimeUnit timeUnit = (TimeUnit) lifetimeUnitComboBox.getSelectedItem();
+            Double lifetime = (Double) lifetimeTextField.getValue();
+            assertion.setTimeUnit(timeUnit);
+            assertion.setLifetime((long)(lifetime * timeUnit.getMultiplier()));
+        }
 
         String prefix = varPrefixTextField.getText();
         if (prefix == null || prefix.trim().isEmpty()) prefix = CreateSecurityContextToken.DEFAULT_VARIABLE_PREFIX;
@@ -173,9 +189,11 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
 
     private void enableOrDisableOkButton() {
         int multiplier = ((TimeUnit) lifetimeUnitComboBox.getSelectedItem()).getMultiplier();
-        boolean enabled = ValidationUtils.isValidDouble(lifetimeTextField.getText().trim(), false, 0, false, MILLIS_100_YEARS  / multiplier, true)
-            && validateVariablePrefix();
-        okButton.setEnabled(enabled);
+        boolean validLifetime = useSystemDefaultCheckBox.isSelected() ||
+            ValidationUtils.isValidDouble(lifetimeTextField.getText().trim(), false,
+                CreateSecurityContextToken.MIN_SESSION_DURATION / multiplier, true, CreateSecurityContextToken.MAX_SESSION_DURATION / multiplier, true);
+
+        okButton.setEnabled(validateVariablePrefix() && validLifetime);
     }
 
     private void onOK() {
