@@ -1037,7 +1037,9 @@ public class WssDecoratorImpl implements WssDecorator {
         if(isWse3) {
             dkt.setAttribute("Algorithm", SoapConstants.ALGORITHM_PSHA2); // WSE 3.0 does not use an attribute NS
         }
-        else {
+        else if ( SoapConstants.WSSC_NAMESPACE3.equals(namespaceFactory.getWsscNs()) ) {
+            dkt.setAttributeNS(namespaceFactory.getWsscNs(), wssc + "Algorithm", SoapConstants.ALGORITHM_PSHA3);
+        } else {
             dkt.setAttributeNS(namespaceFactory.getWsscNs(), wssc + "Algorithm", SoapConstants.ALGORITHM_PSHA);
         }
 

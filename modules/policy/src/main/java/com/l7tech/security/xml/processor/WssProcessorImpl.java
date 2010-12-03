@@ -940,16 +940,8 @@ public class WssProcessorImpl implements WssProcessor {
 
             @Override
             public String getWsscNS() {
-                for (DerivedKeyToken token: derivedKeyTokens) {
-                    NamedNodeMap attributes = token.asElement().getAttributes();
-                    for (int j = 0; j < attributes.getLength(); j++) {
-                        Attr n = (Attr)attributes.item(j);
-                        if ("xmlns".equals(n.getLocalName()) &&
-                            n.getNamespaceURI() != null &&
-                            n.getNamespaceURI().length() > 0) {
-                            return n.getNamespaceURI();
-                        }
-                    }
+                if ( !derivedKeyTokens.isEmpty() ) {
+                    return derivedKeyTokens.iterator().next().asElement().getNamespaceURI();
                 }
                 return null;
             }
