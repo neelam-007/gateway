@@ -236,8 +236,13 @@ public class WssDecoratorImpl implements WssDecorator {
         if (session != null) {
             if (session.getId() == null)
                 throw new DecoratorException("If SecureConversation Session is specified, but it has no session ID");
-            if (session.getSCNamespace() != null && session.getSCNamespace().equals( SoapConstants.WSSC_NAMESPACE2)) {
-                c.nsf.setWsscNs( SoapConstants.WSSC_NAMESPACE2);
+            if (session.getSCNamespace() != null) {
+                for (String wsscNS: SoapConstants.WSSC_NAMESPACE_ARRAY) {
+                    if (session.getSCNamespace().equals( wsscNS )) {
+                        c.nsf.setWsscNs( wsscNS );
+                        break;
+                    }
+                }
             }
             sct = addSecurityContextToken(c, securityHeader, session.getId());
             if (dreq.isProtectTokens() && !signList.isEmpty())
@@ -1049,8 +1054,10 @@ public class WssDecoratorImpl implements WssDecorator {
         lengthEl.appendChild(DomUtils.createTextNode(factory, Integer.toString(length)));
         Element labelEl = DomUtils.createAndAppendElementNS(dkt, "Label", namespaceFactory.getWsscNs(), "wssc");
         labelEl.appendChild(DomUtils.createTextNode(factory, derivationLabel));
-        Element nonceEl = isWse3 ? DomUtils.createAndAppendElementNS(dkt, "Nonce", namespaceFactory.getWsscNs(), "wssc")
-                                 : DomUtils.createAndAppendElementNS(dkt, "Nonce", wsseNs, wsse);
+        boolean useWsseNonce = SoapConstants.WSSC_NAMESPACE.equals(namespaceFactory.getWsscNs()); 
+        Element nonceEl = useWsseNonce?
+            DomUtils.createAndAppendElementNS(dkt, "Nonce", wsseNs, wsse) :
+            DomUtils.createAndAppendElementNS(dkt, "Nonce", namespaceFactory.getWsscNs(), "wssc");
         nonceEl.appendChild(DomUtils.createTextNode(factory, HexUtils.encodeBase64(nonce, true)));
 
         // Derive a copy of the key for ourselves
