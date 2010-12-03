@@ -108,6 +108,7 @@ public class ServerCreateSecurityContextTokenTest {
                                   final int keySize,
                                   final Functions.UnaryVoid<Document> validationCallback ) throws Exception {
         final CreateSecurityContextToken createSecurityContextToken = new CreateSecurityContextToken();
+        createSecurityContextToken.setUseSystemDefaultSessionDuration(false);
         createSecurityContextToken.setLifetime( 1000 );
         createSecurityContextToken.setVariablePrefix( "create" );
 
