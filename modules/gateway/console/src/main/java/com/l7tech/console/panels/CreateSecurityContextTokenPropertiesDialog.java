@@ -173,7 +173,8 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
 
     private void enableOrDisableOkButton() {
         int multiplier = ((TimeUnit) lifetimeUnitComboBox.getSelectedItem()).getMultiplier();
-        boolean enabled = ValidationUtils.isValidDouble(lifetimeTextField.getText().trim(), false, 0, false, MILLIS_100_YEARS  / multiplier, true);
+        boolean enabled = ValidationUtils.isValidDouble(lifetimeTextField.getText().trim(), false, 0, false, MILLIS_100_YEARS  / multiplier, true)
+            && validateVariablePrefix();
         okButton.setEnabled(enabled);
     }
 

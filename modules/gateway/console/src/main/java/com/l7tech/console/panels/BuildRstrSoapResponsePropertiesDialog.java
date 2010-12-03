@@ -331,6 +331,13 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
      * Validate all RSTR components and enable/disable the OK button to indicate the validation result.
      */
     private void enableOrDisableOkButton() {
+        // Check the variable prefix
+        boolean prefixOk = validateVariablePrefix();
+        if (! prefixOk) {
+            okButton.setEnabled(false);
+            return;
+        }
+
         // If the response is for token cancellation, then enable the OK button.
         if (responseForCancelRadioButton.isSelected()) {
             okButton.setEnabled(true);
