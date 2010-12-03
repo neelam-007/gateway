@@ -9,7 +9,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.CancelSecurityContext;
 import com.l7tech.security.token.SecurityContextToken;
+import com.l7tech.security.token.SecurityToken;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -19,6 +21,7 @@ import com.l7tech.server.secureconversation.NoSuchSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.util.RstSoapMessageProcessor;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -37,10 +40,12 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
     private String soapVersion;
 
     public ServerCancelSecurityContext( final CancelSecurityContext assertion,
-                                        final ApplicationContext springContext ) {
+                                        final BeanFactory factory ) {
         super(assertion, assertion);
-        auditor = new Auditor(this, springContext, logger);
-        secureConversationContextManager = springContext.getBean("secureConversationContextManager", SecureConversationContextManager.class);
+        auditor = factory instanceof ApplicationContext?
+                new Auditor(this, (ApplicationContext)factory, logger) :
+                new LogOnlyAuditor(logger);
+        secureConversationContextManager = factory.getBean("secureConversationContextManager", SecureConversationContextManager.class);
     }
 
     @Override
@@ -137,11 +142,14 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         boolean found = false;
         SecurityContextToken securityContextToken = null;
 
+        outer:
         for ( final LoginCredentials credentials : authContext.getCredentials() ) {
-            if ( credentials.getSecurityToken() instanceof SecurityContextToken &&
-                 targetIdentifier.equals(((SecurityContextToken)credentials.getSecurityToken()).getContextIdentifier()) ) {
-                securityContextToken = (SecurityContextToken) credentials.getSecurityToken();
-                break;
+            for ( final SecurityToken token : credentials.getSecurityTokens() ) {
+                if ( token instanceof SecurityContextToken &&
+                     targetIdentifier.equals(((SecurityContextToken)token).getContextIdentifier()) ) {
+                    securityContextToken = (SecurityContextToken) token;
+                    break outer;
+                }
             }
         }
 
