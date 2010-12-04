@@ -16,6 +16,7 @@ import org.xml.sax.SAXException;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,6 +56,24 @@ public class RstSoapMessageProcessor {
     public final static String HAS_KEY_SIZE = "has_key_size";
     public final static String KEY_SIZE = "key_size";
     public final static String ERROR = "parsing_error";
+
+    private static final Map<String,String> trustToPolicyNsMap;
+    private static final  Map<String,String> trustToAddressingNsMap;
+    static {
+        final HashMap<String,String> trustMap = new HashMap<String,String>();
+        trustMap.put( SoapConstants.WST_NAMESPACE1, SoapConstants.WSP_NAMESPACE );
+        trustMap.put( SoapConstants.WST_NAMESPACE2, SoapConstants.WSP_NAMESPACE2 );
+        trustMap.put( SoapConstants.WST_NAMESPACE3, SoapConstants.WSP_NAMESPACE2 );
+        trustMap.put( SoapConstants.WST_NAMESPACE4, SoapConstants.WSP_NAMESPACE2 );
+        trustToPolicyNsMap = Collections.unmodifiableMap( trustMap );
+
+        final HashMap<String,String> addressingMap = new HashMap<String,String>();
+        addressingMap.put( SoapConstants.WST_NAMESPACE1, SoapConstants.WSA_NAMESPACE );
+        addressingMap.put( SoapConstants.WST_NAMESPACE2, SoapConstants.WSA_NAMESPACE2 );
+        addressingMap.put( SoapConstants.WST_NAMESPACE3, SoapConstants.WSA_NAMESPACE_10 );
+        addressingMap.put( SoapConstants.WST_NAMESPACE4, SoapConstants.WSA_NAMESPACE_10 );
+        trustToAddressingNsMap = Collections.unmodifiableMap( addressingMap );
+    }
 
     /**
      * Get all information from the RST SOAP message such as namespaces, element values, etc.
@@ -466,5 +485,57 @@ public class RstSoapMessageProcessor {
         }
         
         return soapVersion;
+    }
+
+    /**
+     * Get the WS-Addressing namespace to use.
+     *
+     * <p>The namespace could be detected from the RST message or could be
+     * derived from the WS-Trust namespace.</p>
+     *
+     * <p>If a namespace cannot be determined then the default namespace is
+     * returned.</p>
+     *
+     * @param parameters The parameters to use.
+     * @return The WS-Trust namespace.
+     */
+    public static String getWsaNamespace( final Map<String, String> parameters ) {
+        return getNamespace( parameters, SoapConstants.WSA_NAMESPACE_10, WSA_NS, trustToAddressingNsMap );
+    }
+
+    /**
+     * Get the WS-Policy namespace to use.
+     *
+     * <p>The namespace could be detected from the RST message or could be
+     * derived from the WS-Trust namespace.</p>
+     *
+     * <p>If a namespace cannot be determined then the default namespace is
+     * returned.</p>
+     *
+     * @param parameters The parameters to use.
+     * @return The WS-Trust namespace.
+     */
+    public static String getWspNamespace( final Map<String, String> parameters ) {
+        return getNamespace( parameters, SoapConstants.WSP_NAMESPACE2, WSP_NS, trustToPolicyNsMap );
+    }
+
+    private static String getNamespace( final Map<String, String> parameters,
+                                        final String defaultNamespace,
+                                        final String namespaceParameter,
+                                        final Map<String,String> namespaceMap ) {
+        String namespace = parameters.get( namespaceParameter );
+
+        if ( namespace == null ) {
+            final String wsTrustNs = parameters.get( WST_NS );
+            if ( wsTrustNs != null ) {
+                namespace = namespaceMap.get( wsTrustNs );
+            }
+        }
+
+        if ( namespace == null ) {
+            namespace = defaultNamespace;
+        }
+
+        return namespace;
     }
 }

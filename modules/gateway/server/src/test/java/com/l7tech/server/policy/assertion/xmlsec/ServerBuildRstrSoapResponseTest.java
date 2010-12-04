@@ -40,7 +40,9 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -136,7 +138,7 @@ public class ServerBuildRstrSoapResponseTest {
     @Test
     public void testResponseAppliesTo() throws Exception {
         // test no AppliesTo if not enabled
-        doSecureConversationResponse( false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
+        doSecureConversationResponse( true, false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
             @Override
             public void call( final BuildRstrSoapResponse buildRstrSoapResponse ) {
                 buildRstrSoapResponse.setIncludeAppliesTo( false );
@@ -150,7 +152,7 @@ public class ServerBuildRstrSoapResponseTest {
 
         // test value used when enabled.
         final String appliesToAddress = "http://layer7tech.com/nowhere";
-        doSecureConversationResponse( false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
+        doSecureConversationResponse( true, false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
             @Override
             public void call( final BuildRstrSoapResponse buildRstrSoapResponse ) {
                 buildRstrSoapResponse.setIncludeAppliesTo( true );
@@ -172,7 +174,7 @@ public class ServerBuildRstrSoapResponseTest {
     @Test
     public void testResponseRequestedAttachedReference() throws Exception {
         // test no RequestedAttachedReference if not enabled
-        doSecureConversationResponse( false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
+        doSecureConversationResponse( true, false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
             @Override
             public void call( final BuildRstrSoapResponse buildRstrSoapResponse ) {
                 buildRstrSoapResponse.setIncludeAttachedRef( false );
@@ -185,7 +187,7 @@ public class ServerBuildRstrSoapResponseTest {
         } );
 
         // test RequestedAttachedReference present when enabled
-        doSecureConversationResponse( false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
+        doSecureConversationResponse( true, false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
             @Override
             public void call( final BuildRstrSoapResponse buildRstrSoapResponse ) {
                 buildRstrSoapResponse.setIncludeAttachedRef( true );
@@ -201,7 +203,7 @@ public class ServerBuildRstrSoapResponseTest {
     @Test
     public void testResponseRequestedUnattachedReference() throws Exception {
         // test no RequestedUnattachedReference if not enabled
-        doSecureConversationResponse( false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
+        doSecureConversationResponse( true, false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
             @Override
             public void call( final BuildRstrSoapResponse buildRstrSoapResponse ) {
                 buildRstrSoapResponse.setIncludeUnattachedRef( false );
@@ -214,7 +216,7 @@ public class ServerBuildRstrSoapResponseTest {
         } );
 
         // test RequestedUnattachedReference present when enabled
-        doSecureConversationResponse( false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
+        doSecureConversationResponse( true, false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
             @Override
             public void call( final BuildRstrSoapResponse buildRstrSoapResponse ) {
                 buildRstrSoapResponse.setIncludeUnattachedRef( true );
@@ -230,7 +232,7 @@ public class ServerBuildRstrSoapResponseTest {
     @Test
     public void testResponseLifetime() throws Exception {
         // test no lifetime if not enabled
-        doSecureConversationResponse( false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
+        doSecureConversationResponse( true, false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
             @Override
             public void call( final BuildRstrSoapResponse buildRstrSoapResponse ) {
                 buildRstrSoapResponse.setIncludeLifetime( false );
@@ -243,7 +245,7 @@ public class ServerBuildRstrSoapResponseTest {
         } );
 
         // test no lifetime present when enabled
-        doSecureConversationResponse( false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
+        doSecureConversationResponse( true, false, true, getSaml11Token(), new Functions.UnaryVoid<BuildRstrSoapResponse>(){
             @Override
             public void call( final BuildRstrSoapResponse buildRstrSoapResponse ) {
                 buildRstrSoapResponse.setIncludeLifetime( true );
@@ -277,23 +279,33 @@ public class ServerBuildRstrSoapResponseTest {
             logger.info( "Testing for token with NS: " + XmlUtil.parse( token ).getDocumentElement().getNamespaceURI() );
 
             // Test SOAP NS matches the request message
-            doNamespaceTest( token, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE );
-            doNamespaceTest( token, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE );
+            doNamespaceTest( true, token, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE );
+            doNamespaceTest( true, token, SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE );
 
             // Test supported ws-addressing versions
             for ( final String addressingUri : SoapConstants.WSA_NAMESPACE_ARRAY ) {
-                doNamespaceTest( token, "http://www.w3.org/2005/08/addressing", addressingUri );
+                doNamespaceTest( true, token, "http://www.w3.org/2005/08/addressing", addressingUri );
             }
 
-            // Test supported ws-trust versions
+            // Test supported ws-trust versions and that they default to the correct WSP / WSA versions
+            final Map<String,String> trustToPolicyNsMap = new HashMap<String,String>(){{
+                put( SoapConstants.WST_NAMESPACE1, SoapConstants.WSP_NAMESPACE );
+                put( SoapConstants.WST_NAMESPACE2, SoapConstants.WSP_NAMESPACE2 );
+                put( SoapConstants.WST_NAMESPACE3, SoapConstants.WSP_NAMESPACE2 );
+            }};
+            final Map<String,String> trustToAddressingNsMap = new HashMap<String,String>(){{
+                put( SoapConstants.WST_NAMESPACE1, SoapConstants.WSA_NAMESPACE );
+                put( SoapConstants.WST_NAMESPACE2, SoapConstants.WSA_NAMESPACE2 );
+                put( SoapConstants.WST_NAMESPACE3, SoapConstants.WSA_NAMESPACE_10 );
+            }};
             for ( final String trustUri : Arrays.asList( SoapConstants.WST_NAMESPACE1, SoapConstants.WST_NAMESPACE2, SoapConstants.WST_NAMESPACE3 ) ) {
-                doNamespaceTest( token, "http://docs.oasis-open.org/ws-sx/ws-trust/200512", trustUri );
+                doNamespaceTest( false, token, "http://docs.oasis-open.org/ws-sx/ws-trust/200512", trustUri, trustToPolicyNsMap.get(trustUri), trustToAddressingNsMap.get(trustUri) );
             }
         }
     }
 
-    private void doNamespaceTest( final String token, final String oldNamespace, final String newNamespace, final String... otherNamespaces ) throws Exception {
-        doSecureConversationResponse( false, true, token, null, new Functions.Unary<String,String>(){
+    private void doNamespaceTest( final boolean addressing, final String token, final String oldNamespace, final String newNamespace, final String... otherNamespaces ) throws Exception {
+        doSecureConversationResponse( addressing, false, true, token, null, new Functions.Unary<String,String>(){
             @Override
             public String call( final String s ) {
                 String request = s.replace( oldNamespace, newNamespace );
@@ -331,10 +343,11 @@ public class ServerBuildRstrSoapResponseTest {
     private void doResponse( final boolean entropy,
                              final boolean clientCert,
                              final String token ) throws Exception {
-        doSecureConversationResponse( entropy, clientCert, token, null, null, null );
+        doSecureConversationResponse( true, entropy, clientCert, token, null, null, null );
     }
 
-    private void doSecureConversationResponse( final boolean entropy,
+    private void doSecureConversationResponse( final boolean addressing,
+                                               final boolean entropy,
                                                final boolean clientCert,
                                                final String token,
                                                final Functions.UnaryVoid<BuildRstrSoapResponse> configCallback,
@@ -370,13 +383,14 @@ public class ServerBuildRstrSoapResponseTest {
         String requestText =
                 "<s:Envelope\n" +
                 "    xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
-                "    xmlns:wsa=\"http://www.w3.org/2005/08/addressing\"\n" +
+                (addressing ? "    xmlns:wsa=\"http://www.w3.org/2005/08/addressing\"\n" : "") +
                 "    xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\"\n" +
                 "    >\n" +
+                ( addressing ?
                 "    <s:Header>\n" +
                 "        <wsa:MessageID>message1</wsa:MessageID>\n" +
                 "        <wsa:Action>"+action+"</wsa:Action>\n" +
-                "    </s:Header>\n" +
+                "    </s:Header>\n" : "" )+
                 "    <s:Body>\n" +
                 "        <wst:RequestSecurityToken>\n" +
                 "            <wst:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</wst:RequestType>\n" +

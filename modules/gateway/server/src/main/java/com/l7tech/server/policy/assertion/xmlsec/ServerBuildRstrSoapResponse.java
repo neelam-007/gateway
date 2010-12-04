@@ -111,7 +111,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_RSTR_RESPONSE, new Message(XmlUtil.stringAsDocument(rstrSoapResponse)));
 
         // Set the context variable for WS-Addressing Namespace (Note: WS-Addressing Namespace is optional to have.)
-        final String wsaNS = rstParameters.get(RstSoapMessageProcessor.WSA_NS);
+        final String wsaNS = RstSoapMessageProcessor.getWsaNamespace( rstParameters );
         context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_WSA_NAMESPACE, (wsaNS == null)? "" : wsaNS);
 
         // Set the context variable for RSTR WS-Addressing Action (Optional)
@@ -354,12 +354,8 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 );
 
                 if (assertion.isIncludeAppliesTo() && addressContent != null && !addressContent.trim().isEmpty()) {
-                    String wsaNS = parameters.get(RstSoapMessageProcessor.WSA_NS);  // The WS-Addressing namespace must not be null.  It has been checked in doCheckRequest.
-                    String wspNS = parameters.get(RstSoapMessageProcessor.WSP_NS);
-                    if (wspNS == null || wspNS.trim().isEmpty()) {
-                        wspNS = SoapConstants.WSP_NAMESPACE2;
-                    }
-
+                    String wsaNS = RstSoapMessageProcessor.getWsaNamespace( parameters ); 
+                    String wspNS = RstSoapMessageProcessor.getWspNamespace( parameters );
                     rstrBuilder
                         .append("<wsp:AppliesTo xmlns:wsp=\"").append(wspNS).append("\" xmlns:wsa=\"").append(wsaNS).append("\">\n")
                         .append("<wsa:EndpointReference>\n")
