@@ -21,6 +21,7 @@ import com.l7tech.server.secureconversation.NoSuchSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.util.RstSoapMessageProcessor;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 
@@ -36,8 +37,6 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
 
     private final SecureConversationContextManager secureConversationContextManager;
     private final Auditor auditor;
-
-    private String soapVersion;
 
     public ServerCancelSecurityContext( final CancelSecurityContext assertion,
                                         final BeanFactory factory ) {
@@ -55,14 +54,13 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
                                               final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
 
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
-        Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, false);
-        soapVersion = RstSoapMessageProcessor.getSoapVersion(context, rstParameters);
+        final Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, false);
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
             RstSoapMessageProcessor.logAuditAndSetSoapFault(
                 auditor,
                 context,
                 AssertionMessages.STS_INVALID_RST_REQUEST,
-                soapVersion,
+                rstParameters,
                 RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
                 rstParameters.get(RstSoapMessageProcessor.ERROR)
             );
@@ -76,11 +74,11 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
                 case USER:
                     final SecureConversationSession session = secureConversationContextManager.getSession( targetIdentifier );
                     if ( session != null ) {
-                        checkAuthenticated( context, authContext, session.getUsedBy() );
+                        checkAuthenticated( context, authContext, rstParameters, session.getUsedBy() );
                     }
                     break;
                 case TOKEN:
-                    checkAuthenticationToken( context, authContext, targetIdentifier );
+                    checkAuthenticationToken( context, authContext, rstParameters, targetIdentifier );
                     break;
             }
 
@@ -91,9 +89,9 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
                     auditor,
                     context,
                     AssertionMessages.STS_EXPIRED_SC_SESSION,
-                    soapVersion,
+                    rstParameters,
                     RstSoapMessageProcessor.WST_FAULT_CODE_EXPIRED_DATA,
-                    e.getMessage()
+                    ExceptionUtils.getMessage( e )
                 );
                 return AssertionStatus.BAD_REQUEST;
             } else {
@@ -111,6 +109,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
 
     private void checkAuthenticated( final PolicyEnforcementContext context,
                                      final AuthenticationContext authContext,
+                                     final Map<String,String> rstParameters,
                                      final User user ) {
         boolean found = false;
 
@@ -128,8 +127,8 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
                 auditor,
                 context,
                 AssertionMessages.STS_AUTHORIZATION_FAILURE,
-                soapVersion,
-                "l7:not_authorized",
+                rstParameters,
+                RstSoapMessageProcessor.WST_FAULT_CODE_FAILED_AUTHENTICATION,
                 "Not authorized."
             );
             throw new AssertionStatusException(AssertionStatus.BAD_REQUEST);
@@ -138,6 +137,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
 
     private void checkAuthenticationToken( final PolicyEnforcementContext context,
                                            final AuthenticationContext authContext,
+                                           final Map<String,String> rstParameters,
                                            final String targetIdentifier ) {
         boolean found = false;
         SecurityContextToken securityContextToken = null;
@@ -167,8 +167,8 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
                 auditor,
                 context,
                 AssertionMessages.STS_AUTHORIZATION_FAILURE,
-                soapVersion,
-                "l7:not_authorized",
+                rstParameters,
+                RstSoapMessageProcessor.WST_FAULT_CODE_FAILED_AUTHENTICATION,
                 "Not authorized."
             );
             throw new AssertionStatusException(AssertionStatus.BAD_REQUEST);

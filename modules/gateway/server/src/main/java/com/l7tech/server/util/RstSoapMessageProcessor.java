@@ -387,29 +387,46 @@ public class RstSoapMessageProcessor {
         return parameters;
     }
 
+    /**
+     * Audit the given message and set a template fault response.
+     *
+     * TODO this is an incorrect use of the fault level
+     *
+     * @param auditor The auditor to use.
+     * @param context The context for the fault
+     * @param assertionMessage The message to audit
+     * @param parameters The parameters for the related RST
+     * @param faultCodeOrValue The code (one of WST_FAULT_CODE_*)
+     * @param faultStringOrReason The reason detail.
+     */
     public static void logAuditAndSetSoapFault(
             final Auditor auditor,
             final PolicyEnforcementContext context,
             final AuditDetailMessage assertionMessage,
-            String soapVersion,
-            String faultCodeOrValue,
-            String faultStringOrReason) {
+            final Map<String, String> parameters,
+            final String faultCodeOrValue,
+            final String faultStringOrReason) {
 
         // Log and audit
         auditor.logAndAudit(assertionMessage, faultStringOrReason);
 
         // Set a SOAP fault
+        final String wstNs = parameters.get( WST_NS ) == null ? SoapConstants.WST_NAMESPACE3 : parameters.get( WST_NS );
+        final String soapVersion = RstSoapMessageProcessor.getSoapVersion(context, parameters);
         SoapFaultLevel fault = new SoapFaultLevel();
         fault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
 
         if ("1.2".equals(soapVersion)) {
             fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\" " +
-                "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
+                "                  xmlns:wst=\"" + wstNs + "\">\n" +
                 "    <soapenv:Body>\n" +
                 "        <soapenv:Fault>\n" +
                 "            <soapenv:Code>\n" +
-                "                <soapenv:Value>" + faultCodeOrValue + "</soapenv:Value>\n" +
+                "                <soapenv:Value>soapenv:Sender</soapenv:Value>\n" +
+                "                <soapenv:Subcode>\n" +
+                "                    <soapenv:Value>" + faultCodeOrValue + "</soapenv:Value>\n" +
+                "                </soapenv:Subcode>\n" +
                 "            </soapenv:Code>\n" +
                 "            <soapenv:Reason>\n" +
                 "                <soapenv:Text xml:lang=\"en-US\">" + faultStringOrReason + "</soapenv:Text>\n" +
@@ -421,7 +438,7 @@ public class RstSoapMessageProcessor {
         } else {
             fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE + "\" " +
-                "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
+                "                  xmlns:wst=\"" + wstNs + "\">\n" +
                 "    <soapenv:Body>\n" +
                 "        <soapenv:Fault>\n" +
                 "            <faultcode>" + faultCodeOrValue + "</faultcode>\n" +

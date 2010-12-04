@@ -53,14 +53,13 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                                              AuthenticationContext authContext) throws IOException, PolicyAssertionException {
 
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
-        Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, true);
-        String soapVersion = RstSoapMessageProcessor.getSoapVersion(context, rstParameters);
+        final Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, true);
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
             RstSoapMessageProcessor.logAuditAndSetSoapFault(
                 auditor,
                 context,
                 AssertionMessages.STS_INVALID_RST_REQUEST,
-                soapVersion,
+                rstParameters,
                 RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
                 rstParameters.get(RstSoapMessageProcessor.ERROR)
             );
@@ -74,7 +73,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                 auditor,
                 context,
                 AssertionMessages.STS_AUTHENTICATION_FAILURE,
-                soapVersion,
+                rstParameters,
                 RstSoapMessageProcessor.WST_FAULT_CODE_FAILED_AUTHENTICATION,
                 "The target message does not contain any authentication information."
             );
@@ -93,7 +92,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                 auditor,
                 context,
                 AssertionMessages.STS_AUTHENTICATION_FAILURE,
-                soapVersion,
+                rstParameters,
                 RstSoapMessageProcessor.WST_FAULT_CODE_FAILED_AUTHENTICATION,
                 "Credentials not found for the authenticated user."
             );

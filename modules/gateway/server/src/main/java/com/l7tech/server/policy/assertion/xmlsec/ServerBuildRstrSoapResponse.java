@@ -70,14 +70,13 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                                              AuthenticationContext authContext) throws IOException, PolicyAssertionException {
 
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
-        Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, assertion.isResponseForIssuance());
-        String soapVersion = RstSoapMessageProcessor.getSoapVersion(context, rstParameters);
+        final Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, assertion.isResponseForIssuance());
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
             RstSoapMessageProcessor.logAuditAndSetSoapFault(
                 auditor,
                 context,
                 AssertionMessages.STS_INVALID_RST_REQUEST,
-                soapVersion,
+                rstParameters,
                 RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
                 rstParameters.get(RstSoapMessageProcessor.ERROR)
             );
@@ -86,10 +85,10 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
         // At this point, everything is fine since the validation is done.  It is ready to generate the RSTR response content depending on Binding type such as Issuance Binding or Cancel Binding.
         String rstrXml;
-        Map<String, String> tokenInfo = new HashMap<String, String>(6);
+        final Map<String, String> tokenInfo = new HashMap<String, String>();
         try {
             if (assertion.isResponseForIssuance()) {
-                AssertionStatus status = getTokenInfo(context, tokenInfo, soapVersion);
+                final AssertionStatus status = getTokenInfo(context, tokenInfo, rstParameters);
                 if (status != AssertionStatus.NONE) return status;
                 rstrXml = generateRstrElement(context, message, rstParameters, tokenInfo);
             } else {
@@ -100,19 +99,19 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 auditor,
                 context,
                 AssertionMessages.STS_EXPIRED_SC_SESSION,
-                soapVersion,
+                rstParameters,
                 RstSoapMessageProcessor.WST_FAULT_CODE_EXPIRED_DATA,
-                e.getMessage()
+                ExceptionUtils.getMessage(e)
             );
             return AssertionStatus.BAD_REQUEST;
         }
 
         // Build a RSTR SOAP response message and set the context variable for rstrResponse
-        String rstrSoapResponse = buildRstrSoapResponse(rstParameters.get(RstSoapMessageProcessor.SOAP_ENVELOPE_NS), rstrXml);
+        final String rstrSoapResponse = buildRstrSoapResponse(rstParameters.get(RstSoapMessageProcessor.SOAP_ENVELOPE_NS), rstrXml);
         context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_RSTR_RESPONSE, new Message(XmlUtil.stringAsDocument(rstrSoapResponse)));
 
         // Set the context variable for WS-Addressing Namespace (Note: WS-Addressing Namespace is optional to have.)
-        String wsaNS = rstParameters.get(RstSoapMessageProcessor.WSA_NS);
+        final String wsaNS = rstParameters.get(RstSoapMessageProcessor.WSA_NS);
         context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_WSA_NAMESPACE, (wsaNS == null)? "" : wsaNS);
 
         // Set the context variable for RSTR WS-Addressing Action (Optional)
@@ -169,7 +168,9 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         return AssertionStatus.NONE;
     }
 
-    private AssertionStatus getTokenInfo(PolicyEnforcementContext context, Map<String, String> tokenInfo, String soapVersion) {
+    private AssertionStatus getTokenInfo( final PolicyEnforcementContext context,
+                                          final Map<String, String> tokenInfo,
+                                          final Map<String,String> rstParameters ) {
         // Get the token issued
         String tokenVariable = assertion.getTokenIssued();
 
@@ -186,7 +187,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 auditor,
                 context,
                 AssertionMessages.STS_INVALID_SECURITY_TOKEN,
-                soapVersion,
+                rstParameters,
                 RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
                 "The security token used to generate a RSTR response is invalid or not well-formatted."
             );
@@ -209,7 +210,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                     auditor,
                     context,
                     AssertionMessages.STS_INVALID_SECURITY_TOKEN,
-                    soapVersion,
+                    rstParameters,
                     RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
                     "There are more than one ID attribute in the SecurityContextToken element."
                 );
@@ -225,7 +226,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                     auditor,
                     context,
                     AssertionMessages.STS_INVALID_SECURITY_TOKEN,
-                    soapVersion,
+                    rstParameters,
                     RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
                     "There are more than one Identifier element in the SecurityContextToken element."
                 );
@@ -235,7 +236,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                     auditor,
                     context,
                     AssertionMessages.STS_INVALID_SECURITY_TOKEN,
-                    soapVersion,
+                    rstParameters,
                     RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
                     "There is no Identifier element in the SecurityContextToken element."
                 );
@@ -261,7 +262,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                     auditor,
                     context,
                     AssertionMessages.STS_INVALID_SECURITY_TOKEN,
-                    soapVersion,
+                    rstParameters,
                     RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
                     "The SAML namespace is invalid."
                 );
@@ -272,7 +273,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 auditor,
                 context,
                 AssertionMessages.STS_INVALID_SECURITY_TOKEN,
-                soapVersion,
+                rstParameters,
                 RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
                 "The security token provided is neither a SecurityContextToken nor a SAML token."
             );
