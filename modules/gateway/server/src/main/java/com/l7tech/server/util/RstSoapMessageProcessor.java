@@ -146,16 +146,12 @@ public class RstSoapMessageProcessor {
             }
         }
 
-        // Find header (Note: it is mandatory to have.)
+        // Find header (Note: it is optional to have.)
         Element header;
         try {
             header = SoapUtil.getHeaderElement(doc);
         } catch (InvalidDocumentFormatException e) {
             parameters.put(ERROR, "There is more than one Header element in the SOAP envelope."); // Checking SOAP is done already.
-            return parameters;
-        }
-        if (header == null) {
-            parameters.put(ERROR, "There is no Header element in the SOAP envelope.");
             return parameters;
         }
 
@@ -175,7 +171,7 @@ public class RstSoapMessageProcessor {
         // Find WS-Addressing Action (Note: it is optional to have.)
         Element actionEl;
         try {
-            actionEl = DomUtils.findOnlyOneChildElementByName(header, parameters.get(WSA_NS), SoapConstants.WSA_ACTION);
+            actionEl = header==null ? null : DomUtils.findOnlyOneChildElementByName(header, parameters.get(WSA_NS), SoapConstants.WSA_ACTION);
         } catch (TooManyChildElementsException e) {
             parameters.put(ERROR,  "There is more than one Action element of WS-Addressing in the SOAP Header.");
             return parameters;
@@ -206,7 +202,7 @@ public class RstSoapMessageProcessor {
         }
 
         // Find EncryptionMethod (Note: it is optional to have.)
-        Element encryptionMethodEl = DomUtils.findFirstDescendantElement(header, SoapConstants.XMLENC_NS, SoapConstants.ENCRYPTION_METHOD);
+        Element encryptionMethodEl = header==null ? null : DomUtils.findFirstDescendantElement(header, SoapConstants.XMLENC_NS, SoapConstants.ENCRYPTION_METHOD);
         if (encryptionMethodEl != null) {
             String alg = encryptionMethodEl.getAttribute(SoapUtil.ATTRIBUTE_ALGORITHM);
             if (alg != null && !alg.trim().isEmpty()) {
