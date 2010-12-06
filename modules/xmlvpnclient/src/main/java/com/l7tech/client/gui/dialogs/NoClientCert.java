@@ -12,7 +12,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 
 /**
  * A dialog that provides different options for agent users that dont already have
@@ -77,22 +76,8 @@ public class NoClientCert extends JDialog {
             csrButton.setVisible(false);
         }
 
-        AbstractAction closeaction = new AbstractAction() {
-                                        public void actionPerformed(ActionEvent e) {
-                                            NoClientCert.this.dispose();
-                                        }
-                                     };
-
-        JLayeredPane layeredPane = getLayeredPane();
-        final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-        final KeyStroke enterKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);
-        layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escKeyStroke, "close-it");
-        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, "close-it");
-        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, "close-it");
-        layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(enterKeyStroke, "close-it");
-        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(enterKeyStroke, "close-it");
-        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(enterKeyStroke, "close-it");
-        layeredPane.getActionMap().put("close-it", closeaction);
+        Utilities.setEscKeyStrokeDisposes(this);
+        getRootPane().setDefaultButton(closeButton);
 
         Utilities.equalizeButtonSizes(new AbstractButton[] {csrButton, importButton});
     }
