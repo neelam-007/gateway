@@ -117,7 +117,7 @@ public class SecureHttpInvokerRequestExecutor extends CommonsHttpInvokerRequestE
                 if (ioe.getMessage() != null &&
                     ( ioe.getMessage().contains("Did not receive successful HTTP response: status code = 503, status message = [") ||
                       ioe.getMessage().contains("Did not receive successful HTTP response: status code = 404, status message = [") ) ) {
-                    logger.log(Level.WARNING, "Replacing HttpException with (dummy) SocketException.", ioe);
+                    logger.log(Level.WARNING, "Replacing HttpException with (dummy) SocketException: " + ExceptionUtils.getMessage(ioe), ExceptionUtils.getDebugException(ioe));
                     throw new SocketException("Dummy cause since HttpClient doesn't nest exceptions.");
                 }
                 else throw ioe;
