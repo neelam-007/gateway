@@ -283,8 +283,10 @@ public class SoapConstants {
 
     public static final String VALUETYPE_DERIVEDKEY = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk";
     public static final String VALUETYPE_DERIVEDKEY2 = "http://schemas.xmlsoap.org/ws/2005/02/sc/dk";
+    public static final String VALUETYPE_DERIVEDKEY3 = "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512/dk";
     public static final String VALUETYPE_SECURECONV = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
     public static final String VALUETYPE_SECURECONV2 = "http://schemas.xmlsoap.org/ws/2005/02/sc/sct";
+    public static final String VALUETYPE_SECURECONV3 = "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512/sct";
     public static final String VALUETYPE_KERBEROS_GSS_AP_REQ = "http://docs.oasis-open.org/wss/oasis-wss-kerberos-token-profile-1.1#GSS_Kerberosv5_AP_REQ";
     public static final String VALUETYPE_KERBEROS_APREQ_SHA1 = "http://docs.oasis-open.org/wss/oasis-wss-kerberos-token-profile-1.1#Kerberosv5APREQSHA1";
     public static final String ENCODINGTYPE_BASE64BINARY_SUFFIX = "Base64Binary";

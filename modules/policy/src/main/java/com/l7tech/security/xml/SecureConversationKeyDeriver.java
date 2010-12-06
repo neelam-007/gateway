@@ -20,13 +20,13 @@ import java.util.*;
  * Date: Aug 3, 2004<br/>
  */
 public class SecureConversationKeyDeriver {
-    public static final String URI_ALG_PSHA1 = "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512/dk/p_sha1";
-    public static final String URI_ALG_PHSA1_2 = SoapConstants.ALGORITHM_PSHA;
-    public static final String URI_ALG_PHSA1_3 = SoapConstants.ALGORITHM_PSHA2;
+    public static final String URI_ALG_PHSA1_1 = SoapConstants.ALGORITHM_PSHA;
+    public static final String URI_ALG_PHSA1_2 = SoapConstants.ALGORITHM_PSHA2;
+    public static final String URI_ALG_PHSA1_3 = SoapConstants.ALGORITHM_PSHA3;
     private static final Collection<String> URI_ALG_PSHA1S = Collections.unmodifiableCollection(Arrays.asList(
-        URI_ALG_PSHA1,
-        URI_ALG_PHSA1_2,
-        URI_ALG_PHSA1_3
+            URI_ALG_PHSA1_1,
+            URI_ALG_PHSA1_2,
+            URI_ALG_PHSA1_3
     ));
     private static final String DEFAULT_DEFAULT_LABEL = "WS-SecureConversationWS-SecureConversation";
     private static final String DEFAULT_LABEL = nullAsNull(SyspropUtil.getString("com.l7tech.security.wssc.defaultLabel", DEFAULT_DEFAULT_LABEL));
@@ -60,7 +60,7 @@ public class SecureConversationKeyDeriver {
                                         final byte[] secret)
                                     throws NoSuchAlgorithmException, InvalidDocumentFormatException {
 
-        String namespaceURI = derivedKeyToken.getNamespaceURI();
+        final String namespaceURI = derivedKeyToken.getNamespaceURI();
         // make sure we got a DerivedKeyToken
         if (derivedKeyToken.getLocalName() == null || !derivedKeyToken.getLocalName().equals( SoapConstants.WSSC_DK_EL_NAME)) {
             throw new InvalidDocumentFormatException("This is no DerivedKeyToken " + derivedKeyToken.getLocalName());
@@ -104,14 +104,14 @@ public class SecureConversationKeyDeriver {
             }
         }
         // get length
-        Element lenNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI, ELE_LENGTH );
+        final Element lenNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI, ELE_LENGTH );
         if (lenNode != null) {
             lengthVal = DomUtils.getTextValue(lenNode);
         }
         if (lengthVal == null || lengthVal.length() < 1) {
             throw new InvalidDocumentFormatException("DerivedKeyToken " +ELE_LENGTH+ " is required");
         }
-        int length;
+        final int length;
         try {
             length = Integer.parseInt(lengthVal.trim());
             if ( length < 0 || length > MAX_LENGTH ) {
@@ -122,7 +122,7 @@ public class SecureConversationKeyDeriver {
         }
 
         // get label
-        Element labelNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI, ELE_LABEL );
+        final Element labelNode = DomUtils.findOnlyOneChildElementByName(derivedKeyToken, namespaceURI, ELE_LABEL );
         if (labelNode != null) {
             label = DomUtils.getTextValue(labelNode);
         }
@@ -142,14 +142,14 @@ public class SecureConversationKeyDeriver {
         final byte[] nonceA;
         nonceA = HexUtils.decodeBase64(nonce);
 
-        byte[] seed = new byte[label.length() + nonceA.length];
+        final byte[] seed = new byte[label.length() + nonceA.length];
         System.arraycopy(label.getBytes(), 0, seed, 0, label.length());
         System.arraycopy(nonceA, 0, seed, label.length(), nonceA.length);
 
-        int offset = generation * length;
+        final int offset = generation * length;
         try{
-            byte[] generated = pSHA1(secret, seed, offset+length);
-            byte[] key = new byte[length];
+            final byte[] generated = pSHA1(secret, seed, offset+length);
+            final byte[] key = new byte[length];
             System.arraycopy(generated, offset, key, 0, length);
             return key;
         } catch (InvalidKeyException e) {

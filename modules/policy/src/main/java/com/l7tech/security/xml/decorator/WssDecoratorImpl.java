@@ -448,7 +448,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                   xencDesiredNextSibling,
                                   elementsToEncrypt,
                                   dktEncKey,
-                                  KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2));
+                                  KeyInfoDetails.makeUriReference(dktId, dkt.getTokenType()));
     }
 
     private void encryptWithKerberosToken( final Context c,
@@ -475,7 +475,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                           xencDesiredNextSibling,
                                           elementsToEncrypt,
                                           dktEncKey,
-                                          KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2));
+                                          KeyInfoDetails.makeUriReference(dktId, dkt.getTokenType()));
     }
 
     private void encryptWithEncryptedKeyToken( final Context c,
@@ -498,21 +498,12 @@ public class WssDecoratorImpl implements WssDecorator {
                                                      "DerivedKey");
             String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
             XencUtil.XmlEncKey dktEncKey = new XencUtil.XmlEncKey(c.dreq.getEncryptionAlgorithm(), dkt.derivedKey);
-            if (c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2)) {
-                addEncryptedReferenceList(c,
-                                          securityHeader,
-                                          xencDesiredNextSibling,
-                                          elementsToEncrypt,
-                                          dktEncKey,
-                                          KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2));
-            } else {
-                addEncryptedReferenceList(c,
-                                          securityHeader,
-                                          xencDesiredNextSibling,
-                                          elementsToEncrypt,
-                                          dktEncKey,
-                                          KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY));
-            }
+            addEncryptedReferenceList(c,
+                                      securityHeader,
+                                      xencDesiredNextSibling,
+                                      elementsToEncrypt,
+                                      dktEncKey,
+                                      KeyInfoDetails.makeUriReference(dktId, dkt.getTokenType()));
         } else {
             // Reference the EncryptedKey directly
             final KeyInfoDetails keyInfoDetails = KeyInfoDetails.makeEncryptedKeySha1Ref(eksha);
@@ -546,21 +537,12 @@ public class WssDecoratorImpl implements WssDecorator {
                                                      "DerivedKey");
             String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
             XencUtil.XmlEncKey dktEncKey = new XencUtil.XmlEncKey(addedEncKeyXmlEncKey.getAlgorithm(), dkt.derivedKey);
-            if (c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2)) {
-                addEncryptedReferenceList(c,
-                                          securityHeader,
-                                          xencDesiredNextSibling,
-                                          elementsToEncrypt,
-                                          dktEncKey,
-                                          KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2));
-            } else {
-                addEncryptedReferenceList(c,
-                                          securityHeader,
-                                          xencDesiredNextSibling,
-                                          elementsToEncrypt,
-                                          dktEncKey,
-                                          KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY));
-            }
+            addEncryptedReferenceList(c,
+                                      securityHeader,
+                                      xencDesiredNextSibling,
+                                      elementsToEncrypt,
+                                      dktEncKey,
+                                      KeyInfoDetails.makeUriReference(dktId, dkt.getTokenType()));
         } else {
             // Encrypt using the EncryptedKey we already added
             String encKeyId = getOrCreateWsuId(c, addedEncKey, null);
@@ -586,13 +568,12 @@ public class WssDecoratorImpl implements WssDecorator {
         XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(c.dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey);
 
         String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, null);
-        String valueTypeUri = c.nsf.getWsscNs().equals(SoapConstants.WSSC_NAMESPACE2) ? SoapConstants.VALUETYPE_DERIVEDKEY2 : SoapConstants.VALUETYPE_DERIVEDKEY;
         addEncryptedReferenceList(c,
                                   securityHeader,
                                   xencDesiredNextSibling,
                                   elementsToEncrypt,
                                   encKey,
-                                  KeyInfoDetails.makeUriReference(dktId, valueTypeUri));
+                                  KeyInfoDetails.makeUriReference(dktId, derivedKeyToken.getTokenType()));
     }
 
     private SignatureInfo processGeneratedEncryptedKeySigningToken( final Context c,
@@ -639,13 +620,10 @@ public class WssDecoratorImpl implements WssDecorator {
                                        addedEncKeyXmlEncKey.getSecretKey().getEncoded(),
                                        "DerivedKey");
             String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
-            String valueType = c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2) ?
-                SoapConstants.VALUETYPE_DERIVEDKEY2 :
-                SoapConstants.VALUETYPE_DERIVEDKEY;
 
             signatureInfo = new SignatureInfo(
                 new XencUtil.XmlEncKey(c.dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey(),
-                KeyInfoDetails.makeUriReference(dktId, valueType ));
+                KeyInfoDetails.makeUriReference(dktId, derivedKeyToken.getTokenType() ));
 
             maybeSignDerivedKeyToken(signList, c.dreq, derivedKeyToken);
         } else {
@@ -711,7 +689,7 @@ public class WssDecoratorImpl implements WssDecorator {
         String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
         signatureInfo = new SignatureInfo(
             new XencUtil.XmlEncKey(c.dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey(),
-            KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2) );
+            KeyInfoDetails.makeUriReference(dktId, derivedKeyToken.getTokenType()) );
         maybeSignDerivedKeyToken(signList, c.dreq, derivedKeyToken);
         return signatureInfo;
     }
@@ -736,7 +714,7 @@ public class WssDecoratorImpl implements WssDecorator {
         String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
         signatureInfo = new SignatureInfo(
             new XencUtil.XmlEncKey(c.dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey(),
-            KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2) );
+            KeyInfoDetails.makeUriReference(dktId, derivedKeyToken.getTokenType()) );
         maybeSignDerivedKeyToken(signList, c.dreq, derivedKeyToken);
         return signatureInfo;
     }
@@ -757,13 +735,10 @@ public class WssDecoratorImpl implements WssDecorator {
                                        c.dreq.getEncryptedKey(),
                                        "DerivedKey");
             String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
-            String valueType = c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2) ?
-                    SoapConstants.VALUETYPE_DERIVEDKEY2 :
-                    SoapConstants.VALUETYPE_DERIVEDKEY;
 
             signatureInfo = new SignatureInfo(
                 new XencUtil.XmlEncKey(c.dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey(),
-                KeyInfoDetails.makeUriReference(dktId, valueType) );
+                KeyInfoDetails.makeUriReference(dktId, derivedKeyToken.getTokenType()) );
 
             maybeSignDerivedKeyToken(signList, c.dreq, derivedKeyToken);
         } else {
@@ -786,15 +761,12 @@ public class WssDecoratorImpl implements WssDecorator {
             throw new DecoratorException("Signing is requested with SecureConversationSession, but session is null");
         DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, null, session, sct);
         String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
-        String valueType = c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2) ?
-                SoapConstants.VALUETYPE_DERIVEDKEY2 :
-                SoapConstants.VALUETYPE_DERIVEDKEY;
 
         maybeSignDerivedKeyToken(signList, dreq, derivedKeyToken);
 
         signatureInfo = new SignatureInfo(
             new AesKey(derivedKeyToken.derivedKey, derivedKeyToken.derivedKey.length * 8),
-            KeyInfoDetails.makeUriReference(dktId, valueType) );
+            KeyInfoDetails.makeUriReference(dktId, derivedKeyToken.getTokenType()) );
         return signatureInfo;
     }
 
@@ -919,7 +891,7 @@ public class WssDecoratorImpl implements WssDecorator {
         String wsse11Ns = SoapConstants.SECURITY11_NAMESPACE;
         Element sc = DomUtils.createAndAppendElementNS(securityHeader, "SignatureConfirmation", wsse11Ns, "wsse11");
         if (signatureConfirmation != null)
-            sc.setAttribute("Value", signatureConfirmation);
+            sc.setAttributeNS(null, "Value", signatureConfirmation);
         return sc;
     }
 
@@ -935,12 +907,20 @@ public class WssDecoratorImpl implements WssDecorator {
     }
 
     private static class DerivedKeyToken {
-        Element dkt;
-        byte[] derivedKey;
+        private final Element dkt;
+        private final byte[] derivedKey;
+        private final String tokenType;
 
-        DerivedKeyToken(Element dkt, byte[] derivedKey) {
+        DerivedKeyToken( final Element dkt,
+                         final byte[] derivedKey,
+                         final String tokenType ) {
             this.dkt = dkt;
             this.derivedKey = derivedKey;
+            this.tokenType = tokenType;
+        }
+
+        private String getTokenType() {
+            return tokenType;
         }
     }
 
@@ -969,28 +949,30 @@ public class WssDecoratorImpl implements WssDecorator {
         // we may want to support different methods based on the user agent
         // the alternative would be : ref.setAttribute("URI", "#" + getOrCreateWsuId(c, sct, null));
         final byte[] derivationSourceSecretKey = session.getSecretKey();
+        final KeyInfoDetails details;
+        final int length;
 
-        if (c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2)) {
-            final String derivationSourceUri = getOrCreateWsuId(c, securityContextToken, "SecurityContextToken");
-            final String derivationSourceValueType = SoapConstants.VALUETYPE_SECURECONV2;
-            return addDerivedKeyToken(c,
-                                  securityHeader,
-                                  desiredNextSibling,
-                                  KeyInfoDetails.makeUriReference(derivationSourceUri, derivationSourceValueType),
-                                  NEW_DERIVED_KEY_LENGTH,
-                                  derivationSourceSecretKey,
-                                  "WS-SecureConversation");
-        } else {
+        if ( c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE) ) {
             final String derivationSourceUri = session.getId();
             final String derivationSourceValueType = SoapConstants.VALUETYPE_SECURECONV;
-            return addDerivedKeyToken(c,
-                                  securityHeader,
-                                  desiredNextSibling,
-                                  KeyInfoDetails.makeUriReferenceRaw(derivationSourceUri, derivationSourceValueType),
-                                  OLD_DERIVED_KEY_LENGTH,
-                                  derivationSourceSecretKey,
-                                  "WS-SecureConversation");
+            details = KeyInfoDetails.makeUriReferenceRaw(derivationSourceUri, derivationSourceValueType);
+            length = OLD_DERIVED_KEY_LENGTH;
+        } else {
+            final String derivationSourceUri = getOrCreateWsuId(c, securityContextToken, "SecurityContextToken");
+            final String derivationSourceValueType = c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2) ?
+                    SoapConstants.VALUETYPE_SECURECONV2 :
+                    SoapConstants.VALUETYPE_SECURECONV3;
+            details = KeyInfoDetails.makeUriReference(derivationSourceUri, derivationSourceValueType);
+            length =  NEW_DERIVED_KEY_LENGTH;
         }
+
+        return addDerivedKeyToken(c,
+                              securityHeader,
+                              desiredNextSibling,
+                              details,
+                              length,
+                              derivationSourceSecretKey,
+                              "WS-SecureConversation");
     }
 
     /**
@@ -1006,23 +988,26 @@ public class WssDecoratorImpl implements WssDecorator {
      * @throws NoSuchAlgorithmException
      * @throws InvalidKeyException
      */
-    private DerivedKeyToken addDerivedKeyToken(Context c,
-                                               Element securityHeader,
-                                               Element desiredNextSibling,
-                                               KeyInfoDetails keyInfoDetail,
-                                               int length,
-                                               byte[] derivationSourceSecretKey,
-                                               String derivationLabel)
+    private DerivedKeyToken addDerivedKeyToken( final Context c,
+                                                final Element securityHeader,
+                                                final Element desiredNextSibling,
+                                                final KeyInfoDetails keyInfoDetail,
+                                                final int length,
+                                                final byte[] derivationSourceSecretKey,
+                                                final String derivationLabel )
             throws NoSuchAlgorithmException, InvalidKeyException
     {
-        NamespaceFactory namespaceFactory = c.nsf;
-        Document factory = securityHeader.getOwnerDocument();
-        String wsseNs = securityHeader.getNamespaceURI();
-        String wsse = securityHeader.getPrefix();
-        if (wsse == null) wsse = "wsse";
-        boolean isWse3 = SoapConstants.WSSC_NAMESPACE2.equals(namespaceFactory.getWsscNs());
+        final NamespaceFactory namespaceFactory = c.nsf;
+        final Document factory = securityHeader.getOwnerDocument();
+        final String wsseNs = securityHeader.getNamespaceURI();
+        final String wsse = securityHeader.getPrefix() == null ? "wsse" : securityHeader.getPrefix();
 
-        Element dkt;
+        // Our 2004/04 WS-SC uses an algorithm attribute in the WS-SC namespace
+        // and uses the WSS namespace for the Nonce. These seem to be non standard
+        // but are preserved for backwards compatibility.
+        final boolean is200404 = SoapConstants.WSSC_NAMESPACE.equals(namespaceFactory.getWsscNs());
+
+        final Element dkt;
         if (desiredNextSibling == null)
             dkt = DomUtils.createAndAppendElementNS(securityHeader,
                                                    SoapConstants.WSSC_DK_EL_NAME,
@@ -1033,42 +1018,44 @@ public class WssDecoratorImpl implements WssDecorator {
                                                          SoapConstants.WSSC_DK_EL_NAME,
                                                          namespaceFactory.getWsscNs(),
                                                          "wssc");
-        String wssc = dkt.getPrefix() == null ? "" : dkt.getPrefix() + ":";
-        if(isWse3) {
-            dkt.setAttribute("Algorithm", SoapConstants.ALGORITHM_PSHA2); // WSE 3.0 does not use an attribute NS
-        }
-        else if ( SoapConstants.WSSC_NAMESPACE3.equals(namespaceFactory.getWsscNs()) ) {
-            dkt.setAttributeNS(namespaceFactory.getWsscNs(), wssc + "Algorithm", SoapConstants.ALGORITHM_PSHA3);
-        } else {
+        final String tokenType;
+        final String wssc = dkt.getPrefix() == null ? "" : dkt.getPrefix() + ":";
+        if( is200404 ) {
+            tokenType = SoapConstants.VALUETYPE_DERIVEDKEY;
             dkt.setAttributeNS(namespaceFactory.getWsscNs(), wssc + "Algorithm", SoapConstants.ALGORITHM_PSHA);
+        } else if ( SoapConstants.WSSC_NAMESPACE2.equals(namespaceFactory.getWsscNs()) ) {
+            tokenType = SoapConstants.VALUETYPE_DERIVEDKEY2;
+            dkt.setAttributeNS(null, "Algorithm", SoapConstants.ALGORITHM_PSHA2);
+        } else {
+            tokenType = SoapConstants.VALUETYPE_DERIVEDKEY3;
+            dkt.setAttributeNS(null, "Algorithm", SoapConstants.ALGORITHM_PSHA3);
         }
 
         keyInfoDetail.populateExistingKeyInfoElement(c.nsf, dkt);
 
         // Gather derived key params
-        byte[] nonce = new byte[length];
+        final byte[] nonce = new byte[length];
         rand.nextBytes(nonce);
 
         // Encode derived key params for the recipient
-        Element generationEl = DomUtils.createAndAppendElementNS(dkt, "Generation", namespaceFactory.getWsscNs(), "wssc");
+        final Element generationEl = DomUtils.createAndAppendElementNS(dkt, "Generation", namespaceFactory.getWsscNs(), "wssc");
         generationEl.appendChild(DomUtils.createTextNode(factory, "0"));
-        Element lengthEl = DomUtils.createAndAppendElementNS(dkt, "Length", namespaceFactory.getWsscNs(), "wssc");
+        final Element lengthEl = DomUtils.createAndAppendElementNS(dkt, "Length", namespaceFactory.getWsscNs(), "wssc");
         lengthEl.appendChild(DomUtils.createTextNode(factory, Integer.toString(length)));
-        Element labelEl = DomUtils.createAndAppendElementNS(dkt, "Label", namespaceFactory.getWsscNs(), "wssc");
+        final Element labelEl = DomUtils.createAndAppendElementNS(dkt, "Label", namespaceFactory.getWsscNs(), "wssc");
         labelEl.appendChild(DomUtils.createTextNode(factory, derivationLabel));
-        boolean useWsseNonce = SoapConstants.WSSC_NAMESPACE.equals(namespaceFactory.getWsscNs()); 
-        Element nonceEl = useWsseNonce?
+        final Element nonceEl = is200404 ?
             DomUtils.createAndAppendElementNS(dkt, "Nonce", wsseNs, wsse) :
             DomUtils.createAndAppendElementNS(dkt, "Nonce", namespaceFactory.getWsscNs(), "wssc");
         nonceEl.appendChild(DomUtils.createTextNode(factory, HexUtils.encodeBase64(nonce, true)));
 
         // Derive a copy of the key for ourselves
-        byte[] seed = new byte[derivationLabel.length() + nonce.length];
+        final byte[] seed = new byte[derivationLabel.length() + nonce.length];
         System.arraycopy(derivationLabel.getBytes(), 0, seed, 0, derivationLabel.length());
         System.arraycopy(nonce, 0, seed, derivationLabel.length(), nonce.length);
-        byte[] derivedKey = new SecureConversationKeyDeriver().pSHA1(derivationSourceSecretKey, seed, length);
+        final byte[] derivedKey = SecureConversationKeyDeriver.pSHA1(derivationSourceSecretKey, seed, length);
 
-        return new DerivedKeyToken(dkt, derivedKey);
+        return new DerivedKeyToken(dkt, derivedKey, tokenType);
     }
 
     private Element addSecurityContextToken(Context c, Element securityHeader, String id) {
@@ -1285,10 +1272,10 @@ public class WssDecoratorImpl implements WssDecorator {
 
     private Element createStrTransform(Context c, Document domFactory, String DS_PREFIX) {
         Element strTransform = domFactory.createElementNS( SoapConstants.DIGSIG_URI, "ds:Transform");
-        strTransform.setAttribute("Algorithm", SoapConstants.TRANSFORM_STR);
+        strTransform.setAttributeNS(null, "Algorithm", SoapConstants.TRANSFORM_STR);
         Element strParams = DomUtils.createAndAppendElementNS(strTransform, "TransformationParameters", c.nsf.getWsseNs(), "wsse");
         Element cannonParam = DomUtils.createAndAppendElementNS(strParams, "CanonicalizationMethod", SoapConstants.DIGSIG_URI, DS_PREFIX);
-        cannonParam.setAttribute("Algorithm", Transform.C14N_EXCLUSIVE);
+        cannonParam.setAttributeNS(null, "Algorithm", Transform.C14N_EXCLUSIVE);
         return strTransform;
     }
 
@@ -1297,7 +1284,7 @@ public class WssDecoratorImpl implements WssDecorator {
         String wsse = securityHeader.getPrefix();
         Element str = DomUtils.createAndAppendElementNS(securityHeader, SoapConstants.SECURITYTOKENREFERENCE_EL_NAME, wsseNs, wsse);
         Element keyid = DomUtils.createAndAppendElementNS(str, SoapConstants.KEYIDENTIFIER_EL_NAME, wsseNs, wsse);
-        keyid.setAttribute("ValueType", valueType);
+        keyid.setAttributeNS(null, "ValueType", valueType);
         keyid.appendChild(DomUtils.createTextNode(keyid, assertionId));
         return str;
     }
@@ -1359,7 +1346,7 @@ public class WssDecoratorImpl implements WssDecorator {
             }
 
             Element dataReference = DomUtils.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
-            dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
+            dataReference.setAttributeNS(null, "URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
 
             keyInfoDetails.createAndAppendKeyInfoElement(c.nsf, encryptedElement);
 
@@ -1434,7 +1421,7 @@ public class WssDecoratorImpl implements WssDecorator {
         if ( SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2.equals(algorithm)) {
             byte[] params = new byte[0];
 
-            encryptionMethod.setAttribute("Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2);
+            encryptionMethod.setAttributeNS(null, "Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2);
             encryptedKeyBytes = XencUtil.encryptKeyWithRsaOaepMGF1SHA1(secretKey.getEncoded(),
                                               recipientCertificate,
                                               recipientCertificate.getPublicKey(),
@@ -1446,9 +1433,9 @@ public class WssDecoratorImpl implements WssDecorator {
             }
 
             Element digestMethodEle = DomUtils.createAndAppendElementNS(encryptionMethod, "DigestMethod", SoapConstants.DIGSIG_URI, "ds");
-            digestMethodEle.setAttribute("Algorithm", SoapConstants.DIGSIG_URI+"sha1");
+            digestMethodEle.setAttributeNS(null, "Algorithm", SoapConstants.DIGSIG_URI+"sha1");
         } else {
-            encryptionMethod.setAttribute("Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO);
+            encryptionMethod.setAttributeNS(null, "Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO);
             encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(),
                                               recipientCertificate,
                                               recipientCertificate.getPublicKey());
@@ -1472,7 +1459,7 @@ public class WssDecoratorImpl implements WssDecorator {
             }
 
             Element dataReference = DomUtils.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
-            dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
+            dataReference.setAttributeNS(null, "URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
             numElementsEncrypted++;
         }
 
@@ -1550,8 +1537,8 @@ public class WssDecoratorImpl implements WssDecorator {
         Element element = DomUtils.createAndAppendElementNS(securityHeader,
                                                            SoapConstants.BINARYSECURITYTOKEN_EL_NAME,
                                                            securityHeader.getNamespaceURI(), "wsse");
-        element.setAttribute("ValueType", c.nsf.getValueType( SoapConstants.VALUETYPE_X509, element));
-        element.setAttribute("EncodingType", c.nsf.getEncodingType( SoapConstants.ENCODINGTYPE_BASE64BINARY, element));
+        element.setAttributeNS(null, "ValueType", c.nsf.getValueType( SoapConstants.VALUETYPE_X509, element));
+        element.setAttributeNS(null, "EncodingType", c.nsf.getEncodingType( SoapConstants.ENCODINGTYPE_BASE64BINARY, element));
         element.appendChild(DomUtils.createTextNode(element, HexUtils.encodeBase64(certificate.getEncoded(), true)));
         return element;
     }
@@ -1561,8 +1548,8 @@ public class WssDecoratorImpl implements WssDecorator {
         String wsse = securityHeader.getPrefix();
         Element str = DomUtils.createAndAppendElementNS(securityHeader, SoapConstants.SECURITYTOKENREFERENCE_EL_NAME, wsseNs, wsse);
         Element keyid = DomUtils.createAndAppendElementNS(str, SoapConstants.KEYIDENTIFIER_EL_NAME, wsseNs, wsse);
-        keyid.setAttribute("EncodingType", SoapConstants.ENCODINGTYPE_BASE64BINARY);
-        keyid.setAttribute("ValueType", SoapConstants.VALUETYPE_KERBEROS_APREQ_SHA1);
+        keyid.setAttributeNS(null, "EncodingType", SoapConstants.ENCODINGTYPE_BASE64BINARY);
+        keyid.setAttributeNS(null, "ValueType", SoapConstants.VALUETYPE_KERBEROS_APREQ_SHA1);
         keyid.appendChild(DomUtils.createTextNode(keyid, kerberosTicketId));
         return str;
     }
@@ -1573,8 +1560,8 @@ public class WssDecoratorImpl implements WssDecorator {
             SoapConstants.BINARYSECURITYTOKEN_EL_NAME);
         element.setPrefix(securityHeader.getPrefix());
 
-        element.setAttribute("ValueType", SoapConstants.VALUETYPE_KERBEROS_GSS_AP_REQ);
-        element.setAttribute("EncodingType", SoapConstants.ENCODINGTYPE_BASE64BINARY);
+        element.setAttributeNS(null, "ValueType", SoapConstants.VALUETYPE_KERBEROS_GSS_AP_REQ);
+        element.setAttributeNS(null, "EncodingType", SoapConstants.ENCODINGTYPE_BASE64BINARY);
 
         element.appendChild(DomUtils.createTextNode(factory, HexUtils.encodeBase64(kerberosTicket.toByteArray(), true)));
         securityHeader.appendChild(element);
