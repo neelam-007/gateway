@@ -169,11 +169,15 @@ public class EmailListenerManagerImpl
 
             logger.log(Level.FINE, "Updates to the email listener require to reset state : " + isNewListener);
             final EmailListenerState state = oldEmailListener.getEmailListenerState();    //state is a transient object
+            if ( state == null ) {
+                entity.createEmailListenerState( "-", 0, 0 ); // this will be stolen by a node later
+            } else {
+                entity.setEmailListenerState(state);
+            }
             if (isNewListener) {
-                state.setLastMessageId(0L);
+                entity.getEmailListenerState().setLastMessageId(0L);
                 logger.log(Level.FINE, "EmailListener " + entity.getOid() + " state got updated");
             }
-            entity.setEmailListenerState(state);
             super.update(entity);
         } catch (FindException fe) {
             throw new UpdateException("Failed to find the updating email listener.", fe);
