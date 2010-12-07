@@ -23,6 +23,9 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
 
     // - PUBLIC
 
+    public static final int IPV4_MAX_PREFIX = 32;
+    public static final int IPV6_MAX_PREFIX = 128;
+
     public RemoteIpRange() {
         startIp = DEFAULT_START_IP;
         networkMask = DEFAULT_NETWORK_PREFIX;
@@ -183,8 +186,6 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
 
     private static final String DEFAULT_START_IP = "192.168.1.0";
     private static final int DEFAULT_NETWORK_PREFIX = 24;
-    private static final int IPV4_MAX_PREFIX = 32;
-    private static final int IPV6_MAX_PREFIX = 128;
 
     private String startIp;
     private int networkMask;

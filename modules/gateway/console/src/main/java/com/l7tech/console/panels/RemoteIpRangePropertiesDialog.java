@@ -15,6 +15,9 @@ import java.awt.event.ActionListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+import static com.l7tech.policy.assertion.RemoteIpRange.IPV4_MAX_PREFIX;
+import static com.l7tech.policy.assertion.RemoteIpRange.IPV6_MAX_PREFIX;
+
 /**
  * Dialog for viewing and editing a RemoteIpRange assertion.
  *
@@ -66,7 +69,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
 
         suffix.setFormatterFactory(new DefaultFormatterFactory(new NumberFormatter() {{
             setMinimum(1);
-            setMaximum(64);
+            setMaximum(IPV6_MAX_PREFIX);
         }}
         ));
 
@@ -113,7 +116,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
             return;
         }
 
-        if (isIpv4 && prefix > 32 || prefix > 64) {
+        if (isIpv4 && prefix > IPV4_MAX_PREFIX || prefix > IPV6_MAX_PREFIX) {
             bark(resources.getString("error.badmask"));
             return;
         }
@@ -151,7 +154,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
             this.address.setText(subject.getStartIp());
             // bug 4796: any existing 0's should be changed to 32 when edited.
             if (subject.getNetworkMask() == 0) {
-                subject.setNetworkMask(32);
+                subject.setNetworkMask(IPV4_MAX_PREFIX);
             }
             suffix.setText("" + subject.getNetworkMask());
             if (subject.getIpSourceContextVariable() == null) {
