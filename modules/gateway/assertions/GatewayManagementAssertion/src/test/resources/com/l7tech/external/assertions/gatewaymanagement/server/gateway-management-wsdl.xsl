@@ -61,7 +61,7 @@
                <part name="SelectorSetPart"  element="wsman:SelectorSet"/>
             </message>
             <message name="OptionSetMessage">
-               <part name="OptionSetMessagePart" element="wsman:OptionSet"/>
+               <part name="OptionSetPart" element="wsman:OptionSet"/>
             </message>
             <message name="OperationTimeoutMessage">
                <part name="OperationTimeoutPart" element="wsman:OperationTimeout"/>
