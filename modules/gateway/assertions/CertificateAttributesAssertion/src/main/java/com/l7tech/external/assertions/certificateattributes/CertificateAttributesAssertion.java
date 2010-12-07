@@ -42,6 +42,15 @@ public class CertificateAttributesAssertion extends Assertion implements SetsVar
         this.variablePrefix = variablePrefix;
     }
 
+    public String[] getVariableSuffixes() {
+
+        List<String> suffixes = new ArrayList<String>();
+        for (CertificateAttribute attribute : EnumSet.allOf(CertificateAttribute.class)) {
+            suffixes.add( attribute.toString() );
+        }
+        return suffixes.toArray( new String[suffixes.size()] );
+    }
+
     /**
      * Get the variables set by this assertion.
      *

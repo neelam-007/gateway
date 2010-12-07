@@ -292,7 +292,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     }
 
     private boolean edit(QueryAttributeMapping im) {
-        AttributeVariableMapDialog dlg = new AttributeVariableMapDialog(this, im);
+        AttributeVariableMapDialog dlg = new AttributeVariableMapDialog(this, im, assertion);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         dlg.setVisible(true);

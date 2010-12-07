@@ -155,6 +155,12 @@ public class NonSoapCheckVerifyResultsAssertion extends NonSoapSecurityAssertion
         return prefix == null || prefix.trim().length() < 1 ? var : prefix.trim() + "." + var;
     }
 
+    @Override
+    public String[] suffixes(){
+        return new String[]{""};
+
+    }
+
     private final static String baseName = "(Non-SOAP) Check Results from XML Verification";
 
     @Override

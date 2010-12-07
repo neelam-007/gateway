@@ -134,6 +134,7 @@ public class JdbcQueryAssertion extends Assertion implements JdbcConnectionable,
         return varMeta.toArray(new VariableMetadata[varMeta.size()]);
     }
 
+
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {

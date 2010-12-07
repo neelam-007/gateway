@@ -1,14 +1,18 @@
 package com.l7tech.external.assertions.xmlsec.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
 import com.l7tech.external.assertions.xmlsec.HasVariablePrefix;
 import com.l7tech.external.assertions.xmlsec.NonSoapSecurityAssertionBase;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.xml.xpath.XpathExpression;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,7 +23,8 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     private JTextField xpathExpressionField;
     private JButton editXpathButton;
     private JPanel controlsBelowXpath;
-    private JTextField variablePrefixField;
+    private JPanel variablePrefixPanel;
+    private TargetVariablePanel variablePrefixField;
     private JLabel variablePrefixLabel;
 
     private final XpathExpression defaultXpathExpression;
@@ -42,6 +47,18 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
 
         // Initial default is null (<Not Yet Set>); but the default we offer in the first opening of the "Config Xpath" dialog is the example Xpath
         defaultXpathExpression = new XpathExpression(assertion.getDefaultXpathExpressionString(), assertion.getDefaultNamespaceMap());
+
+
+        variablePrefixField = new TargetVariablePanel();
+        variablePrefixPanel.setLayout(new BorderLayout());
+        variablePrefixPanel.add(variablePrefixField, BorderLayout.CENTER);
+        variablePrefixField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                getOkButton().setEnabled(!variablePrefixField.isVisible() || variablePrefixField.isEntryValid());
+            }
+        });
+
         this.assertion = assertion;
     }
 
@@ -111,7 +128,9 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
         if (assertion instanceof HasVariablePrefix) {
             HasVariablePrefix hvp = (HasVariablePrefix) assertion;
             String variablePrefix = hvp.getVariablePrefix();
-            variablePrefixField.setText(variablePrefix == null ? "" : variablePrefix);
+            variablePrefixField.setVariable(variablePrefix == null ? "" : variablePrefix);
+            variablePrefixField.setAssertion(assertion);
+            variablePrefixField.setSuffixes(hvp.suffixes());
             variablePrefixField.setVisible(true);
             variablePrefixLabel.setVisible(true);
         } else {
@@ -125,7 +144,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
         assertion.setXpathExpression(getXpathExpression());
         if (assertion instanceof HasVariablePrefix) {
             HasVariablePrefix hvp = (HasVariablePrefix) assertion;
-            String variablePrefix = variablePrefixField.getText().trim();
+            String variablePrefix = variablePrefixField.getVariable().trim();
             hvp.setVariablePrefix(variablePrefix.length() < 1 ? null : variablePrefix);
         }
         return assertion;

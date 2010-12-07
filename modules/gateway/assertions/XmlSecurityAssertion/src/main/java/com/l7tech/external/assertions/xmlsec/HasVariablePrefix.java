@@ -16,4 +16,6 @@ public interface HasVariablePrefix {
      * @return the variable name with the current prefix prepended, along with a dot; or the variable name unchanged if the prefix is currently null or empty.
      */
     String prefix(String var);
+
+    String[] suffixes();
 }

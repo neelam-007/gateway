@@ -1,19 +1,24 @@
 package com.l7tech.external.assertions.xmlsec.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.xmlsec.ItemLookupByIndexAssertion;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 
 public class ItemLookupByIndexAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<ItemLookupByIndexAssertion> {
     private JPanel contentPane;
     private JTextField indexValueField;
     private JFormattedTextField multivaluedVarNameField;
-    private JTextField outputVarNameField;
+    private JPanel outputVarNamePanel;
+    private TargetVariablePanel outputVarNameField;
 
     public ItemLookupByIndexAssertionPropertiesDialog(Frame owner, ItemLookupByIndexAssertion assertion) {
         super(ItemLookupByIndexAssertion.class, owner, assertion.meta().get(AssertionMetadata.SHORT_NAME) + " Properties", true);
@@ -27,7 +32,8 @@ public class ItemLookupByIndexAssertionPropertiesDialog extends AssertionPropert
     public void setData(ItemLookupByIndexAssertion assertion) {
         indexValueField.setText(nonull(assertion.getIndexValue()));
         multivaluedVarNameField.setText(nonull(assertion.getMultivaluedVariableName()));
-        outputVarNameField.setText(nonull(assertion.getOutputVariableName()));
+        outputVarNameField.setVariable(nonull(assertion.getOutputVariableName()));
+        outputVarNameField.setAssertion(assertion);
     }
 
     private boolean isNumber(String s) {
@@ -48,12 +54,23 @@ public class ItemLookupByIndexAssertionPropertiesDialog extends AssertionPropert
 
         assertion.setIndexValue(indexValue);
         assertion.setMultivaluedVariableName(VariablePrefixUtil.fixVariableName(multivaluedVarNameField.getText()));
-        assertion.setOutputVariableName(VariablePrefixUtil.fixVariableName(outputVarNameField.getText()));
+        assertion.setOutputVariableName(VariablePrefixUtil.fixVariableName(outputVarNameField.getVariable()));
         return assertion;
     }
 
     @Override
     protected JPanel createPropertyPanel() {
+
+        outputVarNameField = new TargetVariablePanel();
+        outputVarNamePanel.setLayout(new BorderLayout());
+        outputVarNamePanel.add(outputVarNameField, BorderLayout.CENTER);
+        outputVarNameField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                getOkButton().setEnabled(outputVarNameField .isEntryValid());
+            }
+        });
+        
         return contentPane;
     }
 }

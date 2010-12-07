@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.mtom.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
@@ -38,27 +39,27 @@ public abstract class MtomAssertionPropertiesDialogSupport<T extends Assertion> 
 
     protected void selectOutputTarget( final MessageTargetable target,
                                        final JComboBox messageTargetComboBox,
-                                       final JTextField messageTargetVariableNameTextField ) {
+                                       final TargetVariablePanel messageTargetVariableNameTextField ) {
         if ( target == null ) {
             messageTargetComboBox.setSelectedItem( null );
-            messageTargetVariableNameTextField.setText( "" );
+            messageTargetVariableNameTextField.setVariable( "" );
         } else if ( target.getTarget() == TargetMessageType.OTHER ){
             messageTargetComboBox.setSelectedItem( new MessageTargetableSupport(TargetMessageType.OTHER) );
-            messageTargetVariableNameTextField.setText( target.getTargetName() );
+            messageTargetVariableNameTextField.setVariable( target.getOtherTargetMessageVariable() );
         } else {
             messageTargetComboBox.setSelectedItem( new MessageTargetableSupport(target) );
-            messageTargetVariableNameTextField.setText( "" );
+            messageTargetVariableNameTextField.setVariable( "" );
         }        
     }
 
     protected MessageTargetableSupport getOutputTarget( final JComboBox messageTargetComboBox,
-                                                        final JTextField messageTargetVariableNameTextField ) {
+                                                        final TargetVariablePanel messageTargetVariableNameTextField ) {
         final MessageTargetableSupport target =
                 new MessageTargetableSupport((MessageTargetable) messageTargetComboBox.getSelectedItem());
 
         if ( target.getTarget()==TargetMessageType.OTHER ) {
             target.setOtherTargetMessageVariable(
-                    VariablePrefixUtil.fixVariableName( messageTargetVariableNameTextField.getText()) );
+                    VariablePrefixUtil.fixVariableName( messageTargetVariableNameTextField.getVariable()) );
         }
 
         return target.getTarget()==null ? null : target;

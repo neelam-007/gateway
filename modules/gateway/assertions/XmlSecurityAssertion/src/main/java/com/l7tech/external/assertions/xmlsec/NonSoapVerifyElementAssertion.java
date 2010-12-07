@@ -68,6 +68,17 @@ public class NonSoapVerifyElementAssertion extends NonSoapSecurityAssertionBase 
         this.variablePrefix = variablePrefix;
     }
 
+    @Override
+    public String[] suffixes(){
+        return new String[]{VAR_ELEMENTS_VERIFIED,
+                            VAR_SIGNATURE_METHOD_URIS,
+                            VAR_DIGEST_METHOD_URIS,
+                            VAR_SIGNING_CERTIFICATES,
+                            VAR_SIGNATURE_VALUES,
+                            VAR_SIGNATURE_ELEMENTS};
+
+    }
+
     public String getVerifyCertificateName() {
         return verifyCertificateName;
     }

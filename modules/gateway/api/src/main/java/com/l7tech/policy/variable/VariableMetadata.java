@@ -121,7 +121,7 @@ public class VariableMetadata implements Serializable {
 
     public static void assertNameIsValid(String name) throws VariableNameSyntaxException {
         if (!isNameValid(name))
-            throw new VariableNameSyntaxException("Variable name must consist of a letter or underscore, and optional letters, digits, underscores, dashes, or periods.");
+            throw new VariableNameSyntaxException("Variable name must start with a letter or underscore, and contains optional letters, digits, underscores, dashes, or periods.");
     }
 
     public static boolean isNameValid(String name) {

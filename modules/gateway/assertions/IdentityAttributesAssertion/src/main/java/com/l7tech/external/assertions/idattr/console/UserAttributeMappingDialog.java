@@ -3,12 +3,12 @@
  */
 package com.l7tech.external.assertions.idattr.console;
 
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.mapping.*;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.objectmodel.AttributeHeader;
 
 import javax.swing.*;
@@ -28,15 +28,15 @@ public class UserAttributeMappingDialog extends JDialog {
     private JRadioButton builtInAttributeRadioButton;
     private JRadioButton customAttributeRadioButton;
     private JComboBox builtInAttributeCombo;
-    private JTextField variableNameField;
     private JButton cancelButton;
     private JButton okButton;
     private JTextField customAttributeField;
 
     private JPanel mainPanel;
     private JLabel providerNameLabel;
-    private JLabel variablePrefixLabel;
     private JCheckBox multivaluedCheckBox;
+    private JPanel variableNamePanel;
+    private TargetVariablePanel variableName;
 
     private boolean ok = false;
 
@@ -57,11 +57,8 @@ public class UserAttributeMappingDialog extends JDialog {
         customAttributeField.setEnabled(!builtin && allowCustom);
         customAttributeRadioButton.setEnabled(allowCustom);
 
-        String vn = variableNameField.getText();
-        boolean ok = true;
-        if (vn == null || vn.trim().length() == 0 || !VariableMetadata.isNameValid(vn)) {
-            ok = false;
-        } else if (customAttributeRadioButton.isSelected()) {
+        boolean ok = variableName.isEntryValid();
+        if (customAttributeRadioButton.isSelected()) {
             final String cf = customAttributeField.getText();
             if (cf == null || cf.trim().length() == 0) ok = false;
         }
@@ -87,7 +84,10 @@ public class UserAttributeMappingDialog extends JDialog {
     private void init() {
         Utilities.setEscKeyStrokeDisposes(this);
 
-        variablePrefixLabel.setText(prefix + " . ");
+        variableName = new TargetVariablePanel();
+        variableNamePanel.setLayout(new BorderLayout());
+        variableNamePanel.add(variableName, BorderLayout.CENTER);
+        variableName.setPrefix(prefix);
         
         IdentityProviderType type = config.type();
         if (type == null) throw new IllegalArgumentException("IdentityProviderType is null");
@@ -135,15 +135,15 @@ public class UserAttributeMappingDialog extends JDialog {
         if (header.isBuiltin()) {
             builtInAttributeRadioButton.setSelected(true);
             builtInAttributeCombo.setSelectedItem(header);
-            variableNameField.setText(mapping.getAttributeConfig().getVariableName());
+            variableName.setVariable(mapping.getAttributeConfig().getVariableName());
         } else if (mapping.getAttributeConfig().getVariableName() == null) {
             // New object, created from scratch--copy the variable name from the first built-in option
             builtInAttributeRadioButton.setSelected(true);
-            variableNameField.setText(((AttributeHeader)builtInAttributeCombo.getSelectedItem()).getVariableName());
+            variableName.setVariable(((AttributeHeader)builtInAttributeCombo.getSelectedItem()).getVariableName());
         } else {
             customAttributeRadioButton.setSelected(true);
             customAttributeField.setText(mapping.getCustomAttributeName());
-            variableNameField.setText(mapping.getAttributeConfig().getVariableName());
+            variableName.setVariable(mapping.getAttributeConfig().getVariableName());
         }
 
         multivaluedCheckBox.setSelected(mapping.isMultivalued());
@@ -154,7 +154,7 @@ public class UserAttributeMappingDialog extends JDialog {
             public void actionPerformed(ActionEvent e) { customAttributeField.requestFocus(); }
         });
         customAttributeField.getDocument().addDocumentListener(changeListener);
-        variableNameField.getDocument().addDocumentListener(changeListener);
+        variableName.addChangeListener(changeListener);
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -169,7 +169,7 @@ public class UserAttributeMappingDialog extends JDialog {
 
                 mapping.setMultivalued(multivaluedCheckBox.isSelected());
                 // This must happen after {@link AttributeConfig#setHeader}
-                config.setVariableName(variableNameField.getText());
+                config.setVariableName(variableName.getSuffix());
                 ok = true;
                 dispose();
             }
@@ -183,14 +183,14 @@ public class UserAttributeMappingDialog extends JDialog {
 
         builtInAttributeCombo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                variableNameField.setText(((AttributeHeader) builtInAttributeCombo.getSelectedItem()).getVariableName());
+                variableName.setVariable(((AttributeHeader) builtInAttributeCombo.getSelectedItem()).getVariableName());
             }
         });
 
         customAttributeField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
             public void run() {
                 if (customAttributeRadioButton.isSelected()) {
-                    variableNameField.setText(customAttributeField.getText());
+                    variableName.setVariable(customAttributeField.getText());
                 }
             }
         }));

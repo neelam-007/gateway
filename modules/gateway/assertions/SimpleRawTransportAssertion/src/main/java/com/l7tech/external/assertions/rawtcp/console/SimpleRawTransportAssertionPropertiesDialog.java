@@ -1,9 +1,11 @@
 package com.l7tech.external.assertions.rawtcp.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion;
 import com.l7tech.gui.NumberField;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
@@ -12,6 +14,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -27,8 +30,9 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
     private JPanel contentPane;
     private JComboBox requestSourceComboBox;
     private JRadioButton defaultResponseRadioButton;
-    private JRadioButton saveAsContextVariableRadioButton;
-    private JTextField responseContextVariableField;
+    private JRadioButton saveAsContextVariableRadioButton; 
+    private JPanel responseContextVariablePanel;
+    private TargetVariablePanel responseContextVariableField;
     private JTextField targetHostField;
     private JTextField targetPortField;
     private JCheckBox limitMaximumResponseSizeCheckBox;
@@ -50,21 +54,27 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         transmitTimeoutField.setDocument(new NumberField(9));
         receiveTimeoutField.setDocument(new NumberField(9));
 
-        ActionListener enableListener = new ActionListener() {
+        responseContextVariableField = new TargetVariablePanel();
+        responseContextVariablePanel.setLayout(new BorderLayout());
+        responseContextVariablePanel.add(responseContextVariableField, BorderLayout.CENTER);
+
+        final RunOnChangeListener enableDisableListener = new RunOnChangeListener( new Runnable(){
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void run() {
                 enableOrDisableComponents();
             }
-        };
-        limitMaximumResponseSizeCheckBox.addActionListener(enableListener);
-        customTransmitTimeoutCheckBox.addActionListener(enableListener);
-        customReceiveTimeoutCheckBox.addActionListener(enableListener);
-        saveAsContextVariableRadioButton.addActionListener(enableListener);
+        } );
+        
+        limitMaximumResponseSizeCheckBox.addActionListener(enableDisableListener);
+        customTransmitTimeoutCheckBox.addActionListener(enableDisableListener);
+        customReceiveTimeoutCheckBox.addActionListener(enableDisableListener);
+        defaultResponseRadioButton.addActionListener(enableDisableListener);
+        saveAsContextVariableRadioButton.addActionListener(enableDisableListener);
+        responseContextVariableField.addChangeListener(enableDisableListener);
 
         Utilities.enableGrayOnDisabled(maximumResponseSizeField);
         Utilities.enableGrayOnDisabled(transmitTimeoutField);
         Utilities.enableGrayOnDisabled(receiveTimeoutField);
-        Utilities.enableGrayOnDisabled(responseContextVariableField);
 
         enableOrDisableComponents();
         return contentPane;
@@ -75,6 +85,8 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         transmitTimeoutField.setEnabled(customTransmitTimeoutCheckBox.isSelected());
         receiveTimeoutField.setEnabled(customReceiveTimeoutCheckBox.isSelected());
         responseContextVariableField.setEnabled(saveAsContextVariableRadioButton.isSelected());
+
+        getOkButton().setEnabled(defaultResponseRadioButton.isSelected() || responseContextVariableField.isEntryValid());
     }
 
     private static class RequestSourceComboBoxItem {
@@ -126,12 +138,13 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         if (responseTarget != null && responseTarget.getOtherTargetMessageVariable() != null) {
             defaultResponseRadioButton.setSelected(false);
             saveAsContextVariableRadioButton.setSelected(true);
-            responseContextVariableField.setText(responseTarget.getOtherTargetMessageVariable());
+            responseContextVariableField.setVariable(responseTarget.getOtherTargetMessageVariable());
         } else {
             saveAsContextVariableRadioButton.setSelected(false);
             defaultResponseRadioButton.setSelected(true);
-            responseContextVariableField.setText("");
+            responseContextVariableField.setVariable("");
         }
+        responseContextVariableField.setAssertion(assertion);
 
         long responseLimit = assertion.getMaxResponseBytes();
         limitMaximumResponseSizeCheckBox.setSelected(responseLimit != DEFAULT_RESPONSE_SIZE_LIMIT);
@@ -155,7 +168,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         }
 
         if (saveAsContextVariableRadioButton.isSelected()) {
-            assertion.setResponseTarget(new MessageTargetableSupport(validVariableName("Response context variable name: ", responseContextVariableField.getText()), true));
+            assertion.setResponseTarget(new MessageTargetableSupport(validVariableName("Response context variable name: ", responseContextVariableField.getVariable()), true));
         } else {
             assertion.setResponseTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
         }

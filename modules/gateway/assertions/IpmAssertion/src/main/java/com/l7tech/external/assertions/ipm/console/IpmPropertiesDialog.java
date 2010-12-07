@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.ipm.console;
 
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.util.ExceptionUtils;
@@ -10,6 +12,8 @@ import com.l7tech.external.assertions.ipm.IpmAssertion;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -31,7 +35,8 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
     private JButton cancelButton;
     private JTextPane templateField;
     private SquigglyTextField sourceVarField;
-    private SquigglyTextField destVarField;
+    private JPanel destVarPanel;
+    private TargetVariablePanel destVarField;
     private JRadioButton defaultRequestRadioButton;
     private JRadioButton defaultResponseRadioButton;
     private JRadioButton contextVariableRadioButton;
@@ -49,6 +54,10 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
         getRootPane().setDefaultButton(okButton);
         Utilities.setEscKeyStrokeDisposes(this);
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
+
+        destVarField = new TargetVariablePanel();
+        destVarPanel.setLayout(new BorderLayout());
+        destVarPanel.add(destVarField, BorderLayout.CENTER);
 
         validator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -72,10 +81,15 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
         contextVariableRadioButton.addActionListener(updateListener);
         defaultRequestRadioButton.addActionListener(updateListener);
         defaultResponseRadioButton.addActionListener(updateListener);
-        Utilities.enableGrayOnDisabled(destVarField);
+        
+        destVarField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                okButton.setEnabled(destVarField .isEntryValid());
+            }
+        });
 
         validator.constrainTextFieldToBeNonEmpty("Source Variable Name", sourceVarField, null);
-        validator.constrainTextFieldToBeNonEmpty("Destination Variable Name", destVarField, null);
         validator.constrainTextFieldToBeNonEmpty("Template XML", templateField, new InputValidator.ComponentValidationRule(templateField) {
             public String getValidationError() {
                 try {
@@ -88,7 +102,6 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
         });
 
         Utilities.attachDefaultContextMenu(sourceVarField);
-        Utilities.attachDefaultContextMenu(destVarField);
         templateField.setFont(new JTextArea().getFont());
         templateField.addMouseListener(Utilities.createContextMenuMouseListener(templateField, new Utilities.DefaultContextMenuFactory() {
             @Override
@@ -127,6 +140,7 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
     public void setData(IpmAssertion assertion) {
         templateField.setText(assertion.template());
         sourceVarField.setText(assertion.getSourceVariableName());
+        destVarField.setAssertion(assertion);
         final String targetVar = assertion.getTargetVariableName();
         if (targetVar == null) {
             if (assertion.isUseResponse()) {
@@ -134,10 +148,10 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
             } else {
                 defaultRequestRadioButton.setSelected(true);
             }
-            destVarField.setText("");
+            destVarField.setVariable("");
         } else {
             contextVariableRadioButton.setSelected(true);
-            destVarField.setText(targetVar);
+            destVarField.setVariable(targetVar);
         }
         updateEnableState();
     }
@@ -146,7 +160,7 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
         assertion.template(templateField.getText());
         assertion.setSourceVariableName(sourceVarField.getText());
         if (contextVariableRadioButton.isSelected()) {
-            assertion.setTargetVariableName(destVarField.getText());
+            assertion.setTargetVariableName(destVarField.getVariable());
         } else {
             assertion.setTargetVariableName(null);
             assertion.setUseResponse(defaultResponseRadioButton.isSelected());

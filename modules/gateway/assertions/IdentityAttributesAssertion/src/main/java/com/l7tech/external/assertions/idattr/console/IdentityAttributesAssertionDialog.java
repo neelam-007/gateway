@@ -3,6 +3,7 @@
  */
 package com.l7tech.external.assertions.idattr.console;
 
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -20,10 +21,7 @@ import com.l7tech.objectmodel.AttributeHeader;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
-import javax.swing.event.TableModelListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.event.*;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -46,7 +44,8 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
     private JButton editButton;
     private JButton removeButton;
     private JComboBox identityProviderComboBox;
-    private JTextField variablePrefixField;
+    private JPanel variablePrefixFieldPanel;
+    private TargetVariablePanel variablePrefixField;
 
     private final Map<IdentityProviderType, Set<AttributeHeader>> builtinAttributes = Collections.unmodifiableMap(new HashMap<IdentityProviderType, Set<AttributeHeader>>() {
         {
@@ -81,14 +80,20 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
         mappings.addAll(Arrays.asList(lattrs));
         attributeTable.setModel(tableModel);
 
+        variablePrefixField = new TargetVariablePanel();
+        variablePrefixFieldPanel.setLayout(new BorderLayout());
+        variablePrefixFieldPanel.add(variablePrefixField, BorderLayout.CENTER);
         String prefix = assertion.getVariablePrefix();
         if (prefix == null) prefix = DEFAULT_VAR_PREFIX;
-        variablePrefixField.setText(prefix);
-        variablePrefixField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
-            public void run() {
+        variablePrefixField.setVariable(prefix);
+        variablePrefixField.setAssertion(assertion);
+        variablePrefixField.setSuffixes(getSuffixes());
+        variablePrefixField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
                 enableButtons();
             }
-        }));
+        });
 
         EntityHeader[] tempHeaders;
         
@@ -134,7 +139,7 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 assertion.setLookupAttributes(mappings.toArray(new IdentityMapping[mappings.size()]));
-                final String text = variablePrefixField.getText();
+                final String text = variablePrefixField.getVariable();
                 assertion.setVariablePrefix(text.equals(DEFAULT_VAR_PREFIX) ? null : text);
                 assertion.setIdentityProviderOid(previousProvider.getOid());
                 ok = true;
@@ -176,6 +181,8 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
                 final int sel = attributeTable.getSelectedRow();
                 if (sel == -1) return;
                 if (edit(mappings.get(sel))) tableModel.fireTableRowsUpdated(sel, sel);
+                variablePrefixField.setSuffixes(getSuffixes());
+                variablePrefixField.updateStatus();
             }
         });
 
@@ -319,12 +326,12 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
         editButton.setEnabled(sel);
         removeButton.setEnabled(sel);
 
-        final String vp = variablePrefixField.getText();
+        final String vp = variablePrefixField.getVariable();
         okButton.setEnabled(!isReadOnly() && !mappings.isEmpty() && vp != null && vp.trim().length() > 0 && VariableMetadata.isNameValid(vp));
     }
 
     private boolean edit(IdentityMapping im) {
-        UserAttributeMappingDialog dlg = new UserAttributeMappingDialog(this, im, previousProvider, variablePrefixField.getText());
+        UserAttributeMappingDialog dlg = new UserAttributeMappingDialog(this, im, previousProvider, variablePrefixField.getVariable());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
@@ -340,6 +347,15 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
 
     public IdentityAttributesAssertion getData(IdentityAttributesAssertion assertion) {
         return assertion;
+    }
+
+    private  String[] getSuffixes()  {
+
+        ArrayList<String> suffixes = new ArrayList<String>();
+        for(IdentityMapping mapping :mappings ){
+            suffixes.add(mapping.getAttributeConfig().getVariableName());
+        }
+        return suffixes.toArray(new String[suffixes.size()]);
     }
 
     private class IdentityMappingTableModel extends AbstractTableModel {

@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.xacmlpdp.console;
 
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
 import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -8,6 +9,9 @@ import com.l7tech.util.Functions;
 import com.l7tech.console.util.VariablePrefixUtil;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
@@ -22,7 +26,8 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
     private JPanel mainPanel;
     private JComboBox encapsulationComboBox;
     private JComboBox outputMessageComboBox;
-    private JTextField outputMessageContextVarField;
+    private JPanel outputMessageContextVarPanel;
+    private TargetVariablePanel outputMessageContextVarField;
 
     private XacmlRequestBuilderAssertion assertion;
 
@@ -84,11 +89,16 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
                 throw new IllegalStateException("Unsupported output message destination found");//only happen if enum changes
         }
 
+        outputMessageContextVarField = new TargetVariablePanel();
+        outputMessageContextVarPanel.setLayout(new BorderLayout());
+        outputMessageContextVarPanel.add(outputMessageContextVarField, BorderLayout.CENTER);
+        outputMessageContextVarField.setAssertion(assertion);
+        
         if(assertion.getOutputMessageDestination() != XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
             outputMessageContextVarField.setEnabled(false);
         } else {
             outputMessageContextVarField.setEnabled(true);
-            outputMessageContextVarField.setText(assertion.getOutputMessageVariableName());
+            outputMessageContextVarField.setVariable(assertion.getOutputMessageVariableName());
         }
 
         outputMessageComboBox.addActionListener(new ActionListener() {
@@ -108,8 +118,8 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
             return true;
         }
 
-        if(VariableMetadata.isNameValid( VariablePrefixUtil.fixVariableName(outputMessageContextVarField.getText()))) {
-            assertion.setOutputMessageVariableName(outputMessageContextVarField.getText().trim());
+        if(outputMessageContextVarField.isEntryValid()) {
+            assertion.setOutputMessageVariableName(outputMessageContextVarField.getVariable());
             return true;
         } else {
             JOptionPane.showMessageDialog(this, "Output message context variable name is invalid.", "Context Variable Name Error", JOptionPane.ERROR_MESSAGE);

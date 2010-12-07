@@ -53,6 +53,10 @@ public class NonSoapDecryptElementAssertion extends NonSoapSecurityAssertionBase
         String prefix = getVariablePrefix();
         return prefix == null || prefix.trim().length() < 1 ? var : prefix.trim() + "." + var;
     }
+    @Override
+    public String[] suffixes(){
+        return new String[]{VAR_ELEMENTS_DECRYPTED,VAR_ENCRYPTION_METHOD_URIS,VAR_RECIPIENT_CERTIFICATES};
+    }
 
     private final static String baseName = "(Non-SOAP) Decrypt XML Element";
 

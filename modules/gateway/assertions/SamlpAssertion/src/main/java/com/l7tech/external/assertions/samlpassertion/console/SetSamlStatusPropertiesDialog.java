@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.samlpassertion.SamlStatus;
 import com.l7tech.external.assertions.samlpassertion.SamlVersion;
@@ -30,9 +31,8 @@ public class SetSamlStatusPropertiesDialog extends AssertionPropertiesOkCancelSu
 
     @Override
     public SetSamlStatusAssertion getData( final SetSamlStatusAssertion assertion ) throws ValidationException {
-        validateData();
         assertion.setSamlStatus( (SamlStatus)statusComboBox.getSelectedItem() );
-        assertion.setVariableName( VariablePrefixUtil.fixVariableName( variableNameTextField.getText() ) );
+        assertion.setVariableName( VariablePrefixUtil.fixVariableName( variableNameTextField.getVariable() ) );
         return assertion;
     }
 
@@ -42,7 +42,11 @@ public class SetSamlStatusPropertiesDialog extends AssertionPropertiesOkCancelSu
             versionComboBox.setSelectedItem( SamlVersion.valueOf(assertion.getSamlStatus().getSamlVersion()) );
             statusComboBox.setSelectedItem( assertion.getSamlStatus() );
         }
-        setText( variableNameTextField, assertion.getVariableName() );
+        if ( assertion.getVariableName() != null ) {
+            variableNameTextField.setVariable(assertion.getVariableName());
+        }
+        variableNameTextField.setAssertion(assertion);
+
     }
 
     //- PROTECTED
@@ -66,6 +70,11 @@ public class SetSamlStatusPropertiesDialog extends AssertionPropertiesOkCancelSu
             }
         } ) );
 
+        variableNameTextField = new TargetVariablePanel();
+        variableNamePanel.setLayout(new BorderLayout());
+        variableNamePanel.add(variableNameTextField, BorderLayout.CENTER);
+
+
         final RunOnChangeListener enableDisableListener = new RunOnChangeListener(){
             @Override
             public void run() {
@@ -74,6 +83,7 @@ public class SetSamlStatusPropertiesDialog extends AssertionPropertiesOkCancelSu
         };
 
         versionComboBox.addActionListener( enableDisableListener );
+        variableNameTextField.addChangeListener(enableDisableListener);
     }
 
     //- PRIVATE
@@ -81,26 +91,11 @@ public class SetSamlStatusPropertiesDialog extends AssertionPropertiesOkCancelSu
     private JPanel mainPanel;
     private JComboBox versionComboBox;
     private JComboBox statusComboBox;
-    private JTextField variableNameTextField;
-
-    private void setText( final JTextComponent textComponent, final String text ) {
-        if ( text != null ) {
-            textComponent.setText( text );
-            textComponent.setCaretPosition( 0 );
-        }
-    }
-
-    private void validateData() {
-        // validation
-        String message = VariableMetadata.validateName( VariablePrefixUtil.fixVariableName( variableNameTextField.getText() ) );
-        if ( message != null ) {
-            throw new ValidationException( message, "Invalid Property", null );
-        }
-    }
+    private JPanel variableNamePanel;
+    private TargetVariablePanel variableNameTextField;
 
     private void enableDisableComponents() {
-        boolean enableAny = !isReadOnly();
-
+        boolean enableAny = !isReadOnly() && variableNameTextField.isEntryValid();
 
         if ( ((SamlVersion)versionComboBox.getSelectedItem()).getVersionInt() != ((SamlStatus)statusComboBox.getSelectedItem()).getSamlVersion() ) {
             if ( SamlVersion.SAML1_1.equals(versionComboBox.getSelectedItem()) ) {

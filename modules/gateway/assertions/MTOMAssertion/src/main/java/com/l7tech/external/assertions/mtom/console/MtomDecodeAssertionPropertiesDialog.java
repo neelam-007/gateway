@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.mtom.console;
 
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.mtom.MtomDecodeAssertion;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
@@ -45,6 +46,7 @@ public class MtomDecodeAssertionPropertiesDialog extends MtomAssertionProperties
         messageSourceComboBox.setModel( buildMessageSourceComboBoxModel(assertion) );
         messageSourceComboBox.setSelectedItem( new MessageTargetableSupport(assertion) );
         selectOutputTarget( assertion.getOutputTarget(), messageTargetComboBox, messageTargetVariableNameTextField );
+        messageTargetVariableNameTextField.setAssertion(assertion);
 
         requireEncodedCheckBox.setSelected( assertion.isRequireEncoded() );
         removePackagingCheckBox.setSelected( assertion.isRemovePackaging() );
@@ -67,6 +69,10 @@ public class MtomDecodeAssertionPropertiesDialog extends MtomAssertionProperties
         messageTargetComboBox.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction(defaultName, variableName), null, true ) );
         messageTargetComboBox.setModel( buildMessageTargetComboBoxModel() );
 
+        messageTargetVariableNameTextField = new TargetVariablePanel();
+        messageTargetVariableNamePanel.setLayout(new BorderLayout());
+        messageTargetVariableNamePanel.add(messageTargetVariableNameTextField, BorderLayout.CENTER);
+
         final RunOnChangeListener enableDisableListener = new RunOnChangeListener( new Runnable(){
             @Override
             public void run() {
@@ -76,7 +82,7 @@ public class MtomDecodeAssertionPropertiesDialog extends MtomAssertionProperties
 
         messageSourceComboBox.addActionListener( enableDisableListener );
         messageTargetComboBox.addActionListener( enableDisableListener );
-        messageTargetVariableNameTextField.getDocument().addDocumentListener( enableDisableListener );
+        messageTargetVariableNameTextField.addChangeListener( enableDisableListener );
     }
 
     //- PRIVATE
@@ -87,14 +93,15 @@ public class MtomDecodeAssertionPropertiesDialog extends MtomAssertionProperties
     private JCheckBox requireEncodedCheckBox;
     private JComboBox messageSourceComboBox;
     private JComboBox messageTargetComboBox;
-    private JTextField messageTargetVariableNameTextField;
+    private JPanel messageTargetVariableNamePanel;
+    private TargetVariablePanel messageTargetVariableNameTextField;
     private JCheckBox removePackagingCheckBox;
 
     private void enableAndDisableControls() {
         boolean validSource = messageSourceComboBox.getSelectedItem() != null;
         boolean validMessage = messageTargetComboBox.getSelectedItem()==null ||
                 ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget()!=TargetMessageType.OTHER ||
-                VariableMetadata.isNameValid(VariablePrefixUtil.fixVariableName(messageTargetVariableNameTextField.getText()));
+                messageTargetVariableNameTextField.isEntryValid();
 
         messageTargetVariableNameTextField.setEnabled(
                 messageTargetComboBox.getSelectedItem()!=null &&

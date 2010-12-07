@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.encodedecode.console;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.encodedecode.EncodeDecodeAssertion;
@@ -16,6 +17,8 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.io.IOException;
@@ -47,7 +50,7 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
         validateData();
         assertion.setTransformType( (EncodeDecodeAssertion.TransformType) encodeDecodeComboBox.getSelectedItem() );
         assertion.setSourceVariableName( VariablePrefixUtil.fixVariableName( sourceVariableTextField.getText() ) );
-        assertion.setTargetVariableName( VariablePrefixUtil.fixVariableName( targetVariableTextField.getText() ) );
+        assertion.setTargetVariableName( VariablePrefixUtil.fixVariableName( targetVariableTextField.getVariable() ) );
         assertion.setTargetDataType( (DataType) dataTypeComboBox.getSelectedItem() );
         assertion.setTargetContentType( nullIfEmpty(contentTypeTextField) );
         assertion.setCharacterEncoding( nullIfEmpty(encodingTextField) );
@@ -61,7 +64,8 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
     public void setData( final EncodeDecodeAssertion assertion ) {
         if ( assertion.getTransformType() != null ) encodeDecodeComboBox.setSelectedItem( assertion.getTransformType() );
         setText( sourceVariableTextField, assertion.getSourceVariableName() );
-        setText( targetVariableTextField, assertion.getTargetVariableName() );
+        targetVariableTextField.setVariable(assertion.getTargetVariableName() );
+        targetVariableTextField.setAssertion(assertion);
         if ( assertion.getTargetDataType() != null ) {
             dataTypeComboBox.setSelectedItem( assertion.getTargetDataType() );
         } else {
@@ -106,6 +110,17 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
             }
         } ) );
 
+        targetVariableTextField = new TargetVariablePanel();
+        targetVariablePanel.setLayout(new BorderLayout());
+        targetVariablePanel.add(targetVariableTextField, BorderLayout.CENTER);
+        targetVariableTextField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                getOkButton().setEnabled(targetVariableTextField .isEntryValid());
+            }
+        });
+
+
         contentTypeTextField.setText( ContentTypeHeader.XML_DEFAULT.getFullValue() );
         encodingTextField.setText( ContentTypeHeader.XML_DEFAULT.getEncoding().name() );   
         lineBreakEveryTextField.setDocument( new NumberField() );
@@ -121,7 +136,7 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
         encodeDecodeComboBox.addActionListener( enableDisableListener );
         multipleLinesCheckBox.addActionListener( enableDisableListener );
         sourceVariableTextField.addActionListener( enableDisableListener );
-        targetVariableTextField.addActionListener( enableDisableListener );
+        targetVariableTextField.addChangeListener( enableDisableListener );
         lineBreakEveryTextField.getDocument().addDocumentListener( enableDisableListener );
         contentTypeTextField.getDocument().addDocumentListener( enableDisableListener );
         encodingTextField.getDocument().addDocumentListener( enableDisableListener );
@@ -139,7 +154,8 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
     private JPanel mainPanel;
     private JComboBox encodeDecodeComboBox;
     private JTextField sourceVariableTextField;
-    private JTextField targetVariableTextField;
+    private TargetVariablePanel targetVariableTextField;
+    private JPanel targetVariablePanel;
     private JComboBox dataTypeComboBox;
     private JTextField contentTypeTextField;
     private JTextField encodingTextField;
@@ -205,9 +221,6 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
     private void validateData() {
         // validation
         String message = VariableMetadata.validateName( VariablePrefixUtil.fixVariableName( sourceVariableTextField.getText() ) );
-        if ( message == null ) {
-            message = VariableMetadata.validateName( VariablePrefixUtil.fixVariableName( targetVariableTextField.getText() ) );
-        }
 
         if ( message == null && lineBreakEveryTextField.isEnabled() && !ValidationUtils.isValidInteger( lineBreakEveryTextField.getText(), false, 0, Integer.MAX_VALUE ) ) {
             message = "Invalid line break value, must be a non-negative integer.";
@@ -249,7 +262,7 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
     }
 
     private void enableDisableComponents() {
-        boolean enableAny = !isReadOnly();
+        boolean enableAny = !isReadOnly() && targetVariableTextField.isEntryValid();
 
         final EncodeDecodeAssertion.TransformType transformType = (EncodeDecodeAssertion.TransformType) encodeDecodeComboBox.getSelectedItem();
         DataType targetDataType = (DataType) dataTypeComboBox.getSelectedItem();

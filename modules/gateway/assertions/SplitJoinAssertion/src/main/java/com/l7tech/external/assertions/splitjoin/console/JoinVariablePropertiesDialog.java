@@ -1,12 +1,16 @@
 package com.l7tech.external.assertions.splitjoin.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.splitjoin.JoinAssertion;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.util.ResourceBundle;
 
@@ -18,11 +22,26 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
     }
 
     @Override
+       protected void initComponents() {
+           super.initComponents();
+
+            targetVariableTextField = new TargetVariablePanel();
+            targetVariablePanel.setLayout(new BorderLayout());
+            targetVariablePanel.add(targetVariableTextField, BorderLayout.CENTER);
+            targetVariableTextField.addChangeListener(new ChangeListener(){
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                getOkButton().setEnabled(targetVariableTextField .isEntryValid());
+                }
+            });
+       }
+
+    @Override
     public JoinAssertion getData(JoinAssertion assertion) throws ValidationException {
         validateData();
 
         assertion.setInputVariable(VariablePrefixUtil.fixVariableName(sourceVariableTextField.getText()));
-        assertion.setOutputVariable(VariablePrefixUtil.fixVariableName(targetVariableTextField.getText()));
+        assertion.setOutputVariable(VariablePrefixUtil.fixVariableName(targetVariableTextField.getVariable()));
         assertion.setJoinSubstring(joinStringTextField.getText());//do not modify what the user entered
 
         return assertion;
@@ -37,13 +56,14 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
 
         final String targetVariable = assertion.getOutputVariable();
         if(targetVariable != null && !targetVariable.trim().isEmpty()){
-            targetVariableTextField.setText(targetVariable);
+            targetVariableTextField.setVariable(targetVariable);
         }
 
         final String joinString = assertion.getJoinSubstring();
         if (joinString != null) { //don't test for empty, it's ok
             joinStringTextField.setText(joinString);
         }
+        targetVariableTextField.setAssertion(assertion);
     }
 
     @Override
@@ -54,21 +74,6 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
     private void validateData() throws ValidationException {
         String message = VariableMetadata.validateName(VariablePrefixUtil.fixVariableName(sourceVariableTextField.getText()));
         String propertyName = "sourceVariable";
-
-        if (message == null) {
-            propertyName = "targetVariable";
-            final String targetVariable = targetVariableTextField.getText();
-            message = VariableMetadata.validateName(VariablePrefixUtil.fixVariableName(targetVariable));
-            if (message == null) {
-                final String fixedTargetVariable = VariablePrefixUtil.fixVariableName(targetVariable);
-                final VariableMetadata meta = BuiltinVariables.getMetadata(fixedTargetVariable);
-                if (meta != null) {
-                    if(!meta.isSettable()) {
-                        message = getPropertyValue("targetVariable") + " '" + targetVariable + "' is not settable.";
-                    }
-                }
-            }
-        }
 
         if (message != null) {
             throw new ValidationException(message, "Invalid " + getPropertyValue(propertyName) + " value", null);
@@ -85,7 +90,8 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
 
     private JPanel propertyPanel;
     private JTextField sourceVariableTextField;
-    private JTextField targetVariableTextField;
+    private TargetVariablePanel targetVariableTextField;
     private JTextField joinStringTextField;
+    private JPanel targetVariablePanel;
     private ResourceBundle resourceBundle = ResourceBundle.getBundle(JoinVariablePropertiesDialog.class.getName());
 }

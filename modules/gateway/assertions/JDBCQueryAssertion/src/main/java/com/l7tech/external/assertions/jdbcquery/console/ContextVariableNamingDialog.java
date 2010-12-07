@@ -1,13 +1,16 @@
 package com.l7tech.external.assertions.jdbcquery.console;
 
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.console.util.MutablePair;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.*;
 import java.util.ResourceBundle;
 import java.text.MessageFormat;
@@ -19,14 +22,18 @@ public class ContextVariableNamingDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JTextField columnLabelTextField;
-    private JTextField variableNameTextField;
+    private JPanel variableNamePanel;
+    private TargetVariablePanel variableNameTextField;
+    private String prefix;
 
     private boolean confirmed;
     private MutablePair<String, String> namePair;
 
-    public ContextVariableNamingDialog(JDialog owner, MutablePair<String, String> namePair){
+    public ContextVariableNamingDialog(JDialog owner, MutablePair<String, String> namePair, String prefix,final Assertion assertion){
         super(owner, resources.getString("dialog.title.context.variable.naming"));
+        this.prefix = prefix;
         initialize(namePair);
+        variableNameTextField.setAssertion(assertion);
     }
 
     private void initialize(MutablePair<String, String> namePair) {
@@ -39,6 +46,10 @@ public class ContextVariableNamingDialog extends JDialog {
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
 
+        variableNameTextField = new TargetVariablePanel();
+        variableNamePanel.setLayout(new BorderLayout());
+        variableNamePanel.add(variableNameTextField, BorderLayout.CENTER);
+
         final RunOnChangeListener changeListener = new RunOnChangeListener(new Runnable() {
             public void run() {
                 enableOrDisableOkButton();
@@ -46,11 +57,10 @@ public class ContextVariableNamingDialog extends JDialog {
         });
         // todo: test field length verification
         columnLabelTextField.getDocument().addDocumentListener(changeListener);
-        variableNameTextField.getDocument().addDocumentListener(changeListener);
+        variableNameTextField.addChangeListener(changeListener);
 
         final InputValidator inputValidator = new InputValidator(this, resources.getString("dialog.title.context.variable.naming"));
         inputValidator.constrainTextField(columnLabelTextField, new NonContextVariableTextFieldValidationRule(columnLabelTextField, resources.getString("text.column.label")));
-        inputValidator.constrainTextField(variableNameTextField, new NonContextVariableTextFieldValidationRule(variableNameTextField, resources.getString("text.variable.name")));
 
         inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
@@ -75,7 +85,8 @@ public class ContextVariableNamingDialog extends JDialog {
             throw new IllegalStateException("A namePair object must be initialized first.");
         }
         columnLabelTextField.setText(namePair.left);
-        variableNameTextField.setText(namePair.right);
+        variableNameTextField.setPrefix(prefix);
+        variableNameTextField.setVariable(namePair.right);
     }
 
     private void viewToModel() {
@@ -83,26 +94,18 @@ public class ContextVariableNamingDialog extends JDialog {
             throw new IllegalStateException("A namePair object must be initialized first.");
         }
         namePair.left = columnLabelTextField.getText();
-        namePair.right = variableNameTextField.getText();
+        namePair.right = variableNameTextField.getSuffix();
     }
 
     private void enableOrDisableOkButton() {
         boolean enabled =
             isNonEmptyRequiredTextField(columnLabelTextField.getText()) &&
-            isNonEmptyRequiredTextField(variableNameTextField.getText());
+            isNonEmptyRequiredTextField(variableNameTextField.getVariable());
         okButton.setEnabled(enabled);
     }
 
     private boolean isNonEmptyRequiredTextField(String text) {
         return text != null && !text.trim().isEmpty();
-    }
-
-    public String getColumnName() {
-        return columnLabelTextField.getText();
-    }
-
-    public String getVariableSuffixName() {
-        return variableNameTextField.getText();
     }
 
     public boolean isConfirmed() {

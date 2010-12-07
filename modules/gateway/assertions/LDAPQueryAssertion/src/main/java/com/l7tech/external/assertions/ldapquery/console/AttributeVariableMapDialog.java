@@ -1,11 +1,15 @@
 package com.l7tech.external.assertions.ldapquery.console;
 
+import com.l7tech.console.panels.TargetVariablePanel;
+import com.l7tech.external.assertions.ldapquery.LDAPQueryAssertion;
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -24,7 +28,8 @@ public class AttributeVariableMapDialog extends JDialog {
     private JButton cancelButton;
     private JButton OKButton;
     private JTextField attributeName;
-    private JTextField variableName;
+    private JPanel variableNamePanel;
+    private TargetVariablePanel variableName;
     private JComboBox multivaluedComboBox;
 
     private QueryAttributeMapping data;
@@ -36,15 +41,26 @@ public class AttributeVariableMapDialog extends JDialog {
     private static final String MV_MULTIVALUED = "Set multi-valued context variable";
     private static final String[] MV_MODEL = { MV_USE_FIRST, MV_JOIN_COMMAS, MV_MULTIVALUED };
 
-    public AttributeVariableMapDialog(Dialog owner, QueryAttributeMapping data) throws HeadlessException {
+    public AttributeVariableMapDialog(Dialog owner, QueryAttributeMapping data, final LDAPQueryAssertion assertion) throws HeadlessException {
         super(owner, "Attribute Variable Mapping", true);
         this.data = data;
         initialize();
+        variableName.setAssertion(assertion);
     }
 
     private void initialize() {
         setContentPane(mainPanel);
         Utilities.setEscKeyStrokeDisposes( this );
+
+        variableName = new TargetVariablePanel();
+        variableNamePanel.setLayout(new BorderLayout());
+        variableNamePanel.add(variableName, BorderLayout.CENTER);
+        variableName.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                OKButton.setEnabled(variableName.isEntryValid());
+            }
+        });
 
         validator = new InputValidator(this, "Attribute Variable Mapping");
         validator.disableButtonWhenInvalid(OKButton);
@@ -65,18 +81,6 @@ public class AttributeVariableMapDialog extends JDialog {
             }
         });
 
-        validator.constrainTextFieldToBeNonEmpty("Context Variable Name", variableName , new InputValidator.ComponentValidationRule(variableName) {
-            public String getValidationError() {
-                String val = variableName.getText();
-                if (val == null || val.trim().length() == 0)
-                    return "Context Variable Name cannot be empty.";
-                else if ( !ValidationUtils.isValidCharacters(variableName.getText().trim(), ValidationUtils.ALPHA_NUMERIC + "_-") ) {
-                    return "Invalid character in name. Valid characters are letters, numbers '_' and '-'.";
-                }
-                return null;
-            }
-        });
-
         cancelButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent actionEvent) {
                 dispose();
@@ -91,31 +95,14 @@ public class AttributeVariableMapDialog extends JDialog {
         if (maybeattrval == null || maybeattrval.length() < 1) {
             return;
         }
-        String maybevarval = variableName.getText();
-        try {
-            if (maybevarval == null || maybevarval.length() < 1) {
-                return;
-            }
-            maybevarval = maybevarval.trim();
-            if (maybevarval.startsWith("$")) {
-                maybevarval = maybevarval.substring(1);
-            }
-            if (maybevarval.startsWith("{")) {
-                maybevarval = maybevarval.substring(1);
-            }
-            if (maybevarval.endsWith("}")) {
-                maybevarval = maybevarval.substring(0, maybevarval.length() - 1);
-            }
-        } catch (Exception e) {
-            return;
-        }
 
-        if (maybevarval == null || maybevarval.length() < 1) {
+
+        if (!variableName.isEntryValid()) {
             return;
         }
 
         data.setAttributeName(maybeattrval);
-        data.setMatchingContextVariableName(maybevarval);
+        data.setMatchingContextVariableName(variableName.getVariable());
         viewToModelMultivaluedFlags();
 
         wasOKed = true;
@@ -124,8 +111,8 @@ public class AttributeVariableMapDialog extends JDialog {
 
     private void modelToView() {
         // update gui from assertion
-        attributeName.setText(data.getAttributeName());
-        variableName.setText(data.getMatchingContextVariableName());
+        attributeName.setText(data.getAttributeName()); 
+        variableName.setVariable(data.getMatchingContextVariableName());
         multivaluedComboBox.setModel(new DefaultComboBoxModel(MV_MODEL));
         String mv = MV_USE_FIRST;
         if (data.isMultivalued())
@@ -135,7 +122,7 @@ public class AttributeVariableMapDialog extends JDialog {
 
     public void viewToModel() {
         data.setAttributeName(attributeName.getText().trim());
-        data.setMatchingContextVariableName(variableName.getText().trim());
+        data.setMatchingContextVariableName(variableName.getVariable());
         viewToModelMultivaluedFlags();
     }
 

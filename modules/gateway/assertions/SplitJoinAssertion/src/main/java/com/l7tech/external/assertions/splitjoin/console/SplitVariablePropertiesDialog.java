@@ -1,13 +1,17 @@
 package com.l7tech.external.assertions.splitjoin.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.splitjoin.SplitAssertion;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
@@ -19,13 +23,28 @@ public class SplitVariablePropertiesDialog extends AssertionPropertiesOkCancelSu
         super(SplitAssertion.class, parent, assertion, true);
         initComponents();
     }
+    @Override
+    protected void initComponents() {
+        super.initComponents();
 
+        targetVariableTextField = new TargetVariablePanel();
+        targetVariablePanel.setLayout(new BorderLayout());
+        targetVariablePanel.add(targetVariableTextField, BorderLayout.CENTER);
+        targetVariableTextField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                getOkButton().setEnabled(targetVariableTextField .isEntryValid());
+            }
+        });
+    }
+
+    
     @Override
     public SplitAssertion getData(SplitAssertion assertion) throws ValidationException {
         validateData();
 
         assertion.setInputVariable(VariablePrefixUtil.fixVariableName(sourceVariableTextField.getText()));
-        assertion.setOutputVariable(VariablePrefixUtil.fixVariableName(targetVariableTextField.getText()));
+        assertion.setOutputVariable(VariablePrefixUtil.fixVariableName(targetVariableTextField.getVariable()));
         assertion.setSplitPattern(splitPatternTextField.getText());//do not modify what the user entered
         assertion.setSplitPatternRegEx(regularExpressionCheckBox.isSelected());
 
@@ -41,7 +60,7 @@ public class SplitVariablePropertiesDialog extends AssertionPropertiesOkCancelSu
 
         final String targetVariable = assertion.getOutputVariable();
         if(targetVariable != null && !targetVariable.trim().isEmpty()){
-            targetVariableTextField.setText(targetVariable);
+            targetVariableTextField.setVariable(targetVariable);
         }
 
         final String splitPattern = assertion.getSplitPattern();
@@ -50,6 +69,7 @@ public class SplitVariablePropertiesDialog extends AssertionPropertiesOkCancelSu
         }
 
         regularExpressionCheckBox.setSelected(assertion.isSplitPatternRegEx());
+        targetVariableTextField.setAssertion(assertion);
     }
 
     @Override
@@ -60,21 +80,6 @@ public class SplitVariablePropertiesDialog extends AssertionPropertiesOkCancelSu
     private void validateData() throws ValidationException {
         String message = VariableMetadata.validateName(VariablePrefixUtil.fixVariableName(sourceVariableTextField.getText()));
         String propertyName = "sourceVariable";
-
-        if (message == null) {
-            propertyName = "targetVariable";
-            final String targetVariable = targetVariableTextField.getText();
-            message = VariableMetadata.validateName(VariablePrefixUtil.fixVariableName(targetVariable));
-            if (message == null) {
-                final String fixedTargetVariable = VariablePrefixUtil.fixVariableName(targetVariable);
-                final VariableMetadata meta = BuiltinVariables.getMetadata(fixedTargetVariable);
-                if (meta != null) {
-                    if(!meta.isSettable()) {
-                        message = getPropertyValue("targetVariable") + " '" + targetVariable + "' is not settable.";
-                    }
-                }
-            }
-        }
 
         if (message == null) {
             propertyName = "splitPattern";
@@ -101,8 +106,9 @@ public class SplitVariablePropertiesDialog extends AssertionPropertiesOkCancelSu
 
     private JPanel propertyPanel;
     private JTextField sourceVariableTextField;
-    private JTextField targetVariableTextField;
     private JTextField splitPatternTextField;
     private JCheckBox regularExpressionCheckBox;
+    private JPanel targetVariablePanel;
+    private TargetVariablePanel targetVariableTextField;
     private ResourceBundle resourceBundle = ResourceBundle.getBundle(SplitVariablePropertiesDialog.class.getName());
 }

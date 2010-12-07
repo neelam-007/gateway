@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.jdbcquery.console;
 
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.PermissionFlags;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.MutablePair;
@@ -17,6 +18,7 @@ import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
@@ -26,6 +28,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemListener;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
 
@@ -42,7 +45,8 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private JComboBox connectionComboBox;
     private JTextArea sqlQueryTextArea;
     private JTable namingTable;
-    private JTextField variablePrefixTextField;
+    private JPanel variablePrefixTextPanel;
+    private TargetVariablePanel variablePrefixTextField;
     private JButton testButton;
     private JButton addButton;
     private JButton editButton;
@@ -97,6 +101,10 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
 
+        variablePrefixTextField = new TargetVariablePanel();
+        variablePrefixTextPanel.setLayout(new BorderLayout());
+        variablePrefixTextPanel.add(variablePrefixTextField, BorderLayout.CENTER);
+
         sqlQueryTextArea.setDocument(new MaxLengthDocument(JdbcAdmin.MAX_QUERY_LENGTH));
         queryNameTextField.setDocument(new MaxLengthDocument(128));
 
@@ -107,7 +115,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         });
         connectionComboBox.addItemListener((ItemListener)changeListener);
         sqlQueryTextArea.getDocument().addDocumentListener((DocumentListener)changeListener);
-        variablePrefixTextField.getDocument().addDocumentListener((DocumentListener)changeListener);
+        variablePrefixTextField.addChangeListener((ChangeListener)changeListener);
 
         initNamingTable();
 
@@ -159,7 +167,9 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     private void modelToView() {
         populateConnectionCombobox();
         sqlQueryTextArea.setText(assertion.getSqlQuery());
-        variablePrefixTextField.setText(assertion.getVariablePrefix());
+        variablePrefixTextField.setVariable(assertion.getVariablePrefix());
+        variablePrefixTextField.setAssertion(assertion);
+        variablePrefixTextField.setSuffixes(getSuffixes());
         maxRecordsSpinner.setValue(assertion.getMaxRecords());
         if (assertion.getConnectionName() == null) { // This is a case where the assertion is a new one.  It means to load maxRecords from the global cluster properties.
             JdbcAdmin admin = getJdbcConnectionAdmin();
@@ -176,7 +186,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         assertion.setConnectionName(((String) connectionComboBox.getSelectedItem()));
         assertion.setSqlQuery(sqlQueryTextArea.getText());
         assertion.setNamingMap(namingMap);
-        assertion.setVariablePrefix(variablePrefixTextField.getText());
+        assertion.setVariablePrefix(variablePrefixTextField.getVariable());
         assertion.setMaxRecords((Integer) maxRecordsSpinner.getValue());
         assertion.setAssertionFailureEnabled(failAssertionCheckBox.isSelected());
         assertion.setQueryName(queryNameTextField.getText());
@@ -292,7 +302,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
              !isReadOnly() &&
              isNonEmptyRequiredTextField((String) connectionComboBox.getSelectedItem()) &&
              isNonEmptyRequiredTextField(sqlQueryTextArea.getText()) &&
-             isNonEmptyRequiredTextField(variablePrefixTextField.getText());
+             variablePrefixTextField.isEntryValid();
 
         okButton.setEnabled(enabled);
     }
@@ -365,12 +375,21 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
 
         editAndSave(new MutablePair<String, String>(queryResultName, contextVarName));
     }
+    public String[] getSuffixes(){
+        List<String> suffixes = new ArrayList<String>();
+        suffixes.add(JdbcQueryAssertion.VARIABLE_COUNT);
+        for (String key: namingMap.keySet()) {
+            suffixes.add(namingMap.get(key));
+        }
+        return suffixes.toArray(new String[suffixes.size()]);
+    }
 
     private void editAndSave(final MutablePair<String, String> namePair) {
         if (namePair == null || namePair.left == null || namePair.right == null) return;
         final MutablePair<String, String> originalPair = new MutablePair<String, String>(namePair.left, namePair.right);
 
-        final ContextVariableNamingDialog dlg = new ContextVariableNamingDialog(this, namePair);
+        String suffix = variablePrefixTextField.getVariable();
+        final ContextVariableNamingDialog dlg = new ContextVariableNamingDialog(this, namePair,suffix,assertion);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -400,6 +419,9 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                     keyset.addAll(namingMap.keySet());
                     int currentRow = keyset.indexOf(namePair.left);
                     namingTable.getSelectionModel().setSelectionInterval(currentRow, currentRow);
+
+                    variablePrefixTextField.setSuffixes(getSuffixes());
+
                 }
             }
         });

@@ -10,6 +10,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.ManageHttpConfigurationAction;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.panels.UrlPanel;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.Registry;
@@ -91,7 +92,6 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
 
     private JComboBox messageSourceComboBox;
     private JComboBox messageOutputComboBox;
-    private JTextField outputMessageVariableNameField;
     private JPanel mainPanel;
     private JPanel policyPanel;
     private JButton fetchFileButton;
@@ -108,6 +108,8 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     private JCheckBox sourceSOAPEncapsulatedCheckBox;
     private JCheckBox targetSOAPEncapsulatedCheckBox;
     private JLabel messageVariableLabel;
+    private JPanel outputMessageVariableNamePanel;
+    private TargetVariablePanel outputMessageVariableNameField;
 
     private UIAccessibility uiAccessibility;
     private String policyXml; // uiAccessibility editor cannot be used after dialog disposal
@@ -142,6 +144,11 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         }) );
 
         messageVariableLabel.setEnabled(false);
+
+
+        outputMessageVariableNameField = new TargetVariablePanel();
+        outputMessageVariableNamePanel.setLayout(new BorderLayout());
+        outputMessageVariableNamePanel.add(outputMessageVariableNameField, BorderLayout.CENTER);
         outputMessageVariableNameField.setEnabled(false);
 
         policyLocationComboBox.setModel(new DefaultComboBoxModel(new String[] {CONFIGURED_IN_ADVANCE, resources.getString( "monitor.url.label" ) }));
@@ -246,7 +253,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         });
 
         uiAccessibility.getEditor().getDocument().addDocumentListener(validationListener);
-        outputMessageVariableNameField.getDocument().addDocumentListener(validationListener);
+        outputMessageVariableNameField.addChangeListener(validationListener);
         urlToMonitorField.getDocument().addDocumentListener(validationListener);
         messageOutputComboBox.addActionListener(validationListener);
         failCheckBox.addActionListener(validationListener);
@@ -461,7 +468,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             messageVariableLabel.setEnabled(true);
             outputMessageVariableNameField.setEnabled(true);
 
-            if(outputMessageVariableNameField.getText().trim().length() == 0){
+            if(!outputMessageVariableNameField.isEntryValid()){
                 okButton.setEnabled(false);
                 return;
             }
@@ -586,8 +593,10 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                 break;
             }
         }
+
+        outputMessageVariableNameField.setAssertion(assertion);
         if(assertion.getOutputMessageTarget() == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
-            outputMessageVariableNameField.setText(assertion.getOutputMessageVariableName());
+            outputMessageVariableNameField.setVariable(assertion.getOutputMessageVariableName());
         }
 
         switch ( assertion.getSoapEncapsulation() ) {
@@ -638,7 +647,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                 (XacmlAssertionEnums.MessageLocation)messageOutputComboBox.getSelectedItem();
         assertion.setOutputMessageTarget(outputEntry);
         if(outputEntry == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
-            assertion.setOutputMessageVariableName( VariablePrefixUtil.fixVariableName(outputMessageVariableNameField.getText()) );
+            assertion.setOutputMessageVariableName( VariablePrefixUtil.fixVariableName(outputMessageVariableNameField.getVariable()) );
         }
 
         if ( sourceSOAPEncapsulatedCheckBox.isSelected() &&

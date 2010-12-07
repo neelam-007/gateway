@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.mtom.console;
 
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.mtom.MtomEncodeAssertion;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.gui.util.Utilities;
@@ -58,6 +59,7 @@ public class MtomEncodeAssertionPropertiesDialog extends MtomAssertionProperties
         optimizationThresholdTextField.setText( Integer.toString(assertion.getOptimizationThreshold() / 1024) );
         alwaysEncodeCheckBox.setSelected( assertion.isAlwaysEncode() );
         failIfNotFoundCheckBox.setSelected( assertion.isFailIfNotFound() );
+        messageTargetVariableNameTextField.setAssertion(assertion);
         DefaultListModel model = (DefaultListModel) optimizationXPathsList.getModel();
         model.clear();
         if ( assertion.getXpathExpressions() != null ) {
@@ -89,6 +91,10 @@ public class MtomEncodeAssertionPropertiesDialog extends MtomAssertionProperties
         messageTargetComboBox.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction(defaultName, variableName), null, true ) );
         messageTargetComboBox.setModel( buildMessageTargetComboBoxModel() );
 
+        messageTargetVariableNameTextField = new TargetVariablePanel();
+        messageTargetVariableNamePanel.setLayout(new BorderLayout());
+        messageTargetVariableNamePanel.add(messageTargetVariableNameTextField, BorderLayout.CENTER);
+
         addButton.addActionListener( new ActionListener(){
             @Override
             public void actionPerformed( final ActionEvent e ) {
@@ -119,7 +125,7 @@ public class MtomEncodeAssertionPropertiesDialog extends MtomAssertionProperties
 
         messageSourceComboBox.addActionListener( enableDisableListener );
         messageTargetComboBox.addActionListener( enableDisableListener );
-        messageTargetVariableNameTextField.getDocument().addDocumentListener( enableDisableListener );
+        messageTargetVariableNameTextField.addChangeListener( enableDisableListener );
 
         optimizationThresholdTextField.setDocument( new NumberField(4) );
         optimizationThresholdTextField.getDocument().addDocumentListener( enableDisableListener );
@@ -146,7 +152,8 @@ public class MtomEncodeAssertionPropertiesDialog extends MtomAssertionProperties
     private JTextField optimizationThresholdTextField;
     private JComboBox messageSourceComboBox;
     private JComboBox messageTargetComboBox;
-    private JTextField messageTargetVariableNameTextField;
+    private JPanel messageTargetVariableNamePanel;
+    private TargetVariablePanel messageTargetVariableNameTextField;
     private JCheckBox failIfNotFoundCheckBox;
     private JList optimizationXPathsList;
     private JButton addButton;
@@ -158,7 +165,7 @@ public class MtomEncodeAssertionPropertiesDialog extends MtomAssertionProperties
         boolean validThreshold = ValidationUtils.isValidInteger( optimizationThresholdTextField.getText(), false, 0, 9999 );
         boolean validMessage = messageTargetComboBox.getSelectedItem()==null ||
                 ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget()!=TargetMessageType.OTHER ||
-                VariableMetadata.isNameValid(VariablePrefixUtil.fixVariableName(messageTargetVariableNameTextField.getText()));
+                messageTargetVariableNameTextField.isEntryValid();
 
         messageTargetVariableNameTextField.setEnabled(
                 messageTargetComboBox.getSelectedItem()!=null &&

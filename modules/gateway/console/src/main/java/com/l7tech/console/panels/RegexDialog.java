@@ -52,12 +52,13 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
     public JSplitPane splitPaneTop;
     public JSplitPane splitPaneTest;
     public JSplitPane splitPaneRegex;
-    private JTextField captureVariablePrefix;
     private JRadioButton encodingDefaultButton;
     private JRadioButton encodingCustomButton;
     private JLabel mimePartLabel;
     private JLabel characterEncodingLabel;
     private TargetMessagePanel targetMessagePanel;
+    private JPanel captureVariablePrefixPanel;
+    private TargetVariablePanel captureVariablePrefix;
     private final boolean postRouting;
     private final boolean readOnly;
 
@@ -90,6 +91,11 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
             }
         };
 
+        captureVariablePrefix = new TargetVariablePanel();
+        captureVariablePrefixPanel.setLayout(new BorderLayout());
+        captureVariablePrefixPanel.add(captureVariablePrefix, BorderLayout.CENTER);
+        captureVariablePrefix.setAcceptEmpty(true);
+
         RunOnChangeListener buttonStateUpdateListener = new RunOnChangeListener( new Runnable(){
             @Override
             public void run() {
@@ -101,6 +107,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         proceedIfMatchRadioButton.addItemListener(radioButtonListener);
         matchAndReplaceRadioButton.addItemListener(radioButtonListener);
         proceedIfNoMatchRadioButton.addItemListener(radioButtonListener);
+        captureVariablePrefix.addChangeListener(buttonStateUpdateListener);
 
         cancelButton.addActionListener(new ActionListener() {
             @Override
@@ -215,7 +222,6 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         Utilities.attachDefaultContextMenu(replaceTextArea);
         Utilities.attachDefaultContextMenu(testInputTextArea);
         Utilities.attachDefaultContextMenu(testResultTextPane);
-        Utilities.attachDefaultContextMenu(captureVariablePrefix);
 
         Utilities.enableGrayOnDisabled(replaceTextArea);
         Utilities.enableGrayOnDisabled(encodingField);
@@ -232,7 +238,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
     }
 
     private void updateEnabledState() {
-        okButton.setEnabled( !readOnly && pattern != null && targetMessagePanel.isValidTarget() );
+        okButton.setEnabled( !readOnly && pattern != null && targetMessagePanel.isValidTarget() && captureVariablePrefix.isEntryValid());
     }
 
     private void updateEncodingEnabledState() {
@@ -259,7 +265,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
             regexAssertion.setEncoding(encodingField.getText());
         }
 
-        regexAssertion.setCaptureVar(emptyToNull(captureVariablePrefix.getText()));
+        regexAssertion.setCaptureVar(emptyToNull(captureVariablePrefix.getVariable()));
 
         regexAssertion.setAutoTarget(false);
         targetMessagePanel.updateModel(regexAssertion);
@@ -296,7 +302,8 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         }
         caseInsensitivecheckBox.setSelected(regexAssertion.isCaseInsensitive());
 
-        captureVariablePrefix.setText(nullToEmpty(regexAssertion.getCaptureVar()));
+        captureVariablePrefix.setVariable(nullToEmpty(regexAssertion.getCaptureVar()));
+        captureVariablePrefix.setAssertion(regexAssertion);
 
         if (regexAssertion.isAutoTarget())
             regexAssertion.setTarget(postRouting ? TargetMessageType.RESPONSE : TargetMessageType.REQUEST);
