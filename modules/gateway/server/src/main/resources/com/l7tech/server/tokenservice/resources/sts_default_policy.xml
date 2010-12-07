@@ -382,7 +382,6 @@
                 </L7p:Properties>
             </L7p:AssertionComment>
             <L7p:Base64ResponseBody stringValue="JHtyZXNwb25zZUJ1aWxkZXIucnN0clJlc3BvbnNlLm1haW5wYXJ0fQ=="/>
-            <L7p:ResponseStatus intValue="500"/>
         </L7p:HardcodedResponse>
     </wsp:All>
 </wsp:Policy>
