@@ -170,7 +170,10 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
         String errMsg = null;
         String pattern = startIp + "/" + Integer.toString(networkPrefix);
 
-        if (InetAddressUtil.isValidIpv4Pattern(pattern)) {
+        if ("".equals(startIp)) {
+            if (networkPrefix < 0 || networkPrefix > IPV6_MAX_PREFIX)
+                errMsg = "Invalid network prefix: " + networkPrefix;
+        } else if (InetAddressUtil.isValidIpv4Pattern(pattern)) {
             if (networkPrefix < 0 || networkPrefix > IPV4_MAX_PREFIX)
                 errMsg = "Invalid IPv4 network prefix" + networkPrefix;
         } else if (InetAddressUtil.isValidIpv6Pattern(pattern)) {
@@ -184,7 +187,7 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
             throw new IllegalArgumentException(errMsg);
     }
 
-    private static final String DEFAULT_START_IP = "192.168.1.0";
+    private static final String DEFAULT_START_IP = ""; // 0.0.0.0 or 0:0:0:0:0:0:0:0 (match nothing)
     private static final int DEFAULT_NETWORK_PREFIX = 24;
 
     private String startIp;
