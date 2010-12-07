@@ -33,8 +33,8 @@
 [0:0] -A OUTPUT -d ::1/128 -j ACCEPT
 [0:0] -A FORWARD -d ::1/128 -j ACCEPT
 
- # not as good as stateful related (no connection tracking in our kernel), but should be good enough
- -A INPUT -p tcp ! --syn -j ACCEPT
+# not as good as stateful related (no connection tracking in our kernel), but should be good enough
+[0:0] -A INPUT -p tcp ! --syn -j ACCEPT
 
 # Block bad tcp flags on all interfaces
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG -j badflags6
