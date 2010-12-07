@@ -18,6 +18,7 @@ import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TextUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -368,7 +369,7 @@ class GlobalResourceImportResultsStep extends GlobalResourceImportWizardStepPane
                             replacementUri + resourceHolder.getSystemId().substring( uriPrefix.length() ) :
                             resourceHolder.getSystemId();
                     final String updatedDependencyUri = replacementUri + dependencyUriPair.right.substring( uriPrefix.length() );
-                    final URI newRelativeUri = relativizeUri(asUri(updatedBaseUri), asUri(updatedDependencyUri));
+                    final URI newRelativeUri = ResourceUtils.relativizeUri(asUri(updatedBaseUri), asUri(updatedDependencyUri));
                     if ( !newRelativeUri.equals( asUri(dependencyUriPair.left).normalize() ) ) {
                         // ensure this dependency type can be updated
                         final ResourceHolder dependencyHolder =

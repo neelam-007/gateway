@@ -315,6 +315,38 @@ public final class ResourceUtils {
         return urlWithAuth;
     }
 
+    /**
+     * Relativize one URL against another.
+     *
+     * <p>Similar to URI.relativize but it relativizes more aggressively.</p>
+     *
+     * @param baseUri The base URI to relativize against (required)
+     * @param uri The reference URI (required)
+     * @return The relativized URI (which may be the given reference URI)
+     */
+    public static URI relativizeUri( final URI baseUri, final URI uri ) {
+        int dirs = 0;
+        String relativePath = "";
+
+        if ( isPathProcessableUri( baseUri ) &&
+             isPathProcessableUri( uri ) &&
+             baseUri.getScheme().equals( uri.getScheme() ) &&
+             ((baseUri.getRawUserInfo()==null && uri.getRawUserInfo()==null) || (baseUri.getRawUserInfo()!=null && baseUri.getRawUserInfo().equals( uri.getRawUserInfo() ))) &&
+             ((baseUri.getHost()==null && uri.getHost()==null) || (baseUri.getHost()!=null && baseUri.getHost().equals( uri.getHost() ) ) ) &&
+             baseUri.getPort() == uri.getPort()) {
+            final String basePath = baseUri.getRawPath();
+            final String path = uri.getRawPath();
+
+            int dirIndex = basePath.lastIndexOf( '/' );
+            while ( dirIndex >= 0 && !path.startsWith(basePath.substring( 0, dirIndex+1 )) && (dirIndex = basePath.lastIndexOf( '/', dirIndex-1 )) >= 0 ) {
+                dirs++;
+                relativePath += "../";
+            }
+        }
+
+        return URI.create( relativePath + getBaseUri( baseUri, dirs ).relativize( uri ).toString() );
+    }
+
     //- PRIVATE
 
     /**
@@ -323,6 +355,43 @@ public final class ResourceUtils {
     private static final Logger logger = Logger.getLogger(ResourceUtils.class.getName());
 
     private static final String REGEX_HTTP_URL = "^[hH][tT][tT][pP][sS]?://([\\p{Graph} ]{1,255}@|)[a-zA-Z0-9\\._-]{1,255}[/:]";
+
+    /**
+     * Trim the last path component for a file/http/https uri
+     *
+     * <p>>The returned URI is suitable for use with <code>relativize</code></p>
+     */
+    private static URI getBaseUri( final URI uri,
+                           final int dirStripCount ) {
+        URI baseUri = uri;
+
+        if ( isPathProcessableUri( uri ) ) {
+            String path = uri.getRawPath();
+
+            int index = path.length()+1;
+            for ( int i=0; i<=dirStripCount; i++ ) {
+                if ( index < 0 ) break;
+                index = path.lastIndexOf('/', index-1);
+            }
+
+            if ( index >= 0) {
+                try {
+                    baseUri = new URI( uri.getScheme(), uri.getRawUserInfo(), uri.getHost(), uri.getPort(), uri.getRawPath().substring( 0, index ), null, null );
+                } catch ( URISyntaxException e ) {
+                    logger.log( Level.WARNING, "Error generating base URI", e );
+                }
+            }
+        }
+
+        return baseUri;
+    }
+
+    private static boolean isPathProcessableUri( final URI uri ) {
+        return uri.isAbsolute() && uri.getRawPath() != null &&
+                ( uri.getScheme().equalsIgnoreCase( "file" ) ||
+                  uri.getScheme().equalsIgnoreCase( "http" ) ||
+                  uri.getScheme().equalsIgnoreCase( "https" ) );
+    }
 
     private static String message( final Throwable throwable ) {
         return ExceptionUtils.getMessage( throwable );

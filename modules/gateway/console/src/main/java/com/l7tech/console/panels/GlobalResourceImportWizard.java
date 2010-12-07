@@ -28,6 +28,7 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TextUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -900,7 +901,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                          !absoluteUri.toString().equals(schemaDoc.getDoctype().getSystemId())) {
 
                         // Update the reference to point to the resolved document
-                        final String dependencyReference = relativizeUri( resourceDocument.getUri(), absoluteUri ).toString();
+                        final String dependencyReference = ResourceUtils.relativizeUri( resourceDocument.getUri(), absoluteUri ).toString();
                         if ( !dependencyReference.equals( schemaDoc.getDoctype().getSystemId() ) ) {
                             updatedDoctypeSystemId = dependencyReference;
                         }
@@ -989,7 +990,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                                             final URI dependencyAbsoluteUri ) {
         final boolean updated[] = { false };
 
-        final String dependencyReference = relativizeUri( schemaUri, dependencyAbsoluteUri ).toString();
+        final String dependencyReference = ResourceUtils.relativizeUri( schemaUri, dependencyAbsoluteUri ).toString();
         final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
         schemaReferenceProcessor.processDocumentReferences( schemaXml, new DocumentReferenceProcessor.ReferenceCustomizer(){
             @SuppressWarnings({ "ConstantConditions" })

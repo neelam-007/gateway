@@ -10,6 +10,7 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.common.io.DocumentReferenceProcessor;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ResourceUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -19,6 +20,8 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
@@ -34,7 +37,7 @@ import java.util.List;
  * Date: Oct 19, 2005<br/>
  */
 public class ExternalSchemaReference extends ExternalReference {
-    private final Logger logger = Logger.getLogger(ExternalSchemaReference.class.getName());
+    private static final Logger logger = Logger.getLogger(ExternalSchemaReference.class.getName());
 
     public ExternalSchemaReference( final ExternalReferenceFinder finder,
                                     final EntityResolver entityResolver,
@@ -130,18 +133,18 @@ public class ExternalSchemaReference extends ExternalReference {
                     if (globalSchemaName.equals(name))
                         return false;
                 }
-            } else if ( localizeType == LocalizeAction.REPLACE && name != null) {
+            } else if ( localizeType == LocalizeAction.REPLACE && name != null && localName != null ) {
                 if (schemaResource instanceof GlobalResourceInfo) {
                     final GlobalResourceInfo resourceInfo = (GlobalResourceInfo) schemaResource;
                     if (resourceInfo.getId()!=null && resourceInfo.getId().equals(name)) {
                         resourceInfo.setId( localName );       
                     }
                 } else if (schemaResource instanceof StaticResourceInfo) {
-                    StaticResourceInfo resourceInfo = (StaticResourceInfo) schemaResource;
+                    final StaticResourceInfo resourceInfo = (StaticResourceInfo) schemaResource;
                     try {
                         final Document schema = XmlUtil.parse(asInputSource(resourceInfo), entityResolver);
                         final boolean[] updated = new boolean[]{false};
-                        DocumentReferenceProcessor processor = DocumentReferenceProcessor.schemaProcessor();
+                        final DocumentReferenceProcessor processor = DocumentReferenceProcessor.schemaProcessor();
                         processor.processDocumentReferences( schema, new DocumentReferenceProcessor.ReferenceCustomizer(){
                             @Override
                             public String customize( final Document document,
@@ -149,9 +152,10 @@ public class ExternalSchemaReference extends ExternalReference {
                                                      final String documentUrl,
                                                      final DocumentReferenceProcessor.ReferenceInfo referenceInfo ) {
                                 String uri = null;
-                                if ( name.equals( referenceInfo.getReferenceUrl() ) ) {
+                                if ( name.equals( referenceInfo.getReferenceUrl() ) ||
+                                     name.equals( resolve( documentUrl, referenceInfo.getReferenceUrl() ) )) {
                                     updated[0] = true;
-                                    uri = localName;
+                                    uri = relativize(documentUrl, localName);
                                 }
                                 return uri;
                             }
@@ -190,9 +194,11 @@ public class ExternalSchemaReference extends ExternalReference {
     }
 
     /**
+     * The document should have been parsed in a way that preserves the source URL.
+     *
      * @return An array list of ListedImport objects
      */
-    static ArrayList<ListedImport> listImports(Document schemaDoc) {
+    static ArrayList<ListedImport> listImports( final Document schemaDoc ) {
         final ArrayList<ListedImport> output = new ArrayList<ListedImport>();
         final List<Element> dependencyElements = new ArrayList<Element>();
         final DocumentReferenceProcessor schemaReferenceProcessor = DocumentReferenceProcessor.schemaProcessor();
@@ -207,20 +213,62 @@ public class ExternalSchemaReference extends ExternalReference {
             }
         } );
 
-        for ( Element dependencyElement : dependencyElements ) {
-            String schemaNamespace = "import".equals(dependencyElement.getLocalName())?
+        for ( final Element dependencyElement : dependencyElements ) {
+            final String schemaNamespace = "import".equals(dependencyElement.getLocalName())?
                     dependencyElement.getAttribute("namespace") : // we want empty, not null for a reference to a schema with no TNS
                     null;
-            String schemaUrl = dependencyElement.hasAttribute("schemaLocation") ?
+            final String schemaUrl = dependencyElement.hasAttribute("schemaLocation") ?
                     dependencyElement.getAttribute("schemaLocation") :
                     null;
 
-            if ( schemaUrl != null || schemaNamespace != null ) {
-                output.add(new ListedImport(schemaUrl, schemaNamespace));
+            String resolvedSchemaUrl;
+            if ( schemaUrl != null ) {
+                resolvedSchemaUrl = resolve( schemaDoc.getDocumentURI(), schemaUrl );
+            } else {
+                resolvedSchemaUrl = null;
+            }
+
+            if ( resolvedSchemaUrl != null || schemaNamespace != null ) {
+                output.add(new ListedImport(resolvedSchemaUrl, schemaNamespace));
             }
         }
 
         return output;
+    }
+
+    private static String resolve( final String baseUri,
+                                   final String uri ) {
+        String resolvedUri = uri;
+
+        if ( baseUri != null ) {
+            try {
+                final URI base = new URI( baseUri );
+                resolvedUri = base.resolve( uri ).toString();
+            } catch ( URISyntaxException e ) {
+                logger.log(Level.WARNING, "Error resolving URL for base '"+baseUri+"', url '"+uri+"' :" + ExceptionUtils.getMessage( e ));
+            } catch ( IllegalArgumentException e ) {
+                logger.log(Level.WARNING, "Error resolving URL for base '"+baseUri+"', url '"+uri+"' :" + ExceptionUtils.getMessage( e ));
+            }
+        }
+
+        return resolvedUri;
+    }
+
+    private static String relativize( final String baseUri,
+                                      final String uri ) {
+        String relativeUri = uri;
+
+        if ( baseUri != null ) {
+            try {
+                final URI base = new URI( baseUri );
+                final URI refUri = new URI( uri );
+                relativeUri = ResourceUtils.relativizeUri( base, refUri ).toString();
+            } catch ( URISyntaxException e ) {
+                logger.log(Level.WARNING, "Error relativizing URL for base '"+baseUri+"', url '"+uri+"' :" + ExceptionUtils.getMessage( e ));
+            }
+        }
+
+        return relativeUri;
     }
 
     @SuppressWarnings({ "RedundantIfStatement" })
