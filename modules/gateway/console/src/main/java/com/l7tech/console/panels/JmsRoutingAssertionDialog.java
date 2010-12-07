@@ -160,8 +160,9 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JComboBox requestTargetComboBox;
     private JRadioButton defaultResponseRadioButton;
     private JRadioButton saveAsContextVariableRadioButton;
-    private JTextField responseTargetVariable;
+    private TargetVariablePanel responseTargetVariable;
     private JLabel messageDestinationStatusLabel;
+    private JPanel responseTargetVariablePanel;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
@@ -235,7 +236,6 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         Utilities.enableGrayOnDisabled(dynamicQCF);
         Utilities.enableGrayOnDisabled(dynamicDestQueueName);
         Utilities.enableGrayOnDisabled(dynamicReplyToName); 
-        Utilities.enableGrayOnDisabled(responseTargetVariable);
 
         ButtonGroup secButtonGroup = new ButtonGroup();
         secButtonGroup.add(authNoneRadio);
@@ -301,12 +301,16 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 validateResMsgDest();
             }
         });
-        responseTargetVariable.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+
+        responseTargetVariable = new TargetVariablePanel();
+        responseTargetVariablePanel.setLayout(new BorderLayout());
+        responseTargetVariablePanel.add(responseTargetVariable, BorderLayout.CENTER);
+        responseTargetVariable.addChangeListener(new ChangeListener(){
             @Override
-            public void run() {
+            public void stateChanged(ChangeEvent e) {
                 validateResMsgDest();
             }
-        }));
+        });
         validateResMsgDest();
 
         authSamlRadio.addChangeListener(new ChangeListener(){
@@ -396,7 +400,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
                 assertion.setResponseJmsMessagePropertyRuleSet(responseMsgPropsPanel.getData());
                 if (saveAsContextVariableRadioButton.isSelected()) {
-                    assertion.setResponseTarget(new MessageTargetableSupport(responseTargetVariable.getText(), true));
+                    assertion.setResponseTarget(new MessageTargetableSupport(responseTargetVariable.getVariable(), true));
                 } else {
                     assertion.setResponseTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
                 }
@@ -430,7 +434,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     }
 
     private void enableOrDisableComponents() {
-        responseTargetVariable.setEditable(saveAsContextVariableRadioButton.isSelected());
+        responseTargetVariable.setEnabled(saveAsContextVariableRadioButton.isSelected());
     }
 
     private void populateReqMsgSrcComboBox() {
@@ -474,11 +478,12 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         if (responseTarget != null && responseTarget.getOtherTargetMessageVariable() != null) {
             defaultResponseRadioButton.setSelected(false);
             saveAsContextVariableRadioButton.setSelected(true);
-            responseTargetVariable.setText(responseTarget.getOtherTargetMessageVariable());
+            responseTargetVariable.setVariable(responseTarget.getOtherTargetMessageVariable());
+            responseTargetVariable.setAssertion(assertion);
         } else {
             saveAsContextVariableRadioButton.setSelected(false);
             defaultResponseRadioButton.setSelected(true);
-            responseTargetVariable.setText("");
+            responseTargetVariable.setVariable("");
         }
     }
 
@@ -626,12 +631,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
      * @return <code>true</code> if response messge destination is valid, <code>false</code> if invalid
      */
     private boolean validateResMsgDest() {
-        boolean ok = RoutingDialogUtils.validateMessageDestinationTextField(
-            responseTargetVariable,
-            saveAsContextVariableRadioButton.isSelected(),
-            messageDestinationStatusLabel,
-            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet()
-        );
+        boolean ok = defaultResponseRadioButton.isSelected() || responseTargetVariable.isEntryValid();
         refreshDialog();
         return ok;
     }

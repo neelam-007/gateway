@@ -123,8 +123,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JRadioButton neverFailRadio;
     private JRadioButton resMsgDestDefaultRadioButton;
     private JRadioButton resMsgDestVariableRadioButton;
-    private JTextField resMsgDestVariableTextField;
-    private JLabel resMsgDestVariableStatusLabel;
+    private TargetVariablePanel resMsgDestVariableTextField;
+    private JPanel resMsgDestVariableTextFieldPanel;
     private JCheckBox gzipCheckBox;
     private JComboBox requestMethodComboBox;
     private JRadioButton automaticRequestMethodRadioButton;
@@ -367,18 +367,29 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 validateResMsgDest();
             }
         });
-        resMsgDestVariableTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+        resMsgDestDefaultRadioButton.addItemListener(new ItemListener() {
             @Override
-            public void run() {
+            public void itemStateChanged(ItemEvent e) {
                 validateResMsgDest();
             }
-        }));
+        });
+        resMsgDestVariableTextField = new TargetVariablePanel();
+        resMsgDestVariableTextFieldPanel.setLayout(new BorderLayout());
+        resMsgDestVariableTextFieldPanel.add(resMsgDestVariableTextField, BorderLayout.CENTER);
+        resMsgDestVariableTextField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                validateResMsgDest();
+                okButton.setEnabled(resMsgDestVariableTextField.isEntryValid());
+            }
+        });
         validateResMsgDest();
         final String resMsgDest = assertion.getResponseMsgDest();
+        resMsgDestVariableTextField.setAssertion(assertion);
         if (resMsgDest == null) {
             resMsgDestDefaultRadioButton.doClick();
         } else {
-            resMsgDestVariableTextField.setText(resMsgDest);
+            resMsgDestVariableTextField.setVariable(resMsgDest);
             resMsgDestVariableRadioButton.doClick();
         }
 
@@ -623,11 +634,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             return;
         }
 
-        // Check response message destination.
-        if (!validateResMsgDest()) {
-            JOptionPane.showMessageDialog(okButton, MessageFormat.format(resources.getString("invalidResMsgDestMessage"), url));
-            return;
-        }
+        // Check response message destination - not needed, OK button diabled
 
         // From here down we must succeed
 
@@ -697,7 +704,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         if (resMsgDestDefaultRadioButton.isSelected()) {
             assertion.setResponseMsgDest(null);
         } else if (resMsgDestVariableRadioButton.isSelected()) {
-            assertion.setResponseMsgDest(resMsgDestVariableTextField.getText());
+            assertion.setResponseMsgDest(resMsgDestVariableTextField.getVariable());
         }
 
         assertion.getResponseHeaderRules().setRules(responseHttpRulesTableHandler.getData());
@@ -906,15 +913,11 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
      *
      * @return <code>true</code> if response messge destination is valid, <code>false</code> if invalid
      */
-    private boolean validateResMsgDest() {
-        boolean ok = RoutingDialogUtils.validateMessageDestinationTextField(
-            resMsgDestVariableTextField,
-            resMsgDestVariableRadioButton.isSelected(),
-            resMsgDestVariableStatusLabel,
-            getVariablesSetByPredecessors().keySet()
-        );
+    private void validateResMsgDest() {
+        boolean ok =  resMsgDestDefaultRadioButton.isSelected() || resMsgDestVariableTextField.isEntryValid();
+        resMsgDestVariableTextField.setEnabled(resMsgDestVariableRadioButton.isSelected());
+        okButton.setEnabled(ok);
         refreshDialog();
-        return ok;
     }
 
     /**

@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.wsaddressing.console;
 
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.TargetMessagePanel;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
@@ -11,6 +12,8 @@ import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -28,12 +31,12 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
     private JCheckBox requireSignatureCheckBox;
     private JCheckBox wsAddressing10CheckBox;
     private JCheckBox wsAddressing082004CheckBox;
-    private JTextField variablePrefixTextField;
+    private JPanel variablePrefixTextFieldPanel;
+    private TargetVariablePanel variablePrefixTextField;
     private JCheckBox otherNamespaceCheckBox;
     private JTextField otherNamespaceTextField;
     private JPanel targetMessagePanelHolder;
     private TargetMessagePanel targetMessagePanel = new TargetMessagePanel();
-    private JLabel varPrefixStatusLabel;
     private WsAddressingAssertion assertion;
 
     private boolean targetMessageOk;
@@ -91,7 +94,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
         }
         ok &= targetMessageOk;
         ok &= !isReadOnly();
-        ok &= validateVariablePrefix();
+        ok &= variablePrefixTextField.isEntryValid();
         buttonOK.setEnabled(ok);
     }
 
@@ -109,6 +112,16 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
             public void propertyChange(PropertyChangeEvent evt) {
                 targetMessageOk = Boolean.TRUE.equals(evt.getNewValue());
                 configureView();
+            }
+        });
+
+        variablePrefixTextField = new TargetVariablePanel();
+        variablePrefixTextFieldPanel.setLayout(new BorderLayout());
+        variablePrefixTextFieldPanel.add(variablePrefixTextField, BorderLayout.CENTER);
+        variablePrefixTextField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+               configureView();
             }
         });
 
@@ -143,24 +156,6 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
     }
 
     /**
-     * @see {@link com.l7tech.console.util.VariablePrefixUtil#validateVariablePrefix}
-     */
-    private boolean validateVariablePrefix() {
-        return VariablePrefixUtil.validateVariablePrefix(
-            variablePrefixTextField.getText(),
-            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
-            assertion.getVariableSuffixes(),
-            varPrefixStatusLabel);
-    }
-
-    /**
-     * @see {@link com.l7tech.console.util.VariablePrefixUtil#clearVariablePrefixStatus}
-     */
-    private void clearVariablePrefixStatus() {
-        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
-    }
-
-    /**
      * Handle OK
      */
     private void onOK() {
@@ -190,24 +185,10 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
             otherNamespaceCheckBox.setSelected(true);
             otherNamespaceTextField.setText(other);
         }
-        clearVariablePrefixStatus();
-        variablePrefixTextField.setText(assertion.getVariablePrefix());
-        validateVariablePrefix();
-        TextComponentPauseListenerManager.registerPauseListener(
-            variablePrefixTextField,
-            new PauseListener() {
-                @Override
-                public void textEntryPaused(JTextComponent component, long msecs) {
-                    configureView();
-                }
-
-                @Override
-                public void textEntryResumed(JTextComponent component) {
-                    clearVariablePrefixStatus();
-                }
-            },
-            500
-        );
+        variablePrefixTextField.setAcceptEmpty(true);
+        variablePrefixTextField.setVariable(assertion.getVariablePrefix()==null?"":assertion.getVariablePrefix());
+        variablePrefixTextField.setAssertion(assertion);
+        variablePrefixTextField.setSuffixes(assertion.getVariableSuffixes());
     }
 
     /**
@@ -225,8 +206,8 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
             assertion.setEnableOtherNamespace(null);
         }
 
-        if ( variablePrefixTextField.getText().trim().length() > 0 ) {
-            assertion.setVariablePrefix(variablePrefixTextField.getText().trim());
+        if ( variablePrefixTextField.getVariable().trim().length() > 0 ) {
+            assertion.setVariablePrefix(variablePrefixTextField.getVariable());
         } else {
             assertion.setVariablePrefix(null);
         }

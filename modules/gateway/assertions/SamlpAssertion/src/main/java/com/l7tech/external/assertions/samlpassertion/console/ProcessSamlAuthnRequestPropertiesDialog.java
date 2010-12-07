@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.samlpassertion.ProcessSamlAuthnRequestAssertion;
@@ -11,6 +12,8 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.util.MissingResourceException;
@@ -38,7 +41,7 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
             assertion.setSamlProtocolBinding( null );
         }
         assertion.setVerifySignature( verifySignatureCheckBox.isEnabled() && verifySignatureCheckBox.isSelected() );
-        assertion.setVariablePrefix( variablePrefixTextField.getText() );
+        assertion.setVariablePrefix( variablePrefixTextField.getVariable() );
 
         return assertion;
     }
@@ -55,7 +58,11 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
             bindingComboBox.setSelectedIndex( 0 );
         }
         verifySignatureCheckBox.setSelected( assertion.isVerifySignature() );
-        setText( variablePrefixTextField, assertion.getVariablePrefix() );
+        this.variablePrefixTextField.setVariable(assertion.getVariablePrefix() );
+        this.variablePrefixTextField.setAssertion(assertion);
+
+        String[] suffixes = ProcessSamlAuthnRequestAssertion.VARIABLE_SUFFIXES.toArray( new String[ProcessSamlAuthnRequestAssertion.VARIABLE_SUFFIXES.size()] );
+        variablePrefixTextField.setSuffixes(suffixes);
 
         enableDisableComponents();
     }
@@ -83,6 +90,10 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
             }
         } ) );
 
+        variablePrefixTextField = new TargetVariablePanel();
+        variablePrefixTextFieldPanel.setLayout(new BorderLayout());
+        variablePrefixTextFieldPanel.add(variablePrefixTextField, BorderLayout.CENTER);
+
         final RunOnChangeListener enableDisableListener = new RunOnChangeListener(){
             @Override
             public void run() {
@@ -92,32 +103,12 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
 
         bindingComboBox.addActionListener( enableDisableListener );
         extractSAMLRequestFromCheckBox.addActionListener( enableDisableListener );
+        variablePrefixTextField.addChangeListener(enableDisableListener);
 
         if ( isReadOnly() ) {
             variablePrefixTextField.setEnabled( false );
         }
 
-        variablePrefixTextField.setText("");
-        clearVariablePrefixStatus();
-        TextComponentPauseListenerManager.registerPauseListener(
-            variablePrefixTextField,
-            new PauseListener() {
-                @Override
-                public void textEntryPaused( final JTextComponent component, final long milliseconds ) {
-                    if( validateVariablePrefix() ) {
-                        getOkButton().setEnabled(!isReadOnly());
-                    } else {
-                        getOkButton().setEnabled(false);
-                    }
-                }
-
-                @Override
-                public void textEntryResumed(JTextComponent component) {
-                    clearVariablePrefixStatus();
-                }
-            },
-            500
-        );
     }
 
     //- PRIVATE
@@ -127,10 +118,9 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
     private JPanel mainPanel;
     private JCheckBox extractSAMLRequestFromCheckBox;
     private JComboBox bindingComboBox;
-    private JTextField variablePrefixTextField;
+    private JPanel variablePrefixTextFieldPanel;
+    private TargetVariablePanel variablePrefixTextField;
     private JCheckBox verifySignatureCheckBox;
-    private JLabel varPrefixStatusLabel;
-
     private ProcessSamlAuthnRequestAssertion assertion;
 
     private void setText( final JTextComponent textComponent, final String text ) {
@@ -141,7 +131,7 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
     }
 
     private void enableDisableComponents() {
-        boolean enableAny = !isReadOnly();
+        boolean enableAny = !isReadOnly()  && variablePrefixTextField.isEntryValid();
 
         boolean enableBindingSelection = extractSAMLRequestFromCheckBox.isSelected();
         bindingComboBox.setEnabled( enableAny && enableBindingSelection );
@@ -154,17 +144,4 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
         getOkButton().setEnabled( enableAny );
     }
 
-    private boolean validateVariablePrefix() {
-        String[] suffixes = ProcessSamlAuthnRequestAssertion.VARIABLE_SUFFIXES.toArray( new String[ProcessSamlAuthnRequestAssertion.VARIABLE_SUFFIXES.size()] );
-
-        return VariablePrefixUtil.validateVariablePrefix(
-            variablePrefixTextField.getText(),
-            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
-            suffixes,
-            varPrefixStatusLabel);
-    }
-
-    private void clearVariablePrefixStatus() {
-        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
-    }
 }

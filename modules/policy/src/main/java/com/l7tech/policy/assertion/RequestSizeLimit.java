@@ -29,7 +29,7 @@ public class RequestSizeLimit extends MessageTargetableAssertion implements Uses
     private boolean entireMessage = true;
 
     public RequestSizeLimit() {
-         super(true);
+         super(false);
     }
 
     /** @return the current size limit, in kilobytes, or a context variable reference. */

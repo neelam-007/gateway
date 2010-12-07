@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
@@ -8,6 +9,8 @@ import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 
@@ -28,8 +31,8 @@ public class GatewayManagementAssertionPropertiesDialog extends AssertionPropert
 
     @Override
     public GatewayManagementAssertion getData( final GatewayManagementAssertion assertion ) throws ValidationException {
-        if ( variablePrefixTextField.getText() != null && !variablePrefixTextField.getText().trim().isEmpty() ) {
-            assertion.setVariablePrefix( variablePrefixTextField.getText().trim() );
+        if ( variablePrefixTextField.getVariable() != null && !variablePrefixTextField.getVariable().trim().isEmpty() ) {
+            assertion.setVariablePrefix( variablePrefixTextField.getVariable().trim() );
         } else {
             assertion.setVariablePrefix( null );
         }
@@ -39,7 +42,11 @@ public class GatewayManagementAssertionPropertiesDialog extends AssertionPropert
     @Override
     public void setData( final GatewayManagementAssertion assertion ) {
         this.assertion = assertion;
-        this.variablePrefixTextField.setText( assertion.getVariablePrefix()==null ? "" : assertion.getVariablePrefix() );
+        this.variablePrefixTextField.setVariable( assertion.getVariablePrefix()==null ? "" : assertion.getVariablePrefix() );
+        this.variablePrefixTextField.setAssertion(assertion);
+
+        String[] suffixes = GatewayManagementAssertion.VARIABLE_SUFFIXES.toArray( new String[GatewayManagementAssertion.VARIABLE_SUFFIXES.size()] );
+        variablePrefixTextField.setSuffixes(suffixes);
     }
 
     //- PROTECTED
@@ -48,32 +55,21 @@ public class GatewayManagementAssertionPropertiesDialog extends AssertionPropert
     protected void initComponents() {
         super.initComponents();
 
+        variablePrefixTextField = new TargetVariablePanel();
+        variablePrefixTextFieldPanel.setLayout(new BorderLayout());
+        variablePrefixTextFieldPanel.add(variablePrefixTextField, BorderLayout.CENTER);
+        variablePrefixTextField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+               getOkButton().setEnabled(variablePrefixTextField.isEntryValid());
+            }
+        });
+
         if ( isReadOnly() ) {
             variablePrefixTextField.setEnabled( false );               
         }
 
-        variablePrefixTextField.setText("");
-        clearVariablePrefixStatus();
-        TextComponentPauseListenerManager.registerPauseListener(
-            variablePrefixTextField,
-            new PauseListener() {
-                @Override
-                public void textEntryPaused( final JTextComponent component, final long milliseconds ) {
-                    if( validateVariablePrefix() ) {
-                        getOkButton().setEnabled(true);
-                    } else {
-                        getOkButton().setEnabled(false);
-                    }
-                }
-
-                @Override
-                public void textEntryResumed(JTextComponent component) {
-                    clearVariablePrefixStatus();
-                }
-            },
-            500
-        );
-
+        variablePrefixTextField.setVariable("");
     }
 
     @Override
@@ -84,22 +80,9 @@ public class GatewayManagementAssertionPropertiesDialog extends AssertionPropert
     //- PRIVATE
 
     private JPanel mainPanel;
-    private JTextField variablePrefixTextField;
-    private JLabel varPrefixStatusLabel;
+    private JPanel variablePrefixTextFieldPanel;
+    private TargetVariablePanel variablePrefixTextField;
 
     private GatewayManagementAssertion assertion;
 
-    private boolean validateVariablePrefix() {
-        String[] suffixes = GatewayManagementAssertion.VARIABLE_SUFFIXES.toArray( new String[GatewayManagementAssertion.VARIABLE_SUFFIXES.size()] );
-
-        return VariablePrefixUtil.validateVariablePrefix(
-            variablePrefixTextField.getText(),
-            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
-            suffixes,
-            varPrefixStatusLabel);
-    }
-
-    private void clearVariablePrefixStatus() {
-        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
-    }
 }

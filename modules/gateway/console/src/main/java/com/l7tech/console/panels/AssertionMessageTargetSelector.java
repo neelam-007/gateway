@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -20,7 +21,9 @@ public class AssertionMessageTargetSelector extends JDialog {
     private JRadioButton _requestRadioButton;
     private JRadioButton _responseRadioButton;
     private JRadioButton _otherContextVariableRadioButton;
-    private JTextField _contextVarName;
+    private JPanel _contextVarNamePanel;
+    private JTextField _contextVarTextField;
+    private TargetVariablePanel _contextVarTargetVariable;
 
     private MessageTargetable messageTargetable;
     private boolean readonly;
@@ -42,6 +45,8 @@ public class AssertionMessageTargetSelector extends JDialog {
         getRootPane().setDefaultButton(buttonOK);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
+
+
         RunOnChangeListener validator = new RunOnChangeListener( new Runnable() {
             @Override
             public void run() {
@@ -51,7 +56,20 @@ public class AssertionMessageTargetSelector extends JDialog {
         _requestRadioButton.addActionListener(validator);
         _responseRadioButton.addActionListener(validator);
         _otherContextVariableRadioButton.addActionListener(validator);
-        _contextVarName.getDocument().addDocumentListener(validator);
+
+
+        _contextVarTargetVariable = new TargetVariablePanel();
+        _contextVarNamePanel.setLayout(new BorderLayout());
+        if(messageTargetable.isTargetModifiedByGateway()){
+            _contextVarNamePanel.add(_contextVarTargetVariable, BorderLayout.CENTER);
+            _contextVarTargetVariable.addChangeListener(validator);
+        }
+        else{
+            _contextVarTextField = new JTextField();
+            _contextVarNamePanel.add(_contextVarTextField, BorderLayout.CENTER);
+            _contextVarTextField.getDocument().addDocumentListener(validator);
+        }
+
 
         buttonOK.addActionListener(new ActionListener() {
             @Override
@@ -83,8 +101,10 @@ public class AssertionMessageTargetSelector extends JDialog {
         } else {
             _otherContextVariableRadioButton.setSelected(true);
         }
-        _contextVarName.setText(messageTargetable.getOtherTargetMessageVariable());
-        _contextVarName.setEditable(_otherContextVariableRadioButton.isSelected());
+        setContextVar(messageTargetable.getOtherTargetMessageVariable());
+        setContextVarEnabled(_otherContextVariableRadioButton.isSelected());
+        Assertion ass = (Assertion)messageTargetable;
+        if(messageTargetable.isTargetModifiedByGateway()) _contextVarTargetVariable.setAssertion(ass);
     }
 
     private void onOK() {
@@ -96,7 +116,7 @@ public class AssertionMessageTargetSelector extends JDialog {
             messageTargetable.setOtherTargetMessageVariable(null);
         } else {
             messageTargetable.setTarget(TargetMessageType.OTHER);
-            messageTargetable.setOtherTargetMessageVariable(VariablePrefixUtil.fixVariableName(_contextVarName.getText()));
+            messageTargetable.setOtherTargetMessageVariable(VariablePrefixUtil.fixVariableName(getContextVar()));
         }
         wasOKed = true;
         dispose();
@@ -112,14 +132,46 @@ public class AssertionMessageTargetSelector extends JDialog {
 
     private void doValidate() {
         if ( !readonly ) {
-            _contextVarName.setEditable(_otherContextVariableRadioButton.isSelected());
-            if ( _otherContextVariableRadioButton.isSelected() &&
-                 ( _contextVarName.getText()==null ||
-                  _contextVarName.getText().trim().length() == 0 ) ) {
-                buttonOK.setEnabled( false );
+            setContextVarEnabled(_otherContextVariableRadioButton.isSelected());
+            if ( _otherContextVariableRadioButton.isSelected()){
+                if(messageTargetable.isTargetModifiedByGateway()){
+                    buttonOK.setEnabled( _contextVarTargetVariable.isEntryValid());
+                }
+                else{
+                   boolean notValid = getContextVar()==null ||
+                                   getContextVar().trim().length() == 0 ;
+                    buttonOK.setEnabled( !notValid);
+                }
             } else {
                 buttonOK.setEnabled( true );
             }
+        }
+    }
+
+    private void setContextVar(String text){
+        if(messageTargetable.isTargetModifiedByGateway()){
+           _contextVarTargetVariable.setVariable(text);
+        }
+        else{
+            _contextVarTextField.setText(text);
+        }
+    }
+
+    private String getContextVar(){
+        if(messageTargetable.isTargetModifiedByGateway()){
+           return _contextVarTargetVariable.getVariable();
+        }
+        else{
+           return _contextVarTextField.getText();
+        }
+    }
+
+    private void setContextVarEnabled(boolean enabled){
+        if(messageTargetable.isTargetModifiedByGateway()){
+           _contextVarTargetVariable.setEnabled(enabled);
+        }
+        else{
+            _contextVarTextField.setEnabled(enabled);
         }
     }
 }

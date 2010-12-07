@@ -8,7 +8,7 @@ public class AuditRecordToXmlAssertion extends MessageTargetableAssertion {
     public AuditRecordToXmlAssertion() {
         super(TargetMessageType.REQUEST, true);
     }
-
+                
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();

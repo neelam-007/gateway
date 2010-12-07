@@ -72,6 +72,15 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
         this.signedElementsVariable = signedElementsVariable;
     }
 
+    public String[] getVariableSuffixes() {
+        return new String[] {
+            VAR_SIGNATURE_ELEMENT,
+            VAR_TOKEN_TYPE,
+            VAR_TOKEN_ELEMENT,
+            VAR_TOKEN_ATTRIBUTES
+        };
+    }
+
     @Override
     public VariableMetadata[] getVariablesSet() {
         final List<VariableMetadata> vars = new ArrayList<VariableMetadata>();

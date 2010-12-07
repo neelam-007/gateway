@@ -62,6 +62,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.text.JTextComponent;
@@ -130,7 +132,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private JRadioButton skiReferenceRadioButton;
     private JRadioButton issuerSerialReferenceRadioButton;
     private JCheckBox signedBstCheckBox;
-    private JTextField varPrefixField;
+    private JPanel varPrefixFieldPanel;
+    private TargetVariablePanel varPrefixField;
     private JLabel varPrefixLabel;
     private SpeedIndicator speedIndicator;
     private JComboBox sampleMessagesCombo;
@@ -145,7 +148,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     };
     private BindingOperation currentOperation;
     private JButton editSampleButton;
-    private JLabel varPrefixStatusLabel;
     private JRadioButton encIssuerSerialReferenceRadioButton;
     private JPanel encryptionResponseConfigPanel;
     private JRadioButton encSkiReferenceRadioButton;
@@ -640,12 +642,12 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 }
 
                 if (assertion instanceof SimpleXpathAssertion) {
-                    ((SimpleXpathAssertion)assertion).setVariablePrefix(varPrefixField.getText());
+                    ((SimpleXpathAssertion)assertion).setVariablePrefix(varPrefixField.getVariable());
                 }
 
                 if (assertion instanceof RequireWssSignedElement) {
-                    if ( varPrefixField.getText()!= null && varPrefixField.getText().length() > 0 ) {
-                        ((RequireWssSignedElement)assertion).setVariablePrefix( varPrefixField.getText() );
+                    if ( varPrefixField.getVariable()!= null && varPrefixField.getVariable().length() > 0 ) {
+                        ((RequireWssSignedElement)assertion).setVariablePrefix( varPrefixField.getVariable() );
                     } else {
                         ((RequireWssSignedElement)assertion).setVariablePrefix( null );
                     }
@@ -748,47 +750,39 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             title = assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString();
         }
 
+        varPrefixField = new TargetVariablePanel();
+        varPrefixFieldPanel.setLayout(new BorderLayout());
+        varPrefixFieldPanel.add(varPrefixField, BorderLayout.CENTER);
+        varPrefixField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                okButton.setEnabled(!varPrefixField.isVisible() || varPrefixField.isEntryValid());
+            }
+        });
+
         boolean processPrefix = false;
         String prefix = null;
         if ( assertion instanceof SimpleXpathAssertion ) {
             SimpleXpathAssertion sxa = (SimpleXpathAssertion)assertion;
             processPrefix = true;
             prefix = sxa.getVariablePrefix();
+            varPrefixField.setSuffixes(sxa.getVariableSuffixes());
         } else if ( assertion instanceof RequireWssSignedElement) {
             RequireWssSignedElement sxa = (RequireWssSignedElement)assertion;
             processPrefix = true;
             prefix = sxa.getVariablePrefix();
+            varPrefixField.setAcceptEmpty(true);
+            varPrefixField.setSuffixes(sxa.getVariableSuffixes());
         }
 
         if ( processPrefix ) {
-            clearVariablePrefixStatus();
-            varPrefixField.setText(prefix);
+            varPrefixField.setVariable(prefix);
             varPrefixField.setVisible(true);
             varPrefixLabel.setVisible(true);
-            validateVariablePrefix();
-            TextComponentPauseListenerManager.registerPauseListener(
-                varPrefixField,
-                new PauseListener() {
-                    @Override
-                    public void textEntryPaused(JTextComponent component, long msecs) {
-                        if(validateVariablePrefix()) {
-                            okButton.setEnabled(!readOnly);
-                        } else {
-                            okButton.setEnabled(false);
-                        }
-                    }
-
-                    @Override
-                    public void textEntryResumed(JTextComponent component) {
-                        clearVariablePrefixStatus();
-                    }
-                },
-                500
-            );
+            varPrefixField.setAssertion(assertion);
         } else {
             varPrefixField.setVisible(false);
             varPrefixLabel.setVisible(false);
-            varPrefixStatusLabel.setVisible(false);
         }
 
         descriptionLabel.setText(description);
@@ -1442,30 +1436,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 return "";
             }
         };
-    }
-
-    /**
-     * @see {@link com.l7tech.console.util.VariablePrefixUtil#validateVariablePrefix}
-     */
-    private boolean validateVariablePrefix() {
-        String[] suffixes = new String[0];
-
-        if ( assertion instanceof SimpleXpathAssertion ) {
-            suffixes = ((SimpleXpathAssertion)assertion).getVariableSuffixes();
-        }
-
-        return VariablePrefixUtil.validateVariablePrefix(
-            varPrefixField.getText(),
-            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
-            suffixes,
-            varPrefixStatusLabel);
-    }
-
-    /**
-     * @see {@link com.l7tech.console.util.VariablePrefixUtil#clearVariablePrefixStatus}
-     */
-    private void clearVariablePrefixStatus() {
-        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
     }
 
     private static class XpathFeedBack {

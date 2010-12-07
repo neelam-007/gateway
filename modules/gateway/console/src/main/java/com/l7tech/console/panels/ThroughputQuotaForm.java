@@ -19,6 +19,8 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -56,8 +58,8 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
     private JRadioButton alwaysIncrementRadio;
     private JRadioButton decrementRadio;
     private JRadioButton incrementOnSuccessRadio;
-    private JTextField varPrefixField;
-    private JLabel varPrefixStatusLabel;
+    private JPanel varPrefixFieldPanel;
+    private TargetVariablePanel varPrefixField;
 
     public ThroughputQuotaForm(Frame owner, ThroughputQuota subject, Assertion policyRoot, boolean readOnly) {
         super(owner, subject, true);
@@ -79,28 +81,19 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         model.setSelectedItem(TIME_UNITS[subject.getTimeUnit()-1]);
         counterNameCombo.setEditable(true);
 
-        clearVariablePrefixStatus();
-        varPrefixField.setText(subject.getVariablePrefix());
-        validateVariablePrefix();
-        TextComponentPauseListenerManager.registerPauseListener(
-            varPrefixField,
-            new PauseListener() {
-                @Override
-                public void textEntryPaused(JTextComponent component, long msecs) {
-                    if(validateVariablePrefix()) {
-                        okButton.setEnabled(!readOnly);
-                    } else {
-                        okButton.setEnabled(false);
-                    }
-                }
-
-                @Override
-                public void textEntryResumed(JTextComponent component) {
-                    clearVariablePrefixStatus();
-                }
-            },
-            500
-        );
+        varPrefixField = new TargetVariablePanel();
+        varPrefixFieldPanel.setLayout(new BorderLayout());
+        varPrefixFieldPanel.add(varPrefixField, BorderLayout.CENTER);
+        varPrefixField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                okButton.setEnabled(varPrefixField .isEntryValid());
+            }
+        });
+        varPrefixField.setVariable(subject.getVariablePrefix());
+        varPrefixField.setAssertion(subject);
+        varPrefixField.setSuffixes(subject.getVariableSuffixes());
+        varPrefixField.setAcceptEmpty(true);
 
         // get counter names from other sla assertions here
         ArrayList<String> listofexistingcounternames = new ArrayList<String>();
@@ -213,24 +206,6 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         });
     }
 
-    /**
-     * @see {@link com.l7tech.console.util.VariablePrefixUtil#validateVariablePrefix}
-     */
-    private boolean validateVariablePrefix() {
-        return VariablePrefixUtil.validateVariablePrefix(
-            varPrefixField.getText(),
-            SsmPolicyVariableUtils.getVariablesSetByPredecessors(subject).keySet(),
-            subject.getVariableSuffixes(),
-            varPrefixStatusLabel);
-    }
-
-    /**
-     * @see {@link com.l7tech.console.util.VariablePrefixUtil#clearVariablePrefixStatus}
-     */
-    private void clearVariablePrefixStatus() {
-        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
-    }
-
     private void populateExistingCounterNamesFromPolicy(Assertion toInspect, java.util.List container) {
         if (toInspect == subject) {
             return; // skip us
@@ -271,7 +246,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
         subject.setQuota(quota);
         subject.setGlobal(globalRadio.isSelected());
         subject.setTimeUnit(quotaUnitCombo.getSelectedIndex()+1);
-        subject.setVariablePrefix(varPrefixField.getText());
+        subject.setVariablePrefix(varPrefixField.getVariable());
 
         int counterStrategy = ThroughputQuota.INCREMENT_ON_SUCCESS;
         if (alwaysIncrementRadio.isSelected()) {

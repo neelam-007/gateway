@@ -6,6 +6,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -13,6 +14,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -24,8 +26,11 @@ public class TargetMessagePanel extends JPanel {
     private JRadioButton requestRadioButton;
     private JRadioButton responseRadioButton;
     private JRadioButton otherRadioButton;
-    private JTextField otherMessageVariableTextfield;
+    private JPanel otherMessageVariablePanel;
+    private JTextField otherMessageVariableTextField;
+    private TargetVariablePanel otherMessageVariableTargetVariable;
     private boolean allowNonMessageVariables = false;
+    private boolean modifyByGateway = false;
     private JPanel requestExtraPanel;
     private JPanel responseExtraPanel;
     private JPanel otherExtraPanel;
@@ -50,7 +55,7 @@ public class TargetMessagePanel extends JPanel {
     });
 
     private void enableDisable() {
-        otherMessageVariableTextfield.setEnabled(otherRadioButton.isSelected());
+        setOtherMessageVariableEnabled(otherRadioButton.isSelected());
         if (requestExtra != null) requestExtra.setEnabled(requestRadioButton.isSelected());
         if (responseExtra != null) responseExtra.setEnabled(responseRadioButton.isSelected());
         if (otherExtra != null) otherExtra.setEnabled(otherRadioButton.isSelected());
@@ -97,6 +102,20 @@ public class TargetMessagePanel extends JPanel {
      * @param model the object whose values are to be read to configure the GUI controls.  Required.
      */
     public void setModel(MessageTargetable model) {
+        modifyByGateway = model.isTargetModifiedByGateway() ;
+        
+        if(modifyByGateway){
+            otherMessageVariablePanel.add(otherMessageVariableTargetVariable, BorderLayout.CENTER);
+            otherMessageVariableTargetVariable.addChangeListener(listener);
+            Assertion ass = (Assertion)model;
+            otherMessageVariableTargetVariable.setAssertion(ass);
+
+        }
+        else{
+            otherMessageVariablePanel.add(otherMessageVariableTextField, BorderLayout.CENTER);
+            otherMessageVariableTextField.getDocument().addDocumentListener(listener);
+        }
+
         switch(model.getTarget()) {
             case REQUEST:
                 requestRadioButton.setSelected(true);
@@ -106,11 +125,12 @@ public class TargetMessagePanel extends JPanel {
                 break;
             case OTHER:
                 otherRadioButton.setSelected(true);
-                otherMessageVariableTextfield.setText(model.getOtherTargetMessageVariable());
+                setOtherMessageVariable(model.getOtherTargetMessageVariable());
                 break;
             default:
                 throw new IllegalArgumentException();
         }
+        enableDisable();        
     }
 
     /**
@@ -130,15 +150,26 @@ public class TargetMessagePanel extends JPanel {
     public String check() {
         if (!otherRadioButton.isSelected())
             return null;
-        return VariableMetadata.validateName(getVariableName());
+        if (modifyByGateway){
+            return otherMessageVariableTargetVariable.getErrorMessage();
+        }
+        else{
+            return VariableMetadata.validateName(otherMessageVariableTextField.getText());
+        }
+
     }
 
     protected void initComponents() {
+        // create components
+        otherMessageVariableTextField = new JTextField();
+        otherMessageVariableTargetVariable = new TargetVariablePanel();
+        otherMessageVariablePanel.setLayout(new BorderLayout());          
+
         requestRadioButton.addActionListener(listener);
         responseRadioButton.addActionListener(listener);
         otherRadioButton.addActionListener(listener);
-        otherMessageVariableTextfield.getDocument().addDocumentListener(listener);
-        Utilities.attachDefaultContextMenu(otherMessageVariableTextfield);
+        otherMessageVariableTextField.getDocument().addDocumentListener(listener);
+        Utilities.attachDefaultContextMenu(otherMessageVariableTextField);
 
         enableDisable();
         this.setLayout(new BorderLayout());
@@ -156,7 +187,7 @@ public class TargetMessagePanel extends JPanel {
     }
 
     private String getVariableName() {
-        return VariablePrefixUtil.fixVariableName(otherMessageVariableTextfield.getText());
+        return VariablePrefixUtil.fixVariableName(getOtherMessageVariable());
     }
 
     private void setExtra(JPanel panel, JComponent extra) {
@@ -236,8 +267,13 @@ public class TargetMessagePanel extends JPanel {
     }
 
     public void addDocumentListener( final DocumentListener documentListener ) {
-        otherMessageVariableTextfield.getDocument().addDocumentListener( documentListener );
+        otherMessageVariableTextField.getDocument().addDocumentListener( documentListener );
 
+        if ( documentListener instanceof ChangeListener){
+            ChangeListener cl = (ChangeListener) documentListener;
+            otherMessageVariableTargetVariable.addChangeListener(cl);
+        }
+        
         if ( documentListener instanceof ActionListener ) {
             ActionListener al = (ActionListener) documentListener;
             requestRadioButton.addActionListener(al);
@@ -253,4 +289,32 @@ public class TargetMessagePanel extends JPanel {
     public void removeActionListener(ActionListener l) {
         listenerList.remove(ActionListener.class, l);
     }
+
+    private void setOtherMessageVariable(String text){
+        if(modifyByGateway){
+           otherMessageVariableTargetVariable.setVariable(text);
+        }
+        else{
+            otherMessageVariableTextField.setText(text);
+        }
+    }
+
+    private String getOtherMessageVariable(){
+        if(modifyByGateway){
+           return otherMessageVariableTargetVariable.getVariable();
+        }
+        else{
+           return otherMessageVariableTextField.getText();
+        }
+    }
+
+    private void setOtherMessageVariableEnabled(boolean enabled){
+        if(modifyByGateway){
+           otherMessageVariableTargetVariable.setEnabled(enabled);
+        }
+        else{
+            otherMessageVariableTextField.setEnabled(enabled);
+        }
+    }
+
 }

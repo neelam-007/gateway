@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.samlpassertion.console;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.TargetMessagePanel;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
+import com.l7tech.gui.util.RunOnChangeListener;
 
 import javax.swing.*;
 import java.awt.*;
@@ -149,6 +150,12 @@ public class TargetMessageWizardStepPanel extends SamlpWizardStepPanel {
 
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
         targetMessagePanelHolder.add(targetMessagePanel);
+        targetMessagePanel.addDocumentListener( new RunOnChangeListener( new Runnable(){
+            @Override
+            public void run() {
+                notifyListeners();
+            }
+        }) );
 
         customizeForMode();
     }

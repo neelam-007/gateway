@@ -16,6 +16,8 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -38,8 +40,8 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private JPanel innerPanel;
     private JComboBox cbXslLocation;
     private TargetMessagePanel targetMessagePanel;
-    private JTextField messageVariablePrefixTextField;
-    private JLabel prefixStatusLabel;
+    private JPanel messageVariablePrefixTextFieldPanel;
+    private TargetVariablePanel messageVariablePrefixTextField;
 
     private XslTransformation assertion;
     private final XslTransformationSpecifyPanel specifyPanel;
@@ -111,33 +113,18 @@ public class XslTransformationPropertiesDialog extends JDialog {
         //noinspection UnnecessaryBoxing
         whichMimePartSpinner.setValue(new Integer(assertion.getWhichMimePart()));
 
-        inputValidator.constrainTextField(messageVariablePrefixTextField, new InputValidator.ValidationRule() {
+        messageVariablePrefixTextField = new TargetVariablePanel();
+        messageVariablePrefixTextFieldPanel.setLayout(new BorderLayout());
+        messageVariablePrefixTextFieldPanel.add(messageVariablePrefixTextField, BorderLayout.CENTER);
+        messageVariablePrefixTextField.addChangeListener(new ChangeListener(){
             @Override
-            public String getValidationError() {
-                String prefix = messageVariablePrefixTextField.getText();
-                if (prefix == null || prefix.trim().isEmpty()) {
-                    return "XSLT Message Variable Prefix must be specified.";
-                } else {
-                    return null;
-                }
+            public void stateChanged(ChangeEvent e) {
+                okButton.setEnabled(messageVariablePrefixTextField.isEntryValid()&& !readOnly);
             }
         });
-        messageVariablePrefixTextField.setText(assertion.getMsgVarPrefix());
-        validateVariablePrefix();
-        messageVariablePrefixTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
-            @Override
-            public void run() {
-                boolean isValidPrefix = validateVariablePrefix();
-                okButton.setEnabled(isValidPrefix && !readOnly);
-
-                // If the prefix is not valid, then the validation message will need to resize the dialog.
-                if (! isValidPrefix) {
-                    if (getSize().width < mainPanel.getMinimumSize().width) {
-                        setSize(mainPanel.getMinimumSize().width, getSize().height);
-                    }
-                }
-            }
-        }));
+        messageVariablePrefixTextField.setVariable(assertion.getMsgVarPrefix());
+        messageVariablePrefixTextField.setAssertion(assertion);
+        messageVariablePrefixTextField.setSuffixes(new String[] {XslTransformation.VARIABLE_NAME});
 
         AssertionResourceInfo ri = assertion.getResourceInfo();
         AssertionResourceType rit = ri.getType();
@@ -171,16 +158,6 @@ public class XslTransformationPropertiesDialog extends JDialog {
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 
-    /**
-     * @see {@link com.l7tech.console.util.VariablePrefixUtil#validateVariablePrefix}
-     */
-    private boolean validateVariablePrefix() {
-        return VariablePrefixUtil.validateVariablePrefix(
-            messageVariablePrefixTextField.getText(),
-            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
-            new String[] {XslTransformation.VARIABLE_NAME},
-            prefixStatusLabel);
-    }
 
     private String getCurrentFetchMode() {
         return (String)cbXslLocation.getSelectedItem();
@@ -251,7 +228,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
         targetMessagePanel.updateModel(assertion);
 
         assertion.setWhichMimePart(((Number)whichMimePartSpinner.getValue()).intValue());
-        assertion.setMsgVarPrefix(messageVariablePrefixTextField.getText());
+        assertion.setMsgVarPrefix(messageVariablePrefixTextField.getVariable());
 
         wasoked = true;
         dispose();
