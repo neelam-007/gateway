@@ -11,7 +11,10 @@ import com.l7tech.console.util.SortedListModel;
 
 import javax.swing.*;
 import javax.swing.text.NumberFormatter;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.util.ResourceBundle;
 import java.util.Collection;
 import java.awt.*;
@@ -142,28 +145,44 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         groupMaximumNestingTextField.setEnabled( !readOnly );
         groupMembershipCaseInsensitive.setEnabled( !readOnly );
 
-        RunOnChangeListener validationListener = new RunOnChangeListener(new Runnable() {
-            @Override
-            public void run() {
-                validateComponents();
-            }
-        });
-        
         groupCacheSizeTextField.setDocument(new NumberField(Integer.MAX_VALUE));
         groupMaximumNestingTextField.setDocument(new NumberField(Integer.MAX_VALUE));
 
         final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.####"));
         numberFormatter.setValueClass(Double.class);
         numberFormatter.setMinimum(0.0);
+        numberFormatter.setAllowsInvalid(false);
         groupCacheHierarchyMaxAgeTextField.setFormatterFactory(new JFormattedTextField.AbstractFormatterFactory() {
             @Override
             public JFormattedTextField.AbstractFormatter getFormatter(JFormattedTextField tf) {
                 return numberFormatter;
             }
         });
-        
+         groupCacheHierarchyMaxAgeTextField.getDocument().addDocumentListener(  new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    groupCacheHierarchyMaxAgeTextField.commitEdit();
+                } catch (ParseException e) {
+                   // ignore 
+                }
+            }
+        } ));
+        groupCacheHierarchyMaxAgeTextField.addPropertyChangeListener("value",new PropertyChangeListener(){
+            @Override
+            public void propertyChange(PropertyChangeEvent evt){
+                validateComponents();
+            }
+        });
+
+        RunOnChangeListener validationListener = new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                validateComponents();
+            }
+        });
+
         groupCacheSizeTextField.getDocument().addDocumentListener( validationListener );
-        groupCacheHierarchyMaxAgeTextField.getDocument().addDocumentListener( validationListener );
         groupMaximumNestingTextField.getDocument().addDocumentListener( validationListener );
 
         oldTimeUnit = TimeUnit.MINUTES ;
@@ -281,15 +300,8 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
     private void validateComponents() {
         boolean valid = true;
         int multiplier = ((TimeUnit)hierarchyUnitcomboBox.getSelectedItem()).getMultiplier();
-
-        String maxCache = groupCacheHierarchyMaxAgeTextField.getText();         
-        Double maxCacheNum = 0.0;
-        if (maxCache!=null){
-            try{
-                maxCacheNum=Double.parseDouble(maxCache);
-            }catch(NumberFormatException e){maxCacheNum = MILLIS_100_YEARS+1.0;}
-        }
-        maxAgeGreater100Years = maxCacheNum > (MILLIS_100_YEARS / multiplier);
+        Double val = (Double) groupCacheHierarchyMaxAgeTextField.getValue();
+        maxAgeGreater100Years =   val == null || val > MILLIS_100_YEARS/multiplier;
         boolean groupCacheSize = !ValidationUtils.isValidInteger(groupCacheSizeTextField.getText(), false, 0, Integer.MAX_VALUE);
         boolean nesting = !ValidationUtils.isValidInteger(groupMaximumNestingTextField.getText(), false, 0, Integer.MAX_VALUE);
         if ( groupCacheSize ||
@@ -325,19 +337,6 @@ public class LdapAdvancedConfigurationPanel extends IdentityProviderStepPanel {
         return value;
     }
 
-    private Long getLong( final JTextField textField, final int multiplier ) {
-        Long value = null;
-
-        if ( textField != null ) {
-            try {
-                value = Long.parseLong( textField.getText() ) * multiplier;
-            } catch ( NumberFormatException nfe ) {
-                //
-            }
-        }
-
-        return value;
-    }
 
     private void enableAndDisableComponents() {
         boolean specifiedControlsEnabled = retrieveSpecifiedAttributesRadioButton.isSelected();
