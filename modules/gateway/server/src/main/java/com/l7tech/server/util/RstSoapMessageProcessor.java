@@ -1,12 +1,11 @@
 package com.l7tech.server.util;
 
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
-import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
 import org.w3c.dom.Document;
@@ -29,7 +28,7 @@ public class RstSoapMessageProcessor {
     public static final String WST_FAULT_CODE_INVALID_REQUEST = "wst:InvalidRequest";
     public static final String WST_FAULT_CODE_INVALID_SECURITY_TOKEN = "wst:InvalidSecurityToken";
     public static final String WST_FAULT_CODE_EXPIRED_DATA = "wst:ExpiredData";
-    public static final String WST_FAULT_CODE_FAILED_AUTHENTICATION = "wst:FailedAuthentication";
+    public static final String WST_FAULT_CODE_FAILED_AUTHENTICATION = "wst:FailedAuthentication"; // Leave it here now for future uses.
 
     public final static String SOAP_VERSION = "soap_version";
     public final static String SOAP_ENVELOPE_NS = "soap_envelope_namespace";
@@ -407,36 +406,33 @@ public class RstSoapMessageProcessor {
     }
 
     /**
-     * Audit the given message and set a template fault response.
+     * Generate a SOAP fault response.
      *
-     * TODO this is an incorrect use of the fault level
-     *
-     * @param auditor The auditor to use.
      * @param context The context for the fault
-     * @param assertionMessage The message to audit
      * @param parameters The parameters for the related RST
      * @param faultCodeOrValue The code (one of WST_FAULT_CODE_*)
      * @param faultStringOrReason The reason detail.
      */
-    public static void logAuditAndSetSoapFault(
-            final Auditor auditor,
-            final PolicyEnforcementContext context,
-            final AuditDetailMessage assertionMessage,
-            final Map<String, String> parameters,
-            final String faultCodeOrValue,
-            final String faultStringOrReason) {
-
-        // Log and audit
-        auditor.logAndAudit(assertionMessage, faultStringOrReason);
+    public static void generateSoapFaultResponse(
+        final PolicyEnforcementContext context,
+        final Map<String, String> parameters,
+        final String rstrResponseVariable,
+        final String faultCodeOrValue,
+        final String faultStringOrReason) {
 
         // Set a SOAP fault
         final String wstNs = parameters.get( WST_NS ) == null ? SoapConstants.WST_NAMESPACE3 : parameters.get( WST_NS );
         final String soapVersion = RstSoapMessageProcessor.getSoapVersion(context, parameters);
-        SoapFaultLevel fault = new SoapFaultLevel();
-        fault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
 
-        if ("1.2".equals(soapVersion)) {
-            fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        String requestUrl;
+        try {
+            requestUrl = (String) context.getVariable("request.url");
+        } catch (NoSuchVariableException e) {
+            requestUrl = "";
+        }
+
+        String faultResponse = ("1.2".equals(soapVersion))?
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\" " +
                 "                  xmlns:wst=\"" + wstNs + "\">\n" +
                 "    <soapenv:Body>\n" +
@@ -450,25 +446,24 @@ public class RstSoapMessageProcessor {
                 "            <soapenv:Reason>\n" +
                 "                <soapenv:Text xml:lang=\"en-US\">" + faultStringOrReason + "</soapenv:Text>\n" +
                 "            </soapenv:Reason>\n" +
-                "            <soapenv:Role>${request.url}</soapenv:Role>\n" +
+                "            <soapenv:Role>" + requestUrl + "</soapenv:Role>\n" +
                 "        </soapenv:Fault>\n" +
                 "    </soapenv:Body>\n" +
-                "</soapenv:Envelope>");
-        } else {
-            fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "</soapenv:Envelope>"
+            :
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE + "\" " +
                 "                  xmlns:wst=\"" + wstNs + "\">\n" +
                 "    <soapenv:Body>\n" +
                 "        <soapenv:Fault>\n" +
                 "            <faultcode>" + faultCodeOrValue + "</faultcode>\n" +
                 "            <faultstring>" + faultStringOrReason + "</faultstring>\n" +
-                "            <faultactor>${request.url}</faultactor>\n" +
+                "            <faultactor>" + requestUrl + "</faultactor>\n" +
                 "        </soapenv:Fault>\n" +
                 "    </soapenv:Body>\n" +
-                "</soapenv:Envelope>");
-        }
+                "</soapenv:Envelope>";
 
-        context.setFaultlevel(fault);
+        context.setVariable(rstrResponseVariable, new Message(XmlUtil.stringAsDocument(faultResponse)));
     }
 
     public static String getSoapVersion(final PolicyEnforcementContext context, final Map<String, String> parameters) {

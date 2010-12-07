@@ -55,28 +55,14 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
         final Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, true);
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                auditor,
-                context,
-                AssertionMessages.STS_INVALID_RST_REQUEST,
-                rstParameters,
-                RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
-                rstParameters.get(RstSoapMessageProcessor.ERROR)
-            );
+            auditor.logAndAudit(AssertionMessages.STS_INVALID_RST_REQUEST, rstParameters.get(RstSoapMessageProcessor.ERROR));
             return AssertionStatus.BAD_REQUEST;
         }
 
         // Check if the credentials are provided and proven in the message (request, response, or context variable).
         AuthenticationResult authenticationResult = authContext.getLastAuthenticationResult();
         if (authenticationResult == null) {
-            RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                auditor,
-                context,
-                AssertionMessages.STS_AUTHENTICATION_FAILURE,
-                rstParameters,
-                RstSoapMessageProcessor.WST_FAULT_CODE_FAILED_AUTHENTICATION,
-                "The target message does not contain any authentication information."
-            );
+            auditor.logAndAudit(AssertionMessages.STS_AUTHENTICATION_FAILURE, "The target message does not contain any authentication information.");
             return AssertionStatus.AUTH_FAILED;
         }
 
@@ -88,14 +74,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
             }
         }
         if (loginCredentials == null) {
-            RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                auditor,
-                context,
-                AssertionMessages.STS_AUTHENTICATION_FAILURE,
-                rstParameters,
-                RstSoapMessageProcessor.WST_FAULT_CODE_FAILED_AUTHENTICATION,
-                "Credentials not found for the authenticated user."
-            );
+            auditor.logAndAudit(AssertionMessages.STS_AUTHENTICATION_FAILURE, "Credentials not found for the authenticated user.");
             return AssertionStatus.AUTH_FAILED;
         }
 
@@ -155,6 +134,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
                 keySize
             );
         } catch ( SessionCreationException e ) {
+            //noinspection ThrowableResultOfMethodCallIgnored
             auditor.logAndAudit( AssertionMessages.STS_TOKEN_ISSUE_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FALSIFIED;
         }

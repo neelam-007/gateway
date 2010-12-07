@@ -56,14 +56,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
         final Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, false);
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                auditor,
-                context,
-                AssertionMessages.STS_INVALID_RST_REQUEST,
-                rstParameters,
-                RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
-                rstParameters.get(RstSoapMessageProcessor.ERROR)
-            );
+            auditor.logAndAudit(AssertionMessages.STS_INVALID_RST_REQUEST, rstParameters.get(RstSoapMessageProcessor.ERROR));
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -74,25 +67,18 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
                 case USER:
                     final SecureConversationSession session = secureConversationContextManager.getSession( targetIdentifier );
                     if ( session != null ) {
-                        checkAuthenticated( context, authContext, rstParameters, session.getUsedBy() );
+                        checkAuthenticated( authContext, session.getUsedBy() );
                     }
                     break;
                 case TOKEN:
-                    checkAuthenticationToken( context, authContext, rstParameters, targetIdentifier );
+                    checkAuthenticationToken( authContext, targetIdentifier );
                     break;
             }
 
             secureConversationContextManager.cancelSession(targetIdentifier);
         } catch (NoSuchSessionException e) {
             if (assertion.isFailIfNotExist()) {
-                RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                    auditor,
-                    context,
-                    AssertionMessages.STS_EXPIRED_SC_SESSION,
-                    rstParameters,
-                    RstSoapMessageProcessor.WST_FAULT_CODE_EXPIRED_DATA,
-                    ExceptionUtils.getMessage( e )
-                );
+                auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, ExceptionUtils.getMessage(e));
                 return AssertionStatus.BAD_REQUEST;
             } else {
                 logger.warning(e.getMessage());
@@ -107,10 +93,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         return auditor;
     }
 
-    private void checkAuthenticated( final PolicyEnforcementContext context,
-                                     final AuthenticationContext authContext,
-                                     final Map<String,String> rstParameters,
-                                     final User user ) {
+    private void checkAuthenticated( final AuthenticationContext authContext, final User user ) {
         boolean found = false;
 
         for ( final AuthenticationResult authenticationResult : authContext.getAllAuthenticationResults() ) {
@@ -123,22 +106,12 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
 
         if ( !found ) {
-            RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                auditor,
-                context,
-                AssertionMessages.STS_AUTHORIZATION_FAILURE,
-                rstParameters,
-                RstSoapMessageProcessor.WST_FAULT_CODE_FAILED_AUTHENTICATION,
-                "Not authorized."
-            );
+            auditor.logAndAudit(AssertionMessages.STS_AUTHORIZATION_FAILURE, "Not authorized.");
             throw new AssertionStatusException(AssertionStatus.BAD_REQUEST);
         }
     }
 
-    private void checkAuthenticationToken( final PolicyEnforcementContext context,
-                                           final AuthenticationContext authContext,
-                                           final Map<String,String> rstParameters,
-                                           final String targetIdentifier ) {
+    private void checkAuthenticationToken( final AuthenticationContext authContext, final String targetIdentifier ) {
         boolean found = false;
         SecurityContextToken securityContextToken = null;
 
@@ -163,14 +136,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
 
         if ( !found ) {
-            RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                auditor,
-                context,
-                AssertionMessages.STS_AUTHORIZATION_FAILURE,
-                rstParameters,
-                RstSoapMessageProcessor.WST_FAULT_CODE_FAILED_AUTHENTICATION,
-                "Not authorized."
-            );
+            auditor.logAndAudit(AssertionMessages.STS_AUTHORIZATION_FAILURE, "Not authorized.");
             throw new AssertionStatusException(AssertionStatus.BAD_REQUEST);
         }
     }

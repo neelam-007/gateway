@@ -240,11 +240,14 @@
                             </L7p:Properties>
                         </L7p:assertionComment>
                     </wsp:OneOrMore>
-                    <L7p:BuildRstrSoapResponse>
-                        <L7p:IncludeAttachedRef booleanValue="true"/>
-                        <L7p:IncludeUnattachedRef booleanValue="true"/>
-                        <L7p:TokenIssued stringValue="${issuedSamlAssertion}"/>
-                    </L7p:BuildRstrSoapResponse>
+                    <wsp:OneOrMore wsp:Usage="Required">
+                        <L7p:BuildRstrSoapResponse>
+                            <L7p:IncludeAttachedRef booleanValue="true"/>
+                            <L7p:IncludeUnattachedRef booleanValue="true"/>
+                            <L7p:TokenIssued stringValue="${issuedSamlAssertion}"/>
+                        </L7p:BuildRstrSoapResponse>
+                        <L7p:TrueAssertion/>
+                    </wsp:OneOrMore>
                 </wsp:All>
                 <L7p:assertionComment>
                     <L7p:Properties mapValue="included">
@@ -305,13 +308,16 @@
                     </L7p:Predicates>
                 </L7p:ComparisonAssertion>
                 <L7p:CreateSecurityContextToken/>
-                <L7p:BuildRstrSoapResponse>
-                    <L7p:IncludeAttachedRef booleanValue="true"/>
-                    <L7p:IncludeKeySize booleanValue="true"/>
-                    <L7p:IncludeLifetime booleanValue="true"/>
-                    <L7p:IncludeUnattachedRef booleanValue="true"/>
-                    <L7p:TokenIssued stringValue="${sctBuilder.issuedSCT}"/>
-                </L7p:BuildRstrSoapResponse>
+                <wsp:OneOrMore wsp:Usage="Required">
+                    <L7p:BuildRstrSoapResponse>
+                        <L7p:IncludeAttachedRef booleanValue="true"/>
+                        <L7p:IncludeKeySize booleanValue="true"/>
+                        <L7p:IncludeLifetime booleanValue="true"/>
+                        <L7p:IncludeUnattachedRef booleanValue="true"/>
+                        <L7p:TokenIssued stringValue="${sctBuilder.issuedSCT}"/>
+                    </L7p:BuildRstrSoapResponse>
+                    <L7p:TrueAssertion/>
+                </wsp:OneOrMore>
                 <L7p:assertionComment>
                     <L7p:Properties mapValue="included">
                         <L7p:entry>
@@ -337,9 +343,12 @@
                     </L7p:Predicates>
                 </L7p:ComparisonAssertion>
                 <L7p:CancelSecurityContext/>
-                <L7p:BuildRstrSoapResponse>
-                    <L7p:ResponseForIssuance booleanValue="false"/>
-                </L7p:BuildRstrSoapResponse>
+                <wsp:OneOrMore wsp:Usage="Required">
+                    <L7p:BuildRstrSoapResponse>
+                        <L7p:ResponseForIssuance booleanValue="false"/>
+                    </L7p:BuildRstrSoapResponse>
+                    <L7p:TrueAssertion/>
+                </wsp:OneOrMore>
                 <L7p:assertionComment>
                     <L7p:Properties mapValue="included">
                         <L7p:entry>

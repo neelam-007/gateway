@@ -72,14 +72,15 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
         final Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, assertion.isResponseForIssuance());
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                auditor,
+            RstSoapMessageProcessor.generateSoapFaultResponse(
                 context,
-                AssertionMessages.STS_INVALID_RST_REQUEST,
                 rstParameters,
+                getRstrResponseVariable(),
                 RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
                 rstParameters.get(RstSoapMessageProcessor.ERROR)
             );
+            
+            auditor.logAndAudit(AssertionMessages.STS_INVALID_RST_REQUEST, rstParameters.get(RstSoapMessageProcessor.ERROR));
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -95,14 +96,15 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 rstrXml = generateRstrElement(context, message, rstParameters, null); // no need of token info
             }
         } catch (NoSuchSessionException e) {
-            RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                auditor,
+            RstSoapMessageProcessor.generateSoapFaultResponse(
                 context,
-                AssertionMessages.STS_EXPIRED_SC_SESSION,
                 rstParameters,
+                getRstrResponseVariable(),
                 RstSoapMessageProcessor.WST_FAULT_CODE_EXPIRED_DATA,
                 ExceptionUtils.getMessage(e)
             );
+
+            auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, ExceptionUtils.getMessage(e));
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -168,6 +170,10 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         return AssertionStatus.NONE;
     }
 
+    private String getRstrResponseVariable() {
+        return assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_RSTR_RESPONSE;
+    }
+
     private AssertionStatus getTokenInfo( final PolicyEnforcementContext context,
                                           final Map<String, String> tokenInfo,
                                           final Map<String,String> rstParameters ) {
@@ -183,14 +189,16 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             Document tokenDoc = XmlUtil.stringToDocument(tokenXml);
             root = (Element) tokenDoc.getFirstChild();
         } catch (Throwable t) { // Such as SAXException, ClassCastException, etc.
-            RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                auditor,
+            String errorMessage = "The security token used to generate a RSTR response is invalid or not well-formatted.";
+            RstSoapMessageProcessor.generateSoapFaultResponse(
                 context,
-                AssertionMessages.STS_INVALID_SECURITY_TOKEN,
                 rstParameters,
+                getRstrResponseVariable(),
                 RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
-                "The security token used to generate a RSTR response is invalid or not well-formatted."
+                errorMessage
             );
+
+            auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -206,14 +214,16 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
             try {
                 sctWsuId = DomUtils.getElementIdValue(root, SoapUtil.getDefaultIdAttributeConfig());
             } catch (InvalidDocumentFormatException e) {
-                RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                    auditor,
+                String errorMessage = "There are more than one ID attribute in the SecurityContextToken element.";
+                RstSoapMessageProcessor.generateSoapFaultResponse(
                     context,
-                    AssertionMessages.STS_INVALID_SECURITY_TOKEN,
                     rstParameters,
+                    getRstrResponseVariable(),
                     RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
-                    "There are more than one ID attribute in the SecurityContextToken element."
+                    errorMessage
                 );
+
+                auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
                 return AssertionStatus.BAD_REQUEST;
             }
             tokenInfo.put(SCT_WSU_ID, sctWsuId);
@@ -222,24 +232,28 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 // Set Identifier
                 tokenInfo.put(SCT_IDENTIFIER, DomUtils.findExactlyOneChildElementByName(root, rootNS, "Identifier").getTextContent());
             } catch (TooManyChildElementsException e) {
-                RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                    auditor,
+                String errorMessage = "There are more than one Identifier element in the SecurityContextToken element.";
+                RstSoapMessageProcessor.generateSoapFaultResponse(
                     context,
-                    AssertionMessages.STS_INVALID_SECURITY_TOKEN,
                     rstParameters,
+                    getRstrResponseVariable(),
                     RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
-                    "There are more than one Identifier element in the SecurityContextToken element."
+                    errorMessage
                 );
+
+                auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
                 return AssertionStatus.BAD_REQUEST;
             } catch (MissingRequiredElementException e) {
-                RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                    auditor,
+                String errorMessage = "There is no Identifier element in the SecurityContextToken element.";
+                RstSoapMessageProcessor.generateSoapFaultResponse(
                     context,
-                    AssertionMessages.STS_INVALID_SECURITY_TOKEN,
                     rstParameters,
+                    getRstrResponseVariable(),
                     RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
-                    "There is no Identifier element in the SecurityContextToken element."
+                    errorMessage
                 );
+
+                auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
                 return AssertionStatus.BAD_REQUEST;
             }
         }
@@ -258,25 +272,29 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 // Set ValueType
                 tokenInfo.put(SAML_VALUE_TYPE, SoapConstants.VALUETYPE_SAML_ASSERTIONID3);
             } else {
-                RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                    auditor,
+                String errorMessage = "The SAML namespace is invalid.";
+                RstSoapMessageProcessor.generateSoapFaultResponse(
                     context,
-                    AssertionMessages.STS_INVALID_SECURITY_TOKEN,
                     rstParameters,
+                    getRstrResponseVariable(),
                     RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
-                    "The SAML namespace is invalid."
+                    errorMessage
                 );
+
+                auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
                 return AssertionStatus.BAD_REQUEST;
             }
         } else { // The token is not recognizable.
-            RstSoapMessageProcessor.logAuditAndSetSoapFault(
-                auditor,
+            String errorMessage = "The security token provided is neither a SecurityContextToken nor a SAML token.";
+            RstSoapMessageProcessor.generateSoapFaultResponse(
                 context,
-                AssertionMessages.STS_INVALID_SECURITY_TOKEN,
                 rstParameters,
+                getRstrResponseVariable(),
                 RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_SECURITY_TOKEN,
-                "The security token provided is neither a SecurityContextToken nor a SAML token."
+                errorMessage
             );
+
+            auditor.logAndAudit(AssertionMessages.STS_INVALID_SECURITY_TOKEN, errorMessage);
             return AssertionStatus.BAD_REQUEST;
         }
 
