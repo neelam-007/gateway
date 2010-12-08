@@ -69,7 +69,7 @@ public enum SupportedDigestMethods {
     /**
      * Get a collection of known aliases for the specified JCE digest algorithm name.
      *
-     * @param digest a digest algorithm name, ie "SHA-1".  Required.
+     * @param digestName a digest algorithm name, ie "SHA-1".  Required.
      * @return  a collection of recognized aliases for the specified digest, ie { "SHA-1", "SHA1", "SHA" }, or null.
      */
     public static List<String> getAliases(String digestName) {
