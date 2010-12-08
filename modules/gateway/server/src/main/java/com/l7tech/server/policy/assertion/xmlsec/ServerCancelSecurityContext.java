@@ -106,7 +106,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
 
         if ( !found ) {
-            auditor.logAndAudit(AssertionMessages.STS_AUTHORIZATION_FAILURE, "Not authorized.");
+            auditor.logAndAudit(AssertionMessages.STS_AUTHORIZATION_FAILURE, "User not permitted to cancel token");
             throw new AssertionStatusException(AssertionStatus.BAD_REQUEST);
         }
     }
@@ -136,7 +136,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
 
         if ( !found ) {
-            auditor.logAndAudit(AssertionMessages.STS_AUTHORIZATION_FAILURE, "Not authorized.");
+            auditor.logAndAudit(AssertionMessages.STS_AUTHORIZATION_FAILURE, "Required token not present");
             throw new AssertionStatusException(AssertionStatus.BAD_REQUEST);
         }
     }
