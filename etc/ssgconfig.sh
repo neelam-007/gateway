@@ -51,7 +51,6 @@ elif [ "${1}" == "-keystoreProperty" ] ; then
   shift
   launch "ConfigKeystoreFileProperty" "$*"
 else
-  launch "ConfigWizard" "$*"
-  launchRoot "ConfigClusterAddress"
+  launch "ConfigWizard" "$*" && launchRoot "ConfigClusterAddress"
 fi
 
