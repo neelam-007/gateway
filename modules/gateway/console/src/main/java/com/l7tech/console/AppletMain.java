@@ -5,6 +5,7 @@
 
 package com.l7tech.console;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.console.panels.AppletContentStolenPanel;
@@ -309,7 +310,13 @@ public class AppletMain extends JApplet implements SheetHolder {
     }
 
     private void gatherAppletParameters() {
-        String hostname = getParameter("hostname");
+        String hostname = null;
+        try {
+            hostname = URLDecoder.decode(getParameter("hostname"), HttpConstants.ENCODING_UTF8);
+        } catch (UnsupportedEncodingException e) {
+            logger.warning("Invalid encoding: " + HttpConstants.ENCODING_UTF8); // shouldn't happen
+        }
+
         if ( hostname != null && hostname.length() > 0 ) {
             logger.info("Preconfigured server hostname '" + hostname + "'.");
         } else {
