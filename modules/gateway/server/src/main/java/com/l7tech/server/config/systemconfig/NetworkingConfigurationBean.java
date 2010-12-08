@@ -408,7 +408,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 if (ipv6Addresses.size() > 0)
                     config.add("IPV6ADDR=" + ipv6Addresses.get(0));
                 if (ipv6Addresses.size() > 1)
-                    config.add("IPV6ADDR_SECONDARIES=" + concatConfigLines(" ", ipv6Addresses.subList(1, ipv6Addresses.size()-1)));
+                    config.add("IPV6ADDR_SECONDARIES=" + concatConfigLines(" ", ipv6Addresses.subList(1, ipv6Addresses.size())).trim());
             }
 
             return config;
