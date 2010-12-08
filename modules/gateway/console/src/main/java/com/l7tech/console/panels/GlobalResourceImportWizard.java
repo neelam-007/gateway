@@ -134,7 +134,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                                                                   final ResourceAdmin resourceAdmin,
                                                                   final ErrorListener errorListener ) {
         final GlobalResourceImportContext context = new GlobalResourceImportContext();
-        context.setResourceDocumentResolverForType( null, GlobalResourceImportContext.buildResourceEntryResolver( resourceAdmin, null ) );
+        context.setResourceDocumentResolverForType( null, GlobalResourceImportContext.buildResourceEntryResolver( resourceAdmin, true, null ) );
 
         final Collection<ResourceInputSource> inputSources = new ArrayList<ResourceInputSource>();
         for ( final String uriString : uriStrings ) {
@@ -237,7 +237,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                                                  final ChoiceSelector choiceSelector,
                                                  final Functions.UnaryThrows<ResourceEntryHeader,Collection<ResourceEntryHeader>,IOException> entitySelector,
                                                  final ResourceTherapist resourceTherapist ) {
-        context.setResourceDocumentResolverForType( null, GlobalResourceImportContext.buildResourceEntryResolver( resourceAdmin, null ) );
+        context.setResourceDocumentResolverForType( null, GlobalResourceImportContext.buildResourceEntryResolver( resourceAdmin, false, null ) );
 
         final URI uri;
         final ResourceDocument mainResource;

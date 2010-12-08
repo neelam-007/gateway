@@ -38,8 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Context for global resource imports.
@@ -603,6 +601,7 @@ class GlobalResourceImportContext {
     }
 
     static ResourceDocumentResolver buildResourceEntryResolver( final ResourceAdmin resourceAdmin,
+                                                                final boolean failOnDuplicateTns,
                                                                 final Functions.UnaryThrows<ResourceEntryHeader,Collection<ResourceEntryHeader>,IOException> entrySelector ) {
         return new ResourceDocumentResolverSupport(){
             @Override
@@ -662,7 +661,7 @@ class GlobalResourceImportContext {
                                 }
                             }
 
-                            if ( resourceDocument == null ) {
+                            if ( resourceDocument == null && failOnDuplicateTns ) {
                                 final Set<String> uris = Functions.reduce( headers, new TreeSet<String>(), new Functions.Binary<Set<String>,Set<String>,ResourceEntryHeader>(){
                                     @Override
                                     public Set<String> call( final Set<String> uris, final ResourceEntryHeader resourceEntryHeader ) {
@@ -770,7 +769,7 @@ class GlobalResourceImportContext {
         // Build an import option aware resolver
         return new ResourceDocumentResolverSupport(){
             private final ResourceType resourceType = type;
-            private final ResourceDocumentResolver resourceEntityResolver = buildResourceEntryResolver( resourceAdmin, entitySelector );
+            private final ResourceDocumentResolver resourceEntityResolver = buildResourceEntryResolver( resourceAdmin, false, entitySelector );
             private final ResourceDocumentResolver externalResolver = GlobalResourceImportContext.this.getResolver( externalResolvers );
             private final ResourceDocumentResolver fullResolver = GlobalResourceImportContext.this.getResolver( Arrays.asList( resourceEntityResolver, externalResolver ) );
             private final ChoiceSelector choiceSelector = selector;
@@ -1189,8 +1188,6 @@ class GlobalResourceImportContext {
     }
 
     //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger( GlobalResourceImportContext.class.getName() );
 
     private List<ResourceInputSource> resourceInputSources = Collections.emptyList();
     private Collection<ResourceHolder> currentResourceHolders = Collections.emptyList();
