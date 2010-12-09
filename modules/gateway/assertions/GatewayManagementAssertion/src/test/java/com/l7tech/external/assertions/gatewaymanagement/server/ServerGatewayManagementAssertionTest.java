@@ -51,6 +51,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.server.transport.jms.JmsConnectionManagerStub;
 import com.l7tech.server.transport.jms.JmsEndpointManagerStub;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
@@ -249,7 +250,42 @@ public class ServerGatewayManagementAssertionTest {
         final Element subcode = XmlUtil.findExactlyOneChildElementByName(code, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Subcode");
         final Element value = XmlUtil.findExactlyOneChildElementByName(subcode, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Value");
 
-        assertEquals("SOAP Fault value", "wsman:InvalidSelectors", XmlUtil.getTextValue(value));    }
+        assertEquals("SOAP Fault value", "wsman:InvalidSelectors", XmlUtil.getTextValue(value));
+    }
+
+    @BugNumber(9585)
+    @Test
+    public void testGetInvalidOperationTimeout() throws Exception {
+        final String message =
+                "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\" \n" +
+                "            xmlns:a=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\" \n" +
+                "            xmlns:w=\"http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd\">\n" +
+                "  <s:Header>\n" +
+                "    <a:MessageID>uuid:4ED2993C-4339-4E99-81FC-C2FD3812781A</a:MessageID> \n" +
+                "    <a:To>http://127.0.0.1:8080/wsman</a:To> \n" +
+                "    <a:ReplyTo> \n" +
+                "      <a:Address s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</a:Address> \n" +
+                "    </a:ReplyTo> \n" +
+                "    <a:Action s:mustUnderstand=\"true\">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</a:Action> \n" +
+                "    <w:ResourceURI s:mustUnderstand=\"true\">http://ns.l7tech.com/2010/04/gateway-management/services</w:ResourceURI> \n" +
+                "    <w:SelectorSet>\n" +
+                "      <w:Selector Name=\"id\">1</w:Selector> \n" +
+                "    </w:SelectorSet>\n" +
+                "    <w:OperationTimeout>10</w:OperationTimeout> \n" +
+                "  </s:Header>\n" +
+                "  <s:Body/> \n" +
+                "</s:Envelope>";
+
+        final Document result = processRequest( "http://schemas.xmlsoap.org/ws/2004/09/transfer/Get", message );
+
+        final Element soapBody = SoapUtil.getBodyElement(result);
+        final Element soapFault = XmlUtil.findExactlyOneChildElementByName(soapBody, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Fault");
+        final Element code = XmlUtil.findExactlyOneChildElementByName(soapFault, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Code");
+        final Element subcode = XmlUtil.findExactlyOneChildElementByName(code, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Subcode");
+        final Element value = XmlUtil.findExactlyOneChildElementByName(subcode, SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, "Value");
+
+        assertEquals("SOAP Fault value", "wsman:SchemaValidationError", XmlUtil.getTextValue(value));
+    }
 
     @Test
     public void testCreateClusterProperty() throws Exception {

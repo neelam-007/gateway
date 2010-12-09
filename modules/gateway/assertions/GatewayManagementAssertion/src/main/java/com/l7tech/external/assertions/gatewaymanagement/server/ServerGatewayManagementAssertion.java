@@ -22,6 +22,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.sun.ws.management.InternalErrorFault;
 import com.sun.ws.management.Management;
+import com.sun.ws.management.SchemaValidationErrorFault;
 import com.sun.ws.management.addressing.Addressing;
 import com.sun.ws.management.identify.Identify;
 import com.sun.ws.management.server.HandlerContext;
@@ -38,6 +39,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xmlsoap.schemas.ws._2004._08.addressing.EndpointReferenceType;
 
 import javax.servlet.http.HttpServletResponse;
@@ -128,13 +130,18 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
                     Management request = ensureSOAPFormat(managementRequest);
 
                     try {
+                        validateManagementHeaders( request );
                         validateAddressing( request );
                         response = processForIdentify( request );
                     } catch (Throwable th) {
                         if ( th instanceof AssertionStatusException ) throw (AssertionStatusException) th;
                         try {
                             Management managementResponse = new Management();
-                            managementResponse.setFault((InternalErrorFault)new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(th), null, ExceptionUtils.getDebugException(th), null)).initCause(th));
+                            if ( th instanceof SchemaValidationException )  {
+                                managementResponse.setFault((SchemaValidationErrorFault)new SchemaValidationErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(th), null, ExceptionUtils.getDebugException(th), null)).initCause(th));
+                            } else {
+                                managementResponse.setFault((InternalErrorFault)new InternalErrorFault(SOAP.createFaultDetail(ExceptionUtils.getMessage(th), null, ExceptionUtils.getDebugException(th), null)).initCause(th));
+                            }
                             response = managementResponse;
                         } catch ( Exception e ) {
                             throw ExceptionUtils.wrap( e );
@@ -282,6 +289,27 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
     }
 
     /**
+     * Validate management headers early by accessing them, we'll handle
+     * this error so we don't return a generic fault.
+     */
+    private void validateManagementHeaders( final Management request ) throws SOAPException, JAXBException, SchemaValidationException {
+        try {
+            request.getTimeout();
+            request.getResourceURI();
+            request.getOptions();
+            request.getSelectors();
+            request.getMaxEnvelopeSize();
+            request.getLocale();
+        } catch ( JAXBException e ) {
+            if ( ExceptionUtils.causedBy( e, SAXParseException.class )) {
+                throw new SchemaValidationException( ExceptionUtils.getMessage(e), e);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    /**
      * Wiseman supports async messages but we don't, so fail if the response
      * is not the anonymous address.
      */
@@ -348,5 +376,11 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         } else {
             response.initialize( ContentTypeHeader.SOAP_1_2_DEFAULT, responseData );
         }
-    }    
+    }
+
+    private static class SchemaValidationException extends Exception {
+        private SchemaValidationException( final String message, final Throwable cause ) {
+            super( message, cause );
+        }
+    }
 }
