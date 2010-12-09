@@ -338,7 +338,7 @@ public class RstSoapMessageProcessor {
                         parameters.put(HAS_KEY_SIZE, "true");
                         parameters.put(KEY_SIZE, keySize);
                     } catch (NumberFormatException e) {
-                        parameters.put(ERROR,  "The key size (" + keySize + ") in the RequestSecurityToken element is not an integer.");
+                        parameters.put(ERROR,  "The key size (" + keySize + ") in the RequestSecurityToken element is invalid.");
                         return parameters;
                     }
                 }
