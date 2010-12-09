@@ -1,13 +1,8 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.policy.SsmPolicyVariableUtils;
-import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gui.MaxLengthDocument;
-import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.CreateSecurityContextToken;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
@@ -15,7 +10,6 @@ import com.l7tech.util.ValidationUtils;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.text.JTextComponent;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -146,6 +140,7 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
                 boolean defaultSelected = useSystemDefaultCheckBox.isSelected();
                 lifetimeTextField.setEnabled(! defaultSelected);
                 lifetimeUnitComboBox.setEnabled(! defaultSelected);
+                enableOrDisableOkButton();
             }
         });
 
@@ -216,6 +211,4 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
     private void onCancel() {
         dispose();
     }
-
-
 }
