@@ -1333,7 +1333,7 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                 } else {
                     Map<String,SchemaHandle> dependencyMap = includes.contains(systemId) ? directIncludes : directImports;
                     try {
-                        return schemaSourceTransformerRef.get().makeLsInput(resolveSchema( audit, namespaceURI, systemId, baseURI, seenSystemIds, dependencyMap ));
+                        return schemaSourceTransformerRef.get().makeLsInput(resolveSchema( audit, namespaceURI, systemId, baseURI, seenSystemIds, dependencyMap, !isRemoteSource(source.getResolverId()) ));
                     } catch (IOException e) {
                         throw new UnresolvableException(e, describeResource(baseURI, systemId, publicId, namespaceURI));
                     } catch (SAXException e) {
@@ -1387,13 +1387,14 @@ public class SchemaManagerImpl implements ApplicationListener, SchemaManager, Sc
                                         final String systemId,
                                         final String baseURI,
                                         final Set<String> seenSystemIds,
-                                        final Map<String, SchemaHandle> dependencyMap ) throws IOException, SAXException {
+                                        final Map<String, SchemaHandle> dependencyMap,
+                                        final boolean remoteForbidden ) throws IOException, SAXException {
         SchemaSource source = null;
         if ( systemId != null ) {
-            source = getSchemaSourceForUri(audit, baseURI, systemId, false, false, false, false);
+            source = getSchemaSourceForUri(audit, baseURI, systemId, false, false, remoteForbidden, false);
         }
         if ( source == null ) {
-            source = getSchemaSourceForNamespace( audit, baseURI, namespaceURI, false, false, false);
+            source = getSchemaSourceForNamespace( audit, baseURI, namespaceURI, false, false, remoteForbidden);
         }
         assert source != null;
 
