@@ -454,7 +454,7 @@ public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRst
             if ( session.hasEntropy() ) {
                 String psha1AlgUri;
                 String wstNS = parameters.get(RstSoapMessageProcessor.WST_NS);  // wstNS must not be null, since it has been checked.
-                if (SoapConstants.WST_NAMESPACE1.equals(wstNS)) { // for WS-Trust pre 1.2
+                if (SoapConstants.WST_NAMESPACE.equals(wstNS)) { // for WS-Trust pre 1.2
                     psha1AlgUri = SoapConstants.P_SHA1_ALG_URI;
                 } else if (SoapConstants.WST_NAMESPACE2.equals(wstNS)) { // for WS-Trust 1.2
                     psha1AlgUri = SoapConstants.P_SHA1_ALG_URI2;
@@ -494,8 +494,8 @@ public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRst
                 String wsuId = "uuid-" + UUID.randomUUID().toString();
                 String secret = HexUtils.encodeBase64(session.getServerEntropy(), true);
                 String typeNonce = parameters.get(RstSoapMessageProcessor.WST_NS) + "/Nonce";
-                if ( SoapUtil.WST_NAMESPACE1.equals( parameters.get(RstSoapMessageProcessor.WST_NS) ) ) {
-                    typeNonce = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Nonce";
+                if ( SoapUtil.WST_NAMESPACE.equals( parameters.get(RstSoapMessageProcessor.WST_NS) ) ) {
+                    typeNonce = SoapConstants.WST_BINARY_SECRET_NONCE_TYPE_URI;
                 }
                 rstrBuilder
                     .append("<wst:Entropy>\n")

@@ -99,7 +99,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
             // todo: check if binary secret is only one element in entropy
             if (Boolean.parseBoolean(rstParameters.get(RstSoapMessageProcessor.HAS_BINARY_SECRET))) {
                 String type = rstParameters.get(RstSoapMessageProcessor.BINARY_SECRET_ATTR_TYPE);
-                if (type != null && type.endsWith("Nonce")) {
+                if (type != null && type.endsWith("Nonce")) { // Checking the type ending with "Nonce" is enough, since the URI of Nonce Type has been verified in RstSoapMessageProcessor.
                     String nonce = rstParameters.get(RstSoapMessageProcessor.BINARY_SECRET);
                     clientEntropy = HexUtils.decodeBase64(nonce);
                 }
@@ -157,7 +157,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
         if (wstNamespace == null) throw new IllegalArgumentException("WS-Trust Namespace must be required.");
 
         String wscNamespace;
-        if (SoapConstants.WST_NAMESPACE1.equals(wstNamespace)) {
+        if (SoapConstants.WST_NAMESPACE.equals(wstNamespace)) {
             wscNamespace = SoapConstants.WSSC_NAMESPACE;
         } else if (SoapConstants.WST_NAMESPACE2.equals(wstNamespace)) {
             wscNamespace = SoapConstants.WSSC_NAMESPACE2;

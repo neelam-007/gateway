@@ -98,13 +98,12 @@ public class SoapConstants {
         WSC_RSTR_CANCEL_ACTION2,
     });
 
-    public static final String WST_NAMESPACE1 = "http://schemas.xmlsoap.org/ws/2004/04/trust";
-
+    public static final String WST_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/trust";
     public static final String WST_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2005/02/trust"; // FIM
     public static final String WST_NAMESPACE3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512";
     public static final String WST_NAMESPACE4 = "http://docs.oasis-open.org/ws-sx/ws-trust/200802";
     public static final String[] WST_NAMESPACE_ARRAY = {
-        WST_NAMESPACE1,
+        WST_NAMESPACE,
         WST_NAMESPACE2,   // Seen in Tivoli Fim example messages
         WST_NAMESPACE3,
         WST_NAMESPACE4,
@@ -143,6 +142,40 @@ public class SoapConstants {
         WST_RST_CANCEL_REQUEST_TYPE,
         WST_RST_CANCEL_REQUEST_TYPE2,
     });
+
+    public static final String WST_BINARY_SECRET_NONCE_TYPE = "Nonce";
+
+    public static final String WST_BINARY_SECRET_NONCE_TYPE_URI = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Nonce";
+    public static final String WST_BINARY_SECRET_NONCE_TYPE_URI2 = "http://schemas.xmlsoap.org/ws/2005/02/trust/Nonce";
+    public static final String WST_BINARY_SECRET_NONCE_TYPE_URI3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Nonce";
+    public static final List<String> WST_BINARY_SECRET_NONCE_TYPE_URI_LIST = Arrays.asList(new String[] {
+        WST_BINARY_SECRET_NONCE_TYPE_URI,
+        WST_BINARY_SECRET_NONCE_TYPE_URI2,
+        WST_BINARY_SECRET_NONCE_TYPE_URI3
+    });
+
+    public static final String WST_BINARY_SECRET_ASYMMETRIC_KEY_TYPE = "AsymmetricKey";
+
+    public static final String WST_BINARY_SECRET_ASYMMETRIC_KEY_TYPE_URI = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/AsymmetricKey";
+    public static final String WST_BINARY_SECRET_ASYMMETRIC_KEY_TYPE_URI2 = "http://schemas.xmlsoap.org/ws/2005/02/trust/AsymmetricKey";
+    public static final String WST_BINARY_SECRET_ASYMMETRIC_KEY_TYPE_URI3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/AsymmetricKey";
+    public static final List<String> WST_BINARY_SECRET_ASYMMETRIC_KEY_TYPE_URI_LIST = Arrays.asList(new String[] {
+        WST_BINARY_SECRET_ASYMMETRIC_KEY_TYPE_URI,
+        WST_BINARY_SECRET_ASYMMETRIC_KEY_TYPE_URI2,
+        WST_BINARY_SECRET_ASYMMETRIC_KEY_TYPE_URI3
+    });
+
+    public static final String WST_BINARY_SECRET_SYMMETRIC_KEY_TYPE = "SymmetricKey";
+    
+    public static final String WST_BINARY_SECRET_SYMMETRIC_KEY_TYPE_URI = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/SymmetricKey";
+    public static final String WST_BINARY_SECRET_SYMMETRIC_KEY_TYPE_URI2 = "http://schemas.xmlsoap.org/ws/2005/02/trust/SymmetricKey";
+    public static final String WST_BINARY_SECRET_SYMMETRIC_KEY_TYPE_URI3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512/SymmetricKey";
+    public static final List<String> WST_BINARY_SECRET_SYMMETRIC_KEY_TYPE_URI_LIST = Arrays.asList(new String[] {
+        WST_BINARY_SECRET_SYMMETRIC_KEY_TYPE_URI,
+        WST_BINARY_SECRET_SYMMETRIC_KEY_TYPE_URI2,
+        WST_BINARY_SECRET_SYMMETRIC_KEY_TYPE_URI3
+    });
+
     
     public static final String WST_REQUESTSECURITYTOKEN = "RequestSecurityToken";
     public static final String WST_TOKENTYPE = "TokenType";

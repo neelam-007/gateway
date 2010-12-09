@@ -289,16 +289,16 @@ public class ServerBuildRstrSoapResponseTest {
 
             // Test supported ws-trust versions and that they default to the correct WSP / WSA versions
             final Map<String,String> trustToPolicyNsMap = new HashMap<String,String>(){{
-                put( SoapConstants.WST_NAMESPACE1, SoapConstants.WSP_NAMESPACE );
+                put( SoapConstants.WST_NAMESPACE, SoapConstants.WSP_NAMESPACE );
                 put( SoapConstants.WST_NAMESPACE2, SoapConstants.WSP_NAMESPACE2 );
                 put( SoapConstants.WST_NAMESPACE3, SoapConstants.WSP_NAMESPACE2 );
             }};
             final Map<String,String> trustToAddressingNsMap = new HashMap<String,String>(){{
-                put( SoapConstants.WST_NAMESPACE1, SoapConstants.WSA_NAMESPACE );
+                put( SoapConstants.WST_NAMESPACE, SoapConstants.WSA_NAMESPACE );
                 put( SoapConstants.WST_NAMESPACE2, SoapConstants.WSA_NAMESPACE2 );
                 put( SoapConstants.WST_NAMESPACE3, SoapConstants.WSA_NAMESPACE_10 );
             }};
-            for ( final String trustUri : Arrays.asList( SoapConstants.WST_NAMESPACE1, SoapConstants.WST_NAMESPACE2, SoapConstants.WST_NAMESPACE3 ) ) {
+            for ( final String trustUri : Arrays.asList( SoapConstants.WST_NAMESPACE, SoapConstants.WST_NAMESPACE2, SoapConstants.WST_NAMESPACE3 ) ) {
                 doNamespaceTest( false, token, "http://docs.oasis-open.org/ws-sx/ws-trust/200512", trustUri, trustToPolicyNsMap.get(trustUri), trustToAddressingNsMap.get(trustUri) );
             }
         }

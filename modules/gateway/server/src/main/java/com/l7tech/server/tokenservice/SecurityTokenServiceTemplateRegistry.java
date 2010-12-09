@@ -102,7 +102,7 @@ public class SecurityTokenServiceTemplateRegistry implements InitializingBean, D
     }
 
     private void initialize() {
-        wsTrustNS_WSDL.put(SoapConstants.WST_NAMESPACE1, "ws-trust-200404-1.1.wsdl");
+        wsTrustNS_WSDL.put(SoapConstants.WST_NAMESPACE, "ws-trust-200404-1.1.wsdl");
         wsTrustNS_WSDL.put(SoapConstants.WST_NAMESPACE2, "ws-trust-200502-1.2.wsdl");
         wsTrustNS_WSDL.put(SoapConstants.WST_NAMESPACE3, "ws-trust-200512-1.3.wsdl");
         wsTrustNS_WSDL.put(SoapConstants.WST_NAMESPACE4, "ws-trust-200802-1.4.wsdl");

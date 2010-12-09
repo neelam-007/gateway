@@ -60,14 +60,14 @@ public class RstSoapMessageProcessor {
     private static final  Map<String,String> trustToAddressingNsMap;
     static {
         final HashMap<String,String> trustMap = new HashMap<String,String>();
-        trustMap.put( SoapConstants.WST_NAMESPACE1, SoapConstants.WSP_NAMESPACE );
+        trustMap.put( SoapConstants.WST_NAMESPACE, SoapConstants.WSP_NAMESPACE );
         trustMap.put( SoapConstants.WST_NAMESPACE2, SoapConstants.WSP_NAMESPACE2 );
         trustMap.put( SoapConstants.WST_NAMESPACE3, SoapConstants.WSP_NAMESPACE2 );
         trustMap.put( SoapConstants.WST_NAMESPACE4, SoapConstants.WSP_NAMESPACE2 );
         trustToPolicyNsMap = Collections.unmodifiableMap( trustMap );
 
         final HashMap<String,String> addressingMap = new HashMap<String,String>();
-        addressingMap.put( SoapConstants.WST_NAMESPACE1, SoapConstants.WSA_NAMESPACE );
+        addressingMap.put( SoapConstants.WST_NAMESPACE, SoapConstants.WSA_NAMESPACE );
         addressingMap.put( SoapConstants.WST_NAMESPACE2, SoapConstants.WSA_NAMESPACE2 );
         addressingMap.put( SoapConstants.WST_NAMESPACE3, SoapConstants.WSA_NAMESPACE_10 );
         addressingMap.put( SoapConstants.WST_NAMESPACE4, SoapConstants.WSA_NAMESPACE_10 );
@@ -205,7 +205,7 @@ public class RstSoapMessageProcessor {
                     !SoapConstants.WST_RST_ISSUE_ACTION_LIST.contains(actionValue) &&
                     !SoapConstants.WSC_RST_CANCEL_ACTION_LIST.contains(actionValue)) {
                     
-                    parameters.put(ERROR, "The Action element of WS-Addressing has an unknown value in the SOAP Header.");
+                    parameters.put(ERROR, "The Action element of WS-Addressing is an unknown value in the SOAP Header.");
                     return parameters;
                 }
 
@@ -260,7 +260,7 @@ public class RstSoapMessageProcessor {
                     if (!SoapConstants.WSC_RST_SCT_TOKEN_TYPE_LIST.contains(tokenTypeValue) &&
                         !ArrayUtils.contains(SoapConstants.VALUETYPE_SAML_ARRAY, tokenTypeValue)) {
                         
-                        parameters.put(ERROR,  "The TokenType element in the RequestSecurityToken element has an unknown value in the SOAP Body.");
+                        parameters.put(ERROR,  "The TokenType element in the RequestSecurityToken element is an unknown value in the SOAP Body.");
                         return parameters;
                     }
 
@@ -291,7 +291,7 @@ public class RstSoapMessageProcessor {
                 if ((isForIssuance && !SoapConstants.WST_RST_ISSUE_REQUEST_TYPE_LIST.contains(requestTypeValue)) ||
                     (!isForIssuance && !SoapConstants.WST_RST_CANCEL_REQUEST_TYPE_LIST.contains(requestTypeValue))) {
 
-                    parameters.put(ERROR,  "The RequestType element in the RequestSecurityToken element has an unknown value in the SOAP Body.");
+                    parameters.put(ERROR,  "The RequestType element in the RequestSecurityToken element is an unknown value in the SOAP Body.");
                     return parameters;
                 }
 
@@ -313,7 +313,33 @@ public class RstSoapMessageProcessor {
                 if (binarySecretEl != null) {
                     parameters.put(HAS_BINARY_SECRET, "true"); // "true" means there exists an BinarySecret element.
                     parameters.put(BINARY_SECRET, DomUtils.getTextValue(binarySecretEl));
-                    parameters.put(BINARY_SECRET_ATTR_TYPE, binarySecretEl.getAttribute(SoapUtil.BINARY_SECRET_ATTR_TYPE));
+
+                    String valueOfTypeAttr = binarySecretEl.getAttribute(SoapUtil.BINARY_SECRET_ATTR_TYPE);
+                    if (valueOfTypeAttr != null) {
+                        if (valueOfTypeAttr.trim().isEmpty()) {
+                            parameters.put(ERROR,  "The URI of the attribute 'Type' is empty in the BinarySecret element.");
+                            return parameters;
+                        } else if (valueOfTypeAttr.contains(SoapConstants.WST_BINARY_SECRET_NONCE_TYPE)) {
+                            if (! SoapConstants.WST_BINARY_SECRET_NONCE_TYPE_URI_LIST.contains(valueOfTypeAttr)) {
+                                parameters.put(ERROR,  "The URI of the attribute 'Type' for Nonce is an unknown value in the BinarySecret element.");
+                                return parameters;
+                            }
+                        } else if (valueOfTypeAttr.endsWith(SoapConstants.WST_BINARY_SECRET_ASYMMETRIC_KEY_TYPE)) {
+                            if (! SoapConstants.WST_BINARY_SECRET_ASYMMETRIC_KEY_TYPE_URI_LIST.contains(valueOfTypeAttr)) {
+                                parameters.put(ERROR,  "The URI of the attribute 'Type' for AsymmetricKey is an unknown value in the BinarySecret element.");
+                                return parameters;
+                            }
+                        } else if (valueOfTypeAttr.endsWith(SoapConstants.WST_BINARY_SECRET_SYMMETRIC_KEY_TYPE)) {
+                            if (! SoapConstants.WST_BINARY_SECRET_SYMMETRIC_KEY_TYPE_URI_LIST.contains(valueOfTypeAttr)) {
+                                parameters.put(ERROR,  "The URI of the attribute 'Type' for SymmetricKey is an unknown value in the BinarySecret element.");
+                                return parameters;
+                            }
+                        }  else {
+                            parameters.put(ERROR,  "The attribute 'Type' in the BinarySecret element is none of Nonce, AsymmetricKey, and SymmetricKey.");
+                            return parameters;
+                        }
+                    }
+                    parameters.put(BINARY_SECRET_ATTR_TYPE, valueOfTypeAttr);
                 }
             } else {
                 parameters.put(HAS_ENTROPY, "false");
@@ -387,7 +413,7 @@ public class RstSoapMessageProcessor {
                 String valueTypeValue = refEl.getAttribute(SoapUtil.WSSE_REFERENCE_ATTR_VALUE_TYPE);
                 if (valueTypeValue != null && !valueTypeValue.trim().isEmpty()) {
                     if (! SoapConstants.WSC_RST_SCT_TOKEN_TYPE_LIST.contains(valueTypeValue)) {
-                        parameters.put(ERROR,  "The ValueType attribute in the Reference element has an unknown value in the SOAP Body.");
+                        parameters.put(ERROR,  "The ValueType attribute in the Reference element is an unknown value in the SOAP Body.");
                         return parameters;
                     }
 

@@ -116,13 +116,13 @@ public class ServerCreateSecurityContextTokenTest {
     public void testIssuedTokenVersion() throws Exception {
         // WS-SC map
         final Map<String,String> secureConversationNsMap = new HashMap<String,String>(){{
-            put( SoapConstants.WST_NAMESPACE1, "http://schemas.xmlsoap.org/ws/2004/04/sc" );
+            put( SoapConstants.WST_NAMESPACE, "http://schemas.xmlsoap.org/ws/2004/04/sc" );
             put( SoapConstants.WST_NAMESPACE2, "http://schemas.xmlsoap.org/ws/2005/02/sc" );
             put( SoapConstants.WST_NAMESPACE3, "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512" );
         }};
         
         // Test supported ws-trust versions
-        for ( final String trustUri : Arrays.asList( SoapConstants.WST_NAMESPACE1, SoapConstants.WST_NAMESPACE2, SoapConstants.WST_NAMESPACE3 ) ) {
+        for ( final String trustUri : Arrays.asList( SoapConstants.WST_NAMESPACE, SoapConstants.WST_NAMESPACE2, SoapConstants.WST_NAMESPACE3 ) ) {
             doCreateContext( false, 0, new Functions.Unary<String,String>(){
                 @Override
                 public String call( final String s ) {
