@@ -7,11 +7,14 @@ import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.CreateSecurityContextToken;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
@@ -30,10 +33,10 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
     private JButton cancelButton;
     private JFormattedTextField lifetimeTextField;
     private JComboBox lifetimeUnitComboBox;
-    private JTextField varPrefixTextField;
-    private JLabel varPrefixStatusLabel;
     private JCheckBox useSystemDefaultCheckBox;
     private JComboBox keySizeComboBox;
+    private JPanel varPrefixPanel;
+    private TargetVariablePanel varPrefixTextField;
 
     private CreateSecurityContextToken assertion;
     private TimeUnit oldTimeUnit;
@@ -67,6 +70,17 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
         getRootPane().setDefaultButton(okButton);
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
+
+
+        varPrefixTextField = new TargetVariablePanel();
+        varPrefixPanel.setLayout(new BorderLayout());
+        varPrefixPanel.add(varPrefixTextField, BorderLayout.CENTER);
+        varPrefixTextField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                enableOrDisableOkButton();
+            }
+        });
 
         okButton.addActionListener(new ActionListener() {
             @Override
@@ -135,39 +149,16 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
             }
         });
 
-        varPrefixTextField.setDocument(new MaxLengthDocument(128));
-        TextComponentPauseListenerManager.registerPauseListener(
-            varPrefixTextField,
-            new PauseListener() {
-                @Override
-                public void textEntryPaused(JTextComponent component, long msecs) {
-                    if(validateVariablePrefix()) {
-                        okButton.setEnabled(!isReadOnly());
-                    } else {
-                        okButton.setEnabled(false);
 
-                        // Check if the status label gets a long text to display.
-                        if (varPrefixStatusLabel.getMinimumSize().width + 30 > mainPanel.getMinimumSize().width) {
-                            setSize(varPrefixStatusLabel.getMinimumSize().width + 30, getSize().height);
-                        }
-                    }
-                }
-
-                @Override
-                public void textEntryResumed(JTextComponent component) {
-                    clearVariablePrefixStatus();
-                }
-            },
-            500
-        );
 
         modelToView();
     }
 
     private void modelToView() {
-        clearVariablePrefixStatus();
-        varPrefixTextField.setText(assertion.getVariablePrefix());
-        validateVariablePrefix();
+
+        varPrefixTextField.setSuffixes(assertion.getVariableSuffixes());
+        varPrefixTextField.setVariable(assertion.getVariablePrefix());
+        varPrefixTextField.setAssertion(assertion);
 
         keySizeComboBox.setSelectedItem(Integer.toString(assertion.getKeySize()));
         if ( keySizeComboBox.getSelectedItem() == null ) {
@@ -203,7 +194,7 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
             assertion.setKeySize(Integer.parseInt(value));
         }
 
-        String prefix = varPrefixTextField.getText();
+        String prefix = varPrefixTextField.getVariable();
         if (prefix == null || prefix.trim().isEmpty()) prefix = CreateSecurityContextToken.DEFAULT_VARIABLE_PREFIX;
         assertion.setVariablePrefix(prefix);
     }
@@ -214,7 +205,7 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
             ValidationUtils.isValidDouble(lifetimeTextField.getText().trim(), false,
                 CreateSecurityContextToken.MIN_SESSION_DURATION / multiplier, true, CreateSecurityContextToken.MAX_SESSION_DURATION / multiplier, true);
 
-        okButton.setEnabled(validateVariablePrefix() && validLifetime);
+        okButton.setEnabled(varPrefixTextField.isEntryValid() && validLifetime);
     }
 
     private void onOK() {
@@ -226,15 +217,5 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
         dispose();
     }
 
-    private void clearVariablePrefixStatus() {
-        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
-    }
 
-    private boolean validateVariablePrefix() {
-        return VariablePrefixUtil.validateVariablePrefix(
-            varPrefixTextField.getText(),
-            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
-            assertion.getVariableSuffixes(),
-            varPrefixStatusLabel);
-    }
 }

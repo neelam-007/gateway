@@ -8,10 +8,13 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.BuildRstrSoapResponse;
+import com.l7tech.policy.assertion.xmlsec.CreateSecurityContextToken;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.NumberFormatter;
@@ -37,10 +40,10 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
     private JCheckBox attachedRefCheckBox;
     private JCheckBox unattachedRefCheckBox;
     private JCheckBox keySizeCheckBox;
-    private JTextField varPrefixTextField;
     private JCheckBox appliesToCheckBox;
     private JTextField addressTextField;
-    private JLabel varPrefixStatusLabel;
+    private JPanel varPrefixPanel;
+    private TargetVariablePanel varPrefixTextField;
 
     private static final long MILLIS_100_YEARS = 100L * 365L * 86400L * 1000L;
 
@@ -76,6 +79,16 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         getRootPane().setDefaultButton(okButton);
         Utilities.centerOnScreen(this);
         Utilities.setEscKeyStrokeDisposes(this);
+
+        varPrefixTextField = new TargetVariablePanel();
+        varPrefixPanel.setLayout(new BorderLayout());
+        varPrefixPanel.add(varPrefixTextField, BorderLayout.CENTER);
+        varPrefixTextField.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                enableOrDisableOkButton();
+            }
+        });
 
         okButton.addActionListener(new ActionListener() {
             @Override
@@ -173,33 +186,6 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
                 oldTimeUnit = newTimeUnit;
             }
         });
-
-        varPrefixTextField.setDocument(new MaxLengthDocument(128));
-        TextComponentPauseListenerManager.registerPauseListener(
-            varPrefixTextField,
-            new PauseListener() {
-                @Override
-                public void textEntryPaused(JTextComponent component, long msecs) {
-                    if(validateVariablePrefix()) {
-                        okButton.setEnabled(!isReadOnly());
-                    } else {
-                        okButton.setEnabled(false);
-
-                        // Check if the status label gets a long text to display.
-                        if (varPrefixStatusLabel.getMinimumSize().width + 30 > mainPanel.getMinimumSize().width) {
-                            setSize(varPrefixStatusLabel.getMinimumSize().width + 30, getSize().height);
-                        }
-                    }
-                }
-
-                @Override
-                public void textEntryResumed(JTextComponent component) {
-                    clearVariablePrefixStatus();
-                }
-            },
-            500
-        );
-
         modelToView();
     }
 
@@ -220,9 +206,9 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
     }
 
     private void modelToView() {
-        clearVariablePrefixStatus();
-        varPrefixTextField.setText(assertion.getVariablePrefix());
-        validateVariablePrefix();
+        varPrefixTextField.setSuffixes(assertion.getVariableSuffixes());
+        varPrefixTextField.setVariable(assertion.getVariablePrefix());
+        varPrefixTextField.setAssertion(assertion);
 
         // Check if the response is for token issuance or token cancellation.
         if (assertion.isResponseForIssuance()) {
@@ -265,7 +251,8 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
     }
 
     private void viewToModel(BuildRstrSoapResponse assertion) {
-        String prefix = varPrefixTextField.getText();
+        String prefix = varPrefixTextField.getVariable();
+
         if (prefix == null || prefix.trim().isEmpty()) prefix = BuildRstrSoapResponse.DEFAULT_VARIABLE_PREFIX;
         assertion.setVariablePrefix(prefix);
 
@@ -302,7 +289,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
      */
     private void enableOrDisableOkButton() {
         // Check the variable prefix
-        boolean prefixOk = validateVariablePrefix();
+        boolean prefixOk = varPrefixTextField.isEntryValid();
         if (! prefixOk) {
             okButton.setEnabled(false);
             return;
@@ -353,15 +340,4 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
         dispose();
     }
 
-    private void clearVariablePrefixStatus() {
-        VariablePrefixUtil.clearVariablePrefixStatus(varPrefixStatusLabel);
-    }
-
-    private boolean validateVariablePrefix() {
-        return VariablePrefixUtil.validateVariablePrefix(
-            varPrefixTextField.getText(),
-            SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
-            assertion.getVariableSuffixes(),
-            varPrefixStatusLabel);
-    }
 }
