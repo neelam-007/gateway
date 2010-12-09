@@ -202,7 +202,7 @@ public class BootProcess
         try {
             ipAddress = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
-            auditor.logAndAudit(BootMessages.NO_IP, null, e);
+            auditor.logAndAudit(BootMessages.NO_DETECTED_LOCAL_IP, new String[] {InetAddressUtil.getLocalHostAddress()}, e);
             ipAddress = LOCALHOST_IP;
         }
 
