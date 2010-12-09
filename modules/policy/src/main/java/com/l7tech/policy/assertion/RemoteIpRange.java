@@ -57,7 +57,6 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
      * the start ip address of the range specified by this assertion
      */
     public void setStartIp(String startIp) {
-        validateRange(startIp, this.networkMask);
         this.startIp = startIp;
     }
 
@@ -73,7 +72,6 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
      * @param networkMask valid values are 0..32
      */
     public void setNetworkMask(int networkMask) {
-        validateRange(this.startIp, networkMask);
         this.networkMask = networkMask;
     }
 
@@ -161,19 +159,14 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
         } else return new String[] {ipSourceContextVariable};
     }
 
-    // - PRIVATE
-
     /**
      * @throws IllegalArgumentException if the startIp/networkPrefix combination are not a valid IPv4 or IPv6 address range.
      */
-    private static void validateRange(String startIp, int networkPrefix) {
+    public static void validateRange(String startIp, int networkPrefix) {
         String errMsg = null;
         String pattern = startIp + "/" + Integer.toString(networkPrefix);
 
-        if ("".equals(startIp)) {
-            if (networkPrefix < 0 || networkPrefix > IPV6_MAX_PREFIX)
-                errMsg = "Invalid network prefix: " + networkPrefix;
-        } else if (InetAddressUtil.isValidIpv4Pattern(pattern)) {
+        if (InetAddressUtil.isValidIpv4Pattern(pattern)) {
             if (networkPrefix < 0 || networkPrefix > IPV4_MAX_PREFIX)
                 errMsg = "Invalid IPv4 network prefix" + networkPrefix;
         } else if (InetAddressUtil.isValidIpv6Pattern(pattern)) {
@@ -187,7 +180,9 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
             throw new IllegalArgumentException(errMsg);
     }
 
-    private static final String DEFAULT_START_IP = ""; // 0.0.0.0 or 0:0:0:0:0:0:0:0 (match nothing)
+    // - PRIVATE
+
+    private static final String DEFAULT_START_IP = "192.168.1.0";
     private static final int DEFAULT_NETWORK_PREFIX = 24;
 
     private String startIp;

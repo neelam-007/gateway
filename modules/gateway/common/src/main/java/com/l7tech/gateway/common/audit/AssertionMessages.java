@@ -144,6 +144,7 @@ public class AssertionMessages extends Messages {
     public static final M IP_ACCEPTED            = m(4502, Level.FINEST,  "Requestor address {0} is accepted");
     public static final M IP_REJECTED            = m(4503, Level.INFO,    "Requestor address {0} is not allowed");
     public static final M IP_ADDRESS_UNAVAILABLE = m(4504, Level.WARNING, "Could not resolve a remote IP address from the context variable {0}.");
+    public static final M IP_INVALID_RANGE       = m(4505, Level.WARNING, "Invalid IP range configured: {0}.");
 
     // ServerSecureConversation messages
     public static final M SC_REQUEST_NOT_SOAP                     = m(4600, Level.INFO, "Request not SOAP; unable to check for WS-SecureConversation token");

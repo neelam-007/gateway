@@ -12,8 +12,6 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -37,6 +35,13 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        try {
+            RemoteIpRange.validateRange(assertion.getStartIp(), assertion.getNetworkMask());
+        } catch (IllegalArgumentException e) {
+            auditor.logAndAudit(AssertionMessages.IP_INVALID_RANGE, e.getMessage());
+            return AssertionStatus.FAILED;
+        }
+        
         String input;
         // get remote address
         if (assertion.getIpSourceContextVariable() == null) {
@@ -74,14 +79,7 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
     // - PACKAGE
 
     boolean assertAddress(InetAddress addressToCheck) {
-        String startIp = assertion.getStartIp();
-        if (startIp == null || startIp.isEmpty()) {
-            if (addressToCheck instanceof Inet4Address)
-                startIp = InetAddressUtil.getAnyHostAddress4();
-            else if (addressToCheck instanceof Inet6Address)
-                startIp = InetAddressUtil.getAnyHostAddress6();
-        }
-        return InetAddressUtil.patternMatchesAddress(startIp + "/" + assertion.getNetworkMask(), addressToCheck) ^ ! assertion.isAllowRange();
+        return InetAddressUtil.patternMatchesAddress(assertion.getStartIp() + "/" + assertion.getNetworkMask(), addressToCheck) ^ ! assertion.isAllowRange();
     }
 
     // - PRIVATE
