@@ -74,32 +74,23 @@ public class SecureConversationContextManager implements SecurityContextFinder {
                 sessions.remove(identifier);
             }
         }
-        // Comment: if output is null, it cannot tell if the session does not exist or is expired.
         return output;
     }
 
-    public boolean isExpiredSession(String identifier) throws NoSuchSessionException {
-        synchronized( sessions ) {
-            // Get session
-            SecureConversationSession session = (SecureConversationSession) sessions.get(identifier);
-
-            // Check if it exits or not
-            if (session == null) throw new NoSuchSessionException("The session (identifier = " + identifier + ") does not exist.");
-
-            // Check if it is expired
-            return session.getExpiration() <= System.currentTimeMillis();
-        }
-    }
-
-    public void cancelSession(String identifier) throws NoSuchSessionException {
-        // Check session first
-        if (isExpiredSession(identifier)) {
-            throw new NoSuchSessionException("The session (identifier = " + identifier + ") is expired.");
-        }
+    /**
+     * Cancel the session for the given identifier.
+     *
+     * @param identifier The identifier for the session to cancel
+     * @return True if cancelled, false if the session was not found.
+     */
+    public boolean cancelSession( final String identifier ) {
+        final boolean cancelled;
 
         synchronized (sessions) {
-            sessions.remove(identifier);
+            cancelled = sessions.remove(identifier) != null;
         }
+        
+        return cancelled;
     }
 
     /**
@@ -148,7 +139,7 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         // make up a new session identifier
         final String sessionIdentifier = "http://www.layer7tech.com/uuid/" + randomUuid();
         if (sessionDuration <= 0) {
-            throw new IllegalArgumentException("Session duration must be greater than zero.");
+            throw new SessionCreationException("Session duration must be greater than zero.");
         }
         // generate the session key and server entropy (if required)
         final int keySizeInBytes = calculateKeySize( requestKeySize, namespace );

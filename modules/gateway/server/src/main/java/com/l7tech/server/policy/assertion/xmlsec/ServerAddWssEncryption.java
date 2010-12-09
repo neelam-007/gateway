@@ -206,6 +206,18 @@ public abstract class ServerAddWssEncryption<AT extends Assertion> extends Abstr
             this.recipientContext = recipientContext;
         }
 
+        public boolean isCertificate() {
+            return clientCert != null || signingSecurityToken instanceof X509SigningSecurityToken;
+        }
+
+        public X509Certificate getCertificate() {
+            return clientCert != null ?
+                    clientCert :
+                    signingSecurityToken instanceof X509SigningSecurityToken ?
+                            ((X509SigningSecurityToken)signingSecurityToken).getMessageSigningCertificate() : 
+                            null;
+        }
+
         public boolean hasEncryptionKey() {
             return clientCert != null || signingSecurityToken != null;    
         }

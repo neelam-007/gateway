@@ -18,7 +18,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NA
 /**
  * @author ghuang
  */
-public class BuildRstrSoapResponse extends MessageTargetableAssertion {
+public class BuildRstrSoapResponse extends MessageTargetableAssertion implements RequestIdentityTargetable, SecurityHeaderAddressable {
     public static final String DEFAULT_VARIABLE_PREFIX = "responseBuilder";
     public static final String VARIABLE_RSTR_RESPONSE = "rstrResponse";
     public static final String VARIABLE_WSA_NAMESPACE = "wsaNamespace";
@@ -41,6 +41,8 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
     private long lifetime = DEFAULT_LIFETIME; // Unit: milliseconds.
     private TimeUnit timeUnit = TimeUnit.MINUTES;
     private String variablePrefix = DEFAULT_VARIABLE_PREFIX;
+    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
+    private IdentityTarget identityTarget;
 
     public BuildRstrSoapResponse() {}
 
@@ -134,6 +136,28 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion {
 
     public void setVariablePrefix(String variablePrefix) {
         this.variablePrefix = (variablePrefix == null || variablePrefix.trim().isEmpty())? DEFAULT_VARIABLE_PREFIX : variablePrefix;
+    }
+
+    @Override
+    public XmlSecurityRecipientContext getRecipientContext() {
+        return recipientContext;
+    }
+
+    @Override
+    public void setRecipientContext( final XmlSecurityRecipientContext recipientContext ) {
+        this.recipientContext = recipientContext != null ?
+                recipientContext :
+                XmlSecurityRecipientContext.getLocalRecipient();
+    }
+
+    @Override
+    public IdentityTarget getIdentityTarget() {
+        return identityTarget;
+    }
+
+    @Override
+    public void setIdentityTarget( final IdentityTarget identityTarget ) {
+        this.identityTarget = identityTarget;
     }
 
     public String[] getVariableSuffixes() {

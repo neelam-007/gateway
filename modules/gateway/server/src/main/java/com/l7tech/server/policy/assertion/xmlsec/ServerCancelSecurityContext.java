@@ -17,11 +17,9 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.server.secureconversation.NoSuchSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.util.RstSoapMessageProcessor;
-import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 
@@ -61,29 +59,24 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
 
         // At this point, everything is fine since the validation is done.  It is ready to cancel a SecurityContextToken.
-        String targetIdentifier = rstParameters.get(RstSoapMessageProcessor.REFERENCE_ATTR_URI);
-        try {
-            switch ( assertion.getRequiredAuthorization() ) {
-                case USER:
-                    final SecureConversationSession session = secureConversationContextManager.getSession( targetIdentifier );
-                    if ( session != null ) {
-                        checkAuthenticated( authContext, session.getUsedBy() );
-                    }
-                    break;
-                case TOKEN:
-                    checkAuthenticationToken( authContext, targetIdentifier );
-                    break;
-            }
+        final String targetIdentifier = rstParameters.get(RstSoapMessageProcessor.REFERENCE_ATTR_URI);
+        switch ( assertion.getRequiredAuthorization() ) {
+            case USER:
+                final SecureConversationSession session = secureConversationContextManager.getSession( targetIdentifier );
+                if ( session != null ) {
+                    checkAuthenticated( authContext, session.getUsedBy() );
+                }
+                break;
+            case TOKEN:
+                checkAuthenticationToken( authContext, targetIdentifier );
+                break;
+        }
 
-            secureConversationContextManager.cancelSession(targetIdentifier);
-        } catch (NoSuchSessionException e) {
-            if (assertion.isFailIfNotExist()) {
-                auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, ExceptionUtils.getMessage(e));
-                return AssertionStatus.BAD_REQUEST;
-            } else {
-                logger.warning(e.getMessage());
-            }
-        } 
+        if ( !secureConversationContextManager.cancelSession(targetIdentifier) &&
+             assertion.isFailIfNotExist() ) {
+            auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, "Session not found '"+targetIdentifier+"'");
+            return AssertionStatus.BAD_REQUEST;
+        }
 
         return AssertionStatus.NONE;
     }

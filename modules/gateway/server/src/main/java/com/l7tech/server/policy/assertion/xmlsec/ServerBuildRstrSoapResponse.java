@@ -8,17 +8,13 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.BuildRstrSoapResponse;
-import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.xml.XencUtil;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.secureconversation.NoSuchSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.util.RstSoapMessageProcessor;
@@ -33,13 +29,12 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * @author: ghuang
  */
-public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServerAssertion<BuildRstrSoapResponse> {
+public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRstrSoapResponse> {
     private static final Logger logger = Logger.getLogger(ServerBuildRstrSoapResponse.class.getName());
 
     private static final String IS_SCT = "token.info.is.sct";
@@ -55,7 +50,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
     public ServerBuildRstrSoapResponse( final BuildRstrSoapResponse assertion,
                                         final BeanFactory factory ) {
-        super(assertion, assertion);
+        super(assertion, assertion, assertion, assertion, logger);
         auditor = factory instanceof ApplicationContext?
                 new Auditor(this, (ApplicationContext)factory, logger) :
                 new LogOnlyAuditor(logger);
@@ -87,25 +82,12 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         // At this point, everything is fine since the validation is done.  It is ready to generate the RSTR response content depending on Binding type such as Issuance Binding or Cancel Binding.
         String rstrXml;
         final Map<String, String> tokenInfo = new HashMap<String, String>();
-        try {
-            if (assertion.isResponseForIssuance()) {
-                final AssertionStatus status = getTokenInfo(context, tokenInfo, rstParameters);
-                if (status != AssertionStatus.NONE) return status;
-                rstrXml = generateRstrElement(context, message, rstParameters, tokenInfo);
-            } else {
-                rstrXml = generateRstrElement(context, message, rstParameters, null); // no need of token info
-            }
-        } catch (NoSuchSessionException e) {
-            RstSoapMessageProcessor.generateSoapFaultResponse(
-                context,
-                rstParameters,
-                getRstrResponseVariable(),
-                RstSoapMessageProcessor.WST_FAULT_CODE_EXPIRED_DATA,
-                ExceptionUtils.getMessage(e)
-            );
-
-            auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, ExceptionUtils.getMessage(e));
-            return AssertionStatus.BAD_REQUEST;
+        if (assertion.isResponseForIssuance()) {
+            final AssertionStatus status = getTokenInfo(context, tokenInfo, rstParameters);
+            if (status != AssertionStatus.NONE) return status;
+            rstrXml = generateRstrElement(context, rstParameters, tokenInfo);
+        } else {
+            rstrXml = generateRstrElement(context, rstParameters, null); // no need of token info
         }
 
         // Build a RSTR SOAP response message and set the context variable for rstrResponse
@@ -313,20 +295,14 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
     /**
      * Generate a RequestSecurityTokenResponse element
-     * @param context
-     * @param targetMessage
-     * @param parameters
-     * @param tokenInfo
-     * @return
      */
-    private String generateRstrElement(PolicyEnforcementContext context,
-                                       Message targetMessage,
-                                       Map<String, String> parameters,
-                                       Map<String, String> tokenInfo) throws NoSuchSessionException {
-        StringBuilder rstrBuilder = new StringBuilder();
+    private String generateRstrElement( final PolicyEnforcementContext context,
+                                        final Map<String, String> parameters,
+                                        final Map<String, String> tokenInfo ) throws PolicyAssertionException {
+        final StringBuilder rstrBuilder = new StringBuilder();
 
         // Build RequestSecurityTokenResponse
-        String wsuNS = parameters.get(RstSoapMessageProcessor.WSU_NS) == null? SoapConstants.WSU_NAMESPACE : parameters.get(RstSoapMessageProcessor.WSU_NS);
+        final String wsuNS = parameters.get(RstSoapMessageProcessor.WSU_NS) == null? SoapConstants.WSU_NAMESPACE : parameters.get(RstSoapMessageProcessor.WSU_NS);
         rstrBuilder.append("<wst:RequestSecurityTokenResponse ");
 
         // Check if the response message is for Token Cancel Binding.
@@ -347,10 +323,10 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         }
 
         // Get the token xml
-        String securityTokenXml = tokenInfo.get(TOKEN_XML);
+        final String securityTokenXml = tokenInfo.get(TOKEN_XML);
 
         // Build TokenType
-        boolean hasTokeType = Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_TOKEN_TYPE));
+        final boolean hasTokeType = Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_TOKEN_TYPE));
         if (hasTokeType) {
             rstrBuilder
                 .append("<wst:TokenType>")
@@ -365,15 +341,15 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
         // Build AppliesTo
         if (assertion.isIncludeAppliesTo()) {
-            String address = assertion.getAddressOfEPR();
+            final String address = assertion.getAddressOfEPR();
             if (address != null) {
-                String addressContent = TextUtils.escapeHtmlSpecialCharacters( // escape those special characters
+                final String addressContent = TextUtils.escapeHtmlSpecialCharacters( // escape those special characters
                     ExpandVariables.process(address, context.getVariableMap(variablesUsed, auditor), auditor)
                 );
 
                 if (assertion.isIncludeAppliesTo() && addressContent != null && !addressContent.trim().isEmpty()) {
-                    String wsaNS = RstSoapMessageProcessor.getWsaNamespace( parameters ); 
-                    String wspNS = RstSoapMessageProcessor.getWspNamespace( parameters );
+                    final String wsaNS = RstSoapMessageProcessor.getWsaNamespace( parameters );
+                    final String wspNS = RstSoapMessageProcessor.getWspNamespace( parameters );
                     rstrBuilder
                         .append("<wsp:AppliesTo xmlns:wsp=\"").append(wspNS).append("\" xmlns:wsa=\"").append(wsaNS).append("\">\n")
                         .append("<wsa:EndpointReference>\n")
@@ -385,7 +361,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         }
 
         // Get the type of the token issued
-        boolean isSCT = Boolean.parseBoolean(tokenInfo.get(IS_SCT));
+        final boolean isSCT = Boolean.parseBoolean(tokenInfo.get(IS_SCT));
 
         // Build RequestedAttachedReference including a SecurityTokenReference.
         String wsseNS = parameters.get(RstSoapMessageProcessor.WSSE_NS);
@@ -399,15 +375,15 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 .append("<wsse:SecurityTokenReference xmlns:wsse=\"").append(wsseNS).append("\">\n");
 
             if (isSCT) { // If it is for SecurityContextToken, then include a Reference element.
-                String sctWsuId = tokenInfo.get(SCT_WSU_ID);
+                final String sctWsuId = tokenInfo.get(SCT_WSU_ID);
                 rstrBuilder.append("<wsse:Reference URI=\"#").append(sctWsuId).append("\"");
                 if (hasTokeType) {
                     rstrBuilder.append(" ValueType=\"").append(parameters.get(RstSoapMessageProcessor.TOKEN_TYPE)).append("\"");
                 }
                 rstrBuilder.append("/>\n");
             } else { // If it is a SAML token, then include a KeyIdentifier.
-                String valueType = tokenInfo.get(SAML_VALUE_TYPE);
-                String assertionId = tokenInfo.get(SAML_ASSERTION_ID);
+                final String valueType = tokenInfo.get(SAML_VALUE_TYPE);
+                final String assertionId = tokenInfo.get(SAML_ASSERTION_ID);
 
                 rstrBuilder.append("<wsse:KeyIdentifier");
                 if (hasTokeType) {
@@ -427,7 +403,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 .append("<wsse:SecurityTokenReference xmlns:wsse=\"").append(wsseNS).append("\">\n");
 
             if (isSCT) { // If it is for SecurityContextToken, then include a Reference element.
-                String sctIdentifier = tokenInfo.get(SCT_IDENTIFIER);
+                final String sctIdentifier = tokenInfo.get(SCT_IDENTIFIER);
 
                 rstrBuilder.append("<wsse:Reference URI=\"").append(sctIdentifier).append("\"");
                 if (hasTokeType) {
@@ -435,8 +411,8 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 }
                 rstrBuilder.append("/>\n");
             } else { // If it is a SAML token, then include a KeyIdentifier.
-                String valueType = tokenInfo.get(SAML_VALUE_TYPE);
-                String assertionId = tokenInfo.get(SAML_ASSERTION_ID);
+                final String valueType = tokenInfo.get(SAML_VALUE_TYPE);
+                final String assertionId = tokenInfo.get(SAML_ASSERTION_ID);
 
                 rstrBuilder.append("<wsse:KeyIdentifier");
                 if (hasTokeType) {
@@ -450,18 +426,26 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         }
 
         // Build shared secret (Note: it is only for SCT and not for SAML token.)
-        String sessionId;
-        SecureConversationSession session = null;
-
+        final int sctKeySize;
         if (isSCT) {
             // Check if the session does exist and is not expired before using it.
-            sessionId = tokenInfo.get(SCT_IDENTIFIER);
-            if (scContextManager.isExpiredSession(sessionId)) {
-                throw new NoSuchSessionException("The session (identifier = " + sessionId + ") is expired.");
+            final String sessionId = tokenInfo.get(SCT_IDENTIFIER);
+            final SecureConversationSession session = scContextManager.getSession(sessionId);
+            final String message = "Session not found '"+sessionId+"'";
+            if ( session == null ) {
+                RstSoapMessageProcessor.generateSoapFaultResponse(
+                    context,
+                    parameters,
+                    getRstrResponseVariable(),
+                    RstSoapMessageProcessor.WST_FAULT_CODE_EXPIRED_DATA,
+                    message
+                );
+
+                auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, message);
+                throw new AssertionStatusException(AssertionStatus.FALSIFIED);    
             }
-            
-            //  The session validation is done, then get the session
-            session = scContextManager.getSession(sessionId);
+
+            sctKeySize = session.getKeySize();
 
             // Build RequestedProofToken
             rstrBuilder.append("<wst:RequestedProofToken>\n");
@@ -479,7 +463,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                 }
                 rstrBuilder.append("<wst:ComputedKey>").append(psha1AlgUri).append("</wst:ComputedKey>\n");
             } else {
-                X509Certificate clientCert = getClientCert(targetMessage);
+                final X509Certificate clientCert = getClientCertificate( context, parameters );
                 String secretXml;
                 try {
                     String keyEncAlg = Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_KEY_ENCRYPTION_ALGORITHM))?
@@ -489,7 +473,16 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                         produceEncryptedKeyXml(session.getSharedSecret(), clientCert, wsseNS, keyEncAlg) :
                         produceBinarySecretXml(session.getSharedSecret(), parameters.get(RstSoapMessageProcessor.WST_NS));
                 } catch (GeneralSecurityException e) {
-                    throw new RuntimeException("Cannot produce an EncryptedKey for shared secret in a RSTR element.", e);
+                    RstSoapMessageProcessor.generateSoapFaultResponse(
+                        context,
+                        parameters,
+                        getRstrResponseVariable(),
+                        RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
+                        "Request invalid"
+                    );
+
+                    auditor.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Response encryption failure"}, e);
+                    throw new AssertionStatusException(AssertionStatus.FAILED);
                 }
 
                 rstrBuilder.append(secretXml).append("\n");
@@ -510,6 +503,8 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
                     .append(secret).append("</wst:BinarySecret>\n")
                     .append("</wst:Entropy>\n");
             }
+        } else {
+            sctKeySize = 0;
         }
 
         // Build Lifetime
@@ -531,7 +526,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
         // Build KeySize (Note: this is only for SCT and not for SAML token.)
         if (isSCT && assertion.isIncludeKeySize()) {
-            rstrBuilder.append("<wst:KeySize>").append(session.getKeySize()).append("</wst:KeySize>\n");
+            rstrBuilder.append("<wst:KeySize>").append(sctKeySize).append("</wst:KeySize>\n");
         }
 
         // Finish up
@@ -540,28 +535,31 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
         return rstrBuilder.toString();
     }
 
-    private X509Certificate getClientCert(Message targetMessage) {
-        ProcessorResult wssOutput = targetMessage.getSecurityKnob().getProcessorResult();
-        if (wssOutput == null) return null;
-        
-        SecurityToken[] tokens = wssOutput.getXmlSecurityTokens();
-        X509Certificate clientCert = null;
+    private X509Certificate getClientCertificate( final PolicyEnforcementContext context,
+                                                  final Map<String, String> parameters ) throws PolicyAssertionException {
+        final EncryptionContext encryptionContext;
+        try {
+           encryptionContext = buildEncryptionContext( context );
+        } catch ( MultipleTokensException e ) {
+            RstSoapMessageProcessor.generateSoapFaultResponse(
+                context,
+                parameters,
+                getRstrResponseVariable(),
+                RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
+                "Request invalid"
+            );
 
-        for (SecurityToken token : tokens) {
-            if (token instanceof X509BinarySecurityTokenImpl) {
-                X509BinarySecurityTokenImpl x509token = (X509BinarySecurityTokenImpl) token;
-                if (x509token.isPossessionProved()) {
-                    if (clientCert != null) {
-                        String msg = "Request included more than one X509 security token whose key ownership was proven";
-                        logger.log(Level.WARNING, msg);
-                        throw new RuntimeException(msg);
-                    }
-                    clientCert = x509token.getCertificate();
-                }
-            }
+            auditor.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Response encryption token not found (multiple tokens)"}, e);
+            throw new AssertionStatusException( AssertionStatus.FALSIFIED);
         }
 
-        return clientCert;
+        return encryptionContext != null && encryptionContext.isCertificate() ? encryptionContext.getCertificate() : null;
+    }
+
+    @Override
+    protected boolean isResponse() {
+        // Assume we are always building a response message.
+        return true;
     }
 
     @Override
