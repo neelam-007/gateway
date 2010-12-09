@@ -534,9 +534,19 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     dynamicQCF.setEnabled(false);
                 }
             } else {
+                dynamicDestQueueName.setText(null);
+                dynamicReplyToName.setText(null);
+                dynamicJndiUrl.setText(null);
+                dynamicICF.setText(null);
+                dynamicQCF.setText(null);
                 Utilities.setEnabled(dynamicPropertiesPanel, false);
             }
         } else {
+            dynamicDestQueueName.setText(null);
+            dynamicReplyToName.setText(null);
+            dynamicJndiUrl.setText(null);
+            dynamicICF.setText(null);
+            dynamicQCF.setText(null);
             Utilities.setEnabled(dynamicPropertiesPanel, false);            
         }
     }
