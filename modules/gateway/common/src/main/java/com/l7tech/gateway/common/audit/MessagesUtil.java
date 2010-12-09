@@ -19,6 +19,6 @@ public class MessagesUtil {
     }
 
     public static AuditDetailMessage getAuditDetailMessageById(int id) {
-        return Messages.messagesById.get(id);
+        return Messages.getAuditDetailMessageById(id);
     }
 }

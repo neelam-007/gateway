@@ -5,6 +5,8 @@ package com.l7tech.gateway.common.audit;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 
 /**
@@ -35,7 +37,8 @@ public class Messages {
      */
     public static final String OVERRIDE_PREFIX = "auditmsg.override.";
 
-    static final Map<Integer, AuditDetailMessage> messagesById = new HashMap<Integer, AuditDetailMessage>();
+    private static final Map<Integer, AuditDetailMessage> messagesById = new HashMap<Integer, AuditDetailMessage>();
+    private static final ReadWriteLock messageLock = new ReentrantReadWriteLock(false);
 
     // must appear after the instantiation of messageById HaspMap.
     // NOTE: *_SEVERE is the same as *_WARNING since you should never log at SEVERE anything except "audits flushed"
@@ -48,6 +51,15 @@ public class Messages {
     public static final M EXCEPTION_INFO_WITH_MORE_INFO     = m(6, Level.INFO, "{0}. Exception caught! ");
     // MAX -                                                  m(0099)
 
+    static AuditDetailMessage getAuditDetailMessageById(int id) {
+        messageLock.readLock().lock();
+        try {
+            return Messages.messagesById.get(id);
+        } finally {
+            messageLock.readLock().unlock();
+        }
+    }
+
     protected Messages() { }
 
     protected static M m(int id, Level level, String msg) {
@@ -56,7 +68,13 @@ public class Messages {
 
     protected static M m(int id, Level level, boolean saveRequest, boolean saveResponse, String msg) {
         M adm = new M(id, level, msg, saveRequest, saveResponse);
-        Object o = messagesById.put(id, adm);
+        messageLock.writeLock().lock();
+        Object o;
+        try {
+            o = messagesById.put(id, adm);
+        } finally {
+            messageLock.writeLock().unlock();
+        }
         if (o != null) throw new IllegalArgumentException("A message with id #" + id + " already exists!");
         return adm;
     }
