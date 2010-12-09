@@ -17,6 +17,8 @@ import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -50,8 +52,6 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
     private final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
 
     private JPanel _mainPanel;
-    private JTextField _variableNameTextField;
-    private JLabel _variableNameStatusLabel;
     private JComboBox _dataTypeComboBox;
     private JLabel _contentTypeStatusLabel;
     private JTextArea _expressionTextArea;
@@ -64,6 +64,8 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
     private JButton _cancelButton;
     private JButton _okButton;
     private JComboBox _contentTypeComboBox;
+    private JPanel _variableNamePanel;
+    private TargetVariablePanel _variableNameVarPanel;
 
     private final boolean readOnly;
     private boolean _assertionModified;
@@ -79,7 +81,6 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         this.readOnly = readOnly;
 
         _expressionStatusBorder = _expressionStatusScrollPane.getBorder();
-        clearVariableNameStatus();
         clearContentTypeStatus();
         clearExpressionStatus();
 
@@ -90,9 +91,19 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
          _predecessorVariables = new TreeSet<String>();
         for(String var : vars)
         {
-            _predecessorVariables.add(var.toLowerCase());    
+            _predecessorVariables.add(var.toLowerCase());
         }
 
+        _variableNameVarPanel = new TargetVariablePanel();
+        _variableNameVarPanel.setAssertion(assertion);
+        _variableNamePanel.setLayout(new BorderLayout());
+        _variableNamePanel.add(_variableNameVarPanel, BorderLayout.CENTER);
+        _variableNameVarPanel.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                validateFields();
+            }
+        });
 
         // Populates data type combo box with supported data types.
         _dataTypeComboBox.addItem(new DataTypeComboBoxItem(DataType.STRING));
@@ -110,20 +121,6 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         _contentTypeComboBox.addItem( ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue() );
         _contentTypeComboBox.addItem( ContentTypeHeader.APPLICATION_JSON.getFullValue() );
 
-        TextComponentPauseListenerManager.registerPauseListener(
-                _variableNameTextField,
-                new PauseListener() {
-                    @Override
-                    public void textEntryPaused(JTextComponent component, long msecs) {
-                        validateFields();
-                    }
-
-                    @Override
-                    public void textEntryResumed(JTextComponent component) {
-                        clearVariableNameStatus();
-                    }
-                },
-                500);
         TextComponentPauseListenerManager.registerPauseListener(
                 (JTextComponent)_contentTypeComboBox.getEditor().getEditorComponent(),
                 new PauseListener() {
@@ -164,7 +161,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         _okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                assertion.setVariableToSet(_variableNameTextField.getText());
+                assertion.setVariableToSet(_variableNameVarPanel.getVariable());
 
                 final DataType dataType = getSelectedDataType();
                 assertion.setDataType(dataType);
@@ -198,7 +195,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         // Sets dialog to assertion data.
         //
 
-        _variableNameTextField.setText(assertion.getVariableToSet());
+        _variableNameVarPanel.setVariable(assertion.getVariableToSet());
         selectDataType(assertion.getDataType());
         if ( assertion.getContentType() != null ) {
             _contentTypeComboBox.setSelectedItem( assertion.getContentType() );
@@ -252,11 +249,6 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
         return ((DataTypeComboBoxItem) _dataTypeComboBox.getSelectedItem()).getDataType();
     }
 
-    private void clearVariableNameStatus() {
-        _variableNameStatusLabel.setIcon(BLANK_ICON);
-        _variableNameStatusLabel.setText(null);
-    }
-
     private void clearContentTypeStatus() {
         _contentTypeStatusLabel.setIcon(BLANK_ICON);
         _contentTypeStatusLabel.setText(null);
@@ -272,42 +264,20 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
      * Validates values in various fields and sets the status labels as appropriate.
      */
     private synchronized void validateFields() {
-        final String variableName = _variableNameTextField.getText();
+        final String variableName = _variableNameVarPanel.getVariable();
         final String contentType = ((JTextComponent)_contentTypeComboBox.getEditor().getEditorComponent()).getText();
         final String expression = _expressionTextArea.getText();
 
-        boolean ok = true;
+        boolean ok = _variableNameVarPanel.isEntryValid();
 
-        String validateNameResult;
-        if (variableName.length() == 0) {
-            ok = false;
-        } else if ((validateNameResult = VariableMetadata.validateName(variableName)) != null) {
-            ok = false;
-            _variableNameStatusLabel.setIcon(WARNING_ICON);
-            _variableNameStatusLabel.setText(reconstructLongStringByAddingLineBreakTags(validateNameResult, 58));
+        final VariableMetadata meta = BuiltinVariables.getMetadata(variableName);
+        if (meta == null) {
+            _dataTypeComboBox.setEnabled(true);
         } else {
-            final VariableMetadata meta = BuiltinVariables.getMetadata(variableName);
-            if (meta == null) {
-                if (Syntax.getMatchingName(variableName, _predecessorVariables) == null) {
-                    _variableNameStatusLabel.setText("OK");
-                } else {
-                    _variableNameStatusLabel.setText("OK (Overwrite)");
-                }
-                _variableNameStatusLabel.setIcon(OK_ICON);
-                _dataTypeComboBox.setEnabled(true);
-            } else {
-                if (meta.isSettable()) {
-                    _variableNameStatusLabel.setIcon(OK_ICON);
-                    _variableNameStatusLabel.setText("OK (Built-in, settable)");
-                } else {
-                    ok = false;
-                    _variableNameStatusLabel.setIcon(WARNING_ICON);
-                    _variableNameStatusLabel.setText("Built-in, not settable");
-                }
-                selectDataType(meta.getType());
-                _dataTypeComboBox.setEnabled(false);
-            }
+            selectDataType(meta.getType());
+            _dataTypeComboBox.setEnabled(false);
         }
+
 
         if (getSelectedDataType() == DataType.MESSAGE) {
             _contentTypeComboBox.setEnabled(true);
