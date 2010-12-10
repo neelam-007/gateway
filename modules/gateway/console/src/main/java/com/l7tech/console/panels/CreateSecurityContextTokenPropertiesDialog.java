@@ -198,7 +198,8 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
         int multiplier = ((TimeUnit) lifetimeUnitComboBox.getSelectedItem()).getMultiplier();
         boolean validLifetime = useSystemDefaultCheckBox.isSelected() ||
             ValidationUtils.isValidDouble(lifetimeTextField.getText().trim(), false,
-                CreateSecurityContextToken.MIN_SESSION_DURATION / multiplier, true, CreateSecurityContextToken.MAX_SESSION_DURATION / multiplier, true);
+                formatDouble((double)CreateSecurityContextToken.MIN_SESSION_DURATION / multiplier), true,
+                formatDouble((double)CreateSecurityContextToken.MAX_SESSION_DURATION / multiplier), true);
 
         okButton.setEnabled(varPrefixTextField.isEntryValid() && validLifetime);
     }
@@ -210,5 +211,10 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
 
     private void onCancel() {
         dispose();
+    }
+
+    private double formatDouble(double doubleNum) {
+        DecimalFormat formatter = new DecimalFormat("0.#########");
+        return Double.parseDouble(formatter.format(doubleNum));
     }
 }
