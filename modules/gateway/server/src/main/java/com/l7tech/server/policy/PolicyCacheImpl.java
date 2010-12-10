@@ -238,7 +238,13 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             for ( PolicyCacheEntry pce : policyCache.values() ) {
                 if ( (type == null || type == pce.policy.getType()) &&
                      (tag == null || tag.equals( pce.policy.getInternalTag() ))) {
-                    guids.add( pce.policy.getGuid() );
+                    if ( pce.policy.isDisabled() ) {
+                        logger.log( Level.INFO,
+                                "Ignoring disabled global policy : #{0} ({1})",
+                                new Object[]{ pce.policy.getOid(), pce.policy.getName() }  );
+                    } else {
+                        guids.add( pce.policy.getGuid() );
+                    }
                 }
             }
         } finally {
