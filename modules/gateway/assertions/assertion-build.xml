@@ -75,7 +75,7 @@
             <include name="**/console/**/*"/>
         </fileset>
         <pathconvert property="aar.console.fileset.property" pathsep="${line.separator}" dirsep="/" refid="aar.console.fileset">
-            <mapper type="regexp" from="[/\\](.*)" to="\1"/>
+            <map from="${package.classes.dir}" to=""/>
         </pathconvert>
         <echo file="${package.classes.dir}/AAR-INF/console.index">${aar.console.fileset.property}</echo>
         <replaceregexp file="${package.classes.dir}/AAR-INF/console.index" match="^[/\\]" replace="" byline="true"/>
