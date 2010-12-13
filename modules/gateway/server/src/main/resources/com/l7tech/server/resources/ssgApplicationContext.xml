@@ -205,7 +205,12 @@
 
                         <entry key="ssgConnectorManager"><list><value>interfaceTags</value></list></entry>
 
-                        <entry key="certValidationProcessor"><list><value>pkixTrust.useDefaultAnchors</value></list></entry>
+                        <entry key="certValidationProcessor">
+                            <list>
+                                <value>pkixTrust.useDefaultAnchors</value>
+                                <value>pkixTrust.permittedCriticalExtensions</value>
+                            </list>
+                        </entry>
                         <entry key="jmsBootProcess">
                             <list>
                                 <value>ioJmsErrorSleep</value>

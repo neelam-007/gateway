@@ -20,9 +20,13 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import sun.security.provider.certpath.AdjacencyList;
+import sun.security.provider.certpath.BuildStep;
+import sun.security.provider.certpath.SunCertPathBuilderException;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -47,7 +51,9 @@ import java.util.logging.Logger;
 public class CertValidationProcessorImpl implements CertValidationProcessor, ApplicationListener, PropertyChangeListener, InitializingBean {
     private static final Logger logger = Logger.getLogger(CertValidationProcessorImpl.class.getName());
 
+    private static final boolean USE_EXCEPTION_DECODER = SyspropUtil.getBoolean( "com.l7tech.server.security.cert.useExceptionDecoder", true );
     private static final String PROP_USE_DEFAULT_ANCHORS = "pkixTrust.useDefaultAnchors";
+    private static final String PROP_PERMITTED_CRITICAL_EXTENSIONS = "pkixTrust.permittedCriticalExtensions";
 
     private final DefaultKey defaultKey;
     private final TrustedCertManager trustedCertManager;
@@ -57,6 +63,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     private CrlCache crlCache;
     private OCSPCache ocspCache;
     private RevocationCheckerFactory revocationCheckerFactory;
+    private final BuilderExceptionDecoder exceptionDecoder;
 
     // lock and locked items
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -66,6 +73,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     private final Map<Long, CertValidationCacheEntry> trustedCertsByOid;
     private final Map<Long, RevocationCheckPolicy> revocationPoliciesByOid;
     private Map<String, TrustAnchor> trustAnchorsByDn;  // DN strings in RFC2253 format
+    private final Set<String> permittedCriticalExtensions = new HashSet<String>();
     private CertStore certStore;
     private boolean cacheIsDirty = false;
     private RevocationCheckPolicy currentDefaultRevocationPolicy;
@@ -98,6 +106,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         this.trustedCertsByOid = myOidCache;
         this.trustedCertsBySKI = mySkiCache;
         this.revocationPoliciesByOid = myRCPByIdCache;
+        this.exceptionDecoder = getBuilderExceptionDecoder();
     }
 
     /**
@@ -163,7 +172,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             } else if (ExceptionUtils.causedBy(e, CertificateNotYetValidException.class)) {
                 auditor.logAndAudit(SystemMessages.CERTVAL_CERT_NOT_YET_VALID, subjectDnForLoggingOnly);
             } else {
-                auditor.logAndAudit(SystemMessages.CERTVAL_CANT_BUILD_PATH, new String[] { subjectDnForLoggingOnly, ExceptionUtils.getMessage(e) }, e.getCause());
+                auditor.logAndAudit(SystemMessages.CERTVAL_CANT_BUILD_PATH, new String[] { subjectDnForLoggingOnly, exceptionDecoder.describe(e) }, e.getCause());
             }
             return CertificateValidationResult.CANT_BUILD_PATH;
         } catch (InvalidAlgorithmParameterException e) {
@@ -403,6 +412,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             pbp.setRevocationEnabled(false); // We'll do our own
             if (checkRevocation)
                 pbp.addCertPathChecker(new RevocationCheckingPKIXCertPathChecker(revocationCheckerFactory, pbp, auditor));
+            pbp.addCertPathChecker( new PermitCriticalExtensionPKIXCertPathChecker(permittedCriticalExtensions) );
             pbp.addCertStore(certStore);
             pbp.addCertStore(CertStore.getInstance("Collection",
                     new CollectionCertStoreParameters(Arrays.asList(endEntityCertificatePath))));
@@ -425,6 +435,18 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
                 initializeCertStoreAndTrustAnchors(trustedCertManager.findAll(), Boolean.valueOf((String)event.getNewValue()));
             } catch (FindException e) {
                 logger.log(Level.WARNING, "Couldn't load TrustedCerts", e);
+            } finally {
+                lock.writeLock().unlock();
+            }
+        } else if (PROP_PERMITTED_CRITICAL_EXTENSIONS.equals(event.getPropertyName())) {
+            lock.writeLock().lock();
+            try {
+                if (logger.isLoggable(Level.FINE) ) {
+                    logger.log(Level.FINE,
+                            "Updating permitted critical extensions due to cluster property change, value is now {0}.",
+                            event.getNewValue());
+                }
+                refreshPermittedCriticalExtensions();
             } finally {
                 lock.writeLock().unlock();
             }
@@ -519,6 +541,8 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
 
         initializeCertStoreAndTrustAnchors(tces, Boolean.valueOf(serverConfig.getProperty(PROP_USE_DEFAULT_ANCHORS)));
+
+        refreshPermittedCriticalExtensions();
 
         cacheIsDirty = false;
     }
@@ -647,6 +671,12 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e); // Can't happen (we think!)
         }
+    }
+
+    /** Caller must hold write lock (or be the constructor) */
+    private void refreshPermittedCriticalExtensions() {
+        this.permittedCriticalExtensions.clear();
+        this.permittedCriticalExtensions.addAll( Arrays.asList( serverConfig.getProperty(PROP_PERMITTED_CRITICAL_EXTENSIONS, "" ).split("\\s") ) );
     }
 
     /** Caller must hold write lock */
@@ -792,6 +822,87 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             result = issuerDn.hashCode();
             result = 31 * result + serial.hashCode();
             return result;
+        }
+    }
+
+    /**
+     * Certificate path checker that supports whatever extensions it is configured to support.
+     */
+    private static final class PermitCriticalExtensionPKIXCertPathChecker extends PKIXCertPathChecker {
+        private final Set<String> extensions;
+        
+        private PermitCriticalExtensionPKIXCertPathChecker( final Set<String> extensions ) {
+            this.extensions = Collections.unmodifiableSet( new HashSet<String>(extensions) );
+        }
+
+        @Override
+        public void check( final Certificate cert,
+                           final Collection<String> unresolvedCriticalExtensions ) throws CertPathValidatorException {
+            unresolvedCriticalExtensions.removeAll( extensions );
+        }
+
+        @Override
+        public void init( final boolean forward ) throws CertPathValidatorException {
+        }
+
+        @Override
+        public boolean isForwardCheckingSupported() {
+            return true;
+        }
+
+        @Override
+        public Set<String> getSupportedExtensions() {
+            return extensions;
+        }
+    }
+
+    private static BuilderExceptionDecoder getBuilderExceptionDecoder() {
+        try {
+            return USE_EXCEPTION_DECODER ? new SunBuilderExceptionDecoder() : new DefaultBuilderExceptionDecoder();
+        } catch( NoClassDefFoundError e ) {
+            return new DefaultBuilderExceptionDecoder();
+        }
+    }
+
+    private interface BuilderExceptionDecoder {
+        String describe( CertPathBuilderException exception );
+    }
+
+    private static final class DefaultBuilderExceptionDecoder implements BuilderExceptionDecoder {
+        @Override
+        public String describe( final CertPathBuilderException exception ) {
+            return ExceptionUtils.getMessage( exception );
+        }
+    }
+
+    private static final class SunBuilderExceptionDecoder implements BuilderExceptionDecoder {
+        final BuilderExceptionDecoder fallbackDecoder = new DefaultBuilderExceptionDecoder();
+
+        @SuppressWarnings({ "UseOfSunClasses" })
+        @Override
+        public String describe( final CertPathBuilderException exception ) {
+            String description = fallbackDecoder.describe( exception );
+
+            if ( exception instanceof SunCertPathBuilderException ) {
+                final SunCertPathBuilderException sunException = (SunCertPathBuilderException) exception;
+                final AdjacencyList list = sunException.getAdjacencyList();
+                if ( list != null ) {
+                    final List<String> errorsDuringBuild = new ArrayList<String>();
+                    final Iterator<BuildStep> stepIterator = list.iterator();
+                    while ( stepIterator.hasNext() ) {
+                        final BuildStep buildStep = stepIterator.next();
+                        if ( buildStep.getThrowable() != null ) {
+                            errorsDuringBuild.add( ExceptionUtils.getMessage( buildStep.getThrowable() ) );
+                        }
+                    }
+
+                    if ( !errorsDuringBuild.isEmpty() ) {
+                        description = description + "; related error(s) " + errorsDuringBuild;
+                    }
+                }
+            }
+
+            return description;
         }
     }
 }
