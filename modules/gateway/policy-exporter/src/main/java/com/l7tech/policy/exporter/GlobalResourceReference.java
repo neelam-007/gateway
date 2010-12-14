@@ -14,6 +14,7 @@ import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.wsdl.WsdlEntityResolver;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -416,6 +417,7 @@ public class GlobalResourceReference extends ExternalReference {
     private static class ReferenceBuildingEntityResolver implements EntityResolver {
         private final ExternalReferenceFinder finder;
         private final EntityResolver entityResolver;
+        private final EntityResolver backupEntityResolver = new WsdlEntityResolver();
         private final Collection<GlobalResourceReference> references;
 
         private ReferenceBuildingEntityResolver( final ExternalReferenceFinder finder,
@@ -430,7 +432,12 @@ public class GlobalResourceReference extends ExternalReference {
         public InputSource resolveEntity( final String publicId,
                                           final String systemId ) throws SAXException, IOException {
             references.add( new GlobalResourceReference( finder, entityResolver, systemId, ResourceType.DTD, publicId, null, null ) );
-            return entityResolver.resolveEntity( publicId, systemId );
+            InputSource resolved = entityResolver.resolveEntity( publicId, systemId );
+            if ( resolved == null ) {
+                // fall back to well known default resources
+                resolved = backupEntityResolver.resolveEntity( publicId, systemId );
+            }
+            return resolved;
         }
     }
 
