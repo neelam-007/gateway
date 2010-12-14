@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.Assertion;
@@ -15,7 +12,6 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     protected List<Assertion> children = new ArrayList<Assertion>();
 
     public CompositeAssertion() {
-        super();
     }
 
     /**
@@ -24,7 +20,6 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      * @param children the children to adopt.  May be empty but never null.
      */
     public CompositeAssertion( List<? extends Assertion> children ) {
-        super();
         setChildren(children);
     }
 
@@ -121,13 +116,24 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     }
 
     /**
-     * Check if this composite assertion currently has any children.  Empty composite assertions are invalid, and will
-     * always throw PolicyException at runtime.
+     * Check if this composite assertion currently has any children.
      *
-     * @return true if this composition assertion lacks children and hence will always fail at runtime
+     * <p>Empty composite assertions may always fail.</p>
+     *
+     * @return true if this composite assertion lacks children and hence may fail at runtime
+     * @see #permitsEmpty()
      */
     public boolean isEmpty() {
         return children.isEmpty();
+    }
+
+    /**
+     * Can this assertion succeed when empty?
+     *
+     * @return True if this assertion can succeed, false if it will always fail when empty.
+     */
+    public boolean permitsEmpty() {
+        return false;
     }
 
     /**

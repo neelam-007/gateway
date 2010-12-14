@@ -43,6 +43,10 @@ public class ConcurrentAllAssertion extends CompositeAssertion {
         return getParent() == null;
     }
 
+    @Override
+    public boolean permitsEmpty() {
+        return true;
+    }
 
     //
     // Metadata

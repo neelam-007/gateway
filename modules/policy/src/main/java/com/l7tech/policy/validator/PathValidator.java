@@ -696,18 +696,19 @@ public class PathValidator {
         }
     }
 
-    private void processComposite(CompositeAssertion a) {
-        //noinspection unchecked
-        List<Assertion> children = a.getChildren();
-        for (Assertion kid : children) {
-            // If a composite assertion just contains comment assertions and/or disabled assertions, then treat it as empty.
-            if (!(kid instanceof CommentAssertion) && kid.isEnabled()) {
-                return;
+    private void processComposite( final CompositeAssertion a ) {
+        if ( !a.permitsEmpty() ) {
+            final List<Assertion> children = a.getChildren();
+            for ( final Assertion kid : children ) {
+                // If a composite assertion just contains comment assertions and/or disabled assertions, then treat it as empty.
+                if (!(kid instanceof CommentAssertion) && kid.isEnabled()) {
+                    return;
+                }
             }
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                              bundle.getString("assertion.composite.nochildren"),
+                              null));
         }
-        result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                          bundle.getString("assertion.composite.nochildren"),
-                          null));
     }
 
     private boolean isCustom(Assertion a) {

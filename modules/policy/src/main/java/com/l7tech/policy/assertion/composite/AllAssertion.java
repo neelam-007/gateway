@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
@@ -30,6 +27,11 @@ public final class AllAssertion extends CompositeAssertion {
      */
     public boolean isRoot() {
         return getParent() == null;
+    }
+
+    @Override
+    public boolean permitsEmpty() {
+        return true;
     }
 
     @Override

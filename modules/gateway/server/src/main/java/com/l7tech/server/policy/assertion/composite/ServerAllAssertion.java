@@ -20,10 +20,12 @@ public final class ServerAllAssertion extends ServerCompositeAssertion<AllAssert
         super(data, applicationContext);
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    @Override
+    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
         final List<ServerAssertion> kids = getChildren();
-        AssertionStatus result = AssertionStatus.FALSIFIED;
-        for (ServerAssertion kid : kids) {
+        AssertionStatus result = AssertionStatus.NONE;
+
+        for ( final ServerAssertion kid : kids ) {
             // If the assertion is disabled, then ignore it and continue to check the next assertion.
             if (! kid.getAssertion().isEnabled())
                 continue;
@@ -42,6 +44,7 @@ public final class ServerAllAssertion extends ServerCompositeAssertion<AllAssert
                 return result;
             }
         }
+
         return result;
     }
 }

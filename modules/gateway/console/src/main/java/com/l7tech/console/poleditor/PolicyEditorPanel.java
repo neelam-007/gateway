@@ -766,7 +766,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     private class ClearMessageAreaAction extends AbstractAction {
-        public ClearMessageAreaAction() {
+        private ClearMessageAreaAction() {
             putValue(Action.NAME, "Clear All");
             putValue(Action.SHORT_DESCRIPTION, "Clear message area");
         }
@@ -801,8 +801,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         private JButton buttonValidate;
         private final boolean enableUddi;
 
-        public PolicyEditToolBar(boolean enableUddi) {
-            super();
+        PolicyEditToolBar(boolean enableUddi) {
             this.enableUddi = enableUddi;
             this.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
             initComponents();
@@ -818,13 +817,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             ba.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    if (PolicyEditorPanel.this.hasEmptyRoot()) {
-                        ba.setEnabled(true);
-                        buttonSaveAndActivate.setEnabled(true);
-                        bsaa.setEnabled(true);
-                        buttonSaveOnly.setEnabled(true);
-                        return;
-                    }
+                    validateRoot();
                     appendToMessageArea("<i>Policy saved and made active.</i>");
                     ba.setEnabled(false);
                     buttonSaveAndActivate.setEnabled(false);
@@ -838,11 +831,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             bsaa.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    if (PolicyEditorPanel.this.hasEmptyRoot()) {
-                        bsaa.setEnabled(true);
-                        buttonSaveOnly.setEnabled(true);
-                        return;
-                    }
+                    validateRoot();
                     appendToMessageArea("<i>Policy saved but not activated.</i>");
                     bsaa.setEnabled(false);
                     buttonSaveOnly.setEnabled(false);
@@ -1273,7 +1262,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     nodes = assertionTreeNodes;
                     super.performAction();
                     final JTree tree = policyTree;
-                    if (paths != null && tree != null) {
+                    if (tree != null) {
                         SwingUtilities.invokeLater(new Runnable() {
                             @Override
                             public void run() {
@@ -1306,7 +1295,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     nodes = assertionTreeNodes;
                     super.performAction();
                     final JTree tree = policyTree;
-                    if (paths != null && tree != null) {
+                    if (tree != null) {
                         SwingUtilities.invokeLater(new Runnable() {
                             @Override
                             public void run() {
@@ -1765,13 +1754,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                                 WspWriter.getPolicyXml(getCurrentRoot().asAssertion());
                         if (xml != null) {
                             this.node = rootAssertion;
-
-                            if (hasEmptyRoot()) {
-                                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                    "Cannot save an empty policy or published service.  Please add assertion(s) into it or delete it.", "Save Warning",
-                                    JOptionPane.WARNING_MESSAGE, null);
-                                return;
-                            }
+                            validateRoot();
 
                             HashMap<String, Policy> includedFragments = new HashMap<String, Policy>();
                             extractFragmentsFromAssertion(rootAssertion.asAssertion(), includedFragments);
@@ -1804,12 +1787,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return ret;
     }
 
-    private boolean hasEmptyRoot() {
+    private void validateRoot() {
         if (rootAssertion == null) throw new NullPointerException("Root assertion must not be null.");
         if (!(rootAssertion.asAssertion() instanceof AllAssertion)) throw new RuntimeException("Root assertion must be an AllAssertion.");
-
-        AllAssertion assertion = (AllAssertion)rootAssertion.asAssertion();
-        return assertion.isRoot() && assertion.isEmpty();
     }
 
     private boolean removeNameFromIncludeAssertions(Assertion rootAssertion) {

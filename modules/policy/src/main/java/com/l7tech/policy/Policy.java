@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.folder.Folder;
@@ -250,6 +247,7 @@ public class Policy extends NamedEntityImp implements HasFolder {
         this.internalTag = internalTag;
     }
 
+    @Override
     @ManyToOne
     @JoinColumn(name="folder_oid")
     @Migration(mapName = NONE, mapValue = NONE)
@@ -257,6 +255,7 @@ public class Policy extends NamedEntityImp implements HasFolder {
         return folder;
     }
 
+    @Override
     public void setFolder(Folder folder) {
         this.folder = folder;
     }
@@ -301,7 +300,7 @@ public class Policy extends NamedEntityImp implements HasFolder {
      * <p>This will simplify the given assertion in a manner that is compatible
      * with the constraints of a policy (such as root must be an All).</p>
      *
-     * <p>This method is only for full polcies, so the given assertion must not
+     * <p>This method is only for full policies, so the given assertion must not
      * have a parent.</p>
      *
      * @param assertion The assertion to simplify (must not be null)
@@ -315,10 +314,12 @@ public class Policy extends NamedEntityImp implements HasFolder {
         if (!(assertion instanceof AllAssertion)) throw new IllegalArgumentException("assertion must be AllAssertion");
         if (assertion.getParent() != null) throw new IllegalArgumentException("assertion has a parent");
 
-        Assertion simplified = Assertion.simplify( assertion, true, includeComments);
+        final Assertion simplified = Assertion.simplify( assertion, true, includeComments );
         if ( simplified != assertion ) {
             // then we may need to re-add to the root
-            if ( simplified.getParent() != assertion ) {
+            if ( simplified == null ) {
+                ((AllAssertion) assertion).clearChildren();
+            } else if ( simplified.getParent() != assertion ) {
                 AllAssertion policyRoot = (AllAssertion) assertion;
                 policyRoot.clearChildren();
                 policyRoot.addChild( simplified );

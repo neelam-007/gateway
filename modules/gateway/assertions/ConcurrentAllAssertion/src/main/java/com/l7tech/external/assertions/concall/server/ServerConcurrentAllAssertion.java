@@ -242,7 +242,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
             }
         }
 
-        AssertionStatus result = AssertionStatus.FAILED;
+        AssertionStatus result = AssertionStatus.NONE;
         for (KidContext kidContext : contexts) {
             ServerAssertion kid = kidContext.serverAssertion;
             assert kid.getAssertion().isEnabled() && !(kid.getAssertion() instanceof CommentAssertion);

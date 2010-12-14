@@ -31,9 +31,7 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
         if (beanFactory == null)
             throw new IllegalArgumentException("The Application Context is required");
 
-        if (composite.getChildren().isEmpty()) throw new PolicyAssertionException(assertion, "Must have children");
-
-        final ServerPolicyFactory pf = (ServerPolicyFactory)beanFactory.getBean("policyFactory");
+        final ServerPolicyFactory pf = beanFactory.getBean("policyFactory", ServerPolicyFactory.class);
 
         final List<ServerAssertion> result = new ArrayList<ServerAssertion>(composite.getChildren().size());
         try {

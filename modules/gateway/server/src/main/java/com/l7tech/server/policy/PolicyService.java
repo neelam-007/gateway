@@ -617,9 +617,17 @@ public class PolicyService extends ApplicationObjectSupport {
         }
     }
 
-    private boolean atLeastOnePathIsAnonymous( Assertion rootAssertion ) throws InterruptedException, PolicyAssertionException {
-        rootAssertion = new HideDisabledAssertions().filter(null, rootAssertion);
-        if (rootAssertion == null) return false; // normally can't happen
+    private boolean atLeastOnePathIsAnonymous( final Assertion originalRootAssertion ) throws InterruptedException, PolicyAssertionException {
+        Assertion rootAssertion = new HideDisabledAssertions().filter(null, originalRootAssertion);
+        if (rootAssertion == null) {
+            if ( originalRootAssertion instanceof CompositeAssertion ) {
+                final CompositeAssertion compRootAssertion = (CompositeAssertion) originalRootAssertion;
+                if ( compRootAssertion.isEmpty() && compRootAssertion.permitsEmpty() ) {
+                    return true;
+                }
+            }
+            return false; // normally can't happen
+        }
         PolicyPathResult paths = policyPathBuilderFactory.makePathBuilder().generate(rootAssertion);
         for (AssertionPath assertionPath : paths.paths()) {
             Assertion[] path = assertionPath.getPath();
