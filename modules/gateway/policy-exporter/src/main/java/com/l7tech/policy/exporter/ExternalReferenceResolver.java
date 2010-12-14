@@ -2,26 +2,19 @@ package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.PolicyConflictException;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.util.ExceptionUtils;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.EntityResolver;
-import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * This class takes a set of external references that were exported with a policy
@@ -39,9 +32,11 @@ class ExternalReferenceResolver {
     //- PACKAGE
 
     ExternalReferenceResolver( final WspReader wspReader,
+                               final ExternalReferenceFinder finder,
                                final PolicyImporter.PolicyImporterAdvisor advisor,
                                final EntityResolver entityResolver ) {
         this.wspReader = wspReader;
+        this.finder = finder;
         this.advisor = advisor;
         this.entityResolver = entityResolver;
     }
@@ -100,9 +95,8 @@ class ExternalReferenceResolver {
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger( ExternalReferenceResolver.class.getName() );
-
     private final WspReader wspReader;
+    private final ExternalReferenceFinder finder;
     private final PolicyImporter.PolicyImporterAdvisor advisor;
     private final EntityResolver entityResolver;
     private Collection<ExternalReference> resolvedReferences = new ArrayList<ExternalReference>();
@@ -277,7 +271,7 @@ class ExternalReferenceResolver {
     }
 
     /**
-     * Find and remove redundant references associated with an assertion, which
+     * Find and remove redundant references associated with an assertion.
      *
      * @param assertion: a non-composite assertion
      * @param references: the list of all references.
@@ -306,35 +300,6 @@ class ExternalReferenceResolver {
                     if (customRef.getCustomAssertionName() != null && customRef.getCustomAssertionName().equals(customAssn.getCustomAssertion().getName())) {
                         itr.remove();
                         break;
-                    }
-                }
-            }
-        } else if (assertion instanceof SchemaValidation) {
-            for (Iterator<ExternalReference> itr = references.iterator(); itr.hasNext(); ) {
-                ExternalReference reference = itr.next();
-                if (reference instanceof ExternalSchemaReference) {
-                    SchemaValidation sva = (SchemaValidation)assertion;
-                    if (sva.getResourceInfo() instanceof StaticResourceInfo) {
-                        ExternalSchemaReference schemaRef = (ExternalSchemaReference) reference;
-                        StaticResourceInfo sri = (StaticResourceInfo)sva.getResourceInfo();
-                        boolean found = false;
-                        try {
-                            final Document schema = XmlUtil.parse(ExternalSchemaReference.asInputSource(sri),entityResolver);
-                            List<ExternalSchemaReference.ListedImport> listOfImports = ExternalSchemaReference.listImports(schema);
-                            for (ExternalSchemaReference.ListedImport unresolvedImport : listOfImports) {
-                                if (schemaRef.getName() != null && schemaRef.getName().equals(unresolvedImport.name) &&
-                                    schemaRef.getTns() != null && schemaRef.getTns().equals(unresolvedImport.tns)) {
-                                    found = true;
-                                    itr.remove();
-                                    break;
-                                }
-                            }
-                        } catch (SAXException e) {
-                            logger.log( Level.INFO, "Cannot parse schema to process references: " + ExceptionUtils.getMessage( e ));
-                        } catch ( IOException e ) {
-                            logger.log( Level.INFO, "Cannot parse schema to process references: " + ExceptionUtils.getMessage( e ));
-                        }
-                        if (found) break;
                     }
                 }
             }
@@ -409,6 +374,26 @@ class ExternalReferenceResolver {
                             itr.remove();
                             break;
                         }
+                    }
+                }
+            }
+        }
+
+        if ( assertion instanceof UsesResourceInfo ) {
+            final UsesResourceInfo usesResourceInfo = (UsesResourceInfo) assertion;
+            Collection<GlobalResourceReference> assertionReferences = null;
+
+            for ( final Iterator<ExternalReference> itr = references.iterator(); itr.hasNext(); ) {
+                final ExternalReference reference = itr.next();
+
+                if ( reference instanceof GlobalResourceReference ) {
+                    if ( assertionReferences == null ) {
+                        assertionReferences = GlobalResourceReference.buildResourceEntryReferences( finder, entityResolver, usesResourceInfo );
+                    }
+
+                    if ( assertionReferences.contains( reference )  ) {
+                        itr.remove();
+                        break;
                     }
                 }
             }

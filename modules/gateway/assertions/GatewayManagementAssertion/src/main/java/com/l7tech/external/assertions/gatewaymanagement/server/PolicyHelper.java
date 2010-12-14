@@ -47,7 +47,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.ExternalReferenceErrorListener;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
-import com.l7tech.policy.exporter.ExternalSchemaReference;
+import com.l7tech.policy.exporter.GlobalResourceReference;
 import com.l7tech.policy.exporter.JdbcConnectionReference;
 import com.l7tech.policy.exporter.PolicyExporter;
 import com.l7tech.policy.exporter.PolicyImportCancelledException;
@@ -473,13 +473,13 @@ public class PolicyHelper {
         }
 
         @Override
-        public ResourceEntryHeader findSchemaByName( final String schemaName ) throws FindException {
-            return filter( resourceEntryManager.findHeaderByUriAndType( schemaName, ResourceType.XML_SCHEMA ) );
+        public ResourceEntryHeader findResourceEntryByUriAndType( final String uri, final ResourceType type ) throws FindException {
+            return filter( resourceEntryManager.findHeaderByUriAndType( uri, type ) );
         }
 
         @Override
-        public Collection<ResourceEntryHeader> findSchemaByTNS( final String tns ) throws FindException {
-            return filter( resourceEntryManager.findHeadersByTNS( tns ) );
+        public Collection<ResourceEntryHeader> findResourceEntryByKeyAndType( final String key, final ResourceType type ) throws FindException {
+            return filter( resourceEntryManager.findHeadersByKeyAndType( key, type ) );
         }
 
         public JdbcConnection getJdbcConnectionById( final String id ) throws FindException {
@@ -779,18 +779,19 @@ public class PolicyHelper {
                             refId = connection.getId();
                         }
                     }
-                } else if ( reference instanceof ExternalSchemaReference ) {
-                    final ExternalSchemaReference schemaReference = (ExternalSchemaReference) reference;
-                    final String name = schemaReference.getName();
-                    final String tns = schemaReference.getTns();
-                    if ( name != null ) {
-                        final ResourceEntryHeader resourceEntryHeader = referenceFinder.findSchemaByName( name );
+                } else if ( reference instanceof GlobalResourceReference ) {
+                    final GlobalResourceReference globalResourceReference = (GlobalResourceReference) reference;
+                    final ResourceType type = globalResourceReference.getType();
+                    final String uri = globalResourceReference.getSystemIdentifier();
+                    final String key = globalResourceReference.getResourceKey1();
+                    if ( uri != null ) {
+                        final ResourceEntryHeader resourceEntryHeader = referenceFinder.findResourceEntryByUriAndType( uri, type );
                         if ( resourceEntryHeader != null ) {
                             refId = resourceEntryHeader.getStrId();
                         }
                     }
-                    if ( refId == null && tns != null ) {
-                        Collection<ResourceEntryHeader> resourceEntryHeaders = referenceFinder.findSchemaByTNS( tns );
+                    if ( refId == null && key != null ) {
+                        Collection<ResourceEntryHeader> resourceEntryHeaders = referenceFinder.findResourceEntryByKeyAndType( key, type );
                         if ( resourceEntryHeaders.size() == 1 ) {
                             refId = resourceEntryHeaders.iterator().next().getStrId();
                         }

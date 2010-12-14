@@ -54,6 +54,18 @@ public class ResourceEntryManagerStub extends EntityManagerStub<ResourceEntry, R
     }
 
     @Override
+    public Collection<ResourceEntryHeader> findHeadersByKeyAndType( final String key, final ResourceType type ) throws FindException {
+        return Functions.grep( findAllHeaders(), new Functions.Unary<Boolean,ResourceEntryHeader>(){
+            @Override
+            public Boolean call( final ResourceEntryHeader resourceEntry ) {
+                return ( type==null || resourceEntry.getResourceType() == type ) &&
+                       resourceEntry.getResourceKey1() != null &&
+                       resourceEntry.getResourceKey1().equals( key );
+            }
+        });
+    }
+
+    @Override
     public Collection<ResourceEntryHeader> findHeadersByTNS( final String targetNamespace ) throws FindException {
         return Functions.grep( findAllHeaders(), new Functions.Unary<Boolean,ResourceEntryHeader>(){
             @Override

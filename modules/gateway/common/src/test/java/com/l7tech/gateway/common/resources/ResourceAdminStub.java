@@ -121,6 +121,18 @@ public class ResourceAdminStub implements ResourceAdmin {
     }
 
     @Override
+    public Collection<ResourceEntryHeader> findResourceHeadersByKeyAndType( final String key, final ResourceType type ) throws FindException {
+        return Functions.grep( findAllResources(), new Functions.Unary<Boolean,ResourceEntryHeader>(){
+            @Override
+            public Boolean call( final ResourceEntryHeader resourceEntryHeader ) {
+                return ( type==null || resourceEntryHeader.getResourceType()==type ) &&
+                        ( (key==null && resourceEntryHeader.getResourceKey1()==null) ||
+                          (key!=null && key.equals( resourceEntryHeader.getResourceKey1() )));
+            }
+        } );
+    }
+
+    @Override
     public Collection<ResourceEntryHeader> findResourceHeadersByTargetNamespace( final String targetNamespace ) throws FindException {
         return Functions.grep( findAllResources(), new Functions.Unary<Boolean,ResourceEntryHeader>(){
             @Override

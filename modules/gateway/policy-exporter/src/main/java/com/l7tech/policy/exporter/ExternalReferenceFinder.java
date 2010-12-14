@@ -2,6 +2,7 @@ package com.l7tech.policy.exporter;
 
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -39,9 +40,9 @@ public interface ExternalReferenceFinder {
 
     Policy findPolicyByUniqueName( String name ) throws FindException;
 
-    ResourceEntryHeader findSchemaByName( String schemaName ) throws FindException;
+    ResourceEntryHeader findResourceEntryByUriAndType( String uri, ResourceType type ) throws FindException;
 
-    Collection<ResourceEntryHeader> findSchemaByTNS( String tns ) throws FindException;
+    Collection<ResourceEntryHeader> findResourceEntryByKeyAndType( String key, ResourceType type ) throws FindException;
 
     JdbcConnection getJdbcConnection( String name ) throws FindException;
 

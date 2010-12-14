@@ -114,6 +114,11 @@ public class ResourceAdminImpl implements ResourceAdmin {
     }
 
     @Override
+    public Collection<ResourceEntryHeader> findResourceHeadersByKeyAndType( final String key, final ResourceType type ) throws FindException {
+        return resourceEntryManager.findHeadersByKeyAndType( key, type );
+    }
+
+    @Override
     public Collection<ResourceEntryHeader> findResourceHeadersByTargetNamespace( final String targetNamespace ) throws FindException {
         return resourceEntryManager.findHeadersByTNS( targetNamespace );
     }

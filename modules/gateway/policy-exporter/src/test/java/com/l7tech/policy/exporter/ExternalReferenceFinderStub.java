@@ -2,6 +2,7 @@ package com.l7tech.policy.exporter;
 
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.resources.ResourceEntryHeader;
+import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -58,12 +59,12 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
     }
 
     @Override
-    public ResourceEntryHeader findSchemaByName( final String schemaName ) throws FindException {
+    public ResourceEntryHeader findResourceEntryByUriAndType( final String uri, final ResourceType type ) throws FindException {
         return null;
     }
 
     @Override
-    public Collection<ResourceEntryHeader> findSchemaByTNS( final String tns ) throws FindException {
+    public Collection<ResourceEntryHeader> findResourceEntryByKeyAndType( final String key, final ResourceType type ) throws FindException {
         return Collections.emptyList();
     }
 

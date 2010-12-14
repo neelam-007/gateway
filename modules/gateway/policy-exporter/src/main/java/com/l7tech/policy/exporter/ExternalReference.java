@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
@@ -13,6 +10,7 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.DomUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import org.w3c.dom.Text;
 import org.xml.sax.EntityResolver;
 
 import java.io.IOException;
@@ -241,7 +239,9 @@ public abstract class ExternalReference {
                     references.add(PrivateKeyReference.parseFromElement(finder, refEl));
                 } else if (refType.equals(getReferenceType(JdbcConnectionReference.class))) {
                     references.add(JdbcConnectionReference.parseFromElement(finder, refEl));
-                } 
+                } else if (refType.equals(getReferenceType( GlobalResourceReference.class))) {
+                    references.add( GlobalResourceReference.parseFromElement(finder, entityResolver, refEl));
+                }
             }
         }
         return references;
@@ -267,8 +267,32 @@ public abstract class ExternalReference {
         return null;
     }
 
+    static String getRequiredParamFromEl( final Element parent,
+                                          final String param ) throws InvalidDocumentFormatException {
+        final String value = getParamFromEl( parent, param );
+        if ( value == null ) {
+            throw new InvalidDocumentFormatException( parent.getLocalName() + " missing required element " + param );
+        }
+        return value;
+    }
+
     void setTypeAttribute( final Element refEl ) {
-        refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, getRefType());
+        refEl.setAttributeNS( null, ExporterConstants.REF_TYPE_ATTRNAME, getRefType() );
+    }
+
+    void addParamEl( final Element parent,
+                     final String param,
+                     final String value,
+                     final boolean alwaysAdd ) {
+        if ( value != null || alwaysAdd ) {
+            final Element paramElement = parent.getOwnerDocument().createElementNS( null, param );
+            parent.appendChild( paramElement );
+
+            if ( value != null ) {
+                final Text textNode = DomUtils.createTextNode(parent, value);
+                paramElement.appendChild( textNode );
+            }
+        }
     }
 
     void warning( final String title, final String message ) {

@@ -72,7 +72,7 @@ public class PolicyImporter {
                                                                  ExporterConstants.EXPORTED_POL_NS,
                                                                  ExporterConstants.EXPORTED_REFERENCES_ELNAME);
 
-        ExternalReferenceResolver resolver = new ExternalReferenceResolver( wspReader, advisor, entityResolver );
+        ExternalReferenceResolver resolver = new ExternalReferenceResolver( wspReader, finder, advisor, entityResolver );
         Collection<ExternalReference> references = new ArrayList<ExternalReference>();
         HashMap<String, Policy> fragments = new HashMap<String, Policy>();
         HashMap<Long, String> fragmentOidToNameMap = new HashMap<Long, String>();
@@ -234,7 +234,7 @@ public class PolicyImporter {
                     try {
                         String realFragmentName = fragmentOidToNameMap.get(new Long(oidElement.getAttribute("boxedLongValue")));
                         if(realFragmentName != null) {
-                            nameElement.setAttribute("stringValue", realFragmentName);
+                            nameElement.setAttributeNS( null, "stringValue", realFragmentName );
                         }
                     } catch(NumberFormatException e) {
                         // Ignore, this include assertion is broken

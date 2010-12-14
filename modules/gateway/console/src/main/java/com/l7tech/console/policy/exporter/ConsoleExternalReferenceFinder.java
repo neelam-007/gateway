@@ -107,15 +107,15 @@ class ConsoleExternalReferenceFinder implements ExternalReferenceFinder, Externa
     }
 
     @Override
-    public ResourceEntryHeader findSchemaByName( final String schemaName ) throws FindException {
+    public ResourceEntryHeader findResourceEntryByUriAndType( final String uri, final ResourceType type ) throws FindException {
         ResourceAdmin resourceAdmin = admin(Registry.getDefault().getResourceAdmin());
-        return resourceAdmin.findResourceHeaderByUriAndType( schemaName, ResourceType.XML_SCHEMA );
+        return resourceAdmin.findResourceHeaderByUriAndType( uri, type );
     }
 
     @Override
-    public Collection<ResourceEntryHeader> findSchemaByTNS( final String tns ) throws FindException {
+    public Collection<ResourceEntryHeader> findResourceEntryByKeyAndType( final String key, final ResourceType type ) throws FindException {
         ResourceAdmin resourceAdmin = admin(Registry.getDefault().getResourceAdmin());
-        return resourceAdmin.findResourceHeadersByTargetNamespace( tns );
+        return resourceAdmin.findResourceHeadersByKeyAndType( key, type );
     }
 
     @Override

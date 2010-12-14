@@ -68,6 +68,11 @@ public class ResourceEntryManagerImpl extends HibernateEntityManager<ResourceEnt
     }
 
     @Override
+    public Collection<ResourceEntryHeader> findHeadersByKeyAndType( final String key, final ResourceType type ) throws FindException {
+        return findHeadersByResourceKey( type, key==null ? NULL : key );
+    }
+
+    @Override
     public Class<? extends Entity> getImpClass() {
         return ResourceEntry.class;
     }

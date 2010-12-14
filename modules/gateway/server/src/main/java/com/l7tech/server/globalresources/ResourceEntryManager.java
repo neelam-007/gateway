@@ -47,6 +47,16 @@ public interface ResourceEntryManager extends EntityManager<ResourceEntry, Resou
     ResourceEntryHeader findHeaderByUriAndType( String uri, ResourceType type ) throws FindException;
 
     /**
+     * Find a resource resource by type and (optional) generic key.
+     *
+     * @param key The key to match.
+     * @param type The type for the resource (may be null)
+     * @return The collection of matching resource entry headers (may be empty but never null)
+     * @throws FindException if an error occurs
+     */
+    Collection<ResourceEntryHeader> findHeadersByKeyAndType( String key, ResourceType type ) throws FindException;
+
+    /**
      * Find an XML Schema resource by target namespace.
      *
      * @param targetNamespace The target namespace to match (may be null)

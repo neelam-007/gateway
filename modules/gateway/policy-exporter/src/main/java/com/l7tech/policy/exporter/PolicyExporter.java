@@ -1,22 +1,15 @@
-/**
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.policy.exporter;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.DomUtils;
-import com.l7tech.util.ExceptionUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.EntityResolver;
@@ -110,32 +103,13 @@ public class PolicyExporter {
         if ( assertion instanceof CustomAssertionHolder ) {
             CustomAssertionHolder cahAss = (CustomAssertionHolder)assertion;
             addReference( new CustomAssertionReference( finder, cahAss.getCustomAssertion().getName()), refs );
-        } else if ( assertion instanceof SchemaValidation ) {
-            Document schema = null;
-            SchemaValidation sva = (SchemaValidation) assertion;
-            AssertionResourceInfo schemaResource = sva.getResourceInfo();
-            if (schemaResource instanceof StaticResourceInfo) {
-                try {
-                    schema = XmlUtil.parse(ExternalSchemaReference.asInputSource(((StaticResourceInfo) sva.getResourceInfo())), entityResolver);
-                } catch (SAXException e) {
-                    logger.log(Level.WARNING, "Error parsing schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    // fallthrough since it's possible this assertion is just badly configured in which case we wont care
-                    // about external references
-                } catch ( IOException e ) {
-                    logger.log(Level.WARNING, "Error parsing schema: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    // fallthrough
-                }
-            } else if (schemaResource instanceof GlobalResourceInfo) {
-                String globalSchemaName = ((GlobalResourceInfo) schemaResource).getId();
-                addReference( new ExternalSchemaReference( finder, entityResolver, globalSchemaName, null), refs);
-            }
+        }
 
-            // process external schema imports, if any
-            if (schema != null) {
-                ArrayList<ExternalSchemaReference.ListedImport> listOfImports = ExternalSchemaReference.listImports(schema);
-                for (ExternalSchemaReference.ListedImport unresolvedImport : listOfImports) {
-                    addReference( new ExternalSchemaReference( finder, entityResolver, unresolvedImport.name, unresolvedImport.tns), refs );
-                }
+        if ( assertion instanceof UsesResourceInfo ) {
+            final UsesResourceInfo usesResourceInfo = (UsesResourceInfo) assertion;
+            for ( final GlobalResourceReference globalResourceReference :
+                    GlobalResourceReference.buildResourceEntryReferences( finder, entityResolver, usesResourceInfo ) ) {
+                addReference( globalResourceReference, refs );
             }
         }
 
@@ -220,7 +194,7 @@ public class PolicyExporter {
         exportRoot.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:wsp", WspConstants.WSP_POLICY_NS);
 
         exportRoot.setPrefix(ExporterConstants.EXPORTED_POL_PREFIX);
-        exportRoot.setAttribute(ExporterConstants.VERSION_ATTRNAME, ExporterConstants.CURRENT_VERSION);
+        exportRoot.setAttributeNS(null, ExporterConstants.VERSION_ATTRNAME, ExporterConstants.CURRENT_VERSION);
         Element referencesEl = originalPolicy.createElementNS(ExporterConstants.EXPORTED_POL_NS,
                                                               ExporterConstants.EXPORTED_REFERENCES_ELNAME);
         referencesEl.setPrefix(ExporterConstants.EXPORTED_POL_PREFIX);

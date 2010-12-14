@@ -121,6 +121,18 @@ public interface ResourceAdmin {
     ResourceEntryHeader findResourceHeaderByUriAndType( String uri, ResourceType type ) throws FindException;
 
     /**
+     * Find resource entry headers by key and type.
+     *
+     * @param key The target namespace (may be null)
+     * @param type The type of the resource (may be null)
+     * @return The collection of resource entry headers (may be empty, never null)
+     * @throws FindException If an error occurs.
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype= MethodStereotype.FIND_HEADERS)
+    Collection<ResourceEntryHeader> findResourceHeadersByKeyAndType( String key, ResourceType type ) throws FindException;
+
+    /**
      * Find resource entry headers by target namespace.
      *
      * <p>This will find resource of type XML Schema matching the given target

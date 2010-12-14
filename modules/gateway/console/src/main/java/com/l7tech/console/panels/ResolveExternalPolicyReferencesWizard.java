@@ -4,6 +4,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.policy.exporter.CustomAssertionReference;
 import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.ExternalSchemaReference;
+import com.l7tech.policy.exporter.GlobalResourceReference;
 import com.l7tech.policy.exporter.IdProviderReference;
 import com.l7tech.policy.exporter.IncludedPolicyReference;
 import com.l7tech.policy.exporter.JMSEndpointReference;
@@ -60,6 +61,8 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
                 panel = new ResolvePrivateKeyPanel(null, (PrivateKeyReference)(refs[i]));
             } else if (refs[i] instanceof JdbcConnectionReference) {
                 panel = new ResolveJdbcConnectionPanel(null, (JdbcConnectionReference)(refs[i]));
+            } else if (refs[i] instanceof GlobalResourceReference ) { // must be after ExternalSchemaReference since that is a subclass
+                panel = new ResolveGlobalResourcePanel(null, (GlobalResourceReference)(refs[i]));
             }
             if (panel != null) {
                 if (firstPanel == null) {
