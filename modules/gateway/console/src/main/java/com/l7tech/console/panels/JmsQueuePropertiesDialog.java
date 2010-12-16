@@ -143,7 +143,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         @Override
         public String toString() {
-            return this.cType.getMainValue();
+            return this.cType.getFullValue();
         }
 
         public boolean equals( Object o ) {
@@ -158,7 +158,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
 
         public int hashCode() {
-            return (cType != null ? cType.hashCode() : 0);
+            return (cType != null ? cType.getFullValue().hashCode() : 0);
         }
     }
 
@@ -1411,7 +1411,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private int findContentTypeInList(ContentTypeHeader ctHeader) {
         for (int i = 0; i < contentTypeModel.getSize(); i++) {
             ContentTypeComboBoxItem contentTypeItem = (ContentTypeComboBoxItem) contentTypeModel.getElementAt(i);
-            if (ctHeader.equals(contentTypeItem.getContentType())) {
+            if (ctHeader.equals(contentTypeItem.getContentType()) && ctHeader.getParams().equals(contentTypeItem.getContentType().getParams())) {
                 return i;
             }
         }
