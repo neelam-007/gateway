@@ -76,7 +76,12 @@ echo
 echo "********************************************************************************"
 echo "****************************** MySQL daemon status *****************************"
 echo "********************************************************************************"
-/sbin/service mysqld status
+# MySQL-cluster no longer calls is mysqld so deal with the two options
+if [ -e /etc/init.d/mysqld ]; then
+    /sbin/service mysqld status
+else
+    /sbin/service mysql status
+fi
 echo
 echo
 
