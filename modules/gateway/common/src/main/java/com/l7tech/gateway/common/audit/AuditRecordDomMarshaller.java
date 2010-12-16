@@ -8,6 +8,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
 import javax.xml.bind.MarshalException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.io.StringWriter;
@@ -92,8 +95,10 @@ public class AuditRecordDomMarshaller {
             e.appendChild(user);
         }
 
-        Set<AuditDetail> details = rec.getDetails();
-        if (details != null && !details.isEmpty()) {
+        final List<AuditDetail> details =
+                new ArrayList<AuditDetail>(rec.getDetails()==null?Collections.<AuditDetail>emptySet():rec.getDetails());
+        if (!details.isEmpty()) {
+            Collections.sort( details );
             Element d = e.getOwnerDocument().createElementNS(NS, "details");
             for (AuditDetail detail : details) {
                 addDetailRecordFields(d, detail);
