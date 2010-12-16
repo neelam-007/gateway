@@ -3,7 +3,13 @@ echo "Cleaning up ssh..."
 rm -rf ~/.ssh/
 
 echo "Cleaning mysql..."
-service mysqld stop
+
+if [ -e /etc/init.d/mysqld ]; then
+    service mysqld stop
+else
+    service mysql stop
+fi
+
 rm -f /var/lib/mysql/ib*
 rm -f /var/lib/mysql/*.log
 

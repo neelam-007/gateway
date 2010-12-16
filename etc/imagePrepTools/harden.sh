@@ -203,7 +203,7 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
   echo '-w /etc/audit/audit.rules' >> /etc/audit/audit.rules
   echo '-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon' >> /etc/audit/audit.rules
   echo '-a exit,always -S settimeofday -S setrlimit -S setdomainname' >> /etc/audit/audit.rules
-  echo '# The mysqld program is expected to call sched_setscheduler' >> /etc/audit/audit.rules
+  echo '# The mysql program is expected to call sched_setscheduler' >> /etc/audit/audit.rules
   echo '-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27' >> /etc/audit/audit.rules
 
   # GEN002960
@@ -431,7 +431,7 @@ halt:*:13637:0:99999:7:::' /etc/shadow
          -e '/-w \/etc\/audit\/audit.rules/d' \
          -e '/-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon/d' \
          -e '/-a exit,always -S settimeofday -S setrlimit -S setdomainname/d' \
-         -e '/# The mysqld program is expected to call sched_setscheduler/d' \
+         -e '/# The mysql program is expected to call sched_setscheduler/d' \
          -e '/-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27/d' \
       /etc/audit/audit.rules
   # GEN002960
@@ -675,7 +675,7 @@ fi
 #	  ! "`grep -- "-w /etc/audit/audit.rules" $F`" -o \
 #	  ! "`grep -- "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
 #	  ! "`grep -- "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
-#	  ! "`grep -- "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
+#	  ! "`grep -- "# The mysql program is expected to call sched_setscheduler" $F`" -o \
 #	  ! "`grep -- "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
 #	  echo "Error - Missing settings in /etc/audit/audit.rules"
 #	fi
@@ -695,7 +695,7 @@ if [ ! "`grep -- "-a exit,always -S unlink -S rmdir" $F`" -o \
 	  ! "`grep -- "-w /etc/audit/audit.rules" $F`" -o \
 	  ! "`grep -- "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
 	  ! "`grep -- "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
-	  ! "`grep -- "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
+	  ! "`grep -- "# The mysql program is expected to call sched_setscheduler" $F`" -o \
 	  ! "`grep -- "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
 	  echo "Error - Missing settings in /etc/audit/audit.rules"
 fi
@@ -721,7 +721,7 @@ fi
 #	  ! "`grep -- "-w /etc/audit/audit.rules" $F`" -o \
 #	  ! "`grep -- "-a exit,always -F arch=b32 -S stime -S acct -S reboot -S swapon" $F`" -o \
 #	  ! "`grep -- "-a exit,always -S settimeofday -S setrlimit -S setdomainname" $F`" -o \
-#	  ! "`grep -- "# The mysqld program is expected to call sched_setscheduler" $F`" -o \
+#	  ! "`grep -- "# The mysql program is expected to call sched_setscheduler" $F`" -o \
 #	  ! "`grep -- "-a exit,always -S sched_setparam -S sched_setscheduler -F euid!=27" $F`" ] ; then
 #	  echo "Error - Missing settings in /etc/audit/audit.rules"
 #fi

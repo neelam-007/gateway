@@ -12,7 +12,7 @@ preseal)
 ##########
 # Ensure required services are enabled on boot.
 #
-for f in mysqld ssg ssgsysconfig ssg-dbstatus tarari tcp_tune; do chkconfig $f on; chkconfig --list $f;done
+for f in mysqld mysql ssg ssgsysconfig ssg-dbstatus tarari tcp_tune; do chkconfig $f on; chkconfig --list $f;done
 echo ""
 
 chkconfig kudzu off
