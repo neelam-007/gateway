@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
@@ -57,7 +58,7 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
                 if (tmp == null) throw new NoSuchVariableException("could not resolve " + assertion.getIpSourceContextVariable());
                 input = tmp.toString();
             } catch (NoSuchVariableException e) {
-                logger.log(Level.WARNING, "Remote ip from context variable unavailable. Possible policy error", e);
+                logger.log(Level.WARNING, "Remote ip from context variable unavailable. Possible policy error", ExceptionUtils.getDebugException(e));
                 auditor.logAndAudit(AssertionMessages.IP_ADDRESS_UNAVAILABLE, assertion.getIpSourceContextVariable());
                 return AssertionStatus.SERVER_ERROR;
             }

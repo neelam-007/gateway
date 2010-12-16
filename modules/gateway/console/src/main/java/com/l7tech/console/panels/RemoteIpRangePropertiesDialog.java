@@ -209,7 +209,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
 
     private void addDefaultCntxVar() {
         if (contextVarField.isEnabled() && (contextVarField.getText() == null || contextVarField.getText().length() < 1)) {
-            contextVarField.setText("request.http.header.remoteip");
+            contextVarField.setText("request.tcp.remoteAddress");
         }
     }
 }
