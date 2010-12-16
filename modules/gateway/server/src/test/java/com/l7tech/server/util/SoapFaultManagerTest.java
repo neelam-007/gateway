@@ -371,7 +371,7 @@ public class SoapFaultManagerTest {
         final SoapFaultManager.FaultResponse fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
         System.out.println(fault);
         assertEquals( "Http Status", 555, fault.getHttpStatus() );
-        assertEquals( "Text/Plain Content Type", ContentTypeHeader.create( "text/plain" ), fault.getContentType() );
+        assertTrue( "Text/Plain Content Type", ContentTypeHeader.create( "text/plain" ).matches(fault.getContentType()) );
         assertEquals( "Fault contents", "Server Error", fault.getContent() );
     }
 

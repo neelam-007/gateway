@@ -1464,7 +1464,8 @@ public class PolicyProcessingTest {
             public void call(final PolicyEnforcementContext context) {
                 try {
                     final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
-                    Assert.assertEquals( "content-type", ContentTypeHeader.XML_DEFAULT, context.getResponse().getMimeKnob().getOuterContentType() );
+                    Assert.assertTrue( "content-type", ContentTypeHeader.XML_DEFAULT.matches( context.getResponse().getMimeKnob().getOuterContentType() ) );
+                    Assert.assertEquals( "content-type charset", "utf-8", context.getResponse().getMimeKnob().getOuterContentType().getParam("charset"));
                     Assert.assertEquals( "content", "<xml>body</xml>", XmlUtil.nodeToString(document) );
                 } catch (Exception e) {
                     throw ExceptionUtils.wrap(e);

@@ -1411,7 +1411,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private int findContentTypeInList(ContentTypeHeader ctHeader) {
         for (int i = 0; i < contentTypeModel.getSize(); i++) {
             ContentTypeComboBoxItem contentTypeItem = (ContentTypeComboBoxItem) contentTypeModel.getElementAt(i);
-            if (ctHeader.equals(contentTypeItem.getContentType()) && ctHeader.getParams().equals(contentTypeItem.getContentType().getParams())) {
+            if (ctHeader.matches(contentTypeItem.getContentType()) && ctHeader.getParams().equals(contentTypeItem.getContentType().getParams())) {
                 return i;
             }
         }
