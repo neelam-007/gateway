@@ -32,7 +32,6 @@ import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
-import static org.junit.Assert.*;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -50,6 +49,8 @@ import java.util.Date;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests that ensure that the WssDecorator can produce output for various configurations without throwing an
@@ -182,7 +183,7 @@ public class WssDecoratorTest {
             if (elementsToEncrypt != null) req.getElementsToEncrypt().addAll(Arrays.asList(elementsToEncrypt));
             if (encryptionAlgorithm != null) req.setEncryptionAlgorithm(encryptionAlgorithm);
             if (elementsToSign != null) req.getElementsToSign().addAll(Arrays.asList(elementsToSign));
-            if (signTimestamp) req.setSignTimestamp();
+            if (signTimestamp) req.setSignTimestamp(true);
             req.setSignUsernameToken(signUsernameToken);
 
 
@@ -505,7 +506,7 @@ public class WssDecoratorTest {
         dreq.setSenderMessageSigningPrivateKey(td.req.getSenderMessageSigningPrivateKey());
         dreq.setTimestampCreatedDate(new Date());
         dreq.setIncludeTimestamp(true);
-        dreq.setSignTimestamp();
+        dreq.setSignTimestamp(true);
 
         Pattern findCreated = Pattern.compile("<[^ :>]*:?created[^<]*", Pattern.CASE_INSENSITIVE);
 

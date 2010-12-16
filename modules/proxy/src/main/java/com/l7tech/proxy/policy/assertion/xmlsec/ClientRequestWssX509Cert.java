@@ -57,7 +57,7 @@ public class ClientRequestWssX509Cert extends ClientAssertionWithMetaSupport {
                 wssReqs.setKeyInfoInclusionType(type);
                 wssReqs.setSenderMessageSigningCertificate(userCert);
                 wssReqs.setSenderMessageSigningPrivateKey(userPrivateKey);
-                wssReqs.setSignTimestamp();
+                wssReqs.setSignTimestamp(true);
                 return AssertionStatus.NONE;
             }
         });

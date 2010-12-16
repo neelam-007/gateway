@@ -5,16 +5,16 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.token.EncryptedElement;
+import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.xml.soap.SoapUtil;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -95,7 +97,7 @@ public class WssRoundTripPerformanceTester {
                 DecorationRequirements dr = new DecorationRequirements();
                 dr.setSenderMessageSigningCertificate(SENDER_RSA.getCertificate());
                 dr.setSenderMessageSigningPrivateKey(SENDER_RSA.getPrivate());
-                dr.setSignTimestamp();
+                dr.setSignTimestamp(true);
                 dr.getElementsToSign().add(SoapUtil.getBodyElement(doc));
                 Message mess = new Message(doc);
                 decorator.decorateMessage(mess, dr);
@@ -180,7 +182,7 @@ public class WssRoundTripPerformanceTester {
         DecorationRequirements dr = new DecorationRequirements();
         dr.setSenderMessageSigningCertificate(sender.getCertificate());
         dr.setSenderMessageSigningPrivateKey(sender.getPrivate());
-        dr.setSignTimestamp();
+        dr.setSignTimestamp(true);
         dr.getElementsToSign().add(SoapUtil.getBodyElement(doc));
         Message mess = new Message(doc);
         decorator.decorateMessage(mess, dr);

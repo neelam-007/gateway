@@ -173,7 +173,7 @@ public abstract class ServerAddWssEncryption<AT extends Assertion> extends Abstr
             } else if ( token instanceof SecurityContextToken ||
                         token instanceof EncryptedKey) {
                 if ( WSSecurityProcessorUtils.setToken( wssReq, token ) ) {
-                    wssReq.setSignTimestamp();
+                    wssReq.setSignTimestamp(true);
                 }
             } 
         }

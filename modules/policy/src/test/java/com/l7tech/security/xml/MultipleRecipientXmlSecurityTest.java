@@ -257,7 +257,7 @@ public class MultipleRecipientXmlSecurityTest {
         output.setRecipientCertificate(TestDocuments.getDotNetServerCertificate());
         output.setSenderMessageSigningCertificate(TestDocuments.getFrancoCertificate());
         output.setSenderMessageSigningPrivateKey(TestDocuments.getFrancoPrivateKey());
-        output.setSignTimestamp();
+        output.setSignTimestamp(true);
         Element body = SoapUtil.getBodyElement(doc);
         output.getElementsToSign().add(body);
         return output;
@@ -268,7 +268,7 @@ public class MultipleRecipientXmlSecurityTest {
         output.setRecipientCertificate(TestDocuments.getDotNetServerCertificate());
         output.setSenderMessageSigningCertificate(TestDocuments.getFrancoCertificate());
         output.setSenderMessageSigningPrivateKey(TestDocuments.getFrancoPrivateKey());
-        output.setSignTimestamp();
+        output.setSignTimestamp(true);
         Element body = SoapUtil.getBodyElement(doc);
         output.getElementsToSign().add(body);
         output.setSecurityHeaderActor(actor);

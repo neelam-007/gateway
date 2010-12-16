@@ -417,7 +417,7 @@ public class SamlGenerator {
                     decoReq.setSenderMessageSigningCertificate(subjectCertificate);
                 }
                 if (signMessageCheckBox.isSelected()) {
-                    decoReq.setSignTimestamp();
+                    decoReq.setSignTimestamp(true);
                     if (!signonly) {
                         if (!SamlConstants.CONFIRMATION_SENDER_VOUCHES.equals(subjectConfirmation) &&
                             !SamlConstants.CONFIRMATION_SAML2_SENDER_VOUCHES.equals(subjectConfirmation)) {

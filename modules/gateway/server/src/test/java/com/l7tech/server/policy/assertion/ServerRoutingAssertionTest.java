@@ -1,9 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.TestDocuments;
-import static com.l7tech.common.TestDocuments.PLACEORDER_CLEARTEXT;
-import static com.l7tech.common.TestDocuments.PLACEORDER_CLEARTEXT_S12;
-import static com.l7tech.common.TestDocuments.getTestDocument;
 import com.l7tech.common.io.RandomInputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
@@ -14,29 +11,23 @@ import com.l7tech.message.TcpKnobAdapter;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import static com.l7tech.policy.assertion.RoutingAssertion.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
-import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import static com.l7tech.server.policy.assertion.MutateOption.LEAVE_AS_SOAP;
-import static com.l7tech.server.policy.assertion.MutateOption.MUTATE_INTO_NON_SOAP;
-import static com.l7tech.server.policy.assertion.ThrowOption.SHOULD_NOT_THROW;
-import static com.l7tech.server.policy.assertion.ThrowOption.SHOULD_THROW;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.util.Functions;
 import com.l7tech.xml.soap.SoapUtil;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -47,6 +38,14 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+
+import static com.l7tech.common.TestDocuments.*;
+import static com.l7tech.policy.assertion.RoutingAssertion.*;
+import static com.l7tech.server.policy.assertion.MutateOption.LEAVE_AS_SOAP;
+import static com.l7tech.server.policy.assertion.MutateOption.MUTATE_INTO_NON_SOAP;
+import static com.l7tech.server.policy.assertion.ThrowOption.SHOULD_NOT_THROW;
+import static com.l7tech.server.policy.assertion.ThrowOption.SHOULD_THROW;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -143,7 +142,7 @@ public class ServerRoutingAssertionTest {
             dreq.setSecurityHeaderActor("james");
             dreq.setSenderMessageSigningCertificate(TestDocuments.getFimSigningCertificate());
             dreq.setSenderMessageSigningPrivateKey(TestDocuments.getFimSigningPrivateKey());
-            dreq.setSignTimestamp();
+            dreq.setSignTimestamp(true);
             decorator.decorateMessage(message, dreq);
         }
 
@@ -322,7 +321,7 @@ public class ServerRoutingAssertionTest {
 
         // Decorate message
         WssDecorator decorator = new WssDecoratorImpl();
-        dreq.setSignTimestamp();
+        dreq.setSignTimestamp(true);
         dreq.setSenderMessageSigningCertificate(TestDocuments.getDotNetServerCertificate());
         dreq.setSenderMessageSigningPrivateKey(TestDocuments.getDotNetServerPrivateKey());
         decorator.decorateMessage(message, dreq);

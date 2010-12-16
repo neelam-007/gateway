@@ -3,18 +3,18 @@
  */
 package com.l7tech.message;
 
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.security.token.SecurityToken;
+import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
-import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.io.IOException;
-
-import org.xml.sax.SAXException;
 
 /**
  * Provides access to a {@link SecurityKnob} from a {@link Message}.

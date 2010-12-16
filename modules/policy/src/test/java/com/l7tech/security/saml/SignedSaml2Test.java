@@ -147,7 +147,7 @@ public class SignedSaml2Test extends TestCase {
         assertNotNull(body);
         // in this case, the request is actually signed by the issuer
         DecorationRequirements req = new DecorationRequirements();
-        req.setSignTimestamp();
+        req.setSignTimestamp(true);
         req.getElementsToSign().add(body);
         req.setSenderMessageSigningCertificate(caCertChain[0]);
         req.setSenderMessageSigningPrivateKey(caPrivateKey);
@@ -190,7 +190,7 @@ public class SignedSaml2Test extends TestCase {
         assertNotNull(body);
 
         DecorationRequirements req = new DecorationRequirements();
-        req.setSignTimestamp();
+        req.setSignTimestamp(true);
         req.getElementsToSign().add(body);
         req.setSenderMessageSigningCertificate(clientCertChain[0]);
         req.setSenderMessageSigningPrivateKey(clientPrivateKey);

@@ -33,6 +33,26 @@ public final class KeyReference implements Serializable {
     }
 
     /**
+     * Get the KeyReference with the specified name.
+     *
+     * @param name the name to look up.  Case sensitive.  Required.
+     * @return the KeyReference with a matching name.  Never null.
+     * @throws NullPointerException if name is null
+     * @throws IllegalArgumentException if there is no KeyReference with the specified name.
+     */
+    public static KeyReference valueOf(String name) {
+        if (name == null) throw new NullPointerException("name");
+        if (name.equals(BST.getName())) {
+            return BST;
+        } else if (name.equals(SKI.getName())) {
+            return SKI;
+        } else if (name.equals(ISSUER_SERIAL.getName())) {
+            return ISSUER_SERIAL;
+        }
+        throw new IllegalArgumentException("No such KeyReference: " + name);
+    }
+
+    /**
      * @return the short key reference type name
      */
     public String getName() {
@@ -42,7 +62,7 @@ public final class KeyReference implements Serializable {
     /**
      * @return the array of all types
      */
-    public static List getAllTypes() {
+    public static List<KeyReference> getAllTypes() {
         return Arrays.asList(REFERENCES);
     }
 
@@ -78,9 +98,6 @@ public final class KeyReference implements Serializable {
 
     @Override
     public String toString() {
-        return "KeyReference{" +
-                 "val=" + val +
-                 ", name='" + name + "'" +
-                 "}";
+        return name;
     }
 }

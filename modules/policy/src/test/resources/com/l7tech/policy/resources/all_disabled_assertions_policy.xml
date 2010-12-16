@@ -281,6 +281,9 @@
         <L7p:WssVersion>
             <L7p:Enabled booleanValue="false"/>
         </L7p:WssVersion>
+        <L7p:WssConfiguration>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:WssConfiguration>
         <L7p:PreemptiveCompression>
             <L7p:Enabled booleanValue="false"/>
         </L7p:PreemptiveCompression>

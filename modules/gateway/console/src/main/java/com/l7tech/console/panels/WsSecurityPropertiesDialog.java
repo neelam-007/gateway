@@ -1,25 +1,26 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.xmlsec.WsSecurity;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.console.event.CertEvent;
+import com.l7tech.console.event.CertListenerAdapter;
+import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.console.event.CertListenerAdapter;
-import com.l7tech.console.event.CertEvent;
-import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.message.WsSecurityVersion;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.util.*;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Logger;
 

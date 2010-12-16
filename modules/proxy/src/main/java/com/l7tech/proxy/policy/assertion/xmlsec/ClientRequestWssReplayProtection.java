@@ -62,7 +62,7 @@ public class ClientRequestWssReplayProtection extends ClientAssertionWithMetaSup
 
                 // get the client cert and private key
                 // We must have credentials to get the private key
-                wssReqs.setSignTimestamp();
+                wssReqs.setSignTimestamp(true);
 
                 // If we still haven't yet seen a signature method, assume a WSS signature.
                 // LYONSM: This behavior is controversial -- it has been suggested that we should simply have
@@ -77,7 +77,7 @@ public class ClientRequestWssReplayProtection extends ClientAssertionWithMetaSup
                     wssReqs.setRecipientCertificate(ssgCert);
                     wssReqs.setSenderMessageSigningCertificate(userCert);
                     wssReqs.setSenderMessageSigningPrivateKey(userPrivateKey);
-                    wssReqs.setSignTimestamp();
+                    wssReqs.setSignTimestamp(true);
                 }
 
                 return AssertionStatus.NONE;

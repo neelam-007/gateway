@@ -32,7 +32,7 @@ public class ServerAddWssTimestamp extends ServerAddWssSignature<AddWssTimestamp
                                             final Message targetMessage) throws PolicyAssertionException {
         int signElements = 0;
         if (assertion.isSignatureRequired()) {
-            wssReq.setSignTimestamp();
+            wssReq.setSignTimestamp(true);
             signElements = 1;
         }
         else {

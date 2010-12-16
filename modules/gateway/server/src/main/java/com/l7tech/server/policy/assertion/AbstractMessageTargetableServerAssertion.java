@@ -57,6 +57,9 @@ public abstract class AbstractMessageTargetableServerAssertion<AT extends Assert
      * @param messageDescription A description for the given target message.
      * @param authContext The authentication context for the target message.
      * @return The resulting status (this implementation returns AssertionStatus.FAILED)
+     * @throws PolicyAssertionException something is wrong in the policy dont throw this if there is an issue with the request or the response
+     * @throws java.io.IOException if there is a problem reading a request or response
+     * @throws AssertionStatusException as an alternate mechanism to return an assertion status other than AssertionStatus.NONE.
      */
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
                                               final Message message,

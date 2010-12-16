@@ -1,6 +1,6 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.message.WsSecurityVersion;
+import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;

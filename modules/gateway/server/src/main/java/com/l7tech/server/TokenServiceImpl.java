@@ -531,7 +531,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
 
         WssDecorator wssDecorator = new WssDecoratorImpl();
         DecorationRequirements req = new DecorationRequirements();
-        req.setSignTimestamp();
+        req.setSignTimestamp(true);
         req.getElementsToSign().add(body);
 
         try {

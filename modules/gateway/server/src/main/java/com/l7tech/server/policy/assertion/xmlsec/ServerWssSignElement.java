@@ -68,7 +68,7 @@ public class ServerWssSignElement extends ServerAddWssSignature<WssSignElement> 
 
         //noinspection unchecked
         wssReq.getElementsToSign().addAll(selectedElements);
-        wssReq.setSignTimestamp();
+        wssReq.setSignTimestamp(true);
 
         return selectedElements.size();
     }

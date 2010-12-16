@@ -1,4 +1,4 @@
-package com.l7tech.message;
+package com.l7tech.security.xml;
 
 /**
  * WS-Security version enum.

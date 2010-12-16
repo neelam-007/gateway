@@ -81,7 +81,7 @@ public class PolicyServiceClient {
         if (canSign) {
             req.setSenderMessageSigningCertificate(clientCert);
             req.setSenderMessageSigningPrivateKey(clientKey);
-            req.setSignTimestamp();
+            req.setSignTimestamp(true);
         }
         try {
             if (canSign) {
@@ -122,7 +122,7 @@ public class PolicyServiceClient {
         try {
             req.setIncludeKerberosTicket(true);
             req.setKerberosTicket(kerberosTicket);
-            req.setSignTimestamp();
+            req.setSignTimestamp(true);
 
             Element header = SoapUtil.getHeaderElement(msg);
             Element body = SoapUtil.getBodyElement(msg);

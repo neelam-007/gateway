@@ -43,7 +43,7 @@ public class ClientRequestWssTimestamp extends ClientAssertionWithMetaSupport {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
                 DecorationRequirements wssReqs = context.getWssRequirements(assertion);
                 if (assertion.isSignatureRequired())
-                    wssReqs.setSignTimestamp();
+                    wssReqs.setSignTimestamp(true);
                 return AssertionStatus.NONE;
             }
         });

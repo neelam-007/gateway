@@ -56,7 +56,7 @@ public class ClientSecureConversation extends ClientAssertionWithMetaSupport {
             @Override
             public AssertionStatus decorateRequest(PolicyApplicationContext context) {
                 DecorationRequirements wssReqs = context.getWssRequirements(data);
-                wssReqs.setSignTimestamp();
+                wssReqs.setSignTimestamp(true);
                 wssReqs.setSecureConversationSession(new SimpleSecureConversationSession(sessionId, sessionKey, SoapUtil.WSSC_NAMESPACE));
                 return AssertionStatus.NONE;
             }

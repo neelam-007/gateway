@@ -593,7 +593,7 @@ public class WssProcessorTest {
         DecorationRequirements dreq = new DecorationRequirements();
         dreq.setSecureConversationSession(session);
         dreq.setIncludeTimestamp(true);
-        dreq.setSignTimestamp();
+        dreq.setSignTimestamp(true);
         new WssDecoratorImpl().decorateMessage(msg, dreq);
         return new Pair<Message, SimpleSecureConversationSession>(msg, session);
     }

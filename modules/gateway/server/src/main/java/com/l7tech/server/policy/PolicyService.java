@@ -459,7 +459,7 @@ public class PolicyService extends ApplicationObjectSupport {
         DecorationRequirements reqmts = new DecorationRequirements();
         reqmts.setSenderMessageSigningCertificate(signer.getCertificate());
         reqmts.setSenderMessageSigningPrivateKey(signer.getPrivate());
-        reqmts.setSignTimestamp();
+        reqmts.setSignTimestamp(true);
         try {
             reqmts.getElementsToSign().add(SoapUtil.getBodyElement(responseDoc));
             if (policyVersion != null)

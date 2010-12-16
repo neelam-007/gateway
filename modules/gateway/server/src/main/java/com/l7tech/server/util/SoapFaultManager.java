@@ -470,7 +470,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 requirements.setSecurityHeaderActor( actorUri );
             }
 
-            requirements.setSignTimestamp();
+            requirements.setSignTimestamp(true);
             requirements.getElementsToSign().add( SoapUtil.getBodyElement(soapDoc));
 
             decorator.decorateMessage(new Message(soapDoc), requirements);

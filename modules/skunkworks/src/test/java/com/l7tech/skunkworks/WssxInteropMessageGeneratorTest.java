@@ -47,7 +47,7 @@ public class WssxInteropMessageGeneratorTest {
         gen.dreq().setUsernameTokenCredentials(utok);
         gen.dreq().setEncryptUsernameToken(true);
         gen.dreq().setSignUsernameToken(true);
-        gen.dreq().setSignTimestamp();
+        gen.dreq().setSignTimestamp(true);
         gen.dreq().setEncryptionAlgorithm("http://www.w3.org/2001/04/xmlenc#aes256-cbc");
         final Element bodyEl = SoapUtil.getBodyElement(gen.doc);
         gen.dreq().getElementsToEncrypt().add(bodyEl);
@@ -65,7 +65,7 @@ public class WssxInteropMessageGeneratorTest {
         gen.dreq().setSenderMessageSigningCertificate(gen.getAliceInfo().getCertificate());
         gen.dreq().setSenderMessageSigningPrivateKey(gen.getAliceInfo().getPrivate());
         gen.dreq().setRecipientCertificate(gen.getBobInfo().getCertificate());
-        gen.dreq().setSignTimestamp();
+        gen.dreq().setSignTimestamp(true);
         gen.dreq().setEncryptionAlgorithm("http://www.w3.org/2001/04/xmlenc#aes256-cbc");
         final Element bodyEl = SoapUtil.getBodyElement(gen.doc);
         gen.dreq().getElementsToEncrypt().add(bodyEl);

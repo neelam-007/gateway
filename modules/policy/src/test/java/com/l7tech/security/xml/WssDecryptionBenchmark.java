@@ -14,8 +14,8 @@ import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.w3c.dom.Element;
 
 import java.io.ByteArrayInputStream;
@@ -23,6 +23,9 @@ import java.io.File;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  *
@@ -60,7 +63,7 @@ public class WssDecryptionBenchmark {
         req.setSenderMessageSigningPrivateKey(clientKey);
         req.setRecipientCertificate(serverCert);
         req.setIncludeTimestamp(true);
-        req.setSignTimestamp();
+        req.setSignTimestamp(true);
         req.getElementsToSign().add(body);
         req.getElementsToEncrypt().add(body);
         decorator.decorateMessage(message, req);

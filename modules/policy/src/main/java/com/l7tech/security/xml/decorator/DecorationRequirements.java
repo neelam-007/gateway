@@ -7,6 +7,7 @@ import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.util.NamespaceFactory;
 import com.l7tech.util.SoapConstants;
@@ -91,10 +92,12 @@ public class DecorationRequirements {
      * Regardless of this setting, if a timestamp is added to the document it will always be signed,
      * either directly or indirectly.  It will be signed directly unless it will be covered by an
      * Envelope signature.<p>
+     * @param signTimestamp true to set includeTimestamp to true and mark it as always signed; false to turn off forced-inclusion of signed timestamp.
      */
-    public void setSignTimestamp() {
-        setIncludeTimestamp(true);
-        this.signTimestamp = true;
+    public void setSignTimestamp(boolean signTimestamp) {
+        if (signTimestamp)
+            setIncludeTimestamp(true);
+        this.signTimestamp = signTimestamp;
     }
 
     /**
@@ -299,8 +302,8 @@ public class DecorationRequirements {
      *                              or null if the request did not contain any signatures but confirmation is needed.
      */
     public void addSignatureConfirmation(String signatureConfirmation) {
-        if ( signatureConfirmations.contains(null) ||
-             ! signatureConfirmations.isEmpty() && signatureConfirmation == null)
+        if ( (signatureConfirmations.contains(null) && signatureConfirmation != null) ||
+             (!signatureConfirmations.isEmpty() && !signatureConfirmations.contains(null) && signatureConfirmation == null))
             throw new IllegalArgumentException("Cannot confirm both the lack and the presence of signatures in a request.");
         this.signatureConfirmations.add(signatureConfirmation);
     }
@@ -334,9 +337,34 @@ public class DecorationRequirements {
         this.suppressSamlStrTransform = suppressSamlStrTransform;
     }
 
+    /**
+     * Check if a particular WSS version has been explicitly requested.
+     *
+     * @return the explicitly-requested WSS version, or null.
+     */
+    public WsSecurityVersion getWssVersion() {
+        return wssVersion;
+    }
+
+    /**
+     * Explicitly request a particular version of WS-Security be used during decoration.
+     * <p/>
+     * Setting this to WSS 1.0
+     * <p/>
+     * Currently the only effect of setting this to WSS 1.1 is to cause {@link #isWss11} to always return true,
+     * which may cause signature confirmations to be added (by users of WssDecorator, rather than by the decorator itself) prior to decoration.
+     *
+     * @param wssVersion a specific WSS version to request, or null.
+     */
+    public void setWssVersion(WsSecurityVersion wssVersion) {
+        this.wssVersion = wssVersion;
+    }
+
     public boolean isWss11() {
-        return ! signatureConfirmations.isEmpty() || encryptUsernameToken;
-        // todo: check for other WSS11 decorations -- encrypted headers, when they will be supported 
+        return wssVersion != null
+                ? wssVersion.equals(WsSecurityVersion.WSS11)
+                : !signatureConfirmations.isEmpty() || encryptUsernameToken;
+        // todo: check for other WSS11 decorations -- encrypted headers, when they will be supported
     }
 
     public interface SecureConversationSession {
@@ -807,4 +835,5 @@ public class DecorationRequirements {
     private boolean protectTokens = false;
     private String signatureMessageDigest = null;
     private PreferredSigningTokenType preferredSigningTokenType = null;
+    private WsSecurityVersion wssVersion = null;
 }

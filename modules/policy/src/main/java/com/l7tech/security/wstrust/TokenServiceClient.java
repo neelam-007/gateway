@@ -129,7 +129,7 @@ public class TokenServiceClient {
             if (clientPrivateKey != null && clientCertificate != null) {
                 req.setSenderMessageSigningCertificate(clientCertificate);
                 req.setSenderMessageSigningPrivateKey(clientPrivateKey);
-                req.setSignTimestamp();
+                req.setSignTimestamp(true);
                 //noinspection unchecked
                 req.getElementsToSign().add(body);
             }

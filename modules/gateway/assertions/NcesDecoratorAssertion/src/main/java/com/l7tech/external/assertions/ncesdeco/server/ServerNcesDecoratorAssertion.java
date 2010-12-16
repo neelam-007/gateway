@@ -215,7 +215,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
     }
 
     private void addTimestamp(DecorationRequirements decoReq) {
-        decoReq.setSignTimestamp();
+        decoReq.setSignTimestamp(true);
     }
 
     private void addSaml(Document doc, Element security, DecorationRequirements decoReq, PolicyEnforcementContext context) throws InvalidDocumentFormatException {

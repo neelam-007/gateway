@@ -105,7 +105,7 @@ public class ClientRequestWssSaml extends ClientAssertionWithMetaSupport {
                 DecorationRequirements wssReqs = context.getWssRequirements(data);
 
                 if ( privateKey != null ) {
-                    wssReqs.setSignTimestamp();
+                    wssReqs.setSignTimestamp(true);
                     wssReqs.setSenderMessageSigningPrivateKey(privateKey);
                 }
 

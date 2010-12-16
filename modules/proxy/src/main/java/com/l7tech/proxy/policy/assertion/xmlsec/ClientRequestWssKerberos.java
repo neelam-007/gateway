@@ -46,7 +46,7 @@ public class ClientRequestWssKerberos extends ClientAssertionWithMetaSupport {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException
             {
                 DecorationRequirements wssReqs = context.getWssRequirements(data);
-                wssReqs.setSignTimestamp();
+                wssReqs.setSignTimestamp(true);
 
                 if(kerberosId!=null) {
                     context.setUsedKerberosServiceTicketReference(true);

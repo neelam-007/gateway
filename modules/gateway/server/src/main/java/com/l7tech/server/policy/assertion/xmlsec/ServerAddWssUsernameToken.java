@@ -1,28 +1,27 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import org.springframework.context.ApplicationContext;
-import org.xml.sax.SAXException;
-
-import java.util.logging.Logger;
-import java.util.Date;
-import java.io.IOException;
-
-import com.l7tech.policy.assertion.xmlsec.AddWssUsernameToken;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.xmlsec.AddWssUsernameToken;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.security.token.UsernameTokenImpl;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ISO8601Date;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.token.UsernameTokenImpl;
-import com.l7tech.gateway.common.audit.AssertionMessages;
+import org.springframework.context.ApplicationContext;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.logging.Logger;
 
 /**
  * Server assertion for addition of WS-Security UsernameToken
@@ -87,7 +86,7 @@ public class ServerAddWssUsernameToken extends ServerAddWssEncryption<AddWssUser
 
             decorationRequirements.setEncryptUsernameToken( true );
             decorationRequirements.setSignUsernameToken( true );
-            decorationRequirements.setSignTimestamp();
+            decorationRequirements.setSignTimestamp(true);
             decorationRequirements.setUseDerivedKeys( true );
         }
 

@@ -158,7 +158,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                     auditor.logAndAudit(AssertionMessages.SC_UNABLE_TO_ATTACH_SC_TOKEN);
                     throw new CausedIOException(e);
                 }
-                wssReq.setSignTimestamp();
+                wssReq.setSignTimestamp(true);
                 wssReq.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                     @Override
                     public String getId() {
