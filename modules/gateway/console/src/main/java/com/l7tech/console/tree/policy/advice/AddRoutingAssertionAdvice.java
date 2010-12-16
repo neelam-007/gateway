@@ -1,5 +1,6 @@
 package com.l7tech.console.tree.policy.advice;
 
+import com.l7tech.console.policy.PolicyPositionAware;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.wsdl.Wsdl;
@@ -20,7 +21,7 @@ import java.awt.*;
  * routing assertion add. It sets security defaults such as default envelope signing.
  * <p/>
  * 
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author Emil Marceta
  */
 public class AddRoutingAssertionAdvice implements Advice {
     private static final Logger log = Logger.getLogger(AddRoutingAssertionAdvice.class.getName());
@@ -33,6 +34,7 @@ public class AddRoutingAssertionAdvice implements Advice {
      * 
      * @param pc The policy change.
      */
+    @Override
     public void proceed(final PolicyChange pc) {
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 ||
@@ -74,10 +76,12 @@ public class AddRoutingAssertionAdvice implements Advice {
             if (ra.getEndpointOid() == null) {
                 final Frame mainWindow = TopComponents.getInstance().getTopParent();
                 final JmsRoutingAssertionDialog dialog = new JmsRoutingAssertionDialog(mainWindow, ra, false);
+                dialog.setPolicyPosition( new PolicyPositionAware.PolicyPosition( pc.getParent().asAssertion(), pc.getChildLocation()) );
                 dialog.setModal(true);
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog, new Runnable() {
+                    @Override
                     public void run() {
                         if (!dialog.isCanceled())
                             pc.proceed();

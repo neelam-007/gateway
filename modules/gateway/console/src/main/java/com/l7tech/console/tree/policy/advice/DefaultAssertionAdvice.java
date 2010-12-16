@@ -1,10 +1,10 @@
 package com.l7tech.console.tree.policy.advice;
 
+import com.l7tech.console.policy.PolicyPositionAware;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.Functions;
 import com.l7tech.console.panels.AssertionPropertiesEditor;
-import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.util.TopComponents;
@@ -40,8 +40,8 @@ public class DefaultAssertionAdvice<AT extends Assertion> implements Advice {
         }
 
         final AssertionPropertiesEditor<AT> ape = apeFactory.call(TopComponents.getInstance().getTopParent(), ass);
-        if ( ape instanceof AssertionPropertiesEditorSupport ) {
-            ((AssertionPropertiesEditorSupport)ape).setPolicyPosition( pc.getParent().asAssertion(), pc.getChildLocation() );            
+        if ( ape instanceof PolicyPositionAware ) {
+            ((PolicyPositionAware)ape).setPolicyPosition( new PolicyPositionAware.PolicyPosition( pc.getParent().asAssertion(), pc.getChildLocation()) );            
         }
         ape.setData(ass);
         final JDialog dlg = ape.getDialog();

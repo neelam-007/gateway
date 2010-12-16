@@ -6,6 +6,7 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.console.policy.PolicyPositionAware;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
@@ -21,7 +22,9 @@ import java.awt.*;
  * This class however needs to be updated to use meta data, see it's DefaultAssertionPropertiesEditor implementation
  * where it passes meta data to it's super, class AssertionPropertiesOkCancelSupport could just extract this info itself
  */
-public class LegacyAssertionPropertyDialog extends JDialog {
+public class LegacyAssertionPropertyDialog extends JDialog implements PolicyPositionAware {
+
+    //- PUBLIC
 
     public LegacyAssertionPropertyDialog(final Frame owner, final Assertion assertion, final boolean modal) {
         super(owner, modal);
@@ -30,4 +33,32 @@ public class LegacyAssertionPropertyDialog extends JDialog {
         }
         setTitle(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
     }
+
+    @Override
+    public PolicyPosition getPolicyPosition() {
+        return policyPosition;
+    }
+
+    @Override
+    public void setPolicyPosition( final PolicyPosition policyPosition ) {
+        this.policyPosition = policyPosition;
+    }
+
+    //- PROTECTED
+
+    /**
+     * Get the assertion prior to this assertion in the policy.
+     *
+     * <p>This will only be available when adding an assertion to the policy.</p>
+     *
+     * @return The previous assertion (null if there is none)
+     */
+    @SuppressWarnings({ "unchecked" })
+    protected Assertion getPreviousAssertion() {
+        return policyPosition==null ? null : policyPosition.getPreviousAssertion();
+    }
+
+    //- PRIVATE
+
+    private PolicyPosition policyPosition;
 }

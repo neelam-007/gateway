@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.policy.PolicyPositionAware;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
@@ -21,7 +21,7 @@ import java.util.TreeSet;
  *
  * @author steve
  */
-public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> extends JDialog implements AssertionPropertiesEditor<AT> {
+public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> extends JDialog implements AssertionPropertiesEditor<AT>, PolicyPositionAware {
 
     //- PUBLIC
 
@@ -93,18 +93,22 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
         return this;
     }
 
+    @Override
+    public PolicyPosition getPolicyPosition() {
+        return this.policyPosition;
+    }
+
     /**
      * The policy position is set when the assertion about to be added to a policy.
      *
      * <p>The policy position can be used to extract contextual information from a
      * policy (such as variables that are set before this assertion)</p>
      *
-     * @param parentAssertion The assertion that will be the parent of this assertion.
-     * @param insertPosition The index that will be used to add this assertion to the parent
+     * @param policyPosition The position to be used for this assertion.
      */
-    public void setPolicyPosition( final Assertion parentAssertion, final int insertPosition ) {
-        this.parentAssertion = parentAssertion;
-        this.insertPosition = insertPosition;
+    @Override
+    public void setPolicyPosition( final PolicyPositionAware.PolicyPosition policyPosition ) {
+        this.policyPosition = policyPosition;
     }
 
     //- PROTECTED
@@ -137,20 +141,7 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
      */
     @SuppressWarnings({ "unchecked" })
     protected Assertion getPreviousAssertion() {
-        Assertion assertion = null;
-
-        if ( parentAssertion instanceof CompositeAssertion ) {
-            CompositeAssertion compositeAssertion = (CompositeAssertion) parentAssertion;
-            java.util.List<Assertion> children = compositeAssertion.getChildren();
-            //children should never be null
-            if(children == null || children.isEmpty()) return parentAssertion;
-
-            if (insertPosition == 0) return parentAssertion;
-            else if(children.size() > (insertPosition-1)) return children.get(insertPosition-1);
-            else return children.get(children.size() - 1);
-        }
-
-        return assertion;
+        return policyPosition==null ? null : policyPosition.getPreviousAssertion();
     }
 
     protected ComboBoxModel buildMessageSourceComboBoxModel( final Assertion assertion ) {
@@ -204,8 +195,7 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
     //- PRIVATE
 
     private boolean readOnly = false;
-    private Assertion parentAssertion;
-    private int insertPosition;
+    private PolicyPositionAware.PolicyPosition policyPosition;
 
     private void init() {
         this.setDefaultCloseOperation( JDialog.DISPOSE_ON_CLOSE );

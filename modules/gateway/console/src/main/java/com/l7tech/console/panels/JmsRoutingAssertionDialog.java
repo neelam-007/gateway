@@ -9,7 +9,6 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.AssertionPath;
@@ -453,7 +452,11 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         else if (sourceTarget == TargetMessageType.RESPONSE)
             requestTargetComboBox.setSelectedIndex(1);
 
-        final Map<String, VariableMetadata> predecessorVariables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion);
+        final Map<String, VariableMetadata> predecessorVariables =
+                (assertion.getParent() != null) ? SsmPolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
+                (getPreviousAssertion() != null)? SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() ) :
+                Collections.<String, VariableMetadata>emptyMap();
+
         final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
         for (String variableName : predecessorVariableNames) {
             if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
@@ -653,6 +656,12 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         if (getSize().width < mainPanel.getMinimumSize().width) {
             setSize(mainPanel.getMinimumSize().width, getSize().height);
         }
+    }
+
+    @Override
+    public void setPolicyPosition( final PolicyPosition policyPosition ) {
+        super.setPolicyPosition( policyPosition );
+        populateReqMsgSrcComboBox();
     }
 
     /**
