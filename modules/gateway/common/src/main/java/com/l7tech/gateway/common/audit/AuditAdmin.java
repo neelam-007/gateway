@@ -48,7 +48,6 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @param criteria an {@link AuditSearchCriteria} describing the search criteria.  Must not be null.
      * @throws FindException if there was a problem retrieving Audit records from the database
      */
-    @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
     @Administrative(licensed=false)
     Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException;
@@ -60,7 +59,6 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @return criteria an {@link AuditSearchCriteria} describing the search criteria.  Must not be null.
      * @throws FindException if there was a problem retrieving Audit records from the database
      */
-    @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITIES)
     @Administrative(licensed=false)
     Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException;
@@ -69,11 +67,11 @@ public interface AuditAdmin extends GenericLogAdmin {
      * Checks if there are any audits found given the date and level to search for.
      * @param date  Starting date consider to be new audits
      * @param level The auditing level to be queried for
-     * @return  TRUE if new audit exists based on the provided starting date.  
+     * @return The date of the first available audit or 0 if none are available.
      */
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
-    boolean hasNewAudits(Date date, Level level);
+    long hasNewAudits(Date date, Level level);
 
     /**
      * Get the level below which the server will not record audit events of type {@link MessageSummaryAuditRecord}.

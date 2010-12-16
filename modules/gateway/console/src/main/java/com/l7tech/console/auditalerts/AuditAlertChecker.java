@@ -1,9 +1,6 @@
 package com.l7tech.console.auditalerts;
 
 import com.l7tech.gateway.common.audit.AuditAdmin;
-import com.l7tech.gateway.common.audit.AuditSearchCriteria;
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.console.logging.ErrorManager;
 
 import javax.swing.Timer;
@@ -55,18 +52,9 @@ public class AuditAlertChecker {
                 }
             }
 
-            long alertTime = 0;
             //check if there are new audits to grab
-            if (admin.hasNewAudits(lastAcknowledged, configBean.getAuditAlertLevel())) {
-                AuditSearchCriteria crit = getAuditSearchCriteria(lastAcknowledged);
-                Collection<AuditRecord> coll = admin.find(crit);
-                if (coll != null) {
-                    Iterator<AuditRecord> arIter = coll.iterator();
-                    if (arIter.hasNext()) {
-                        AuditRecord auditRecord = arIter.next();
-                        if (auditRecord != null) alertTime = auditRecord.getMillis();
-                    }
-                }
+            long alertTime = admin.hasNewAudits(lastAcknowledged, configBean.getAuditAlertLevel());
+            if ( alertTime > 0 ) {
                 for (AuditWatcher auditWatcher : auditWatchers) {
                     auditWatcher.alertsAvailable(alertTime!=0, alertTime);
                 }
@@ -80,8 +68,6 @@ public class AuditAlertChecker {
         } catch (RemoteAccessException e) {
             // bzilla #3741, we may no longer be connected
             logger.log(Level.WARNING, "Could not access Gateway to update this. Perhaps the connection to the Gateway timed out.", e);
-        } catch (FindException e) {
-            logger.warning("Error while checking for new Audits: [" + e.getMessage() + "]");
         }
     }
 
@@ -122,6 +108,7 @@ public class AuditAlertChecker {
         if (timer == null) {
             timer = new Timer(getDelay(),
                 new ActionListener() {
+                    @Override
                     public void actionPerformed(ActionEvent e) {
                         try {
                             if (configBean.isEnabled())
@@ -134,11 +121,6 @@ public class AuditAlertChecker {
             timer.setInitialDelay(1000);
         }
         return timer;
-    }
-
-    private AuditSearchCriteria getAuditSearchCriteria(Date lastAckedTime) {
-        Level currentLevel = configBean.getAuditAlertLevel();
-        return new AuditSearchCriteria.Builder().fromTime(lastAckedTime).fromLevel(currentLevel).maxRecords(1).build();
     }
 
     private void startTimer() {

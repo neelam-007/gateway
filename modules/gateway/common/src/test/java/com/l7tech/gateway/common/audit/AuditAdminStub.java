@@ -113,7 +113,7 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public boolean hasNewAudits(Date date, Level level) {
-        return false;  
+    public long hasNewAudits(Date date, Level level) {
+        return 0;
     }
 }

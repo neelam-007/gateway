@@ -19,6 +19,7 @@ import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.admin.AuditViewGatewayAuditsData;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.Background;
 import com.l7tech.util.OpaqueId;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
@@ -27,19 +28,16 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,6 +47,13 @@ import java.util.logging.Logger;
 public class AuditAdminImpl implements AuditAdmin, InitializingBean, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static final String CLUSTER_PROP_LAST_AUDITACK_TIME = "audit.acknowledge.highestTime";
+    private static final int MAX_CRITERIA_HISTORY = SyspropUtil.getInteger( "com.l7tech.server.audit.maxAuditSearchCriteria", 20 );
+    private static final String MAX_AUDIT_DATA_CACHE_SIZE = "com.l7tech.server.audit.maxAuditDataCacheSize";
+    private static final int CLEANUP_DELAY = SyspropUtil.getInteger( "com.l7tech.server.audit.auditDataCacheDelay", 120000 );
+    private static final long CLEANUP_PERIOD = SyspropUtil.getLong( "com.l7tech.server.audit.auditDataCachePeriod",  60000 );
+
+    // map of IdentityHeader -> AuditViewData
+    private final LRUMap auditedData = new LRUMap(SyspropUtil.getInteger(MAX_AUDIT_DATA_CACHE_SIZE, 100));
 
     private AuditDownloadManager auditDownloadManager;
     private AuditRecordManager auditRecordManager;
@@ -57,10 +62,16 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private ServerConfig serverConfig;
     private ClusterPropertyManager clusterPropertyManager;
     private AuditArchiver auditArchiver;
-    private PlatformTransactionManager transactionManager; // required for TransactionTemplate
     private ApplicationContext applicationContext;
 
-    private final BlockingQueue<AuditViewData> queue = new ArrayBlockingQueue<AuditViewData>(10);
+    public AuditAdminImpl() {
+        Background.scheduleRepeated( new TimerTask(){
+            @Override
+            public void run() {
+                cleanupAuditViewData();
+            }
+        }, CLEANUP_DELAY, CLEANUP_PERIOD );
+    }
 
     public void setAuditDownloadManager(AuditDownloadManager auditDownloadManager) {
         this.auditDownloadManager = auditDownloadManager;
@@ -90,20 +101,19 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         this.auditArchiver = auditArchiver;
     }
 
-    public void setTransactionManager(PlatformTransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
-    }
-
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
+    @Override
     public AuditRecord findByPrimaryKey( final long oid ) throws FindException {
         return auditRecordManager.findByPrimaryKey(oid);
     }
 
+    @Override
     public Collection<AuditRecord> find(final AuditSearchCriteria criteria) throws FindException {
-        addToAudit(criteria);
+        notifyAuditSearch(criteria);
         return auditRecordManager.find(criteria);
     }
 
@@ -114,31 +124,55 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
      *
      * @param criteria  The search criteria for retrieving audits
      */
-    private void addToAudit(final AuditSearchCriteria criteria) {
+    private void notifyAuditSearch( final AuditSearchCriteria criteria ) {
         final AdminInfo adminInfo = AdminInfo.find();
-        AuditViewGatewayAuditsData audit = new AuditViewGatewayAuditsData(this, criteria.getAuditQueryDetails(false));
-        try {
-            queue.put(new AuditViewData(audit, adminInfo, criteria));
-        } catch (InterruptedException ie) {
-            logger.warning("Failed to add audit view event: " + ie.getMessage());
+
+        boolean audit;
+        synchronized ( auditedData ) {
+            AuditViewData data = (AuditViewData) auditedData.get( adminInfo.getIdentityHeader() );
+            if ( data != null ) {
+                audit = data.isNewCriteria( criteria );
+            } else {
+                auditedData.put( adminInfo.getIdentityHeader(), new AuditViewData(adminInfo, criteria) );
+                audit = true;
+            }
+        }
+
+        if ( audit ) {
+            final AuditViewGatewayAuditsData auditEvent = new AuditViewGatewayAuditsData(this, criteria.getAuditQueryDetails(false));
+            applicationContext.publishEvent( auditEvent );
         }
     }
 
+    @SuppressWarnings({ "unchecked" })
+    private void cleanupAuditViewData() {
+        synchronized ( auditedData ) {
+            //loop through the set and delete any data that has expired already
+            for (Iterator i = auditedData.entrySet().iterator(); i.hasNext();) {
+                Map.Entry<IdentityHeader, AuditViewData> entry = (Map.Entry<IdentityHeader, AuditViewData>) i.next();
+                AuditViewData data = entry.getValue();
+                if (data.isStale()) i.remove();
+            }
+        }
+    }
+
+    @Override
     public Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException{
-        addToAudit(criteria);
+        notifyAuditSearch(criteria);
         return auditRecordManager.findHeaders(criteria);
     }
 
-    public boolean hasNewAudits( final Date date, final Level level) {
+    @Override
+    public long hasNewAudits( final Date date, final Level level) {
         AuditSearchCriteria criteria = new AuditSearchCriteria.Builder().fromTime(date).fromLevel(level).maxRecords(1).build();
-        boolean hasNewAudits = false;
+        long newAuditTime = 0;
         User user = JaasUtils.getCurrentUser();
         if ( user != null ) {
             try {
                 Collection<AuditRecordHeader> newAudits = auditRecordManager.findHeaders(criteria);
                 newAudits = filter.filter(newAudits, user, OperationType.READ, null );
                 if ( newAudits.size() > 0 ) {
-                    hasNewAudits = true;
+                    newAuditTime = newAudits.iterator().next().getTimestamp();
                 }
             } catch (FindException fe) {
                 logger.fine("Failed to find new audits for date " + date.toString() + " with level " + level.toString());
@@ -146,13 +180,15 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         } else {
             logger.fine("User not found when checking for new audits.");
         }
-        return hasNewAudits;
+        return newAuditTime;
     }
 
+    @Override
     public void deleteOldAuditRecords() throws DeleteException {
         auditRecordManager.deleteOldAuditRecords(-1);
     }
 
+    @Override
     public void doAuditArchive() {
         if (auditArchiver == null) {
             throw new NullPointerException("Null AuditArchiver! Cannot run requested archive command.");
@@ -160,6 +196,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         auditArchiver.runNow();
     }
 
+    @Override
     public ClusterProperty getFtpAuditArchiveConfig() {
         ClusterProperty result = null;
         try {
@@ -172,6 +209,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         return result != null ? result : new ClusterProperty(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION, null);
     }
 
+    @Override
     public void setFtpAuditArchiveConfig(ClusterProperty prop) throws UpdateException {
 
         if (prop == null || ! ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION.equals(prop.getName()))
@@ -197,10 +235,9 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         }
     }
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         checkAuditRecordManager();
-        AuditViewerTask task = new AuditViewerTask();
-        task.start();   //start daemon thread
     }
 
     private void checkAuditRecordManager() {
@@ -209,6 +246,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         }
     }
 
+    @Override
     public OpaqueId downloadAllAudits(long fromTime,
                                       long toTime,
                                       long[] serviceOids,
@@ -220,6 +258,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         }
     }
 
+    @Override
     public DownloadChunk downloadNextChunk(OpaqueId context) {
         DownloadChunk chunk = null;
 
@@ -242,6 +281,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
      * @param size The maximum number of records to return
      * @throws FindException
      */
+    @Override
     public Collection<AuditRecord> findAuditRecords(final String nodeid,
                                                     final Date startMsgDate,
                                                     final Date endMsgDate,
@@ -253,6 +293,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                 toTime(endMsgDate).nodeId(nodeid).startMessageNumber(-1).endMessageNumber(-1).maxRecords(size).build());
     }
 
+    @Override
     public Date getLastAcknowledgedAuditDate() {
         Date date = null;
         String value = null;
@@ -274,6 +315,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         return date;
     }
 
+    @Override
     public Date markLastAcknowledgedAuditDate() {
         Date date = new Date();
         String value = Long.toString(date.getTime());
@@ -301,6 +343,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         return date;
     }
 
+    @Override
     public SSGLogRecord[] getSystemLog(final String nodeid,
                                        final long startMsgNumber,
                                        final long endMsgNumber,
@@ -312,6 +355,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         return logRecordManager.find(nodeid, startMsgNumber, size);
     }
 
+    @Override
     public int getSystemLogRefresh(final int typeId) {
         int refreshInterval = 0;
         int defaultRefreshInterval = 3;
@@ -349,10 +393,12 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         return refreshInterval;
     }
 
+    @Override
     public Level serverMessageAuditThreshold() {
         return getAuditLevel(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD, "message", AuditContext.DEFAULT_MESSAGE_THRESHOLD);
     }
 
+    @Override
     public Level serverDetailAuditThreshold() {
         return getAuditLevel(ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD, "detail", AuditContext.DEFAULT_ASSOCIATED_LOGS_THRESHOLD);
     }
@@ -375,6 +421,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         return output;
     }
 
+    @Override
     public int serverMinimumPurgeAge() {
         String sAge = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
         int age = 168;
@@ -393,116 +440,18 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     }
 
     /**
-     * A daemon thread which will persist audit view events.
-     */
-    private class AuditViewerTask extends Thread {
-        private final LRUMap auditedData;
-        private static final int DEFAULT_MAX_AUDIT_DATA_SIZE = 100;
-        private static final String MAX_AUDIT_DATA_CACHE_SIZE = "com.l7tech.server.audit.maxAuditDataCacheSize";
-
-        public AuditViewerTask() {
-            auditedData = new LRUMap(SyspropUtil.getInteger(MAX_AUDIT_DATA_CACHE_SIZE, DEFAULT_MAX_AUDIT_DATA_SIZE));
-            setDaemon(true);
-        }
-
-        /**
-         * Determines whether a particular audit event should be persisted.
-         *
-         * @param data  The audit view data containing all the necessary informaiton to processing
-         * @return  TRUE if the audit should be persisted
-         */
-        private boolean shouldPersistAudit(final AuditViewData data) {
-            AdminInfo admin = data.getAdminInfo();
-            AuditSearchCriteria criteria = data.getCriteria();
-
-            //determine if we really need to audit this.  It the user has requested to view actual new audit data we'll need
-            //to audit it, if it's just the refresh update from the audit view data then we'll need to audit this
-             if (!auditedData.containsKey(admin.getIdentityHeader())) {
-                //brand new one, we need to audit this admin
-                auditedData.put(admin.getIdentityHeader(), data);
-                return true;
-            } else {
-                //find out when was the it's a new audit view query or just from refresh rate
-                AuditViewData lastData = (AuditViewData) auditedData.get(admin.getIdentityHeader());
-                AuditSearchCriteria lastCriteria = lastData.getCriteria();
-
-                //if the criteria content are already different then we'll need to audit them
-                 long now = System.currentTimeMillis();
-                if (!lastCriteria.containsSimilarCritiera(criteria)) {
-                    auditedData.put(admin.getIdentityHeader(), data);
-                    return true;
-                } else {
-                    //update last checked time on this particular audit view data
-                    AuditViewData temp = (AuditViewData) auditedData.get(admin.getIdentityHeader());
-                    temp.setLastTimeChecked(now);
-                    auditedData.put(admin.getIdentityHeader(), temp);
-                }
-            }
-            return false;
-        }
-
-        /**
-         * Clean up any expired audited data that has lived passed it's time to live time frame.  This is needed
-         * so that the thread doesn't keep on accumulating when there are unnecessary data.
-         */
-        @SuppressWarnings({"unchecked"})
-        private void cleanUp() {
-            //loop through the set and delete any data that has expired already
-            for (Iterator i = auditedData.entrySet().iterator(); i.hasNext();) {
-                Map.Entry<IdentityHeader, AuditViewData> entry = (Map.Entry<IdentityHeader, AuditViewData>) i.next();
-                AuditViewData data = entry.getValue();
-                if (data.isStale()) i.remove();
-            }
-        }
-
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    final AuditViewData auditData = queue.take();   //block until more data
-                    if (shouldPersistAudit(auditData)) {
-                        auditData.getAdminInfo().invokeCallable(new Callable<Object>() {
-                            public Object call() throws Exception {
-                                new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
-                                    protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
-                                        applicationContext.publishEvent(auditData.getAudit());
-                                    }
-                                });
-                                return null;
-                            }
-                        });
-                    }
-                } catch (InterruptedException ie) {
-                    if (queue.remainingCapacity() > 0) {
-                        logger.warning("Some view audit data were not recorded.");
-                    }
-                    break;
-                } catch (Exception e) {
-                    //shouldn't happen
-                    logger.warning("Failed to publish audit view event: " + e.getMessage());
-                } finally {
-                    //cleanup any expired ones
-                    cleanUp();
-                }
-            }
-        }
-    }
-
-
-    /**
      * Temporary object which will hold the audit view event and administrative information which fired the audit
      * view event.
      */
     private class AuditViewData {
-        private final AuditViewGatewayAuditsData audit;
         private final AdminInfo adminInfo;
-        private final AuditSearchCriteria criteria;
+        private final List<AuditSearchCriteria> criteria = Collections.synchronizedList( new ArrayList<AuditSearchCriteria>() );
         private volatile long lastTimeChecked;
 
-        public AuditViewData(AuditViewGatewayAuditsData audit, AdminInfo adminInfo, AuditSearchCriteria criteria) {
-            this.audit = audit;
+        private AuditViewData( final AdminInfo adminInfo,
+                               final AuditSearchCriteria criteria ) {
             this.adminInfo = adminInfo;
-            this.criteria = criteria;
+            this.criteria.add( criteria );
             this.lastTimeChecked = System.currentTimeMillis();
         }
 
@@ -510,24 +459,33 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
             return adminInfo;
         }
 
-        public AuditViewGatewayAuditsData getAudit() {
-            return audit;
-        }
-
-        public AuditSearchCriteria getCriteria() {
-            return criteria;
-        }
-
         public boolean isStale() {
             return (System.currentTimeMillis() - lastTimeChecked) > TimeUnit.HOURS.toMillis(1);
         }
 
-        public long getLastTimeChecked() {
-            return lastTimeChecked;
-        }
+        public boolean isNewCriteria( final AuditSearchCriteria criteria ) {
+            lastTimeChecked = System.currentTimeMillis();
 
-        public void setLastTimeChecked(long lastTimeChecked) {
-            this.lastTimeChecked = lastTimeChecked;
+            boolean newCriteria = true;
+            synchronized( this.criteria ) {
+                for ( final AuditSearchCriteria previousCriteria : this.criteria ) {
+                    if ( previousCriteria.containsSimilarCritiera(criteria) ) {
+                        newCriteria = false;
+                        break;
+                    }
+                }
+
+                if ( newCriteria ) {
+                    this.criteria.add( criteria );
+                }
+
+                // remove older criteria if maximum exceeded
+                while ( this.criteria.size() > MAX_CRITERIA_HISTORY ) {
+                    this.criteria.remove( 0 );
+                }
+            }
+
+            return newCriteria;
         }
     }
 }
