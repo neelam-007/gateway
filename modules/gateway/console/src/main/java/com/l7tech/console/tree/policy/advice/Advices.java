@@ -52,7 +52,8 @@ public class Advices {
             if (advice != null) advices.add(advice);
 
             if (advices.isEmpty()) advices.add(new UnknownAssertionAdvice());
-            
+            advices.add( new PolicyValidatorAdvice() );
+
             return advices.toArray(new Advice[advices.size()]);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -90,7 +91,6 @@ public class Advices {
     // the advice that applies to the assertion
     private static Map<Class<?>, Collection<Class<? extends Advice>>> advicesMap =
             new HashMap<Class<?>, Collection<Class<? extends Advice>>>() {{
-                put(Assertion.class, ary(PolicyValidatorAdvice.class));
                 put(RoutingAssertion.class, ary(AddRoutingAssertionAdvice.class));
                 put(SchemaValidation.class, ary(AddSchemaValidationAssertionAdvice.class));
                 put(XslTransformation.class, ary(AddXslTransformationAssertionAdvice.class));
