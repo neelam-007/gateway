@@ -80,10 +80,10 @@ public class TargetVariablePanel  extends JPanel {
         suffixField.setEnabled(enabled);
         if (!enabled){
             // clear status and tooltips
-            statusLabel.setIcon(BLANK_ICON);
-            statusLabel.setText(null);
+            clearVariableNameStatus();
             mainPanel.setToolTipText(null);
             suffixField.setToolTipText(null);
+            entryValid = true;
         }
         else validateFields();
     }
@@ -162,6 +162,11 @@ public class TargetVariablePanel  extends JPanel {
      * Validates values in various fields and sets the status labels as appropriate.
      */
     private synchronized void validateFields() {
+        if(isEnabled()== false) {
+            entryValid = true ;
+            return;
+        }
+
         final String variableName = prefix.isEmpty()? getVariable(): getSuffix();
         String validateNameResult;
         entryValid = true;
