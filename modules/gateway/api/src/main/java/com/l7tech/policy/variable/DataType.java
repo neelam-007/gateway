@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.policy.variable;
 
 import org.w3c.dom.Element;
@@ -26,19 +23,11 @@ import java.lang.reflect.Method;
 public final class DataType implements Serializable {
     private static final Map nameMap = new HashMap();
 
-    public static final DataType STRING = new DataType("string", "String", new Class[] { CharSequence.class, char[].class, Character.class, Character.TYPE });
+    public static final DataType STRING = new DataType("string", "String", new Class[] { String.class });
     public static final DataType CERTIFICATE = new DataType("cert", "X.509 Certificate", new Class[] { X509Certificate.class });
-    public static final DataType INTEGER = new DataType("int", "Integer",
-            new Class[] { Long.TYPE, Long.class,
-            Integer.TYPE, Integer.class,
-            Byte.TYPE, Byte.class,
-            Character.TYPE, Character.class,
-            Short.TYPE, Short.class,
-            BigInteger.class }
-    );
-    
+    public static final DataType INTEGER = new DataType("int", "Integer", new Class[] { BigInteger.class });
     public static final DataType DECIMAL = new DataType("decimal", "Decimal Number", new Class[] { BigDecimal.class });
-    public static final DataType FLOAT = new DataType("float", "Floating Point Number", new Class[] { BigDecimal.class, Float.TYPE, Float.class, Double.TYPE, Double.class});
+    public static final DataType FLOAT = new DataType("float", "Floating Point Number", new Class[] { Double.class });
     public static final DataType ELEMENT = new DataType("xml", "XML Element", new Class[] { Element.class });
     public static final DataType BOOLEAN = new DataType("boolean", "Boolean", new Class[] { Boolean.class, Boolean.TYPE });
     public static final DataType BINARY = new DataType("binary", "Binary", new Class[] { byte[].class, String.class });

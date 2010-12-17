@@ -13,16 +13,25 @@ import java.math.BigInteger;
  * @author alex
 */
 public class IntegerConverter implements ValueConverter<BigInteger> {
+    @Override
     public BigInteger convert(Object val) throws ConversionException {
-        try {
-            // Try simple conversion first
-            return new BigInteger(val.toString());
-        } catch (NumberFormatException e) {
+        //
+        if ( val instanceof Long ||
+             val instanceof Integer ||
+             val instanceof Short ||
+             val instanceof Byte ) {
+            return BigInteger.valueOf( ((Number)val).longValue() );   
+        } else {
             try {
-                // Not an integer, try to truncate it
-                return new BigDecimal(val.toString()).toBigInteger();
-            } catch (Exception e1) {
-                throw new ConversionException("Invalid integer value", e1);
+                // Try simple conversion first
+                return new BigInteger(val.toString());
+            } catch (NumberFormatException e) {
+                try {
+                    // Not an integer, try to truncate it
+                    return new BigDecimal(val.toString()).toBigInteger();
+                } catch (Exception e1) {
+                    throw new ConversionException("Invalid integer value", e1);
+                }
             }
         }
     }
