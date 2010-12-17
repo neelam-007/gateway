@@ -18,10 +18,6 @@ echo ""
 chkconfig kudzu off
 chkconfig cpuspeed off
 
-# fixme: this won't actually do anything as we've already added the latest packages to the install media.
-# Update the system with the lastest packages.
-#yum -y update
-#echo ""
 ;;
 
 test)
@@ -241,22 +237,12 @@ seal)
   pam_tally --reset --user root
   pam_tally --reset --user ssgconfig
 
-# fixme: shouldn't we enable the firstboot service and touch
-# /etc/reconfigSys to have the client go through base
-# install settings? I.e. date,country,keyboard etc.
-  # chkconfig firstboot on
-  # touch /etc/reconfigSys
-
-# fixme: kuduz redetect everything? Is there a way to force kudzu to use some sort of defaults upon detection?
-
-  # fixme: this should probably only be done pre image creation.
-  # Zero out all empty blocks on the hard drive.
-  #dd if=/dev/zero of=/tmp/0bits bs=20971520 # bs=20m
-  #rm -f /tmp/0bits
-
   # Delete the ssh keys to ensure they are created new
   rm -f /etc/ssh/ssh_host_*
 
+  #Delete anything left behind in /tmp
+  rm -rf /tmp/*
+  
   # Delete this script.
   rm -f /root/sealsys
 
