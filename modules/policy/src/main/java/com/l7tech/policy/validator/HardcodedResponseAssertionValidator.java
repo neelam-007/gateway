@@ -34,7 +34,7 @@ public class HardcodedResponseAssertionValidator implements AssertionValidator {
         }
 
         final String body = ass.responseBodyString();
-        if (body != null) {
+        if (body != null && ctype != null && ctype.isXml()) {
             useContextVariable = Syntax.getReferencedNames(body).length > 0;
             if (useContextVariable) return;
         }
@@ -56,7 +56,7 @@ public class HardcodedResponseAssertionValidator implements AssertionValidator {
         if (ctypeErr != null)
             result.addError(new PolicyValidatorResult.Error(ass, path, "The content type is invalid: " + ctypeErr, null));
         if (useContextVariable)
-            result.addWarning(new PolicyValidatorResult.Warning(ass, path, "Response Body using context variable may result in invalid body content.", null));
+            result.addWarning(new PolicyValidatorResult.Warning(ass, path, "Response Body using context variable may result in invalid XML.", null));
         if (xmlErr != null)
             result.addWarning(new PolicyValidatorResult.Warning(ass, path, "XML response is not well-formed: " + xmlErr, null));
     }
