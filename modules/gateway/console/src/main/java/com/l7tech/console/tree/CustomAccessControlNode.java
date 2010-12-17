@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class CustomAccessControlNode extends AbstractTreeNode {
+public class CustomAccessControlNode extends AbstractTreeNode implements Comparable<AbstractTreeNode> {
     private static final Logger logger = Logger.getLogger(CustomAccessControlNode.class.getName());
 
     private CustomAssertionsRegistrar registrar;
@@ -178,5 +178,10 @@ public class CustomAccessControlNode extends AbstractTreeNode {
             description = assDesc == null ? "" : assDesc;
         }
         return description;
+    }
+
+    @Override
+    public int compareTo( final AbstractTreeNode treeNode ) {
+        return String.CASE_INSENSITIVE_ORDER.compare(getName(),treeNode.getName());
     }
 }
