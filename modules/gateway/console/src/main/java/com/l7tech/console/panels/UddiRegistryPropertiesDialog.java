@@ -199,10 +199,11 @@ public class UddiRegistryPropertiesDialog extends JDialog {
                     DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this,  validate, testRegistryTitle, JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
-                viewToModel();
+                final UDDIRegistry testUddiRegistry = new UDDIRegistry();
+                viewToModel(testUddiRegistry);
                 UDDIRegistryAdmin uddiRegistryAdmin = getUDDIRegistryAdmin();
                 try {
-                    uddiRegistryAdmin.testUDDIRegistryAuthentication(uddiRegistry);
+                    uddiRegistryAdmin.testUDDIRegistryAuthentication(testUddiRegistry);
 
                     DialogDisplayer.showMessageDialog(UddiRegistryPropertiesDialog.this, "Connected successfully to UDDI Registry!",
                             testRegistryTitle, JOptionPane.INFORMATION_MESSAGE, null);
@@ -298,7 +299,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             }
         });
 
-        modelToView();
+        modelToView( uddiRegistry );
     }
 
     /**
@@ -400,7 +401,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
      * Calls enableOrDisableComponents after doing this to enable / disable components appropriately depending on
      * the UDDIRegistry state
      */
-    private void modelToView(){
+    private void modelToView( final UDDIRegistry uddiRegistry ){
         registryNameTextField.setText(uddiRegistry.getName());
         registryNameTextField.setCaretPosition( 0 );
         enabledCheckBox.setSelected(uddiRegistry.isEnabled());
@@ -523,7 +524,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     }
 
     private void onOk() {
-        viewToModel();
+        viewToModel(uddiRegistry);
         confirmed = canEdit;
         dispose();
     }
@@ -532,7 +533,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
      * Configure the UDDIRegistry instance with information gathered from the GUI control states.
      * Assumes caller has already checked view state against the inputValidator.
      */
-    private void viewToModel() {
+    private void viewToModel( final UDDIRegistry uddiRegistry ) {
         uddiRegistry.setName(registryNameTextField.getText().trim());
         uddiRegistry.setEnabled(enabledCheckBox.isSelected());
         UDDIRegistry.UDDIRegistryType regType = (UDDIRegistry.UDDIRegistryType) uddiRegistryTypeComboBox.getSelectedItem();
