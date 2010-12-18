@@ -10,6 +10,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.util.Functions;
+import com.l7tech.util.TimeUnit;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -27,6 +28,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 @RequiresSOAP(wss=true)
 public class RequireWssSaml extends SamlPolicyAssertion implements MessageTargetable, UsesVariables, SetsVariables, SecurityHeaderAddressable {
     public static final String PREFIX_SAML_ATTR = "saml.attr";
+    public static final long UPPER_BOUND_FOR_MAX_EXPIRY = 100L * 365L * 86400L * 1000L; // 100 Years
 
     private String[] subjectConfirmations = new String[]{};
     private String subjectConfirmationDataRecipient;
@@ -38,6 +40,8 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
     private boolean requireHolderOfKeyWithMessageSignature = false;
     private MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport(false);
     private boolean checkAssertionValidity = true;
+    private long maxExpiry = 0;
+    private TimeUnit timeUnit = TimeUnit.MINUTES;
 
     public RequireWssSaml() {
     }
@@ -95,6 +99,8 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
         this.setSubjectConfirmationDataCheckAddress(requestWssSaml.isSubjectConfirmationDataCheckAddress());
         this.setSubjectConfirmationDataCheckValidity(requestWssSaml.isSubjectConfirmationDataCheckValidity());
         this.setSubjectConfirmationDataRecipient(requestWssSaml.getSubjectConfirmationDataRecipient());
+        this.setMaxExpiry(requestWssSaml.getMaxExpiry());
+        this.setTimeUnit(requestWssSaml.getTimeUnit());
     }
 
     /**
@@ -135,6 +141,30 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
      */
     public void setCheckAssertionValidity(boolean checkAssertionValidity) {
         this.checkAssertionValidity = checkAssertionValidity;
+    }
+
+    /**
+     * @return an integer value for the maximum lifetime of the SAML assertion (unit: milliseconds)
+     */
+    public long getMaxExpiry() {
+        return maxExpiry;
+    }
+
+    /**
+     * Set the maximum lifetime of the SAML assertion (unit: milliseconds)
+     * 
+     * @param maxExpiry: an integer value for the maximum lifetime of the SAML assertion.
+     */
+    public void setMaxExpiry(long maxExpiry) {
+        this.maxExpiry = maxExpiry;
+    }
+
+    public TimeUnit getTimeUnit() {
+        return timeUnit;
+    }
+
+    public void setTimeUnit(TimeUnit timeUnit) {
+        this.timeUnit = timeUnit;
     }
 
     @Override

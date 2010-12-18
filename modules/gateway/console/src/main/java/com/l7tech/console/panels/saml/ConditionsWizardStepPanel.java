@@ -6,15 +6,20 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.SamlIssuerConfiguration;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.util.TimeUnit;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
+import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.text.DecimalFormat;
 
 /**
  * The SAML Conditions <code>WizardStepPanel</code>
@@ -33,9 +38,13 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     private JLabel notOnOrAfterLabel;
     private JRadioButton defaultValidityRadioButton;
     private JRadioButton specifyValidityRadioButton;
+    private JFormattedTextField maxExpiryTextField;
+    private JComboBox timeUnitComboBox;
+    private JPanel maxExpiryPanel;
 
     private final boolean showTitleLabel;
     private final boolean issueMode;
+    private TimeUnit oldTimeUnit;
 
     /**
      * Creates new form ConditionsWizardStepPanel
@@ -83,7 +92,13 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             issuerConfiguration.setConditionsNotBeforeSecondsInPast( specifyValidityRadioButton.isSelected() ? (Integer)notBeforeSpinner.getValue() : -1);
             issuerConfiguration.setConditionsNotOnOrAfterExpirySeconds( specifyValidityRadioButton.isSelected() ? (Integer)notOnOrAfterSpinner.getValue() : -1);
         } else {
-            ((RequireWssSaml)settings).setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
+            final RequireWssSaml assertion = (RequireWssSaml) settings;
+            assertion.setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
+
+            TimeUnit timeUnit = (TimeUnit) timeUnitComboBox.getSelectedItem();
+            Double lifetime = (Double) maxExpiryTextField.getValue();
+            assertion.setTimeUnit(timeUnit);
+            assertion.setMaxExpiry((long)(lifetime * timeUnit.getMultiplier()));
         }
     }
 
@@ -115,6 +130,12 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
         } else {
             RequireWssSaml ass = (RequireWssSaml) samlAssertion;
             checkBoxCheckAssertionValidity.setSelected(ass.isCheckAssertionValidity());
+
+            TimeUnit timeUnit = ass.getTimeUnit();
+            Double lifetime = (double) ass.getMaxExpiry();
+            maxExpiryTextField.setValue(lifetime / timeUnit.getMultiplier());
+            timeUnitComboBox.setSelectedItem(timeUnit);
+            oldTimeUnit = timeUnit;
         }
     }
 
@@ -123,6 +144,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
 
         if (issueMode) {
             checkBoxCheckAssertionValidity.setVisible(false);
+            maxExpiryPanel.setVisible(false);
             notBeforeSpinner.setModel(new SpinnerNumberModel(120, 0, 3600, 1));
             validationRules.add(new InputValidator.NumberSpinnerValidationRule(notBeforeSpinner, "Not Before seconds in past"));
             notOnOrAfterSpinner.setModel(new SpinnerNumberModel(300, 30, 3600, 1));
@@ -147,6 +169,8 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             notBeforeSpinner.setVisible(false);
             notOnOrAfterLabel.setVisible(false);
             notOnOrAfterSpinner.setVisible(false);
+
+            initMaxExpiryPanel();
         }
 
         /** Set content pane */
@@ -156,6 +180,71 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
         } else {
             titleLabel.getParent().remove(titleLabel);
         }
+    }
+
+    private void initMaxExpiryPanel() {
+        final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.#########"));
+        numberFormatter.setValueClass(Double.class);
+        numberFormatter.setMinimum((double) 0);
+
+        maxExpiryTextField.setFormatterFactory(new JFormattedTextField.AbstractFormatterFactory() {
+            @Override
+            public JFormattedTextField.AbstractFormatter getFormatter(JFormattedTextField tf) {
+                return numberFormatter;
+            }
+        });
+
+        maxExpiryTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        notifyListeners();
+                    }
+                });
+            }
+        }));
+
+        timeUnitComboBox.setModel(new DefaultComboBoxModel(TimeUnit.ALL));
+        timeUnitComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TimeUnit newTimeUnit = (TimeUnit) timeUnitComboBox.getSelectedItem();
+                Double time = (Double) maxExpiryTextField.getValue();
+
+                if (newTimeUnit != null && oldTimeUnit != null && newTimeUnit != oldTimeUnit) {
+                    double oldMillis = oldTimeUnit.getMultiplier() * time;
+                    maxExpiryTextField.setValue(oldMillis / newTimeUnit.getMultiplier());
+                }
+
+                oldTimeUnit = newTimeUnit;
+
+                notifyListeners();
+            }
+        });
+    }
+
+    private boolean validateMaxExpiry() {
+        TimeUnit timeUnit = (TimeUnit) timeUnitComboBox.getSelectedItem();
+        if (timeUnit == null) return true;
+
+        int multiplier = ((TimeUnit) timeUnitComboBox.getSelectedItem()).getMultiplier();
+        return ValidationUtils.isValidDouble(
+            maxExpiryTextField.getText().trim(),
+            false,
+            0,
+            RequireWssSaml.UPPER_BOUND_FOR_MAX_EXPIRY  / multiplier);
+    }
+
+    @Override
+    public boolean canFinish() {
+        return validateMaxExpiry();
+    }
+
+    @Override
+    public boolean canAdvance() {
+        return validateMaxExpiry();
     }
 
     /**
