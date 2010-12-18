@@ -65,6 +65,7 @@ public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<Ha
         updateView();
 
         getContentPane().add(mainPanel);
+        Utilities.setEscKeyStrokeDisposes( this );
     }
 
     private void updateView() {

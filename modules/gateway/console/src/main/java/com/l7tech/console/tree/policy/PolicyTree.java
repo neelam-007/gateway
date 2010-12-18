@@ -469,7 +469,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     new DeleteAssertionAction(node, nodes).actionPerformed(null);
                 }
             } else if (keyCode == KeyEvent.VK_ENTER) {
-                // default properties
+                final TreePath[] paths = PolicyTree.this.getSelectionPaths();
+                if ( paths != null && paths.length == 1 && paths[0] != null && paths[0].getLastPathComponent() instanceof AbstractTreeNode) {
+                    final Action action = ((AbstractTreeNode) paths[0].getLastPathComponent()).getPreferredAction();
+                    if ( action != null ) action.actionPerformed( new ActionEvent(tree, ActionEvent.ACTION_PERFORMED, "enter-key") );
+                }
             }
         }
 

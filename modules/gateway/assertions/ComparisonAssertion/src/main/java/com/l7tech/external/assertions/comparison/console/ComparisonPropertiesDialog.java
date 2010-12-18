@@ -193,6 +193,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         enableButtons();
 
         add(mainPanel);
+        Utilities.setEscKeyStrokeDisposes( this );
     }
 
     private void editSelected() {
