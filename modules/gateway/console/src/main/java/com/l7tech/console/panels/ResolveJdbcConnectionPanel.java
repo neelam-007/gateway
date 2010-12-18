@@ -27,6 +27,12 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
     private JPanel mainPanel;
     private JComboBox connectionComboBox;
     private JButton manageConnectionsButton;
+    private JRadioButton changeRadioButton;
+    private JRadioButton removeRadioButton;
+    private JRadioButton ignoreRadioButton;
+    private JTextField nameTextField;
+    private JTextField driverClassTextField;
+    private JTextField jdbcUrlTextField;
 
     private JdbcConnectionReference connectionReference;
 
@@ -53,16 +59,29 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
 
     @Override
     public boolean onNextButton() {
-        if (connectionComboBox.getSelectedIndex() < 0) return false;
+        if (changeRadioButton.isSelected()) {
+            if (connectionComboBox.getSelectedIndex() < 0) return false;
 
-        String connectionName = (String) connectionComboBox.getSelectedItem();
-        connectionReference.setLocalizeReplaceByName(connectionName);
+            String connectionName = (String) connectionComboBox.getSelectedItem();
+            connectionReference.setLocalizeReplaceByName(connectionName);
+        } else if (removeRadioButton.isSelected()) {
+            connectionReference.setLocalizeDelete();
+        } else if (ignoreRadioButton.isSelected()) {
+            connectionReference.setLocalizeIgnore();
+        }
         return true;
     }
 
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
+
+        nameTextField.setText( connectionReference.getConnectionName() );
+        nameTextField.setCaretPosition( 0 );
+        driverClassTextField.setText( connectionReference.getDriverClass() );
+        driverClassTextField.setCaretPosition( 0 );
+        jdbcUrlTextField.setText( connectionReference.getJdbcUrl() );
+        jdbcUrlTextField.setCaretPosition( 0 );
 
         manageConnectionsButton.addActionListener(new ActionListener() {
             @Override
@@ -72,16 +91,23 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
         });
 
         populateConnectionCombobox();
+        enableAndDisableComponents();
     }
 
     private void doManageJdbcConnections() {
         JdbcConnectionManagerWindow connMgrWindow = new JdbcConnectionManagerWindow(TopComponents.getInstance().getTopParent());
         connMgrWindow.pack();
         Utilities.centerOnScreen(connMgrWindow);
+        final boolean changeWasEnabled = changeRadioButton.isEnabled();
         DialogDisplayer.display(connMgrWindow, new Runnable() {
             @Override
             public void run() {
                 populateConnectionCombobox();
+                enableAndDisableComponents();
+                if ( changeRadioButton.isEnabled() && !changeWasEnabled ) {
+                    if (removeRadioButton.isSelected()) changeRadioButton.setSelected( true );
+                    connectionComboBox.setSelectedIndex( 0 );
+                }
             }
         });
     }
@@ -116,5 +142,14 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
             return null;
         }
         return reg.getJdbcConnectionAdmin();
+    }
+
+    private void enableAndDisableComponents() {
+        final boolean enableSelection = connectionComboBox.getModel().getSize() > 0;
+        changeRadioButton.setEnabled( enableSelection );
+
+        if ( !changeRadioButton.isEnabled() && changeRadioButton.isSelected() ) {
+            removeRadioButton.setSelected( true );    
+        }
     }
 }

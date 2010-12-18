@@ -157,16 +157,18 @@ public class JdbcConnectionReference extends ExternalReference {
 
     @Override
     boolean localizeAssertion(Assertion assertionToLocalize) {
-        if ( localizeType == LocalizeAction.REPLACE) {
+        if (localizeType != LocalizeAction.IGNORE){
             if (assertionToLocalize instanceof JdbcConnectionable) {
-                JdbcConnectionable connable = (JdbcConnectionable)assertionToLocalize;
+                final JdbcConnectionable connable = (JdbcConnectionable)assertionToLocalize;
                 if (connable.getConnectionName().equalsIgnoreCase(connectionName)) { // The purpose of "equals" is to find the right assertion and update it using localized value.
-                    connable.setConnectionName(localConnectionName);
+                    if ( localizeType == LocalizeAction.REPLACE) {
+                        connable.setConnectionName(localConnectionName);
+                    }  else if ( localizeType == LocalizeAction.DELETE) {
+                        logger.info("Deleted this assertion from the tree.");
+                        return false;
+                    }
                 }
             }
-        }  else if ( localizeType == LocalizeAction.DELETE) {
-            logger.info("Deleted this assertion from the tree.");
-            return false;
         }
 
         return true;
