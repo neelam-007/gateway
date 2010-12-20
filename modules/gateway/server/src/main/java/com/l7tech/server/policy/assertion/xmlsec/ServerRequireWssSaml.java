@@ -14,7 +14,6 @@ import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -180,32 +179,44 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
 
             // Enforce to check the expiration of the SAML token against the specified "Maximum Expiry Time".
             final long maxExpiry = assertion.getMaxExpiry();
-            if (maxExpiry != 0) {
-                Calendar now = Calendar.getInstance(SamlAssertionValidate.UTC_TIME_ZONE);
+            if (maxExpiry != 0) {  // "0" means no checking.
+                final Calendar now = Calendar.getInstance(SamlAssertionValidate.UTC_TIME_ZONE);
                 now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
 
                 // Get the issue instant
-                Calendar issueInstant = samlAssertion.getIssueInstant();
+                final Calendar issueInstant = samlAssertion.getIssueInstant();
                 if (issueInstant == null) { // Maybe checking null is redundant, since IssueInstant is a mandatory element in a SAML assertion.
                     auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, "SAML Assertion Validation Error: The issue instant is not specified.");
                     return AssertionStatus.FALSIFIED;
                 }
 
-                // Adjust the issue instant based on the NotOnOrAfter clock skew before checking expiration.
-                issueInstant = adjustIssueInstant(issueInstant);
+                // Get and adjust the lower bound of the checking condition based on the NotBefore clock skew
+                Calendar lowerBound = SamlAssertionValidate.adjustNotBefore(issueInstant);
 
                 // Check if the issue instant is in the past or not.
-                if (now.before(issueInstant)) {
+                if (now.before(lowerBound)) {
                     auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, "SAML Assertion Validation Error: The issue instant is not in the past.");
                     return AssertionStatus.FALSIFIED;
                 }
 
                 // Get the maximum lifetime of the SAML token
+                @SuppressWarnings({"UnnecessaryLocalVariable"})
                 Calendar tokenMaxExpiryTime = issueInstant;
-                tokenMaxExpiryTime.add(Calendar.MINUTE, (int) (maxExpiry/ TimeUnit.MINUTES.getMultiplier()));  //  The reason of using Calendar.MINUTE is that maxExpiry has a millisecond unit and would be a large long integer, which is not an integer type..
+                if (maxExpiry > TimeUnit.MINUTES.getMultiplier()) {
+                    int howmanyMins = (int) (maxExpiry / TimeUnit.MINUTES.getMultiplier());
+                    tokenMaxExpiryTime.add(Calendar.MINUTE, howmanyMins);
+
+                    int howmanyMs = (int) (maxExpiry % TimeUnit.MINUTES.getMultiplier());
+                    tokenMaxExpiryTime.add(Calendar.MILLISECOND, howmanyMs);
+                } else {
+                    tokenMaxExpiryTime.add(Calendar.MILLISECOND, (int) maxExpiry);
+                }
+
+                // Get and adjust the upper bound of the checking condition based on the NotBefore clock skew
+                Calendar upperBound = SamlAssertionValidate.adjustNotAfter(tokenMaxExpiryTime);
 
                 // Check if the SAML token is expired or not.
-                if (now.after(tokenMaxExpiryTime)) {
+                if (now.after(upperBound)) {
                     auditor.logAndAudit(AssertionMessages.SAML_TOKEN_EXPIRATION_WARNING);
                     return AssertionStatus.FALSIFIED;
                 }
@@ -280,14 +291,5 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
      */
     private String encode( final String text ) {
         return text.replace( '/', '-' ).replace( '+', '_' );
-    }
-
-    private Calendar adjustIssueInstant(Calendar issueInstant) {
-        int offsetMinutes = ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_samlValidateAfterOffsetMinutes, 0, 30000L);
-        if (offsetMinutes != 0) {
-            issueInstant = (Calendar)issueInstant.clone();
-            issueInstant.add(Calendar.MINUTE, offsetMinutes);
-        }
-        return issueInstant;
     }
 }
