@@ -192,24 +192,25 @@ public class PrivateKeyReference extends ExternalReference {
 
     @Override
     boolean localizeAssertion(Assertion assertionToLocalize) {
-        if (localizeType == LocalizeAction.REPLACE) {
+        if (localizeType != LocalizeAction.IGNORE){
             if (assertionToLocalize instanceof PrivateKeyable) {
                 PrivateKeyable keyable = (PrivateKeyable)assertionToLocalize;
                 if (!keyable.isUsesDefaultKeyStore() && keyable.getKeyAlias() != null && keyable.getKeyAlias().equals(keyAlias)) {
-                    if (localIsDefaultKey) {
-                        keyable.setUsesDefaultKeyStore(true);
-                    } else {
-                        keyable.setUsesDefaultKeyStore(false);
-                        keyable.setKeyAlias(localKeyAlias);
-                        keyable.setNonDefaultKeystoreId(localKeystoreOid);
+                    if (localizeType == LocalizeAction.REPLACE) {
+                        if (localIsDefaultKey) {
+                            keyable.setUsesDefaultKeyStore(true);
+                        } else {
+                            keyable.setUsesDefaultKeyStore(false);
+                            keyable.setKeyAlias(localKeyAlias);
+                            keyable.setNonDefaultKeystoreId(localKeystoreOid);
+                        }
+                    }  else if (localizeType == LocalizeAction.DELETE) {
+                        logger.info("Deleted this assertion from the tree.");
+                        return false;
                     }
                 }
             }
-        }  else if (localizeType == LocalizeAction.DELETE) {
-            logger.info("Deleted this assertion from the tree.");
-            return false;
         }
-
         return true;
     }
 

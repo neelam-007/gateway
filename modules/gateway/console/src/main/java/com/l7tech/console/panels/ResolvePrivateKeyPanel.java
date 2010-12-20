@@ -13,6 +13,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,11 +26,13 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
     private final Logger logger = Logger.getLogger(ResolvePrivateKeyPanel.class.getName());
 
     private JPanel mainPanel;
-    private JRadioButton useDefaultKeypairRadioButton;
+    private JTextField aliasTextField;
+    private JRadioButton useDefaultKeyPairRadioButton;
     private JRadioButton useCustomKeyPairRadioButton;
+    private JRadioButton removeRadioButton;
+    private JRadioButton ignoreRadioButton;
     private JComboBox aliasCombo;
     private JButton manageCustomKeysButton;
-    private JPanel customFrame;
 
     private PrivateKeyReference keyReference;
 
@@ -52,21 +55,24 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
 
     @Override
     public String getStepLabel() {
-        return "Unresolved Private Key " + keyReference.getKeyAlias();
+        return "Unresolved private key " + keyReference.getKeyAlias();
     }
 
     @Override
     public boolean onNextButton() {
-        if (useDefaultKeypairRadioButton.isSelected()) {
+        if ( useDefaultKeyPairRadioButton.isSelected() ) {
             keyReference.setLocalizeReplace(true, null, 0);
-        } else {
+        } else if ( useCustomKeyPairRadioButton.isSelected() ) {
             ComboEntry comboentry = (ComboEntry)aliasCombo.getSelectedItem();
-            keyReference.setLocalizeReplace(false, comboentry.alias, comboentry.keystoreid);
             if (comboentry.alias == null) {
                 return false;
             }
+            keyReference.setLocalizeReplace(false, comboentry.alias, comboentry.keystoreid);
+        } else if (removeRadioButton.isSelected()) {
+            keyReference.setLocalizeDelete();
+        } else if (ignoreRadioButton.isSelected()) {
+            keyReference.setLocalizeIgnore();
         }
-
         return true;
     }
 
@@ -74,14 +80,19 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
         setLayout(new BorderLayout());
         add(mainPanel);
 
+        aliasTextField.setText( keyReference.getKeyAlias() );
+        aliasTextField.setCaretPosition( 0 );
+
         ActionListener modecheck = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableValueFieldAsAppropriate();
             }
         };
-        useDefaultKeypairRadioButton.addActionListener(modecheck);
+        useDefaultKeyPairRadioButton.addActionListener(modecheck);
         useCustomKeyPairRadioButton.addActionListener(modecheck);
+        removeRadioButton.addActionListener(modecheck);
+        ignoreRadioButton.addActionListener(modecheck);
 
         manageCustomKeysButton.addActionListener(new ActionListener() {
             @Override
@@ -91,22 +102,14 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
         });
 
         populateCombobox();
-
-        if (keyReference.isDefaultKey()) {
-            useDefaultKeypairRadioButton.setSelected(true);
-        } else {
-            useCustomKeyPairRadioButton.setSelected(true);
-        }
-
         enableValueFieldAsAppropriate();
     }
 
     private void manageCustomKeys() {
-        PrivateKeyManagerWindow pkmw;
-        pkmw = new PrivateKeyManagerWindow(owner);
-        pkmw.pack();
-        Utilities.centerOnScreen(pkmw);
-        DialogDisplayer.display(pkmw, new Runnable() {
+        final PrivateKeyManagerWindow privateKeyManagerWindow = new PrivateKeyManagerWindow(owner);
+        privateKeyManagerWindow.pack();
+        Utilities.centerOnParentWindow(privateKeyManagerWindow);
+        DialogDisplayer.display(privateKeyManagerWindow, new Runnable() {
             @Override
             public void run() {
                 populateCombobox();
@@ -116,29 +119,25 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
 
     private void populateCombobox() {
         try {
-            java.util.List<KeystoreFileEntityHeader> keystores = getTrustedCertAdmin().findAllKeystores(true);
-            if (keystores != null) {
-                java.util.List<ComboEntry> comboEntries = new ArrayList<ComboEntry>();
-                ComboEntry toSelect = null;
-                final long wantId = keyReference.getKeystoreOid();
-                for (KeystoreFileEntityHeader kfeh : keystores) {
-                    for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(kfeh.getOid())) {
-                        ComboEntry comboEntry = new ComboEntry(kfeh.getOid(), kfeh.getName(), entry.getAlias());
+            final java.util.List<KeystoreFileEntityHeader> keystores = getTrustedCertAdmin().findAllKeystores(true);
+            if ( keystores != null ) {
+                final java.util.List<ComboEntry> comboEntries = new ArrayList<ComboEntry>();
+                final ComboEntry previousSelection = (ComboEntry) aliasCombo.getSelectedItem();
+                for ( final KeystoreFileEntityHeader header : keystores ) {
+                    for ( final SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(header.getOid()) ) {
+                        final ComboEntry comboEntry = new ComboEntry(header.getOid(), header.getName(), entry.getAlias());
                         comboEntries.add(comboEntry);
-                        if ((wantId == 0 || wantId == -1 || wantId == kfeh.getOid()) && entry.getAlias().equalsIgnoreCase(keyReference.getKeyAlias()))
-                            toSelect = comboEntry;
                     }
                 }
-                if (toSelect == null && !keyReference.isDefaultKey()) {
-                    // Alias is configured, but it doesn't exist on this Gateway (Bug #4143)
-                    toSelect = new ComboEntry(wantId, "UNRECOGNIZED", keyReference.getKeyAlias());
-                    comboEntries.add(0, toSelect);
-                }
+
+                Collections.sort(comboEntries);
+
                 aliasCombo.setModel(new DefaultComboBoxModel(comboEntries.toArray()));
-                if (toSelect != null) {
-                    aliasCombo.setSelectedItem(toSelect);
+
+                if ( previousSelection != null && comboEntries.contains(previousSelection) ) {
+                    aliasCombo.setSelectedItem( previousSelection );
                 } else {
-                    aliasCombo.setSelectedIndex(0);
+                    aliasCombo.setSelectedIndex( 0 );
                 }
             }
         } catch (Exception e) {
@@ -151,30 +150,52 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
     }
 
     private void enableValueFieldAsAppropriate() {
-        if (useDefaultKeypairRadioButton.isSelected()) {
-            aliasCombo.setEnabled(false);
-            manageCustomKeysButton.setEnabled(false);
-            customFrame.setEnabled(false);
-        } else {
-            aliasCombo.setEnabled(true);
-            manageCustomKeysButton.setEnabled(true);
-            customFrame.setEnabled(true);
-        }
+        final boolean enableSelection = useCustomKeyPairRadioButton.isSelected();
+        aliasCombo.setEnabled( enableSelection );
     }
 
+    private class ComboEntry implements Comparable<ComboEntry> {
+        private final long keystoreid;
+        private final String keystorename;
+        private final String alias;
 
-    private class ComboEntry {
-        public ComboEntry(long keystoreid, String keystorename, String alias) {
+        private ComboEntry(long keystoreid, String keystorename, String alias) {
             this.keystoreid = keystoreid;
             this.keystorename = keystorename;
             this.alias = alias;
         }
 
-        public long keystoreid;
-        public String keystorename;
-        public String alias;
+        @Override
+        public int compareTo( final ComboEntry o ) {
+            return alias.compareTo( o.alias );
+        }
+
         public String toString() {
             return "'" + alias + "'" + " in " + keystorename;
+        }
+
+        @SuppressWarnings({ "RedundantIfStatement" })
+        @Override
+        public boolean equals( final Object o ) {
+            if ( this == o ) return true;
+            if ( o == null || getClass() != o.getClass() ) return false;
+
+            final ComboEntry that = (ComboEntry) o;
+
+            if ( keystoreid != that.keystoreid ) return false;
+            if ( alias != null ? !alias.equals( that.alias ) : that.alias != null ) return false;
+            if ( keystorename != null ? !keystorename.equals( that.keystorename ) : that.keystorename != null )
+                return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) (keystoreid ^ (keystoreid >>> 32));
+            result = 31 * result + (keystorename != null ? keystorename.hashCode() : 0);
+            result = 31 * result + (alias != null ? alias.hashCode() : 0);
+            return result;
         }
     }
 }
