@@ -978,14 +978,14 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             throw new RuntimeException(e);
         }
         schemaFromWsdlChooser.pack();
-        Utilities.centerOnScreen(schemaFromWsdlChooser);
+        Utilities.centerOnParentWindow(schemaFromWsdlChooser);
         DialogDisplayer.display(schemaFromWsdlChooser, new Runnable() {
             @Override
             public void run() {
                 String result = schemaFromWsdlChooser.getOkedSchema();
                 if ( result != null ) {
                     importSchemaContent(
-                            getUri(schemaFromWsdlChooser.getOkedSchemaNode(), fullSchemas),
+                            getUri(schemaFromWsdlChooser.getOkedSchemaNode(), CollectionUtils.iterable( fullSchemas, inputSchemas, outputSchemas )),
                             result,
                             Collections.<ResourceDocumentResolver>singleton(new WsdlSchemaResourceDocumentResolver(fullSchemas)) );
                 }
@@ -994,7 +994,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     }
 
     private static String getUri( final Node schemaNode,
-                                  final Collection<Pair<String,Element>> uriElementPairs ) {
+                                  final Iterable<Pair<String,Element>> uriElementPairs ) {
         String uri = null;
 
         if ( uriElementPairs != null ) {
