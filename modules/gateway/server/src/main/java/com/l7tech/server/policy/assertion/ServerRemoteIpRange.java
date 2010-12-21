@@ -64,7 +64,12 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
             }
         }
 
-        InetAddress addr = InetAddressUtil.getAddress(input);
+        String host = InetAddressUtil.getHostAndPort(input, null).left;
+        if (host != null && host.startsWith("[") && host.endsWith("]")) {
+            host = host.substring(1, host.length()-1);
+        }
+        InetAddress addr = InetAddressUtil.getAddress(host);
+
         if (addr == null) {
             auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, input);
             return AssertionStatus.FALSIFIED;
