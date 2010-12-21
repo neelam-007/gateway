@@ -260,11 +260,17 @@ public class InetAddressUtil {
      * @param pattern a pattern in a form similar to "24", "24.0.0.0/8", or "24.0/8",
      *                or 22:, 22:/64, 22::/64. Required.
      * @param addr  IPv4 or IPv6 address to check.
-     * @return true if the specified address matches the specified pattern.
+     * @return true if the specified address matches the specified pattern, false if the pattern is invalid or doesn't match the address
      */
     public static boolean patternMatchesAddress(String pattern, InetAddress addr) {
-        return addr instanceof Inet4Address  ? patternMatchesAddress4(pattern, (Inet4Address) addr):
-               addr instanceof Inet6Address && patternMatchesAddress6(pattern, (Inet6Address) addr);
+        if (isValidIpv4Pattern(pattern)) {
+            return addr instanceof Inet4Address && patternMatchesAddress4(pattern, (Inet4Address) addr);
+        } else if (isValidIpv6Pattern(pattern)) {
+            return addr instanceof Inet6Address && patternMatchesAddress6(pattern, (Inet6Address) addr);
+        } else {
+            logger.log(Level.WARNING, "Invalid IP address pattern: " + pattern);
+            return false;
+        }
     }
 
     private static boolean patternMatchesAddress4(String pattern, Inet4Address addr4) {
