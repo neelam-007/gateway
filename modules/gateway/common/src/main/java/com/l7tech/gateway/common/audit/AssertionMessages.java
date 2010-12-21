@@ -755,9 +755,11 @@ public class AssertionMessages extends Messages {
     public static final M SAMLP_PROCREQ_SIGNING_ERROR = m(9233, Level.WARNING, "Signature validation failure: ''{0}''.");
     public static final M SAMLP_1_1_PROCREQ_PROFILE_VIOLATION = m(9234, Level.WARNING, "SAML 1.1 Web SSO profile rule violation: {0}.");
 
-    public static final M ADD_WS_ADDRESSING_SOAP_ACTION_MISMATCH = m(9260, Level.WARNING, "Target message has a SOAPAction ''{0}'' which does not match the configured Action of ''{1}''.");
-    public static final M ADD_WS_ADDRESSING_NO_SOAP_ACTION       = m(9261, Level.WARNING, "Target message has no associated SOAPAction. Cannot automatically add the Action element.");
-    public static final M ADD_WS_ADDRESSING_NO_ACTION_SUPPLIED   = m(9262, Level.WARNING, "Action is a required WS-Addressing messaging property. No value found at runtime.");
+    public static final M ADD_WS_ADDRESSING_NO_SOAP_ACTION         = m(9260, Level.WARNING, "Target message has no associated SOAPAction. Cannot automatically add the Action element.");
+    public static final M ADD_WS_ADDRESSING_NO_ACTION_SUPPLIED     = m(9261, Level.WARNING, "Action is a required WS-Addressing messaging property. No value found at runtime.");
+    public static final M ADD_WS_ADDRESSING_NO_WSDL_ACTION_FOUND   = m(9262, Level.WARNING, "Action extension element not found in the WSDL.");
+    public static final M ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO = m(9263, Level.INFO, "Invalid URI value ''{0}'' for WS-Addressing ''{1}'' property.");
+    public static final M ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN = m(9264, Level.WARNING, "Invalid URI value ''{0}'' for required WS-Addressing ''{1}'' property.");
 
     public static final M STS_INVALID_RST_REQUEST      = m(9290, Level.WARNING, "Invalid RST SOAP Request: {0}");
     public static final M STS_INVALID_SECURITY_TOKEN  = m(9291, Level.WARNING, "Invalid Security Token: {0}");

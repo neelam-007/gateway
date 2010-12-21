@@ -1825,7 +1825,24 @@ public class SoapUtil extends SoapConstants {
         return output;
     }
 
-    public static Operation getOperation(final Wsdl wsdl, final Message request)
+    public static Pair<Binding, Operation> getBindingAndOperation(final Wsdl wsdl, final Message request)
+            throws IOException, SAXException, InvalidDocumentFormatException {
+
+        return getBindingAndOperation(wsdl, request, null);
+    }
+    /**
+     * Get the Binding and Operation the XML message is targeted at from the supplied WSDL.
+     * @param wsdl WSDL to search
+     * @param request XML Message to match to a Binding + Operation
+     * @param soapVersion Can be null. If not null and not UNKNOWN, then it will determine what Bindings are searched.
+     * @return Pair of Binding and Operation. Null if no match is found. If not null, then both the Binding and
+     * Operation will be not null. Binding and Operation will be from a Binding which matches the supplied SoapVersion,
+     * if supplied and is not UNKNOWN.
+     * @throws IOException
+     * @throws SAXException
+     * @throws InvalidDocumentFormatException
+     */
+    public static Pair<Binding, Operation> getBindingAndOperation(final Wsdl wsdl, final Message request, final SoapVersion soapVersion)
             throws IOException, SAXException, InvalidDocumentFormatException {
         final XmlKnob requestXml = request.getKnob(XmlKnob.class);
         if (requestXml == null) {
@@ -1882,6 +1899,19 @@ public class SoapUtil extends SoapConstants {
             return null;
         }
 
+        boolean includeSoap1_1 = true;
+        boolean includeSoap1_2 = true;
+        if(soapVersion != null){
+            switch (soapVersion){
+                case SOAP_1_1:
+                    includeSoap1_2 = false;
+                    break;
+                case SOAP_1_2:
+                    includeSoap1_1 = false;
+                    break;
+            }
+        }
+
         boolean foundSoapBinding = false;
         for ( Binding binding : bindings ) {
             SOAPBinding soapBinding = null;
@@ -1889,10 +1919,10 @@ public class SoapUtil extends SoapConstants {
             //noinspection unchecked
             List<ExtensibilityElement> bindingEels = binding.getExtensibilityElements();
             for (ExtensibilityElement element : bindingEels) {
-                if (element instanceof SOAPBinding) {
+                if (element instanceof SOAPBinding && includeSoap1_1) {
                     foundSoapBinding = true;
                     soapBinding = (SOAPBinding) element;
-                } else if (element instanceof SOAP12Binding) {
+                } else if (element instanceof SOAP12Binding && includeSoap1_2) {
                     foundSoapBinding = true;
                     soap12Binding = (SOAP12Binding) element;
                 }
@@ -1901,7 +1931,7 @@ public class SoapUtil extends SoapConstants {
             if (soapBinding == null && soap12Binding == null)
                 continue; // This isn't a SOAP binding; we don't care
             Operation res = getOperationFromBinding(binding, context);
-            if (res != null) return res;
+            if (res != null) return new Pair<Binding, Operation>(binding, res);
         }
         if (!foundSoapBinding) {
             log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
@@ -1909,5 +1939,36 @@ public class SoapUtil extends SoapConstants {
             log.info("none of the binding could match exactly one operation from this request");
         }
         return null;
+    }
+
+    public static String extractSoapAction(BindingOperation bindingOperation, SoapVersion soapVersion){
+        String soapAction = null;
+        boolean includeSoap1_1 = true;
+        boolean includeSoap1_2 = true;
+        if(soapVersion != null){
+            switch (soapVersion){
+                case SOAP_1_1:
+                    includeSoap1_2 = false;
+                    break;
+                case SOAP_1_2:
+                    includeSoap1_1 = false;
+                    break;
+            }
+        }
+
+        //noinspection unchecked
+        final List<ExtensibilityElement> extElements = bindingOperation.getExtensibilityElements();
+        for (ExtensibilityElement element : extElements) {
+            if (element instanceof SOAPOperation && includeSoap1_1) {
+                SOAPOperation soapOperation = (SOAPOperation) element;
+                soapAction = soapOperation.getSoapActionURI();
+
+            } else if (element instanceof SOAP12Operation && includeSoap1_2) {
+                SOAP12Operation soap12Operation = (SOAP12Operation) element;
+                soapAction = soap12Operation.getSoapActionURI();
+            }
+        }
+
+        return soapAction;
     }
 }

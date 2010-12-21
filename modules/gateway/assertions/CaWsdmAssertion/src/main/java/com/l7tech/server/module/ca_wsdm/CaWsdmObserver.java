@@ -24,11 +24,13 @@ import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultDetail;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import javax.xml.namespace.QName;
 import java.io.BufferedReader;
@@ -131,12 +133,12 @@ public class CaWsdmObserver implements ApplicationListener {
             }
 
             // Determines operation name.
-            final Operation operation = context.getOperation();
-            if (operation == null) {
+            final Pair<Binding,Operation> pair = context.getBindingAndOperation();
+            if (pair == null) {
                 _logger.warning("Cannot determine operation in request. Probably no matching published service.");
                 return;
             }
-            final String operationName = context.getOperation().getName();
+            final String operationName = pair.right.getName();
 
             // Determine operation namespace.
             QName[] names = request.getSoapKnob().getPayloadNames();

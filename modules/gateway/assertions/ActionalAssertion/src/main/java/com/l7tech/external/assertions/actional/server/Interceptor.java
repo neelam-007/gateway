@@ -17,8 +17,11 @@ import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultDetail;
 
+import javax.wsdl.Binding;
+import javax.wsdl.Operation;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -58,8 +61,10 @@ class Interceptor {
             ci.setGroupName(event.getUrl().getHost());
             ci.setServiceName(pec.getService().getName());
             try {
-                if (pec.getService().isSoap())
-                    ci.setOpName(pec.getOperation().getName());
+                if (pec.getService().isSoap()){
+                    final Pair<Binding,Operation> pair = pec.getBindingAndOperation();
+                    ci.setOpName(pair.right.getName());
+                }
             } catch (Exception e) {
                 logger.log(Level.FINE, "Failed to determine soap operation: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
@@ -195,7 +200,7 @@ class Interceptor {
             si.setServiceName(pec.getService().getName());
             String operation;
             try {
-                operation = pec.getService().isSoap() ? pec.getOperation().getName() : httpServletRequestKnob.getRequestUri();
+                operation = pec.getService().isSoap() ? pec.getBindingAndOperation().right.getName() : httpServletRequestKnob.getRequestUri();
             } catch (Exception e) {
                 operation = httpServletRequestKnob.getRequestUri();
             }

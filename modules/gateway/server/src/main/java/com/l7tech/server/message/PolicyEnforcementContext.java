@@ -16,9 +16,11 @@ import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
 import org.xml.sax.SAXException;
 
+import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
 import java.io.Closeable;
@@ -205,7 +207,17 @@ public interface PolicyEnforcementContext extends Closeable {
      */
     long getRoutingTotalTime();
 
-    Operation getOperation()
+    /**
+     * Get the Binding and Operation the request is targeted at. May not be found.
+     * @return Pair with the Binding on the left and Operation on the right. May be null. If the pair is not null,
+     * then the Binding and the Operation will be not null. Once this method has been called, the return value will
+     * always be the same for subsequent calls.
+     * @throws IOException
+     * @throws SAXException
+     * @throws WSDLException
+     * @throws InvalidDocumentFormatException
+     */
+    Pair<Binding, Operation> getBindingAndOperation()
             throws IOException, SAXException, WSDLException, InvalidDocumentFormatException;
 
     /**

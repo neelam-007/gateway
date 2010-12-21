@@ -33,8 +33,10 @@ import com.l7tech.util.Pair;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import org.xml.sax.SAXException;
 
+import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
 import java.io.ByteArrayInputStream;
@@ -70,7 +72,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     private PolicyContextCache cache;
     private CompositeRoutingResultListener routingResultListener = new CompositeRoutingResultListener();
     private boolean operationAttempted = false;
-    private Operation cachedOperation = null;
+    private Pair<Binding, Operation> cachedBindingAndOperation = null;
     private RoutingStatus routingStatus = RoutingStatus.NONE;
     private URL routedServiceUrl;
     private long routingStartTime;
@@ -433,20 +435,24 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
     }
 
     @Override
-    public Operation getOperation()
+    public Pair<Binding, Operation> getBindingAndOperation()
             throws IOException, SAXException, WSDLException, InvalidDocumentFormatException
     {
         if (operationAttempted)
-            return cachedOperation;
+            return cachedBindingAndOperation;
 
         operationAttempted = true;
         if (service == null || service.getWsdlXml() == null || service.getWsdlXml().length() <= 0) {
             return null;
         }
 
-        Wsdl wsdl = service.parsedWsdl();
-        cachedOperation = SoapUtil.getOperation(wsdl, getRequest());
-        return cachedOperation;
+        final Wsdl wsdl = service.parsedWsdl();
+        final SoapVersion soapVersion = service.getSoapVersion();
+        final Pair<Binding, Operation> bindingOpPair = SoapUtil.getBindingAndOperation(wsdl, getRequest(), soapVersion);
+        if(bindingOpPair != null){
+            cachedBindingAndOperation = bindingOpPair;
+        }
+        return cachedBindingAndOperation;
     }
 
     /**

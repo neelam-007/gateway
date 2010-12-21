@@ -17,15 +17,14 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.xmlsec.ServerAddWssSignature;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.SoapConstants;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.wsdl.*;
+import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -75,9 +74,14 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
             final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
             
             String wsaNs = resolveProperty(assertion.getWsaNamespaceUri(), vars);
-            if(wsaNs == null) {
+            if (wsaNs == null) {
                 wsaNs = AddWsAddressingAssertion.DEFAULT_NAMESPACE;
                 logger.log(Level.INFO, "No namespace value found for WS-Addressing. Using default value of " + AddWsAddressingAssertion.DEFAULT_NAMESPACE);
+            }
+
+            if(!ValidationUtils.isValidUri(wsaNs)){
+                logger.log(Level.INFO, "Invalid namespace URI found for WS-Addressing Namespace '"+wsaNs+"'. Using default value of " + AddWsAddressingAssertion.DEFAULT_NAMESPACE);
+                wsaNs = AddWsAddressingAssertion.DEFAULT_NAMESPACE;
             }
 
             String resolvedAction = resolveProperty(assertion.getAction(), vars);
@@ -86,57 +90,161 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
                 return -1;
             }
 
-            final boolean hasSoapAction = soapAction != null;
-            if (resolvedAction.equals(AddWsAddressingAssertion.ACTION_AUTOMATIC)) {
-                if (!hasSoapAction) {
+            if (AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_INPUT.equals(resolvedAction) ||
+                    AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_OUTPUT.equals(resolvedAction)) {
+                final Pair<Binding,Operation> pair = context.getBindingAndOperation();
+                String wsdlAction = null;
+                if(pair != null){
+                    final Operation operation = pair.right; 
+                    Map map = null;
+                    if(AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_OUTPUT.equals(resolvedAction)){
+                        final Output output = operation.getOutput();
+                        if(output != null){
+                            map = output.getExtensionAttributes();
+                        }
+                    } else {
+                        final Input input = operation.getInput();
+                        if(input != null){
+                            map = input.getExtensionAttributes();
+                        }
+                    }
+
+                    if(map != null && !map.isEmpty()){
+                        final QName actionQName = new QName(SoapConstants.WSA_WSDL_LATEST, SoapConstants.WSA_MSG_PROP_ACTION);
+                        final Object o = map.get(actionQName);
+                        if(o != null){
+                            wsdlAction = o.toString();
+                        } else {
+                            for(String namespaceUri: AddWsAddressingAssertion.WSA_WSDL_NAMESPACES){
+                                final QName qName = new QName(namespaceUri, SoapConstants.WSA_MSG_PROP_ACTION);
+                                if(map.containsKey(qName)){
+                                    wsdlAction = map.get(qName).toString();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if(wsdlAction == null && AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_INPUT.equals(resolvedAction)){
+                        //check binding for soapAction ONLY when dealing with the INPUT, there is no fallback for
+                        //output, as the soap binding extension element only allows a soap action for a request to be specified.
+                        final Binding binding = pair.left;
+                        String inputName = null;
+                        String outputName = null;
+                        if(operation.getInput() != null){
+                            final Input input = operation.getInput();
+                            if(input != null){
+                                inputName = input.getName(); //may be null, that is ok.
+                            }
+                        }
+
+                        if(operation.getOutput() != null){
+                            final Output output = operation.getOutput();
+                            if(output != null){
+                                outputName = output.getName(); //may be null, that is ok.
+                            }
+                        }
+
+                        //need to look up operation with the input and ouput names, if available, as the operation name
+                        //is not unique in the WSDL.
+                        final BindingOperation lookedUpOp = binding.getBindingOperation(operation.getName(), inputName, outputName);
+                        if(lookedUpOp != null){
+                            wsdlAction = SoapUtil.extractSoapAction(lookedUpOp, context.getService().getSoapVersion());
+                        }
+                    }
+                }
+
+                if(wsdlAction == null || wsdlAction.trim().isEmpty()){
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_WSDL_ACTION_FOUND);
+                    return -1;
+                }
+                resolvedAction = wsdlAction;
+            } else if (AddWsAddressingAssertion.ACTION_FROM_TARGET_MESSAGE.equals(resolvedAction)){
+                if (soapAction == null || soapAction.trim().isEmpty()) {
                     auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_SOAP_ACTION);
                     return -1;
                 }
                 resolvedAction = soapAction;
-            } else if (hasSoapAction) {
-                if(!soapAction.equals(resolvedAction)){
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_SOAP_ACTION_MISMATCH, soapAction, resolvedAction);
-                    return -1;
-                }
             }
 
+            if (!ValidationUtils.isValidUri(resolvedAction)) {
+                auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, new String[]{resolvedAction, SoapConstants.WSA_MSG_PROP_ACTION});
+                return -1;
+            }
+
+            //set action context variable.
+            context.setVariable(assertion.getVariablePrefix() + "." + AddWsAddressingAssertion.SUFFIX_ACTION, resolvedAction);
             int elementNumber = 0;
             elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_ACTION, resolvedAction, elementNumber++, false));
 
-            final String messageId = resolveProperty(assertion.getMessageId(), vars);
-            if(messageId != null){
-                elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_MESSAGE_ID, messageId, elementNumber++, false));
+            final String resolvedMessageId = resolveProperty(assertion.getMessageId(), vars);
+
+            final String msgIdToUse;
+            if(AddWsAddressingAssertion.MESSAGE_ID_AUTOMATIC.equals(resolvedMessageId)){
+                msgIdToUse = SoapUtil.generateUniqueUri("MessageId-", true);
+            } else {
+                msgIdToUse = resolvedMessageId;
+            }
+
+            if(msgIdToUse != null){
+                if (!ValidationUtils.isValidUri(msgIdToUse)) {
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, new String[]{msgIdToUse, SoapConstants.WSA_MSG_PROP_MESSAGE_ID});
+                    return -1;
+                }
+                //set message id context variable
+                context.setVariable(assertion.getVariablePrefix() +"." + AddWsAddressingAssertion.SUFFIX_MESSAGE_ID, msgIdToUse);
+                elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_MESSAGE_ID, msgIdToUse, elementNumber++, false));
             }
 
             final String destination = resolveProperty(assertion.getDestination(), vars);
             if(destination != null){
-                elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_DESTINATION, destination, elementNumber++, false));
+                if (!ValidationUtils.isValidUri(destination)) {
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, new String[]{destination, SoapConstants.WSA_MSG_PROP_DESTINATION});
+                } else {
+                    elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_DESTINATION, destination, elementNumber++, false));
+                }
             }
 
             final String from = resolveProperty(assertion.getSourceEndpoint(), vars);
             if(from != null){
-                elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT, from, elementNumber++, true));
+                if (!ValidationUtils.isValidUri(from)) {
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, new String[]{from, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT});
+                } else {
+                    elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT, from, elementNumber++, true));
+                }
             }
 
             final String replyTo = resolveProperty(assertion.getReplyEndpoint(), vars);
             if(replyTo != null){
-                elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_REPLY_TO, replyTo, elementNumber++, true));
+                if (!ValidationUtils.isValidUri(replyTo)) {
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, new String[]{replyTo, SoapConstants.WSA_MSG_PROP_REPLY_TO});
+                } else {
+                    elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_REPLY_TO, replyTo, elementNumber++, true));
+                }
             }
 
             final String faultTo = resolveProperty(assertion.getFaultEndpoint(), vars);
             if(faultTo != null){
-                elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_FAULT_TO, faultTo, elementNumber++, true));
+                if (!ValidationUtils.isValidUri(faultTo)) {
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, new String[]{faultTo, SoapConstants.WSA_MSG_PROP_FAULT_TO});
+                } else {
+                    elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_FAULT_TO, faultTo, elementNumber++, true));
+                }
             }
 
             final String relatesMsgId = resolveProperty(assertion.getRelatesToMessageId(), vars);
             if(relatesMsgId != null){
-                final Element relatesToEl =
-                        addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_RELATES_TO, relatesMsgId, elementNumber++, false);
-                final String prefix = DomUtils.getOrCreatePrefixForNamespace(relatesToEl, wsaNs, "wsa");
-                relatesToEl.setAttributeNS(wsaNs, prefix + ":" + SoapConstants.WSA_MSG_PROP_RELATES_TO_RELATIONSHIP_TYPE,
-                                                  SoapConstants.WSA_MSG_PROP_RELATIONSHIP_REPLY_NAMESPACE);
+                if (!ValidationUtils.isValidUri(relatesMsgId)) {
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, new String[]{relatesMsgId, SoapConstants.WSA_MSG_PROP_RELATES_TO});
+                } else {
+                    final Element relatesToEl =
+                            addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_RELATES_TO, relatesMsgId, elementNumber++, false);
+                    final String prefix = DomUtils.getOrCreatePrefixForNamespace(relatesToEl, wsaNs, "wsa");
+                    relatesToEl.setAttributeNS(wsaNs, prefix + ":" + SoapConstants.WSA_MSG_PROP_RELATES_TO_RELATIONSHIP_TYPE,
+                                                      SoapConstants.WSA_MSG_PROP_RELATIONSHIP_REPLY_NAMESPACE);
 
-                elementsToSign.add(relatesToEl);
+                    elementsToSign.add(relatesToEl);
+                }
             }
 
         } catch (Exception e) {

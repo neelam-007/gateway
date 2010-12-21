@@ -12,9 +12,11 @@ import java.io.IOException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
+import com.l7tech.util.Pair;
 import org.xml.sax.SAXException;
 import org.springframework.context.ApplicationContext;
 
+import javax.wsdl.Binding;
 import javax.wsdl.WSDLException;
 
 /**
@@ -49,8 +51,9 @@ public class ServerOperation extends AbstractServerAssertion {
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
-            javax.wsdl.Operation cntxop = context.getOperation();
-            if (cntxop != null) {
+            final Pair<Binding,javax.wsdl.Operation> pair = context.getBindingAndOperation();
+            if (pair != null) {
+                javax.wsdl.Operation cntxop = pair.right;
                 String tmp = cntxop.getName();
                 if (subject.getOperationName().equals(tmp)) {
                     return AssertionStatus.NONE;

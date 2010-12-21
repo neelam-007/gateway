@@ -32,7 +32,9 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 
+import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -305,8 +307,10 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
     private String getOperationName(PolicyEnforcementContext context) {
         String operationName = null;
         try {
-            Operation op = context.getOperation();
-            if (op != null) operationName = op.getName();
+            final Pair<Binding,Operation> pair = context.getBindingAndOperation();
+            if(pair != null){
+                operationName = pair.right.getName();
+            }
         } catch (Exception e) {
             logger.log(Level.INFO, "Couldn't determine operation name: " + e.toString());
         }

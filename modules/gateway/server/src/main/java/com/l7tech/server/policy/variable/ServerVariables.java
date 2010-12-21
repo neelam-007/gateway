@@ -22,7 +22,9 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.trace.TracePolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 
+import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
 import javax.xml.namespace.QName;
@@ -725,8 +727,11 @@ public class ServerVariables {
                     return null;
                 }
                 if (context.getService().isSoap()) {
-                    Operation operation = context.getOperation();
-                    if (operation != null) return operation.getName();
+                    final Pair<Binding,Operation> pair = context.getBindingAndOperation();
+                    if (pair != null) {
+                        Operation operation = pair.right;
+                        return operation.getName();
+                    }
                     return null;
                 } else {
                     logger.info("Can't get operation name for a non-SOAP service");

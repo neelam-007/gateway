@@ -61,6 +61,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.xml.sax.SAXException;
 
+import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
 import java.io.Closeable;
@@ -413,8 +414,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private String getOperationName( PolicyEnforcementContext context ) {
         String name = null;
         try {
-            Operation operation = context.getOperation();
-            name = operation==null ? null : operation.getName();
+            final Pair<Binding, Operation> pair = context.getBindingAndOperation();
+            if(pair != null){
+                Operation operation = pair.right;
+                name = operation.getName();
+            }
         } catch ( IOException ioe ) {
             logger.log(Level.INFO, "Could not determine soap operation '"+ExceptionUtils.getMessage(ioe)+"'.", ExceptionUtils.getDebugException(ioe));
         } catch ( SAXException saxe ) {

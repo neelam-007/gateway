@@ -134,10 +134,10 @@ public class SystemMessages extends Messages {
     public static final M UDDI_NOTIFICATION_SERVICE_WSDL_ERROR  = m(2292, Level.WARNING, "Error updating service WSDL from UDDI ''{0}''.");
     public static final M UDDI_NOTIFICATION_ENDPOINT_NOT_FOUND  = m(2293, Level.WARNING, "Error finding endpoint for business service ''{0}'', wsdl:port ''{1}'', wsdl:binding ''{2}'' {3} for UDDI registry ''{4}''.");
     /*Audit message 2294 has been replaced by audit message 2298*/
-    public static final M UDDI_NOTIFICATION_ENDPOINT_UPDATED_OLD= m(2294, Level.INFO,    "Updated endpoint from UDDI ''{0}'' for business service ''{1}'', wsdl:port ''{2}'' for UDDI registry ''{3}''.");
+    /** @deprecated */ @Deprecated public static final M UDDI_NOTIFICATION_ENDPOINT_UPDATED_OLD= m(2294, Level.INFO,    "Updated endpoint from UDDI ''{0}'' for business service ''{1}'', wsdl:port ''{2}'' for UDDI registry ''{3}''.");
     public static final M UDDI_NOTIFICATION_TRIGGERING_FAILED   = m(2295, Level.WARNING, "Error firing monitoring update events for UDDI Registry with id#({0}).");
     /*Audit message 2296 has been replaced by audit message 2299*/
-    public static final M UDDI_ORIGINAL_SERVICE_INVALIDATED_OLD = m(2296, Level.WARNING, "Original Business Service in UDDI can no longer be monitored. serviceKey: {0} UDDI Registry with id#({1}).");
+    /** @deprecated */ @Deprecated public static final M UDDI_ORIGINAL_SERVICE_INVALIDATED_OLD = m(2296, Level.WARNING, "Original Business Service in UDDI can no longer be monitored. serviceKey: {0} UDDI Registry with id#({1}).");
     public static final M UDDI_GIF_SCHEME_NOT_AVAILABLE         = m(2297, Level.WARNING, "Service is configured to publish a GIF ''{0}'' endpoint which is no longer available on the Gateway. UDDI is now out of date. To fix either add / enable the listener or republish the GIF endpoint.");
     public static final M UDDI_NOTIFICATION_ENDPOINT_UPDATED    = m(2298, Level.INFO,    "Updated context variable service.defaultRoutingURL for published service #({0}) with updated endpoint from UDDI ''{1}'' for business service ''{2}'', wsdl:port ''{3}'' for UDDI registry ''{4}''.");
     public static final M UDDI_ORIGINAL_SERVICE_INVALIDATED     = m(2299, Level.WARNING, "Original Business Service ''{0}'' in UDDI Registry ''{1}'' is no longer eligible to be monitored. Published Service #({2}) can no longer be under UDDI Control.");

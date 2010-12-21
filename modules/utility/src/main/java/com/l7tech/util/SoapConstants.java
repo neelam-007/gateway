@@ -209,6 +209,11 @@ public class SoapConstants {
         WSA_NAMESPACE_200303
     };
 
+    public static final String WSA_WSDL_NAMESPACE_2006_05 = "http://www.w3.org/2006/05/addressing/wsdl";
+    public static final String WSA_WSDL_NAMESPACE_2006_02 = "http://www.w3.org/2006/02/addressing/wsdl";
+    public static final String WSA_WSDL_NAMESPACE_2005_03 = "http://www.w3.org/2005/03/addressing/wsdl";
+    public static final String WSA_WSDL_LATEST = WSA_WSDL_NAMESPACE_2006_05;
+
     public static final String WSA_ANONYMOUS_ADDRESS = "http://www.w3.org/2005/08/addressing/anonymous";
     public static final String WSA_NO_ADDRESS = "http://www.w3.org/2005/08/addressing/none";
 

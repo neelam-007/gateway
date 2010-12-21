@@ -12,6 +12,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Operation;
 import java.util.List;
@@ -36,14 +37,74 @@ public class SoapUtilTest  {
         Document wsdldoc = TestDocuments.getTestDocument(TestDocuments.DIR + "AxisWarehouse.wsdl");
         Message msg = makeMessage(soapdoc, "");
         Wsdl wsdl = Wsdl.newInstance(null, wsdldoc);
-        Operation op = SoapUtil.getOperation(wsdl, msg);
+        Operation op = SoapUtil.getBindingAndOperation(wsdl, msg).right;
         assertFalse(op == null);
         assertTrue(op.getName().equals("placeOrder"));
         // make sure this returns null when it needs to (totally unrelated request)
         soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "GetLastTradePriceSoapRequest.xml");
         msg = makeMessage(soapdoc, "");
-        op = SoapUtil.getOperation(wsdl, msg);
-        assertTrue(op == null);
+        final Pair<Binding, Operation> nullPair = SoapUtil.getBindingAndOperation(wsdl, msg);
+        assertTrue(nullPair == null);
+    }
+
+    /**
+     * Same test as above, but with soap version supplied
+     * @throws Exception
+     */
+    @Test
+    public void testSoapVersion_1_1() throws Exception {
+        Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "PlaceOrder_cleartext.xml");
+        Document wsdldoc = TestDocuments.getTestDocument(TestDocuments.DIR + "AxisWarehouse.wsdl");
+        Message msg = makeMessage(soapdoc, "");
+        Wsdl wsdl = Wsdl.newInstance(null, wsdldoc);
+        Operation op = SoapUtil.getBindingAndOperation(wsdl, msg, SoapVersion.SOAP_1_1).right;
+        assertFalse(op == null);
+        assertTrue(op.getName().equals("placeOrder"));
+        // make sure this returns null when it needs to (totally unrelated request)
+        soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "GetLastTradePriceSoapRequest.xml");
+        msg = makeMessage(soapdoc, "");
+        final Pair<Binding, Operation> nullPair = SoapUtil.getBindingAndOperation(wsdl, msg, null);
+        assertTrue(nullPair == null);
+    }
+
+    /**
+     * Same test as above, but with a soap version supplied which finds no results
+     * @throws Exception
+     */
+    @Test
+    public void testSoapVersion_1_2_NotFound() throws Exception {
+        Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "PlaceOrder_cleartext.xml");
+        Document wsdldoc = TestDocuments.getTestDocument(TestDocuments.DIR + "AxisWarehouse.wsdl");
+        Message msg = makeMessage(soapdoc, "");
+        Wsdl wsdl = Wsdl.newInstance(null, wsdldoc);
+        final Pair<Binding, Operation> pair = SoapUtil.getBindingAndOperation(wsdl, msg, SoapVersion.SOAP_1_2);
+        assertTrue(pair == null);
+    }
+
+    @Test
+    public void testSoapVersion_1_2() throws Exception {
+        Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "warehouseRequestOutOfOrderHeader.xml");
+        Document wsdldoc = TestDocuments.getTestDocument(TestDocuments.DIR + "Warehouse_1_2_Only.wsdl");
+        Message msg = makeMessage(soapdoc, "");
+        Wsdl wsdl = Wsdl.newInstance(null, wsdldoc);
+        Operation op = SoapUtil.getBindingAndOperation(wsdl, msg, SoapVersion.SOAP_1_2).right;
+        assertFalse(op == null);
+        assertTrue(op.getName().equals("placeOrder"));
+        // make sure this returns null when it needs to (totally unrelated request)
+        soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "GetLastTradePriceSoapRequest.xml");
+        msg = makeMessage(soapdoc, "");
+        final Pair<Binding, Operation> nullPair = SoapUtil.getBindingAndOperation(wsdl, msg, null);
+        assertTrue(nullPair == null);
+    }
+
+    @Test
+    public void testSoapVersion_1_1_NotFound() throws Exception {
+        Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "warehouseRequestOutOfOrderHeader.xml");
+        Document wsdldoc = TestDocuments.getTestDocument(TestDocuments.DIR + "Warehouse_1_2_Only.wsdl");
+        Message msg = makeMessage(soapdoc, "");
+        Wsdl wsdl = Wsdl.newInstance(null, wsdldoc);
+        final Pair<Binding, Operation> pair = SoapUtil.getBindingAndOperation(wsdl, msg, SoapVersion.SOAP_1_1);
+        assertNull(pair);
     }
 
     @Test
@@ -52,13 +113,13 @@ public class SoapUtilTest  {
         Document wsdldoc = TestDocuments.getTestDocument( "com/l7tech/policy/resources/warehouse.wsdl" );
         Message msg = makeMessage(soapdoc, "http://warehouse.acme.com/ws/listProducts");
         Wsdl wsdl = Wsdl.newInstance(null, wsdldoc);
-        Operation op = SoapUtil.getOperation(wsdl, msg);
+        Operation op = SoapUtil.getBindingAndOperation(wsdl, msg).right;
         assertFalse(op == null);
         assertTrue(op.getName().equals("listProducts"));
         // in this case, the operation should be identifiable even if the soapaction is incorrect
         msg = makeMessage(soapdoc, ":foo:bar");
-        op = SoapUtil.getOperation(wsdl, msg);
-        assertFalse(op == null);
+        final Pair<Binding, Operation> notNullPair = SoapUtil.getBindingAndOperation(wsdl, msg);
+        assertFalse(notNullPair == null);
         assertTrue(op.getName().equals("listProducts"));
     }
 
@@ -69,18 +130,18 @@ public class SoapUtilTest  {
         Document wsdldoc = TestDocuments.getTestDocument(TestDocuments.DIR + "bugzilla2304.wsdl");
         Message msg = makeMessage(soapdoc, "http://systinet.com/j2ee/ejb/ServiceFacade#addService?KExjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvU2VydmljZTspTGNhL2JjL2dvdi9hZy9jc293cy9zZXJ2aWNlcy9TZXJ2aWNlOw==");
         Wsdl wsdl = Wsdl.newInstance(null, wsdldoc);
-        Operation op = SoapUtil.getOperation(wsdl, msg);
+        Operation op = SoapUtil.getBindingAndOperation(wsdl, msg).right;
         assertFalse(op == null);
         assertTrue(op.getName().equals("addService"));
         // same request with different soapaction should yield different operation
         msg = makeMessage(soapdoc, "http://systinet.com/j2ee/ejb/ServiceFacade#updateService?KExjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvU2VydmljZTspVg==");
-        op = SoapUtil.getOperation(wsdl, msg);
+        op = SoapUtil.getBindingAndOperation(wsdl, msg).right;
         assertFalse(op == null);
         assertTrue(op.getName().equals("updateService"));
         // without the soapaction, this should yield an ambiguity
         msg = makeMessage(soapdoc, "");
-        op = SoapUtil.getOperation(wsdl, msg);
-        assertTrue(op == null);
+        final Pair<Binding, Operation> nullPair = SoapUtil.getBindingAndOperation(wsdl, msg);
+        assertTrue(nullPair == null);
     }
 
     @SuppressWarnings({ "deprecation" })
@@ -199,6 +260,21 @@ public class SoapUtilTest  {
 
         final List<Element> found = SoapUtil.getWsaAddressingElements( soapDoc, new String[]{SoapUtil.WSA_NAMESPACE} );
         assertEquals("Element count", 4, found.size());
+    }
+
+    @Test
+    public void testGetSoapActionFromBindingOperation() throws Exception{
+        Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "warehouseRequestOutOfOrderHeader.xml");
+        Document wsdldoc = TestDocuments.getTestDocument(TestDocuments.DIR + "Warehouse_1_2_Only.wsdl");
+        Message msg = makeMessage(soapdoc, "");
+        Wsdl wsdl = Wsdl.newInstance(null, wsdldoc);
+        final Pair<Binding, Operation> pair = SoapUtil.getBindingAndOperation(wsdl, msg, SoapVersion.SOAP_1_2);
+        assertFalse(pair == null);
+
+        final Binding binding = pair.left;
+        final BindingOperation bindingOperation = binding.getBindingOperation("listProducts", null, null);
+        final String soapAction = SoapUtil.extractSoapAction(bindingOperation, SoapVersion.SOAP_1_2);
+        assertEquals("http://warehouse.acme.com/ws/listProducts", soapAction);
     }
 
     public static final String SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION_BEFORE_CONTENT =

@@ -1,10 +1,12 @@
 package com.l7tech.server.hpsoam.metrics;
 
+import com.l7tech.util.Pair;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.gateway.common.service.PublishedService;
 
+import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
 import java.util.ArrayList;
@@ -63,7 +65,8 @@ public class ServicePerformance {
 
     public OperationPerformance getOrMakeOperationPerformance(PolicyEnforcementContext context) {
         try {
-            Operation thisop = context.getOperation();
+            final Pair<Binding,Operation> pair = context.getBindingAndOperation();
+            Operation thisop = pair.right;
             String thisns = "";
             if (context.getRequest().getSoapKnob().getPayloadNames().length > 0) {
                 thisns = context.getRequest().getSoapKnob().getPayloadNames()[0].getNamespaceURI();

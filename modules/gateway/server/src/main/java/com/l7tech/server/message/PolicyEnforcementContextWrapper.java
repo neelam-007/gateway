@@ -18,9 +18,11 @@ import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
 import org.xml.sax.SAXException;
 
+import javax.wsdl.Binding;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
@@ -310,8 +312,8 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
-    public Operation getOperation() throws IOException, SAXException, WSDLException, InvalidDocumentFormatException {
-        return delegate.getOperation();
+    public Pair<Binding, Operation> getBindingAndOperation() throws IOException, SAXException, WSDLException, InvalidDocumentFormatException {
+        return delegate.getBindingAndOperation();
     }
 
     @Override
