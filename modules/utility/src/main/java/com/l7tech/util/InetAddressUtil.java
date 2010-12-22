@@ -56,6 +56,25 @@ public class InetAddressUtil {
         return localHost;
     }
 
+    /**
+     * Non-throwing version of InetAddress.getLocalHost().getHostName().
+     *
+     * Returns the configured local host's name, even if it is not resolvable,
+     * in which case it is extracted from the underlying error message.
+     * This is an implementation-specific hack.
+     *
+     * @return the local host's name
+     */
+    public static String getLocalHostName() {
+        String localHostName;
+        try {
+            localHostName = InetAddress.getLocalHost().getCanonicalHostName();
+        } catch (UnknownHostException e) {
+            localHostName = e.getMessage().split(": ")[0];
+        }
+        return localHostName;
+    }
+
     public static String getLocalHostAddress() {
         return isUseIpv6() ? getLocalHostAddress6() : getLocalHostAddress4();
     }

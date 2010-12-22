@@ -140,7 +140,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         Engine engine = embedded.createEngine();
         engine.setName("ssg");
-        engine.setDefaultHost(getListenAddress());
+        engine.setDefaultHost(InetAddressUtil.getLocalHostName());
         embedded.addEngine(engine);
 
         File inf = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_WEB_DIRECTORY, null, false);
@@ -148,7 +148,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         if (!inf.exists() || !inf.isDirectory()) throw new LifecycleException("No such directory: " + inf.getPath());
 
         final String s = inf.getAbsolutePath();
-        Host host = embedded.createHost(getListenAddress(), s);
+        Host host = embedded.createHost(InetAddressUtil.getLocalHostName(), s);
         host.getPipeline().addValve(new ConnectionIdValve(this));
         host.getPipeline().addValve(new ResponseKillerValve());
         engine.addChild(host);
@@ -375,16 +375,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             if (!itworked)
                 running.set(false);
         }
-    }
-
-    private static String getListenAddress() {
-        String addr;
-        try {
-            addr = InetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException e) {
-            addr = InetAddressUtil.getAnyHostAddress();
-        }
-        return addr;
     }
 
     /**
