@@ -64,7 +64,6 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
     private JButton _cancelButton;
     private JButton _okButton;
     private JComboBox _contentTypeComboBox;
-    private JPanel _variableNamePanel;
     private TargetVariablePanel _variableNameVarPanel;
 
     private final boolean readOnly;
@@ -94,10 +93,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
             _predecessorVariables.add(var.toLowerCase());
         }
 
-        _variableNameVarPanel = new TargetVariablePanel();
         _variableNameVarPanel.setAssertion(assertion);
-        _variableNamePanel.setLayout(new BorderLayout());
-        _variableNamePanel.add(_variableNameVarPanel, BorderLayout.CENTER);
         _variableNameVarPanel.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {

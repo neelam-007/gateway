@@ -4,8 +4,6 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.splitjoin.JoinAssertion;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
@@ -23,15 +21,12 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
 
     @Override
        protected void initComponents() {
-           super.initComponents();
+            super.initComponents();
 
-            targetVariableTextField = new TargetVariablePanel();
-            targetVariablePanel.setLayout(new BorderLayout());
-            targetVariablePanel.add(targetVariableTextField, BorderLayout.CENTER);
-            targetVariableTextField.addChangeListener(new ChangeListener(){
+            targetVariablePanel.addChangeListener(new ChangeListener(){
                 @Override
                 public void stateChanged(ChangeEvent e) {
-                getOkButton().setEnabled(targetVariableTextField .isEntryValid());
+                    getOkButton().setEnabled(targetVariablePanel.isEntryValid());
                 }
             });
        }
@@ -41,7 +36,7 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
         validateData();
 
         assertion.setInputVariable(VariablePrefixUtil.fixVariableName(sourceVariableTextField.getText()));
-        assertion.setOutputVariable(VariablePrefixUtil.fixVariableName(targetVariableTextField.getVariable()));
+        assertion.setOutputVariable(VariablePrefixUtil.fixVariableName(targetVariablePanel.getVariable()));
         assertion.setJoinSubstring(joinStringTextField.getText());//do not modify what the user entered
 
         return assertion;
@@ -56,14 +51,14 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
 
         final String targetVariable = assertion.getOutputVariable();
         if(targetVariable != null && !targetVariable.trim().isEmpty()){
-            targetVariableTextField.setVariable(targetVariable);
+            targetVariablePanel.setVariable(targetVariable);
         }
 
         final String joinString = assertion.getJoinSubstring();
         if (joinString != null) { //don't test for empty, it's ok
             joinStringTextField.setText(joinString);
         }
-        targetVariableTextField.setAssertion(assertion);
+        targetVariablePanel.setAssertion(assertion);
     }
 
     @Override
@@ -90,8 +85,7 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
 
     private JPanel propertyPanel;
     private JTextField sourceVariableTextField;
-    private TargetVariablePanel targetVariableTextField;
+    private TargetVariablePanel targetVariablePanel;
     private JTextField joinStringTextField;
-    private JPanel targetVariablePanel;
     private ResourceBundle resourceBundle = ResourceBundle.getBundle(JoinVariablePropertiesDialog.class.getName());
 }

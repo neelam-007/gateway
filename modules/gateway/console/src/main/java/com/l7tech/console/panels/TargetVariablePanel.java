@@ -26,12 +26,17 @@ import java.util.TreeSet;
 
 /**
  * User: wlui
+ *
+ * Usage:
+ *     - the following fields must be set to work properly:
+ *         - assertion
+ *         - suffixes ( if avaliable)
  */
+
 public class TargetVariablePanel  extends JPanel {
     private JTextField suffixField;
     private JLabel prefixLabel;
     private JLabel statusLabel;
-    private JPanel mainPanel;
 
     private String prefix = "";
     private Set<String> predecessorVariables = new TreeSet<String>();
@@ -47,11 +52,43 @@ public class TargetVariablePanel  extends JPanel {
 
 
     public TargetVariablePanel() {
-        setLayout(new BorderLayout());
-        add(mainPanel);
-        
-        prefixLabel.setText("");
-        suffixField.setText("");
+
+        suffixField = new JTextField();
+        prefixLabel = new JLabel("");
+        statusLabel = new JLabel("");
+
+        setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = 0;
+        c.gridwidth = 1;
+        c.gridheight = 1;
+        c.weighty = 0;
+        c.weightx = 0;
+        c.anchor = GridBagConstraints.CENTER;
+        c.fill = GridBagConstraints.NONE;
+        add(prefixLabel,c);
+
+        c.gridx = 1;
+        c.gridy = 0;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.gridheight = 1;
+        c.weighty = 1;
+        c.weightx = 1;
+        c.anchor = GridBagConstraints.LINE_START ;
+        c.fill = GridBagConstraints.HORIZONTAL ;
+        add(suffixField,c);
+
+        c.gridx = 1;
+        c.gridy = 1;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.gridheight = 1;
+        c.weighty = 1;
+        c.weightx = 0.5;
+        c.anchor = GridBagConstraints.LINE_START;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.insets.top = 4;
+        add(statusLabel,c);
 
         Utilities.attachDefaultContextMenu(suffixField);
         clearVariableNameStatus();
@@ -81,7 +118,7 @@ public class TargetVariablePanel  extends JPanel {
         if (!enabled){
             // clear status and tooltips
             clearVariableNameStatus();
-            mainPanel.setToolTipText(null);
+            //mainPanel.setToolTipText(null);
             suffixField.setToolTipText(null);
             entryValid = true;
         }
@@ -140,10 +177,18 @@ public class TargetVariablePanel  extends JPanel {
         suffixField.setText(var);
         validateFields();
     }
+
+    /**
+     * @return the entire variable, including the prefix if available
+     */
     public String getVariable(){
         return prefix.isEmpty()? suffixField.getText(): prefix + '.' + suffixField.getText();
     }
 
+    /**
+     *
+     * @return just the user edited part
+     */
     public String getSuffix(){
         return suffixField.getText();
     }
@@ -170,7 +215,7 @@ public class TargetVariablePanel  extends JPanel {
         final String variableName = prefix.isEmpty()? getVariable(): getSuffix();
         String validateNameResult;
         entryValid = true;
-        mainPanel.setToolTipText(null);
+        //mainPanel.setToolTipText(null);
         suffixField.setToolTipText(null);
 
         // check empty
