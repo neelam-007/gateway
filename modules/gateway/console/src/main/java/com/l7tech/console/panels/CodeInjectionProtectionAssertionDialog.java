@@ -201,6 +201,7 @@ public class CodeInjectionProtectionAssertionDialog extends AssertionPropertiesE
         enableOkButton();
 
         setContentPane(_contentPane);
+        setMinimumSize( getContentPane().getMinimumSize() );
         getRootPane().setDefaultButton(_okButton);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
