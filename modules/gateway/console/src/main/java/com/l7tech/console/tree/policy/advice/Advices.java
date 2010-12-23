@@ -1,6 +1,5 @@
 package com.l7tech.console.tree.policy.advice;
 
-import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
@@ -51,30 +50,11 @@ public class Advices {
             Advice advice = (Advice)assertion.meta().get(AssertionMetadata.POLICY_ADVICE_INSTANCE);
             if (advice != null) advices.add(advice);
 
-            if (advices.isEmpty()) advices.add(new UnknownAssertionAdvice());
             advices.add( new PolicyValidatorAdvice() );
 
             return advices.toArray(new Advice[advices.size()]);
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-
-    /**
-     * the class UnknonwnAssertionAdvice is a 'null object' advice
-     */
-    static class UnknownAssertionAdvice implements Advice {
-        public UnknownAssertionAdvice() {
-        }
-
-        /**
-         * Intercepts a policy change.
-         * 
-         * @param pc The policy change.
-         */
-        @Override
-        public void proceed(PolicyChange pc) {
         }
     }
 
