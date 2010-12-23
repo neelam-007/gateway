@@ -36,15 +36,16 @@ disable_sca_if_needed() {
       fi
 
 
-      echo ""
-      echo "**********************"
-      echo "Disabling SCA startup"
-      echo "**********************"
+      SCARPMS=`rpm -qa | grep -i sca`
+      if [ -n "${SCARPMS}" ] ; then
+        echo ""
+        echo "**********************"
+        echo "Disabling SCA startup"
+        echo "**********************"
+        rpm -e ${SCARPMS}
+        rpm -e sun-nspr sun-nss
+      fi
 
-
-      rpm -e `rpm -qa | grep -i sca`
-      rpm -e sun-nspr sun-nss
-      
       #echo ""
       #echo "Disabling SCA startup scripts"
       #rm -f /etc/rc3.d/S*sca.driver
@@ -65,7 +66,8 @@ config_or_disable_nfast() {
         /opt/nfast/sbin/install
     else
         echo "WARNING: nShield does not appear to be installed. Removing support software"
-        rpm -e ssg-nshieldpci
+        NFASTRPM=`rpm -qa | grep ssg-nshieldpci`
+        [ -n "${NFASTRPM}" ] && rpm -e ssg-nshieldpci
     fi
 }
 
