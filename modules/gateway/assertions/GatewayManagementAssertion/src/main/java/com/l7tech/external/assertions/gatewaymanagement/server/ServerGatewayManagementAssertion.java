@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
 import com.l7tech.gateway.api.impl.ValidationUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -19,7 +18,6 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
 import com.sun.ws.management.InternalErrorFault;
 import com.sun.ws.management.Management;
 import com.sun.ws.management.SchemaValidationErrorFault;
@@ -44,11 +42,15 @@ import org.xmlsoap.schemas.ws._2004._08.addressing.EndpointReferenceType;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBException;
+import javax.xml.soap.MessageFactory;
+import javax.xml.soap.SOAPConstants;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.SOAPPart;
+import javax.xml.transform.dom.DOMSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.HashMap;
@@ -78,7 +80,8 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         final MimeKnob mimeKnob = request.getMimeKnob();
 
         // Validate content type
-        final String contentTypeText = mimeKnob.getOuterContentType().getFullValue();
+        final ContentTypeHeader contentTypeHeader = mimeKnob.getOuterContentType();
+        final String contentTypeText = contentTypeHeader.getFullValue();
         final ContentType contentType = ContentType.createFromHttpContentType(contentTypeText);
         if (contentType == null || !contentType.isAcceptable()) {
             auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, "Content-Type not supported : " + contentTypeText );
@@ -89,7 +92,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader( assertion.getClass().getClassLoader() );
         try {
-            return handle( context, contentType, request, response );
+            return handle( context, contentTypeHeader, contentType, request, response );
         } finally {
             Thread.currentThread().setContextClassLoader( contextClassLoader );
         }
@@ -234,22 +237,23 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
     }
 
     private AssertionStatus handle( final PolicyEnforcementContext context,
+                                    final ContentTypeHeader contentTypeHeader,
                                     final ContentType contentType,
                                     final Message request,
                                     final Message response ) throws IOException {
         AssertionStatus status = AssertionStatus.NONE;
 
         boolean processingResponse = false;
-        InputStream is = null;
         try {
-            final MimeKnob mimeKnob = request.getMimeKnob();
-            is = mimeKnob.getEntireMessageBodyAsInputStream();
+            final MessageFactory factory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL);
+            final SOAPMessage message = factory.createMessage();
+            final SOAPPart part = message.getSOAPPart();
+            part.setContent( new DOMSource( request.getXmlKnob().getDocumentReadOnly() ) );
 
-            final Management managementRequest = new Management( is );
+            final Management managementRequest = new Management( message );
             managementRequest.setXmlBinding(agent.getXmlBinding());
             managementRequest.setContentType(contentType);
 
-            final ContentTypeHeader contentTypeHeader = mimeKnob.getOuterContentType();
             final String contentTypeStr = contentTypeHeader.getFullValue();
             final Principal user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
             final Charset charEncoding = contentTypeHeader.getEncoding();
@@ -272,7 +276,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
             if ( !processingResponse ) throw e;
             auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
             return AssertionStatus.FAILED;
-        } catch ( NoSuchPartException e ) {
+        } catch ( SAXException e ) {
             auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
             return AssertionStatus.FAILED;
         } catch ( SOAPException e ) {
@@ -281,8 +285,6 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         } catch ( JAXBException e ) {
             auditor.logAndAudit( AssertionMessages.GATEWAYMANAGEMENT_ERROR, new String[]{ExceptionUtils.getMessage(e)}, e );
             return AssertionStatus.FAILED;
-        } finally {
-            ResourceUtils.closeQuietly( is );
         }
 
         return status;

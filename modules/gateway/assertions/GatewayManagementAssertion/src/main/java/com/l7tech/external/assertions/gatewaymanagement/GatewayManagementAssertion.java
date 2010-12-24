@@ -6,6 +6,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
@@ -23,6 +25,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * 
  */
 @SuppressWarnings({"serial"})
+@ProcessesRequest
+@RequiresSOAP
 public class GatewayManagementAssertion extends Assertion implements SetsVariables {
 
     //-PUBLIC
