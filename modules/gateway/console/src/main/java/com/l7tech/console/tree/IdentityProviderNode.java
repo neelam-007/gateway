@@ -9,16 +9,14 @@ import com.l7tech.objectmodel.EntityHeader;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 
 /**
  * The class represents an tree node gui node element that
  * corresponds to the Provider entity.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.2
+ * @author Emil Marceta
  */
-public class IdentityProviderNode extends EntityHeaderNode {
+public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
     /**
      * construct the <CODE>ProviderNode</CODE> instance for
      * a given entity.
@@ -33,7 +31,6 @@ public class IdentityProviderNode extends EntityHeaderNode {
         if (e == null) {
             throw new IllegalArgumentException("entity == null");
         }
-        //setAllowsChildren(true);
     }
 
 
@@ -43,8 +40,9 @@ public class IdentityProviderNode extends EntityHeaderNode {
      *
      * @return actions appropriate to the node
      */
+    @Override
     public Action[] getActions() {
-        java.util.List list = new ArrayList();
+        java.util.List<Action> list = new ArrayList<Action>();
         list.add(new IdentityProviderPropertiesAction(this));
         Options options = new Options();
         options.setEnableDeleteAction(true);
@@ -53,52 +51,52 @@ public class IdentityProviderNode extends EntityHeaderNode {
         if (obj instanceof EntityHeader) {
             options.setInitialProvider(((EntityHeader)obj).getOid());
         }
-        list.add(new FindIdentityAction(options));
-        final Action newUserAction;
-        final NewGroupAction newGroupAction;
-        final NewVirtualGroupAction newVirtualGroupAction;
-
         IdentityProviderConfig config = getProviderConfig();
 
-        if (config.type() == IdentityProviderType.INTERNAL) {
-            newUserAction = new NewInternalUserAction(this);
-            newGroupAction = new NewGroupAction(this);
-            newVirtualGroupAction = new NewVirtualGroupAction(this);
-            newUserAction.setEnabled(true);
-            newGroupAction.setEnabled(true);
-            newVirtualGroupAction.setEnabled(false);
-        } else if (config.type() == IdentityProviderType.FEDERATED) {
-            newUserAction = new NewFederatedUserAction(this);
-            newGroupAction = new NewGroupAction(this);
-            newVirtualGroupAction = new NewVirtualGroupAction(this);
-            newUserAction.setEnabled(true);
-            newGroupAction.setEnabled(true);
-            newVirtualGroupAction.setEnabled(true);
-        } else {
-            // the actions here is dummy as they are always disabled from the beginning
-            // this is currently for LDAP user
-            newUserAction = new NewInternalUserAction(this);
-            newGroupAction = new NewGroupAction(this);
-            newVirtualGroupAction = new NewVirtualGroupAction(this);
-            newUserAction.setEnabled(false);
-            newGroupAction.setEnabled(false);
-            newVirtualGroupAction.setEnabled(false);
-        }
+        if ( config != null ) {
+            list.add(new FindIdentityAction(options));
+            final Action newUserAction;
+            final NewGroupAction newGroupAction;
+            final NewVirtualGroupAction newVirtualGroupAction;
 
-        list.add(newUserAction);
-        list.add(newGroupAction);
-        list.add(newVirtualGroupAction);
-
-        list.addAll(Arrays.asList(super.getActions()));
-        for (Iterator iterator = list.iterator(); iterator.hasNext();) {
-            Action action = (Action)iterator.next();
-            if (action instanceof DeleteEntityAction) {
-                action.setEnabled(config.type() != IdentityProviderType.INTERNAL);
+            if (config.type() == IdentityProviderType.INTERNAL) {
+                newUserAction = new NewInternalUserAction(this);
+                newGroupAction = new NewGroupAction(this);
+                newVirtualGroupAction = new NewVirtualGroupAction(this);
+                newUserAction.setEnabled(true);
+                newGroupAction.setEnabled(true);
+                newVirtualGroupAction.setEnabled(false);
+            } else if (config.type() == IdentityProviderType.FEDERATED) {
+                newUserAction = new NewFederatedUserAction(this);
+                newGroupAction = new NewGroupAction(this);
+                newVirtualGroupAction = new NewVirtualGroupAction(this);
+                newUserAction.setEnabled(true);
+                newGroupAction.setEnabled(true);
+                newVirtualGroupAction.setEnabled(true);
+            } else {
+                // the actions here is dummy as they are always disabled from the beginning
+                // this is currently for LDAP user
+                newUserAction = new NewInternalUserAction(this);
+                newGroupAction = new NewGroupAction(this);
+                newVirtualGroupAction = new NewVirtualGroupAction(this);
+                newUserAction.setEnabled(false);
+                newGroupAction.setEnabled(false);
+                newVirtualGroupAction.setEnabled(false);
             }
 
+            list.add(newUserAction);
+            list.add(newGroupAction);
+            list.add(newVirtualGroupAction);
         }
 
-        return (Action[])list.toArray(new Action[]{});
+        list.addAll(Arrays.asList(super.getActions()));
+        for ( final Action action : list ) {
+            if ( action instanceof DeleteEntityAction ) {
+                action.setEnabled( config != null && config.type() != IdentityProviderType.INTERNAL );
+            }
+        }
+
+        return list.toArray(new Action[list.size()]);
     }
 
     /**
@@ -106,6 +104,7 @@ public class IdentityProviderNode extends EntityHeaderNode {
      *
      * @return <code>null</code> indicating there should be none default action
      */
+    @Override
     public Action getPreferredAction() {
         return new IdentityProviderPropertiesAction(this);
     }
@@ -116,6 +115,7 @@ public class IdentityProviderNode extends EntityHeaderNode {
      *
      * @return true if leaf, false otherwise
      */
+    @Override
     public boolean isLeaf() {
         return true;
     }
@@ -125,16 +125,18 @@ public class IdentityProviderNode extends EntityHeaderNode {
      *
      * @param open for nodes that can be opened, can have children
      */
+    @Override
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/CreateIdentityProvider16x16.gif";
     }
 
     /**
      * test whether the node can refresh its children. The provider
-     * node can always refresh its children
+     * node can never refresh its children
      *
-     * @return always true
+     * @return always false
      */
+    @Override
     public boolean canRefresh() {
         return false;
     }
@@ -144,6 +146,7 @@ public class IdentityProviderNode extends EntityHeaderNode {
      *
      * @return true if the node can be deleted, false otherwise
      */
+    @Override
     public boolean canDelete() {
         return true;
     }

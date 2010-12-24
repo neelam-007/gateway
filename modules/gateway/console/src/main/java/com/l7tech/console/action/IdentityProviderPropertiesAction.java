@@ -43,6 +43,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TextUtils;
 
 /**
  * The <code>IdentityProviderPropertiesAction</code> edits the
@@ -103,36 +104,40 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                         iProvider =
                           getIdentityAdmin().findIdentityProviderConfigByID(header.getOid());
 
-                        WizardStepPanel configPanel;
-                        Wizard w;
+                        if ( iProvider == null ) {
+                            handleProviderDeleted(header);
+                        } else {
+                            WizardStepPanel configPanel;
+                            Wizard w;
 
-                        if (iProvider.type() == IdentityProviderType.INTERNAL || iProvider.type() == IdentityProviderType.LDAP) {
-                            if (iProvider.type() == IdentityProviderType.LDAP) {
-                                configPanel = new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(new LdapAdvancedConfigurationPanel(new LdapCertificateSettingsPanel(null)))), false);
+                            if (iProvider.type() == IdentityProviderType.INTERNAL || iProvider.type() == IdentityProviderType.LDAP) {
+                                if (iProvider.type() == IdentityProviderType.LDAP) {
+                                    configPanel = new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(new LdapAdvancedConfigurationPanel(new LdapCertificateSettingsPanel(null)))), false);
+                                } else {
+                                    configPanel = new InternalIdentityProviderConfigPanel(new IdentityProviderCertificateValidationConfigPanel(null), false);
+                                }
+
+                                w = new EditIdentityProviderWizard(f, configPanel, iProvider);
+
+                            } else if (iProvider.type() == IdentityProviderType.FEDERATED) {
+                                boolean readOnly = !PermissionFlags.get(ID_PROVIDER_CONFIG).canUpdateSome();
+                                IdentityProviderCertificateValidationConfigPanel cvPanel = new IdentityProviderCertificateValidationConfigPanel(null,readOnly);
+                                configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(cvPanel, readOnly), readOnly);
+
+                                w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig)iProvider, readOnly);
                             } else {
-                                configPanel = new InternalIdentityProviderConfigPanel(new IdentityProviderCertificateValidationConfigPanel(null), false);
+                                throw new RuntimeException("Unsupported Identity Provider Type: " + iProvider.type().toString());
                             }
 
-                            w = new EditIdentityProviderWizard(f, configPanel, iProvider);
+                            w.addWizardListener(wizardListener);
 
-                        } else if (iProvider.type() == IdentityProviderType.FEDERATED) {
-                            boolean readOnly = !PermissionFlags.get(ID_PROVIDER_CONFIG).canUpdateSome();
-                            IdentityProviderCertificateValidationConfigPanel cvPanel = new IdentityProviderCertificateValidationConfigPanel(null,readOnly);
-                            configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(cvPanel, readOnly), readOnly);
+                            // register itself to listen to the updateEvent
+                            addEntityListener(entityListener);
 
-                            w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig)iProvider, readOnly);
-                        } else {
-                            throw new RuntimeException("Unsupported Identity Provider Type: " + iProvider.type().toString());
+                            w.pack();
+                            Utilities.centerOnScreen(w);
+                            DialogDisplayer.display(w);
                         }
-
-                        w.addWizardListener(wizardListener);
-
-                        // register itself to listen to the updateEvent
-                        addEntityListener(entityListener);
-
-                        w.pack();
-                        Utilities.centerOnScreen(w);
-                        DialogDisplayer.display(w);
 
                     } catch (Exception e1) {
                         ErrorManager.getDefault().
@@ -143,10 +148,35 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         });
     }
 
+    private void handleProviderDeleted( final EntityHeader header ) {
+        DialogDisplayer.showMessageDialog(
+                TopComponents.getInstance().getTopParent(),
+                "The Identity Provider '"+ TextUtils.truncStringMiddleExact( header.getName(), 60 )+"' is no longer available.",
+                "Identity Provider Removed",
+                JOptionPane.WARNING_MESSAGE,
+                new Runnable(){
+            @Override
+            public void run() {
+                final DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                model.removeNodeFromParent( node );
+                fireEventProviderRemoved( header );
+            }
+        } );
+    }
+
     /**
-     * notfy the listeners that the entity has been updated
-     *
-     * @param header
+     * notify the listeners that the entity has been removed
+     */
+    private void fireEventProviderRemoved(EntityHeader header) {
+        final EntityEvent event = new EntityEvent(this, header);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (EventListener listener : listeners) {
+            ((EntityListener) listener).entityRemoved(event);
+        }
+    }
+
+    /**
+     * notify the listeners that the entity has been updated
      */
     private void fireEventProviderUpdated(EntityHeader header) {
         EntityEvent event = new EntityEvent(this, header);
