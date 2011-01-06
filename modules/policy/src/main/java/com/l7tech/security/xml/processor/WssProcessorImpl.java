@@ -1221,6 +1221,56 @@ public class WssProcessorImpl implements WssProcessor {
                 }
 
                 derivationSource = xst;
+            } else if ( SoapConstants.VALUETYPE_SAML_ASSERTIONID2.equals(valueType) ) {
+                if (securityTokenResolver == null) {
+                    throw new ProcessorException("Unable to process DerivedKeyToken - it references a SAMLAssertionID, but no security token resolver is available");
+                }
+
+                String samlAssertionId = keyIdEl.getTextContent();
+
+                EncryptedKey ek = null;
+                NodeList samlAssertions = derivedKeyEl.getOwnerDocument().getElementsByTagNameNS("urn:oasis:names:tc:SAML:1.0:assertion", "Assertion");
+                for(int i = 0;i < samlAssertions.getLength();i++) {
+                    Element samlAssertion = (Element)samlAssertions.item(i);
+
+                    if(samlAssertionId.equals(samlAssertion.getAttribute("AssertionID"))) {
+                        Element attributeStatement = XmlUtil.findFirstChildElementByName(samlAssertion, "urn:oasis:names:tc:SAML:1.0:assertion", "AttributeStatement");
+                        if(attributeStatement == null) {
+                            throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain an AttributeStatement");
+                        }
+
+                        Element subject = XmlUtil.findFirstChildElementByName(attributeStatement, "urn:oasis:names:tc:SAML:1.0:assertion", "Subject");
+                        if(subject == null) {
+                            throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain a Subject");
+                        }
+
+                        Element subjectConfirmation = XmlUtil.findFirstChildElementByName(subject, "urn:oasis:names:tc:SAML:1.0:assertion", "SubjectConfirmation");
+                        if(subjectConfirmation == null) {
+                            throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain an EncryptedKey");
+                        }
+
+                        Element keyInfo = XmlUtil.findFirstChildElementByName(subjectConfirmation, "http://www.w3.org/2000/09/xmldsig#", "KeyInfo");
+                        if(keyInfo == null) {
+                            throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain a KeyInfo");
+                        }
+
+                        Element encryptedKey = XmlUtil.findFirstChildElementByName(keyInfo, "http://www.w3.org/2001/04/xmlenc#", "EncryptedKey");
+                        try {
+                            ek = new EncryptedKeyImpl(encryptedKey, securityTokenResolver, messageX509TokenResolver);
+                        } catch(IOException ioe) {
+                            throw new InvalidDocumentFormatException(ioe);
+                        }
+
+                        break;
+                    }
+                }
+
+                if(ek != null) {
+                    derivationSource = ek;
+                } else {
+                    // TODO caching to allow reference to a SAML assertion that isn't included with the message but which we are expected to already possess
+                    throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to an unknown SAML assertion");
+                }
             } else
                 throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to unsupported ValueType " + valueType);
 
@@ -1230,8 +1280,17 @@ public class WssProcessorImpl implements WssProcessor {
                 throw new InvalidDocumentFormatException("DerivedKeyToken's SecurityTokenReference lacks URI parameter");
             if (ref.startsWith("#"))
                 derivationSource = findXmlSecurityTokenById(ref);
-            else
-                derivationSource = findSecurityContextTokenBySessionId(ref);
+            else {
+                XmlSecurityToken tok = findSecurityContextTokenBySessionId(ref);
+
+                // WCF Unum support - WCF service responses do not include the SecurityContextToken in the message, just the Identifier as the Id
+                if (tok == null && SoapConstants.VALUETYPE_SECURECONV2.equals(refEl.getAttribute("ValueType"))) {
+                    SecurityContext sctx = securityContextFinder.getSecurityContext(ref);
+                    if (sctx != null) tok = new SecurityContextTokenImpl(sctx, derivedKeyEl, ref);
+                }
+
+                derivationSource = tok;
+            }
         }
 
         processSecurityTokenReferenceWSS11(sTokrefEl);

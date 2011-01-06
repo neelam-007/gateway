@@ -5,6 +5,7 @@ package com.l7tech.security.xml;
 
 import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
@@ -13,6 +14,8 @@ import com.l7tech.message.Message;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.SignedSamlTest;
 import com.l7tech.security.token.*;
+import com.l7tech.security.wstrust.RstInfo;
+import com.l7tech.security.wstrust.RstrInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecorationRequirements.SimpleSecureConversationSession;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
@@ -43,6 +46,9 @@ import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -1012,6 +1018,131 @@ public class WssProcessorTest {
         Message message = new Message();
         message.initialize(XmlUtil.stringToDocument(xml));
         return message;
+    }
+
+    @Test
+    public void testWcfTrace() throws Exception {
+        // Load private keys we'll need to process the trace messages
+        SignerInfo[] privateKeys = loadPrivateKeys(TestDocuments.DIR + "wcf_unum/", ".p12", "password".toCharArray(),
+                "bookstoreservice_com", "bookstorests_com");
+        final SimpleSecurityTokenResolver resolver = new SimpleSecurityTokenResolver(null, privateKeys);
+
+
+        // 00 Initial client RST
+        Message rst;
+        Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/00_cl_rst_sct.xml");
+        WssProcessorImpl processor = new WssProcessorImpl(rst = new Message(d));
+        processor.setSecurityTokenResolver(resolver);
+        ProcessorResult pr = processor.processMessage();
+        assertBodyWasSigned(pr, d);
+        RstInfo rstInfo = RstInfo.parseRstElement(SoapUtil.getPayloadElement(rst.getXmlKnob().getDocumentReadOnly()));
+
+
+        // 01 Server RSTR
+        Message rstr;
+        d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/01_sv_rstr_sct.xml");
+        processor = new WssProcessorImpl(rstr = new Message(d));
+        processor.setSecurityTokenResolver(resolver);
+        pr = processor.processMessage();
+        assertBodyWasSigned(pr, d);
+        RstrInfo rstrInfo = RstrInfo.parseRstrElement(SoapUtil.getPayloadElement(rstr.getXmlKnob().getDocumentReadOnly()));
+
+
+        // Reconstruct WS-SC session using parsed RST and RSTR messages along with knowledge of private key
+        final Pair<String, byte[]> session = SecureConversationKeyDeriver.createSecureConversationSession(rstInfo, rstrInfo);
+        final SecurityContextFinder scFinder = new SecurityContextFinder() {
+            @Override
+            public SecurityContext getSecurityContext(String securityContextIdentifier) {
+                if (session.left.equals(securityContextIdentifier)) {
+                    return new SecurityContext() {
+                        @Override
+                        public byte[] getSharedSecret() {
+                            return session.right;
+                        }
+
+                        @Override
+                        public SecurityToken getSecurityToken() {
+                            throw new UnsupportedOperationException("getSecurityToken");
+                        }
+                    };
+                }
+                return null;
+            }
+        };
+
+
+        // 02 Client BuyBook
+        d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/02_cl_buybook.xml");
+        processor = new WssProcessorImpl(new Message(d));
+        processor.setSecurityTokenResolver(resolver);
+        processor.setSecurityContextFinder(scFinder);
+        pr = processor.processMessage();
+        assertBodyWasSigned(pr, d);
+
+
+        // 03 Server BuyBookResponse
+        d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/03_sv_buybookresponse.xml");
+        processor = new WssProcessorImpl(new Message(d));
+        processor.setSecurityTokenResolver(resolver);
+        processor.setSecurityContextFinder(scFinder);
+        pr = processor.processMessage();
+        assertBodyWasSigned(pr, d);
+
+
+        // 04 Client Cancel Context
+        d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/04_cl_rst_sct_cancel.xml");
+        processor = new WssProcessorImpl(new Message(d));
+        processor.setSecurityTokenResolver(resolver);
+        processor.setSecurityContextFinder(scFinder);
+        pr = processor.processMessage();
+        assertBodyWasSigned(pr, d);
+
+
+        // 04 Client Cancel Context
+        d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/05_sv_rstr_sct_cancel.xml");
+        processor = new WssProcessorImpl(new Message(d));
+        processor.setSecurityTokenResolver(resolver);
+        processor.setSecurityContextFinder(scFinder);
+        pr = processor.processMessage();
+        assertBodyWasSigned(pr, d);
+    }
+
+    private void assertBodyWasSigned(ProcessorResult pr, Document soapenv) throws InvalidDocumentFormatException {
+        boolean sawSignedBody = false;
+        
+        Element body = SoapUtil.getBodyElement(soapenv);
+        for (SignedElement signedElement : pr.getElementsThatWereSigned()) {
+            if (signedElement.asElement() == body)
+                sawSignedBody = true;
+        }
+
+        assertTrue("Body was not recorded as signed and successfully verified", sawSignedBody);
+    }
+
+    /**
+     * Load a number of private keys that are all in their own PKCS#12 file, named following a similar naming convention,
+     * using the same password.
+     *
+     * @param prefix  pathname prefix, including any prefix for the filename portion, ie "foo/bar/baz/testkey_".  Required.
+     * @param suffix  pathname suffix, typically just a file extension, ie ".p12".  Required.
+     * @param password password for all PKCS#12 files.  Required.
+     * @param aliases list of names of individual files to load.  Each pathname will be constructed as prefix + alias + suffix and loaded as a PKCS#12 keystore.
+     * @return an array of SignerInfo in the same order as the aliases were given.  Never null.  May be empty only if an empty aliases array was provided.
+     * @throws IOException if one of the files cannot be opened or read.
+     * @throws GeneralSecurityException if there is an error reading a keystore file.
+     * @throws AliasNotFoundException if one of the keystores does not contain exactly one suitable private key entry.
+     */
+    private static SignerInfo[] loadPrivateKeys(String prefix, String suffix, char[] password, String... aliases) throws IOException, GeneralSecurityException, AliasNotFoundException {
+        List<SignerInfo> ret = new ArrayList<SignerInfo>();
+        for (String alias : aliases) {
+            if (alias == null)
+                continue;
+            InputStream stream = TestDocuments.getInputStream(prefix + alias + suffix);
+            KeyStore.PrivateKeyEntry pke = CertUtils.loadPrivateKey(new FixedCallable<InputStream>(stream), "PKCS12", password, null, password);
+            SignerInfo si = new SignerInfo(pke.getPrivateKey(), (X509Certificate[]) pke.getCertificateChain());
+            ret.add(si);
+        }
+        return ret.toArray(new SignerInfo[ret.size()]);
     }
 
     public static final String SIGNED =

@@ -110,6 +110,16 @@ public interface SecurityTokenResolver {
     void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey);
 
     /**
+     * Look up a cached subject confirmation secret key by the SAML AssertionID it arrived in.
+     *
+     * @param samlAssertionId
+     * @return
+     */
+    //byte[] getSecretKeyBySamlAssertionId(String samlAssertionId);
+
+    //void putSecretKeyBySamlAssertionId(String samlAssertionId, byte[] secretKey);
+
+    /**
      * Look up a Kerberos token using a Kerberosv5APREQSHA1 reference.
      *
      * @param kerberosSha1  the base64-encoded Kerberosv5APREQSHA1 identifier to look up
