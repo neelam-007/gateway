@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.ldapquery.console;
 
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
@@ -14,8 +15,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ObjectModelException;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -48,8 +47,11 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     private JCheckBox cacheLDAPAttributeValuesCheckBox;
     private JSpinner cacheSizeSpinner;
     private JSpinner cachePeriodSpinner;
-    private JCheckBox failIfNoResultsCheckBox;
     private JCheckBox protectAgainstLDAPInjectionCheckBox;
+    private JCheckBox allowMultipleSearchResultsCheckBox;
+    private JSpinner maximumResultsSpinner;
+    private JCheckBox failIfNoResultsCheckBox;
+    private JCheckBox failIfTooManyResultsCheckBox;
     private boolean wasOKed = false;
     private LDAPQueryAssertion assertion;
     private java.util.List<QueryAttributeMapping> localMappings = new ArrayList<QueryAttributeMapping>();
@@ -112,22 +114,18 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
             }
         });
 
-        mappingTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+        final RunOnChangeListener enableDisableListener = new RunOnChangeListener(){
             @Override
-            public void valueChanged(ListSelectionEvent e) {
-                enableButtons();
+            protected void run() {
+                enableDisableComponents();
             }
-        });
+        };
 
-		 cacheLDAPAttributeValuesCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent event) {
-                enableDisableCache();
-            }
-        });
+        mappingTable.getSelectionModel().addListSelectionListener(enableDisableListener);
+        cacheLDAPAttributeValuesCheckBox.addActionListener(enableDisableListener);
+        allowMultipleSearchResultsCheckBox.addActionListener(enableDisableListener);
 
         Utilities.equalizeButtonSizes(new JButton[]{okBut, editButton, deleteButton});
-        enableButtons();
 
         ldapCombo.setModel(new DefaultComboBoxModel(populateLdapProviders()));
         cacheSizeSpinner.setModel(new SpinnerNumberModel(assertion.getCacheSize(), 0, 100000, 1));
@@ -136,6 +134,10 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         cachePeriodSpinner.setModel(new SpinnerNumberModel((int)assertion.getCachePeriod(), 0, null, 1));
         validator.addRule(new InputValidator.NumberSpinnerValidationRule(cachePeriodSpinner, "Cache maximum age"));
         InputValidator.NumberSpinnerValidationRule.validateOnChange( validator, cachePeriodSpinner );
+        maximumResultsSpinner.setModel( new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1) );
+        validator.addRule(new InputValidator.NumberSpinnerValidationRule(maximumResultsSpinner, "Maximum results"));
+        InputValidator.NumberSpinnerValidationRule.validateOnChange( validator, maximumResultsSpinner );
+        maximumResultsSpinner.getEditor().setPreferredSize( cachePeriodSpinner.getEditor().getPreferredSize() );
 
         validator.disableButtonWhenInvalid(okBut);
         validator.constrainTextFieldToBeNonEmpty("Search Filter", searchField, new InputValidator.ComponentValidationRule(searchField) {
@@ -161,7 +163,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
 
         Utilities.setDoubleClickAction(mappingTable, editButton);
         modelToView();
-        enableDisableCache();
+        enableDisableComponents();
         validator.validate();
     }
 
@@ -182,6 +184,9 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         cacheSizeSpinner.setValue(assertion.getCacheSize());
         cachePeriodSpinner.setValue(assertion.getCachePeriod());
         failIfNoResultsCheckBox.setSelected(assertion.isFailIfNoResults());
+        failIfTooManyResultsCheckBox.setSelected(assertion.isFailIfTooManyResults());
+        allowMultipleSearchResultsCheckBox.setSelected(assertion.isAllowMultipleResults());
+        maximumResultsSpinner.setValue(assertion.getMaximumResults());
     }
 
     private void viewToModel() {
@@ -216,10 +221,17 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         }
     }
 
-    private void enableDisableCache() {
-        boolean enabled = cacheLDAPAttributeValuesCheckBox.isSelected();
-        cacheSizeSpinner.setEnabled( enabled );
-        cachePeriodSpinner.setEnabled( enabled );
+    private void enableDisableComponents() {
+        final boolean attributeSelected = mappingTable.getSelectedRow() != -1;
+        editButton.setEnabled(attributeSelected);
+        deleteButton.setEnabled(!isReadOnly() && attributeSelected);
+
+        final boolean multipleResultsEnabled = allowMultipleSearchResultsCheckBox.isSelected();
+        maximumResultsSpinner.setEnabled( multipleResultsEnabled );
+
+        final boolean cacheEnabled = cacheLDAPAttributeValuesCheckBox.isSelected();
+        cacheSizeSpinner.setEnabled( cacheEnabled );
+        cachePeriodSpinner.setEnabled( cacheEnabled );
     }
 
     private Object[] populateLdapProviders() {
@@ -252,12 +264,6 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         return comboStuff.toArray();
     }
 
-    private void enableButtons() {
-        final boolean sel = mappingTable.getSelectedRow() != -1;
-        editButton.setEnabled(sel);
-        deleteButton.setEnabled(sel);
-    }
-
     @Override
     public JDialog getDialog() {
         return this;
@@ -288,6 +294,13 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         assertion.setCacheSize(((Number)cacheSizeSpinner.getValue()).intValue());
         assertion.setCachePeriod(((Number)cachePeriodSpinner.getValue()).longValue());
         assertion.setFailIfNoResults(failIfNoResultsCheckBox.isSelected());
+        assertion.setFailIfTooManyResults(failIfTooManyResultsCheckBox.isSelected());
+        assertion.setAllowMultipleResults(allowMultipleSearchResultsCheckBox.isSelected());
+        if ( allowMultipleSearchResultsCheckBox.isSelected() ) {
+            assertion.setMaximumResults( (Integer) maximumResultsSpinner.getValue() );
+        } else {
+            assertion.setMaximumResults( 0 );   
+        }
         return assertion;
     }
 

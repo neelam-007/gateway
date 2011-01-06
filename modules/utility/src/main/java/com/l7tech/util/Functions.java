@@ -56,6 +56,11 @@ public final class Functions {
         void call(P1 p1);
     }
 
+    /** A function that takes one argument, returns void and may throw one type of exception. */
+    public interface UnaryVoidThrows<P1, E extends Throwable> {
+        void call(P1 p1) throws E;
+    }
+
     /** A function that takes two arguments and returns a value. */
     public interface Binary<R, P1, P2> {
         R call(P1 p1, P2 p2);
@@ -69,6 +74,11 @@ public final class Functions {
     /** A function that takes two arguments and returns void. */
     public interface BinaryVoid<P1, P2> {
         void call(P1 p1, P2 p2);
+    }
+
+    /** A function that takes two arguments, returns void and may throw one type of exception. */
+    public interface BinaryVoidThrows<P1, P2, E extends Throwable> {
+        void call(P1 p1, P2 p2) throws E;
     }
 
     /** A function that takes three arguments and returns a value. */

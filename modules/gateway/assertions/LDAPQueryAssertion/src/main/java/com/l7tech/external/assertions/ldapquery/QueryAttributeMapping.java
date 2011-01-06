@@ -12,24 +12,31 @@ import java.io.Serializable;
  * User: flascell<br/>
  * Date: Nov 6, 2007<br/>
  */
-public class QueryAttributeMapping implements Serializable {
+public class QueryAttributeMapping implements Cloneable, Serializable {
     private String attributeName;
     private String matchingContextVariableName;
     private boolean joinMultivalued = true;
     private boolean multivalued;
+    private boolean failMultivalued;
 
     public QueryAttributeMapping() {
     }
 
-    public QueryAttributeMapping(String attribute, String variable) {
+    public QueryAttributeMapping( final String attribute,
+                                  final String variable) {
         this.attributeName = attribute;
         this.matchingContextVariableName = variable;
     }
 
-    public QueryAttributeMapping(String attributeName, String matchingContextVariableName, boolean joinMultivalued, boolean multivalued) {
+    public QueryAttributeMapping( final String attributeName,
+                                  final String matchingContextVariableName,
+                                  final boolean joinMultivalued,
+                                  final boolean failMultivalued,
+                                  final boolean multivalued ) {
         this.attributeName = attributeName;
         this.matchingContextVariableName = matchingContextVariableName;
         this.joinMultivalued = joinMultivalued;
+        this.failMultivalued = failMultivalued;
         this.multivalued = multivalued;
     }
 
@@ -87,5 +94,29 @@ public class QueryAttributeMapping implements Serializable {
      */
     public void setJoinMultivalued(boolean joinMultivalued) {
         this.joinMultivalued = joinMultivalued;
+    }
+
+    /**
+     * Indicates whether the presence of a  multivalued attribute is an error.
+     *
+     * <p>This setting is ignored unless multivalued is false.</p>
+     *
+     * @return True to fail the assertion if the attribute has multiple values.
+     */
+    public boolean isFailMultivalued() {
+        return failMultivalued;
+    }
+
+    public void setFailMultivalued( final boolean failMultivalued ) {
+        this.failMultivalued = failMultivalued;
+    }
+
+    @Override
+    public QueryAttributeMapping clone() {
+        try {
+            return (QueryAttributeMapping) super.clone();
+        } catch ( CloneNotSupportedException e ) {
+            throw new RuntimeException(e);
+        }
     }
 }

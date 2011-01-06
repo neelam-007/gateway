@@ -726,6 +726,12 @@ public class AssertionMessages extends Messages {
     public static final M MCM_TOO_MANY_MAPPINGS  = m(9003, Level.WARNING, "Message context mapping dropped {0}.");
     public static final M MCM_TOO_LONG_VALUE     = m(9004, Level.WARNING, "Message context mapping value truncated {0}.");
 
+    public static final M LDAP_QUERY_SEARCH_FILTER    = m(9025, Level.FINE, "LDAP Query using search filter: {0}");
+    public static final M LDAP_QUERY_ERROR            = m(9026, Level.WARNING, "LDAP Query error: {0}");
+    public static final M LDAP_QUERY_NO_RESULTS       = m(9027, Level.INFO, "The search filter ''{0}'' did not return any ldap entry");
+    public static final M LDAP_QUERY_TOO_MANY_RESULTS = m(9028, Level.INFO, "The search filter ''{0}'' returned too many results (maximum {1})");
+    public static final M LDAP_QUERY_MULTIVALUED_ATTR = m(9029, Level.WARNING, "Attribute ''{0}'' has multiple values");
+
     public static final M GATEWAYMANAGEMENT_ERROR = m(9050, Level.WARNING, "Error processing management request: {0}" );
 
     public static final M JDBC_CANNOT_START_POOLING              = m(9100, Level.WARNING, "JDBC Connection Pooling cannot start due to: {0}");

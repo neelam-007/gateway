@@ -137,6 +137,6 @@ public class LDAPQueryAssertionWspTest {
 
     private QueryAttributeMapping mapping(boolean multi, boolean join) {
         final String name = multi + "_" + join;
-        return new QueryAttributeMapping(name + "_attr", name + "_variable", join, multi);
+        return new QueryAttributeMapping(name + "_attr", name + "_variable", join, false, multi);
     }
 }

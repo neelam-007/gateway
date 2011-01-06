@@ -2,16 +2,19 @@ package com.l7tech.external.assertions.ldapquery.server;
 
 import com.l7tech.external.assertions.ldapquery.LDAPQueryAssertion;
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.identity.ldap.LdapUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.util.ExceptionUtils;
@@ -20,11 +23,13 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
 import org.apache.commons.collections.map.LRUMap;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
@@ -46,15 +51,16 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
 
     //- PUBLIC
 
-    @SuppressWarnings({ "unchecked" })
     public ServerLDAPQueryAssertion( final LDAPQueryAssertion assertion,
-                                     final ApplicationContext applicationContext ) {
+                                     final BeanFactory context ) {
         super(assertion);
-        auditor = new Auditor(this, applicationContext, logger);
-        identityProviderFactory = applicationContext.getBean("identityProviderFactory", IdentityProviderFactory.class);
+        auditor = context instanceof ApplicationContext ?
+                new Auditor( this, (ApplicationContext)context, logger ) :
+                new LogOnlyAuditor( logger );
+        identityProviderFactory = context.getBean("identityProviderFactory", IdentityProviderFactory.class);
         varsUsed = assertion.getVariablesUsed();
         cachedAttributeValues = Collections.synchronizedMap( assertion.getCacheSize() > 0 ? new LRUMap( assertion.getCacheSize() ) : new HashMap());
-        Timer timer = applicationContext.getBean( "managedBackgroundTimer", Timer.class );
+        final Timer timer = context.getBean( "managedBackgroundTimer", Timer.class );
         timer.schedule( cacheCleanupTask, 5393L, cacheCleanupInterval );
     }
 
@@ -71,6 +77,8 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 }
             });
 
+        auditor.logAndAudit( AssertionMessages.LDAP_QUERY_SEARCH_FILTER, filterExpression );
+
         CacheEntry cacheEntry = null;
         if (assertion.isEnableCache()) {
             cacheEntry = (CacheEntry) cachedAttributeValues.get(filterExpression);
@@ -80,7 +88,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
             try {
                 cacheEntry = createNewCacheEntry(filterExpression, assertion.getAttrNames());
             } catch (FindException e) {
-                logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                auditor.logAndAudit( AssertionMessages.LDAP_QUERY_ERROR, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e) );
                 return AssertionStatus.SERVER_ERROR;
             }
             
@@ -94,7 +102,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
         }
 
         if (assertion.isFailIfNoResults() && cacheEntry.cachedAttributes.size() < 1) {
-            return AssertionStatus.FAILED;
+            return AssertionStatus.FALSIFIED;
         }
 
         pushToPec(pec, cacheEntry);
@@ -144,9 +152,15 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
         }
     }
 
-    private CacheEntry createNewCacheEntry( final String filter,
-                                            final String[] attributeNames ) throws FindException {
-        final CacheEntry cacheEntry = new CacheEntry();
+    /**
+     * Search
+     */
+    protected int doSearch( final String filter,
+                            final String[] attributeNames,
+                            final int maxResults,
+                            final Functions.BinaryVoidThrows<QueryAttributeMapping,SimpleAttribute,Exception> resultCallback ) throws FindException {
+        int availableResultCount = 0;
+
         final IdentityProvider provider = getIdProvider();
         if (provider instanceof LdapIdentityProvider) {
             final LdapIdentityProvider identityProvider = (LdapIdentityProvider) provider;
@@ -157,48 +171,29 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 final SearchControls sc = new SearchControls();
                 sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
                 sc.setReturningAttributes( attributeNames );
-                sc.setCountLimit( 2 );
+                if ( maxResults > 0 ) {
+                    sc.setCountLimit( maxResults + 1 );
+                }
                 answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
 
-                if (answer.hasMore()) {
+                while ( answer.hasMore() && (availableResultCount++ < maxResults || maxResults==0) ) {
                     final SearchResult sr = (SearchResult) answer.next();
-                    if ( answer.hasMore() ) {
-                        logger.warning("Search filter returned more than one ldap entry: " + filter);
+                    if ( logger.isLoggable( Level.FINE ) ) {
+                        logger.log( Level.FINE, "Reading LDAP attributes for " + sr.getNameInNamespace());
                     }
-                    logger.info("Reading LDAP attributes for " + sr.getNameInNamespace());
-                    for (final QueryAttributeMapping attributeMapping : assertion.getQueryMappings()) {
-                        final Attribute valuesWereLookingFor = sr.getAttributes().get(attributeMapping.getAttributeName());
-                        if (valuesWereLookingFor != null && valuesWereLookingFor.size() > 0) {
-                            if (attributeMapping.isMultivalued()) {
-                                if (attributeMapping.isJoinMultivalued()) {
-                                    final StringBuilder builder = new StringBuilder();
-                                    for (int i = 0; i < valuesWereLookingFor.size(); i++) {
-                                        if (i > 0) {
-                                            builder.append(", ");
-                                        }
-                                        builder.append(valuesWereLookingFor.get(i).toString());
-                                    }
-                                    logger.fine("Set " + attributeMapping.getMatchingContextVariableName() + " to " + builder.toString());
-                                    cacheEntry.cachedAttributes.put(attributeMapping.getMatchingContextVariableName(), new AttributeValue(builder.toString()));
-                                } else {
-                                    List<String> valueStrings = new ArrayList<String>();
-                                    for (int i = 0; i < valuesWereLookingFor.size(); i++)
-                                        valueStrings.add(valuesWereLookingFor.get(i).toString());
-                                    logger.fine("Set " + attributeMapping.getMatchingContextVariableName() + " to " + valueStrings.size() + " values");
-                                    cacheEntry.cachedAttributes.put(attributeMapping.getMatchingContextVariableName(), new AttributeValue(valueStrings));
-                                }
-                            } else {
-                                logger.fine("Set " + attributeMapping.getMatchingContextVariableName() + " to " + valuesWereLookingFor.get(0));
-                                cacheEntry.cachedAttributes.put(attributeMapping.getMatchingContextVariableName(), new AttributeValue(valuesWereLookingFor.get(0).toString()));
-                            }
+                    final Attributes attributes = sr.getAttributes();
+                    for ( final QueryAttributeMapping attributeMapping : assertion.getQueryMappings() ) {
+                        final String attributeName = attributeMapping.getAttributeName();
+                        final Attribute attribute = attributes.get( attributeName );
+                        if ( attribute != null && attribute.size() > 0 ) {
+                            resultCallback.call( attributeMapping, new SimpleAttribute(sr.getNameInNamespace(), attribute) );
                         } else {
-                            logger.info("Attribute named " + attributeMapping.getAttributeName() + " was not present for ldap entry " + sr.getNameInNamespace());
+                            resultCallback.call( attributeMapping, new SimpleAttribute(sr.getNameInNamespace()) );
                         }
                     }
-                } else {
-                    logger.warning("The search filter " + filter + " did not return any ldap entry.");
                 }
-                return cacheEntry;
+            } catch (AssertionStatusException e) {
+                throw e;
             } catch (Exception e) {
                 if (ExceptionUtils.causedBy(e, NamingException.class)) {
                     String extraDetail = "";
@@ -216,6 +211,82 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
         } else {
             throw new FindException("Id provider is not ldap");
         }
+
+        return availableResultCount;
+    }
+
+    private CacheEntry createNewCacheEntry( final String filter,
+                                            final String[] attributeNames ) throws FindException {
+        final int maxResults;
+        if ( !assertion.isAllowMultipleResults() ) {
+            maxResults = 1;
+        } else {
+            maxResults = assertion.getMaximumResults();
+        }
+
+        final Map<String,List<String>> attributeValues = new HashMap<String,List<String>>();
+        final int availableResults = doSearch( filter, attributeNames, maxResults, new Functions.BinaryVoidThrows<QueryAttributeMapping,SimpleAttribute,Exception>(){
+            @Override
+            public void call( final QueryAttributeMapping attributeMapping,
+                              final SimpleAttribute simpleAttribute ) throws Exception {
+                final String attributeName = attributeMapping.getAttributeName();
+                final String contextVariableName = attributeMapping.getMatchingContextVariableName();
+
+                if ( simpleAttribute.isPresent() && simpleAttribute.getSize() > 0 ) {
+                    List<String> values = attributeValues.get( contextVariableName );
+                    if ( values == null ) {
+                        values = new ArrayList<String>();
+                        attributeValues.put( contextVariableName, values );
+                    }
+
+                    if ( attributeMapping.isMultivalued() ) {
+                        if ( attributeMapping.isJoinMultivalued() ) {
+                            final String value = simpleAttribute.getJoinedValue();
+                            if ( logger.isLoggable( Level.FINE ) ) {
+                                logger.log( Level.FINE, "Attribute " + attributeName + " as " + value);
+                            }
+                            values.add( value );
+                        } else {
+                            if ( logger.isLoggable( Level.FINE ) ) {
+                                logger.log( Level.FINE, "Attribute " + attributeName + " as " + simpleAttribute.getSize() + " values");
+                            }
+                            values.addAll( simpleAttribute.getValues() );
+                        }
+                    } else {
+                        if ( attributeMapping.isFailMultivalued() && simpleAttribute.getSize() > 1 ) {
+                            auditor.logAndAudit( AssertionMessages.LDAP_QUERY_MULTIVALUED_ATTR, attributeName );
+                            throw new AssertionStatusException( AssertionStatus.FALSIFIED );
+                        }
+                        if ( logger.isLoggable( Level.FINE ) ) {
+                            logger.log( Level.FINE, "Attribute " + attributeName + " as " + simpleAttribute.getFirstValue());
+                        }
+                        values.add( simpleAttribute.getFirstValue() );
+                    }
+                } else {
+                    if ( logger.isLoggable( Level.FINE ) ) {
+                        logger.log( Level.FINE, "Attribute named " + attributeName + " was not present for ldap entry " + simpleAttribute.getEntryName());
+                    }
+                }
+            }
+        } );
+
+        if ( maxResults > 0 && availableResults > maxResults ) {
+            auditor.logAndAudit( AssertionMessages.LDAP_QUERY_TOO_MANY_RESULTS, filter, Integer.toString(maxResults) );
+            if ( assertion.isFailIfTooManyResults() ) {
+                throw new AssertionStatusException( AssertionStatus.FALSIFIED );
+            }
+        } else if ( availableResults == 0 ) {
+            auditor.logAndAudit( AssertionMessages.LDAP_QUERY_NO_RESULTS, filter );
+        }
+
+        final Map<String, AttributeValue> cachedAttributes = new HashMap<String,AttributeValue>();
+        for ( final QueryAttributeMapping attributeMapping : assertion.getQueryMappings() ) {
+            final String entryKey = attributeMapping.getMatchingContextVariableName();
+            final List<String> values = attributeValues.get( entryKey );
+            if ( values == null ) continue;
+            cachedAttributes.put( entryKey, new AttributeValue( assertion.isAllowMultipleResults(), values ) );
+        }
+        return new CacheEntry( cachedAttributes );
     }
 
     private void cacheCleanup() {
@@ -242,39 +313,85 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
     }
 
     /**
+     * An "easy to use" wrapper for an Attribute
+     */
+    protected static class SimpleAttribute {
+        private final String entryName;
+        private final Attribute attribute;
+
+        protected SimpleAttribute( final String entryName ){
+            this( entryName, null );
+        }
+
+        protected SimpleAttribute( final String entryName,
+                                   final Attribute attribute ){
+            this.entryName = entryName;
+            this.attribute = attribute;
+        }
+
+        public String getEntryName() {
+            return entryName;
+        }
+
+        public boolean isPresent() {
+            return attribute != null;
+        }
+
+        public String getFirstValue() throws Exception {
+            return getStringValue( 0 );
+        }
+
+        public String getJoinedValue() throws Exception {
+            final StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < getSize(); i++) {
+                if (i > 0) {
+                    builder.append(", ");
+                }
+                builder.append( getStringValue(i) );
+            }
+            return builder.toString();
+        }
+
+        public List<String> getValues() throws Exception {
+            final List<String> values = new ArrayList<String>();
+            for ( int i=0; i<getSize(); i++ ) {
+                values.add( getStringValue(i) );
+            }
+            return values;
+        }
+
+        public int getSize() {
+            return attribute.size();
+        }
+
+        protected String getStringValue( final int index ) throws Exception {
+            return attribute.get( index ).toString();
+        }
+    }
+
+    /**
      * Single or multivalued attribute value.
      */
     private static class AttributeValue {
         private final boolean multivalued;
         private final List<String> values;
 
-        private AttributeValue( final String value ) {
-            if (value == null) throw new NullPointerException("Value may not be null");
-            this.multivalued = false;
-            this.values = Collections.singletonList( value );
+        private AttributeValue( final boolean multivalued, final List<String> values ) {
+            if (values == null) throw new NullPointerException("Values may not be null");
+            this.multivalued = multivalued || values.size() > 1;
+            this.values = Collections.unmodifiableList(new ArrayList<String>(values));
         }
 
-        private AttributeValue( final List<String> value ) {
-            if (value == null) throw new NullPointerException("Value may not be null");
-            this.multivalued = true;
-            this.values = Collections.unmodifiableList(new ArrayList<String>(value));
-        }
-
-        public String getString() {
+        private String getString() {
             return values.isEmpty() ? null : values.get( 0 );
         }
 
-        public String[] getStrings() {
+        private String[] getStrings() {
             return values.toArray( new String[values.size()] );
         }
 
-        /** @return true if multivalued */
-        public boolean isMultivalued() {
-            return multivalued;
-        }
-
         /** @return either a String or a String[]  */
-        public Object getStringOrStrings() {
+        private Object getStringOrStrings() {
             return multivalued ? getStrings() : getString();
         }
     }
@@ -284,9 +401,9 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
         // key: attribute name, value: attribute value
         private final Map<String, AttributeValue> cachedAttributes;
 
-        CacheEntry() {
-            timestamp = System.currentTimeMillis();
-            cachedAttributes = new HashMap<String, AttributeValue>();
+        private CacheEntry( final Map<String, AttributeValue> cachedAttributes ) {
+            this.timestamp = System.currentTimeMillis();
+            this.cachedAttributes = Collections.unmodifiableMap( cachedAttributes );
         }
     }    
 }

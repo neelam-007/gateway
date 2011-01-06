@@ -41,6 +41,9 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     private long cachePeriod = 10; // minutes
     private boolean enableCache = true;
     private boolean failIfNoResults = false;
+    private boolean failIfTooManyResults = false;
+    private boolean allowMultipleResults = false;
+    private int maximumResults = 0;
 
     public LDAPQueryAssertion() {
     }
@@ -203,6 +206,30 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
         this.failIfNoResults = failIfNoResults;
     }
 
+    public boolean isFailIfTooManyResults() {
+        return failIfTooManyResults;
+    }
+
+    public void setFailIfTooManyResults( final boolean failIfTooManyResults ) {
+        this.failIfTooManyResults = failIfTooManyResults;
+    }
+
+    public boolean isAllowMultipleResults() {
+        return allowMultipleResults;
+    }
+
+    public void setAllowMultipleResults( final boolean allowMultipleResults ) {
+        this.allowMultipleResults = allowMultipleResults;
+    }
+
+    public int getMaximumResults() {
+        return maximumResults;
+    }
+
+    public void setMaximumResults( final int maximumResults ) {
+        this.maximumResults = maximumResults;
+    }
+
     /** @deprecated only for parsing pre-5.0 versions of the policy XML */
     @Deprecated
     public void setAttrNames(String[] attrNames) {
@@ -219,5 +246,15 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     @Deprecated
     public void setVarNames(String[] varNames) {
         queryMappings = LDAPQueryCompatibilityAssertionMapping.populateVarNames(queryMappings, varNames);
+    }
+
+    @Override
+    public LDAPQueryAssertion clone() {
+        LDAPQueryAssertion cloned = (LDAPQueryAssertion) super.clone();
+        cloned.queryMappings = cloned.queryMappings.clone();
+        for ( int i=0; i<cloned.queryMappings.length; i++  ) {
+            cloned.queryMappings[i] = cloned.queryMappings[i].clone();
+        }
+        return cloned;
     }
 }
