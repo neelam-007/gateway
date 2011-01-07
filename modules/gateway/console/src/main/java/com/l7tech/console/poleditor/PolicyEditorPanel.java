@@ -1001,9 +1001,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
             an.setValidatorMessages(r.messages(an.asAssertionIndexPath()));
         }
-        if (!validating) {
-            ((DefaultTreeModel)policyTree.getModel()).nodeChanged(getCurrentRoot());
-        }
+        ((DefaultTreeModel)policyTree.getModel()).nodeChanged(getCurrentRoot());
         overWriteMessageArea("");
         if (rootAssertion != null && containDisabledAssertion(rootAssertion.asAssertion())) {
             appendToMessageArea("<i>Some assertion(s) disabled.</i>");
