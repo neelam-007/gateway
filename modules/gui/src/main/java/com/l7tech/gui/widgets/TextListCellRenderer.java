@@ -5,6 +5,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.Functions;
 
 /**
@@ -119,8 +120,10 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
      * @return The renderer
      */
     public static <T> TextListCellRenderer<T> basicComboBoxRenderer() {
-        TextListCellRenderer<T> renderer = new TextListCellRenderer<T>( TextListCellRenderer.<T>toStringAccessor() );
+        final Functions.Unary<String, T> toStringAccessor = TextListCellRenderer.toStringAccessor();
+        TextListCellRenderer<T> renderer = new TextListCellRenderer<T>( toStringAccessor, toStringAccessor, false );
         renderer.setRenderClipped(true);
+        renderer.setSmartTooltips(true);
         return renderer;
     }
 
@@ -162,6 +165,13 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
                     null;
         }
 
+        if ( smartTooltips && text != null && tooltipText != null && list.getParent() != null ) {
+            final int width = Math.min(list.getWidth(), list.getParent().getWidth());
+            if ( width > Utilities.computeStringWidth( list.getFontMetrics(list.getFont()), text ) ) {
+                tooltipText = null; // suppress tooltip if full text is visible
+            }
+        }
+        
         setText( text );
         setToolTipText(tooltipText);
 
@@ -193,6 +203,21 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
         this.renderClipped = renderClipped;
     }
 
+    /**
+     * Smart tooltips will only display if the text for an entry is not fully visible.
+     *
+     * <p>You still need to configure the accessor for the tooltip.</p>
+     *
+     * @return True if smart tooltips are in use.
+     */
+    public boolean isSmartTooltips() {
+        return smartTooltips;
+    }
+
+    public void setSmartTooltips( final boolean smartTooltips ) {
+        this.smartTooltips = smartTooltips;
+    }
+
     //- PROTECTED
 
     @Override
@@ -215,4 +240,5 @@ public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer
     private final Functions.Unary<Icon, SO> iconAccessorFunction;
     private final boolean useAccessorForNull;
     private boolean renderClipped;
+    private boolean smartTooltips;
 }

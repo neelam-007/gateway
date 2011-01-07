@@ -49,7 +49,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Copyright (C) 2009, Layer 7 Technologies Inc.
  * User: njordan
  * Date: 13-Mar-2009
  * Time: 5:29:48 PM
@@ -80,7 +79,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                 return messageSource.getLocationName();
             }else{
                 return "Context Variable: " +
-                        Syntax.SYNTAX_PREFIX + messageVariableName + Syntax.SYNTAX_SUFFIX;    
+                        Syntax.SYNTAX_PREFIX + messageVariableName + Syntax.SYNTAX_SUFFIX;
             }
         }
     }
@@ -130,6 +129,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         messageSourceComboBox.setModel(buildMessageSourceComboBoxModel(assertion));
+        messageSourceComboBox.setRenderer(TextListCellRenderer.basicComboBoxRenderer());
 
         DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
         comboBoxModel.addElement(XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST);
