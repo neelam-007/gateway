@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
@@ -94,6 +91,7 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
         updateAuthenticationSummary();
         updateButtons();
         getContentPane().add(mainPanel);
+        Utilities.setEscKeyStrokeDisposes( this );
     }
 
     private static class FieldInfo {

@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.external.assertions.snmptrap.console;
 
 import com.l7tech.gui.util.InputValidator;
@@ -90,6 +84,7 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
 
         pack();
         Utilities.centerOnScreen(this);
+        Utilities.setEscKeyStrokeDisposes( this );
         if (assertion != null) setData(assertion);
     }
 

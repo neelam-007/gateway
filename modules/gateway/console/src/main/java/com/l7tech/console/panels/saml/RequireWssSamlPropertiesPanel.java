@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.gui.util.Utilities;
@@ -132,7 +127,6 @@ public class RequireWssSamlPropertiesPanel extends LegacyAssertionPropertyDialog
             wizardPanel.readSettings(assertion);
             wizardPanel.addChangeListener(wizardPanelChangeListener);
         }
-        Utilities.setEscKeyStrokeDisposes(this);
         buttonCancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();

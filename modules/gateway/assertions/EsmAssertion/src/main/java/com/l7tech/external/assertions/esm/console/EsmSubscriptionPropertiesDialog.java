@@ -4,6 +4,7 @@ import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.esm.EsmSubscriptionAssertion;
 import com.l7tech.external.assertions.esm.EsmConstants;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
@@ -76,6 +77,7 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
                 enableDisable();
             }
         });
+        Utilities.setEscKeyStrokeDisposes( this );
     }
 
     private void createListModel() {

@@ -5,7 +5,6 @@ import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.AssertionPath;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
 
 import javax.swing.*;
@@ -23,8 +22,6 @@ import java.util.*;
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * @author flascell<br/>
- * $Id$<br/>
- *
  */
 public class TimeRangePropertiesDialog extends LegacyAssertionPropertyDialog {
 
@@ -80,7 +77,6 @@ public class TimeRangePropertiesDialog extends LegacyAssertionPropertyDialog {
 
         itemsToToggleForTimeOfDay.clear();
         itemsToToggleForDayOfWeek.clear();
-        Utilities.setEscKeyStrokeDisposes(this);
         
         // calculate UTC offset
         int totOffsetInMin = Calendar.getInstance().getTimeZone().getOffset(System.currentTimeMillis()) / (1000*60);

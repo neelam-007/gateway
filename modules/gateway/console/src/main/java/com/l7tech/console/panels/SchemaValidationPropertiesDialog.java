@@ -225,8 +225,6 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
             }
         });
 
-        Utilities.setEscKeyStrokeDisposes(this);
-
         // create callbacks
         cbSchemaLocation.addActionListener(new ActionListener() {
             @Override

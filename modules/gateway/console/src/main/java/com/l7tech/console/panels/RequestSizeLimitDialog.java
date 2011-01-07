@@ -36,8 +36,6 @@ public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
                          final boolean readOnly ) {
         this.sizeAssertion = assertion;
 
-        Utilities.setEscKeyStrokeDisposes( this );
-
         targetMessagePanel.setTitle(null);
         targetMessagePanel.setBorder(null);
         targetMessagePanel.setModel(assertion);

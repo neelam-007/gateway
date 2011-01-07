@@ -421,7 +421,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         getRootPane().setDefaultButton(okButton);               
-        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     private void initializeProxyTab() {

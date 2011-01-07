@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
@@ -49,9 +44,6 @@ public class CookieCredentialSourceAssertionPropertiesDialog extends LegacyAsser
         });
 
         getRootPane().setDefaultButton(okButton);
-        Utilities.runActionOnEscapeKey(getRootPane(), new AbstractAction() {
-            public void actionPerformed(ActionEvent e) { cancelButton.doClick(); }
-        });
     }
 
     /**

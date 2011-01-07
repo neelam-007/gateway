@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 /**
  * This class is the SSL properties editor.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author Emil Marceta
  * @version 1.0
  */
 public class EditSslAssertionPropertiesDialog extends LegacyAssertionPropertyDialog {
@@ -39,7 +39,6 @@ public class EditSslAssertionPropertiesDialog extends LegacyAssertionPropertyDia
         initialize(readOnly);
         pack();
         Utilities.centerOnScreen(this);
-        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     private void initialize(boolean readOnly) {

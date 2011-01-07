@@ -495,12 +495,6 @@ public class HtmlFormDataAssertionDialog extends LegacyAssertionPropertyDialog i
 
         setContentPane(_contentPane);
         getRootPane().setDefaultButton(_okButton);
-        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                onCancel();
-            }
-        });
     }
 
     public boolean isAssertionModified() {

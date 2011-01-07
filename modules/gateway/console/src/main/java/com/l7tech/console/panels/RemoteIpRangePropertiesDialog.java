@@ -61,7 +61,6 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
         setContentPane(mainPanel);
         okButton.setEnabled( !readOnly );
         Utilities.equalizeButtonSizes(okButton, cancelButton, helpButton);
-        Utilities.setEscKeyStrokeDisposes(this);
 
         includeExcludeCombo.setModel(new DefaultComboBoxModel(new String[] {
                                                           resources.getString("includeExcludeCombo.include"),

@@ -124,6 +124,7 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
         });
 
         Utilities.setDoubleClickAction( mappingTable, propertiesButton);
+        Utilities.setEscKeyStrokeDisposes( this );
         enableOrDisableButtons();
         getContentPane().add(mainPanel);
     }

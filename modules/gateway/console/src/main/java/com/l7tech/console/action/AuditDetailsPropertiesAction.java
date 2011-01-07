@@ -1,7 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.console.action;
 
 import com.l7tech.policy.assertion.AuditDetailAssertion;
@@ -15,6 +11,9 @@ import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * @author darmstrong
+ */
 public class AuditDetailsPropertiesAction extends NodeActionWithMetaSupport{
     static final Logger log = Logger.getLogger(AuditDetailsPropertiesAction.class.getName());
     private final AssertionTreeNode<AuditDetailAssertion> subject;
@@ -30,7 +29,6 @@ public class AuditDetailsPropertiesAction extends NodeActionWithMetaSupport{
                 new AuditDetailAssertionPropertiesDialog(TopComponents.getInstance().getTopParent(), subject.asAssertion(), !subject.canEdit());
         aad.pack();
         Utilities.centerOnScreen(aad);
-        Utilities.setEscKeyStrokeDisposes(aad);
         aad.setVisible(true);
         if (aad.isModified()) {
             assertionChanged();

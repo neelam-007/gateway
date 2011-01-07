@@ -30,7 +30,6 @@ public class RegexAdvice extends AddContextSensitiveAssertionAdvice {
             }
         });
 
-        Utilities.setEscKeyStrokeDisposes(rd);
         rd.pack();
         Utilities.centerOnScreen(rd);
         DialogDisplayer.display(rd, new Runnable() {

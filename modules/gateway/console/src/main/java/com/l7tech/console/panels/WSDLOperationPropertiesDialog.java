@@ -66,12 +66,6 @@ public class WSDLOperationPropertiesDialog extends LegacyAssertionPropertyDialog
                 ok();
             }
         });
-        Utilities.setEscAction(this, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                cancel();
-            }
-        });
 
         operationCombo.setModel(new DefaultComboBoxModel(possibleOperationNames));
 

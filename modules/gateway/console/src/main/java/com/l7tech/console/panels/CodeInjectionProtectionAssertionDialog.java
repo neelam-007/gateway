@@ -1,8 +1,6 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.CodeInjectionProtectionAssertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.TargetMessageType;
@@ -210,6 +208,7 @@ public class CodeInjectionProtectionAssertionDialog extends AssertionPropertiesE
                 onCancel();
             }
         });
+        Utilities.setEscKeyStrokeDisposes( this );
     }
 
     private void onOK() {

@@ -25,7 +25,6 @@ public class InverseHttpFormPostAdvice implements Advice {
         InverseHttpFormPost hfp = (InverseHttpFormPost)assertions[0];
         final InverseHttpFormPostDialog hfpd = new InverseHttpFormPostDialog(f, hfp, false);
         hfpd.setModal(true);
-        Utilities.setEscKeyStrokeDisposes(hfpd);
         hfpd.pack();
         Utilities.centerOnScreen(hfpd);
         DialogDisplayer.display(hfpd, new Runnable() {

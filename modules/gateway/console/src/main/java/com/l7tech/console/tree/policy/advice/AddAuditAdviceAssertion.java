@@ -36,7 +36,6 @@ public class AddAuditAdviceAssertion implements Advice {
         final AuditDetailAssertionPropertiesDialog aad = new AuditDetailAssertionPropertiesDialog(mw, subject, false);
         aad.pack();
         Utilities.centerOnScreen(aad);
-        Utilities.setEscKeyStrokeDisposes(aad);
         DialogDisplayer.display(aad, new Runnable() {
             public void run() {
                 if (aad.isModified())

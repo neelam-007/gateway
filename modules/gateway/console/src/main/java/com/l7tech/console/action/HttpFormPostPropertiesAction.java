@@ -38,7 +38,6 @@ public class HttpFormPostPropertiesAction extends NodeActionWithMetaSupport {
         Frame f = TopComponents.getInstance().getTopParent();
         final HttpFormPostDialog hfpd = new HttpFormPostDialog(f, hfp, !node.canEdit());
         hfpd.setModal(true);
-        Utilities.setEscKeyStrokeDisposes(hfpd);
         hfpd.pack();
         Utilities.centerOnScreen(hfpd);
         DialogDisplayer.display(hfpd, new Runnable() {

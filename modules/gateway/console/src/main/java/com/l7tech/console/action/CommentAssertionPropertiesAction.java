@@ -36,7 +36,6 @@ public class CommentAssertionPropertiesAction extends NodeActionWithMetaSupport 
         CommentAssertion ca = (CommentAssertion)node.asAssertion();
         Frame f = TopComponents.getInstance().getTopParent();
         final CommentAssertionDialog cad = new CommentAssertionDialog(f, ca, !node.canEdit());
-        Utilities.setEscKeyStrokeDisposes(cad);
         cad.pack();
         Utilities.centerOnScreen(cad);
         DialogDisplayer.display(cad, new Runnable() {

@@ -52,7 +52,6 @@ public class RegexPropertiesAction extends NodeActionWithMetaSupport {
             }
         });
 
-        Utilities.setEscKeyStrokeDisposes(rd);
         rd.pack();
         Utilities.centerOnScreen(rd);
         DialogDisplayer.display(rd);

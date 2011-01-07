@@ -253,12 +253,6 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
                 ok();
             }
         });
-        Utilities.setEscAction(this, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                cancel();
-            }
-        });
 
         xmlContainer = new XMLContainer(true);
         UIAccessibility uiAccessibility = xmlContainer.getUIAccessibility();

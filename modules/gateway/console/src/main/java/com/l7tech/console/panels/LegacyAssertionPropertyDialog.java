@@ -1,12 +1,7 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: Sep 3, 2009
- * Time: 11:43:18 AM
- */
 package com.l7tech.console.panels;
 
 import com.l7tech.console.policy.PolicyPositionAware;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
@@ -21,6 +16,10 @@ import java.awt.*;
  * New Assertions should <b>NOT</b> use this class but should use AssertionPropertiesOkCancelSupport or a subclass.
  * This class however needs to be updated to use meta data, see it's DefaultAssertionPropertiesEditor implementation
  * where it passes meta data to it's super, class AssertionPropertiesOkCancelSupport could just extract this info itself
+ *
+ * User: darmstrong
+ * Date: Sep 3, 2009
+ * Time: 11:43:18 AM
  */
 public class LegacyAssertionPropertyDialog extends JDialog implements PolicyPositionAware {
 
@@ -32,6 +31,8 @@ public class LegacyAssertionPropertyDialog extends JDialog implements PolicyPosi
             throw new IllegalArgumentException();
         }
         setTitle(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
+        setDefaultCloseOperation( DISPOSE_ON_CLOSE );
+        Utilities.setEscKeyStrokeDisposes( this );
     }
 
     @Override

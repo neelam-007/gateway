@@ -209,7 +209,6 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
         contentPane.add(mainPanel, BorderLayout.CENTER);
-        Utilities.setEscKeyStrokeDisposes(this);
 
         queueComboBox.setModel(new DefaultComboBoxModel(getQueueItems()));
         queueComboBox.addActionListener(new ActionListener() {

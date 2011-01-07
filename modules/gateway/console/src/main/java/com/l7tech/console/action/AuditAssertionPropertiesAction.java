@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.action;
 
 import com.l7tech.gui.util.Utilities;
@@ -36,7 +33,6 @@ public class AuditAssertionPropertiesAction extends NodeActionWithMetaSupport {
         final AuditAssertionDialog aad = new AuditAssertionDialog(TopComponents.getInstance().getTopParent(), subject.asAssertion(), thresold.getName(), !subject.canEdit());
         aad.pack();
         Utilities.centerOnScreen(aad);
-        Utilities.setEscKeyStrokeDisposes(aad);
         DialogDisplayer.display(aad, TopComponents.getInstance().getRootSheetHolder(), new Runnable() {
             @Override
             public void run() {

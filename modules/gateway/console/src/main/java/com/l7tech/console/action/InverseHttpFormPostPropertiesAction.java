@@ -38,7 +38,6 @@ public class InverseHttpFormPostPropertiesAction extends NodeActionWithMetaSuppo
         Frame f = TopComponents.getInstance().getTopParent();
         final InverseHttpFormPostDialog hfpd = new InverseHttpFormPostDialog(f, hfp, !node.canEdit());
         hfpd.setModal(true);
-        Utilities.setEscKeyStrokeDisposes(hfpd);
         hfpd.pack();
         Utilities.centerOnScreen(hfpd);
         DialogDisplayer.display(hfpd, new Runnable() {
