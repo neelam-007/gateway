@@ -1151,6 +1151,49 @@ public class Utilities {
     }
 
     /**
+     * Request focus for the first (viable) child component on open.
+     *
+     * <p>This is not usually necessary but is useful when the default focus
+     * does not work as desired.</p>
+     *
+     * @param window The window to request focus for
+     * @see java.awt.Component#requestFocusInWindow()
+     */
+    public static void setRequestFocusOnOpen( final Window window ) {
+        window.addWindowListener( new WindowAdapter(){
+            @Override
+            public void windowOpened( final WindowEvent e ) {
+                if ( !focusFirstChildInWindow( window ) ) {
+                    // fall back to focus of window if no component can be focused
+                    window.requestFocusInWindow();
+                }
+            }
+
+            private boolean focusFirstChildInWindow( final Component component ) {
+                boolean requestedFocus = false;
+
+                if ( component.isVisible() && component.isFocusable() ) {
+                    if ( component instanceof Container ) {
+                        final Container container = (Container) component;
+                        final Component[] components = container.getComponents();
+                        for ( final Component childComponent : components ) {
+                            if ( focusFirstChildInWindow( childComponent ) ) {
+                                requestedFocus = true;
+                                break;
+                            }
+                        }
+                    } else {
+                        component.requestFocusInWindow();
+                        requestedFocus = true;
+                    }
+                }
+
+                return requestedFocus;
+            }
+        } );
+    }
+
+    /**
      * Set focusable state for a component and its children.
      *
      * @param component the component to be updated

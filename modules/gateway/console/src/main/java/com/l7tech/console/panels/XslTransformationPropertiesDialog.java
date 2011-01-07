@@ -1,13 +1,7 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels;
 
-import com.l7tech.console.policy.SsmPolicyVariableUtils;
-import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.assertion.AssertionResourceType;
@@ -155,6 +149,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
 
         add(mainPanel);
 
+        Utilities.setRequestFocusOnOpen( this );
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
 

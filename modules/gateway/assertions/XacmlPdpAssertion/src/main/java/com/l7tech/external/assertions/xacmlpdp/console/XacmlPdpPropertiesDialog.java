@@ -307,6 +307,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         policyPanel.add(xmlEditor, BorderLayout.CENTER);
 
         setContentPane(mainPanel);
+        Utilities.setRequestFocusOnOpen( this );
     }
 
     private ComboBoxModel buildMessageSourceComboBoxModel( final XacmlPdpAssertion assertion ) {
