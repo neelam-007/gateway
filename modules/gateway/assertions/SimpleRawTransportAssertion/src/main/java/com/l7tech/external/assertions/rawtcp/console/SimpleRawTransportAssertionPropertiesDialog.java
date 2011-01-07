@@ -2,25 +2,19 @@ package com.l7tech.external.assertions.rawtcp.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import static com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion.DEFAULT_READ_TIMEOUT;
 import static com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion.DEFAULT_RESPONSE_SIZE_LIMIT;
@@ -53,6 +47,12 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         maximumResponseSizeField.setDocument(new NumberField(10, Integer.MAX_VALUE));
         transmitTimeoutField.setDocument(new NumberField(9));
         receiveTimeoutField.setDocument(new NumberField(9));
+
+        final Functions.Unary<String, MessageTargetable> nameAccessor = getMessageNameFunction("Default", null, "Context Variable: ");
+        final TextListCellRenderer<MessageTargetable> renderer = new TextListCellRenderer<MessageTargetable>( nameAccessor, nameAccessor, false );
+        renderer.setRenderClipped( true );
+        renderer.setSmartTooltips( true );
+        requestSourceComboBox.setRenderer( renderer );
 
         responseContextVariableField = new TargetVariablePanel();
         responseContextVariablePanel.setLayout(new BorderLayout());
@@ -89,33 +89,9 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         getOkButton().setEnabled(defaultResponseRadioButton.isSelected() || responseContextVariableField.isEntryValid());
     }
 
-    private static class RequestSourceComboBoxItem {
-        final String variableName;
-        final String displayName;
-        RequestSourceComboBoxItem(String variableName, String displayName) {
-            this.variableName = variableName;
-            this.displayName = displayName;
-        }
-        @Override
-        public String toString() { return displayName; }
-    }
-
     private void populateAndUpdateRequestSourceComboBox(SimpleRawTransportAssertion assertion) {
-        requestSourceComboBox.removeAllItems();
-        requestSourceComboBox.addItem(new RequestSourceComboBoxItem(null, "Default Request"));
-        final Map<String, VariableMetadata> predecessorVariables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion);
-        final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
-        for (String variableName: predecessorVariableNames) {
-            if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
-                RequestSourceComboBoxItem item =
-                        new RequestSourceComboBoxItem(variableName, String.format("Context Variable: %s%s%s", Syntax.SYNTAX_PREFIX, variableName, Syntax.SYNTAX_SUFFIX));
-                requestSourceComboBox.addItem(item);
-                MessageTargetableSupport requestTarget = assertion.getRequestTarget();
-                if (requestTarget != null && variableName.equals(requestTarget.getOtherTargetMessageVariable())) {
-                    requestSourceComboBox.setSelectedItem(item);
-                }
-            }
-        }
+        requestSourceComboBox.setModel( buildMessageSourceComboBoxModel( assertion, true, false ) );
+        requestSourceComboBox.setSelectedItem( new MessageTargetableSupport(assertion.getRequestTarget()) );
     }
 
     @Override
@@ -159,13 +135,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         assertion.setResponseContentType(validNonEmptyString("Response content type", responseContentTypeField.getText()));
         assertion.setTargetHost(validNonEmptyString("Target host", targetHostField.getText()));
         assertion.setTargetPort(validInt("Port must be a number between 1 and 65535", 65535, targetPortField.getText()));
-
-        RequestSourceComboBoxItem requestSourceItem = (RequestSourceComboBoxItem) requestSourceComboBox.getSelectedItem();
-        if (requestSourceItem != null && requestSourceItem.variableName != null) {
-            assertion.setRequestTarget(new MessageTargetableSupport(validVariableName("Request context variable name: ", requestSourceItem.variableName), false));
-        } else {
-            assertion.setRequestTarget(new MessageTargetableSupport(TargetMessageType.REQUEST, false));
-        }
+        assertion.setRequestTarget( (MessageTargetableSupport) requestSourceComboBox.getSelectedItem() );
 
         if (saveAsContextVariableRadioButton.isSelected()) {
             assertion.setResponseTarget(new MessageTargetableSupport(validVariableName("Response context variable name: ", responseContextVariableField.getVariable()), true));

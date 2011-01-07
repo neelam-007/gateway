@@ -145,10 +145,21 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
     }
 
     protected ComboBoxModel buildMessageSourceComboBoxModel( final Assertion assertion ) {
+        return buildMessageSourceComboBoxModel( assertion, true, true );
+    }
+
+    protected ComboBoxModel buildMessageSourceComboBoxModel( final Assertion assertion,
+                                                             final boolean includeRequest,
+                                                             final boolean includeResponse ) {
         final DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
 
-        comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.REQUEST ) );
-        comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.RESPONSE ) );
+        if ( includeRequest ) {
+            comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.REQUEST ) );
+        }
+
+        if ( includeResponse ) { 
+            comboBoxModel.addElement( new MessageTargetableSupport( TargetMessageType.RESPONSE ) );
+        }
 
         final Map<String, VariableMetadata> predecessorVariables =
                 (assertion.getParent() != null) ? SsmPolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
@@ -177,14 +188,22 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
     }
 
     protected Functions.Unary<String, MessageTargetable> getMessageNameFunction( final String defaultName,
-                                                                                final String variableName ) {
+                                                                                 final String variableName ) {
+        return getMessageNameFunction( defaultName, variableName, null );
+    }
+
+    protected Functions.Unary<String, MessageTargetable> getMessageNameFunction( final String defaultName,
+                                                                                 final String variableName,
+                                                                                 final String variablePrefix ) {
         return new Functions.Unary<String,MessageTargetable>(){
             @Override
             public String call( final MessageTargetable messageTargetable ) {
                 if ( messageTargetable == null ) {
                     return defaultName;
-                } else if ( variableName != null && messageTargetable.getTarget()== TargetMessageType.OTHER ) {
+                } else if ( variableName != null && messageTargetable.getTarget() == TargetMessageType.OTHER ) {
                     return variableName;
+                } else if ( variablePrefix != null && messageTargetable.getTarget() == TargetMessageType.OTHER ) {
+                    return variablePrefix + messageTargetable.getTargetName();
                 } else {
                     return messageTargetable.getTargetName();
                 }
