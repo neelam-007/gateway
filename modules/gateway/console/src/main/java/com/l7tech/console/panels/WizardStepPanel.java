@@ -162,6 +162,17 @@ public abstract class WizardStepPanel<ST> extends JPanel {
         }
     }
 
+    /**
+     * Called by the wizard to notify that the panel is active.
+     */
+    public void notifyActive() {
+    }
+
+    /**
+     * Called by the wizard to notify that the panel is inactive.
+     */
+    public void notifyInactive() {
+    }
 
     /**
      * Provides the wizard with the current data--either

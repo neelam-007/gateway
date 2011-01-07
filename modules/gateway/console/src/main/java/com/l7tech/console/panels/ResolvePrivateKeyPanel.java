@@ -105,6 +105,11 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
         enableValueFieldAsAppropriate();
     }
 
+    @Override
+    public void notifyActive() {
+        populateCombobox(); // ensure up to date
+    }
+
     private void manageCustomKeys() {
         final PrivateKeyManagerWindow privateKeyManagerWindow = new PrivateKeyManagerWindow(owner);
         privateKeyManagerWindow.pack();

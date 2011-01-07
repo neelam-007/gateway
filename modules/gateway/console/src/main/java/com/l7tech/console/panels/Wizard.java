@@ -476,6 +476,10 @@ public class Wizard<ST> extends JDialog {
         wizardStepPanel.add(next, BorderLayout.CENTER);
         updateWizardControls(next);
         validate();
+        if (current != null) {
+            current.notifyInactive();
+        }
+        next.notifyActive();
         fireSelectionChanged(next);
     }
 
