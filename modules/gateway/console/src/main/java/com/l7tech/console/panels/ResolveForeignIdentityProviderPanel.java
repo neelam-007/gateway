@@ -15,6 +15,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.HexUtils;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ResolvingComparator;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -22,6 +24,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashMap;
@@ -79,6 +82,11 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             unresolvedRef.setLocalizeIgnore();
         }
         return true;
+    }
+
+    @Override
+    public void notifyActive() {
+        populateIdProviders(unresolvedRef.getIdProviderTypeVal());
     }
 
     private String getProviderNameForDisplay() {
@@ -264,9 +272,17 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             return;
         }
         if (providerHeaders == null) {
-            // this can't happen under normal circumpstences
+            // this can't happen under normal circumstances
             throw new RuntimeException("No providers at all?");
         }
+
+        Arrays.sort( providerHeaders, new ResolvingComparator<EntityHeader,String>( new Resolver<EntityHeader,String>(){
+            @Override
+            public String resolve( final EntityHeader key ) {
+                return key.getName()==null ? "" : key.getName().toLowerCase();
+            }
+        }, false ) );
+        final Object selectedItem = providerSelector.getSelectedItem();
         DefaultComboBoxModel idprovidermodel = new DefaultComboBoxModel();
         for (EntityHeader entityHeader : providerHeaders) {
             try {
@@ -280,6 +296,12 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
             }
         }
         providerSelector.setModel(idprovidermodel);
+        if ( selectedItem != null && providerSelector.getModel().getSize() > 0 ) {
+            providerSelector.setSelectedItem( selectedItem );
+            if ( providerSelector.getSelectedIndex() == -1 ) {
+                providerSelector.setSelectedIndex( 0 );
+            }
+        }
     }
 
     private Long getProviderIdFromName(String name) {

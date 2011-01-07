@@ -72,6 +72,11 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
         return true;
     }
 
+    @Override
+    public void notifyActive() {
+        populateConnectionCombobox();
+    }
+
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
@@ -113,6 +118,7 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
     }
 
     private void populateConnectionCombobox() {
+        final Object selectedItem = connectionComboBox.getSelectedItem();
         java.util.List<String> connNameList;
         JdbcAdmin admin = getJdbcConnectionAdmin();
         if (admin == null) return;
@@ -132,6 +138,13 @@ public class ResolveJdbcConnectionPanel extends WizardStepPanel {
         connectionComboBox.removeAllItems();
         for (String driverClass: connNameList) {
             connectionComboBox.addItem(driverClass);
+        }
+
+        if ( selectedItem != null && connectionComboBox.getModel().getSize() > 0 ) {
+            connectionComboBox.setSelectedItem( selectedItem );
+            if ( connectionComboBox.getSelectedIndex() == -1 ) {
+                connectionComboBox.setSelectedIndex( 0 );
+            }
         }
     }
 

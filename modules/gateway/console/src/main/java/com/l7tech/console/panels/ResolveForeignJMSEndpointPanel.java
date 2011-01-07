@@ -133,6 +133,11 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         return true;
     }
 
+    @Override
+    public void notifyActive() {
+        populateQueueSelector();
+    }
+
     private void populateQueueSelector() {
         JmsAdmin admin = Registry.getDefault().getJmsManager();
         if (admin == null) {
@@ -140,6 +145,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
             return;
         }
 
+        final Object selectedItem = queueSelector.getSelectedItem();
         DefaultComboBoxModel model = new DefaultComboBoxModel();
         for (JmsUtilities.QueueItem queueItem : JmsUtilities.loadQueueItems()) {
             if (!queueItem.getQueue().getEndpoint().isMessageSource()) {
@@ -157,6 +163,13 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
             }
         } else {
             changeRadio.setEnabled(true);
+
+            if ( selectedItem != null ) {
+                queueSelector.setSelectedItem( selectedItem );
+                if ( queueSelector.getSelectedIndex() == -1 ) {
+                    queueSelector.setSelectedIndex( 0 );
+                }
+            }
         }
     }
 
