@@ -294,7 +294,7 @@ public class EditPolicyAction extends NodeAction {
         Object result = JOptionPane.showInputDialog(TopComponents.getInstance().getTopParent(),
                                                     "This policy has been disabled by having its active revision revoked.\n" +
                                                     "Please choose a revision on which to base your edit.",
-                                                    "Chose Starting Revision",
+                                                    "Choose Starting Revision",
                                                     JOptionPane.QUESTION_MESSAGE,
                                                     null,
                                                     options.toArray(new AssertionHaver[options.size()]),
