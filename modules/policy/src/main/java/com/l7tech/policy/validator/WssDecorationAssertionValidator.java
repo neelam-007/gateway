@@ -1,5 +1,6 @@
 package com.l7tech.policy.validator;
 
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -48,7 +49,10 @@ public class WssDecorationAssertionValidator implements AssertionValidator {
             }
 
             if ( requiresDecoration && !seenDecoration ) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "This assertion will be ignored. An \"Add or Remove WS-Security\" assertion should be used to apply security.", null));
+                final String wsSecurityAssName = new WsSecurity().meta().get(AssertionMetadata.SHORT_NAME).toString();
+                result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "This assertion will be ignored as an " +
+                        "\"" + wsSecurityAssName + "\" assertion configured to apply WS-Security with the same\n" +
+                        "message target is required to apply security.", null));
             }
 
             if ( isWss11 && seenWss10 ) {

@@ -281,16 +281,17 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertionPrivateK
 
                 if(pathAssertion instanceof WsSecurity){
                     WsSecurity wsAssertion = (WsSecurity) pathAssertion;
-                    if(wsAssertion.getTargetName().equals(assertion.getTargetName())){
+                    if(wsAssertion.getTargetName().equals(assertion.getTargetName()) && wsAssertion.isApplyWsSecurity()){
                         seenDecoration = true;
                     }
                 }
             }
 
             if(!seenDecoration ){
+                final String wsSecurityAssName = new WsSecurity().meta().get(AssertionMetadata.SHORT_NAME).toString();
                 result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
                         "The configured WS-Addressing message addressing properties will not be signed unless " +
-                                "an \"Apply WS-Security\" assertion is added to the policy and configured with the same message target.", null));
+                                "an \"" + wsSecurityAssName + "\" assertion is added to the policy and is configured to apply WS-Security with the same message target.", null));
             }
 
         }
