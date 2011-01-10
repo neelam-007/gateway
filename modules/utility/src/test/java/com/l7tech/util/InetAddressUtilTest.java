@@ -121,4 +121,17 @@ public class InetAddressUtilTest {
         assertFalse(InetAddressUtil.isEqualUrl("HTTP://EXAMPLE.COM/%63", "http://example.com/c"));
         assertTrue(InetAddressUtil.isEqualUrl("http://[::1]", "http://[0:0::000:1]"));
     }
+
+    @Test
+    public void testIsAnyHostAddress() {
+        assertTrue( "*", InetAddressUtil.isAnyHostAddress("*") );
+        assertTrue( "0.0.0.0", InetAddressUtil.isAnyHostAddress("0.0.0.0") );
+        assertTrue( "::", InetAddressUtil.isAnyHostAddress("::") );
+        assertTrue( "0000:0000:0000:0000:0000:0000:0000:0000", InetAddressUtil.isAnyHostAddress("0000:0000:0000:0000:0000:0000:0000:0000") );
+
+        assertFalse( "1.2.3.4", InetAddressUtil.isAnyHostAddress("1.2.3.4") );
+        assertFalse( "0.0.0.1", InetAddressUtil.isAnyHostAddress("0.0.0.1") );
+        assertFalse( "::1", InetAddressUtil.isAnyHostAddress("::1") );
+        assertFalse( "0000:0000:0000:0000:0000:0000:0000:0001", InetAddressUtil.isAnyHostAddress("0000:0000:0000:0000:0000:0000:0000:0001") );
+    }
 }

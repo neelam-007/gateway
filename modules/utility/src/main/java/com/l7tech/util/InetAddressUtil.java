@@ -104,7 +104,7 @@ public class InetAddressUtil {
     }
 
     public static boolean isAnyHostAddress(String address) {
-        InetAddress addr = getAddress(address);
+        InetAddress addr = getAddress(address, true);
         return "*".equals(address) || (addr != null && addr.isAnyLocalAddress());
     }
 
@@ -114,7 +114,19 @@ public class InetAddressUtil {
      * @param address the string to check
      * @return true if the provided string is a valid IPv4 address, false otherwise.
      */
-    public static boolean isValidIpv4Address(String address) {
+    public static boolean isValidIpv4Address( final String address ) {
+        return isValidIpv4Address( address, false );
+    }
+
+    /**
+     * Verifies if the provided string parameter is a valid IPv4 address.
+     *
+     * @param address the string to check
+     * @param listener true for a "listener" address
+     * @return true if valid
+     */
+    public static boolean isValidIpv4Address( final String address,
+                                              final boolean listener ) {
 
         if (address == null) return false;
 
@@ -130,7 +142,7 @@ public class InetAddressUtil {
                 String octetString = matcher.group(i);
                 try {
                     int octet = Integer.parseInt(octetString);
-                    if (i == 1)
+                    if (i == 1 && !listener)
                         start = 1;
                     else
                         start = 0;
@@ -156,13 +168,26 @@ public class InetAddressUtil {
      * @return the InetAddress, or null if the supplied address string is not a valid IPv4 or IPv6 address
      */
     public static InetAddress getAddress(String address) {
+        return getAddress( address, false );
+    }
+
+    /**
+     * Non-throwing, no-lookup version of InetAddress.getByName()
+     *
+     * @param address the address string to parse into a InetAddress object; IPv6 addresses must not include brackets
+     * @param listener true to allow a listener address (such as "0.0.0.0")
+     * @return the InetAddress, or null if the supplied address string is not a valid IPv4 or IPv6 address
+     */
+    public static InetAddress getAddress( final String address,
+                                          final boolean listener ) {
         try {
-            return isValidIpv4Address(address) ? Inet4Address.getByName(address):
+            return isValidIpv4Address(address, listener) ? Inet4Address.getByName(address):
                    getIpv6Address(address);
         } catch (UnknownHostException e) {
             return null; // should not happen after isValid
         }
     }
+
     /**
      * @param address an IPv6 address to be tested, in string literal representation, without brackets 
      * @return true if the provided string is a valid IPv6 address, false otherwise
