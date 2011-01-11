@@ -1,8 +1,6 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.comparison.server.convert;
 
+import com.l7tech.policy.variable.DataType;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.common.io.XmlUtil;
 import org.w3c.dom.Element;
@@ -17,8 +15,14 @@ import org.xml.sax.SAXException;
  * </ul>
  * @author alex
  */
-public class XmlConverter implements ValueConverter<Element> {
-    public Element convert(Object val) throws ConversionException {
+public class XmlConverter extends ValueConverterSupport<Element> {
+
+    public XmlConverter() {
+        super( DataType.ELEMENT );
+    }
+
+    @Override
+    public Element convert( final Object val ) throws ConversionException {
         if (val instanceof CharSequence) {
             String s = val.toString();
             try {

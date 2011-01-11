@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.util;
 
 import javax.xml.bind.annotation.XmlEnum;
@@ -164,8 +159,13 @@ public enum ComparisonOperator {
             if (left == null) throw new NullPointerException();
             if (right == null) return false;
             boolean match;
-            @SuppressWarnings({"unchecked"})
-            int comp = left.compareTo(right);
+            int comp;
+            try {
+                //noinspection unchecked
+                comp = left.compareTo(right);
+            } catch ( ClassCastException cce ) {
+                return false; // incomparable types
+            }
             if (comp > 0) comp = 1;
             if (comp < 0) comp = -1;
             match = comp == compareVal1 || comp == compareVal2;

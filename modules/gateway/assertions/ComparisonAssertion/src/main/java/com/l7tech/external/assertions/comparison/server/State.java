@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.comparison.server;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -63,7 +60,7 @@ abstract class State {
 
     /**
      * @param value the value to be converted; must not be null.
-     * @return the converted object; never null.
+     * @return the converted object or null if an error occurs
      */
     protected Object convertValue(Object value, DataType type) {
         if (value == null) throw new NullPointerException();
@@ -85,6 +82,30 @@ abstract class State {
         }
     }
 
+    /**
+     * @param value the value to be converted; must not be null.
+     * @param typeExample an example object with the desired result type.
+     * @return the converted object or null if an error occurs
+     */
+    protected Object convertValue( final Object value,
+                                   final Comparable typeExample ) {
+        if (value == null) throw new NullPointerException();
+
+        final ValueConverter converter = ValueConverter.Factory.getConverter( typeExample );
+        if ( converter != null ) {
+            auditor.logAndAudit(AssertionMessages.COMPARISON_CONVERTING, value.getClass().getName(), converter.getDataType().getShortName());
+
+            try {
+                return converter.convert(value);
+            } catch (ConversionException e) {
+                auditor.logAndAudit(AssertionMessages.COMPARISON_CANT_CONVERT, value.getClass().getSimpleName(), converter.getDataType().getName());
+                return null;
+            }
+        } else {
+            return value; // conversion not possible or not necessary
+        }
+    }
+
     protected boolean evalBinary(final Object left, final BinaryPredicate bpred, final Map<String, Object> vars) {
         Comparable cleft;
         if (left instanceof Comparable) {
@@ -99,9 +120,13 @@ abstract class State {
             cright = null;
         } else {
             Object right = ServerComparisonAssertion.getValue(bpred.getRightValue(), vars, auditor);
-            if (type != null && right != null) {
-                // Convert this rvalue before comparing if there's a DataTypePredicate present
-                right = convertValue(right, type);
+            if (right != null) {
+                DataType type = this.type;
+                if ( type == null ) {
+                    right = convertValue(right, cleft);
+                } else {
+                    right = convertValue(right, type);
+                }
             }
             if (right instanceof Comparable || right == null) {
                 cright = (Comparable) right;

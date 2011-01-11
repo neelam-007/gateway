@@ -1,7 +1,6 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.comparison.server.convert;
+
+import com.l7tech.policy.variable.DataType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -12,7 +11,12 @@ import java.math.BigInteger;
  * followed by {@link java.math.BigDecimal#toBigInteger()}.
  * @author alex
 */
-public class IntegerConverter implements ValueConverter<BigInteger> {
+public class IntegerConverter extends ValueConverterSupport<BigInteger> {
+
+    public IntegerConverter() {
+        super( DataType.INTEGER );
+    }
+
     @Override
     public BigInteger convert(Object val) throws ConversionException {
         //

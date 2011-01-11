@@ -1,7 +1,6 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.comparison.server.convert;
+
+import com.l7tech.policy.variable.DataType;
 
 import java.math.BigDecimal;
 
@@ -9,8 +8,14 @@ import java.math.BigDecimal;
  * Attempts to convert any {@link Object} into a {@link BigDecimal} (by calling {@link BigDecimal#BigDecimal(String)} on it)
  * @author alex
 */
-public class DecimalConverter implements ValueConverter<BigDecimal> {
-    public BigDecimal convert(Object val) throws ConversionException {
+public class DecimalConverter extends ValueConverterSupport<BigDecimal> {
+
+    public DecimalConverter() {
+        super( DataType.DECIMAL );
+    }
+
+    @Override
+    public BigDecimal convert( final Object val ) throws ConversionException {
         try {
             return new BigDecimal(val.toString());
         } catch (NumberFormatException e) {

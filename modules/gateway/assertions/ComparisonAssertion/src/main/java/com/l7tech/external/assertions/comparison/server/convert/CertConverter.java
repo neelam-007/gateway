@@ -1,9 +1,7 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.comparison.server.convert;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.policy.variable.DataType;
 
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -17,8 +15,14 @@ import java.security.cert.X509Certificate;
  * </ul>
  * @author alex
 */
-public class CertConverter implements ValueConverter<X509Certificate> {
-    public X509Certificate convert(Object val) throws ConversionException {
+public class CertConverter extends ValueConverterSupport<X509Certificate> {
+
+    public CertConverter() {
+        super( DataType.CERTIFICATE );
+    }
+
+    @Override
+    public X509Certificate convert( final Object val ) throws ConversionException {
         if (val instanceof String) {
             String b64 = (String) val;
             try {
