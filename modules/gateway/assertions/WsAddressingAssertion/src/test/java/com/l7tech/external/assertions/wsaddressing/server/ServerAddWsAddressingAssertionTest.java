@@ -733,7 +733,7 @@ public class ServerAddWsAddressingAssertionTest {
     
     private PolicyEnforcementContext getContext(String messageContent, final String soapAction) throws IOException, SAXException {
 
-        Message request = new Message(XmlUtil.parse(messageContent));
+        Message request = new Message(XmlUtil.parse(messageContent),0);
         Message response = new Message();
 
         MockServletContext servletContext = new MockServletContext();

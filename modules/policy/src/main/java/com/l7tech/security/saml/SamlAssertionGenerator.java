@@ -184,7 +184,7 @@ public class SamlAssertionGenerator {
                 dr.setSenderMessageSigningCertificate(attestingEntity.getCertificateChain()[0]);
             }
             dr.setSecurityHeaderActor(options.getSecurityHeaderActor());
-            wssDecorator.decorateMessage(new Message(soapMessage), dr);
+            wssDecorator.decorateMessage(new Message(soapMessage,0), dr);           // todo
         } catch (SignatureException e) {
             throw e;
         } catch (CertificateException e) {

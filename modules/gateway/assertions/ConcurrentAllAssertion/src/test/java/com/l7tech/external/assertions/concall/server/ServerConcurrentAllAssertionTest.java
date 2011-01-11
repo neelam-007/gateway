@@ -229,7 +229,7 @@ public class ServerConcurrentAllAssertionTest {
     }
 
     static Message makeMessage(ContentTypeHeader contentType, String body) throws IOException {
-        return new Message(new ByteArrayStashManager(), contentType, new ByteArrayInputStream(body.getBytes()));
+        return new Message(new ByteArrayStashManager(), contentType, new ByteArrayInputStream(body.getBytes()),0);
     }
 
     static String toString(Message message) throws IOException, NoSuchPartException {

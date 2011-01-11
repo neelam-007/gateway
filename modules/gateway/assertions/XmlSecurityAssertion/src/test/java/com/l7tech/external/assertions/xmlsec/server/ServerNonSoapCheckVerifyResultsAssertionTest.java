@@ -124,7 +124,7 @@ public class ServerNonSoapCheckVerifyResultsAssertionTest {
         cat.setAttribute("color", "black");
         dog = XmlUtil.createAndAppendElement(doc, "dog");
         snake = XmlUtil.createAndAppendElement(doc, "snake");
-        message = new Message(pets);
+        message = new Message(pets,0);
         pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(message, new Message());
 
         // Default assertion bean config for these tests

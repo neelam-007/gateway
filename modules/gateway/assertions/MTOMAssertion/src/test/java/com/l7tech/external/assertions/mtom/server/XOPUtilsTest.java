@@ -40,7 +40,8 @@ public class XOPUtilsTest {
         message.initialize(
                 smf.createStashManager(),
                 ContentTypeHeader.parseValue(mtomContentType),
-                new ByteArrayInputStream(HexUtils.decodeBase64( mtom )));
+                new ByteArrayInputStream(HexUtils.decodeBase64( mtom )),
+                0);
         
         XOPUtils.reconstitute( message, true, LENGTH_LIMIT, smf );
         System.out.println( XmlUtil.nodeToFormattedString( message.getXmlKnob().getDocumentReadOnly() ));
@@ -68,7 +69,8 @@ public class XOPUtilsTest {
         message.initialize(
                 smf.createStashManager(),
                 ContentTypeHeader.parseValue(mtomContentType),
-                new ByteArrayInputStream(HexUtils.decodeBase64( mtom )));
+                new ByteArrayInputStream(HexUtils.decodeBase64( mtom )),
+                0);
 
         XOPUtils.reconstitute( message, false, LENGTH_LIMIT, smf );
 
@@ -90,7 +92,8 @@ public class XOPUtilsTest {
         message.initialize(
                 smf.createStashManager(),
                 ContentTypeHeader.parseValue(mtomContentType),
-                new ByteArrayInputStream(HexUtils.decodeBase64( mtom )));
+                new ByteArrayInputStream(HexUtils.decodeBase64( mtom )),
+                0);
 
         XOPUtils.reconstitute( message, false, 1, smf );
         message.close();
@@ -103,7 +106,8 @@ public class XOPUtilsTest {
         message.initialize(
                 smf.createStashManager(),
                 ContentTypeHeader.parseValue(wcfContentType),
-                new ByteArrayInputStream(wcfBody.getBytes()));
+                new ByteArrayInputStream(wcfBody.getBytes()),
+                0);
 
         XOPUtils.reconstitute( message, false, LENGTH_LIMIT, smf );
 
@@ -125,7 +129,8 @@ public class XOPUtilsTest {
         message.initialize(
                 smf.createStashManager(),
                 ContentTypeHeader.parseValue(jaxwsContentType),
-                new ByteArrayInputStream(jaxwsBody.getBytes()));
+                new ByteArrayInputStream(jaxwsBody.getBytes()),
+                0);
 
         XOPUtils.reconstitute( message, false, LENGTH_LIMIT, smf );
 
@@ -147,7 +152,8 @@ public class XOPUtilsTest {
         message.initialize(
                 smf.createStashManager(),
                 ContentTypeHeader.parseValue(jaxwsSoap12ContentType),
-                new ByteArrayInputStream(jaxwsSoap12Body.getBytes()));
+                new ByteArrayInputStream(jaxwsSoap12Body.getBytes()),
+                0);
 
         XOPUtils.reconstitute( message, false, LENGTH_LIMIT, smf );
 
@@ -169,7 +175,8 @@ public class XOPUtilsTest {
         message.initialize(
                 smf.createStashManager(),
                 ContentTypeHeader.parseValue(jaxwsContentType),
-                new ByteArrayInputStream(jaxwsBodyInvalid.getBytes()));
+                new ByteArrayInputStream(jaxwsBodyInvalid.getBytes()),
+                0);
 
         XOPUtils.reconstitute( message, false, LENGTH_LIMIT, smf );
         message.close();
@@ -182,7 +189,8 @@ public class XOPUtilsTest {
         message.initialize(
                 smf.createStashManager(),
                 ContentTypeHeader.parseValue(jaxwsContentType),
-                new ByteArrayInputStream(jaxwsBodyInvalid.getBytes()));
+                new ByteArrayInputStream(jaxwsBodyInvalid.getBytes()),
+                0);
 
         XOPUtils.validate( message );
         message.close();
@@ -200,7 +208,7 @@ public class XOPUtilsTest {
                 "</soapenv:Envelope>";
         final Document document = XmlUtil.parse( soap );
 
-        Message message = new Message(document);
+        Message message = new Message(document,0);
         XOPUtils.extract( message, iter(document.getElementsByTagNameNS( "http://tempuri.org/tns", "Content" )), 0, true, smf );
 
         System.out.println( message.getMimeKnob().getOuterContentType().getFullValue() );
@@ -222,7 +230,7 @@ public class XOPUtilsTest {
                 "</soapenv:Envelope>";
         final Document document = XmlUtil.parse( soap );
 
-        Message message = new Message(document);
+        Message message = new Message(document,0);
         XOPUtils.extract( message, iter(document.getElementsByTagNameNS( "http://tempuri.org/tns", "Content" )), 0, true, smf );
     }
 
@@ -250,7 +258,8 @@ public class XOPUtilsTest {
         message.initialize(
                 smf.createStashManager(),
                 ContentTypeHeader.parseValue(jaxwsContentType),
-                new ByteArrayInputStream(jaxwsBody.getBytes()));
+                new ByteArrayInputStream(jaxwsBody.getBytes()),
+                0);
 
         ElementCursor cursor = message.getXmlKnob().getElementCursor();
         cursor.moveToDocumentElement();

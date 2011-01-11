@@ -79,7 +79,7 @@ public class MessageProcessorTest {
 
         final MessageProcessor messageProcessor = new MessageProcessor();
 
-        final Message request = new Message( XmlUtil.parse( requestMessage ) );
+        final Message request = new Message( XmlUtil.parse( requestMessage ),0 );
         final Message response = new Message();
 
         final URL originalUrl = new URL("http://127.0.0.1:7700/gateway1/test");

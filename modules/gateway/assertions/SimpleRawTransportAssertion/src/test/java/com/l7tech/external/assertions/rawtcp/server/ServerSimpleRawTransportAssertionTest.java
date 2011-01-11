@@ -236,7 +236,7 @@ public class ServerSimpleRawTransportAssertionTest {
         final String requestStr = "<requestVarContent/>";
         final String respContentType = "text/xml";
         PolicyEnforcementContext context = context("<defaultRequestContent/>");
-        context.setVariable("requestVar", new Message(XmlUtil.stringAsDocument(requestStr)));
+        context.setVariable("requestVar", new Message(XmlUtil.stringAsDocument(requestStr),0));
         ass.setResponseContentType(respContentType);
 
         final ByteArrayOutputStream outputCapture = new ByteArrayOutputStream();
@@ -386,7 +386,7 @@ public class ServerSimpleRawTransportAssertionTest {
     }
 
     private static PolicyEnforcementContext context(String requestStr) {
-        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(XmlUtil.stringAsDocument(requestStr)), new Message(), true);
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(XmlUtil.stringAsDocument(requestStr),0), new Message(), true);
     }
 
     private static StubSocketImpl simulateRequest(SimpleRawTransportAssertion ass, PolicyEnforcementContext context, ByteArrayOutputStream outputCapture, String responseStr) throws PolicyAssertionException, IOException {

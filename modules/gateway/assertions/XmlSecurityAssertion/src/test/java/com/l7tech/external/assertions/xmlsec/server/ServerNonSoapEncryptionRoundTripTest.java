@@ -56,7 +56,7 @@ public class ServerNonSoapEncryptionRoundTripTest {
 
         logger.info("Encrypted XML:\n" + encryptedXml);
 
-        Message request = new Message(XmlUtil.stringAsDocument(encryptedXml));
+        Message request = new Message(XmlUtil.stringAsDocument(encryptedXml),0);
         NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());

@@ -64,7 +64,8 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRouti
         try {
             response.initialize(stashManagerFactory.createStashManager(),
                                 cth,
-                                mimeKnob.getEntireMessageBodyAsInputStream());
+                                mimeKnob.getEntireMessageBodyAsInputStream(),
+                                0);
             context.setRoutingStatus(RoutingStatus.ROUTED); // Ensure routing status set (Bug #4570)
             return AssertionStatus.NONE;
         } catch (NoSuchPartException nspe) {

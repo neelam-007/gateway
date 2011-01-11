@@ -29,7 +29,7 @@ public class ServerHelloWorldAssertion extends ServerRoutingAssertion<HelloWorld
         Message request = context.getRequest();
         Message response = context.getResponse();
 
-        response.initialize(ContentTypeHeader.XML_DEFAULT, greetBytes);
+        response.initialize(ContentTypeHeader.XML_DEFAULT, greetBytes,0);
 
         // todo: move to abstract routing assertion
         request.notifyMessage(response, MessageRole.RESPONSE);

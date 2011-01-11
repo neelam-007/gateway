@@ -43,7 +43,7 @@ public class TarariSchemaHandlerTest extends TestCase {
 //        tsh.loadHardware("/tmp/foo", SOAPENV_SCHEMA);
 //        tsh.loadHardware("/tmp/bar", WAREHOUSE_SCHEMA);
 
-        Message msg = new Message( XmlUtil.stringToDocument(MESSAGE));
+        Message msg = new Message( XmlUtil.stringToDocument(MESSAGE),0);
         assertTrue(msg.isSoap());
         TarariKnob tk = msg.getKnob(TarariKnob.class);
         assertNotNull(tk);

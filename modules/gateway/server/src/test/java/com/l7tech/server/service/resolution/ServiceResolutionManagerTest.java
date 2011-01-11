@@ -24,7 +24,7 @@ public class ServiceResolutionManagerTest {
 
     @Test
     public void testResolutionEmptyBody() throws Exception {
-        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body/></soapenv:Envelope>" ));
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body/></soapenv:Envelope>" ),0);
         PublishedService service = resolutionManager.resolve( auditor, message, null, services );
         assertNotNull( "Service null (not resolved)", service );
         assertEquals( "Service id", 1, service.getOid() );

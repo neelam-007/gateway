@@ -401,7 +401,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         public void setDocument(Document document) {
             XmlKnob respXml = pec.getResponse().getKnob(XmlKnob.class);
             if (respXml == null)
-                pec.getResponse().initialize(document);
+                pec.getResponse().initialize(document,0);
             else
                 respXml.setDocument(document);
             try {
@@ -489,7 +489,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         public void setDocument(Document document) {
             XmlKnob reqXml = pec.getRequest().getKnob(XmlKnob.class);
             if (reqXml == null)
-                pec.getRequest().initialize(document);
+                pec.getRequest().initialize(document,0);
             else
                 reqXml.setDocument(document);
             try {

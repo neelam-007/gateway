@@ -170,7 +170,8 @@ public class RequestHandler extends AbstractHandler {
             Message reply = new Message();
             reply.initialize(exceptionToFault(e,
                                               e.getStatus() == 404 ? "Client" : "Server",
-                                              getOriginalUrl(httpRequest, httpRequest.getUri().toString())));
+                                              getOriginalUrl(httpRequest, httpRequest.getUri().toString())),
+                                              0);
             transmitResponse(e.getStatus(), httpResponse, reply, false, null);
         } catch (Error e) {
             log.log(Level.SEVERE, e.getMessage(), e);
@@ -245,7 +246,8 @@ public class RequestHandler extends AbstractHandler {
 
                 prequest.initialize(Managers.createStashManager(),
                                     outerContentType,
-                                    httpRequest.getInputStream());
+                                    httpRequest.getInputStream(),
+                                    0);
                 prequest.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(gatherHeaders(httpRequest)));
 
                 URL originalUrl = getOriginalUrl(httpRequest, endpoint);
@@ -481,7 +483,7 @@ public class RequestHandler extends AbstractHandler {
                                                       sfd.getFaultDetail(),
                                                       actor);
                         String namespaceUri = context.getResponse().getXmlKnob().getDocumentReadOnly().getDocumentElement().getNamespaceURI();
-                        context.getResponse().initialize(SoapFaultUtils.generateSoapFaultDocument(SoapVersion.namespaceToSoapVersion(namespaceUri), sfd, actor));
+                        context.getResponse().initialize(SoapFaultUtils.generateSoapFaultDocument(SoapVersion.namespaceToSoapVersion(namespaceUri), sfd, actor), 0);
                         haveFault = true;
                     }
                 }
@@ -494,7 +496,7 @@ public class RequestHandler extends AbstractHandler {
             }
             if (!haveFault) {
                 Message response = context.getResponse();
-                response.initialize(exceptionToFault(e, null, context.getOriginalUrl()));
+                response.initialize(exceptionToFault(e, null, context.getOriginalUrl()),0);
                 // For some errors the MessageProcessor will not have set a status code which causes
                 // Jetty to fail writing the response with an EOF exception.
                 try {

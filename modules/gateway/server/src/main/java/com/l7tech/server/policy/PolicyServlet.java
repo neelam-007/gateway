@@ -135,7 +135,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             Message request = new Message();
             request.initialize(new ByteArrayStashManager(),
                                ContentTypeHeader.parseValue(servletRequest.getContentType()),
-                               servletRequest.getInputStream());
+                               servletRequest.getInputStream(),
+                               Message.getRequestMaxBytes());
             request.attachHttpRequestKnob(new HttpServletRequestKnob(servletRequest));
 
             Message response = new Message();

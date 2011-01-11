@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.JCheckBoxListModel;
 import com.l7tech.gui.widgets.SquigglyTextField;
@@ -112,6 +113,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JCheckBox overrideContentTypeCheckBox;
     private JCheckBox hardwiredServiceCheckBox;
     private ServiceComboBox serviceNameComboBox;
+    private SquigglyTextField maxFirstPartSizeTextField;
+    private JCheckBox setMaximumRequestSizeCheckBox;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -311,14 +314,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
 
-        ActionListener enableOrDisableServiceDropdownsActionListener = new ActionListener() {
+        RunOnChangeListener enableOrDisableServiceDropdownsActionListener = new RunOnChangeListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void run() {
                 enableOrDisableServiceResolutionDropdowns();
             }
         };
         hardwiredServiceCheckBox.addActionListener(enableOrDisableServiceDropdownsActionListener);
-        overrideContentTypeCheckBox.addActionListener(enableOrDisableServiceDropdownsActionListener);
+        overrideContentTypeCheckBox.addChangeListener(enableOrDisableServiceDropdownsActionListener);
 
         DefaultComboBoxModel contentTypeComboBoxModel = new DefaultComboBoxModel();
         ContentTypeHeader[] offeredTypes = new ContentTypeHeader[] {
@@ -342,6 +345,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         inputValidator.validateWhenDocumentChanges(portField);
         inputValidator.constrainTextFieldToNumberRange("Port Range Start", portRangeStartField, 0, 65535);
         inputValidator.constrainTextFieldToNumberRange("Port Range Count", portRangeCountField, 1, 65535);
+        setMaximumRequestSizeCheckBox.addChangeListener(new RunOnChangeListener(){
+            @Override
+            public void run() {
+                maxFirstPartSizeTextField.setEnabled(setMaximumRequestSizeCheckBox.isSelected());
+            }
+        });
+        inputValidator.constrainTextFieldToNumberRange("Max Request Size", maxFirstPartSizeTextField, 0, Long.MAX_VALUE,false);
+        inputValidator.validateWhenDocumentChanges(maxFirstPartSizeTextField);
         inputValidator.constrainTextField(portRangeCountField, new InputValidator.ComponentValidationRule(portRangeCountField) {
             @Override
             public String getValidationError() {
@@ -1039,6 +1050,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         boolean usingHardwired = serviceNameComboBox.populateAndSelect(hardwiredServiceId != -1, hardwiredServiceId);
         hardwiredServiceCheckBox.setSelected(usingHardwired);
 
+        String maxRequestSize = connector.getProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT);
+        setMaximumRequestSizeCheckBox.setSelected(maxRequestSize!=null);
+        maxFirstPartSizeTextField.setEnabled(maxRequestSize!=null);
+        maxFirstPartSizeTextField.setText(maxRequestSize);
+
         String ctype = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         if (ctype == null) {
             overrideContentTypeCheckBox.setSelected(false);
@@ -1087,6 +1103,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         propNames.remove(SsgConnector.PROP_THREAD_POOL_SIZE);
         propNames.remove(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         propNames.remove(SsgConnector.PROP_HARDWIRED_SERVICE_ID);
+        propNames.remove(SsgConnector.PROP_REQUEST_SIZE_LIMIT);
 
         // Also hide properties reserved for use by custom GUI panels
         // TODO should only really hide them when the corresponding transport protocol is selected
@@ -1204,6 +1221,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             Object value = contentTypeComboBox.getSelectedItem();
             if (value != null)
                 connector.putProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE, value.toString());
+        }
+
+        connector.removeProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT);
+        if(setMaximumRequestSizeCheckBox.isSelected()) {
+            connector.putProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, maxFirstPartSizeTextField.getText());
         }
 
         // Delete those removed properties

@@ -53,7 +53,7 @@ public class OversizedTextAssertionTest extends TestCase {
 
     // Creates a PEC holding the specified request document.
     private PolicyEnforcementContext makeContext(String doc) throws Exception {
-        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message( XmlUtil.stringToDocument(doc)), new Message());
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message( XmlUtil.stringToDocument(doc),0), new Message());
     }
 
     // Passes the specified request to the specified asseriton and returns the result.

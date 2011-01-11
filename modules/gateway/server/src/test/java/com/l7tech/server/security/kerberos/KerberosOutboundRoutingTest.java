@@ -148,7 +148,7 @@ public class KerberosOutboundRoutingTest extends KerberosTest {
 
     private PolicyEnforcementContext getPEContext(String testMessage) throws Exception {
 
-        Message req = new Message( testMessage(testMessage) );
+        Message req = new Message( testMessage(testMessage),0 );
         Message res = new Message();
 
 

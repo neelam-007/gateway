@@ -87,7 +87,7 @@ public class ClientXpathAssertionsTest {
     }
 
     private PolicyApplicationContext makereq(Ssg ssg, Document d) {
-        return new PolicyApplicationContext(ssg, new Message(d), new Message(d), null, null, null);
+        return new PolicyApplicationContext(ssg, new Message(d,0), new Message(d,0), null, null, null);
     }
 
     private Map<String,String> createDefaultNamespaceMap() {

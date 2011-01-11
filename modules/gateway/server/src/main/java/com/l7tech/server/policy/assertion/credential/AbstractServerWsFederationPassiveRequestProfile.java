@@ -102,7 +102,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile<AT extends
             decoReq.setIncludeTimestamp(false);
         }
         decoReq.setSenderSamlToken(samlAssertion, false);
-        deco.decorateMessage(new Message(requestDoc), decoReq);
+        deco.decorateMessage(new Message(requestDoc,0), decoReq);
         requestXml.setDocument(requestDoc);
         requestSec.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, securityTokenResolver));
     }

@@ -314,7 +314,7 @@ public class SoapUtilTest  {
 
     private Message makeMessage(final Document doc, final String saction) {
         // produce fake message with arguments
-        Message output = new Message(doc);
+        Message output = new Message(doc,0);
         output.attachHttpRequestKnob(new HttpRequestKnobAdapter(saction));
         return output;
     }

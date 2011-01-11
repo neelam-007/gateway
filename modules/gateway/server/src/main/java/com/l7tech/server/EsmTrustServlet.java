@@ -165,7 +165,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
 
         ContentTypeHeader ctype = ContentTypeHeader.parseValue(hreq.getContentType());
         Message req = new Message();
-        req.initialize(new ByteArrayStashManager(), ctype, hreq.getInputStream());
+        req.initialize(new ByteArrayStashManager(), ctype, hreq.getInputStream(),0);
         req.attachHttpRequestKnob(new HttpServletRequestKnob(hreq));
         //noinspection unchecked
         FormParams param = new FormParams(req.getHttpRequestKnob().getParameterMap());

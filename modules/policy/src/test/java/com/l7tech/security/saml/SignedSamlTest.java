@@ -190,7 +190,7 @@ public class SignedSamlTest extends TestCase {
         req.getElementsToSign().add(body);
         req.setSenderSamlToken(SamlAssertion.newInstance(samlsvAssertion.getDocumentElement()), true);
         req.setSenderMessageSigningPrivateKey(caPrivateKey);
-        new WssDecoratorImpl().decorateMessage(new Message(request), req);
+        new WssDecoratorImpl().decorateMessage(new Message(request,0), req);
 
         return request;
     }
@@ -215,7 +215,7 @@ public class SignedSamlTest extends TestCase {
         SecurityTokenResolver resolver = new SimpleSecurityTokenResolver(caCertChain[0]);
         req.setSenderSamlToken(SamlAssertion.newInstance(samlAssertion, resolver), true);
         req.setSenderMessageSigningPrivateKey(clientPrivateKey);
-        new WssDecoratorImpl().decorateMessage(new Message(request), req);
+        new WssDecoratorImpl().decorateMessage(new Message(request,0), req);
 
         return request;
     }

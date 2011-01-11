@@ -97,7 +97,7 @@ public class ServerCacheLookupAssertion extends AbstractMessageTargetableServerA
                 }
                 // TODO use proper hybrid stash manager, making arrangements to have it closed when context is closed,
                 // instead of just using two-arg initialize() which just uses ByteArrayStashManager
-                message.initialize(contentType, bodyBytes);
+                message.initialize(contentType, bodyBytes,0);
                 return AssertionStatus.NONE;
             } finally {
                 if (bodyInputStream != null) bodyInputStream.close();

@@ -21,11 +21,11 @@ class MimeFacet extends MessageFacet {
         mimeBody = null;
     }
 
-    public MimeFacet(Message message, StashManager stash, ContentTypeHeader ctype, InputStream bodyStream)
+    public MimeFacet(Message message, StashManager stash, ContentTypeHeader ctype, InputStream bodyStream, long firstPartMaxBytes)
             throws IOException
     {
         super(message, null); // Null because this will normally be the last aspect
-        this.mimeBody = new MimeBody(stash, ctype, bodyStream);
+        this.mimeBody = new MimeBody(stash, ctype, bodyStream, firstPartMaxBytes);
     }
 
     public MessageKnob getKnob(Class c) {

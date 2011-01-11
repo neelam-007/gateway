@@ -6,6 +6,7 @@ package com.l7tech.external.assertions.esm.server;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.esm.EsmSubscriptionAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.Auditor;
@@ -44,14 +45,14 @@ public class ServerEsmSubscriptionAssertion extends AbstractServerAssertion<EsmS
 
         try {
             final Document response = esmService.handleSubscriptionRequest(context.getService().getOid(), context.getRequest(), assertion.getNotificationPolicyGuid());
-            context.getResponse().initialize(response);
+            context.getResponse().initialize(response, 0);
             return AssertionStatus.NONE;
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.BAD_REQUEST;
         } catch (FaultMappableException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, e.getMessage());
-            context.getResponse().initialize(ContentTypeHeader.XML_DEFAULT, e.getSoapFaultXML().getBytes(Charsets.UTF8));
+            context.getResponse().initialize(ContentTypeHeader.XML_DEFAULT, e.getSoapFaultXML().getBytes(Charsets.UTF8),0);
             final SoapFaultLevel faultlevel = new SoapFaultLevel();
             faultlevel.setFaultTemplate(e.getSoapFaultXML());
             faultlevel.setLevel(SoapFaultLevel.TEMPLATE_FAULT);

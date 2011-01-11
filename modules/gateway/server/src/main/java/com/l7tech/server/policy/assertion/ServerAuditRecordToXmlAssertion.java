@@ -75,7 +75,7 @@ public class ServerAuditRecordToXmlAssertion extends AbstractMessageTargetableSe
             // Fallthrough and reinitialize
         }
 
-        mess.initialize(XmlUtil.createEmptyDocument());
+        mess.initialize(XmlUtil.createEmptyDocument(),0);
         try {
             return mess.getXmlKnob().getDocumentWritable();
         } catch (SAXException e) {

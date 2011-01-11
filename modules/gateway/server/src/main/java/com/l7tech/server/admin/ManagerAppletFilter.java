@@ -188,9 +188,10 @@ public class ManagerAppletFilter implements Filter {
                 passed = true;
                 return;
             }
+            long maxBytes = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT,Message.getRequestMaxBytes());
 
             Message request = new Message();
-            request.initialize(fakeDoc);
+            request.initialize(fakeDoc,maxBytes);
             request.attachHttpRequestKnob(new HttpServletRequestKnob(hreq));
 
             Message response = new Message();

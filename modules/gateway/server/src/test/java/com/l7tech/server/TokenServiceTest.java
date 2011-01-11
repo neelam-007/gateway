@@ -114,7 +114,7 @@ public class TokenServiceTest {
         };
         final Message response = new Message();
         final Message request = new Message();
-        request.initialize(requestMsg);
+        request.initialize(requestMsg,0);
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, false);
 
         AssertionStatus status = service.respondToSecurityTokenRequest(context, authenticator, false, false);
@@ -171,7 +171,7 @@ public class TokenServiceTest {
 
         final Message response = new Message();
         final Message request = new Message();
-        request.initialize(requestMsg);
+        request.initialize(requestMsg,0);
         request.attachHttpRequestKnob(new HttpServletRequestKnob(getFakeServletRequest()));
 
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, false);

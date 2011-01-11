@@ -28,8 +28,8 @@ public class GetKnobTest {
                     final InputStream reqStream = null;//TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream();
                     final InputStream respStream = null;//estDocuments.getTestDocumentURL(TestDocuments.DOTNET_SIGNED_REQUEST2).openStream();
 
-                    final Message request = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, reqStream);
-                    final Message response = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, respStream);
+                    final Message request = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, reqStream,0);
+                    final Message response = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, respStream,0);
 
                     request.attachHttpRequestKnob(new HttpServletRequestKnob(new MockHttpServletRequest()));
                     response.attachHttpResponseKnob(new HttpServletResponseKnob(new MockHttpServletResponse()));

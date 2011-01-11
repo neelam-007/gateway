@@ -135,6 +135,14 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
         this.responseTarget = responseTarget;
     }
 
+    public long getResponseSize(){
+        return responseSize;
+    }
+
+    public void setResponseSize(long responseSize){
+        this.responseSize = responseSize;
+    }
+
     @Override
     public boolean initializesRequest() {
         return responseTarget != null && TargetMessageType.REQUEST == responseTarget.getTarget();
@@ -241,4 +249,5 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
 
     private MessageTargetableSupport requestTarget = new MessageTargetableSupport(TargetMessageType.REQUEST, false);
     private MessageTargetableSupport responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
+    protected long responseSize = -1;
 }

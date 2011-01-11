@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.AssertionPath;
@@ -18,6 +19,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -162,6 +164,8 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private TargetVariablePanel responseTargetVariable;
     private JLabel messageDestinationStatusLabel;
     private JPanel responseTargetVariablePanel;
+    private JTextField responseLimitTextField;
+    private JCheckBox setResponseLimitCheckBox;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
@@ -228,6 +232,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         defaultResponseRadioButton.addActionListener(enableListener);
         saveAsContextVariableRadioButton.addActionListener(enableListener);
+        setResponseLimitCheckBox.addActionListener(enableListener);
 
         Utilities.enableGrayOnDisabled(dynamicICF);
         Utilities.enableGrayOnDisabled(dynamicJndiUrl);
@@ -242,6 +247,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         samlExpiryInMinutesSpinner.setModel(new SpinnerNumberModel(5, 1, 120, 1));
         InputValidator inputValidator = new InputValidator(this, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString());
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(samlExpiryInMinutesSpinner, "Ticket expiry"));
+        inputValidator.constrainTextFieldToNumberRange( "Response limit",responseLimitTextField,0, Long.MAX_VALUE);
         inputValidator.constrainTextFieldToBeNonEmpty( "Initial Context Factory class name", dynamicICF, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "JNDI URL", dynamicJndiUrl, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "Queue Connection Factory Name", dynamicQCF, null );
@@ -299,6 +305,12 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 validateResMsgDest();
             }
         });
+        responseLimitTextField.getDocument().addDocumentListener(new RunOnChangeListener(){
+            @Override
+            protected void run(){
+                validateResMsgDest();
+            }
+        });
 
         responseTargetVariable = new TargetVariablePanel();
         responseTargetVariablePanel.setLayout(new BorderLayout());
@@ -308,7 +320,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             public void stateChanged(ChangeEvent e) {
                 validateResMsgDest();
             }
-        });
+        });        
         validateResMsgDest();
 
         authSamlRadio.addChangeListener(new ChangeListener(){
@@ -402,6 +414,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 } else {
                     assertion.setResponseTarget(new MessageTargetableSupport(TargetMessageType.RESPONSE, true));
                 }
+                assertion.setResponseSize(setResponseLimitCheckBox.isSelected()?Long.parseLong( responseLimitTextField.getText() ):-1 );
 
                 String responseTimeoutOverride = jmsResponseTimeout.getText();
                 if (responseTimeoutOverride != null && ! responseTimeoutOverride.isEmpty()) {
@@ -433,6 +446,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     private void enableOrDisableComponents() {
         responseTargetVariable.setEnabled(saveAsContextVariableRadioButton.isSelected());
+        responseLimitTextField.setEnabled(setResponseLimitCheckBox.isSelected());
     }
 
     private void populateReqMsgSrcComboBox() {
@@ -486,6 +500,11 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             saveAsContextVariableRadioButton.setSelected(false);
             defaultResponseRadioButton.setSelected(true);
             responseTargetVariable.setVariable("");
+        }
+
+        if(assertion.getResponseSize()>=0){
+            setResponseLimitCheckBox.setSelected(true);
+            responseLimitTextField.setText(Long.toString(assertion.getResponseSize()));
         }
     }
 
@@ -643,7 +662,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
      * @return <code>true</code> if response messge destination is valid, <code>false</code> if invalid
      */
     private boolean validateResMsgDest() {
-        boolean ok = defaultResponseRadioButton.isSelected() || responseTargetVariable.isEntryValid();
+        boolean ok = (defaultResponseRadioButton.isSelected() || responseTargetVariable.isEntryValid());
         refreshDialog();
         return ok;
     }

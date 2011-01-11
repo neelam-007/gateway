@@ -729,7 +729,8 @@ public class MessageProcessor {
 
             response.initialize(Managers.createStashManager(),
                                 outerContentType,
-                                responseBodyAsStream);
+                                responseBodyAsStream,
+                                0);
             response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(responseHeaders));
             if (interceptor != null)
                 interceptor.onBackEndReply(context);
@@ -1315,7 +1316,7 @@ public class MessageProcessor {
             try {
                 Document respDoc = XmlUtil.stringToDocument(responseStr);
                 if (SoapFaultUtils.gatherSoapFaultDetail(respDoc) != null)
-                    response.initialize(respDoc);
+                    response.initialize(respDoc,0);
             } catch (SAXException e) {
                 // couldn't parse a fault, fallthrough without one
             } catch (InvalidDocumentFormatException e) {

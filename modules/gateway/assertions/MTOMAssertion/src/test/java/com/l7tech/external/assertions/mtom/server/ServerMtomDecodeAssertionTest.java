@@ -91,7 +91,8 @@ public class ServerMtomDecodeAssertionTest {
             Message mess = new Message(
                     new ByteArrayStashManager(),
                     ContentTypeHeader.parseValue("multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\""),
-                    new ByteArrayInputStream( message.getBytes() ));
+                    new ByteArrayInputStream( message.getBytes() ),
+                    0);
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
             AssertionStatus status = smda.checkRequest( context );
             assertEquals( "status ok", AssertionStatus.NONE, status );
@@ -121,7 +122,8 @@ public class ServerMtomDecodeAssertionTest {
                 Message mess = new Message(
                         new ByteArrayStashManager(),
                         ContentTypeHeader.parseValue("multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\""),
-                        new ByteArrayInputStream( message.getBytes() ));
+                        new ByteArrayInputStream( message.getBytes() ),
+                        0);
                 context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
                 AssertionStatus status = smda.checkRequest( context );
                 assertEquals( "status ok", AssertionStatus.NONE, status );
@@ -141,7 +143,8 @@ public class ServerMtomDecodeAssertionTest {
             Message mess = new Message(
                     new ByteArrayStashManager(),
                     ContentTypeHeader.parseValue("multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\""),
-                    new ByteArrayInputStream( securedMessage.getBytes() ));
+                    new ByteArrayInputStream( securedMessage.getBytes() ),
+                    0);
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
             AssertionStatus status = smda.checkRequest( context );
             assertEquals( "status ok", AssertionStatus.NONE, status );
@@ -171,7 +174,8 @@ public class ServerMtomDecodeAssertionTest {
             Message mess = new Message(
                     new ByteArrayStashManager(),
                     ContentTypeHeader.parseValue("multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\""),
-                    new ByteArrayInputStream( message.getBytes() ));
+                    new ByteArrayInputStream( message.getBytes() ),
+                    0);
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
             AssertionStatus status = smda.checkRequest( context );
             assertEquals( "status ok", AssertionStatus.NONE, status );
@@ -198,7 +202,7 @@ public class ServerMtomDecodeAssertionTest {
             final ServerMtomDecodeAssertion smda = buildServerAssertion( mda );
             PolicyEnforcementContext context = null;
             try {
-                Message mess = new Message(XmlUtil.parse( xmlMessage ));
+                Message mess = new Message(XmlUtil.parse( xmlMessage ),0);
                 context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
                 AssertionStatus status = smda.checkRequest( context );
                 assertEquals( "status fail", AssertionStatus.BAD_REQUEST, status );
@@ -211,7 +215,7 @@ public class ServerMtomDecodeAssertionTest {
             final ServerMtomDecodeAssertion smda = buildServerAssertion( mda );
             PolicyEnforcementContext context = null;
             try {
-                Message mess = new Message(XmlUtil.parse( xmlMessage ));
+                Message mess = new Message(XmlUtil.parse( xmlMessage ),0);
                 context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
                 AssertionStatus status = smda.checkRequest( context );
                 assertEquals( "status ok", AssertionStatus.NONE, status );
@@ -235,7 +239,8 @@ public class ServerMtomDecodeAssertionTest {
             Message mess = new Message(
                     new ByteArrayStashManager(),
                     ContentTypeHeader.parseValue("multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\""),
-                    new ByteArrayInputStream( message.getBytes() ));
+                    new ByteArrayInputStream( message.getBytes() ),
+                    0);
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
             AssertionStatus status = smda.checkRequest( context );
             assertEquals( "status ok", AssertionStatus.NONE, status );

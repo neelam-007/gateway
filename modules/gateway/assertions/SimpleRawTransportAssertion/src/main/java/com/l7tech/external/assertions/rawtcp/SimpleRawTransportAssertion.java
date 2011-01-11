@@ -21,7 +21,6 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
     public static final String LISTEN_PROP_BACKLOG = "l7.raw.backlog";
     public static final String LISTEN_PROP_READ_TIMEOUT = "l7.raw.readTimeout";
     public static final String LISTEN_PROP_WRITE_TIMEOUT = "l7.raw.writeTimeout";
-    public static final String LISTEN_PROP_REQUEST_SIZE_LIMIT = "l7.raw.requestSizeLimit";    
 
     private MessageTargetableSupport responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
     private MessageTargetableSupport requestTarget = new MessageTargetableSupport(TargetMessageType.REQUEST, false);

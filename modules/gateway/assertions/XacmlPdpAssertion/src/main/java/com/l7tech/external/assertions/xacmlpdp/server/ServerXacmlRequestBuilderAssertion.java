@@ -148,7 +148,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     // todo: only happen if enum changes, move to enum
                     throw new IllegalStateException("Unsupported message output destination found");
             }
-            message.initialize(xacmlRequestDocument);
+            message.initialize(xacmlRequestDocument,0);
         } catch (NoSuchVariableException e) {
             auditor.logAndAudit( AssertionMessages.XACML_REQUEST_ERROR, "Error creating output message " + assertion.getOutputMessageVariableName());
             return AssertionStatus.FAILED;

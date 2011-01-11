@@ -489,7 +489,7 @@ public class GClient {
                 });
 
                 Message request = new Message();
-                request.initialize(XmlUtil.stringToDocument(requestString.trim()));
+                request.initialize(XmlUtil.stringToDocument(requestString.trim()),0);
 
                 Message response = new Message();
                 RequestInterceptor nri = NullRequestInterceptor.INSTANCE;
@@ -510,7 +510,7 @@ public class GClient {
                     throw new RuntimeException("Decoration failed: " + result.toString());
 
                 Document document = request.getXmlKnob().getDocumentWritable();
-                final Message mess = new Message(document);
+                final Message mess = new Message(document,0);
                 for (DecorationRequirements wssReq : context.getAllDecorationRequirements())
                     new WssDecoratorImpl().decorateMessage(mess, wssReq);
 

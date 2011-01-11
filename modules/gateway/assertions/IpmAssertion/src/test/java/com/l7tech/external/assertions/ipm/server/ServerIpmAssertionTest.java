@@ -44,7 +44,7 @@ public class ServerIpmAssertionTest {
         ServerIpmAssertion sass = new ServerIpmAssertion(ass, null);
 
         Message request = new Message();
-        request.initialize(ContentTypeHeader.XML_DEFAULT, requestStr.getBytes("UTF-8"));
+        request.initialize(ContentTypeHeader.XML_DEFAULT, requestStr.getBytes("UTF-8"),0);
         Message response = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         context.setVariable("databuff", extractDataBuff(requestStr));
@@ -74,7 +74,7 @@ public class ServerIpmAssertionTest {
         ServerIpmAssertion sass = new ServerIpmAssertion(ass, null);
 
         Message request = new Message();
-        request.initialize(ContentTypeHeader.XML_DEFAULT, requestStr.getBytes("UTF-8"));
+        request.initialize(ContentTypeHeader.XML_DEFAULT, requestStr.getBytes("UTF-8"),0);
         Message response = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         context.setVariable("databuff", extractDataBuff(requestStr));

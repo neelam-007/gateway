@@ -147,7 +147,8 @@ public class ServerMultipartAssemblyAssertion extends AbstractServerAssertion<Mu
 
             message.initialize(stashManagerFactory.createStashManager(),
                                multipartRelated,
-                               makeBodyInputStream(multipartRelated, sm, contentTypeHeaders, partIdStrings));
+                               makeBodyInputStream(multipartRelated, sm, contentTypeHeaders, partIdStrings),
+                               0);
 
             transferOwnershipToContext(context, sm);
             sm = null;

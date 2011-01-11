@@ -59,7 +59,7 @@ public class CompositeAssertionTest extends TestCase {
             @Override
             public Void call() throws Exception {
                 PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(new ByteArrayStashManager(),
-                ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message(), false);
+                ContentTypeHeader.XML_DEFAULT, new EmptyInputStream(),0), null, false);
                 {
                     final List kidsTrueFalseTrue = Arrays.asList(
                             new TrueAssertion(),
@@ -111,8 +111,8 @@ public class CompositeAssertionTest extends TestCase {
     public void testCompositeLogic() throws Exception {
         final PolicyEnforcementContext context =
                 PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(new ByteArrayStashManager(),
-                        ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()),
-                        new Message(),
+                        ContentTypeHeader.XML_DEFAULT, new EmptyInputStream(),0),
+                        null,
                         false);
 
         final List kidsTrueFalseTrue = Arrays.asList(

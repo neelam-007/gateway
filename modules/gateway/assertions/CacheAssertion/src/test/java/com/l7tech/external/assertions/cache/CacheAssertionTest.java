@@ -83,14 +83,14 @@ public class CacheAssertionTest extends TestCase {
         );
 
         PolicyEnforcementContext ctx = makeContext();
-        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToCache/>" ) );
+        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToCache/>" ),0 );
         String cachedString = messageBodyToString( ctx.getResponse() );
         assertTrue( cachedString.contains( "<responseToCache" ) ); // may be canonicalized; we'll accept it if so
         AssertionStatus storeResult = storass.checkRequest( ctx );
         assertEquals( storeResult, AssertionStatus.NONE );
 
         ctx = makeContext();
-        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToReplace/>" ) );
+        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToReplace/>" ),0 );
         AssertionStatus lookResult = lookass.checkRequest( ctx );
 
         // Must hit
@@ -105,14 +105,14 @@ public class CacheAssertionTest extends TestCase {
         ServerCacheLookupAssertion lookass = new ServerCacheLookupAssertion( lookbean, beanFactory );
 
         PolicyEnforcementContext ctx = makeContext();
-        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToCache/>" ) );
+        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToCache/>" ),0 );
         String cachedString = messageBodyToString( ctx.getResponse() );
         assertTrue( cachedString.contains( "<responseToCache" ) ); // may be canonicalized; we'll accept it if so
         AssertionStatus storeResult = storass.checkRequest( ctx );
         assertEquals( storeResult, AssertionStatus.NONE );
 
         ctx = makeContext();
-        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToReplace/>" ) );
+        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToReplace/>" ),0 );
         String origResponse = messageBodyToString( ctx.getResponse() );
         assertTrue( origResponse.contains( "<responseToReplace" ) ); // may be canonicalized; we'll accept it if so
         AssertionStatus lookResult = lookass.checkRequest( ctx );
@@ -175,9 +175,9 @@ public class CacheAssertionTest extends TestCase {
 
     private static PolicyEnforcementContext makeContext( String res ) {
         Message request = new Message();
-        request.initialize( XmlUtil.stringAsDocument( "<myrequest/>" ) );
+        request.initialize( XmlUtil.stringAsDocument( "<myrequest/>" ),0 );
         Message response = new Message();
-        response.initialize( XmlUtil.stringAsDocument( res ) );
+        response.initialize( XmlUtil.stringAsDocument( res ),0 );
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
     }
 
@@ -190,7 +190,7 @@ public class CacheAssertionTest extends TestCase {
         ServerCacheLookupAssertion lookass = new ServerCacheLookupAssertion( new CacheLookupAssertion(), beanFactory );
 
         PolicyEnforcementContext ctx = makeContext();
-        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToCache/>" ) );
+        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToCache/>" ),0 );
         AssertionStatus storeResult = storass.checkRequest( ctx );
         assertEquals( AssertionStatus.NONE, storeResult );
 
@@ -198,7 +198,7 @@ public class CacheAssertionTest extends TestCase {
         eventProxy.onApplicationEvent( new Stopping( this, Component.GATEWAY, "0.0.0.0" ) );
 
         ctx = makeContext();
-        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToReplace/>" ) );
+        ctx.getResponse().initialize( XmlUtil.stringAsDocument( "<responseToReplace/>" ) ,0);
         String origResponse = messageBodyToString( ctx.getResponse() );
         assertTrue( origResponse.contains( "<responseToReplace" ) ); // may be canonicalized; we'll accept it if so
         AssertionStatus lookResult = lookass.checkRequest( ctx );

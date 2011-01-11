@@ -70,7 +70,8 @@ public class TestEchoAssertion extends RoutingAssertion {
                 response.initialize(new ByteArrayStashManager(),
                                                  requestMime.getOuterContentType(),
                                                  new ByteArrayInputStream( IOUtils.slurpStream(
-                                                         requestMime.getEntireMessageBodyAsInputStream())));
+                                                         requestMime.getEntireMessageBodyAsInputStream())),
+                                                 0);
 
                 // todo: move to abstract routing assertion
                 request.notifyMessage(response, MessageRole.RESPONSE);

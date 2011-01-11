@@ -22,6 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Represents an abstract Message in the system.  This can be a request or a reply; over HTTP or JMS or transport
@@ -33,6 +36,10 @@ public final class Message implements Closeable {
     public static final String PROPERTY_ENABLE_ORIGINAL_DOCUMENT = "com.l7tech.message.enableOriginalDocument";
 
     private static boolean defaultEnableOriginalDocument = SyspropUtil.getBoolean(PROPERTY_ENABLE_ORIGINAL_DOCUMENT, false);
+    private static final Logger logger = Logger.getLogger(Message.class.getName());
+
+    private static final AtomicLong responseMaxBytes = new AtomicLong(0);
+    private static final AtomicLong requestMaxBytes = new AtomicLong(0);
 
     /**
      * enable this to enable XmlKnob.getOriginalDocument().
@@ -71,24 +78,27 @@ public final class Message implements Closeable {
      *             This <b>must not include</b> any outer headers (HTTP or otherwise) that may have
      *             accompanied the body of this Message.  To attach the outer headers to the message,
      *             see {@link #attachKnob} and {@link com.l7tech.message.HttpHeadersKnob}.
+     * @param firstPartMaxBytes  the byte limit of the xml part.  0 for unlimited
      * @throws IOException if there is a problem reading the initial boundary from a multipart/related body, or
      *                     if the message is multipart/related but contains no initial boundary.
      */
     public Message(StashManager sm,
                    ContentTypeHeader outerContentType,
-                   InputStream body)
+                   InputStream body,
+                   long firstPartMaxBytes)
             throws IOException
     {
-        initialize(sm, outerContentType, body);
+        initialize(sm, outerContentType, body, firstPartMaxBytes);
     }
 
     /**
      * Create a Message pre-initialized with a Document.
      *
      * @param doc the Document to use.  Must not be null.
+     * @param firstPartMaxBytes  the byte limit of the xml part.    0 for unlimited
      */
-    public Message(Document doc) {
-        initialize(doc);
+    public Message(Document doc, long firstPartMaxBytes) {
+        initialize(doc,firstPartMaxBytes);
     }
 
     /**
@@ -100,12 +110,14 @@ public final class Message implements Closeable {
      * @param sm  the StashManager to use for stashing MIME parts temporarily.  Must not be null.
      * @param outerContentType  the content type of the body InputStream.  Must not be null.
      * @param body an InputStream positioned at the first byte of body content for this Message.
+     * @param firstPartMaxBytes  the byte limit of the xml part.    0 for unlimited
      * @throws IOException if there is a problem reading the initial boundary from a multipart/related body, or
      *                     if the message is multipart/related but contains no initial boundary.
      */
     public void initialize(StashManager sm,
                                   ContentTypeHeader outerContentType,
-                                  InputStream body)
+                                  InputStream body,
+                                  long firstPartMaxBytes)
             throws IOException
     {
         HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
@@ -113,7 +125,7 @@ public final class Message implements Closeable {
         if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
         rootFacet = null; // null it first just in case MimeFacet c'tor throws
         invalidateCachedKnobs();
-        rootFacet = new MimeFacet(this, sm, outerContentType, body);
+        rootFacet = new MimeFacet(this, sm, outerContentType, body, firstPartMaxBytes);  
         if (reqKnob != null) rootFacet = new HttpRequestFacet(this, rootFacet, reqKnob);
         if (respKnob != null) rootFacet = new HttpResponseFacet(this, rootFacet, respKnob);
         invalidateCachedKnobs();
@@ -127,15 +139,17 @@ public final class Message implements Closeable {
      * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
      *
      * @param body the Document to replace this Message's current content
+     * @param firstPartMaxBytes  the byte limit of the xml part.    0 for unlimited
      */
-    public void initialize(Document body)
+    public void initialize(Document body,
+                           long firstPartMaxBytes)
     {
         try {
             HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
             HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
             if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
             rootFacet = null;
-            rootFacet = new MimeFacet(this, new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
+            rootFacet = new MimeFacet(this, new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream(),firstPartMaxBytes);
             rootFacet = new XmlFacet(this, rootFacet);
             invalidateCachedKnobs();
             if (reqKnob != null) attachHttpRequestKnob(reqKnob);
@@ -156,13 +170,13 @@ public final class Message implements Closeable {
      * @param bodyBytes the body bytes.  May be empty but must not be null.
      * @throws IOException if contentType is multipart, but the body does not contain the boundary or contains no parts
      */
-    public void initialize(ContentTypeHeader contentType, byte[] bodyBytes) throws IOException {
+    public void initialize(ContentTypeHeader contentType, byte[] bodyBytes,long firstPartMaxBytes) throws IOException {
         try {
             HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
             HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
             if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
             rootFacet = null;
-            rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentType, new ByteArrayInputStream(bodyBytes));
+            rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentType, new ByteArrayInputStream(bodyBytes),firstPartMaxBytes);
             invalidateCachedKnobs();
             if (reqKnob != null) attachHttpRequestKnob(reqKnob);
             if (respKnob != null) attachHttpResponseKnob(respKnob);
@@ -656,6 +670,31 @@ public final class Message implements Closeable {
 
         return (T)findKnob(c);
     }
+
+    public static void setResponseMaxBytes(long firstPartMaxBytes) {
+        if(firstPartMaxBytes<0){
+            logger.log(Level.WARNING, "Ignoring invalid response max size ''{0}'' (using 2621440).", firstPartMaxBytes);
+            firstPartMaxBytes = 2621440;
+        }
+        Message.responseMaxBytes.set(firstPartMaxBytes);
+    }
+
+    public static long getResponseMaxBytes(){
+        return responseMaxBytes.get();
+    }
+
+    public static void setRequestMaxBytes(long firstPartMaxBytes) {
+        if(firstPartMaxBytes<0){
+            logger.log(Level.WARNING, "Ignoring invalid request max size ''{0}'' (using 2621440).", firstPartMaxBytes);
+            firstPartMaxBytes = 2621440;            
+        }
+        Message.requestMaxBytes.set(firstPartMaxBytes);
+    }
+    
+    public static long getRequestMaxBytes(){
+        return requestMaxBytes.get();
+    }
+
 
     private MessageKnob findKnob(Class c) {
         return rootFacet.getKnob(c);

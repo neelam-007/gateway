@@ -608,8 +608,16 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     }
                 });
             }
+            long maxBytes = 0;              
+            if (assertion.getResponseSize() <0){
+                maxBytes = Message.getResponseMaxBytes();
+            }
+            else{
+                maxBytes = assertion.getResponseSize();
+            }
 
-            boolean readOk = readResponse(context, routedResponse, routedResponseDestination, method == HttpMethod.HEAD);
+
+            boolean readOk = readResponse(context, routedResponse, routedResponseDestination, method == HttpMethod.HEAD, maxBytes);
             long latencyTimerEnd = System.currentTimeMillis();
             if (readOk) {
                 long latency = latencyTimerEnd - latencyTimerStart;
@@ -748,7 +756,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private boolean readResponse(final PolicyEnforcementContext context,
                                  final GenericHttpResponse routedResponse,
                                  final Message destination,
-                                 final boolean wasHeadMethod) {
+                                 final boolean wasHeadMethod,
+                                 final long maxBytes) {
         boolean responseOk = true;
         try {
             final int status = routedResponse.getStatus();
@@ -790,7 +799,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOCONTENTTYPE, Integer.toString(status));
                 responseOk = false;
             } else if (assertion.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
-                destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
+                destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream,maxBytes);
                 responseOk = false;
             } else if (status >= HttpConstants.STATUS_ERROR_RANGE_START && assertion.isFailOnErrorStatus() && !passthroughSoapFault) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
@@ -798,12 +807,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             } else if (outerContentType != null) { // response OK
                 if (responseStream == null) {
                     if (wasHeadMethod)
-                        destination.initialize(outerContentType, new byte[0]);
+                        destination.initialize(outerContentType, new byte[0],maxBytes);
                     else
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_CTYPEWOUTPAYLOAD, outerContentType.getFullValue());
                 } else {
                     StashManager stashManager = stashManagerFactory.createStashManager();
-                    destination.initialize(stashManager, outerContentType, responseStream);
+                    destination.initialize(stashManager, outerContentType, responseStream,maxBytes);
                 }
             }
         } catch(EOFException eofe){

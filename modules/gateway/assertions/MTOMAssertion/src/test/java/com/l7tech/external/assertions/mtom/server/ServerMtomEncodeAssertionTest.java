@@ -98,7 +98,7 @@ public class ServerMtomEncodeAssertionTest {
         final Document requestDoc = XmlUtil.parse( message );
         PolicyEnforcementContext context = null;
         try {
-            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc), null );
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc,0), null );
             AssertionStatus status = smea.checkRequest( context );
             assertEquals( "status ok", AssertionStatus.NONE, status );
 
@@ -150,7 +150,7 @@ public class ServerMtomEncodeAssertionTest {
         final Document requestDoc = XmlUtil.parse( message );
         PolicyEnforcementContext context = null;
         try {
-            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc), null );
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc,0), null );
             AssertionStatus xpathStatus = srxa.checkRequest( context );
             assertEquals( "status ok", AssertionStatus.NONE, xpathStatus );
 
@@ -183,7 +183,7 @@ public class ServerMtomEncodeAssertionTest {
         final Document requestDoc = XmlUtil.parse( message );
         PolicyEnforcementContext context = null;
         try {
-            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc), null );
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc,0), null );
             AssertionStatus status = smea.checkRequest( context );
             assertEquals( "status ok", AssertionStatus.NONE, status );
 
@@ -212,7 +212,7 @@ public class ServerMtomEncodeAssertionTest {
         final Document requestDoc = XmlUtil.parse( message );
         PolicyEnforcementContext context = null;
         try {
-            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc), null );
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc,0), null );
             AssertionStatus status = smea.checkRequest( context );
             assertEquals( "status fail", AssertionStatus.FALSIFIED, status );
 
@@ -242,7 +242,7 @@ public class ServerMtomEncodeAssertionTest {
         final Document requestDoc = XmlUtil.parse( message );
         PolicyEnforcementContext context = null;
         try {
-            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc), null );
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc,0), null );
             AssertionStatus status = smea.checkRequest( context );
             assertEquals( "status fail", AssertionStatus.NONE, status );
 
@@ -272,7 +272,7 @@ public class ServerMtomEncodeAssertionTest {
         final Document requestDoc = XmlUtil.parse( message );
         PolicyEnforcementContext context = null;
         try {
-            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc), null );
+            context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(requestDoc,0), null );
             AssertionStatus status = smea.checkRequest( context );
             assertEquals( "status falsified for " + description, AssertionStatus.FALSIFIED, status );
             boolean sawAudit = false;

@@ -62,7 +62,7 @@ public class ServerRoutingAssertionTest {
 
     @Test
     public void testHandleNonXml() throws Exception {
-        Message message = new Message(new ByteArrayStashManager(), ContentTypeHeader.parseValue("application/binary"), new RandomInputStream(7, 2048));
+        Message message = new Message(new ByteArrayStashManager(), ContentTypeHeader.parseValue("application/binary"), new RandomInputStream(7, 2048),0);
         message.getSecurityKnob();
         assertNotXml(doHandle(SHOULD_NOT_THROW, message, REMOVE_CURRENT_SECURITY_HEADER, null));
     }
@@ -335,9 +335,9 @@ public class ServerRoutingAssertionTest {
 
     private static Message makeMessage() throws IOException, SAXException {
         if ( soap11 )
-            return new Message(getTestDocument(PLACEORDER_CLEARTEXT));
+            return new Message(getTestDocument(PLACEORDER_CLEARTEXT),0);
         else
-            return new Message(getTestDocument(PLACEORDER_CLEARTEXT_S12));
+            return new Message(getTestDocument(PLACEORDER_CLEARTEXT_S12),0);
     }
 
     private TestServerRoutingAssertion makeTestSra() {

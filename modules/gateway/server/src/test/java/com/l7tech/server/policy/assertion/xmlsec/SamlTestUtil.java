@@ -56,7 +56,7 @@ public class SamlTestUtil {
      * @throws Exception if something fails
      */
     public static Message makeSamlRequest(boolean version2) throws Exception {
-        Message message = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT_ONELINE));
+        Message message = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT_ONELINE),0);
 
         PrivateKey privateKey = TestDocuments.getDotNetServerPrivateKey();
         SamlAssertionGenerator sag = new SamlAssertionGenerator(new SignerInfo(privateKey,

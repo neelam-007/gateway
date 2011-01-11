@@ -21,6 +21,7 @@ import com.l7tech.objectmodel.VersionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ValidationUtils;
 
 import javax.naming.Context;
 import javax.swing.*;
@@ -112,6 +113,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JButton addEnvironmentButton;
     private JButton editEnvironmentButton;
     private JButton removeEnvironmentButton;
+    private JCheckBox setRequestLimitCheckBox;
+    private JTextField requestLimitTextField;
+    private JLabel requestLimitLabel;
 
 
     private JmsConnection connection = null;
@@ -338,6 +342,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         failureQueueNameTextField.getDocument().addDocumentListener( enableDisableListener );
         jmsMsgPropWithSoapActionTextField.getDocument().addDocumentListener( enableDisableListener );
         outboundReplySpecifiedQueueField.getDocument().addDocumentListener( enableDisableListener );
+        requestLimitTextField.getDocument().addDocumentListener(enableDisableListener);
+        setRequestLimitCheckBox.addItemListener(enableDisableListener);
 
         final ComponentEnabler inboundEnabler = new ComponentEnabler(new Functions.Nullary<Boolean>() {
             @Override
@@ -866,6 +872,15 @@ public class JmsQueuePropertiesDialog extends JDialog {
             ep.setDisabled(disableListeningTheQueueCheckBox.isSelected());
         }
 
+        if(setRequestLimitCheckBox.isSelected())
+        {
+            ep.setRequestMaxSize(Long.parseLong(requestLimitTextField.getText()));
+        }
+        else
+        {
+            ep.setRequestMaxSize(-1);
+        }
+
         // Preserve old OID, if we have one
 /*
         if (endpoint != null) {
@@ -1065,6 +1080,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 else
                     outboundCorrelationIdRadioButton.setSelected(true);
             }
+
+            if(endpoint.getRequestMaxSize()>=0){
+                setRequestLimitCheckBox.setSelected(true);
+                requestLimitTextField.setText(Long.toString(endpoint.getRequestMaxSize()));
+            }
         }
 
         useJmsMsgPropAsSoapActionRadioButton.setSelected(false);
@@ -1161,6 +1181,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
             getContentTypeFromProperty.getText().trim().length() == 0)
             return false;
 
+        if (setRequestLimitCheckBox.isSelected() &&
+            !ValidationUtils.isValidLong(requestLimitTextField.getText(), false, 0, Long.MAX_VALUE))
+            return false;
+
         return true;
     }
 
@@ -1194,6 +1218,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
             inboundReplySpecifiedQueueField.setEnabled(canEdit && specified);
             inboundMessageIdRadioButton.setEnabled(canEdit && (specified || auto));
             inboundCorrelationIdRadioButton.setEnabled(canEdit && (specified || auto));
+            requestLimitTextField.setEnabled(canEdit && setRequestLimitCheckBox.isSelected());
+            requestLimitLabel.setEnabled(canEdit && setRequestLimitCheckBox.isSelected());
         } else {
             tabbedPane.setEnabledAt(3, false);
             tabbedPane.setEnabledAt(4, true);
@@ -1208,6 +1234,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         
         isTemplateQueue.setEnabled(canEdit && outboundRadioButton.isSelected());
         applyReset.setEnabled( canEdit && providerComboBox.getSelectedItem() != null );
+
+
         final boolean valid = validateForm();
         saveButton.setEnabled(valid && canEdit);
         testButton.setEnabled(valid && !viewIsTemplate());

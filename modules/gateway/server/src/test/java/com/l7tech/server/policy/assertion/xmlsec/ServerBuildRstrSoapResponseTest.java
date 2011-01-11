@@ -87,7 +87,7 @@ public class ServerBuildRstrSoapResponseTest {
                 "            <wst:CancelTarget><wss:SecurityTokenReference><wss:Reference URI=\"token1\"/></wss:SecurityTokenReference></wst:CancelTarget>\n"+
                 "        </wst:RequestSecurityToken>\n" +
                 "    </s:Body>\n" +
-                "</s:Envelope>" ));
+                "</s:Envelope>" ),0);
         final Message response = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
 
@@ -401,7 +401,7 @@ public class ServerBuildRstrSoapResponseTest {
         
         if ( requestCallback != null ) requestText = requestCallback.call( requestText );
 
-        final Message request = new Message( XmlUtil.parse( requestText ) );
+        final Message request = new Message( XmlUtil.parse( requestText ),0 );
         final Message response = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
 

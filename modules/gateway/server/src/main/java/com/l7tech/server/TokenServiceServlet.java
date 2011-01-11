@@ -121,7 +121,7 @@ public class TokenServiceServlet extends HttpServlet {
             AssertionStatus status;
             try {
                 final StashManager stashManager = stashManagerFactory.createStashManager();
-                request.initialize(stashManager, ctype, req.getInputStream());
+                request.initialize(stashManager, ctype, req.getInputStream(),0);
                 status = tokenService.respondToSecurityTokenRequest(context, authenticator(context), false, false);
                 context.setPolicyResult(status);
             } catch (InvalidDocumentFormatException e) {

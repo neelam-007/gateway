@@ -57,7 +57,7 @@ public class TestWssEcSigningPerformance {
     private static void doTest() throws Exception {
         byte[] signedBytes = getDecoratedRequest();
 
-        Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(signedBytes));
+        Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(signedBytes),0);
 
         WssProcessor processor = new WssProcessorImpl();
 //        Document doc = mess.getXmlKnob().getDocumentWritable();
@@ -77,7 +77,7 @@ public class TestWssEcSigningPerformance {
         dreq.setSenderMessageSigningCertificate(k.left);
         dreq.setSenderMessageSigningPrivateKey(k.right);
         dreq.getElementsToSign().add(SoapUtil.getPayloadElement(d));
-        request = new Message(d);
+        request = new Message(d,0);
         decorator.decorateMessage(request, dreq);
         is = request.getMimeKnob().getEntireMessageBodyAsInputStream();
         return IOUtils.slurpStream(is);

@@ -190,7 +190,7 @@ public class ServerCreateSecurityContextTokenTest {
 
         if ( requestCallback != null ) requestText = requestCallback.call( requestText );
 
-        final Message request = new Message( XmlUtil.parse( requestText ) );
+        final Message request = new Message( XmlUtil.parse( requestText ),0 );
         final Message response = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
 

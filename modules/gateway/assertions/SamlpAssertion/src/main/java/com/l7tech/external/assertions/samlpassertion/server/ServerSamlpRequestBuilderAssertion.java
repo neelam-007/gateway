@@ -414,7 +414,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
         // set the target message with the full SOAP request message
-        target.initialize( soapify(msgXmlString, bContext) );
+        target.initialize( soapify(msgXmlString, bContext),0 );
     }
 
     private void marshal(final PolicyEnforcementContext context, final JAXBElement<?> request, final Object marshalTo)

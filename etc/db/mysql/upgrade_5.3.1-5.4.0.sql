@@ -168,6 +168,8 @@ DROP TABLE IF EXISTS community_schemas;
 
 ALTER TABLE jms_endpoint ADD COLUMN destination_type tinyint(1) NOT NULL default 1 AFTER name;
 
+ALTER TABLE jms_endpoint ADD COLUMN request_max_size bigint NOT NULL default -1 AFTER use_message_id_for_correlation;
+
 --
 -- Reenable FK at very end of script
 --

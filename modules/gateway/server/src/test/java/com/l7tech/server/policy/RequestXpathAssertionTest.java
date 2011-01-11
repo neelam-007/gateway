@@ -53,7 +53,7 @@ public class RequestXpathAssertionTest extends TestCase {
     private AssertionStatus getResultForXPath(String expression) throws Exception {
         ServerRequestXpathAssertion serverAssertion = getAssertion(new XpathExpression(expression, namespaces));
         Message m = new Message();
-        m.initialize(testDoc);
+        m.initialize(testDoc,0);
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(m, new Message(), false);
         return serverAssertion.checkRequest(pec);

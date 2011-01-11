@@ -83,12 +83,12 @@ public class ServerRequestSizeLimitTest extends TestCase {
         AssertionStatus result;
 
         // small message
-        Message smallRequest = new Message(XmlUtil.stringAsDocument("<foo/>"));
+        Message smallRequest = new Message(XmlUtil.stringAsDocument("<foo/>"),0);
         result = serverAss.checkRequest(PolicyEnforcementContextFactory.createPolicyEnforcementContext(smallRequest,null));
         assertEquals(AssertionStatus.NONE, result);
 
         //large message > 1KB
-        Message bigRequest = new Message(XmlUtil.parse(getClass().getResourceAsStream("largeMessage.xml")));
+        Message bigRequest = new Message(XmlUtil.parse(getClass().getResourceAsStream("largeMessage.xml")),0);
         result = serverAss.checkRequest(PolicyEnforcementContextFactory.createPolicyEnforcementContext(bigRequest,null));
         assertEquals(AssertionStatus.FALSIFIED, result);
 
@@ -108,13 +108,13 @@ public class ServerRequestSizeLimitTest extends TestCase {
         AssertionStatus result;
 
         // small message
-        Message smallRequest = new Message(XmlUtil.stringAsDocument("<foo/>"));
+        Message smallRequest = new Message(XmlUtil.stringAsDocument("<foo/>"),0);
         context.setVariable("var",smallRequest);
         result = serverAss.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
 
         //large message > 1KB
-        Message bigRequest = new Message(XmlUtil.parse(getClass().getResourceAsStream("largeMessage.xml")));
+        Message bigRequest = new Message(XmlUtil.parse(getClass().getResourceAsStream("largeMessage.xml")),0);
         context.setVariable("var",bigRequest);
         result = serverAss.checkRequest(context);
         assertEquals(AssertionStatus.FALSIFIED, result);

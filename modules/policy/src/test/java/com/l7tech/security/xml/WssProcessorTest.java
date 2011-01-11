@@ -76,7 +76,7 @@ public class WssProcessorTest {
 
         log.info("Testing document: " + testDocument.name);
         log.info("Original decorated message (reformatted): " + XmlUtil.nodeToFormattedString(request));
-        ProcessorResult result = wssProcessor.undecorateMessage(new Message(request),
+        ProcessorResult result = wssProcessor.undecorateMessage(new Message(request,0),
                 testDocument.securityContextFinder,
                                                                 new WrapSSTR(recipientCertificate,
                                                                              recipientPrivateKey,
@@ -578,7 +578,7 @@ public class WssProcessorTest {
         log.info("Input decorated message (reformatted): \n" + XmlUtil.nodeToFormattedString(d));
         WssProcessor p = new WssProcessorImpl();
 
-        ProcessorResult got = p.undecorateMessage(new Message(d), null,
+        ProcessorResult got = p.undecorateMessage(new Message(d,0), null,
                                                   new WrapSSTR(aliceCert,
                                                                TestDocuments.getWssInteropAliceKey(),
                                                                new SimpleSecurityTokenResolver(bobCert)));
@@ -588,7 +588,7 @@ public class WssProcessorTest {
 
     private Pair<Message, SimpleSecureConversationSession> makeWsscSignedMessage() throws Exception {
         Message msg = new Message();
-        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream());
+        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream(),0);
 
         // Sign this message with WS-SecureConversation
         final byte[] sessionKey = new byte[256];
@@ -611,7 +611,7 @@ public class WssProcessorTest {
 
         byte[] decoratedBytes = IOUtils.slurpStream(req.left.getMimeKnob().getEntireMessageBodyAsInputStream());
 
-        Message msg = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(decoratedBytes));
+        Message msg = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(decoratedBytes),0);
 
         // Undecorate the signed documnet
         SecurityContextFinder scf = new SecurityContextFinder() {
@@ -798,13 +798,13 @@ public class WssProcessorTest {
             placeOrder = XmlUtil.parse(XmlUtil.nodeToString(placeOrder));
 
             {
-                WssProcessorImpl processor = new WssProcessorImpl(new Message(placeOrder));
+                WssProcessorImpl processor = new WssProcessorImpl(new Message(placeOrder,0));
                 processor.setRejectOnMustUnderstand(false);
                 processor.processMessage();
             }
 
             try {
-                WssProcessorImpl processor = new WssProcessorImpl(new Message(placeOrder));
+                WssProcessorImpl processor = new WssProcessorImpl(new Message(placeOrder,0));
                 processor.setRejectOnMustUnderstand(shouldReject);
                 processor.processMessage();
                 if (shouldReject)
@@ -896,7 +896,7 @@ public class WssProcessorTest {
     @BugNumber(6002)
 	public void testProcessNcesSignedMessageWithTrogdor() throws Exception {
         Document doc = getNcesSignedRequest();
-        WssProcessorImpl proc = new WssProcessorImpl(new Message(doc));
+        WssProcessorImpl proc = new WssProcessorImpl(new Message(doc,0));
         ProcessorResult result = proc.processMessage();
         final SignedElement[] signed = result.getElementsThatWereSigned();
         System.out.println("Saw " + signed.length + " signed elements:");
@@ -1016,7 +1016,7 @@ public class WssProcessorTest {
 
     private static Message makeMessage(String xml) throws SAXException {
         Message message = new Message();
-        message.initialize(XmlUtil.stringToDocument(xml));
+        message.initialize(XmlUtil.stringToDocument(xml),0);
         return message;
     }
 
@@ -1031,7 +1031,7 @@ public class WssProcessorTest {
         // 00 Initial client RST
         Message rst;
         Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/00_cl_rst_sct.xml");
-        WssProcessorImpl processor = new WssProcessorImpl(rst = new Message(d));
+        WssProcessorImpl processor = new WssProcessorImpl(rst = new Message(d,0));
         processor.setSecurityTokenResolver(resolver);
         ProcessorResult pr = processor.processMessage();
         assertBodyWasSigned(pr, d);
@@ -1041,7 +1041,7 @@ public class WssProcessorTest {
         // 01 Server RSTR
         Message rstr;
         d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/01_sv_rstr_sct.xml");
-        processor = new WssProcessorImpl(rstr = new Message(d));
+        processor = new WssProcessorImpl(rstr = new Message(d,0));
         processor.setSecurityTokenResolver(resolver);
         pr = processor.processMessage();
         assertBodyWasSigned(pr, d);
@@ -1073,7 +1073,7 @@ public class WssProcessorTest {
 
         // 02 Client BuyBook
         d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/02_cl_buybook.xml");
-        processor = new WssProcessorImpl(new Message(d));
+        processor = new WssProcessorImpl(new Message(d,0));
         processor.setSecurityTokenResolver(resolver);
         processor.setSecurityContextFinder(scFinder);
         pr = processor.processMessage();
@@ -1082,7 +1082,7 @@ public class WssProcessorTest {
 
         // 03 Server BuyBookResponse
         d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/03_sv_buybookresponse.xml");
-        processor = new WssProcessorImpl(new Message(d));
+        processor = new WssProcessorImpl(new Message(d,0));
         processor.setSecurityTokenResolver(resolver);
         processor.setSecurityContextFinder(scFinder);
         pr = processor.processMessage();
@@ -1091,7 +1091,7 @@ public class WssProcessorTest {
 
         // 04 Client Cancel Context
         d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/04_cl_rst_sct_cancel.xml");
-        processor = new WssProcessorImpl(new Message(d));
+        processor = new WssProcessorImpl(new Message(d,0));
         processor.setSecurityTokenResolver(resolver);
         processor.setSecurityContextFinder(scFinder);
         pr = processor.processMessage();
@@ -1100,7 +1100,7 @@ public class WssProcessorTest {
 
         // 04 Client Cancel Context
         d = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/05_sv_rstr_sct_cancel.xml");
-        processor = new WssProcessorImpl(new Message(d));
+        processor = new WssProcessorImpl(new Message(d,0));
         processor.setSecurityTokenResolver(resolver);
         processor.setSecurityContextFinder(scFinder);
         pr = processor.processMessage();

@@ -92,7 +92,7 @@ public class XslTransformationTest {
             }
         };
 
-        Message req = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
+        Message req = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")),0);
         Message res = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, res);
 
@@ -114,7 +114,7 @@ public class XslTransformationTest {
         long before = System.currentTimeMillis();
         int num = 5000;
         for (int i = 0; i < num; i++) {
-            Message req = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
+            Message req = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")),0);
             Message res = new Message();
             PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, res);
 
@@ -211,7 +211,7 @@ public class XslTransformationTest {
         }});
         ServerAssertion sa = new ServerXslTransformation(assertion, beanFactory);
 
-        Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML));
+        Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML),0);
         Message response = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         context.setVariable("ecf-mde-id", "VARIABLE CONTENT");
@@ -244,7 +244,7 @@ public class XslTransformationTest {
             }
         };
 
-        Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML));
+        Message request = new Message(XmlUtil.stringToDocument(DUMMY_SOAP_XML),0);
         Message response = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         context.setVariable("ecf-mde-id", "VARIABLE CONTENT");
@@ -265,7 +265,7 @@ public class XslTransformationTest {
         xsl.setResourceInfo(new SingleUrlResourceInfo(xslUrl));
         xsl.setDirection(XslTransformation.APPLY_TO_REQUEST);
 
-        Message request = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new URL(responseUrl).openStream());
+        Message request = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new URL(responseUrl).openStream(),0);
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
         ServerXslTransformation sxsl = new ServerXslTransformation(xsl, ApplicationContexts.getTestApplicationContext());

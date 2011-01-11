@@ -238,7 +238,7 @@ public class RegexAssertionTest {
 
 
     private void testReplacement(String message, Regex regex) throws SAXException, LicenseException, IOException, PolicyAssertionException {
-        Message request = new Message(XmlUtil.stringToDocument(message));
+        Message request = new Message(XmlUtil.stringToDocument(message),0);
         Message response = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         ServerAssertion sass =  serverPolicyFactory.compilePolicy(regex, false);
@@ -342,7 +342,7 @@ public class RegexAssertionTest {
 
     private Message message(String request) throws IOException {
         Message req = new Message();
-        req.initialize(ContentTypeHeader.TEXT_DEFAULT, request.getBytes("utf-8"));
+        req.initialize(ContentTypeHeader.TEXT_DEFAULT, request.getBytes("utf-8"),0);
         return req;
     }
 
@@ -522,7 +522,7 @@ public class RegexAssertionTest {
 
         // Request is encoded in ISO-8859-1, but lies and claims UTF-8
         context.getRequest().initialize(ContentTypeHeader.parseValue("text/plain; charset=UTF-8"),
-                PHRASE_UNICODE_JOSE.getBytes("ISO-8859-1"));
+                PHRASE_UNICODE_JOSE.getBytes("ISO-8859-1"),0);
 
         Regex regex = regex(PHRASE_UNICODE_JOSE);
 

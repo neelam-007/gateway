@@ -47,7 +47,7 @@ public class ServerFtpCredentialAssertionTest extends TestCase {
 
     private PolicyEnforcementContext makeContext(boolean addFtpKnob, final boolean withCreds) throws Exception {
         // create messages
-        Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
+        Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT),0);
         Message response = new Message();
 
         // add knob

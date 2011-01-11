@@ -97,6 +97,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         AssertionStatus status = AssertionStatus.UNDEFINED;
         boolean responseSuccess = false;
         boolean messageTooLarge = false;
+        long sizeLimit; 
         Properties props = endpointCfg.getConnection().properties();
         try {
             if ( topicMasterOnly && !endpointCfg.isQueue() && !clusterMaster.isMaster() ) {
@@ -125,7 +126,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                 }
 
                 // enforce size restriction
-                int sizeLimit = config.getIntProperty(PARAM_JMS_MESSAGE_MAX_BYTES, 5242880);
+                sizeLimit = endpointCfg.getEndpoint().getRequestMaxSize()<0 ? config.getIntProperty(PARAM_JMS_MESSAGE_MAX_BYTES, 2621440) : endpointCfg.getEndpoint().getRequestMaxSize();
                 if ( sizeLimit > 0 && size > sizeLimit ) {
                     messageTooLarge = true;
                 }
@@ -175,7 +176,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                 }
 
                 com.l7tech.message.Message request = new com.l7tech.message.Message();
-                request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream );
+                request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream, sizeLimit);
                 request.attachJmsKnob(new JmsKnob() {
                     @Override
                     public boolean isBytesMessage() {

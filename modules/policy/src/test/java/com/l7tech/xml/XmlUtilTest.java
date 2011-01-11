@@ -304,7 +304,8 @@ public class XmlUtilTest {
         TarariLoader.compile();
         Message msg = new Message(new ByteArrayStashManager(),
             ContentTypeHeader.XML_DEFAULT,
-            new ByteArrayInputStream(PI_XML.getBytes("UTF-8"))
+            new ByteArrayInputStream(PI_XML.getBytes("UTF-8")),
+            0
         );
         ElementCursor cursor = msg.getXmlKnob().getElementCursor();
         cursor.moveToRoot();

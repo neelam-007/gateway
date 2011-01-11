@@ -107,7 +107,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         // fla bugfix attach the status before closing otherwise, it's lost
         hrk.setStatus(status);
         response.close();
-        response.initialize(stashManager, contentType, new ByteArrayInputStream(bytes));
+        response.initialize(stashManager, contentType, new ByteArrayInputStream(bytes),0);// set to unlimited, user contolled data
         response.attachHttpResponseKnob(hrk);
 
         // todo: move to abstract routing assertion

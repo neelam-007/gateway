@@ -69,7 +69,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
                 new ServerCodeInjectionProtectionAssertion(assertion, appContext);
 
         final PolicyEnforcementContext context = getContext(null);
-        context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(noInvalidCharacters.getBytes())));
+        context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(noInvalidCharacters.getBytes()),0));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
@@ -96,7 +96,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
                 new ServerCodeInjectionProtectionAssertion(assertion, appContext);
 
         final PolicyEnforcementContext context = getContext(null);
-        context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidCharsInKeyValue.getBytes())));
+        context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidCharsInKeyValue.getBytes()),0));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be FALSIFIED", AssertionStatus.FALSIFIED, status);
@@ -123,12 +123,12 @@ public class ServerCodeInjectionProtectionAssertionTest {
                 new ServerCodeInjectionProtectionAssertion(assertion, appContext);
 
         final PolicyEnforcementContext context = getContext(null);
-        context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidCharactersInValue.getBytes())));
+        context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidCharactersInValue.getBytes()),0));
 
         AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be FALSIFIED", AssertionStatus.FALSIFIED, status);
 
-        context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidCharactersInValueInArray.getBytes())));
+        context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidCharactersInValueInArray.getBytes()),0));
 
         status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be FALSIFIED", AssertionStatus.FALSIFIED, status);
@@ -170,7 +170,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
 
         if(requestBody != null){
-            request.initialize(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(requestBody.getBytes(Charsets.UTF8)));    
+            request.initialize(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(requestBody.getBytes(Charsets.UTF8)),0);    
         }
 
         PolicyEnforcementContext policyEnforcementContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);

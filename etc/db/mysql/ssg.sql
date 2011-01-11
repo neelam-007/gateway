@@ -390,6 +390,7 @@ CREATE TABLE jms_endpoint(
   is_template tinyint NOT NULL default '0',
   outbound_message_type varchar(128),
   use_message_id_for_correlation tinyint(1) NOT NULL DEFAULT 0,
+  request_max_size bigint NOT NULL default -1,
   primary key(objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 

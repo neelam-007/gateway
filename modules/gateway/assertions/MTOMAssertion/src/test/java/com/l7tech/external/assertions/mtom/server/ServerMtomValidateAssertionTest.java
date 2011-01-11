@@ -70,7 +70,8 @@ public class ServerMtomValidateAssertionTest {
             Message mess = new Message(
                     new ByteArrayStashManager(),
                     ContentTypeHeader.parseValue("multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\""),
-                    new ByteArrayInputStream( message.getBytes() ));
+                    new ByteArrayInputStream( message.getBytes() ),
+                    0);
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
             AssertionStatus status = smva.checkRequest( context );
             assertEquals( "status ok", AssertionStatus.NONE, status );
@@ -137,7 +138,8 @@ public class ServerMtomValidateAssertionTest {
             Message mess = new Message(
                     new ByteArrayStashManager(),
                     ContentTypeHeader.parseValue("multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\""),
-                    new ByteArrayInputStream( message.getBytes() ));
+                    new ByteArrayInputStream( message.getBytes() ),
+                    0);
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
             AssertionStatus status = smva.checkRequest( context );
             assertEquals( "status falsified", AssertionStatus.FALSIFIED, status );
@@ -201,7 +203,8 @@ public class ServerMtomValidateAssertionTest {
             Message mess = new Message(
                     new ByteArrayStashManager(),
                     ContentTypeHeader.parseValue("multipart/related;start=\"<rootpart*45ac4aae-b978-40c3-b093-18e82e03ce3a@example.jaxws.sun.com>\";type=\"application/xop+xml\";boundary=\"uuid:45ac4aae-b978-40c3-b093-18e82e03ce3a\";start-info=\"text/xml\""),
-                    new ByteArrayInputStream( message.getBytes() ));
+                    new ByteArrayInputStream( message.getBytes() ),
+                    0);
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( mess, null );
             AssertionStatus status = smva.checkRequest( context );
             assertEquals( "status falsified", AssertionStatus.FALSIFIED, status );

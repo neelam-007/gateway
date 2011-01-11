@@ -166,11 +166,11 @@ public class JceProviderTest {
             log.info("pretest: signing XML message");
             final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest();
             WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
-            new WssDecoratorImpl().decorateMessage(new Message(td.c.message), td.req);
+            new WssDecoratorImpl().decorateMessage(new Message(td.c.message,0), td.req);
 
             log.info("pretest: checking XML message signature");
             ProcessorResult processorResult = new WssProcessorImpl().undecorateMessage(
-                    new Message(null/*td.c.message*/),
+                    new Message(null/*td.c.message*/,0),
                     null,
                     null//new WrapSSTR(TestDocuments.getDotNetServerCertificate(),
             //                     TestDocuments.getDotNetServerPrivateKey())
@@ -200,7 +200,7 @@ public class JceProviderTest {
         {
             WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
             DecorationRequirements decorationRequirements = td.req;
-            new WssDecoratorImpl().decorateMessage(new Message(td.c.message), decorationRequirements);
+            new WssDecoratorImpl().decorateMessage(new Message(td.c.message,0), decorationRequirements);
             encryptedXml = XmlUtil.nodeToString(td.c.message);
         }
 //        log.info("Encrypted XML message: " + encryptedXml);
@@ -217,7 +217,7 @@ public class JceProviderTest {
             public void run() throws Throwable {
                 WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
                 DecorationRequirements decorationRequirements = td.req;
-                new WssDecoratorImpl().decorateMessage(new Message(td.c.message), decorationRequirements);
+                new WssDecoratorImpl().decorateMessage(new Message(td.c.message,0), decorationRequirements);
             }
         });
 

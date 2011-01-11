@@ -315,12 +315,12 @@ import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
 
          if(contextVariableName != null && !contextVariableName.isEmpty()){
              policyEnforcementContext.setVariable(contextVariableName,
-                     new Message(XmlUtil.stringToDocument(xacmlRequestXml)));
+                     new Message(XmlUtil.stringToDocument(xacmlRequestXml),0));
          }else{
              if(useRequest){
-                 request.initialize( XmlUtil.stringToDocument(xacmlRequestXml));
+                 request.initialize( XmlUtil.stringToDocument(xacmlRequestXml),0);
              }else{
-                 response.initialize(XmlUtil.stringToDocument(xacmlRequestXml));
+                 response.initialize(XmlUtil.stringToDocument(xacmlRequestXml),0);
              }
          }
          request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));

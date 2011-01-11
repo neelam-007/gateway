@@ -155,7 +155,7 @@ public class ServerCancelSecurityContextTest {
                 "            </wst:CancelTarget>\n" +
                 "        </wst:RequestSecurityToken>\n" +
                 "    </s:Body>\n" +
-                "</s:Envelope>" ));
+                "</s:Envelope>" ),0);
         final Message response = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
 

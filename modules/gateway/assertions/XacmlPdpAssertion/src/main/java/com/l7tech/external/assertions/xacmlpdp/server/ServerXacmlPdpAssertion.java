@@ -269,7 +269,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             } else {
                 message = context.getResponse();
             }
-            message.initialize( stashManagerFactory.createStashManager(), cth, bais );
+            message.initialize( stashManagerFactory.createStashManager(), cth, bais, 0 );
 
             return status;
         } catch(InvalidRequestException e) {

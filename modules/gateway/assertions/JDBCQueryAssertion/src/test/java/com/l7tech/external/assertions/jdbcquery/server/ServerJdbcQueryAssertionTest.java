@@ -121,9 +121,9 @@ public class ServerJdbcQueryAssertionTest {
 
     private PolicyEnforcementContext makeContext(String req, String res) {
         Message request = new Message();
-        request.initialize( XmlUtil.stringAsDocument(req));
+        request.initialize( XmlUtil.stringAsDocument(req),0);
         Message response = new Message();
-        response.initialize( XmlUtil.stringAsDocument(res));
+        response.initialize( XmlUtil.stringAsDocument(res),0);
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
     }
 }

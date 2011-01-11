@@ -51,8 +51,8 @@ public class AuditLogFormatterTest extends TestCase {
             pubsvc.setOid(393216L);
             pubsvc.setName("Warehoust");
             pubsvc.setRoutingUri("/wh2");
-            Message req = new Message(XmlUtil.createEmptyDocument());
-            Message resp = new Message(XmlUtil.createEmptyDocument());
+            Message req = new Message(XmlUtil.createEmptyDocument(),0);
+            Message resp = new Message(XmlUtil.createEmptyDocument(),0);
             pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, resp);
             pec.setService(pubsvc);
         }
