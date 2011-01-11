@@ -262,8 +262,8 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
           "<html>Specify SAML statement conditions such as assertion validity period and Audience Restriction</html>";
         } else {
             return
-          "<html>Specify SAML statement conditions such as Audience Restriction [optional] " +
-                "and whether to check the assertion validity [optional]</html>";
+          "<html>Optionally indicate whether the token’s validity period should be checked, whether the token’s expiry " +
+              "time should be further restricted, or whether to restrict the audience for the SAML token.</html>";
         }
     }
 }
