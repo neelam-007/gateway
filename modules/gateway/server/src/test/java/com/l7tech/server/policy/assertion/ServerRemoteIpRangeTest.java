@@ -60,6 +60,16 @@ public class ServerRemoteIpRangeTest extends TestCase {
         addToTest = InetAddressUtil.getAddress("10.168.1.2");
         res = testee.assertAddress(addToTest);
         assertFalse(addToTest + " should NOT pass", res);
+
+        testee = new ServerRemoteIpRange(new RemoteIpRange("2222::", 64, true), ApplicationContexts.getTestApplicationContext() );
+
+        addToTest = InetAddressUtil.getAddress("2222::215");
+        res = testee.assertAddress(addToTest);
+        assertTrue(addToTest + " should pass", res);
+
+        addToTest = InetAddressUtil.getAddress("2221::215");
+        res = testee.assertAddress(addToTest);
+        assertFalse(addToTest + " should NOT pass", res);
     }
 
     public void testExclusions() {
@@ -85,5 +95,15 @@ public class ServerRemoteIpRangeTest extends TestCase {
         addToTest = InetAddressUtil.getAddress("10.0.0.77");
         res = testee.assertAddress(addToTest);
         assertFalse(addToTest + " should NOT pass", res);
+
+        testee = new ServerRemoteIpRange(new RemoteIpRange("2222::", 64, false), ApplicationContexts.getTestApplicationContext() );
+
+        addToTest = InetAddressUtil.getAddress("2222::215");
+        res = testee.assertAddress(addToTest);
+        assertFalse(addToTest + " should NOT pass", res);
+
+        addToTest = InetAddressUtil.getAddress("2221::215");
+        res = testee.assertAddress(addToTest);
+        assertTrue(addToTest + " should pass", res);
     }
 }

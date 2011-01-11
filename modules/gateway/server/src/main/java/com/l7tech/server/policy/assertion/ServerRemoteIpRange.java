@@ -43,7 +43,7 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
             return AssertionStatus.FAILED;
         }
         
-        String input;
+        String remoteAddress;
         // get remote address
         if (assertion.getIpSourceContextVariable() == null) {
             TcpKnob tcp = context.getRequest().getKnob(TcpKnob.class);
@@ -51,12 +51,12 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
                 auditor.logAndAudit(AssertionMessages.IP_NOT_TCP);
                 return AssertionStatus.BAD_REQUEST;
             }
-            input = tcp.getRemoteAddress();
+            remoteAddress = tcp.getRemoteAddress();
         } else {
             try {
                 Object tmp = context.getVariable(assertion.getIpSourceContextVariable());
                 if (tmp == null) throw new NoSuchVariableException("could not resolve " + assertion.getIpSourceContextVariable());
-                input = tmp.toString();
+                remoteAddress = InetAddressUtil.getHostAndPort(tmp.toString(), null).left;
             } catch (NoSuchVariableException e) {
                 logger.log(Level.WARNING, "Remote ip from context variable unavailable. Possible policy error", ExceptionUtils.getDebugException(e));
                 auditor.logAndAudit(AssertionMessages.IP_ADDRESS_UNAVAILABLE, assertion.getIpSourceContextVariable());
@@ -64,20 +64,19 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
             }
         }
 
-        String host = InetAddressUtil.getHostAndPort(input, null).left;
-        if (host != null && host.startsWith("[") && host.endsWith("]")) {
-            host = host.substring(1, host.length()-1);
+        if (remoteAddress != null && remoteAddress.startsWith("[") && remoteAddress.endsWith("]")) {
+            remoteAddress = remoteAddress.substring(1, remoteAddress.length()-1);
         }
-        InetAddress addr = InetAddressUtil.getAddress(host);
+        InetAddress addr = InetAddressUtil.getAddress(remoteAddress);
 
         if (addr == null) {
-            auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, input);
+            auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, remoteAddress);
             return AssertionStatus.FALSIFIED;
         } else if (assertAddress(addr)) {
-            auditor.logAndAudit(AssertionMessages.IP_ACCEPTED, input);
+            auditor.logAndAudit(AssertionMessages.IP_ACCEPTED, remoteAddress);
             return AssertionStatus.NONE;
         } else {
-            auditor.logAndAudit(AssertionMessages.IP_REJECTED, input);
+            auditor.logAndAudit(AssertionMessages.IP_REJECTED, remoteAddress);
             return AssertionStatus.FALSIFIED;
         }
     }
