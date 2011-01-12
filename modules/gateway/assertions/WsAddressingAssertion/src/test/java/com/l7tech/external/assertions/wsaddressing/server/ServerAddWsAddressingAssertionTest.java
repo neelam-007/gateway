@@ -379,19 +379,7 @@ public class ServerAddWsAddressingAssertionTest {
         final PolicyEnforcementContext context = getContext(soapMsg, null);
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
-        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
-
-        final Message request = context.getRequest();
-
-        //validate request
-        final Document requestDoc = request.getXmlKnob().getDocumentReadOnly();
-        final Element headerEl = SoapUtil.getHeaderElement(requestDoc);
-        System.out.println(XmlUtil.nodeToFormattedString(headerEl));
-
-        //get out any value and validate the default namespace was used when the context variable configured resolved to nothing
-        final Element actionEl =
-                XmlUtil.findExactlyOneChildElementByName(headerEl, namespace, SoapConstants.WSA_MSG_PROP_ACTION);
-        validateNamespace(actionEl, SoapConstants.WSA_NAMESPACE_10);
+        Assert.assertEquals("Status should be FAILED", AssertionStatus.FAILED, status);
     }
 
     @Test
@@ -402,6 +390,7 @@ public class ServerAddWsAddressingAssertionTest {
 
         final String action = "http://warehouse.acme.com/ws/listProducts";
         assertion.setAction(action);
+        assertion.setWsaNamespaceUri(SoapConstants.WSA_NAMESPACE_10);
         final ServerAddWsAddressingAssertion serverAssertion =
                 new ServerAddWsAddressingAssertion(assertion, appContext);
 

@@ -25,6 +25,7 @@ import org.w3c.dom.Element;
 
 import javax.wsdl.*;
 import javax.xml.namespace.QName;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,10 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
         this.auditor = applicationContext != null ? new Auditor(this, applicationContext, logger) : new LogOnlyAuditor(logger);
         this.variablesUsed = assertion.getVariablesUsed();
         //validate required fields
+        if(assertion.getWsaNamespaceUri() == null){
+            throw new PolicyAssertionException(assertion, "WS-Addressing namespace is required.");
+        }
+
         if(assertion.getAction() == null){
             throw new PolicyAssertionException(assertion, "Action message addressing property is required.");
         }
@@ -74,14 +79,13 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
             final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
             
             String wsaNs = resolveProperty(assertion.getWsaNamespaceUri(), vars);
-            if (wsaNs == null) {
-                wsaNs = AddWsAddressingAssertion.DEFAULT_NAMESPACE;
-                logger.log(Level.INFO, "No namespace value found for WS-Addressing. Using default value of " + AddWsAddressingAssertion.DEFAULT_NAMESPACE);
-            }
 
             if(!ValidationUtils.isValidUri(wsaNs)){
-                logger.log(Level.INFO, "Invalid namespace URI found for WS-Addressing Namespace '"+wsaNs+"'. Using default value of " + AddWsAddressingAssertion.DEFAULT_NAMESPACE);
-                wsaNs = AddWsAddressingAssertion.DEFAULT_NAMESPACE;
+                auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_NAMESPACE, wsaNs, "Namespace is not a valid URI");
+                return -1;
+            } else if (!new URI(wsaNs).isAbsolute()) {
+                auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_NAMESPACE, wsaNs, "Namespace is not an absolute URI");
+                return -1;
             }
 
             String resolvedAction = resolveProperty(assertion.getAction(), vars);

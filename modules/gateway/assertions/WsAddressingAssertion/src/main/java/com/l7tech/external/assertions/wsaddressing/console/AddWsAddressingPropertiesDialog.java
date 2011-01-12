@@ -10,6 +10,8 @@ import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ResourceBundle;
 
 /**
@@ -195,7 +197,7 @@ public class AddWsAddressingPropertiesDialog extends AssertionPropertiesOkCancel
         //validate all URIs for those which don't reference context variables.
 
         if(!AddWsAddressingAssertion.WSA_ACTIONS.contains(action)) {
-            validateUriIfNoVariableReferenced(resources.getString("actionLabel"), action);
+            validateUriIfNoVariableReferenced(resources.getString("actionLabel"), action, false);
         }
 
         final String wsaNamespaceUri = namespaceComboBox.getEditor().getItem().toString().trim();
@@ -204,29 +206,29 @@ public class AddWsAddressingPropertiesDialog extends AssertionPropertiesOkCancel
         }
 
         if(!AddWsAddressingAssertion.WSA_NAMESPACES.contains(wsaNamespaceUri)){
-            validateUriIfNoVariableReferenced(resources.getString("WsAddressingNamespace"), wsaNamespaceUri);            
+            validateUriIfNoVariableReferenced(resources.getString("WsAddressingNamespace"), wsaNamespaceUri, true);            
         }
-        
+
         final String msgId = messageIdComboBox.getEditor().getItem().toString().trim();
         if(!AddWsAddressingAssertion.MESSAGE_ID_AUTOMATIC.equals(msgId)){
-            validateUriIfNoVariableReferenced(resources.getString("messageIdLabel"), msgId);
+            validateUriIfNoVariableReferenced(resources.getString("messageIdLabel"), msgId, false);
         }
 
         final String dest = toComboBox.getEditor().getItem().toString().trim();
-        validateUriIfNoVariableReferenced(resources.getString("toLabel"), dest);
+        validateUriIfNoVariableReferenced(resources.getString("toLabel"), dest, false);
 
         final String from = fromComboBox.getEditor().getItem().toString().trim();
-        validateUriIfNoVariableReferenced(resources.getString("fromLabel"), from);
+        validateUriIfNoVariableReferenced(resources.getString("fromLabel"), from, false);
 
         final String replyTo = replyToAddress.getEditor().getItem().toString().trim();
-        validateUriIfNoVariableReferenced(resources.getString("replyToAddress"), replyTo);
+        validateUriIfNoVariableReferenced(resources.getString("replyToAddress"), replyTo, false);
 
         final String fault = faultToComboBox.getEditor().getItem().toString().trim();
-        validateUriIfNoVariableReferenced(resources.getString("faultToAddress"), fault);
+        validateUriIfNoVariableReferenced(resources.getString("faultToAddress"), fault, false);
 
         final String relatesTo = relatesToMessageIdTextField.getText().trim();
         validateUriIfNoVariableReferenced(resources.getString("relatesToPanel") + " " +
-                resources.getString("relatesToMessageId"), relatesTo);
+                resources.getString("relatesToMessageId"), relatesTo, false);
 
         final String prefix = targetVariablePanel.getVariable();
         if(prefix.isEmpty()){
@@ -234,13 +236,23 @@ public class AddWsAddressingPropertiesDialog extends AssertionPropertiesOkCancel
         }
     }
 
-    private void validateUriIfNoVariableReferenced(String propertyName, String propertyValue)
+    private void validateUriIfNoVariableReferenced(String propertyName, String propertyValue, boolean validateIsAbsolute)
             throws ValidationException{
         if(propertyValue == null || propertyValue.isEmpty()) return;
 
         if (Syntax.getReferencedNamesIndexedVarsNotOmitted(propertyValue).length <= 0) {
             if (!ValidationUtils.isValidUri(propertyValue)) {
                 throw new ValidationException(propertyName + " is not a valid URI.");
+            }
+
+            if(validateIsAbsolute){
+                try {
+                    if(!new URI(propertyValue).isAbsolute()){
+                        throw new ValidationException(propertyName + " is not an absolute URI.");
+                    }
+                } catch (URISyntaxException e) {
+                    //can't happen
+                }
             }
         }
     }

@@ -766,6 +766,7 @@ public class AssertionMessages extends Messages {
     public static final M ADD_WS_ADDRESSING_NO_WSDL_ACTION_FOUND   = m(9262, Level.WARNING, "Action extension element not found in the WSDL.");
     public static final M ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO = m(9263, Level.INFO, "Invalid URI value ''{0}'' for WS-Addressing ''{1}'' property.");
     public static final M ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN = m(9264, Level.WARNING, "Invalid URI value ''{0}'' for required WS-Addressing ''{1}'' property.");
+    public static final M ADD_WS_ADDRESSING_INVALID_NAMESPACE      = m(9265, Level.WARNING, "Invalid namespace: ''{0}''. {1}.");
 
     public static final M STS_INVALID_RST_REQUEST      = m(9290, Level.WARNING, "Invalid RST SOAP Request: {0}");
     public static final M STS_INVALID_SECURITY_TOKEN  = m(9291, Level.WARNING, "Invalid Security Token: {0}");
