@@ -118,6 +118,12 @@ public class NewFederatedUserDialog extends JDialog {
         });
 
         userNameTextField.setToolTipText(resources.getString("idTextField.tooltip"));
+        userNameTextField.setDocument(new FilterDocument(128,
+                        new FilterDocument.Filter() {
+                            public boolean accept(String str) {
+                                return str != null;
+                            }
+                        }));
         userNameTextField.addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent e) {
                 SwingUtilities.invokeLater(new Runnable() {
