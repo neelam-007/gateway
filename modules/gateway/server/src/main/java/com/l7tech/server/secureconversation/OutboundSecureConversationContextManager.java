@@ -65,8 +65,12 @@ public class OutboundSecureConversationContextManager extends SecureConversation
      * @param serviceUrl: the URL of the service with which a client established a secure conversation.
      * @return an outbound secure conversation session object, which matches the given userId and serviceUrl.
      */
-    public SecureConversationSession getSession(String userId, String serviceUrl) {
-        if (userId == null || userId.trim().isEmpty() || serviceUrl == null || serviceUrl.trim().isEmpty()) return null;
+    public SecureConversationSession getSession(String userId, String serviceUrl) throws SessionLookupException {
+        if (userId == null || userId.trim().isEmpty()) {
+            throw new SessionLookupException("The user identifier used for session lookup is not specified.");
+        } else if (serviceUrl == null || serviceUrl.trim().isEmpty()) {
+            throw new SessionLookupException("The service URL for session lookup is not specified.");
+        }
 
         // Cleanup if necessary
         checkExpiredSessions();
@@ -139,7 +143,7 @@ public class OutboundSecureConversationContextManager extends SecureConversation
      * @param namespace The WS-SecureConversation namespace in use (may be null)
      * @param sessionDuration: its unit is milliseconds.  It must be greater than 0.
      * @param requestClientEntropy The request client entropy (may be null)
-     *  @param requestServerEntropy The reqeust server entropy (may be null)
+     *  @param requestServerEntropy The request server entropy (may be null)
      * @return the newly created session
      */
     public SecureConversationSession createContextForUser(final User sessionOwner,

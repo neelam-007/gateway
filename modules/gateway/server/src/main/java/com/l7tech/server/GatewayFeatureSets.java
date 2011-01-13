@@ -345,6 +345,7 @@ public class GatewayFeatureSets {
             ass(WsSecurity.class),
             ass(CreateSecurityContextToken.class),
             ass(CancelSecurityContext.class),
+            ass(LookupOutboundSecureConversationSession.class),
             ass(BuildRstSoapRequest.class),
             ass(BuildRstrSoapResponse.class),
             ass(ProcessRstrSoapResponse.class),
