@@ -1,51 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.AddWssSecurityTokenPanel">
-  <grid id="feec" binding="mainPanel" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="feec" binding="mainPanel" layout-manager="GridLayoutManager" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="0" y="0" width="324" height="190"/>
+      <xy x="0" y="0" width="816" height="639"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="b23c4" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
-        <constraints>
-          <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties/>
-        <border type="none" title-resource-bundle="com/l7tech/console/resources/AddWssSecurityTokenDialog" title-key="certGroup.title"/>
-        <children>
-          <component id="bf9fb" class="javax.swing.JRadioButton" binding="bstRadio">
-            <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <selected value="true"/>
-              <text resource-bundle="com/l7tech/console/resources/AddWssSecurityTokenDialog" key="bstRadio.text"/>
-              <toolTipText resource-bundle="com/l7tech/console/resources/AddWssTimestampDialog" key="bstRadio.tooltip"/>
-            </properties>
-          </component>
-          <component id="45509" class="javax.swing.JRadioButton" binding="strRadio">
-            <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text resource-bundle="com/l7tech/console/resources/AddWssSecurityTokenDialog" key="strRadio.text"/>
-              <toolTipText resource-bundle="com/l7tech/console/resources/AddWssTimestampDialog" key="strRadio.tooltip"/>
-            </properties>
-          </component>
-          <component id="1d111" class="javax.swing.JRadioButton" binding="issuerSerialRadio">
-            <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text resource-bundle="com/l7tech/console/resources/AddWssSecurityTokenDialog" key="issuerSerialRadio.text"/>
-              <toolTipText resource-bundle="com/l7tech/console/resources/AddWssSecurityTokenDialog" key="issuerSerialRadio.tooltip"/>
-            </properties>
-          </component>
-        </children>
-      </grid>
       <component id="f2b36" class="javax.swing.JComboBox" binding="tokenTypeCombo">
         <constraints>
           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
@@ -61,21 +23,302 @@
           <text resource-bundle="com/l7tech/console/resources/AddWssSecurityTokenDialog" key="tokenTypeLabel.text"/>
         </properties>
       </component>
-      <component id="e5446" class="javax.swing.JCheckBox" binding="includePasswordCheckBox">
-        <constraints>
-          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <text value="Include &amp;Password"/>
-        </properties>
-      </component>
-      <hspacer id="9770b">
+      <hspacer id="3892e">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false">
-            <minimum-size width="320" height="-1"/>
+            <minimum-size width="600" height="-1"/>
           </grid>
         </constraints>
       </hspacer>
+      <tabbedpane id="1b412" binding="propertiesTabbedPane">
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <preferred-size width="200" height="200"/>
+          </grid>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <grid id="cc347" layout-manager="GridLayoutManager" row-count="10" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="5" left="5" bottom="5" right="5"/>
+            <constraints>
+              <tabbedpane title="Username Token"/>
+            </constraints>
+            <properties/>
+            <border type="none" title="Username Token"/>
+            <children>
+              <grid id="5011b" layout-manager="GridLayoutManager" row-count="6" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="3" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="515bd" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <labelFor value="75d41"/>
+                      <text resource-bundle="com/l7tech/console/panels/AddWssUsernameTokenPropertiesDialog" key="username.label"/>
+                    </properties>
+                  </component>
+                  <component id="75d41" class="javax.swing.JTextField" binding="usernameTextField">
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                        <preferred-size width="150" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <component id="1387a" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <labelFor value="64b43"/>
+                      <text resource-bundle="com/l7tech/console/panels/AddWssUsernameTokenPropertiesDialog" key="password.label"/>
+                    </properties>
+                  </component>
+                  <component id="2fdca" class="javax.swing.JCheckBox" binding="showPasswordCheckBox">
+                    <constraints>
+                      <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/console/panels/AddWssUsernameTokenPropertiesDialog" key="showPassword.label"/>
+                    </properties>
+                  </component>
+                  <component id="d1b71" class="javax.swing.JCheckBox" binding="includeNonceCheckBox">
+                    <constraints>
+                      <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/console/panels/AddWssUsernameTokenPropertiesDialog" key="includeNonce.label"/>
+                    </properties>
+                  </component>
+                  <component id="d9520" class="javax.swing.JCheckBox" binding="includeCreatedCheckBox">
+                    <constraints>
+                      <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/console/panels/AddWssUsernameTokenPropertiesDialog" key="includeCreated.label"/>
+                    </properties>
+                  </component>
+                  <component id="253d7" class="javax.swing.JCheckBox" binding="digestPasswordCheckBox">
+                    <constraints>
+                      <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/console/panels/AddWssUsernameTokenPropertiesDialog" key="digest.label"/>
+                    </properties>
+                  </component>
+                  <component id="64b43" class="javax.swing.JPasswordField" binding="passwordField">
+                    <constraints>
+                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                        <preferred-size width="150" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <component id="d2a11" class="javax.swing.JCheckBox" binding="encryptUsernameTokenCheckBox">
+                    <constraints>
+                      <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text resource-bundle="com/l7tech/console/panels/AddWssUsernameTokenPropertiesDialog" key="encrypt.label"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <component id="4d49c" class="javax.swing.JRadioButton" binding="useLastGatheredRequestRadioButton" default-binding="true">
+                <constraints>
+                  <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <selected value="true"/>
+                  <text value="Use &amp;Last Gathered Request Credentials"/>
+                </properties>
+              </component>
+              <component id="b9ff0" class="javax.swing.JRadioButton" binding="useSpecifiedCredentialsRadioButton" default-binding="true">
+                <constraints>
+                  <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="Use Specified &amp;Credentials:"/>
+                </properties>
+              </component>
+              <component id="e5446" class="javax.swing.JCheckBox" binding="includePasswordCheckBox">
+                <constraints>
+                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="Include Pass&amp;word"/>
+                </properties>
+              </component>
+              <component id="81389" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/console/resources/AddWssTimestampDialog" key="certGroup.title"/>
+                </properties>
+              </component>
+              <component id="bf9fb" class="javax.swing.JRadioButton" binding="bstRadio">
+                <constraints>
+                  <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="3" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <selected value="true"/>
+                  <text resource-bundle="com/l7tech/console/resources/AddWssSecurityTokenDialog" key="bstRadio.text"/>
+                  <toolTipText resource-bundle="com/l7tech/console/resources/AddWssTimestampDialog" key="bstRadio.tooltip"/>
+                </properties>
+              </component>
+              <component id="45509" class="javax.swing.JRadioButton" binding="strRadio">
+                <constraints>
+                  <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="3" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/console/resources/AddWssSecurityTokenDialog" key="strRadio.text"/>
+                  <toolTipText resource-bundle="com/l7tech/console/resources/AddWssTimestampDialog" key="strRadio.tooltip"/>
+                </properties>
+              </component>
+              <component id="1d111" class="javax.swing.JRadioButton" binding="issuerSerialRadio">
+                <constraints>
+                  <grid row="9" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="3" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text resource-bundle="com/l7tech/console/resources/AddWssSecurityTokenDialog" key="issuerSerialRadio.text"/>
+                  <toolTipText resource-bundle="com/l7tech/console/resources/AddWssSecurityTokenDialog" key="issuerSerialRadio.tooltip"/>
+                </properties>
+              </component>
+              <vspacer id="15d07">
+                <constraints>
+                  <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
+                    <preferred-size width="-1" height="8"/>
+                  </grid>
+                </constraints>
+              </vspacer>
+              <vspacer id="acace">
+                <constraints>
+                  <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
+                    <preferred-size width="-1" height="8"/>
+                  </grid>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+          <grid id="d53a7" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="5" left="5" bottom="5" right="5"/>
+            <constraints>
+              <tabbedpane title="Secure Conversation"/>
+            </constraints>
+            <properties/>
+            <border type="none" title="WS-SecureConversation Security Context"/>
+            <children>
+              <component id="853f1" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <labelFor value="d7ff1"/>
+                  <text value="Session &amp;Variable Name:"/>
+                </properties>
+              </component>
+              <component id="d7ff1" class="javax.swing.JTextField" binding="wsscSessionVariableField">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties/>
+              </component>
+              <vspacer id="5e3d9">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+          <grid id="daec8" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="5" left="5" bottom="5" right="5"/>
+            <constraints>
+              <tabbedpane title="SAML Assertion"/>
+            </constraints>
+            <properties/>
+            <border type="none" title="SAML Assertion"/>
+            <children>
+              <component id="4fb6f" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="SAML Assertion XML:"/>
+                </properties>
+              </component>
+              <scrollpane id="97e42">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="6500b" class="javax.swing.JTextArea" binding="samlAssertionXmlTextArea">
+                    <constraints/>
+                    <properties/>
+                  </component>
+                </children>
+              </scrollpane>
+            </children>
+          </grid>
+          <grid id="91acb" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="5" left="5" bottom="5" right="5"/>
+            <constraints>
+              <tabbedpane title="Encrypted Key"/>
+            </constraints>
+            <properties/>
+            <border type="none" title="Encrypted Key"/>
+            <children>
+              <component id="533d9" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="3" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="&lt;html&gt;When the security requirements are next applied to the target message, a new EncryptedKey&lt;br/&gt;&#10;will be generated, encrypted for the encryption recipient, and included in the message.&#10;&lt;p&gt; &lt;br/&gt;&lt;/p&gt;&#10;The Gateway will cache the generated key for a period of time and will recognize it when processing&lt;br/&gt;future incoming messages that refer to it by its EncryptedKeySHA1.&#10;"/>
+                </properties>
+              </component>
+              <vspacer id="12e42">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+        </children>
+      </tabbedpane>
+      <component id="167e3" class="javax.swing.JCheckBox" binding="signTokenCheckBox">
+        <constraints>
+          <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="Include Security Token In &amp;Message Signature"/>
+        </properties>
+      </component>
+      <vspacer id="bb279">
+        <constraints>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </vspacer>
     </children>
   </grid>
+  <buttonGroups>
+    <group name="usernameTokenCredentialSourceButtonGroup">
+      <member id="4d49c"/>
+      <member id="b9ff0"/>
+    </group>
+    <group name="encryptedKeyLocationButtonGroup">
+      <member id="d0b8e"/>
+      <member id="cd38c"/>
+    </group>
+  </buttonGroups>
 </form>

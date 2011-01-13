@@ -537,10 +537,10 @@ public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRst
 
     private X509Certificate getClientCertificate( final PolicyEnforcementContext context,
                                                   final Map<String, String> parameters ) throws PolicyAssertionException {
-        final EncryptionContext encryptionContext;
+        final AddWssEncryptionContext encryptionContext;
         try {
            encryptionContext = buildEncryptionContext( context );
-        } catch ( MultipleTokensException e ) {
+        } catch ( AddWssEncryptionSupport.MultipleTokensException e ) {
             RstSoapMessageProcessor.generateSoapFaultResponse(
                 context,
                 parameters,
@@ -563,7 +563,7 @@ public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRst
     }
 
     @Override
-    protected Audit getAuditor() {
+    public Audit getAuditor() {
         return auditor;
     }
 

@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -12,6 +13,7 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.HexUtils;
@@ -34,15 +36,36 @@ public class ServerAddWssUsernameToken extends ServerAddWssEncryption<AddWssUser
         super( assertion, assertion, assertion, assertion, logger );
         auditor = new Auditor(this, spring, logger);
         variableNames = assertion.getVariablesUsed();
-        usernameHasVariables = assertion.getUsername() != null && assertion.getUsername().indexOf( "${" ) > -1;
-        passwordHasVariables = assertion.getPassword() != null && assertion.getPassword().indexOf( "${" ) > -1;
     }
 
     @Override
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
                                               final Message message,
                                               final String messageDescription,
-                                              final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
+                                              final AuthenticationContext authContext ) throws IOException, PolicyAssertionException
+    {
+        String password = assertion.isIncludePassword() ? assertion.getPassword() : null;
+        return applyUsernameTokenSpecifiedCredentialsDecorationRequirements(addWssEncryptionSupport, context, message, messageDescription, assertion.getRecipientContext(),
+                assertion.getUsername(), password, variableNames, assertion.isIncludeCreated(), assertion.isEncrypt(), assertion.isIncludeNonce(), assertion.isDigest(), this);
+    }
+
+    // Apply decoration requriements for a (possibly-encrypted) username token.
+    static AssertionStatus applyUsernameTokenSpecifiedCredentialsDecorationRequirements(AddWssEncryptionSupport addWssEncryptionSupport,
+                                                           PolicyEnforcementContext context,
+                                                           Message message,
+                                                           String messageDescription,
+                                                           XmlSecurityRecipientContext recipientContext,
+                                                           String usernameTemplate,
+                                                           String passwordTemplate,
+                                                           String[] variableNames,
+                                                           boolean includeCreated,
+                                                           boolean encrypt,
+                                                           boolean includeNonce,
+                                                           boolean digest,
+                                                           ServerAssertion deferredAssertionOwner)
+            throws IOException, PolicyAssertionException
+    {
+        final Audit auditor = addWssEncryptionSupport.getAuditor();
         try {
             if (!message.isSoap()) {
                 auditor.logAndAudit( AssertionMessages.ADD_WSS_USERNAME_NOT_SOAP, messageDescription);
@@ -52,19 +75,14 @@ public class ServerAddWssUsernameToken extends ServerAddWssEncryption<AddWssUser
             throw new CausedIOException(e);
         }
 
-        final XmlSecurityRecipientContext recipientContext = assertion.getRecipientContext();
         final SecurityKnob securityKnob = message.getSecurityKnob();
         final DecorationRequirements decorationRequirements = securityKnob.getAlternateDecorationRequirements( recipientContext );
 
-        final String username = usernameHasVariables ?
-                ExpandVariables.process(assertion.getUsername(), context.getVariableMap(variableNames, auditor), auditor) :
-                assertion.getUsername();
-        final String password = passwordHasVariables && assertion.isIncludePassword() ?
-                ExpandVariables.process(assertion.getPassword(), context.getVariableMap(variableNames, auditor), auditor) :
-                assertion.getPassword();
+        final String username = usernameTemplate == null ? null : ExpandVariables.process(usernameTemplate, context.getVariableMap(variableNames, auditor), auditor);
+        final String password = passwordTemplate == null ? null : ExpandVariables.process(passwordTemplate, context.getVariableMap(variableNames, auditor), auditor);
 
         final String created;
-        if ( assertion.isIncludeCreated() ) {
+        if ( includeCreated ) {
             String millisDate = ISO8601Date.format(new Date());
             //truncate the milliseconds from our timesamp...
             //since it seems to cause problems w/WSE3 and some customers
@@ -73,13 +91,13 @@ public class ServerAddWssUsernameToken extends ServerAddWssEncryption<AddWssUser
             created = "";
         }
 
-        if ( assertion.isEncrypt() ) {
-            final EncryptionContext encryptionContext;
+        if ( encrypt ) {
+            final AddWssEncryptionContext encryptionContext;
             try {
-                encryptionContext = buildEncryptionContext( context );
+                encryptionContext = addWssEncryptionSupport.buildEncryptionContext( context );
                 DecorationRequirements wssReq = message.getSecurityKnob().getAlternateDecorationRequirements(encryptionContext.getRecipientContext());
-                applyDecorationRequirements( context, wssReq, encryptionContext );
-            } catch ( MultipleTokensException mte ) {
+                addWssEncryptionSupport.applyDecorationRequirements( context, wssReq, encryptionContext, deferredAssertionOwner);
+            } catch ( AddWssEncryptionSupport.MultipleTokensException mte ) {
                 auditor.logAndAudit(AssertionMessages.ADD_WSS_USERNAME_MORE_THAN_ONE_TOKEN);
                 return AssertionStatus.BAD_REQUEST;
             }
@@ -94,14 +112,14 @@ public class ServerAddWssUsernameToken extends ServerAddWssEncryption<AddWssUser
                 username != null ? username : null,
                 password != null ? password.toCharArray() : null,
                 created,
-                assertion.isIncludeNonce() ? HexUtils.randomBytes(16) : null,
-                assertion.isDigest() ) );
+                includeNonce ? HexUtils.randomBytes(16) : null,
+                digest ) );
 
         return AssertionStatus.NONE;
     }
 
     @Override
-    protected Auditor getAuditor() {
+    public Auditor getAuditor() {
         return auditor;
     }
 
@@ -111,7 +129,4 @@ public class ServerAddWssUsernameToken extends ServerAddWssEncryption<AddWssUser
 
     private final Auditor auditor;
     private final String[] variableNames;
-    private final boolean usernameHasVariables;
-    private final boolean passwordHasVariables;
-
 }

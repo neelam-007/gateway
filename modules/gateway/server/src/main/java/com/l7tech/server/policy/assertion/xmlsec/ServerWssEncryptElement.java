@@ -54,10 +54,10 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
                                               final Message message,
                                               final String messageDescription,
                                               final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
-        final EncryptionContext encryptionContext;
+        final AddWssEncryptionContext encryptionContext;
         try {
             encryptionContext = buildEncryptionContext( context );
-        } catch ( MultipleTokensException mte ) {
+        } catch ( AddWssEncryptionSupport.MultipleTokensException mte ) {
             auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
             return AssertionStatus.BAD_REQUEST;
         }
@@ -87,7 +87,7 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
     private AssertionStatus addDecorationRequirements(
                                               final Message message,
                                               final String messageDescription,
-                                              final EncryptionContext encryptionContext,
+                                              final AddWssEncryptionContext encryptionContext,
                                               final PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException
     {

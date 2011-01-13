@@ -80,12 +80,6 @@ public class WssDecoratorImpl implements WssDecorator {
             this.message = message;
             this.dreq = dreq;
         }
-
-        String getBase64EncodingTypeUri() {
-            return SoapConstants.SECURITY_NAMESPACE.equals(nsf.getWsseNs())
-                    ? SoapConstants.ENCODINGTYPE_BASE64BINARY
-                    : SoapConstants.ENCODINGTYPE_BASE64BINARY_2;     // lyonsm: ??? what is this for?  It hardcodes wsse: prefix!
-        }
     }
 
     /**

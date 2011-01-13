@@ -34,7 +34,7 @@ public class AddWssSecurityTokenPropertiesAction extends NodeActionWithMetaSuppo
     @Override
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
-        final AddWssSecurityTokenDialog dlg = new AddWssSecurityTokenDialog(f, true, (AddWssSecurityToken) node.asAssertion().clone(), !node.canEdit());
+        final AddWssSecurityTokenDialog dlg = new AddWssSecurityTokenDialog(f, (AddWssSecurityToken) node.asAssertion(), !node.canEdit());
         Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
@@ -44,8 +44,6 @@ public class AddWssSecurityTokenPropertiesAction extends NodeActionWithMetaSuppo
                 if (dlg.wasOKed()) {
                     AddWssSecurityToken newAss = dlg.getValue();
                     if (newAss == null) return;
-                    AddWssSecurityToken oldAss = (AddWssSecurityToken)node.asAssertion();
-                    oldAss.copyFrom(newAss);
                     JTree tree = TopComponents.getInstance().getPolicyTree();
                     if (tree != null) {
                         PolicyTreeModel model = (PolicyTreeModel)tree.getModel();

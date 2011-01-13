@@ -28,6 +28,7 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
     private JCheckBox signTimestampCheckBox;
     private JCheckBox signSecurityTokensCheckBox;
     private JCheckBox addTimestampCheckBox;
+    private JTabbedPane tabbedPane1;
 
     private static final String UNCHANGED = "<Unchanged>";
 

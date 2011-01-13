@@ -1,13 +1,20 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.KeyReference;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -16,16 +23,31 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * @author alex
  */
 @RequiresSOAP
-public class AddWssSecurityToken extends MessageTargetableAssertion implements WssDecorationConfig, PrivateKeyable {
-    public static final SecurityTokenType[] SUPPORTED_TOKEN_TYPES = new SecurityTokenType[] { SecurityTokenType.WSS_USERNAME };
+public class AddWssSecurityToken extends MessageTargetableAssertion implements WssDecorationConfig, PrivateKeyable, SecurityHeaderAddressable, RequestIdentityTargetable, UsesVariables, UsesEntities {
+    public static final SecurityTokenType[] SUPPORTED_TOKEN_TYPES = new SecurityTokenType[] {
+            SecurityTokenType.WSS_USERNAME,
+            SecurityTokenType.WSSC_CONTEXT,
+            SecurityTokenType.SAML_ASSERTION,
+            SecurityTokenType.WSS_ENCRYPTEDKEY
+    };
 
     private String keyReference = KeyReference.BST.getName();
-    private boolean protectTokens;
+    private boolean protectTokens = true;
     private SecurityTokenType tokenType = SecurityTokenType.WSS_USERNAME;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
+    private IdentityTarget identityTarget;
     private boolean includePassword;
     private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
     private String digestAlgorithmName;
+    private boolean useLastGatheredCredentials = true;
+    private boolean includeNonce = true;
+    private boolean includeCreated = true;
+    private boolean digest = false;
+    private boolean encrypt = false;
+    private String username;
+    private String password;
+    private String wsscSessionVariable;
+    private String samlAssertionTemplate;
 
     public AddWssSecurityToken() {
         super(TargetMessageType.RESPONSE, true);
@@ -119,13 +141,114 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
         privatekeyableSupport.setUsesDefaultKeyStore(usesDefaultKeyStore);
     }
 
-    public void copyFrom(AddWssSecurityToken other) {
-        this.keyReference = other.keyReference;
-        this.tokenType = other.tokenType;
-        this.recipientContext = other.recipientContext;
-        this.includePassword = other.includePassword;
-        this.protectTokens = other.protectTokens;
-        this.privatekeyableSupport.copyFrom( other.privatekeyableSupport );
+    public IdentityTarget getIdentityTarget() {
+        return identityTarget;
+    }
+
+    public void setIdentityTarget(IdentityTarget identityTarget) {
+        this.identityTarget = identityTarget;
+    }
+
+    public boolean isIncludeNonce() {
+        return includeNonce;
+    }
+
+    public void setIncludeNonce(boolean includeNonce) {
+        this.includeNonce = includeNonce;
+    }
+
+    public boolean isIncludeCreated() {
+        return includeCreated;
+    }
+
+    public void setIncludeCreated(boolean includeCreated) {
+        this.includeCreated = includeCreated;
+    }
+
+    public boolean isDigest() {
+        return digest;
+    }
+
+    public void setDigest(boolean digest) {
+        this.digest = digest;
+    }
+
+    public boolean isEncrypt() {
+        return encrypt;
+    }
+
+    public void setEncrypt(boolean encrypt) {
+        this.encrypt = encrypt;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public boolean isUseLastGatheredCredentials() {
+        return useLastGatheredCredentials;
+    }
+
+    public void setUseLastGatheredCredentials(boolean useLastGatheredCredentials) {
+        this.useLastGatheredCredentials = useLastGatheredCredentials;
+    }
+
+    public String getWsscSessionVariable() {
+        return wsscSessionVariable;
+    }
+
+    public void setWsscSessionVariable(String wsscSessionVariable) {
+        this.wsscSessionVariable = wsscSessionVariable;
+    }
+
+    public String getSamlAssertionTemplate() {
+        return samlAssertionTemplate;
+    }
+
+    public void setSamlAssertionTemplate(String samlAssertionTemplate) {
+        this.samlAssertionTemplate = samlAssertionTemplate;
+    }
+
+    @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.USERGROUP)
+    public EntityHeader[] getEntitiesUsed() {
+        return identityTarget != null ?
+                identityTarget.getEntitiesUsed():
+                new EntityHeader[0];
+    }
+
+    @Override
+    public void replaceEntity( final EntityHeader oldEntityHeader,
+                               final EntityHeader newEntityHeader ) {
+        if ( identityTarget != null ) {
+            identityTarget.replaceEntity(oldEntityHeader, newEntityHeader);
+        }
+    }
+
+    @Override
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    public String[] getVariablesUsed() {
+        List<String> vars = new ArrayList<String>( Arrays.asList(super.getVariablesUsed()));
+
+        StringBuilder allRefs = new StringBuilder();
+        if ( username != null ) allRefs.append( username );
+        if ( password != null ) allRefs.append( password );
+        String[] referencedVariables = Syntax.getReferencedNames( allRefs.toString() );
+        vars.addAll( Arrays.asList(referencedVariables));
+
+        return vars.toArray(new String[vars.size()]);
     }
 
     final static String baseName = "Add Signed Security Token";
@@ -142,14 +265,14 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
         DefaultAssertionMetadata meta = super.defaultMeta();
 
         meta.put(PALETTE_NODE_NAME, baseName);
-        meta.put(DESCRIPTION, "Add a signed security token to the message.");
+        meta.put(DESCRIPTION, "Add a security token to the message.");
         meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(PALETTE_NODE_SORT_PRIORITY, 60000);
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.AddWssSecurityTokenPropertiesAction");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Signed Security Token Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Security Token Properties");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/About16.gif");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssDecorationAssertionValidator");
 

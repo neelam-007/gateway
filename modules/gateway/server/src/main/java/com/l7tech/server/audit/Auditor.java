@@ -3,10 +3,7 @@
  */
 package com.l7tech.server.audit;
 
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.AuditDetail;
-import com.l7tech.gateway.common.audit.AuditDetailEvent;
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.*;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -16,7 +13,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-public class Auditor implements Audit {
+public class Auditor implements Audit, AuditHaver {
     private final ApplicationEventPublisher eventPub;
     private final Object source;
     private final Logger logger;
@@ -132,6 +129,11 @@ public class Auditor implements Audit {
                 logger.log( record );
             }
         }
+    }
+
+    @Override
+    public Audit getAuditor() {
+        return this;
     }
 
     /**

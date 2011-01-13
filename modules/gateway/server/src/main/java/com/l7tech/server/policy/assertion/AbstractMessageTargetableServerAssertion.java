@@ -1,17 +1,17 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.AuthenticationContext;
-import com.l7tech.message.Message;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.MessageTargetable;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
-import java.io.*;
+import java.io.IOException;
 
 /**
  * Support class for implementation of MessageTargetable server assertions.
