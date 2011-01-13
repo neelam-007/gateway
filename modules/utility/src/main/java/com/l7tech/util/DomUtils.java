@@ -163,6 +163,24 @@ public class DomUtils {
 
     /**
      * Finds one and only one child {@link Element} of a parent {@link Element}
+     *
+     * The parent must belong to a DOM produced by a namespace-aware parser.
+     *
+     * @param parent the {@link Element} in which to search for children. Must be non-null.
+     * @return The only matching child {@link Element}
+     * @throws TooManyChildElementsException if multiple child elements are found
+     * @throws MissingRequiredElementException if no matching child elements are found
+     */
+    public static Element findExactlyOneChildElement( final Element parent ) throws MissingRequiredElementException, TooManyChildElementsException {
+        final Element element = findOnlyOneChildElement( parent );
+        if ( element == null ) {
+            throw new MissingRequiredElementException(MessageFormat.format("Required child of element {0} not found",  parent.getLocalName()));
+        }
+        return element;
+    }
+
+    /**
+     * Finds one and only one child {@link Element} of a parent {@link Element}
      * with the specified name that is in the specified namespace, and throws
      * {@link com.l7tech.util.MissingRequiredElementException} if such an element cannot be found.
      *

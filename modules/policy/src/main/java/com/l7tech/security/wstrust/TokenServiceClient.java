@@ -27,6 +27,7 @@ import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -54,6 +55,7 @@ public class TokenServiceClient {
 
     private final WsTrustConfig wstConfig;
     private final GenericHttpClient httpClient;
+    private final String soapNs;
 
     /**
      * Create a TokenServiceClient that can only create requests and parse responses (no HTTP support).
@@ -61,7 +63,7 @@ public class TokenServiceClient {
      * @param wstConfig  the WS-Trust version to use for the messages.  Must not be null.
      */
     public TokenServiceClient( final WsTrustConfig wstConfig ) {
-        this(wstConfig, null);
+        this(wstConfig, null, null);
     }
 
     /**
@@ -69,15 +71,33 @@ public class TokenServiceClient {
      * server.
      *
      * @param wstConfig  the WS-Trust version to use for the messages.  Must not be null.
-     * @param httpClient the HTTP client to use for remote HTTP calls.  Must not be null.
+     * @param httpClient the HTTP client to use for remote HTTP calls.  Must not be null if HTTP support is required.
      */
     public TokenServiceClient( final WsTrustConfig wstConfig,
                                final GenericHttpClient httpClient ) {
+        this(wstConfig, httpClient, null);
+    }
+
+    /**
+     * Create a TokenServiceClient that can create requests and parse responses and talk over HTTP to a WS-Trust
+     * server.
+     *
+     * @param wstConfig  the WS-Trust version to use for the messages.  Must not be null.
+     * @param httpClient the HTTP client to use for remote HTTP calls.  Must not be null if HTTP support is required.
+     * @param soapVersion the SOAP version to use, or null for the system default.
+     */
+    public TokenServiceClient( final WsTrustConfig wstConfig,
+                               final GenericHttpClient httpClient,
+                               final SoapVersion soapVersion ) {
         if (wstConfig == null) throw new NullPointerException();
         this.wstConfig = wstConfig;
         this.httpClient = httpClient;
+        this.soapNs = soapVersion != null ?
+                soapVersion.getNamespaceUri() :
+                SyspropUtil.getBoolean( "com.l7tech.security.wstrust.useSoap12", false ) ?
+                    SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE :
+                    SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
     }
-
 
     /** Internal checked exception for reliable handling of server cert rediscovery. */
     public static class UnrecognizedServerCertException extends Exception {
@@ -101,7 +121,8 @@ public class TokenServiceClient {
      * @param clientCertificate  the certificate to use to sign the request
      * @param clientPrivateKey   the private key of the certificate to use to sign the request
      * @param desiredTokenType   the token type being applied for
-     * @param base
+     * @param requestType        the type of RST message
+     * @param base               the base security token, null for none
      * @param appliesToAddress   wsa:Address to use for wsp:AppliesTo, or null to leave out the AppliesTo
      * @param wstIssuerAddress   wsa:Address to use for wst:Issuer, or null to leave out the Issuer
      * @return a signed SOAP message containing a wst:RequestSecurityToken
@@ -118,8 +139,7 @@ public class TokenServiceClient {
             throws CertificateException
     {
         try {
-            Document msg = wstConfig.makeRequestSecurityTokenMessage(desiredTokenType,
-                                                                     requestType, appliesToAddress, wstIssuerAddress, base);
+            Document msg = wstConfig.makeRequestSecurityTokenMessage(soapNs, desiredTokenType, requestType, appliesToAddress, wstIssuerAddress, null, 0, 0, base);
             Element env = msg.getDocumentElement();
             Element body = DomUtils.findFirstChildElementByName(env, env.getNamespaceURI(), "Body");
 
@@ -157,11 +177,11 @@ public class TokenServiceClient {
      * Create a SOAP envelope with no security header containing a RequestSecurityToken message with the specified
      * parameters.
      *
-     * @param desiredTokenType
-     * @param requestType
-     * @param base
-     * @param appliesToAddress
-     * @param wstIssuerAddress
+     * @param desiredTokenType   the token type being applied for
+     * @param requestType        the type of RST message
+     * @param base               the base security token, null for none
+     * @param appliesToAddress   wsa:Address to use for wsp:AppliesTo, or null to leave out the AppliesTo
+     * @param wstIssuerAddress   wsa:Address to use for wst:Issuer, or null to leave out the Issuer
      * @return a DOM containing a complete SOAP envelope.  Never null.
      */
     public Document createRequestSecurityTokenMessage( final SecurityTokenType desiredTokenType,
@@ -170,13 +190,52 @@ public class TokenServiceClient {
                                                        final String appliesToAddress,
                                                        final String wstIssuerAddress ) {
         try {
-            return wstConfig.makeRequestSecurityTokenMessage(desiredTokenType,
+            return wstConfig.makeRequestSecurityTokenMessage(soapNs,
+                                                             desiredTokenType,
                                                              requestType,
                                                              appliesToAddress,
                                                              wstIssuerAddress,
+                                                             null,
+                                                             0,
+                                                             0,
                                                              base);
-        } catch (IOException e) {
+        } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
+        }
+    }
+
+    /**
+     * Create a SOAP envelope with no security header containing a RequestSecurityToken message with the specified
+     * parameters.
+     *
+     * @param desiredTokenType   the token type being applied for
+     * @param requestType        the type of RST message
+     * @param base               the base security token, null for none
+     * @param appliesToAddress   wsa:Address to use for wsp:AppliesTo, or null to leave out the AppliesTo
+     * @param wstIssuerAddress   wsa:Address to use for wst:Issuer, or null to leave out the Issuer
+     * @param entropy            the client entropy to use, null for none
+     * @param keySize            the desired key size in bits, 0 for none
+     * @param lifetime           the desired lifetime of the token, 0 for none
+     * @return a DOM containing a complete SOAP envelope.  Never null.
+     */
+    public Document createRequestSecurityTokenMessage( final SecurityTokenType desiredTokenType,
+                                                       final WsTrustRequestType requestType,
+                                                       final XmlSecurityToken base,
+                                                       final String appliesToAddress,
+                                                       final String wstIssuerAddress,
+                                                       final byte[] entropy,
+                                                       final int keySize,
+                                                       final long lifetime ) {
+        try {
+            return wstConfig.makeRequestSecurityTokenMessage(soapNs,
+                                                             desiredTokenType,
+                                                             requestType,
+                                                             appliesToAddress,
+                                                             wstIssuerAddress,
+                                                             entropy,
+                                                             keySize,
+                                                             lifetime,
+                                                             base);
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         }

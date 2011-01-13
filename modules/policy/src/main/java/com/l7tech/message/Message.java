@@ -144,12 +144,28 @@ public final class Message implements Closeable {
     public void initialize(Document body,
                            long firstPartMaxBytes)
     {
+        initialize( body, firstPartMaxBytes, ContentTypeHeader.XML_DEFAULT );
+    }
+
+    /**
+     * Initialize, or re-initialize, a Message with a memory-based MIME facet and an XML facet initialized with
+     * the specified Document.
+     * <p>
+     * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
+     * any previously existing facets of this Message will be lost and replaced with a single MIME facet.
+     *
+     * @param body the Document to replace this Message's current content
+     * @param firstPartMaxBytes  the byte limit of the xml part.    0 for unlimited
+     * @param contentTypeHeader the XML content type to use
+     */
+    public void initialize(Document body, long firstPartMaxBytes, ContentTypeHeader contentTypeHeader)
+    {
         try {
             HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
             HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
             if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
             rootFacet = null;
-            rootFacet = new MimeFacet(this, new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream(),firstPartMaxBytes);
+            rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentTypeHeader, new EmptyInputStream(),firstPartMaxBytes);
             rootFacet = new XmlFacet(this, rootFacet);
             invalidateCachedKnobs();
             if (reqKnob != null) attachHttpRequestKnob(reqKnob);

@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.assertion.annotation.ProcessesResponse;
 import com.l7tech.policy.wsp.TypeMappingUtils;
+import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -24,6 +25,14 @@ import java.lang.reflect.InvocationTargetException;
  *
  */
 public class AllAssertionsTest {
+
+    @Test
+    public void testMetadataConstruction() throws Exception {
+        final Assertion[] assertions = AllAssertions.SERIALIZABLE_EVERYTHING;
+        for ( final Assertion assertion : assertions ) {
+            assertion.meta();
+        }
+    }
 
     @Test
     public void testAssertionMetadataConsistency() throws Throwable {
@@ -131,6 +140,7 @@ public class AllAssertionsTest {
                             o1 instanceof SslAssertion.Option ||
                             o1 instanceof XpathExpression ||
                             o1 instanceof TimeUnit ||
+                            o1 instanceof SecurityTokenType ||
                             o1.getClass().isArray() ||
                             o1.getClass().isEnum() ||
                             o1.getClass().isPrimitive() ) {

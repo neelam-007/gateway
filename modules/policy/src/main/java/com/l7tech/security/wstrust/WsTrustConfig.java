@@ -1,40 +1,35 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.security.wstrust;
 
 import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
-import javax.xml.soap.SOAPConstants;
 import javax.xml.XMLConstants;
-import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Encapsulates a version of WS-Trust.
+ * Encapsulates a version of WS-Trust, currently shared and immutable.
  */
 public abstract class WsTrustConfig {
     private final String wstNs;
-    private String wspNs;
-    private String wsaNs;
-    private String wsscNs = SoapConstants.WSSC_NAMESPACE;
-    private String soapNs = SyspropUtil.getBoolean( "com.l7tech.security.wstrust.useSoap12", false ) ? 
-            SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE :
-            SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
+    private final String wspNs;
+    private final String wsaNs;
+    private final String wsscNs = SoapConstants.WSSC_NAMESPACE;
 
-    public WsTrustConfig(String wstNs, String wspNs, String wsaNs) {
+    public WsTrustConfig( final String wstNs,
+                          final String wspNs,
+                          final String wsaNs) {
         this.wstNs = wstNs;
         this.wspNs = wspNs;
         this.wsaNs = wsaNs;
@@ -52,20 +47,8 @@ public abstract class WsTrustConfig {
         return wstNs;
     }
 
-    protected void setWsscNs(String wsscNs) {
-        this.wsscNs = wsscNs;
-    }
-
     public String getWsscNs() {
         return wsscNs;
-    }
-
-    public String getSoapNs() {
-        return soapNs;
-    }
-
-    public void setSoapNs( String soapNs ) {
-        this.soapNs = soapNs;
     }
 
     /**
@@ -77,8 +60,9 @@ public abstract class WsTrustConfig {
 
 
 
-    protected Document makeRequestSecurityTokenResponseMessage(String tokenString) throws SAXException {
-        String start = "<soap:Envelope xmlns:soap=\"" + getSoapNs() + "\">" +
+    protected Document makeRequestSecurityTokenResponseMessage(final String soapNs,
+                                                               final String tokenString) throws SAXException {
+        String start = "<soap:Envelope xmlns:soap=\"" + soapNs + "\">" +
                 "<soap:Body>" +
                 "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + getWstNs() + "\" " +
                 "xmlns:wsu=\"" + SoapConstants.WSU_NAMESPACE + "\" " +
@@ -97,20 +81,22 @@ public abstract class WsTrustConfig {
         return XmlUtil.stringToDocument(responseXml.toString());
     }
 
-
     /** @return a SOAP envelope containing a RequestSecurityToken body. */
-    protected  Document makeRequestSecurityTokenMessage(SecurityTokenType desiredTokenType,
-                                                        WsTrustRequestType requestType,
-                                                        String appliesToAddress,
-                                                        String wstIssuerAddress,
-                                                        XmlSecurityToken base)
-            throws IOException, SAXException {
+    protected  Document makeRequestSecurityTokenMessage( final String soapNs,
+                                                         final SecurityTokenType desiredTokenType,
+                                                         final WsTrustRequestType requestType,
+                                                         final String appliesToAddress,
+                                                         final String wstIssuerAddress,
+                                                         final byte[] entropy,
+                                                         final int keySize,
+                                                         final long lifetime,
+                                                         final XmlSecurityToken base) throws SAXException {
         // TODO fix or remove this hack: if a saml: qname will be used, declare saml NS in root element
         String extraNs = "";
         if (desiredTokenType != null && SamlSecurityToken.class.isAssignableFrom(desiredTokenType.getInterfaceClass()))
             extraNs += " xmlns:saml=\"" + desiredTokenType.getWstPrototypeElementNs() + "\"";
 
-        Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + getSoapNs() + "\"" + extraNs + ">" +
+        Document msg = XmlUtil.parse("<soap:Envelope xmlns:soap=\"" + soapNs + "\"" + extraNs + ">" +
                                                     "<soap:Header/><soap:Body>" +
                                                     "<wst:RequestSecurityToken xmlns:wst=\"" + getWstNs() + "\">" +
                                                     "</wst:RequestSecurityToken>" +
@@ -118,6 +104,22 @@ public abstract class WsTrustConfig {
         Element env = msg.getDocumentElement();
         Element body = DomUtils.findFirstChildElementByName(env, env.getNamespaceURI(), "Body");
         Element rst = DomUtils.findFirstChildElement(body);
+
+        // Add TokenType, if meaningful with this token type
+        if (desiredTokenType != null) {
+            final String tokenTypeUri = desiredTokenType.getWstTokenTypeUri(); // TODO [steve] update the token URIs to match specs?
+            if (tokenTypeUri != null) {
+                // Add TokenType element
+                Element tokenType = DomUtils.createAndAppendElementNS(rst, "TokenType", getWstNs(), "wst");
+                tokenType.appendChild(DomUtils.createTextNode(msg, tokenTypeUri));
+            }
+        }
+
+        // Add RequestType
+        {
+            final Element rt = DomUtils.createAndAppendElementNS(rst, "RequestType", rst.getNamespaceURI(), "wst");
+            rt.appendChild(DomUtils.createTextNode(msg, getRequestTypeUri(requestType)));
+        }
 
         // Add AppliesTo, if provided
         if (appliesToAddress != null && appliesToAddress.length() > 0) {
@@ -134,14 +136,29 @@ public abstract class WsTrustConfig {
             address.appendChild(DomUtils.createTextNode(address, wstIssuerAddress));
         }
 
-        // Add TokenType, if meaningful with this token type
-        if (desiredTokenType != null) {
-            final String tokenTypeUri = desiredTokenType.getWstTokenTypeUri();
-            if (tokenTypeUri != null) {
-                // Add TokenType element
-                Element tokenType = DomUtils.createAndPrependElementNS(rst, "TokenType", getWstNs(), "wst");
-                tokenType.appendChild(DomUtils.createTextNode(msg, tokenTypeUri));
+        // Add Entropy, if any
+        if ( entropy != null ) {
+            final Element entropyElement = DomUtils.createAndAppendElementNS(rst, "Entropy", getWstNs(), "wst");
+            final Element binarySecretElement = DomUtils.createAndAppendElementNS(entropyElement, "BinarySecret", getWstNs(), "wst");
+            String typeNonce = getWstNs() + "/Nonce";
+            if ( SoapUtil.WST_NAMESPACE.equals( getWstNs() ) ) {
+                typeNonce = SoapConstants.WST_BINARY_SECRET_NONCE_TYPE_URI;
             }
+            binarySecretElement.setAttributeNS( null, "Type", typeNonce );
+            DomUtils.setTextContent( binarySecretElement, HexUtils.encodeBase64( entropy, true ));
+        }
+
+        // Add KeySize
+        if ( keySize > 64 ) {
+            final Element keySizeElement = DomUtils.createAndAppendElementNS(rst, "KeySize", getWstNs(), "wst");
+            DomUtils.setTextContent( keySizeElement, Integer.toString(keySize) );
+        }
+
+        // Add Lifetime
+        if ( lifetime > 30000 ) {
+            final Element lifetimeElement = DomUtils.createAndAppendElementNS(rst, "Lifetime", getWstNs(), "wst");
+            final Element expiresElement = DomUtils.createAndAppendElementNS(lifetimeElement, "Expires", SoapConstants.WSU_NAMESPACE, "wsu");
+            DomUtils.setTextContent( expiresElement, ISO8601Date.format(new Date(System.currentTimeMillis()+lifetime)));
         }
 
         // Add Base, if provided.  Base is not required to be the same token type as the token type we are requesting.
@@ -190,12 +207,6 @@ public abstract class WsTrustConfig {
             }
 
             baseEl.appendChild(importedTokenElement);
-        }
-
-        // Add RequestType
-        {
-            Element rt = DomUtils.createAndAppendElementNS(rst, "RequestType", rst.getNamespaceURI(), "wst");
-            rt.appendChild(DomUtils.createTextNode(msg, getRequestTypeUri(requestType)));
         }
 
         return msg;

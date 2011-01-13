@@ -775,5 +775,14 @@ public class AssertionMessages extends Messages {
     public static final M STS_AUTHORIZATION_FAILURE  = m(9294, Level.WARNING, "Authorization Failure: {0}");
     public static final M STS_TOKEN_ISSUE_ERROR = m(9295, Level.WARNING, "Unable to issue token: {0}");
 
+    public static final M RST_BUILDER_ERROR  = m( 9330, Level.WARNING, "Error building RST: {0}" );
+    public static final M RST_BUILDER_OUTPUT = m( 9331, Level.WARNING, "Unable to create RST message variable ''{0}''" );
+
+    public static final M RSTR_PROCESSOR_NOT_SOAP         = m(9350, Level.WARNING, "{0} is not SOAP");
+    public static final M RSTR_PROCESSOR_BAD_XML          = m(9351, Level.WARNING, "{0} parse failure: {1}");
+    public static final M RSTR_PROCESSOR_INVALID          = m(9352, Level.WARNING, "Invalid response: {0}");
+    public static final M RSTR_PROCESSOR_ENCRYPTION_ERROR = m(9353, Level.WARNING, "Error processing encrypted key: {0}");
+    public static final M RSTR_PROCESSOR_UNEXPECTED_TOKEN = m(9354, Level.WARNING, "Expected token of type ''{0}'', but found: {1}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

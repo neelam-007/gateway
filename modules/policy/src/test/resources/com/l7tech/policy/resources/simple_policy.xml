@@ -170,7 +170,9 @@
                 <L7p:WsSecurity/>
                 <L7p:CreateSecurityContextToken/>
                 <L7p:CancelSecurityContext/>
+                <L7p:BuildRstSoapRequest/>
                 <L7p:BuildRstrSoapResponse/>
+                <L7p:ProcessRstrSoapResponse/>
                 <L7p:RemoveElement/>
                 <L7p:AddWssUsernameToken/>
                 <L7p:AuditRecordToXml/>

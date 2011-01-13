@@ -9,9 +9,6 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.TimeUnit;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
 
@@ -174,10 +171,6 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion implements
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
-
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, ASSERTION_BASIC_NAME);
         meta.put(AssertionMetadata.DESCRIPTION, "Build a SOAP response containing a RequestSecurityTokenResponse element in SOAP body.");
@@ -188,8 +181,6 @@ public class BuildRstrSoapResponse extends MessageTargetableAssertion implements
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-
-        //TODO: name factory
 
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/xmlelement.gif");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.BuildRstrSoapResponsePropertiesDialog");

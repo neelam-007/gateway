@@ -34,16 +34,17 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.Assert;
+import static org.junit.Assert.*;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.xml.soap.SOAPConstants;
+import javax.xml.XMLConstants;
 import java.io.InputStream;
 import java.security.PrivateKey;
 import java.security.GeneralSecurityException;
@@ -65,18 +66,17 @@ public class TokenServiceTest {
 
     @Test
     public void testTokenServiceClient() throws Exception {
-        doTestTokenServiceClient( WsTrustConfigFactory.getDefaultWsTrustConfig() );
+        doTestTokenServiceClient( WsTrustConfigFactory.getDefaultWsTrustConfig(), null );
     }
 
     @Test
     public void testTokenServiceClientSoap12() throws Exception {
         WsTrustConfig config = WsTrustConfigFactory.getDefaultWsTrustConfig();
-        config.setSoapNs( SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE );
-        doTestTokenServiceClient( config );
+        doTestTokenServiceClient( config, SoapVersion.SOAP_1_2 );
     }
 
-    private void doTestTokenServiceClient( final WsTrustConfig wsTrustConfig ) throws Exception {
-        final TokenServiceClient tokenServiceClient = new TokenServiceClient(wsTrustConfig);
+    private void doTestTokenServiceClient( final WsTrustConfig wsTrustConfig, final SoapVersion soapVersion ) throws Exception {
+        final TokenServiceClient tokenServiceClient = new TokenServiceClient(wsTrustConfig, null, soapVersion);
         
         Document requestMsg = tokenServiceClient.createRequestSecurityTokenMessage(TestDocuments.getDotNetServerCertificate(),
                                                                     TestDocuments.getDotNetServerPrivateKey(),
@@ -84,6 +84,10 @@ public class TokenServiceTest {
                                                                     WsTrustRequestType.ISSUE,
                                                                     null, null, null, null);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
+
+        if ( soapVersion != null ) {
+            assertEquals( "Correct soap namesapce", soapVersion.getNamespaceUri(), requestMsg.getDocumentElement().getNamespaceURI() );
+        }
 
         SecurityTokenResolver testTokenResolver = (SecurityTokenResolver)applicationContext.getBean("securityTokenResolver");
 
@@ -118,7 +122,7 @@ public class TokenServiceTest {
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, false);
 
         AssertionStatus status = service.respondToSecurityTokenRequest(context, authenticator, false, false);
-        Assert.assertEquals(status, AssertionStatus.NONE);
+        assertEquals(status, AssertionStatus.NONE);
 
         Document responseMsg = response.getXmlKnob().getDocumentWritable();
 
@@ -129,7 +133,7 @@ public class TokenServiceTest {
                                                                    TestDocuments.getDotNetServerPrivateKey(),
                                                                    TestDocuments.getDotNetServerCertificate());
 
-        Assert.assertTrue(responseObj instanceof TokenServiceClient.SecureConversationSession);
+        assertTrue(responseObj instanceof TokenServiceClient.SecureConversationSession);
         TokenServiceClient.SecureConversationSession session = (TokenServiceClient.SecureConversationSession)responseObj;
         log.info("Got session! Session id=" + session.getSessionId());
         log.info("Session expiry date=" + session.getExpiryDate());
@@ -149,7 +153,7 @@ public class TokenServiceTest {
                 SecurityTokenType.SAML_ASSERTION,
                 WsTrustRequestType.ISSUE,
                 null, null, null, null);
-        requestMsg.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
+        requestMsg.getDocumentElement().setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:saml", SamlConstants.NS_SAML);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
         final TokenService service = new TokenServiceImpl(new MockConfig(new Properties()),
@@ -176,7 +180,7 @@ public class TokenServiceTest {
 
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response, false);
         AssertionStatus status = service.respondToSecurityTokenRequest(context, authenticator, false, false);
-        Assert.assertEquals(status, AssertionStatus.NONE);
+        assertEquals(status, AssertionStatus.NONE);
 
         Document responseMsg = response.getXmlKnob().getDocumentWritable();
 
@@ -186,19 +190,19 @@ public class TokenServiceTest {
                                                                                   subjectCertificate,
                                                                                   subjectPrivateKey,
                                                                                   issuerCertificate);
-        Assert.assertTrue("Token obtained must be SAML", responseObj instanceof SamlAssertion);
+        assertTrue("Token obtained must be SAML", responseObj instanceof SamlAssertion);
         SamlAssertion token = (SamlAssertion)responseObj;
-        Assert.assertTrue("Obtained saml token must be signed", token.hasEmbeddedIssuerSignature());
-        Assert.assertTrue("Obtained saml token must be holder-of-key", token.isHolderOfKey());
-        Assert.assertTrue("Obtained saml token must have non-null assertion ID", token.getAssertionId() != null);
-        Assert.assertTrue("Obtained saml token must have non-empty assertion ID", token.getAssertionId().length() > 0);
-        Assert.assertTrue("Obtained saml token must have subject certificate", token.getSubjectCertificate() != null);
-        Assert.assertTrue("Obtained saml token must have issuer certificate", token.getIssuerCertificate() != null);
-        Assert.assertTrue("Obtained saml token must have embedded issuer certificate", token.hasEmbeddedIssuerSignature());
-        Assert.assertEquals("subject certificate must match our client certificate",
+        assertTrue("Obtained saml token must be signed", token.hasEmbeddedIssuerSignature());
+        assertTrue("Obtained saml token must be holder-of-key", token.isHolderOfKey());
+        assertTrue("Obtained saml token must have non-null assertion ID", token.getAssertionId() != null);
+        assertTrue("Obtained saml token must have non-empty assertion ID", token.getAssertionId().length() > 0);
+        assertTrue("Obtained saml token must have subject certificate", token.getSubjectCertificate() != null);
+        assertTrue("Obtained saml token must have issuer certificate", token.getIssuerCertificate() != null);
+        assertTrue("Obtained saml token must have embedded issuer certificate", token.hasEmbeddedIssuerSignature());
+        assertEquals("subject certificate must match our client certificate",
                      token.getSubjectCertificate(),
                      subjectCertificate);
-        Assert.assertEquals("issuer certificate must match the expected issuer certificate",
+        assertEquals("issuer certificate must match the expected issuer certificate",
                      token.getIssuerCertificate(),
                      issuerCertificate);
         token.verifyEmbeddedIssuerSignature();
@@ -224,7 +228,7 @@ public class TokenServiceTest {
                                                                                     WsTrustRequestType.VALIDATE,
                                                                                     usernameToken,
                                                                                     "http://samlpart.com/sso", null);
-        Assert.assertNotNull(rstDoc);
+        assertNotNull(rstDoc);
 
         // TODO check this somehow, other than uncommenting below line and eyeballing the diff
         //InputStream fimIs = getClass().getClassLoader().getResourceAsStream("com/l7tech/example/resources/tivoli/FIM_RST.xml");
@@ -238,18 +242,18 @@ public class TokenServiceTest {
         final TokenServiceClient tokenServiceClient = new TokenServiceClient(WsTrustConfigFactory.getDefaultWsTrustConfig());
 
         InputStream respIs = TokenServiceTest.class.getResourceAsStream("tivoliFIM_RSTR.xml");
-        Assert.assertNotNull( "Message resource input", respIs );
+        assertNotNull( "Message resource input", respIs );
         final Document rstr = XmlUtil.parse(respIs);
 
         Object got = tokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstr);
 
         SamlAssertion saml = (SamlAssertion)got;
-        Assert.assertEquals(saml.getNameIdentifierFormat(), SamlConstants.NAMEIDENTIFIER_EMAIL);
-        Assert.assertEquals(saml.getNameIdentifierValue(), "testloser");
+        assertEquals(saml.getNameIdentifierFormat(), SamlConstants.NAMEIDENTIFIER_EMAIL);
+        assertEquals(saml.getNameIdentifierValue(), "testloser");
 
-        Assert.assertFalse(saml.isHolderOfKey());
-        Assert.assertFalse(saml.isSenderVouches());
-        Assert.assertNull(saml.getConfirmationMethod());
+        assertFalse(saml.isHolderOfKey());
+        assertFalse(saml.isSenderVouches());
+        assertNull(saml.getConfirmationMethod());
         saml.verifyEmbeddedIssuerSignature();
 
         log.info("Issuer cert = " + saml.getIssuerCertificate());

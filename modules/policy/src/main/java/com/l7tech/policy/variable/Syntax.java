@@ -91,6 +91,28 @@ public abstract class Syntax {
     }});
 
     /**
+     * This will return the entire string contained within each set of ${...} in the given strings. The variables names
+     * may not exist and variables referenced like ${variablename.mainpart} will be returned as variablename.mainpart.
+     * <p/>
+     * There is no special behaviour for variables referenced which use selectors.
+     *
+     * @param values the Strings to find out what variables are referenced using our syntax of ${}. Must not be null. Null elements are ignored.
+     * @return all the (distinct) variable names which are contained within our variable reference syntax of ${...} in String s
+     * @throws VariableNameSyntaxException If an error occurs
+     */
+    public static String[] getReferencedNames( final String... values ) {
+        final Set<String> variables = new LinkedHashSet<String>();
+
+        for ( final String value : values ) {
+            if ( value != null ) {
+                variables.addAll( Arrays.asList( getReferencedNames( value ) ) );
+            }
+        }
+
+        return variables.toArray( new String[variables.size()] );
+    }
+
+    /**
      * This will return the entire string contained within each set of ${...} in the String s. The variables names
      * may not exist and variables referenced like ${variablename.mainpart} will be returned as variablename.mainpart.
      * <p/>

@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.security.wstrust;
 
 import com.l7tech.xml.WsTrustRequestType;
@@ -18,15 +13,15 @@ public class WsTrustConfigFactory {
 
     public static final String WST_NAMESPACE  = "http://schemas.xmlsoap.org/ws/2004/04/trust"; // pre-3.1 SSG/SSB
     public static final String WST_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2005/02/trust"; // FIM
-    public static final String WST_NAMESPACE3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512"; // WS-SX
+    public static final String WST_NAMESPACE3 = "http://docs.oasis-open.org/ws-sx/ws-trust/200512"; // WS-SX 1.3
+    public static final String WST_NAMESPACE4 = "http://docs.oasis-open.org/ws-sx/ws-trust/200802"; // WS-SX 1.4
 
     public static final String WSP_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/12/policy";
-    public static final String WSP_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/09/policy"; // FIM
-    public static final String WSP_NAMESPACE3 = "http://schemas.xmlsoap.org/ws/2004/09/policy"; // WS-SX
+    public static final String WSP_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/09/policy"; // FIM & WS-SX
 
     public static final String WSA_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/addressing";
     public static final String WSA_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/08/addressing"; // FIM
-    public static final String WSA_NAMESPACE3 = "http://schemas.xmlsoap.org/ws/2004/08/addressing"; // WS-SX
+    public static final String WSA_NAMESPACE3 = "http://www.w3.org/2005/08/addressing"; // WS-SX
 
     // Backward compat with old Bridge operating environments: detect overridden WS-Trust URI system prop and DTRT
     public static final String PROP_WST_NS = "com.l7tech.common.security.wstrust.ns.wst";
@@ -40,7 +35,9 @@ public class WsTrustConfigFactory {
     static {
         configs.put(WST_NAMESPACE, new OldWsTrustConfig(WST_NAMESPACE, WSP_NAMESPACE, WSA_NAMESPACE));
         configs.put(WST_NAMESPACE2, new OldWsTrustConfig(WST_NAMESPACE2, WSP_NAMESPACE2, WSA_NAMESPACE2));
-        configs.put(WST_NAMESPACE3, new WsSxWsTrustConfig(WST_NAMESPACE3, WSP_NAMESPACE3, WSA_NAMESPACE3));
+        configs.put(WST_NAMESPACE3, new WsSxWsTrustConfig(WST_NAMESPACE3, WSP_NAMESPACE2, WSA_NAMESPACE3));
+        // 1.4 uses the 1.3 namespace for elements we currently use
+        configs.put(WST_NAMESPACE4, new WsSxWsTrustConfig(WST_NAMESPACE3, WSP_NAMESPACE2, WSA_NAMESPACE3));
     }
 
 
@@ -75,7 +72,7 @@ public class WsTrustConfigFactory {
     private static class OldWsTrustConfig extends WsTrustConfig {
         private final Map<String,String> requestTypeMap;
 
-        public OldWsTrustConfig(String wstNs, String wspNs, String wsaNs) {
+        private OldWsTrustConfig(String wstNs, String wspNs, String wsaNs) {
             super(wstNs, wspNs, wsaNs);
             requestTypeMap = new HashMap<String,String>();
             int idx = tscWstRequestTypeIndex;
@@ -97,7 +94,7 @@ public class WsTrustConfigFactory {
     private static class WsSxWsTrustConfig extends WsTrustConfig {
         private final Map<String,String> requestTypeMap;
 
-        public WsSxWsTrustConfig(String wstNs, String wspNs, String wsaNs) {
+        private WsSxWsTrustConfig(String wstNs, String wspNs, String wsaNs) {
             super(wstNs, wspNs, wsaNs);
             requestTypeMap = new HashMap<String,String>();
             requestTypeMap.put(WsTrustRequestType.NAME_ISSUE, "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue");

@@ -181,6 +181,7 @@ public class SoapConstants {
     public static final String WST_TOKENTYPE = "TokenType";
     public static final String WST_REQUESTTYPE = "RequestType";
     public static final String WST_CANCELTARGET = "CancelTarget";
+    public static final String WST_ISSUER = "Issuer";
     public static final String ENTROPY = "Entropy";
     public static final String BINARY_SECRET = "BinarySecret";
     public static final String BINARY_SECRET_ATTR_TYPE ="Type";
@@ -197,6 +198,8 @@ public class SoapConstants {
     };
 
     public static final String WSA_ACTION = "Action";
+    public static final String WSA_ADDRESS = "Address";
+    public static final String WSA_ENDPOINTREFERENCE = "EndpointReference";
 
     public static final String WSA_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/addressing";
     public static final String WSA_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/08/addressing"; // FIM

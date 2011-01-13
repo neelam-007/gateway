@@ -36,6 +36,7 @@ import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.wsdl.MimePartInfo;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.WsTrustRequestType;
+import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -339,6 +340,7 @@ public class WspConstants {
         new Java5EnumTypeMapping(TargetMessageType.class, "target"),
         new Java5EnumTypeMapping(CertificateValidationType.class, "certificateValidation"),
         new Java5EnumTypeMapping(IdentityTarget.TargetIdentityType.class, "identityType"),
+        new Java5EnumTypeMapping(SoapVersion.class, "soapVersion"),
 
         // Make sure we get equal instances of built-in attributes (analogous to readResolve())
         new BeanTypeMapping( AttributeHeader.class, "header") {
