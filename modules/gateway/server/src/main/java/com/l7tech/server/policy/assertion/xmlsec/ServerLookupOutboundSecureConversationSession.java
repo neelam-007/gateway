@@ -66,6 +66,11 @@ public class ServerLookupOutboundSecureConversationSession extends AbstractMessa
             return AssertionStatus.FALSIFIED;
         }
 
+        if (session == null) {
+            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_LOOKUP_FAILURE, "The session (with User ID: " + userId + " and Service URL: " + serviceUrl + ") is either expired or not found.");
+            return AssertionStatus.FALSIFIED;
+        }
+
         // Set variable
         String varFullName = assertion.getVariablePrefix() + LookupOutboundSecureConversationSession.VARIABLE_SESSION;
         context.setVariable(varFullName, session);

@@ -299,6 +299,9 @@
         <L7p:CancelSecurityContext>
             <L7p:Enabled booleanValue="false"/>
         </L7p:CancelSecurityContext>
+        <L7p:LookupOutboundSecureConversationSession>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:LookupOutboundSecureConversationSession>
         <L7p:BuildRstSoapRequest>
             <L7p:Enabled booleanValue="false"/>
         </L7p:BuildRstSoapRequest>
