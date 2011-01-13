@@ -13,7 +13,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.server.util.RstSoapMessageProcessor;
@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class ServerCreateSecurityContextToken extends AbstractMessageTargetableServerAssertion<CreateSecurityContextToken> {
     private static final Logger logger = Logger.getLogger(ServerCreateSecurityContextToken.class.getName());
 
-    private final SecureConversationContextManager scContextManager;
+    private final InboundSecureConversationContextManager scContextManager;
     private final Auditor auditor;
 
     public ServerCreateSecurityContextToken( final CreateSecurityContextToken assertion,
@@ -43,7 +43,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
         auditor = factory instanceof ApplicationContext?
                 new Auditor(this, (ApplicationContext)factory, logger) :
                 new LogOnlyAuditor(logger);
-        scContextManager = factory.getBean("secureConversationContextManager", SecureConversationContextManager.class);
+        scContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
     }
 
     @Override

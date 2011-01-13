@@ -37,6 +37,7 @@ import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
@@ -46,7 +47,6 @@ import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
@@ -89,7 +89,7 @@ public class PolicyProcessingTest {
     private static AuditContext auditContext = null;
     private static SoapFaultManager soapFaultManager = null;
     private static TestingHttpClientFactory testingHttpClientFactory = null;
-    private static SecureConversationContextManager secureConversationContextManager = null;
+    private static InboundSecureConversationContextManager inboundSecureConversationContextManager = null;
 
     static {
         System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
@@ -179,7 +179,7 @@ public class PolicyProcessingTest {
         auditContext = applicationContext.getBean("auditContext", AuditContext.class);
         soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
         testingHttpClientFactory = applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
-        secureConversationContextManager = applicationContext.getBean("secureConversationContextManager", SecureConversationContextManager.class);
+        inboundSecureConversationContextManager = applicationContext.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
 
         ServiceCacheStub cache = applicationContext.getBean("serviceCache", ServiceCacheStub.class);
         cache.initializeServiceCache();
@@ -260,9 +260,9 @@ public class PolicyProcessingTest {
         // Create a well known test session for secure conversation testing
         UserBean ub1 = new UserBean(9898, "Alice");
         ub1.setUniqueIdentifier( "4718592" );
-        if (secureConversationContextManager.getSession("http://www.layer7tech.com/uuid/00000001") == null) {
-            secureConversationContextManager.createContextForUser(
-                    "http://www.layer7tech.com/uuid/00000001",
+        if (inboundSecureConversationContextManager.getSession("http://www.layer7tech.com/uuid/00000001") == null) {
+            inboundSecureConversationContextManager.createContextForUser(
+                    "http://www.layer7tech.com/uuid/00000001", null,
                     System.currentTimeMillis() + TimeUnit.DAYS.getMultiplier(),
                     ub1,
                     LoginCredentials.makeLoginCredentials(new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class),

@@ -1070,7 +1070,7 @@
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="policyFactory"/>
         <constructor-arg ref="securityTokenResolver"/>
-        <constructor-arg ref="secureConversationContextManager"/>
+        <constructor-arg ref="inboundSecureConversationContextManager"/>
     </bean>
 
     <bean id="auditContext" class="com.l7tech.server.audit.ThreadLocalAuditContext">
@@ -1872,7 +1872,11 @@
         <constructor-arg index="0" ref="httpClientFactory"/>
     </bean>
 
-    <bean id="secureConversationContextManager" class="com.l7tech.server.secureconversation.SecureConversationContextManager">
+    <bean id="inboundSecureConversationContextManager" class="com.l7tech.server.secureconversation.InboundSecureConversationContextManager">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+
+    <bean id="outboundSecureConversationContextManager" class="com.l7tech.server.secureconversation.OutboundSecureConversationContextManager">
         <constructor-arg index="0" ref="serverConfig"/>
     </bean>
 
@@ -1881,7 +1885,7 @@
     <bean id="securityContextFinder" class="com.l7tech.server.security.DelegatingSecurityContextFinder">
         <constructor-arg index="0">
             <list>
-                <ref bean="secureConversationContextManager"/>
+                <ref bean="inboundSecureConversationContextManager"/>
                 <ref bean="kerberosSessionContextManager"/>
             </list>
         </constructor-arg>

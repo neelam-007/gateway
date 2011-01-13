@@ -4,6 +4,7 @@ import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpHeader;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
@@ -20,7 +21,6 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
@@ -59,7 +59,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     private static AuditContext auditContext = null;
     private static SoapFaultManager soapFaultManager = null;
     private static TestingHttpClientFactory testingHttpClientFactory = null;
-    private static SecureConversationContextManager secureConversationContextManager = null;
+    private static InboundSecureConversationContextManager inboundSecureConversationContextManager = null;
 
     /**
      * Test services, data is:
@@ -147,12 +147,12 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         auditContext = applicationContext.getBean("auditContext", AuditContext.class);
         soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
         testingHttpClientFactory = applicationContext.getBean("httpRoutingHttpClientFactory", TestingHttpClientFactory.class);
-        secureConversationContextManager = applicationContext.getBean("secureConversationContextManager", SecureConversationContextManager.class);
+        inboundSecureConversationContextManager = applicationContext.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
 
         // well known test session
-        if (secureConversationContextManager.getSession("http://www.layer7tech.com/uuid/00000000") == null) {
-            secureConversationContextManager.createContextForUser(
-                    "http://www.layer7tech.com/uuid/00000000",
+        if (inboundSecureConversationContextManager.getSession("http://www.layer7tech.com/uuid/00000000") == null) {
+            inboundSecureConversationContextManager.createContextForUser(
+                    "http://www.layer7tech.com/uuid/00000000", null,
                     System.currentTimeMillis() + TimeUnit.DAYS.getMultiplier(),
                     new UserBean(),
                     LoginCredentials.makeLoginCredentials(new HttpBasicToken("test", "password".toCharArray()), HttpBasic.class),

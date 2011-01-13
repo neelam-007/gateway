@@ -14,7 +14,7 @@ import com.l7tech.security.xml.processor.MockProcessorResult;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ISO8601Date;
@@ -55,11 +55,11 @@ public class ServerBuildRstrSoapResponseTest {
 
     private static final Logger logger = Logger.getLogger( ServerBuildRstrSoapResponseTest.class.getName() );
 
-    private static final SecureConversationContextManager contextManager = new SecureConversationContextManager( new MockConfig( new Properties() ) );
+    private static final InboundSecureConversationContextManager contextManager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ) );
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
 
     static {
-        beanFactory.addBean( "secureConversationContextManager", contextManager );
+        beanFactory.addBean( "inboundSecureConversationContextManager", contextManager );
     }
 
     @Test

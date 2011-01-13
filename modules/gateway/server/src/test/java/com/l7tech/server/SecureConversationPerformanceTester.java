@@ -13,7 +13,7 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.xml.processor.SecurityContextFinder;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.util.MockConfig;
@@ -29,7 +29,7 @@ import java.util.Properties;
 public class SecureConversationPerformanceTester {
     @Test
     public void testSignatureValidationPerformance() throws Exception {
-        final SecureConversationContextManager manager = new SecureConversationContextManager( new MockConfig( new Properties() ) );
+        final InboundSecureConversationContextManager manager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ) );
         WssDecoratorTest.TestDocument td = new WssDecoratorTest().getSigningOnlyWithSecureConversationTestDocument();
         final SecureConversationSession session = manager.createContextForUser(new UserBean(3, "foo"),
                 LoginCredentials.makeLoginCredentials(new HttpBasicToken("foo", "blah".toCharArray()),

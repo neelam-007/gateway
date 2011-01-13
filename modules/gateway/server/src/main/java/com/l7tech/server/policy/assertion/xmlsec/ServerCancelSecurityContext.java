@@ -17,7 +17,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.util.RstSoapMessageProcessor;
 import org.springframework.beans.factory.BeanFactory;
@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class ServerCancelSecurityContext extends AbstractMessageTargetableServerAssertion<CancelSecurityContext> {
     private static final Logger logger = Logger.getLogger(ServerCancelSecurityContext.class.getName());
 
-    private final SecureConversationContextManager secureConversationContextManager;
+    private final InboundSecureConversationContextManager inboundSecureConversationContextManager;
     private final Auditor auditor;
 
     public ServerCancelSecurityContext( final CancelSecurityContext assertion,
@@ -42,7 +42,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         auditor = factory instanceof ApplicationContext?
                 new Auditor(this, (ApplicationContext)factory, logger) :
                 new LogOnlyAuditor(logger);
-        secureConversationContextManager = factory.getBean("secureConversationContextManager", SecureConversationContextManager.class);
+        inboundSecureConversationContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         final String targetIdentifier = rstParameters.get(RstSoapMessageProcessor.REFERENCE_ATTR_URI);
         switch ( assertion.getRequiredAuthorization() ) {
             case USER:
-                final SecureConversationSession session = secureConversationContextManager.getSession( targetIdentifier );
+                final SecureConversationSession session = inboundSecureConversationContextManager.getSession( targetIdentifier );
                 if ( session != null ) {
                     checkAuthenticated( authContext, session.getUsedBy() );
                 }
@@ -72,7 +72,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
                 break;
         }
 
-        if ( !secureConversationContextManager.cancelSession(targetIdentifier) &&
+        if ( !inboundSecureConversationContextManager.cancelSession(targetIdentifier) &&
              assertion.isFailIfNotExist() ) {
             auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, "Session not found '"+targetIdentifier+"'");
             return AssertionStatus.BAD_REQUEST;

@@ -46,7 +46,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.util.*;
@@ -111,7 +111,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
     private final ServerPolicyFactory policyFactory;
     private final AtomicReference<ServerAssertion> tokenServicePolicy = new AtomicReference<ServerAssertion>();
     private final SecurityTokenResolver securityTokenResolver;
-    private final SecureConversationContextManager secureConversationContextManager;
+    private final InboundSecureConversationContextManager inboundSecureConversationContextManager;
 
     /**
      * specify the server key and cert at construction time instead of letting the object try to retrieve them
@@ -123,7 +123,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                              final DefaultKey defaultKey,
                              final ServerPolicyFactory policyFactory,
                              final SecurityTokenResolver securityTokenResolver,
-                             final SecureConversationContextManager secureConversationContextManager ) {
+                             final InboundSecureConversationContextManager inboundSecureConversationContextManager) {
         if (defaultKey == null) {
             throw new IllegalArgumentException("DefaultKey must be provided to create a TokenService");
         }
@@ -132,7 +132,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         this.defaultKey = defaultKey;
         this.policyFactory = policyFactory;
         this.securityTokenResolver = securityTokenResolver;
-        this.secureConversationContextManager = secureConversationContextManager;
+        this.inboundSecureConversationContextManager = inboundSecureConversationContextManager;
 
         try {
             buildTokenServicePolicy();
@@ -192,7 +192,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 WssProcessor trogdor = new WssProcessorImpl();
                 final SecurityKnob reqSec = context.getRequest().getSecurityKnob();
                 ProcessorResult wssOutput = trogdor.undecorateMessage(context.getRequest(),
-                        secureConversationContextManager,
+                    inboundSecureConversationContextManager,
                                                                       securityTokenResolver);
                 reqSec.setProcessorResult(wssOutput);
             } catch (IOException e) {
@@ -457,7 +457,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                                                              final String scns ) throws TokenServiceException, GeneralSecurityException {
         SecureConversationSession newSession;
         try {
-            newSession = secureConversationContextManager.createContextForUser(requestor,
+            newSession = inboundSecureConversationContextManager.createContextForUser(requestor,
                                                                                              context.getDefaultAuthenticationContext().getLastCredentials(),
                                                                                              scns);
         } catch (SessionCreationException e) {

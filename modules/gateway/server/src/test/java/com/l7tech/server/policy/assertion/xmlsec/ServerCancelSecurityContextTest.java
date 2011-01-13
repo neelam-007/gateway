@@ -19,7 +19,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.util.Functions;
@@ -37,11 +37,11 @@ import static org.junit.Assert.*;
  */
 public class ServerCancelSecurityContextTest {
 
-    private static final SecureConversationContextManager contextManager = new SecureConversationContextManager( new MockConfig( new Properties() ) );
+    private static final InboundSecureConversationContextManager contextManager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ) );
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
 
     static {
-        beanFactory.addBean( "secureConversationContextManager", contextManager );
+        beanFactory.addBean( "inboundSecureConversationContextManager", contextManager );
     }
 
     @Test

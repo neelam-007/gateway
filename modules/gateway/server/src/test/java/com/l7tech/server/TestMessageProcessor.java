@@ -15,7 +15,7 @@ import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyVersionException;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsServicesImpl;
 import com.l7tech.server.util.ManagedTimer;
@@ -44,7 +44,7 @@ public class TestMessageProcessor extends MessageProcessor {
      * @param wssd         the Wss Decorator
      * @throws IllegalArgumentException if any of the arguments is null
      */
-    public TestMessageProcessor(ServiceCache sc, PolicyCache pc, WssDecorator wssd, SecureConversationContextManager sccm)
+    public TestMessageProcessor(ServiceCache sc, PolicyCache pc, WssDecorator wssd, InboundSecureConversationContextManager sccm)
             throws Exception {
         super(  sc,
                 pc,

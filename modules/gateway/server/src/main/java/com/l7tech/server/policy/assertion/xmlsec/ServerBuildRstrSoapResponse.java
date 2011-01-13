@@ -15,7 +15,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.util.RstSoapMessageProcessor;
 import com.l7tech.util.*;
@@ -32,7 +32,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * @author: ghuang
+ * @author ghuang
  */
 public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRstrSoapResponse> {
     private static final Logger logger = Logger.getLogger(ServerBuildRstrSoapResponse.class.getName());
@@ -44,7 +44,7 @@ public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRst
     private static final String SAML_ASSERTION_ID = "saml.info.assertion.id";
     private static final String SAML_VALUE_TYPE = "saml.info.value.type";
 
-    private final SecureConversationContextManager scContextManager;
+    private final InboundSecureConversationContextManager scContextManager;
     private final Auditor auditor;
     private final String[] variablesUsed;
 
@@ -55,7 +55,7 @@ public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRst
                 new Auditor(this, (ApplicationContext)factory, logger) :
                 new LogOnlyAuditor(logger);
         variablesUsed = assertion.getVariablesUsed();
-        scContextManager = factory.getBean("secureConversationContextManager", SecureConversationContextManager.class);
+        scContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
     }
 
     @Override

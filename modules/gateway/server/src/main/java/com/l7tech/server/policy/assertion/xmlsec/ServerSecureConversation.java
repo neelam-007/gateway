@@ -18,7 +18,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
@@ -44,13 +44,13 @@ import java.util.logging.Logger;
  */
 public class ServerSecureConversation extends AbstractServerAssertion<SecureConversation> {
     private final Auditor auditor;
-    private final SecureConversationContextManager secureConversationContextManager;
+    private final InboundSecureConversationContextManager inboundSecureConversationContextManager;
 
     public ServerSecureConversation(SecureConversation assertion, ApplicationContext springContext) {
         super(assertion);
         // nothing to remember from the passed assertion
         this.auditor = new Auditor(this, springContext, logger);
-        this.secureConversationContextManager = springContext.getBean( "secureConversationContextManager", SecureConversationContextManager.class );
+        this.inboundSecureConversationContextManager = springContext.getBean( "inboundSecureConversationContextManager", InboundSecureConversationContextManager.class );
     }
 
     private String getIncomingURL(PolicyEnforcementContext context) {
@@ -97,7 +97,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                     continue;
                 }
                 String contextId = secConTok.getContextIdentifier();
-                SecureConversationSession session = secureConversationContextManager.getSession(contextId);
+                SecureConversationSession session = inboundSecureConversationContextManager.getSession(contextId);
                 if (session == null) {
                     auditor.logAndAudit(AssertionMessages.SC_TOKEN_INVALID);
                     context.setRequestPolicyViolated();

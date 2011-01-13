@@ -172,7 +172,7 @@
         <constructor-arg ref="serviceCache"/>
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="wssDecorator"/>
-        <constructor-arg ref="secureConversationContextManager"/>        
+        <constructor-arg ref="inboundSecureConversationContextManager"/>
     </bean>
 
     <!-- server side policy filter manager  -->
@@ -379,7 +379,11 @@
 
     <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerStub"/>
 
-    <bean id="secureConversationContextManager" class="com.l7tech.server.secureconversation.SecureConversationContextManager">
+    <bean id="inboundSecureConversationContextManager" class="com.l7tech.server.secureconversation.InboundSecureConversationContextManager">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+
+    <bean id="outboundSecureConversationContextManager" class="com.l7tech.server.secureconversation.OutboundSecureConversationContextManager">
         <constructor-arg index="0" ref="serverConfig"/>
     </bean>
 

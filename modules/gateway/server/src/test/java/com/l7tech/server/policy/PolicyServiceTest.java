@@ -30,7 +30,7 @@ import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.filter.FilterManager;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.MockConfig;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -125,7 +125,7 @@ public class PolicyServiceTest {
                 (FilterManager) applicationContext.getBean("policyFilterManager"),
                 (SecurityTokenResolver) applicationContext.getBean("securityTokenResolver"),
                 (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory"),
-                applicationContext.getBean("secureConversationContextManager",SecureConversationContextManager.class) );
+                applicationContext.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class) );
         ps.setApplicationContext(applicationContext);
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
             @Override
