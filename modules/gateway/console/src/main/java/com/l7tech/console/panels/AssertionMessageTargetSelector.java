@@ -103,8 +103,10 @@ public class AssertionMessageTargetSelector extends JDialog {
         }
         setContextVar(messageTargetable.getOtherTargetMessageVariable());
         setContextVarEnabled(_otherContextVariableRadioButton.isSelected());
-        Assertion ass = (Assertion)messageTargetable;
-        if(messageTargetable.isTargetModifiedByGateway()) _contextVarTargetVariable.setAssertion(ass);
+        if ( messageTargetable instanceof Assertion ) {
+            Assertion ass = (Assertion) messageTargetable;
+            if(messageTargetable.isTargetModifiedByGateway()) _contextVarTargetVariable.setAssertion(ass);
+        }
     }
 
     private void onOK() {
