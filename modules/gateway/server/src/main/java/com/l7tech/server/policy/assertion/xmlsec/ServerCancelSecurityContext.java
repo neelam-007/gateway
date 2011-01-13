@@ -17,7 +17,9 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
+import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.util.RstSoapMessageProcessor;
 import org.springframework.beans.factory.BeanFactory;
@@ -34,7 +36,9 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
     private static final Logger logger = Logger.getLogger(ServerCancelSecurityContext.class.getName());
 
     private final InboundSecureConversationContextManager inboundSecureConversationContextManager;
+    private final OutboundSecureConversationContextManager outboundSecureConversationContextManager;
     private final Auditor auditor;
+    private final String[] variablesUsed;
 
     public ServerCancelSecurityContext( final CancelSecurityContext assertion,
                                         final BeanFactory factory ) {
@@ -43,18 +47,33 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
                 new Auditor(this, (ApplicationContext)factory, logger) :
                 new LogOnlyAuditor(logger);
         inboundSecureConversationContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
+        outboundSecureConversationContextManager = factory.getBean("outboundSecureConversationContextManager", OutboundSecureConversationContextManager.class);
+        variablesUsed = assertion.getVariablesUsed();
     }
 
     @Override
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
                                               final Message message,
                                               final String messageDescription,
-                                              final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
+                                              final AuthenticationContext authenticationContext ) throws IOException, PolicyAssertionException {
+        if ( assertion.isCancelInbound() ) {
+            return doCancelInbound( message, authenticationContext );
+        } else {
+            return doCancelOutbound( context, authenticationContext );
+        }
+    }
 
+    @Override
+    protected Audit getAuditor() {
+        return auditor;
+    }
+
+    private AssertionStatus doCancelInbound( final Message message,
+                                             final AuthenticationContext authenticationContext ) {
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
         final Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, false);
         if (rstParameters.containsKey(RstSoapMessageProcessor.ERROR)) {
-            auditor.logAndAudit(AssertionMessages.STS_INVALID_RST_REQUEST, rstParameters.get(RstSoapMessageProcessor.ERROR));
+            auditor.logAndAudit( AssertionMessages.STS_INVALID_RST_REQUEST, rstParameters.get(RstSoapMessageProcessor.ERROR));
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -64,11 +83,11 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
             case USER:
                 final SecureConversationSession session = inboundSecureConversationContextManager.getSession( targetIdentifier );
                 if ( session != null ) {
-                    checkAuthenticated( authContext, session.getUsedBy() );
+                    checkAuthenticated( authenticationContext, session.getUsedBy() );
                 }
                 break;
             case TOKEN:
-                checkAuthenticationToken( authContext, targetIdentifier );
+                checkAuthenticationToken( authenticationContext, targetIdentifier );
                 break;
         }
 
@@ -81,15 +100,31 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         return AssertionStatus.NONE;
     }
 
-    @Override
-    protected Audit getAuditor() {
-        return auditor;
+    private AssertionStatus doCancelOutbound( final PolicyEnforcementContext context,
+                                              final AuthenticationContext authenticationContext ) {
+        final Map<String,Object> vars = context.getVariableMap( variablesUsed, auditor );
+        final User user = authenticationContext.getLastAuthenticatedUser();
+        if ( user == null ) {
+            auditor.logAndAudit(AssertionMessages.STS_AUTHENTICATION_FAILURE, "The target message does not contain an authenticated user.");
+            return AssertionStatus.FALSIFIED;
+        }
+
+        final String serviceUrl = ExpandVariables.process( assertion.getOutboundServiceUrl()==null ? "" : assertion.getOutboundServiceUrl(), vars, auditor );
+
+        if ( !outboundSecureConversationContextManager.cancelSession( user.getId(), serviceUrl ) &&
+             assertion.isFailIfNotExist() ) {
+            auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, "Session not found for user '"+user.getId()+"', service URL '"+serviceUrl+"'");
+            return AssertionStatus.FALSIFIED;
+        }
+        
+        return AssertionStatus.NONE;
     }
 
-    private void checkAuthenticated( final AuthenticationContext authContext, final User user ) {
+    private void checkAuthenticated( final AuthenticationContext authenticationContext,
+                                     final User user ) {
         boolean found = false;
 
-        for ( final AuthenticationResult authenticationResult : authContext.getAllAuthenticationResults() ) {
+        for ( final AuthenticationResult authenticationResult : authenticationContext.getAllAuthenticationResults() ) {
             final User authenticatedUser = authenticationResult.getUser();
             if ( authenticatedUser.getProviderId()==user.getProviderId() &&
                  authenticatedUser.getId().equals( user.getId() ) ) {
@@ -104,12 +139,13 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
     }
 
-    private void checkAuthenticationToken( final AuthenticationContext authContext, final String targetIdentifier ) {
+    private void checkAuthenticationToken( final AuthenticationContext authenticationContext,
+                                           final String targetIdentifier ) {
         boolean found = false;
         SecurityContextToken securityContextToken = null;
 
         outer:
-        for ( final LoginCredentials credentials : authContext.getCredentials() ) {
+        for ( final LoginCredentials credentials : authenticationContext.getCredentials() ) {
             for ( final SecurityToken token : credentials.getSecurityTokens() ) {
                 if ( token instanceof SecurityContextToken &&
                      targetIdentifier.equals(((SecurityContextToken)token).getContextIdentifier()) ) {
@@ -120,7 +156,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
         }
 
         if ( securityContextToken != null && securityContextToken.isPossessionProved() ) {
-            for ( final AuthenticationResult authenticationResult : authContext.getAllAuthenticationResults() ) {
+            for ( final AuthenticationResult authenticationResult : authenticationContext.getAllAuthenticationResults() ) {
                 if ( authenticationResult.matchesSecurityToken( securityContextToken ) ) {
                     found = true;
                     break;

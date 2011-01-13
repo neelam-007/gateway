@@ -20,6 +20,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
+import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.util.Functions;
@@ -37,11 +38,13 @@ import static org.junit.Assert.*;
  */
 public class ServerCancelSecurityContextTest {
 
-    private static final InboundSecureConversationContextManager contextManager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ) );
+    private static final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ) );
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager( new MockConfig( new Properties() ) );
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
 
     static {
-        beanFactory.addBean( "inboundSecureConversationContextManager", contextManager );
+        beanFactory.addBean( "inboundSecureConversationContextManager", inboundContextManager );
+        beanFactory.addBean( "outboundSecureConversationContextManager", outboundContextManager );
     }
 
     @Test
@@ -186,7 +189,7 @@ public class ServerCancelSecurityContextTest {
     }
 
     private SecureConversationSession generateContextToken() throws SessionCreationException {
-        return contextManager.createContextForUser(
+        return inboundContextManager.createContextForUser(
                 user(1, "Alice"),
                 LoginCredentials.makeLoginCredentials( new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class ),
                 "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512" );

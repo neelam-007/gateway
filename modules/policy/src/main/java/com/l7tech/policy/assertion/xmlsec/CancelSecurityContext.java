@@ -1,12 +1,19 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
@@ -36,12 +43,28 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
     public CancelSecurityContext() {
     }
 
+    public boolean isCancelInbound() {
+        return cancelInbound;
+    }
+
+    public void setCancelInbound( final boolean cancelInbound ) {
+        this.cancelInbound = cancelInbound;
+    }
+
     public AuthorizationType getRequiredAuthorization() {
         return requiredAuthorization;
     }
 
     public void setRequiredAuthorization( final AuthorizationType requiredAuthorization ) {
         this.requiredAuthorization = requiredAuthorization==null ? AuthorizationType.TOKEN : requiredAuthorization;
+    }
+
+    public String getOutboundServiceUrl() {
+        return outboundServiceUrl;
+    }
+
+    public void setOutboundServiceUrl( final String outboundServiceUrl ) {
+        this.outboundServiceUrl = outboundServiceUrl;
     }
 
     public boolean isFailIfNotExist() {
@@ -53,6 +76,15 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    public String[] getVariablesUsed() {
+        final Set<String> allVars = new LinkedHashSet<String>();
+        final String[] strings = Syntax.getReferencedNames( new String[]{ outboundServiceUrl } ); // allows null
+        allVars.addAll(Arrays.asList(strings));
+        allVars.addAll(Arrays.asList(super.getVariablesUsed()));
+        return allVars.toArray(new String[allVars.size()]);    }
+
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -60,7 +92,7 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
 
         // Set description for GUI
         meta.put(SHORT_NAME, "Cancel Security Context");
-        meta.put(DESCRIPTION, "Cancel a security context associated with a secure conversation session.");
+        meta.put(DESCRIPTION, "Cancel a security context associated with an outbound/inbound secure conversation.");
 
         // Add to palette folder(s)
         meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
@@ -87,4 +119,6 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
 
     private AuthorizationType requiredAuthorization = AuthorizationType.TOKEN;
     private boolean failIfNotExist = true; // Default set as true.  If user wants to change to false, go to the assertion properties dialog to make change.
+    private boolean cancelInbound = true;
+    private String outboundServiceUrl;
 }

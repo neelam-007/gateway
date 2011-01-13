@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.xmlsec.CancelSecurityContext;
@@ -7,50 +8,48 @@ import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
 /**
  * @author ghuang
  */
-public class CancelSecurityContextPropertiesDialog extends AssertionPropertiesEditorSupport<CancelSecurityContext> {
+public class CancelSecurityContextPropertiesDialog extends AssertionPropertiesOkCancelSupport<CancelSecurityContext> {
 
     private static final ResourceBundle resources = ResourceBundle.getBundle( CancelSecurityContextPropertiesDialog.class.getName() );
 
     private JPanel mainPanel;
-    private JButton okButton;
-    private JButton cancelButton;
     private JCheckBox failIfNotExistCheckBox;
     private JComboBox permitCancellationComboBox;
+    private JTextField serviceUrlTextField;
+    private JRadioButton inboundSecureConversationSessionRadioButton;
+    private JRadioButton outboundSecureConversationSessionRadioButton;
 
-    private CancelSecurityContext assertion;
-    private boolean confirmed;
-
-    public CancelSecurityContextPropertiesDialog(Window owner, CancelSecurityContext assertion) {
-        super(owner, assertion);
+    public CancelSecurityContextPropertiesDialog( final Window owner,
+                                                  final CancelSecurityContext assertion ) {
+        super(CancelSecurityContext.class, owner, assertion, true);
+        initComponents();
         setData(assertion);
-        initialize();
     }
 
     @Override
-    public boolean isConfirmed() {
-        return confirmed;
+    public void setData( final CancelSecurityContext assertion ) {
+        modelToView(assertion);
     }
 
     @Override
-    public void setData(CancelSecurityContext assertion) {
-        this.assertion = assertion;
-    }
-
-    @Override
-    public CancelSecurityContext getData(CancelSecurityContext assertion) {
+    public CancelSecurityContext getData( final CancelSecurityContext assertion ) {
         viewToModel(assertion);
         return assertion;
     }
 
-    private void initialize() {
-        setContentPane(mainPanel);
+    @Override
+    protected JPanel createPropertyPanel() {
+        return mainPanel;
+    }
+
+    @Override
+    protected void initComponents() {
+        super.initComponents();
 
         permitCancellationComboBox.setModel( new DefaultComboBoxModel( CancelSecurityContext.AuthorizationType.values() ) );
         permitCancellationComboBox.setRenderer( new TextListCellRenderer<CancelSecurityContext.AuthorizationType>( new Functions.Unary<String,CancelSecurityContext.AuthorizationType>(){
@@ -60,47 +59,69 @@ public class CancelSecurityContextPropertiesDialog extends AssertionPropertiesEd
             }
         } ) );
 
-        okButton.addActionListener(new ActionListener() {
+        final RunOnChangeListener enableDisableListener = new RunOnChangeListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                onOK();
+            protected void run() {
+                enableDisableComponents();
             }
-        });
+        };
 
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onCancel();
-            }
-        });
+        inboundSecureConversationSessionRadioButton.addActionListener( enableDisableListener );
+        outboundSecureConversationSessionRadioButton.addActionListener( enableDisableListener );
+        serviceUrlTextField.getDocument().addDocumentListener( enableDisableListener );
 
-        setMinimumSize( getContentPane().getMinimumSize() );
         pack();
-        getRootPane().setDefaultButton(okButton);
+        setMinimumSize( getContentPane().getMinimumSize() );
         Utilities.centerOnParentWindow(this);
-        Utilities.setEscKeyStrokeDisposes(this);
-
-        modelToView();
     }
 
-    private void modelToView() {
-        if ( assertion.getRequiredAuthorization() != null ) {
-            permitCancellationComboBox.setSelectedItem(assertion.getRequiredAuthorization());
+    private void enableDisableComponents(){
+        boolean enableOk = true;
+
+        permitCancellationComboBox.setEnabled( inboundSecureConversationSessionRadioButton.isSelected() );
+        serviceUrlTextField.setEnabled( outboundSecureConversationSessionRadioButton.isSelected() );
+
+        if ( outboundSecureConversationSessionRadioButton.isSelected() && serviceUrlTextField.getText().trim().isEmpty() ) {
+            enableOk = false;
         }
+
+        getOkButton().setEnabled( enableOk && !isReadOnly() );
+    }
+
+    private void modelToView( final CancelSecurityContext assertion ) {
+        if ( assertion.isCancelInbound() ) {
+            inboundSecureConversationSessionRadioButton.setSelected( true );
+        } else {
+            outboundSecureConversationSessionRadioButton.setSelected( true );
+        }
+
+        if (  assertion.isCancelInbound() && assertion.getRequiredAuthorization() != null ) {
+            permitCancellationComboBox.setSelectedItem(assertion.getRequiredAuthorization());
+        } else {
+            permitCancellationComboBox.setSelectedIndex( 0 );
+        }
+
+        if ( !assertion.isCancelInbound() && assertion.getOutboundServiceUrl() != null ) {
+            serviceUrlTextField.setText( assertion.getOutboundServiceUrl() );
+            serviceUrlTextField.setCaretPosition(0);
+        } else {
+            serviceUrlTextField.setText( "" );
+        }
+
         failIfNotExistCheckBox.setSelected(assertion.isFailIfNotExist());
+        enableDisableComponents();
     }
 
-    private void viewToModel(CancelSecurityContext assertion) {
-        assertion.setRequiredAuthorization( (CancelSecurityContext.AuthorizationType)permitCancellationComboBox.getSelectedItem() );
+    private void viewToModel( final CancelSecurityContext assertion ) {
+        if ( inboundSecureConversationSessionRadioButton.isSelected() ) {
+            assertion.setCancelInbound( true );
+            assertion.setRequiredAuthorization( (CancelSecurityContext.AuthorizationType)permitCancellationComboBox.getSelectedItem() );
+            assertion.setOutboundServiceUrl( null );
+        } else {
+            assertion.setCancelInbound( false );
+            assertion.setRequiredAuthorization( null ); // sets to default
+            assertion.setOutboundServiceUrl( serviceUrlTextField.getText().trim() );
+        }
         assertion.setFailIfNotExist(failIfNotExistCheckBox.isSelected());
-    }
-
-    private void onOK() {
-        confirmed = true;
-        dispose();
-    }
-
-    private void onCancel() {
-        dispose();
     }
 }
