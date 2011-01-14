@@ -38,6 +38,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
+import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
@@ -256,13 +257,14 @@ public class PolicyProcessingTest {
         TestIdentityProvider.addGroup(gb1, ub2);
     }
 
-    private static void createSecureConversationSession() throws DuplicateSessionException {
+    private static void createSecureConversationSession() throws SessionCreationException {
         // Create a well known test session for secure conversation testing
         UserBean ub1 = new UserBean(9898, "Alice");
         ub1.setUniqueIdentifier( "4718592" );
         if (inboundSecureConversationContextManager.getSession("http://www.layer7tech.com/uuid/00000001") == null) {
             inboundSecureConversationContextManager.createContextForUser(
-                    "http://www.layer7tech.com/uuid/00000001", null,
+                    "http://www.layer7tech.com/uuid/00000001",
+                    "http://www.layer7tech.com/uuid/00000001",
                     System.currentTimeMillis() + TimeUnit.DAYS.getMultiplier(),
                     ub1,
                     LoginCredentials.makeLoginCredentials(new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class),

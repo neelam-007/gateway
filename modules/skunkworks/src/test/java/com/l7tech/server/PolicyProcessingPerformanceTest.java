@@ -152,7 +152,8 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         // well known test session
         if (inboundSecureConversationContextManager.getSession("http://www.layer7tech.com/uuid/00000000") == null) {
             inboundSecureConversationContextManager.createContextForUser(
-                    "http://www.layer7tech.com/uuid/00000000", null,
+                    "http://www.layer7tech.com/uuid/00000000",
+                    "http://www.layer7tech.com/uuid/00000000",
                     System.currentTimeMillis() + TimeUnit.DAYS.getMultiplier(),
                     new UserBean(),
                     LoginCredentials.makeLoginCredentials(new HttpBasicToken("test", "password".toCharArray()), HttpBasic.class),

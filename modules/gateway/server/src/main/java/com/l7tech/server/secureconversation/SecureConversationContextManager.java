@@ -2,8 +2,6 @@ package com.l7tech.server.secureconversation;
 
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.security.xml.processor.SecurityContext;
-import com.l7tech.security.xml.processor.SecurityContextFinder;
 import com.l7tech.util.Config;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SyspropUtil;
@@ -19,7 +17,7 @@ import java.util.logging.Logger;
 /**
  * Server-side manager that manages the inbound/outbound Secure Conversation sessions.
  */
-public abstract class SecureConversationContextManager implements SecurityContextFinder {
+public abstract class SecureConversationContextManager<KT> {
 
     public SecureConversationContextManager( final Config config, final boolean isInbound ) {
         this.isInbound = isInbound;
@@ -37,53 +35,82 @@ public abstract class SecureConversationContextManager implements SecurityContex
     }
 
     /**
-     * For use by the WssProcessor on the ssg.
+     * Retrieve a session previously recorded.
+     *
+     * @param sessionKey the key of a session to be retrieved
+     * @return a secure conversation session that matches the given key or null
      */
-    @Override
-    public SecurityContext getSecurityContext(String securityContextIdentifier) {
-        return getSession(securityContextIdentifier);
+    public final SecureConversationSession getSession( final KT sessionKey ) {
+        // Cleanup if necessary
+        checkExpiredSessions();
+
+        // Get session
+        SecureConversationSession output;
+        synchronized( sessions ) {
+            output = (SecureConversationSession) sessions.get(sessionKey);
+        }
+
+        // Check if expired
+        if ( output != null && output.getExpiration() <= System.currentTimeMillis() ) {
+            output = null;
+
+            synchronized( sessions ) {
+                sessions.remove(sessionKey);
+            }
+        }
+        return output;
     }
 
     /**
-     * Retrieve a session previously recorded.
+     * Cancel the session for the given key.
      *
-     * @param sessionIdentifier: the identifier of a session to be retrieved
-     * @return a secure conversation session whose identifier matches sessionIdentifier.
-     */
-    protected abstract SecureConversationSession getSession(String sessionIdentifier);
-
-    /**
-     * Cancel the session for the given identifier.
-     *
-     * @param identifier The identifier for the session to cancel
+     * @param sessionKey The key for the session to cancel
      * @return True if cancelled, false if the session was not found.
      */
-    protected abstract boolean cancelSession( final String identifier );
+    public final boolean cancelSession( final KT sessionKey ) {
+        final boolean cancelled;
+
+        synchronized (sessions) {
+            cancelled = sessions.remove(sessionKey) != null;
+        }
+
+        return cancelled;
+    }
 
     /**
      *  Records and remembers an inbound/outbound session for the duration specified.
      *
-     * @param identifier: For Inbound Session, it is a session identifier.  For Outbound Session, it is User ID + Service URL.
+     * @param sessionKey: For Inbound Session, it is a session identifier.  For Outbound Session, it is User ID + Service URL.
      * @param newSession: The session is to be saved.
      * @throws DuplicateSessionException thrown when attempting to save an existing session.
      */
-    public void saveSession(String identifier, SecureConversationSession newSession) throws DuplicateSessionException {
+    protected void saveSession( final KT sessionKey ,
+                                final SecureConversationSession newSession ) throws SessionCreationException {
+        validateSessionKey( sessionKey );
         synchronized( sessions ) {
             // Two sessions with same id is not allowed. ever (even if one is expired)
-            SecureConversationSession alreadyExistingOne = (SecureConversationSession) sessions.get(identifier);
+            SecureConversationSession alreadyExistingOne = (SecureConversationSession) sessions.get(sessionKey);
             if (alreadyExistingOne != null) {
                 throw new DuplicateSessionException("Session already exists with id " + newSession.getIdentifier());
             }
-            sessions.put(identifier, newSession);
+            sessions.put(sessionKey, newSession);
             logger.fine("Saved SecureConversation context " + newSession.getIdentifier());
         }
     }
-    
+
+    /**
+     * Override if the session key needs validation.
+     *
+     * @param sessionKey The key to validate
+     */
+    protected void validateSessionKey( KT sessionKey ) throws SessionCreationException {
+    }
+
     /**
      * Creates a new inbound/outbound session and saves it.
      *
-     * @param sessionId the session identifier, you should use your own "namespace"
-     * @param serviceUrl the URL of the service that creates a SCT.  This URL is only used when creating an outbound secure conversation session.
+     * @param sessionKey the key for the new session
+     * @param sessionId the external ("public") session identifier, you should use your own "namespace"
      * @param expiryTime the expiry in milliseconds
      * @param sessionOwner the user
      * @param credentials the users credentials
@@ -91,7 +118,7 @@ public abstract class SecureConversationContextManager implements SecurityContex
      * @return the newly created session
      * @throws DuplicateSessionException thrown when attempting to create a new session, which exists already.
      */
-    public SecureConversationSession createContextForUser(String sessionId, String serviceUrl, long expiryTime, User sessionOwner, LoginCredentials credentials, byte[] sharedKey) throws DuplicateSessionException {
+    public SecureConversationSession createContextForUser(KT sessionKey, String sessionId, long expiryTime, User sessionOwner, LoginCredentials credentials, byte[] sharedKey) throws SessionCreationException {
         long expires = expiryTime > 0 ? expiryTime : System.currentTimeMillis() + getDefaultSessionDuration();
         SecureConversationSession session = new SecureConversationSession(
                 null,
@@ -102,8 +129,7 @@ public abstract class SecureConversationContextManager implements SecurityContex
                 sessionOwner,
                 credentials
         );
-        String identifier = (serviceUrl == null || serviceUrl.trim().isEmpty())? sessionId : (sessionOwner.getId() + serviceUrl);
-        saveSession(identifier, session);
+        saveSession(sessionKey, session);
         return session;
     }
 

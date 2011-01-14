@@ -1,136 +1,131 @@
 package com.l7tech.server.secureconversation;
 
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.Config;
+import com.l7tech.util.HexUtils;
 
-import java.util.Set;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 /**
  * The outbound session map uses the concatenation of User ID and Service URL (rather than Session Identifier) as a lookup key.
  *
  * @author ghuang
  */
-public class OutboundSecureConversationContextManager extends SecureConversationContextManager {
+public class OutboundSecureConversationContextManager extends SecureConversationContextManager<OutboundSecureConversationContextManager.OutboundSessionKey> {
 
-    public OutboundSecureConversationContextManager(Config config) {
+    public OutboundSecureConversationContextManager( final Config config ) {
         super(config, false);
     }
 
     /**
-     * Lookup an outbound secure conversation session by a session identifier.  Since the cache is mapped by user id and server url, to lookup  a
-     * session by a session identifier, go thru the list of sessions and find the one, whose session identifier is the same as the given session identifier. 
+     * The key for an outbound session.
      *
-     * @param sessionIdentifier: the identifier of a session to be retrieved
-     * @return an outbound secure conversation session object, which matches the given session identifier.
+     * <p>An outbound session is for a particular user and service (or group of services).</p>
      */
-    @Override
-    public SecureConversationSession getSession(String sessionIdentifier) {
-        if (sessionIdentifier == null || sessionIdentifier.trim().isEmpty()) return null;
+    public static final class OutboundSessionKey implements Serializable {
+        private final long providerId;
+        private final String userId;
+        private final String serviceUrl;
 
-        // Cleanup if necessary
-        checkExpiredSessions();
+        /**
+         * Create a new session key for the given user and "url".
+         *
+         * @param user The user for the session.
+         * @param serviceUrl The URL for the session.
+         */
+        public OutboundSessionKey( final User user,
+                                   final String serviceUrl ) {
+            if ( user == null ) throw new IllegalArgumentException("user is required");
+            if ( serviceUrl == null ) throw new IllegalArgumentException("service url is required");
+            this.providerId = user.getProviderId();
+            this.userId = user.getId();
+            this.serviceUrl = serviceUrl;
+        }
 
-        // Get session
-        SecureConversationSession output = null;
-        String identifier = null; // This is not a session identifier.  It is a lookup identifier and obtained by matching the given session identifier.
-        synchronized (sessions) {
-            Set idSet = sessions.keySet();
-            for (Object id: idSet) {
-                SecureConversationSession session = (SecureConversationSession) sessions.get(id);
-                if (sessionIdentifier.equals(session.getIdentifier())) {
-                    output = session;
-                    identifier = (String) id;
-                    break;
+        /**
+         * Recreate a session key from its string representation.
+         *
+         * @param stringIdentifier The session string.
+         * @return The session key
+         * @throws IllegalArgumentException if the given identifier is invalid
+         * @see #toStringIdentifier()
+         */
+        public static OutboundSessionKey fromStringIdentifier( final String stringIdentifier ) {
+            final ObjectInputStream in;
+            try {
+                in = new ObjectInputStream( new ByteArrayInputStream( HexUtils.decodeBase64( stringIdentifier )) );
+                final Object read = in.readObject();
+                if ( read instanceof OutboundSessionKey ) {
+                    return (OutboundSessionKey) read;
+                } else {
+                    throw new IllegalArgumentException( "Invalid identifier" );
                 }
+            } catch ( IOException e ) {
+                throw new IllegalArgumentException( "Invalid identifier", e );
+            } catch ( ClassNotFoundException e ) {
+                throw new IllegalArgumentException( "Invalid identifier", e );
             }
         }
 
-        // Check if expired
-        if ( output != null && output.getExpiration() <= System.currentTimeMillis() ) {
-            output = null;
+        /**
+         * Convert the session key to a string representation.
+         *
+         * @return This session key as a string
+         * @see #fromStringIdentifier(String)
+         */
+        public String toStringIdentifier() {
+            String identifier;
 
-            synchronized (sessions) {
-                sessions.remove(identifier);
-            }
-        }
-
-        return output;
-    }
-
-    /**
-     * Lookup an outbound secure conversation session by user id and service url.
-     *
-     * @param userId: the identifier of an authenticated user
-     * @param serviceUrl: the URL of the service with which a client established a secure conversation.
-     * @return an outbound secure conversation session object, which matches the given userId and serviceUrl.
-     */
-    public SecureConversationSession getSession(String userId, String serviceUrl) throws SessionLookupException {
-        if (userId == null || userId.trim().isEmpty()) {
-            throw new SessionLookupException("The user identifier used for session lookup is not specified.");
-        } else if (serviceUrl == null || serviceUrl.trim().isEmpty()) {
-            throw new SessionLookupException("The service URL for session lookup is not specified.");
-        }
-
-        // Cleanup if necessary
-        checkExpiredSessions();
-
-        // Get session
-        SecureConversationSession output;
-        String identifier = userId + serviceUrl;
-        synchronized( sessions ) {
-            output = (SecureConversationSession) sessions.get(identifier);
-        }
-
-        // Check if expired
-        if ( output != null && output.getExpiration() <= System.currentTimeMillis() ) {
-            output = null;
-
-            synchronized( sessions ) {
-                sessions.remove(identifier);
-            }
-        }
-        return output;
-    }
-
-    /**
-     * Cancel an outbound secure conversation session, whose session identifier is the same as the given id, sessionIdentifier.
-     *
-     * @param sessionIdentifier: the session identifier, with which an outbound session associated will be removed from the cache.
-     * @return true if the cancellation is successful.
-     */
-    @Override
-    public boolean cancelSession(String sessionIdentifier) {
-        // Get the lookup identifier, which is <user id + service url> and not same as a session identifier.
-        String identifier = null; // The identifier is obtained by matching the given session identifier.
-        synchronized (sessions) {
-            Set idSet = sessions.keySet();
-            for (Object id: idSet) {
-                SecureConversationSession session = (SecureConversationSession) sessions.get(id);
-                if (sessionIdentifier.equals(session.getIdentifier())) {
-                    identifier = (String) id;
-                    break;
-                }
+            BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
+            try {
+                ObjectOutputStream oos = new ObjectOutputStream( new NonCloseableOutputStream(bos) );
+                oos.writeObject( this );
+                oos.close();
+                identifier = HexUtils.encodeBase64(bos.toByteArray(), true);
+            } catch ( IOException e ) {
+                throw new IllegalStateException( e );
+            } finally {
+                bos.close();
             }
 
-            return identifier != null && sessions.remove(identifier) != null;
+            return identifier;
         }
-    }
 
-    /**
-     * Cancel a secure conversation session matched by User ID and Service URL
-     *
-     * @param userId: the user identifier
-     * @param serviceUrl: the URL of the service with which  a client established a secure conversation
-     * @return true if the cancellation is successful.  Otherwise, return false if userId or serviceUrl is not specified.
-     */
-    public boolean cancelSession(String userId, String serviceUrl) {
-        if (userId == null || userId.trim().isEmpty() || serviceUrl == null || serviceUrl.trim().isEmpty()) return false;
+        /**
+         * Is this session key valid?
+         */
+        boolean isValid() {
+            return userId != null;
+        }
 
-        // Get the lookup identifier
-        String identifier = userId + serviceUrl;
-        synchronized (sessions) {
-            return sessions.remove(identifier) != null;
+        @SuppressWarnings({ "RedundantIfStatement" })
+        @Override
+        public boolean equals( final Object o ) {
+            if ( this == o ) return true;
+            if ( o == null || getClass() != o.getClass() ) return false;
+
+            final OutboundSessionKey that = (OutboundSessionKey) o;
+
+            if ( providerId != that.providerId ) return false;
+            if ( !serviceUrl.equals( that.serviceUrl ) ) return false;
+            if ( userId != null ? !userId.equals( that.userId ) : that.userId != null ) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) (providerId ^ (providerId >>> 32));
+            result = 31 * result + (userId != null ? userId.hashCode() : 0);
+            result = 31 * result + serviceUrl.hashCode();
+            return result;
         }
     }
 
@@ -143,7 +138,7 @@ public class OutboundSecureConversationContextManager extends SecureConversation
      * @param namespace The WS-SecureConversation namespace in use (may be null)
      * @param sessionDuration: its unit is milliseconds.  It must be greater than 0.
      * @param requestClientEntropy The request client entropy (may be null)
-     *  @param requestServerEntropy The request server entropy (may be null)
+     * @param requestServerEntropy The request server entropy (may be null)
      * @return the newly created session
      */
     public SecureConversationSession createContextForUser(final User sessionOwner,
@@ -158,6 +153,11 @@ public class OutboundSecureConversationContextManager extends SecureConversation
         final byte[] sharedSecret;
         final byte[] clientEntropy;
         final byte[] serverEntropy;
+
+        if ( sessionOwner == null ) throw new SessionCreationException( "session owner is required" );
+        if ( serviceUrl == null ) throw new SessionCreationException( "service url is required" );
+
+        final OutboundSessionKey sessionKey = new OutboundSessionKey( sessionOwner, serviceUrl );
 
         if (requestSharedSecret != null) {
             if (requestSharedSecret.length >= MIN_SHARED_SECRET_BYTES && requestSharedSecret.length <= MAX_SHARED_SECRET_BYTES) {
@@ -205,9 +205,15 @@ public class OutboundSecureConversationContextManager extends SecureConversation
             credentials
         );
 
-        String identifier = sessionOwner.getId() + serviceUrl; // This identifier is not a session identifier.
-        saveSession(identifier, session);
+        saveSession(sessionKey, session);
 
         return session;
+    }
+
+    @Override
+    protected void validateSessionKey( final OutboundSessionKey sessionKey ) throws SessionCreationException {
+        if ( !sessionKey.isValid() ) {
+            throw new SessionCreationException( "Unable to create session for user (not a persistent identity)" );
+        }
     }
 }

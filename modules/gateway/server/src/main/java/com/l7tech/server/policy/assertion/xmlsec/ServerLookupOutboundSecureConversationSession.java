@@ -15,7 +15,6 @@ import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAsserti
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.server.secureconversation.SessionLookupException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 
@@ -54,20 +53,19 @@ public class ServerLookupOutboundSecureConversationSession extends AbstractMessa
         }
 
         // Get User ID and Service URL
-        String userId = user.getId();
-        String serviceUrl = ExpandVariables.process(assertion.getServiceUrl(), context.getVariableMap(variablesUsed, auditor), auditor);  // serviceUrl won't be null.  So no check for it.
+        final String serviceUrl = ExpandVariables.process(assertion.getServiceUrl(), context.getVariableMap(variablesUsed, auditor), auditor);  // serviceUrl won't be null.  So no check for it.
 
         // Lookup the outbound session
         SecureConversationSession session;
         try {
-            session = securityContextManager.getSession(userId, serviceUrl);
-        } catch (SessionLookupException e) {
+            session = securityContextManager.getSession( new OutboundSecureConversationContextManager.OutboundSessionKey( user, serviceUrl ) );
+        } catch ( IllegalArgumentException e ) {
             auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_LOOKUP_FAILURE, e.getMessage());
             return AssertionStatus.FALSIFIED;
         }
 
         if (session == null) {
-            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_LOOKUP_FAILURE, "The session (with User ID: " + userId + " and Service URL: " + serviceUrl + ") is either expired or not found.");
+            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_LOOKUP_FAILURE, "The session (with User ID: " + user.getId() + " and Service URL: " + serviceUrl + ") is either expired or not found.");
             return AssertionStatus.FALSIFIED;
         }
 

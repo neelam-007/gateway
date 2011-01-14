@@ -103,7 +103,7 @@ public class ServerBuildRstSoapRequest extends AbstractServerAssertion<BuildRstS
 
     private static final Logger logger = Logger.getLogger( ServerBuildRstSoapRequest.class.getName() );
 
-    private static final String CONFIG_DEFAULT_SESSION_DURATION = "outbound.secureConversation.defaultSessionDuration"; //TODO [steve] is this the right property name?
+    private static final String CONFIG_DEFAULT_SESSION_DURATION = "outbound.secureConversation.defaultSessionDuration";
     private static final long MIN_SESSION_DURATION = 1000*60; // 1 min
     private static final long MAX_SESSION_DURATION = 1000*60*60*24; // 24 hrs
 

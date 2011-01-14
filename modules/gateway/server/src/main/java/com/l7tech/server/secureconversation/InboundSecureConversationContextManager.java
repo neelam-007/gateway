@@ -3,6 +3,8 @@ package com.l7tech.server.secureconversation;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.xml.SecureConversationKeyDeriver;
+import com.l7tech.security.xml.processor.SecurityContext;
+import com.l7tech.security.xml.processor.SecurityContextFinder;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SoapConstants;
@@ -15,51 +17,18 @@ import java.util.Arrays;
 /**
  * @author ghuang
  */
-public class InboundSecureConversationContextManager extends SecureConversationContextManager {
-    public InboundSecureConversationContextManager(Config config) {
+public class InboundSecureConversationContextManager extends SecureConversationContextManager<String> implements SecurityContextFinder {
+
+    public InboundSecureConversationContextManager( final Config config ) {
         super(config, true);
     }
 
     /**
-     * Retrieve a session previously recorded.
+     * For use by the WssProcessor on the ssg.
      */
     @Override
-    public SecureConversationSession getSession(String identifier) {
-        // Cleanup if necessary
-        checkExpiredSessions();
-
-        // Get session
-        SecureConversationSession output;
-        synchronized( sessions ) {
-            output = (SecureConversationSession) sessions.get(identifier);
-        }
-
-        // Check if expired
-        if ( output != null && output.getExpiration() <= System.currentTimeMillis() ) {
-            output = null;
-
-            synchronized( sessions ) {
-                sessions.remove(identifier);
-            }
-        }
-        return output;
-    }
-
-    /**
-     * Cancel the session for the given identifier.
-     *
-     * @param identifier The identifier for the session to cancel
-     * @return True if cancelled, false if the session was not found.
-     */
-    @Override
-    public boolean cancelSession( final String identifier ) {
-        final boolean cancelled;
-
-        synchronized (sessions) {
-            cancelled = sessions.remove(identifier) != null;
-        }
-
-        return cancelled;
+    public SecurityContext getSecurityContext( final String securityContextIdentifier ) {
+        return getSession(securityContextIdentifier);
     }
 
      /**
@@ -69,7 +38,9 @@ public class InboundSecureConversationContextManager extends SecureConversationC
      * @param namespace The WS-SecureConversation namespace in use (may be null)
      * @return the newly created session
      */
-    public SecureConversationSession createContextForUser(User sessionOwner, LoginCredentials credentials, String namespace) throws SessionCreationException {
+    public SecureConversationSession createContextForUser( final User sessionOwner,
+                                                           final LoginCredentials credentials,
+                                                           final String namespace) throws SessionCreationException {
         return createContextForUser(sessionOwner, credentials, namespace, getDefaultSessionDuration(), null, -1);
     }
 
