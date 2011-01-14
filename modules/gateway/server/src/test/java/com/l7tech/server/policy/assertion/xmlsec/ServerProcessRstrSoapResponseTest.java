@@ -45,6 +45,32 @@ public class ServerProcessRstrSoapResponseTest {
             "  </soap:Body>\n" +
             "</soap:Envelope>";
 
+    private static final String RSTR_COLLECTION_MESSAGE =
+            "<soap:Envelope xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\">\n" +
+            "  <soap:Body>\n" +
+            "    <wst:RequestSecurityTokenResponseCollection xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\">\n" +
+            "     <wst:RequestSecurityTokenResponse>\n" +
+            "      <wst:TokenType>http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512/sct</wst:TokenType>\n" +
+            "      <wst:RequestedSecurityToken>\n" +
+            "        <wsc:SecurityContextToken xmlns:wsc=\"http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512\">\n" +
+            "          <wsc:Identifier>urn:tokenid</wsc:Identifier>\n" +
+            "        </wsc:SecurityContextToken>\n" +
+            "      </wst:RequestedSecurityToken>\n" +
+            "      <wst:RequestedProofToken>\n" +
+            "        <wst:BinarySecret>TWbYuUCjczs1n4hQEWENV8HkGMcHOgQlJJircNa1Cd4=</wst:BinarySecret>\n" +
+            "      </wst:RequestedProofToken>\n" +
+            "      <wst:Entropy>\n" +
+            "        <wst:BinarySecret>BF9gTwzpFq81zxDC4GLOt3R4a6CGXzfTx2OR1fW9K68=</wst:BinarySecret>\n" +
+            "      </wst:Entropy>\n" +
+            "      <wst:Lifetime xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\">\n" +
+            "        <wsu:Created>2011-01-12T12:00:00.000Z</wsu:Created>\n" +
+            "        <wsu:Expires>2011-01-12T14:00:00.000Z</wsu:Expires>\n" +
+            "      </wst:Lifetime>\n" +
+            "     </wst:RequestSecurityTokenResponse>\n" +
+            "    </wst:RequestSecurityTokenResponseCollection>\n" +
+            "  </soap:Body>\n" +
+            "</soap:Envelope>";
+
     private static final String RSTR_MESSAGE_ENC_KEY =
             "<soap:Envelope xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\">\n" +
             "  <soap:Body>\n" +
@@ -150,6 +176,22 @@ public class ServerProcessRstrSoapResponseTest {
         assertEquals( "expires variable", "2011-01-12T14:00:00.000Z", expires );
         assertEquals( "entropy variable", "BF9gTwzpFq81zxDC4GLOt3R4a6CGXzfTx2OR1fW9K68=", entropy );
         assertEquals( "secret variable", "TWbYuUCjczs1n4hQEWENV8HkGMcHOgQlJJircNa1Cd4=", secret );
+    }
+
+    @Test
+    public void testResponseCollection() throws Exception {
+        final ProcessRstrSoapResponse processRstrSoapResponse = new ProcessRstrSoapResponse();
+        processRstrSoapResponse.setTokenType( SecurityTokenType.WSSC_CONTEXT );
+
+        final ServerProcessRstrSoapResponse serverProcessRstrSoapResponse =
+                new ServerProcessRstrSoapResponse( processRstrSoapResponse, beanFactory );
+
+        final Message request = new Message( XmlUtil.parse(RSTR_COLLECTION_MESSAGE), 0 );
+        final Message response = new Message();
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
+
+        final AssertionStatus status = serverProcessRstrSoapResponse.checkRequest( context );
+        assertEquals( "AssertionStatus", AssertionStatus.NONE, status );
     }
 
     @Test

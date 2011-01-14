@@ -88,6 +88,7 @@ public class ServerBuildRstSoapRequest extends AbstractServerAssertion<BuildRstS
                     soapVersion==SoapVersion.SOAP_1_1 ?
                             ContentTypeHeader.XML_DEFAULT :
                             ContentTypeHeader.SOAP_1_2_DEFAULT );
+            output.getSecurityKnob().getOrMakeDecorationRequirements().getNamespaceFactory().setWsscNs( wsTrustConfig.getWsscNs() );
         } catch ( NoSuchVariableException e ) {
             auditor.logAndAudit( AssertionMessages.RST_BUILDER_OUTPUT, e.getVariable() );
             throw new AssertionStatusException(AssertionStatus.FAILED);

@@ -35,6 +35,7 @@ import org.xml.sax.SAXException;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -77,16 +78,33 @@ public class ServerProcessRstrSoapResponse extends AbstractMessageTargetableServ
 
         final Element rstrElement;
         try {
-            rstrElement = DomUtils.findOnlyOneChildElement( soapBody );
+            final Element bodyChild = DomUtils.findOnlyOneChildElement( soapBody );
+
+            if ( !ArrayUtils.contains( SoapConstants.WST_NAMESPACE_ARRAY, bodyChild.getNamespaceURI() )) {
+                auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_INVALID, "not an RSTR message." );
+                return AssertionStatus.FALSIFIED;
+            }
+
+            if ( "RequestSecurityTokenResponseCollection".equals(bodyChild.getLocalName()) ) {
+                final List<Element> requestSecurityTokenResponses = DomUtils.findChildElementsByName( bodyChild, bodyChild.getNamespaceURI(), "RequestSecurityTokenResponse" );
+
+                if ( requestSecurityTokenResponses.size() != 1 ) {
+                    auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_INVALID, "Unexpected response count: " + requestSecurityTokenResponses.size() );
+                    return AssertionStatus.FALSIFIED;
+                } else {
+                    rstrElement = requestSecurityTokenResponses.get( 0 );
+                }
+            } else if ( "RequestSecurityTokenResponse".equals(bodyChild.getLocalName()) ) {
+                rstrElement = bodyChild;
+            } else {
+                auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_INVALID, "not an RSTR message." );
+                return AssertionStatus.FALSIFIED;
+            }
         } catch ( TooManyChildElementsException e ) {
             auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_INVALID, "not an RSTR message." );
             return AssertionStatus.FALSIFIED;
         }
 
-        if ( !ArrayUtils.contains( SoapConstants.WST_NAMESPACE_ARRAY, rstrElement.getNamespaceURI() )) {
-            auditor.logAndAudit( AssertionMessages.RSTR_PROCESSOR_INVALID, "not an RSTR message." );
-            return AssertionStatus.FALSIFIED;
-        }
         final String wsTrustNamespace = rstrElement.getNamespaceURI();
 
         final Element tokenElement;

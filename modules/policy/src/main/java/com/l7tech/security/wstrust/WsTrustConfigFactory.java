@@ -1,5 +1,6 @@
 package com.l7tech.security.wstrust;
 
+import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.util.SyspropUtil;
 
@@ -88,6 +89,15 @@ public class WsTrustConfigFactory {
             String ret = requestTypeMap.get(requestType.getName());
             if (ret == null) throw new IllegalArgumentException("Unknown WsTrustRequestType: " + requestType.getName());
             return ret;
+        }
+
+        @Override
+        protected String getTokenUri( final SecurityTokenType securityTokenType ) {
+            if ( SecurityTokenType.WSSC_CONTEXT == securityTokenType ) {
+                return super.getTokenUri( securityTokenType );
+            } else {
+                return securityTokenType.getWstTokenTypeUri();
+            }
         }
     }
 

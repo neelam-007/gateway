@@ -7,6 +7,7 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.SoapConstants;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.xml.soap.SoapUtil;
@@ -22,17 +23,28 @@ import java.util.Set;
  * Encapsulates a version of WS-Trust, currently shared and immutable.
  */
 public abstract class WsTrustConfig {
+    private static final boolean deriveWsscNamespace = SyspropUtil.getBoolean( "com.l7tech.security.wstrust.deriveWsscNamespace", true ); // prior to 5.4.1 we did not derive the namespace
+    private static final boolean useLegacyTokenUris = SyspropUtil.getBoolean( "com.l7tech.security.wstrust.useLegacyTokenUris", false ); // prior to 5.4.1 we used "old" token uris
+
     private final String wstNs;
     private final String wspNs;
     private final String wsaNs;
-    private final String wsscNs = SoapConstants.WSSC_NAMESPACE;
+    private final String wsscNs;
 
     public WsTrustConfig( final String wstNs,
                           final String wspNs,
                           final String wsaNs) {
+        this( wstNs, wspNs, wsaNs, deriveWsscNamespace ? deriveWsSecureConversationNamespace(wstNs) : SoapConstants.WSSC_NAMESPACE );
+    }
+
+    public WsTrustConfig( final String wstNs,
+                          final String wspNs,
+                          final String wsaNs,
+                          final String wsscNs ) {
         this.wstNs = wstNs;
         this.wspNs = wspNs;
         this.wsaNs = wsaNs;
+        this.wsscNs = wsscNs;
     }
 
     public String getWspNs() {
@@ -52,13 +64,36 @@ public abstract class WsTrustConfig {
     }
 
     /**
+     * Derive the namespace of WS-Secure Conversation from a given namespace of WS-Trust.
+     *
+     * @param wstNamespace: the namespace of WS-Trust
+     * @return a corresponding namespace of WS-Secure Conversation.
+     * @throws IllegalArgumentException If the given namespace is null or unrecognized.
+     */
+    public static String deriveWsSecureConversationNamespace( final String wstNamespace ) {
+        if (wstNamespace == null) throw new IllegalArgumentException("WS-Trust Namespace must be required.");
+
+        String wscNamespace;
+        if (SoapConstants.WST_NAMESPACE.equals(wstNamespace)) {
+            wscNamespace = SoapConstants.WSSC_NAMESPACE;
+        } else if (SoapConstants.WST_NAMESPACE2.equals(wstNamespace)) {
+            wscNamespace = SoapConstants.WSSC_NAMESPACE2;
+        } else if (SoapConstants.WST_NAMESPACE3.equals(wstNamespace)) {
+            wscNamespace = SoapConstants.WSSC_NAMESPACE3;
+        } else if (SoapConstants.WST_NAMESPACE4.equals(wstNamespace)) {
+            wscNamespace = SoapConstants.WSSC_NAMESPACE3;
+        } else {
+            throw new IllegalArgumentException("Invalid WS-Trust namespace, " + wstNamespace);
+        }
+
+        return wscNamespace;
+    }
+
+    /**
      * @return the request type URI for the specified WsTrustRequestType for this WsTrustConfig's version of WS-Trust.
      *         Never null -- any valid WsTrustRequestType instance will produce a URI.
      */
-
     protected abstract String getRequestTypeUri(WsTrustRequestType requestType);
-
-
 
     protected Document makeRequestSecurityTokenResponseMessage(final String soapNs,
                                                                final String tokenString) throws SAXException {
@@ -107,7 +142,7 @@ public abstract class WsTrustConfig {
 
         // Add TokenType, if meaningful with this token type
         if (desiredTokenType != null) {
-            final String tokenTypeUri = desiredTokenType.getWstTokenTypeUri(); // TODO [steve] update the token URIs to match specs?
+            final String tokenTypeUri = getTokenUri(desiredTokenType);
             if (tokenTypeUri != null) {
                 // Add TokenType element
                 Element tokenType = DomUtils.createAndAppendElementNS(rst, "TokenType", getWstNs(), "wst");
@@ -212,5 +247,25 @@ public abstract class WsTrustConfig {
         return msg;
     }
 
+    protected String getTokenUri( final SecurityTokenType securityTokenType ) {
+        String tokenUri;
 
+        if ( useLegacyTokenUris ) {
+            tokenUri = securityTokenType.getWstTokenTypeUri();
+        } else if ( SecurityTokenType.SAML_ASSERTION == securityTokenType ) {
+            tokenUri = SoapConstants.VALUETYPE_SAML4;
+        } else if ( SecurityTokenType.SAML2_ASSERTION == securityTokenType ) {
+            tokenUri = SoapConstants.VALUETYPE_SAML5;
+        } else if ( SecurityTokenType.WSSC_CONTEXT == securityTokenType ) {
+            if ( SoapConstants.WSSC_NAMESPACE.endsWith( getWsscNs() )) {
+                tokenUri = SoapConstants.WSC_RST_SCT_TOKEN_TYPE;
+            } else {
+                tokenUri = getWsscNs() + "/sct";
+            }
+        } else {
+            tokenUri = securityTokenType.getWstTokenTypeUri();
+        }
+
+        return tokenUri;
+    }
 }

@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.CreateSecurityContextToken;
+import com.l7tech.security.wstrust.WsTrustConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -154,22 +155,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
      * @return a corresponding namespace of WS-Secure Conversation.
      */
     private String deriveWscNamespace(String wstNamespace) {
-        if (wstNamespace == null) throw new IllegalArgumentException("WS-Trust Namespace must be required.");
-
-        String wscNamespace;
-        if (SoapConstants.WST_NAMESPACE.equals(wstNamespace)) {
-            wscNamespace = SoapConstants.WSSC_NAMESPACE;
-        } else if (SoapConstants.WST_NAMESPACE2.equals(wstNamespace)) {
-            wscNamespace = SoapConstants.WSSC_NAMESPACE2;
-        } else if (SoapConstants.WST_NAMESPACE3.equals(wstNamespace)) {
-            wscNamespace = SoapConstants.WSSC_NAMESPACE3;
-        } else if (SoapConstants.WST_NAMESPACE4.equals(wstNamespace)) {
-            wscNamespace = SoapConstants.WSSC_NAMESPACE3;
-        } else {
-            throw new IllegalArgumentException("Invalid WS-Trust namespace, " + wstNamespace);
-        }
-
-        return wscNamespace;
+        return WsTrustConfig.deriveWsSecureConversationNamespace( wstNamespace );
     }
 
     @Override
