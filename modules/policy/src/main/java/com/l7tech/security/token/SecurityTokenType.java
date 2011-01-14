@@ -36,6 +36,21 @@ public class SecurityTokenType implements Serializable {
         return securityTokenType;
     }
 
+    /**
+     * Look up a security token type by its WS-Trust token type URI.  This is the URI that would be used with a wsse:TokenType element to
+     * identify a type of security token.
+     *
+     * @param tokenTypeUri the token URI, eg "http://www.w3.org/2001/04/xmlenc#EncryptedKey".  Required.
+     * @return the first SecurityTokenType with a matching token URI, or null if none was found.
+     */
+    public static SecurityTokenType getByWstTokenTypeUri(String tokenTypeUri) {
+        for (SecurityTokenType value : VALUES) {
+            if (tokenTypeUri.equals(value.getWstTokenTypeUri()))
+                return value;
+        }
+        return null;
+    }
+
     public int getNum() {
         return num;
     }

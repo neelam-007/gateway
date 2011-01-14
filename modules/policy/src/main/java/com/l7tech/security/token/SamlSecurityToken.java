@@ -64,6 +64,11 @@ public interface SamlSecurityToken extends X509SigningSecurityToken {
     boolean hasEmbeddedIssuerSignature();
 
     /**
+     * @return true if this assertion is a holder-of-key assertion that appears to use a wrapped symmetric key for subject confirmation.
+     */
+    boolean hasSubjectConfirmationEncryptedKey();
+
+    /**
      * Check embededded signature of this saml assertion.  May only be called if {@link #hasEmbeddedIssuerSignature()}  returns true.
      * */
     void verifyEmbeddedIssuerSignature() throws SignatureException;

@@ -1038,7 +1038,10 @@
     </bean>
 
     <!-- server Wss Decorator -->
-    <bean id="wssDecorator" class="com.l7tech.security.xml.decorator.WssDecoratorImpl"/>
+    <bean id="wssDecorator" class="com.l7tech.security.xml.decorator.WssDecoratorImpl">
+        <property name="securityTokenResolver" ref="securityTokenResolver"/>
+    </bean>
+
     <!-- server Message Processor -->
     <bean id="messageProcessor" class="com.l7tech.server.MessageProcessor">
         <constructor-arg ref="serviceCache"/>

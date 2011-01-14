@@ -61,6 +61,10 @@ public class AddWssSignatureSupport implements AuditHaver {
         return auditHaver.getAuditor();
     }
 
+    public SignerInfo getSignerInfo() {
+        return signerInfo;
+    }
+
     /**
      * Apply signature decoration requirements to a target message, and return a recommended AssertionStatus.
      *

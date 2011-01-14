@@ -9,7 +9,7 @@ import java.awt.*;
  * Properties dialog for "Add Security Token" assertion.
  */
 public class AddWssSecurityTokenDialog extends AssertionOkCancelDialog<AddWssSecurityToken> {
-    public AddWssSecurityTokenDialog(Frame owner, AddWssSecurityToken assertion, boolean readOnly) {
-        super(owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString(), true, new AddWssSecurityTokenPanel(assertion), readOnly, assertion);
+    public AddWssSecurityTokenDialog(Frame owner, AddWssSecurityToken assertion) {
+        super(owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString(), new AddWssSecurityTokenPanel(assertion), assertion);
     }
 }

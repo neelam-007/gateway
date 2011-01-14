@@ -7,14 +7,13 @@ import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Element;
 
-import java.security.cert.X509Certificate;
 import java.security.GeneralSecurityException;
-import java.io.IOException;
+import java.security.cert.X509Certificate;
 
 /**
- *
+ * Implementation of an EncryptedKey token.
  */
-class EncryptedKeyImpl extends SigningSecurityTokenImpl implements EncryptedKey {
+public class EncryptedKeyImpl extends SigningSecurityTokenImpl implements EncryptedKey {
     private final String elementWsuId;
     private final byte[] encryptedKeyBytes;
     private final SignerInfo signerInfo;
@@ -23,8 +22,8 @@ class EncryptedKeyImpl extends SigningSecurityTokenImpl implements EncryptedKey 
     private byte[] secretKeyBytes = null;
 
     // Constructor that supports lazily-unwrapping the key
-    EncryptedKeyImpl(Element encryptedKeyEl, SecurityTokenResolver tokenResolver, Resolver<String,X509Certificate> x509Resolver)
-            throws InvalidDocumentFormatException, IOException, GeneralSecurityException, UnexpectedKeyInfoException {
+    public EncryptedKeyImpl(Element encryptedKeyEl, SecurityTokenResolver tokenResolver, Resolver<String,X509Certificate> x509Resolver)
+            throws InvalidDocumentFormatException, GeneralSecurityException, UnexpectedKeyInfoException {
         super(encryptedKeyEl);
         this.elementWsuId = SoapUtil.getElementWsuId(encryptedKeyEl);
         this.tokenResolver = tokenResolver;

@@ -25,6 +25,9 @@ public class IssuerSerialKeyInfoDetails extends KeyInfoDetails {
     private final boolean includeStr;
 
     public IssuerSerialKeyInfoDetails(X509Certificate certificate, boolean includeStr) {
+        if (certificate == null) {
+            throw new IllegalStateException("Unable to create IssuerSerial reference -- no target certificate provided");
+        }
         this.cert = certificate;
         this.includeStr = includeStr;
     }

@@ -38,14 +38,6 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
 
     private final AddWssSecurityToken assertion;
 
-    private final ActionListener updater = new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            propertiesTabbedPane.setSelectedIndex(tokenTypeCombo.getSelectedIndex());
-            checkSyntax();
-        }
-    };
-
     public AddWssSecurityTokenPanel(AddWssSecurityToken model) {
         super("assertion");
         this.assertion = model;
@@ -54,6 +46,15 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
 
     @Override
     protected void initComponents() {
+        RunOnChangeListener updater = new RunOnChangeListener( new Runnable(){
+            @Override
+            public void run() {
+                updateVisibleTab();
+                checkSyntax();
+                updateButtons();
+            }
+        } );
+
         // Neuter tabbed pane back into something resembling a CardLayout panel by hiding tabs and border
         propertiesTabbedPane.setUI(new BasicTabbedPaneUI() {
             @Override
@@ -136,18 +137,16 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
             }
         } );
 
-        RunOnChangeListener stateUpdateListener = new RunOnChangeListener( new Runnable(){
-            @Override
-            public void run() {
-                updateButtons();
-            }
-        } );
+        includePasswordCheckBox.addActionListener( updater );
 
-        includePasswordCheckBox.addActionListener( stateUpdateListener );
-
+        updateVisibleTab();
         updateButtons();
 
         add(mainPanel, BorderLayout.CENTER);
+    }
+
+    private void updateVisibleTab() {
+        propertiesTabbedPane.setSelectedIndex(tokenTypeCombo.getSelectedIndex());
     }
 
     private void updateButtons() {

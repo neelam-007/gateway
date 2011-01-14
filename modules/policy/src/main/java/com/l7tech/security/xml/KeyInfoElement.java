@@ -222,8 +222,9 @@ public class KeyInfoElement implements ParsedElement {
      * the EncryptedType.  Concrete examples are EncryptedKey and EncryptedData.
      *
      * @param encryptedType the EncryptedKey or EncryptedData element.  Must include a KeyInfo child.
-     * @param securityTokenResolver resolver for private keys
-     * @param certResolver resolver for certificates by identifier
+     * @param securityTokenResolver resolver for private keys.  required
+     * @param certResolver resolver for certificates by identifier, to resolve references to BSTs in the same message that are carrying certificate bytes,
+     *                     or null if no Reference URIs to BSTs within the same message should be followed
      * @return a SignerInfo containing the matching private key and certificate chain.  Never null.
      * @throws com.l7tech.util.InvalidDocumentFormatException  if there was a problem with the encryptedType, or the KeyInfo didn't match.
      * @throws com.l7tech.security.xml.UnexpectedKeyInfoException      if the keyinfo did not match any known private key

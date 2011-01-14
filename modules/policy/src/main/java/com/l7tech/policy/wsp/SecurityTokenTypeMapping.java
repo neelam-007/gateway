@@ -59,6 +59,10 @@ class SecurityTokenTypeMapping implements TypeMapping {
     public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         String uri = DomUtils.getTextValue(source).trim();
 
+        SecurityTokenType exactMatch = SecurityTokenType.getByWstTokenTypeUri(uri);
+        if (exactMatch != null)
+            return new TypedReference(getMappedClass(), exactMatch);
+
         if (PX509.matcher(uri).find())
             return new TypedReference(getMappedClass(), SecurityTokenType.WSS_X509_BST);
         if (PUT.matcher(uri).find())

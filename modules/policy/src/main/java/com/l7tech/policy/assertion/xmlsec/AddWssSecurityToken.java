@@ -245,18 +245,23 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
         StringBuilder allRefs = new StringBuilder();
         if ( username != null ) allRefs.append( username );
         if ( password != null ) allRefs.append( password );
+        if ( samlAssertionTemplate != null ) allRefs.append( samlAssertionTemplate );
         String[] referencedVariables = Syntax.getReferencedNames( allRefs.toString() );
         vars.addAll( Arrays.asList(referencedVariables));
+        if (wsscSessionVariable != null && wsscSessionVariable.length() > 0)
+            vars.add(wsscSessionVariable);
 
         return vars.toArray(new String[vars.size()]);
     }
 
-    final static String baseName = "Add Signed Security Token";
+    final static String baseName = "Add Security Token";
+    final static String baseNameSigned = "Add Signed Security Token";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<AddWssSecurityToken>(){
         @Override
         public String getAssertionName( final AddWssSecurityToken assertion, final boolean decorate) {
-            return (decorate) ? AssertionUtils.decorateName(assertion, baseName) + " (" + assertion.getTokenType().getName() + ")" : baseName;
+            final String base = assertion.isProtectTokens() ? baseNameSigned : baseName;
+            return (decorate) ? AssertionUtils.decorateName(assertion, base) + " (" + assertion.getTokenType().getName() + ")" : base;
         }
     };
 
@@ -265,13 +270,14 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
         DefaultAssertionMetadata meta = super.defaultMeta();
 
         meta.put(PALETTE_NODE_NAME, baseName);
-        meta.put(DESCRIPTION, "Add a security token to the message.");
+        meta.put(DESCRIPTION, "Add a WS-Security security token to the message.  This can be a UsernameToken, a SAML Assertion, an EncryptedKey, " +
+                "or a WS-SecureConversation session.<p/>The token will be added to the target message when the security requirements are next applied to it.");
         meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
         meta.put(PALETTE_NODE_SORT_PRIORITY, 60000);
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.AddWssSecurityTokenPropertiesAction");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.AddWssSecurityTokenDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Security Token Properties");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_ICON, "com/l7tech/console/resources/About16.gif");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssDecorationAssertionValidator");

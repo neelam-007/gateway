@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
@@ -9,20 +10,30 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernameTokenImpl;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -35,6 +46,7 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
     private final String[] variableNames;
     private final AddWssSignatureSupport addWssSignatureSupport;
     private final AddWssEncryptionSupport addWssEncryptionSupport;
+    private final SecurityTokenResolver securityTokenResolver;
 
     public ServerAddWssSecurityToken( final AddWssSecurityToken assertion, final BeanFactory beanFactory, final ApplicationEventPublisher eventPub ) {
         super(assertion, assertion);
@@ -42,6 +54,7 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
         this.variableNames = assertion.getVariablesUsed();
         this.addWssEncryptionSupport = new AddWssEncryptionSupport(auditor, logger, assertion, assertion, assertion);
         this.addWssSignatureSupport = new AddWssSignatureSupport(auditor, assertion, beanFactory, shouldFailIfNoElementsToSign(assertion), Assertion.isResponse(assertion));
+        this.securityTokenResolver = beanFactory == null ? null : beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
 
     @Override
@@ -71,26 +84,99 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
     }
 
     private AssertionStatus addEncryptedKey(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext, DecorationRequirements dreq) throws IOException, PolicyAssertionException {
-        AssertionStatus ret = addWssSignatureSupport.applySignatureDecorationRequirements(context, message, messageDescription, authContext, true, new AddWssSignatureSupport.SignedElementSelector() {
-            @Override
-            public int selectElementsToSign(PolicyEnforcementContext context, AuthenticationContext authContext, Document soapmsg, DecorationRequirements wssReq, Message targetMessage) throws PolicyAssertionException {
-                return 1;
-            }
-        });
-        dreq.setSenderMessageSigningCertificate(null);
-        dreq.setSenderSamlToken(null);
-        dreq.setSenderMessageSigningPrivateKey(null);
+        dreq.setPreferredSigningTokenType(DecorationRequirements.PreferredSigningTokenType.ENCRYPTED_KEY);
         dreq.setIncludeTimestamp(true);
         dreq.setSignTimestamp(true);
-        return ret;
+        try {
+            AddWssEncryptionContext encryptionContext = addWssEncryptionSupport.buildEncryptionContext(context);
+            addWssEncryptionSupport.applyDecorationRequirements(context, dreq, encryptionContext, null);
+        } catch (AddWssEncryptionSupport.MultipleTokensException e) {
+            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_MULTIPLE_REQ_TOKENS);
+            // Continue anyway after warning, in case subsequent apply security fills in an appropriate encryption recipient
+        }
+        return AssertionStatus.NONE;
     }
 
     private AssertionStatus addSamlAssertion(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext, DecorationRequirements dreq) {
-        throw new UnsupportedOperationException("Not yet implemented - addSamlAssertion");
+        String assertionTemplate = assertion.getSamlAssertionTemplate();
+        if (assertionTemplate == null || assertionTemplate.length() < 1) {
+            auditor.logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, "no SAML assertion template was provided");
+            return AssertionStatus.SERVER_ERROR;
+        }
+
+        Map<String, Object> varMap = context.getVariableMap(variableNames, auditor);
+        String samlXml = ExpandVariables.process(assertionTemplate, varMap, auditor);
+        Document samlDoc;
+        try {
+            samlDoc = XmlUtil.stringToDocument(samlXml);
+        } catch (SAXException e) {
+            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_BAD_SAML_XML, null, e);
+            return AssertionStatus.SERVER_ERROR;
+        }
+
+        SamlAssertion samlAssertion;
+        try {
+            samlAssertion = SamlAssertion.newInstance(samlDoc.getDocumentElement());
+        } catch (SAXException e) {
+            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_BAD_SAML_XML, null, e);
+            return AssertionStatus.SERVER_ERROR;
+        }
+
+        dreq.setSenderSamlToken(samlAssertion);
+        dreq.setSenderMessageSigningPrivateKey(addWssSignatureSupport.getSignerInfo().getPrivate());
+
+        if (samlAssertion.hasSubjectConfirmationEncryptedKey()) {
+            // To use this assertion for decoration we'll need to either already have its secret key or else be able to unwrap it
+            EncryptedKey encryptedKey = null;
+            try {
+                encryptedKey = samlAssertion.getSubjectConfirmationEncryptedKey(securityTokenResolver, null);
+            } catch (InvalidDocumentFormatException e) {
+                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE, null, e);
+            } catch (UnexpectedKeyInfoException e) {
+                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE, null, e);
+            } catch (GeneralSecurityException e) {
+                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE, null, e);
+            }
+
+            if (encryptedKey != null) {
+                try {
+                    byte[] secretKeyBytes = encryptedKey.getSecretKey();
+                    dreq.setEncryptedKey(secretKeyBytes);
+                    dreq.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
+                } catch (InvalidDocumentFormatException e) {
+                    auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE, null, e);
+                } catch (GeneralSecurityException e) {
+                    auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE, null, e);
+                }
+            }
+        }
+
+        return AssertionStatus.NONE;
     }
 
     private AssertionStatus addWsscContext(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext, DecorationRequirements dreq) {
-        throw new UnsupportedOperationException("Not yet implemented - addWsscContext");
+        String wsscVarName = assertion.getWsscSessionVariable();
+        if (wsscVarName == null || wsscVarName.length() < 1) {
+            auditor.logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, "no secure conversation session variable name was provided");
+            return AssertionStatus.SERVER_ERROR;
+        }
+
+        final Object wsscVal;
+        try {
+            wsscVal = context.getVariable(wsscVarName);
+        } catch (NoSuchVariableException e) {
+            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, wsscVarName);
+            return AssertionStatus.SERVER_ERROR;
+        }
+
+        if (!(wsscVal instanceof SecureConversationSession)) {
+            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SESSION);
+            return AssertionStatus.SERVER_ERROR;
+        }
+
+        SecureConversationSession session = (SecureConversationSession) wsscVal;
+        dreq.setSecureConversationSession(session);
+        return AssertionStatus.NONE;
     }
 
     private AssertionStatus addUsernameToken(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext, DecorationRequirements dreq) throws IOException, PolicyAssertionException {

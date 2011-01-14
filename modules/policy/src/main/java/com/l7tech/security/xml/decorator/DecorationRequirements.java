@@ -776,7 +776,7 @@ public class DecorationRequirements {
         return securityHeaderMustUnderstand;
     }
 
-    public enum PreferredSigningTokenType { X509  } // currently only X509 can be preferred
+    public enum PreferredSigningTokenType { X509, ENCRYPTED_KEY  } // currently only X509 or EncryptedKey can be preferred
 
     /**
      * Get the preferred signing token type if any.

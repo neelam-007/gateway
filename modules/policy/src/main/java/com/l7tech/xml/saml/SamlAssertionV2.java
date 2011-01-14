@@ -8,6 +8,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.KeyInfoElement;
@@ -257,8 +258,24 @@ public final class SamlAssertionV2 extends SamlAssertion {
         return embeddedSignatureElement!=null;
     }
 
+    @Override
+    public boolean hasSubjectConfirmationEncryptedKey() {
+        return false;
+    }
+
     public Element getEmbeddedIssuerSignature() {
         return embeddedSignatureElement;
+    }
+
+    @Override
+    public EncryptedKey getSubjectConfirmationEncryptedKey(SecurityTokenResolver tokenResolver, Resolver<String, X509Certificate> x509Resolver) throws InvalidDocumentFormatException {
+        logger.warning("Subject confirmation using EncryptedKey is not currently implemented for SAMLv2");
+        return null;
+    }
+
+    @Override
+    public boolean isSubjectConfirmationEncryptedKeyAvailable() {
+        return false;
     }
 
     /**

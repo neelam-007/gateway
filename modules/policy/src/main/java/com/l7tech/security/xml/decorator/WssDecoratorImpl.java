@@ -59,7 +59,17 @@ public class WssDecoratorImpl implements WssDecorator {
 
     private static final Random rand = new SecureRandom();
 
+    private SecurityTokenResolver securityTokenResolver = null;
+
     public WssDecoratorImpl() {
+    }
+
+    public SecurityTokenResolver getSecurityTokenResolver() {
+        return securityTokenResolver;
+    }
+
+    public void setSecurityTokenResolver(SecurityTokenResolver securityTokenResolver) {
+        this.securityTokenResolver = securityTokenResolver;
     }
 
     private static class Context {
@@ -254,6 +264,15 @@ public class WssDecoratorImpl implements WssDecorator {
                     case X509:
                         signatureInfo = buildX509SignatureInfo( dreq, senderCertKeyInfo );
                         break;
+
+                    case ENCRYPTED_KEY:
+                        final Element[] addedEncKeyHolder = new Element[1];
+                        final XencUtil.XmlEncKey[] addedEncKeyXmlEncKeyHolder = new XencUtil.XmlEncKey[1];
+                        signatureInfo = processGeneratedEncryptedKeySigningToken( c, securityHeader, signList, addedEncKeyHolder, addedEncKeyXmlEncKeyHolder );
+                        addedEncKey = addedEncKeyHolder[0];
+                        addedEncKeyXmlEncKey = addedEncKeyXmlEncKeyHolder[0];
+                        break;
+
                     default:
                         throw new DecoratorException("Signing is requested, but there is no key available.");
                 }
@@ -1373,6 +1392,10 @@ public class WssDecoratorImpl implements WssDecorator {
                                      final Element desiredNextSibling )
       throws GeneralSecurityException, DecoratorException {
 
+        if (recipientCertificate == null) {
+            throw new DecoratorException("Unable to create EncryptedKey: no encryption recipient certificate has been specified");
+        }
+
         Document soapMsg = securityHeader.getOwnerDocument();
 
         String xencNs = SoapConstants.XMLENC_NS;
@@ -1434,7 +1457,12 @@ public class WssDecoratorImpl implements WssDecorator {
                                               recipientCertificate,
                                               recipientCertificate.getPublicKey());
         }
-        c.lastEncryptedKeyBytes = encryptedKeyBytes;
+        c.lastEncryptedKeyBytes = encryptedKeyBytes;        
+        if (securityTokenResolver != null) {
+            String encryptedKeySha1 = XencUtil.computeEncryptedKeySha1(encryptedKeyBytes);
+            securityTokenResolver.putSecretKeyByEncryptedKeySha1(encryptedKeySha1, secretKey.getEncoded());
+        }
+
         final String base64 = HexUtils.encodeBase64(encryptedKeyBytes, true);
         cipherValue.appendChild(DomUtils.createTextNode(soapMsg, base64));
         Element referenceList = DomUtils.createAndAppendElementNS(encryptedKey, SoapConstants.REFLIST_EL_NAME, xencNs, xenc);

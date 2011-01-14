@@ -6,18 +6,22 @@
 
 package com.l7tech.xml.saml;
 
-import com.l7tech.security.token.SamlSecurityToken;
-import com.l7tech.security.xml.processor.X509SigningSecurityTokenImpl;
-import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.saml.SamlConstants;
-
+import com.l7tech.security.token.EncryptedKey;
+import com.l7tech.security.token.SamlSecurityToken;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.UnexpectedKeyInfoException;
+import com.l7tech.security.xml.processor.X509SigningSecurityTokenImpl;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.Resolver;
+import org.apache.xmlbeans.XmlObject;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import org.apache.xmlbeans.XmlObject;
 
+import java.security.GeneralSecurityException;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.TimeZone;
 
 /**
  * Encapsulates an abstract saml:Assertion SecurityToken.
@@ -81,6 +85,31 @@ public abstract class SamlAssertion extends X509SigningSecurityTokenImpl impleme
     public abstract void setAttestingEntity(X509Certificate attestingEntity);
 
     public abstract Element getEmbeddedIssuerSignature();
+
+    /**
+     * Get the DOM Element representing an EncryptedKey used for subject confirmation, if one is present.
+     * <p/>
+     * Even if an encrypted key is returned, it still may not have been unwrapped; call call {@link com.l7tech.security.token.EncryptedKey#isUnwrapped()} to
+     * check whether the unwrapped secret key is already available.
+     *
+     * @param tokenResolver resolver for finding information that may be needed for unwrapping an embedded encrypted key.  Required unless {@link #isSubjectConfirmationEncryptedKeyAvailable()} returned true.
+     * @param x509Resolver resolver for certificates by identifier, to resolve references to BSTs in the same message that are carrying certificate bytes,
+     *                     or null if no Reference URIs to BSTs within the same message should be followed
+     * @return an EncryptedKey, or null if one was not present or could not be processed
+     * @throws InvalidDocumentFormatException if there is a problem with the format of the SAML assertion or the encrypted key.
+     * @throws GeneralSecurityException if there was a problem with the recipient certificate or a certificate embedded within the EncryptedKey.
+     * @throws UnexpectedKeyInfoException  if the EncryptedKey's KeyInfo did not match private key known to the tokenResolver.
+     */
+    public abstract EncryptedKey getSubjectConfirmationEncryptedKey(SecurityTokenResolver tokenResolver, Resolver<String,X509Certificate> x509Resolver) throws InvalidDocumentFormatException, UnexpectedKeyInfoException, GeneralSecurityException;
+
+    /**
+     * Check if a subject confirmation EncryptedKey has already been located and examined (though not necessarily unwrapped).
+     * <p/>
+     * If this returns true, you may call {@link #getSubjectConfirmationEncryptedKey} without passing in any resolvers.
+     *
+     * @return true if {@link #getSubjectConfirmationEncryptedKey} would return non-null if called with null arguments.
+     */
+    public abstract boolean isSubjectConfirmationEncryptedKeyAvailable();
 
     public boolean equals(Object o) {
         if (this == o) return true;

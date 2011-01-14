@@ -814,6 +814,21 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
+    private SamlAssertion findSamlSecurityTokenByAssertionId(String assertionId) throws InvalidDocumentFormatException {
+        if (assertionId.length() < 1)
+            throw new InvalidDocumentFormatException("Reference to empty SAML assertion ID");
+
+        for (XmlSecurityToken token : securityTokens) {
+            if (token instanceof SamlAssertion) {
+                SamlAssertion samlAssertion = (SamlAssertion) token;
+                if (assertionId.equals(samlAssertion.getAssertionId()))
+                    return samlAssertion;
+            }
+
+        }
+        return null;
+    }
+
     private void processTimestamp(final Element timestampElement)
             throws InvalidDocumentFormatException
     {
@@ -1229,48 +1244,17 @@ public class WssProcessorImpl implements WssProcessor {
                 String samlAssertionId = keyIdEl.getTextContent();
 
                 EncryptedKey ek = null;
-                NodeList samlAssertions = derivedKeyEl.getOwnerDocument().getElementsByTagNameNS("urn:oasis:names:tc:SAML:1.0:assertion", "Assertion");
-                for(int i = 0;i < samlAssertions.getLength();i++) {
-                    Element samlAssertion = (Element)samlAssertions.item(i);
-
-                    if(samlAssertionId.equals(samlAssertion.getAttribute("AssertionID"))) {
-                        Element attributeStatement = XmlUtil.findFirstChildElementByName(samlAssertion, "urn:oasis:names:tc:SAML:1.0:assertion", "AttributeStatement");
-                        if(attributeStatement == null) {
-                            throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain an AttributeStatement");
-                        }
-
-                        Element subject = XmlUtil.findFirstChildElementByName(attributeStatement, "urn:oasis:names:tc:SAML:1.0:assertion", "Subject");
-                        if(subject == null) {
-                            throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain a Subject");
-                        }
-
-                        Element subjectConfirmation = XmlUtil.findFirstChildElementByName(subject, "urn:oasis:names:tc:SAML:1.0:assertion", "SubjectConfirmation");
-                        if(subjectConfirmation == null) {
-                            throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain an EncryptedKey");
-                        }
-
-                        Element keyInfo = XmlUtil.findFirstChildElementByName(subjectConfirmation, "http://www.w3.org/2000/09/xmldsig#", "KeyInfo");
-                        if(keyInfo == null) {
-                            throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain a KeyInfo");
-                        }
-
-                        Element encryptedKey = XmlUtil.findFirstChildElementByName(keyInfo, "http://www.w3.org/2001/04/xmlenc#", "EncryptedKey");
-                        try {
-                            ek = new EncryptedKeyImpl(encryptedKey, securityTokenResolver, messageX509TokenResolver);
-                        } catch(IOException ioe) {
-                            throw new InvalidDocumentFormatException(ioe);
-                        }
-
-                        break;
-                    }
+                SamlAssertion samlAssertion = findSamlSecurityTokenByAssertionId(samlAssertionId);
+                if (samlAssertion != null) {
+                    ek = samlAssertion.getSubjectConfirmationEncryptedKey(securityTokenResolver, messageX509TokenResolver);
                 }
 
-                if(ek != null) {
-                    derivationSource = ek;
-                } else {
+                if (ek == null) {
                     // TODO caching to allow reference to a SAML assertion that isn't included with the message but which we are expected to already possess
                     throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to an unknown SAML assertion");
                 }
+
+                derivationSource = ek;
             } else
                 throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to unsupported ValueType " + valueType);
 

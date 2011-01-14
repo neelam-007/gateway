@@ -5,9 +5,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;

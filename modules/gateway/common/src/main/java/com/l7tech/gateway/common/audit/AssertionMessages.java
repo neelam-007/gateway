@@ -12,7 +12,8 @@ import java.util.logging.Level;
 public class AssertionMessages extends Messages {
 
     // Generic Assersion Message
-    public static final M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "Request did not contain any WSS level security");
+    public static final M REQUESTWSS_NO_SECURITY     = m(4302, Level.INFO, "Request did not contain any WSS level security");
+    public static final M ASSERTION_MISCONFIGURED    = m(4304, Level.WARNING, false, false, "Assertion configuration error: {0}"); // Provided as less-drastic alternative to throwing PolicyAssertionException
 
     // ServerHttpRoutingAssertion messages
     public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.WARNING, "Could not initialize SSL Context");
@@ -621,6 +622,10 @@ public class AssertionMessages extends Messages {
     public static final M ADD_WSS_TOKEN_NO_CREDS         = m(7901, Level.WARNING, true, false, "No credentials were available from the request");
     public static final M ADD_WSS_TOKEN_NO_USERNAME      = m(7902, Level.WARNING, true, false, "Credentials were available, but no username could be found");
     public static final M ADD_WSS_TOKEN_NO_PASSWORD      = m(7903, Level.WARNING, true, false, "Password inclusion was requested, but no password could be found");
+    public static final M ADD_WSS_TOKEN_NOT_SESSION      = m(7904, Level.WARNING, false, false, "Specified context variable exists but does not contain a WS-SecureConversation session");
+    public static final M ADD_WSS_TOKEN_BAD_SAML_XML     = m(7905, Level.WARNING, false, false, "Expanded SAML assertion template was not valid SAML assertion XML");
+    public static final M ADD_WSS_TOKEN_MULTIPLE_REQ_TOKENS = m(7906, Level.INFO, false, false, "Unable to identify the encryption recipient because we are decorating a response to a request with multiple eligible tokens.  Encryption recipient must be specified explicitly.");
+    public static final M ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE = m(7907, Level.WARNING, false, false, "The SAML assertion uses a secret key for subject confirmation, but the Gateway does not already possess this key, and is unable to unwrap it from the EncryptedKey");
 
     public static final M CUSTOM_ASSERTION_INFO               = m(8000, Level.INFO, "Assertion ''{0}''; {1}");
     public static final M CUSTOM_ASSERTION_WARN               = m(8001, Level.WARNING, "Assertion ''{0}''; {1}");

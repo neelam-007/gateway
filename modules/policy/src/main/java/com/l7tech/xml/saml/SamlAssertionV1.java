@@ -8,11 +8,10 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
+import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.security.xml.DsigUtil;
-import com.l7tech.security.xml.KeyInfoElement;
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.*;
+import com.l7tech.security.xml.processor.EncryptedKeyImpl;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.*;
 import org.apache.xmlbeans.XmlException;
@@ -26,6 +25,7 @@ import x0Assertion.oasisNamesTcSAML1.*;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
@@ -61,6 +61,8 @@ public class SamlAssertionV1 extends SamlAssertion {
     private String nameQualifier;
     private String nameIdentifierValue;
     private String authenticationMethod;
+
+    private EncryptedKey subjectConfirmationEncryptedKey = null;
 
    /**
      * Construct a new SamlAssertion from an XML element, using the specified thumbprint resolver to locate
@@ -226,8 +228,75 @@ public class SamlAssertionV1 extends SamlAssertion {
         return embeddedSignatureElement != null;
     }
 
+    @Override
+    public boolean hasSubjectConfirmationEncryptedKey() {
+        try {
+            return getSubjectConfirmationEncryptedKeyElement(false) != null;
+        } catch (InvalidDocumentFormatException e) {
+            // can't happen, passed false
+            return false;
+        }
+    }
+
     public Element getEmbeddedIssuerSignature() {
         return embeddedSignatureElement;
+    }
+
+    @Override
+    public EncryptedKey getSubjectConfirmationEncryptedKey(SecurityTokenResolver tokenResolver, Resolver<String, X509Certificate> x509Resolver) throws InvalidDocumentFormatException, UnexpectedKeyInfoException, GeneralSecurityException {
+        if (subjectConfirmationEncryptedKey != null) {
+            return subjectConfirmationEncryptedKey;
+        }
+
+        Element encryptedKeyElement = getSubjectConfirmationEncryptedKeyElement(true);
+
+        return subjectConfirmationEncryptedKey = new EncryptedKeyImpl(encryptedKeyElement, tokenResolver, x509Resolver);        
+    }
+
+    private Element getSubjectConfirmationEncryptedKeyElement(boolean failIfNotPresent) throws InvalidDocumentFormatException {
+        Element samlElement = asElement();
+        String samlNs = samlElement.getNamespaceURI();
+        Element attributeStatement = XmlUtil.findFirstChildElementByName(samlElement, samlNs, "AttributeStatement");
+        if(attributeStatement == null) {
+            if (failIfNotPresent)
+                throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain an AttributeStatement");
+            return null;
+        }
+
+        Element subject = XmlUtil.findFirstChildElementByName(attributeStatement, samlNs, "Subject");
+        if(subject == null) {
+            if (failIfNotPresent)
+                throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain a Subject");
+            return null;
+        }
+
+        Element subjectConfirmation = XmlUtil.findFirstChildElementByName(subject, samlNs, "SubjectConfirmation");
+        if(subjectConfirmation == null) {
+            if (failIfNotPresent)
+                throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain an EncryptedKey");
+            return null;
+        }
+
+        Element keyInfo = XmlUtil.findFirstChildElementByName(subjectConfirmation, SoapConstants.DIGSIG_URI, "KeyInfo");
+        if(keyInfo == null) {
+            if (failIfNotPresent)
+                throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain a KeyInfo");
+            return null;
+        }
+
+        Element encryptedKeyElement = XmlUtil.findFirstChildElementByName(keyInfo, SoapConstants.XMLENC_NS, "EncryptedKey");
+        if(encryptedKeyElement == null) {
+            if (failIfNotPresent)
+                throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain an EncryptedKey");
+            return null;
+        }
+
+        return encryptedKeyElement;
+    }
+
+    @Override
+    public boolean isSubjectConfirmationEncryptedKeyAvailable() {
+        return subjectConfirmationEncryptedKey != null;
     }
 
     /**
