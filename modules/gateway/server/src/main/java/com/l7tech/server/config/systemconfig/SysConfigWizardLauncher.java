@@ -35,6 +35,7 @@ public class SysConfigWizardLauncher {
 
     private static List<ConfigWizardConsoleStep> getSteps(SystemConfigurationWizard sysWizard) {
         List<ConfigWizardConsoleStep> stepsList = new ArrayList<ConfigWizardConsoleStep>();
+        stepsList.add(new SystemConfigWizardKeyboardStep(sysWizard));
         stepsList.add(new SystemConfigWizardNetworkingStep(sysWizard));
         stepsList.add(new SystemConfigWizardNtpStep(sysWizard));
         stepsList.add(new ConfigWizardConsoleSummaryStep(sysWizard, "System Configuration Summary"));

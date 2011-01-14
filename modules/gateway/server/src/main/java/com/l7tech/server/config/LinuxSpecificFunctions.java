@@ -22,6 +22,7 @@ public class LinuxSpecificFunctions extends UnixSpecificFunctions {
     void doOsSpecificSetup() {
         networkConfigDir = "/etc/sysconfig/network-scripts";
         timeZonesDir = "/usr/share/zoneinfo/";
+        keymapsDir = "/lib/kbd/keymaps/i386";
     }
 
     @Override

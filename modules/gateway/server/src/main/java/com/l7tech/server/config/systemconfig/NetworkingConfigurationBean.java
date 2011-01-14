@@ -54,19 +54,19 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     protected void populateExplanations() {
         List<String> network = getNetworkConfigLines();
         if (! network.isEmpty()) {
-            explanations.add("\nNetwork configuration: ");
+            explanations.add("\nNetwork configuration: \n\t");
             explanations.add(concatConfigLines(EOL + "\t", network));
         }
 
         List<String> resolvConf = getResolvConfLines();
         if (! resolvConf.isEmpty() ) {
-            explanations.add("\nNameserver configuration: ");
+            explanations.add("\nNameserver configuration: \n\t");
             explanations.add(concatConfigLines(EOL + "\t", resolvConf));
         }
 
         for (InterfaceConfig ifConfig : interfaceConfigs) {
             if (ifConfig != null && ifConfig.isDirtyFlag()) {
-                explanations.add("\nConfigure \"" + ifConfig.getInterfaceName() + "\" interface");
+                explanations.add("\nConfigure \"" + ifConfig.getInterfaceName() + "\" interface\n\t");
                 explanations.add(concatConfigLines(EOL + "\t", ifConfig.getConfigLines()));
             }
         }
@@ -207,14 +207,6 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
                 return true;
         }
         return false;
-    }
-
-    private static String concatConfigLines(String separatorChars, List<String> configLines) {
-        StringBuilder result = new StringBuilder();
-        for (String line : configLines) {
-            result.append(separatorChars).append(line);
-        }
-        return result.toString();
     }
 
     public static class InterfaceConfig {

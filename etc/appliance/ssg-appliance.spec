@@ -179,6 +179,7 @@ echo "Defaults:layer7 env_reset" >> /etc/sudoers
 echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/masterkey-manage.pl" >> /etc/sudoers
 echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/ncipherconfig.pl" >> /etc/sudoers
 echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
+echo "layer7 ALL = NOPASSWD: /bin/loadkeys" >> /etc/sudoers
 echo "layer7 ALL = (gateway) NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
 
 # The gateway user is allowed to run the sca stuff without having to enter a password

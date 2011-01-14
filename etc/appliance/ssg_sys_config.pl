@@ -23,6 +23,7 @@ my $interfaceConfigPattern = "/opt/SecureSpan/Appliance/config/configfiles/ifcfg
 
 my %copyFiles = (
     "/opt/SecureSpan/Appliance/config/configfiles/network" => "/etc/sysconfig/network",
+    "/opt/SecureSpan/Appliance/config/configfiles/keyboard" => "/etc/sysconfig/keyboard",
     "/opt/SecureSpan/Appliance/config/configfiles/resolv.conf" => "/etc/resolv.conf"
 );
 

@@ -1,12 +1,7 @@
 package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.commands.BaseConfigurationCommand;
-import org.apache.commons.lang.StringUtils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -53,35 +48,5 @@ public class NetworkingConfigurationCommand extends BaseConfigurationCommand<Net
 
     private boolean writeResolvConfFile() {
         return writeConfigFile("resolv.conf", configBean.getResolvConf());
-    }
-
-    private boolean writeConfigFile(String filename, String configData) {
-        boolean success = true;
-        if (!StringUtils.isEmpty(configData)) {
-            File currentWorkingDir = new File(".");
-            File configDir = new File(currentWorkingDir, "configfiles");
-            if (configDir.mkdir())
-                logger.info("Created new directory for networking configuration: " + configDir.getAbsolutePath());
-
-            File configFile = new File(configDir, filename);
-            PrintWriter configWriter = null;
-            try {
-                if (configFile.createNewFile())
-                    logger.info("created file \"" + configFile.getAbsolutePath() + "\"");
-                else
-                    logger.info("editing file \"" + configFile.getAbsolutePath() + "\"");
-
-                configWriter = new PrintWriter(new FileOutputStream(configFile));
-                configWriter.print(configData);
-
-            } catch (IOException e) {
-                logger.severe("Could not create file:" + configFile.getAbsolutePath());
-                success = false;
-            } finally {
-                if (configWriter != null)
-                    configWriter.close();
-            }
-        }
-        return success;
     }
 }

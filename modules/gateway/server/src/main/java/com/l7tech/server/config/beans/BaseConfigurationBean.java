@@ -46,6 +46,14 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
     protected String elementDescription;
     protected List<String> explanations;
 
+    protected static String concatConfigLines(String separatorChars, List<String> configLines) {
+        StringBuilder result = new StringBuilder();
+        for (String line : configLines) {
+            if ( result.length() >0 ) result.append(separatorChars); // don't start the file with the separator
+            result.append(line);
+        }
+        return result.toString();
+    }
 
     protected abstract void populateExplanations();
 }

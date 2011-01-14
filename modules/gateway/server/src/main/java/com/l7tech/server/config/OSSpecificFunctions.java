@@ -36,6 +36,10 @@ public abstract class OSSpecificFunctions {
         return timeZonesDir;
     }
 
+    public String getKeymapsDir() {
+        return keymapsDir;
+    }
+
     public static OSSpecificFunctions getOSSpecificFunctions() throws UnsupportedOsException {
         if (!OSDetector.isLinux())
             throw new UnsupportedOsException(OSDetector.getOSName() + " is not a supported operating system.");
@@ -52,6 +56,7 @@ public abstract class OSSpecificFunctions {
     // configuration files/directories to be queried, modified or created
     protected String networkConfigDir;
     protected String timeZonesDir;
+    protected String keymapsDir;
 
     // - PACKAGE
 
