@@ -159,20 +159,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                     throw new CausedIOException(e);
                 }
                 wssReq.setSignTimestamp(true);
-                wssReq.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
-                    @Override
-                    public String getId() {
-                        return session.getIdentifier();
-                    }
-                    @Override
-                    public byte[] getSecretKey() {
-                        return session.getSharedSecret();
-                    }
-                    @Override
-                    public String getSCNamespace() {
-                        return session.getSecConvNamespaceUsed();
-                    }
-                });
+                wssReq.setSecureConversationSession(session);
                 return AssertionStatus.NONE;
             }
         };

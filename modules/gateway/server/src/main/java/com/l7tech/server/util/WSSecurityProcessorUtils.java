@@ -613,21 +613,7 @@ public class WSSecurityProcessorUtils {
             final SecurityContextToken sct = (SecurityContextToken) signingToken;
             final SecurityContext context = sct.getSecurityContext();
             if ( context instanceof SecureConversationSession ) {
-                final SecureConversationSession session = (SecureConversationSession) context;
-                decoration.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
-                    @Override
-                    public String getId() {
-                        return session.getIdentifier();
-                    }
-                    @Override
-                    public byte[] getSecretKey() {
-                        return session.getSharedSecret();
-                    }
-                    @Override
-                    public String getSCNamespace() {
-                        return session.getSecConvNamespaceUsed();
-                    }
-                });
+                decoration.setSecureConversationSession((SecureConversationSession) context);
                 set = true;
             }
         } else if ( signingToken instanceof EncryptedKey ) {

@@ -1,5 +1,6 @@
 package com.l7tech.server.secureconversation;
 
+import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.identity.User;
@@ -13,7 +14,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
  * User: flascell<br/>
  * Date: Aug 3, 2004<br/>
  */
-public class SecureConversationSession implements SecurityContext {
+public class SecureConversationSession implements SecurityContext, DecorationRequirements.SecureConversationSession {
 
     public SecureConversationSession( final String secConvNamespaceUsed,
                                       final String identifier,
@@ -110,6 +111,21 @@ public class SecureConversationSession implements SecurityContext {
      */
     public String getSecConvNamespaceUsed() {
         return secConvNamespaceUsed;
+    }
+
+    @Override
+    public String getId() {
+        return getIdentifier();
+    }
+
+    @Override
+    public byte[] getSecretKey() {
+        return getSharedSecret();
+    }
+
+    @Override
+    public String getSCNamespace() {
+        return getSecConvNamespaceUsed();
     }
 
     private final String identifier;
