@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
@@ -125,6 +126,8 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         bstRadio.addActionListener(updater);
         strRadio.addActionListener(updater);
         issuerSerialRadio.addActionListener(updater);
+        useSpecifiedCredentialsRadioButton.addActionListener(updater);
+        useLastGatheredRequestRadioButton.addActionListener(updater);
 
         showPasswordCheckBox.setSelected( false );
         showPasswordCheckBox.addActionListener( new ActionListener(){
@@ -138,6 +141,9 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         } );
 
         includePasswordCheckBox.addActionListener( updater );
+
+        Utilities.enableGrayOnDisabled(usernameTextField);
+        Utilities.enableGrayOnDisabled(passwordField);
 
         updateVisibleTab();
         updateButtons();
@@ -154,6 +160,15 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         passwordField.setEnabled( enablePasswordSettings );
         showPasswordCheckBox.setEnabled( enablePasswordSettings );
         digestPasswordCheckBox.setEnabled( enablePasswordSettings );
+
+        boolean enableSpecifiedSettings = useSpecifiedCredentialsRadioButton.isSelected();
+        includeNonceCheckBox.setEnabled(enableSpecifiedSettings);
+        includeCreatedCheckBox.setEnabled(enableSpecifiedSettings);
+        usernameTextField.setEnabled(enableSpecifiedSettings);
+        passwordField.setEnabled(enableSpecifiedSettings);
+        digestPasswordCheckBox.setEnabled(enableSpecifiedSettings);
+        encryptUsernameTokenCheckBox.setEnabled(enableSpecifiedSettings);
+        showPasswordCheckBox.setEnabled(enableSpecifiedSettings);
     }
 
     @Override
