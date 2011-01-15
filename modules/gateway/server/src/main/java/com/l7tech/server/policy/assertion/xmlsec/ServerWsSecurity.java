@@ -1,40 +1,44 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.xmlsec.WsSecurity;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.AuthenticationContext;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.identity.cert.TrustedCertCache;
-import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
-import com.l7tech.security.xml.decorator.*;
-import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.DecoratorException;
+import com.l7tech.security.xml.decorator.WssDecorator;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.identity.cert.TrustedCertCache;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SoapConstants;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.objectmodel.FindException;
+import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
-import java.util.*;
 import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
-
-import org.xml.sax.SAXException;
-import org.w3c.dom.Element;
-import org.w3c.dom.Document;
-import org.springframework.context.ApplicationContext;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Applies collected and pending WSS message decorations; all decorations requirements are removed once they are applied.
@@ -54,6 +58,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
         super( assertion, assertion );
         this.auditor = new Auditor(this, context, logger);
         this.trustedCertCache = context.getBean( "trustedCertCache", TrustedCertCache.class );
+        this.wssDecorator = context.getBean( "wssDecorator", WssDecorator.class );
     }
 
     //- PROTECTED
@@ -85,7 +90,6 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                     securityKnob.setPolicyWssVersion(assertion.getWsSecurityVersion());
 
                 if (decorations != null && decorations.length > 0) {
-                    WssDecorator decorator = new WssDecoratorImpl();
                     for (DecorationRequirements decoration : decorations) {
                         // process headers
                         processSecurityHeaderActor(context, decoration, assertion.isUseSecureSpanActor(), securityHeaderActors);
@@ -103,7 +107,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                         try {
                             // add signature confirmations
                             WSSecurityProcessorUtils.addSignatureConfirmations(message, auditor);
-                            decorator.decorateMessage(message, decoration);
+                            wssDecorator.decorateMessage(message, decoration);
                         } catch ( DecoratorException de ) {
                             auditor.logAndAudit(AssertionMessages.WSSECURITY_ERROR, assertion.getTargetName(), ExceptionUtils.getMessage(de));
                             throw new AssertionStatusException(AssertionStatus.FALSIFIED);
@@ -153,6 +157,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
     private static final Logger logger = Logger.getLogger(ServerWsSecurity.class.getName());
     private final Auditor auditor;
     private final TrustedCertCache trustedCertCache;
+    private final WssDecorator wssDecorator;
 
     private static class AssertionStatusException extends Exception {
         final AssertionStatus status;
