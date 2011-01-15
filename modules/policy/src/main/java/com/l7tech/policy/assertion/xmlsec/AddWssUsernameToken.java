@@ -156,8 +156,8 @@ public class AddWssUsernameToken extends MessageTargetableAssertion implements S
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.DESCRIPTION, "Add a WS-Security UsernameToken to the message.");
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
+        meta.put(AssertionMetadata.DESCRIPTION, "Add a WS-Security UsernameToken to the message.  This functionality now exists in the Add Security Token assertion.");
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{ }); // Do not display on palette
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.AddWssUsernameTokenPropertiesDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "WS-Security UsernameToken Properties");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
