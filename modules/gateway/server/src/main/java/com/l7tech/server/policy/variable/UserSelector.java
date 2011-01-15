@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.identity.Identity;
 import com.l7tech.identity.User;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.policy.variable.Syntax;
@@ -31,6 +32,22 @@ public class UserSelector implements ExpandVariables.Selector<User> {
             } else {
                 return new Selection(null); // TODO support user.cert for other types of user?
             }
+        } else if (Identity.ATTR_PROVIDER_OID.equalsIgnoreCase(name)) {
+            return new Selection(user.getProviderId());
+        } else if ("id".equalsIgnoreCase(name)) {
+            return new Selection(user.getId());
+        } else if ("login".equalsIgnoreCase(name)) {
+            return new Selection(user.getLogin());
+        } else if ("firstName".equalsIgnoreCase(name)) {
+            return new Selection(user.getFirstName());
+        } else if ("lastName".equalsIgnoreCase(name)) {
+            return new Selection(user.getLastName());
+        } else if ("email".equalsIgnoreCase(name)) {
+            return new Selection(user.getEmail());
+        } else if ("department".equalsIgnoreCase(name)) {
+            return new Selection(user.getDepartment());
+        } else if ("subjectDn".equalsIgnoreCase(name)) {
+            return new Selection(user.getSubjectDn());
         } else {
             return null;
         }

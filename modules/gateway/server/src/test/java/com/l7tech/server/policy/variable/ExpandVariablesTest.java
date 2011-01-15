@@ -12,14 +12,18 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessagesUtil;
+import com.l7tech.identity.UserBean;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.audit.LogOnlyAuditor;
@@ -27,14 +31,15 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import com.l7tech.server.policy.assertion.ServerXpathAssertion;
+import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
+import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.IteratorEnumeration;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.junit.Test;
 import org.junit.Before;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -47,6 +52,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
@@ -60,6 +66,12 @@ public class ExpandVariablesTest {
     private static final Logger logger = Logger.getLogger(ExpandVariablesTest.class.getName());
     private static final Audit audit = new LogOnlyAuditor(logger);
     private static final String TINY_BODY = "<blah/>";
+    private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(new MockConfig(new Properties()));
+
+    static {
+        beanFactory.addBean( "outboundSecureConversationContextManager", outboundContextManager );
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -704,6 +716,65 @@ public class ExpandVariablesTest {
         assertEquals("message.parts.1.body", "<content/>", ExpandVariables.process( "${message.parts.1.body}", vars, audit, true ));
         assertEquals("message.parts.1.contentType", "text/xml; charset=utf-8", ExpandVariables.process( "${message.parts.1.contentType}", vars, audit, true ));
         assertEquals("message.parts.1.size", "10", ExpandVariables.process( "${message.parts.1.size}", vars, audit, true ));
+    }
+
+    @Test
+    public void testSecureCovnersationSession() throws Exception {
+        //  Create a user
+        final UserBean user = new UserBean("Alice");
+        user.setUniqueIdentifier("1");
+
+        // Create a secure conversation session
+        SecureConversationSession session = outboundContextManager.createContextForUser(
+            user,
+            "fake_service_url",
+            LoginCredentials.makeLoginCredentials( new HttpBasicToken(user.getLogin(), "password".toCharArray()), HttpBasic.class ),
+            "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512",
+            "fake_session_identifier",
+            2*60*1000,
+            null,
+            null,
+            generateNewSecret(64)
+        );
+
+        // Set the variable, scLookup.session
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        pec.setVariable("scLookup.session", session);
+
+        // Check the attribute, id
+        String id = getSessionAttributeVariableValue(pec, "scLookup.session.id");
+        assertEquals("scLookup.session.id", "fake_session_identifier", id);
+
+        // Check the attribute, user
+        pec.setVariable("scLookup.session.user", session.getUsedBy());
+        String userId = getSessionAttributeVariableValue(pec, "scLookup.session.user.id");
+        assertEquals("scLookup.session.user.id", "1", userId);
+
+        // Check the attribute, creation
+        long creationInMills = session.getCreation();
+        String creation = getSessionAttributeVariableValue(pec, "scLookup.session.creation");
+        assertEquals("scLookup.session.creation", ISO8601Date.format(new Date(creationInMills)), creation);
+
+        // Check the attribute, expiration
+        long expirationInMills = session.getExpiration();
+        String expiration = getSessionAttributeVariableValue(pec, "scLookup.session.expiration");
+        assertEquals("scLookup.session.expiration", ISO8601Date.format(new Date(expirationInMills)), expiration);
+
+        // Check the attribute, scNamespace
+        String scNamespace = getSessionAttributeVariableValue(pec, "scLookup.session.scNamespace");
+        assertEquals("scLookup.session.scNamespace", "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512", scNamespace);
+    }
+
+    private byte[] generateNewSecret(int length) {
+        final byte[] output = new byte[length];
+        Random random = new SecureRandom();
+        random.nextBytes(output);
+        return output;
+    }
+
+    private String getSessionAttributeVariableValue(PolicyEnforcementContext pec, String variableName) {
+        final Map<String, Object> vars = pec.getVariableMap(new String[]{variableName}, audit);
+        return ExpandVariables.process("${" + variableName + "}", vars, audit, true);
     }
 
     private Map<String, String> nsmap() {

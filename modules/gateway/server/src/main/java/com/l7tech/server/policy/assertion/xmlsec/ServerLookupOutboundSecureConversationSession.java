@@ -70,8 +70,8 @@ public class ServerLookupOutboundSecureConversationSession extends AbstractMessa
         }
 
         // Set variable
-        String varFullName = assertion.getVariablePrefix() + LookupOutboundSecureConversationSession.VARIABLE_SESSION;
-        context.setVariable(varFullName, session);
+        StringBuilder varFullName = new StringBuilder(assertion.getVariablePrefix()).append(".").append(LookupOutboundSecureConversationSession.VARIABLE_SESSION);
+        context.setVariable(varFullName.toString(), session);
 
         return AssertionStatus.NONE;
     }
