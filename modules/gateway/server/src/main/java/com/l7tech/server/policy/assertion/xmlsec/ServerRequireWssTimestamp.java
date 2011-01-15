@@ -5,34 +5,35 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
+import com.l7tech.message.MessageRole;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
+import com.l7tech.security.token.ParsedElement;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.security.xml.processor.WssTimestampDate;
-import com.l7tech.security.xml.processor.ProcessorResultUtil;
-import com.l7tech.security.token.ParsedElement;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.Collection;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -107,7 +108,8 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
                         authContext,
                         processorResult,
                         elements.toArray(new ParsedElement[elements.size()]),
-                        requireCredentialSigningToken ) ) {
+                        requireCredentialSigningToken,
+                        msg.getRelated(MessageRole.REQUEST) ) ) {
                     auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
                     return getBadMessageStatus();
                 }

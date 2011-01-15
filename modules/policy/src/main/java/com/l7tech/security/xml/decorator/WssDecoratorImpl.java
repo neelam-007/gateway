@@ -59,17 +59,17 @@ public class WssDecoratorImpl implements WssDecorator {
 
     private static final Random rand = new SecureRandom();
 
-    private SecurityTokenResolver securityTokenResolver = null;
+    private EncryptedKeyCache encryptedKeyCache = null;
 
     public WssDecoratorImpl() {
     }
 
-    public SecurityTokenResolver getSecurityTokenResolver() {
-        return securityTokenResolver;
+    public EncryptedKeyCache getEncryptedKeyCache() {
+        return encryptedKeyCache;
     }
 
-    public void setSecurityTokenResolver(SecurityTokenResolver securityTokenResolver) {
-        this.securityTokenResolver = securityTokenResolver;
+    public void setEncryptedKeyCache(EncryptedKeyCache encryptedKeyCache) {
+        this.encryptedKeyCache = encryptedKeyCache;
     }
 
     private static class Context {
@@ -80,6 +80,7 @@ public class WssDecoratorImpl implements WssDecorator {
         private NamespaceFactory nsf = new NamespaceFactory();
         private byte[] lastEncryptedKeyBytes = null;
         private SecretKey lastEncryptedKeySecretKey = null;
+        private String lastWsscSecurityContextId = null;
         private AttachmentEntityResolver attachmentResolver;
         private Map<String,Boolean> signatures = new HashMap<String, Boolean>();
         private Set<String> encryptedSignatures = new HashSet<String>();
@@ -240,6 +241,7 @@ public class WssDecoratorImpl implements WssDecorator {
         if (session != null) {
             if (session.getId() == null)
                 throw new DecoratorException("If SecureConversation Session is specified, but it has no session ID");
+            c.lastWsscSecurityContextId = session.getId();
             if (session.getSCNamespace() != null) {
                 for (String wsscNS: SoapConstants.WSSC_NAMESPACE_ARRAY) {
                     if (session.getSCNamespace().equals( wsscNS )) {
@@ -871,6 +873,11 @@ public class WssDecoratorImpl implements WssDecorator {
             }
 
             @Override
+            public String getWsscSecurityContextId() {
+                return c.lastWsscSecurityContextId;
+            }
+
+            @Override
             public Map<String, Boolean> getSignatures() {
                 return c.signatures;
             }
@@ -1458,9 +1465,9 @@ public class WssDecoratorImpl implements WssDecorator {
                                               recipientCertificate.getPublicKey());
         }
         c.lastEncryptedKeyBytes = encryptedKeyBytes;        
-        if (securityTokenResolver != null) {
+        if (encryptedKeyCache != null) {
             String encryptedKeySha1 = XencUtil.computeEncryptedKeySha1(encryptedKeyBytes);
-            securityTokenResolver.putSecretKeyByEncryptedKeySha1(encryptedKeySha1, secretKey.getEncoded());
+            encryptedKeyCache.putSecretKeyByEncryptedKeySha1(encryptedKeySha1, secretKey.getEncoded());
         }
 
         final String base64 = HexUtils.encodeBase64(encryptedKeyBytes, true);

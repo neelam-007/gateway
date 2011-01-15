@@ -17,7 +17,7 @@ public class EncryptedKeyImpl extends SigningSecurityTokenImpl implements Encryp
     private final String elementWsuId;
     private final byte[] encryptedKeyBytes;
     private final SignerInfo signerInfo;
-    private SecurityTokenResolver tokenResolver;
+    private EncryptedKeyCache tokenResolver;
     private String encryptedKeySHA1 = null;
     private byte[] secretKeyBytes = null;
 

@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorValidationException;
 import com.l7tech.security.xml.processor.SecurityContext;
@@ -101,17 +102,21 @@ public class WSSecurityProcessorUtils {
      * @param wssResults The Processor Results to validate.
      * @param elementsToValidate The required signed elements
      * @param checkSigningTokenIsCredential True to check that the signing token is a credential if any identity is permitted
+     * @param relatedRequestMessage a related request message whose EncryptedKey and WS-SecureConversation tokens whose secret keys are known to the Gateway are to be recognized as valid signing tokens
+     *                              for the current target message (as long as a specific signing credentials have not been asked-for in the auth context), or null
      * @return True if valid
      */
     public static boolean isValidSingleSigner( final AuthenticationContext authContext,
                                                final ProcessorResult wssResults,
                                                final ParsedElement[] elementsToValidate,
-                                               final boolean checkSigningTokenIsCredential ) {
+                                               final boolean checkSigningTokenIsCredential,
+                                               final Message relatedRequestMessage ) {
         boolean valid = true;
 
         final SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
+        final List<LoginCredentials> credentials = authContext.getCredentials();
         final SigningSecurityToken[] tokens = checkSigningTokenIsCredential ?
-                getSigningSecurityTokens(authContext.getCredentials()) :
+                getSigningSecurityTokens(credentials) :
                 null;
 
         // Validate that there is only a single signing identity
@@ -121,8 +126,17 @@ public class WSSecurityProcessorUtils {
         for ( SignedElement signedElement : signedElements ) {
             if (!securityTokenElements.contains(signedElement.asElement())) {
                 if (signatureElement == null) {
-                    if ( tokens==null || ArrayUtils.contains(tokens, signedElement.getSigningSecurityToken()) ) {
+                    final SigningSecurityToken signingToken = signedElement.getSigningSecurityToken();
+                    if ( tokens==null || ArrayUtils.contains(tokens, signingToken) ) {
                         signatureElement = signedElement.getSignatureElement();
+                    } else if (relatedRequestMessage != null && credentials.isEmpty() && (signingToken instanceof EncryptedKey || signingToken instanceof SecurityContextToken)) {
+                        // If the policy does not require specific signing credentials, permit response signature using an EncryptedKey or WS-SC session from a corresponding request (if any)
+                        if (isTokenRecognizedEncryptedKeyOrWsscSession(signingToken, relatedRequestMessage)) {
+                            signatureElement = signedElement.getSignatureElement();
+                        } else {
+                            valid = false;
+                            break;
+                        }
                     } else {
                         valid = false;
                         break;
@@ -151,6 +165,51 @@ public class WSSecurityProcessorUtils {
         }
 
         return valid;
+    }
+
+    private static boolean isTokenRecognizedEncryptedKeyOrWsscSession(SigningSecurityToken signingToken, Message relatedRequestMessage) {
+        String signingEncryptedKeySha1 = null;
+        if (signingToken instanceof EncryptedKey) {
+            EncryptedKey ek = (EncryptedKey) signingToken;
+            signingEncryptedKeySha1 = ek.getEncryptedKeySHA1();
+        }
+
+        String signingSecurityContextId = null;
+        if (signingToken instanceof SecurityContextToken) {
+            SecurityContextToken sct = (SecurityContextToken) signingToken;
+            signingSecurityContextId = sct.getContextIdentifier();
+        }
+
+        // First check for decoration results, in case this was an outgoing request
+        List<WssDecorator.DecorationResult> reqDecorationResults = relatedRequestMessage.getSecurityKnob().getAllDecorationResults();
+        for (WssDecorator.DecorationResult decorationResult : reqDecorationResults) {
+            String eksha1 = decorationResult.getEncryptedKeySha1();
+            if (eksha1 != null && eksha1.equals(signingEncryptedKeySha1))
+                return true;
+
+            String scid = decorationResult.getWsscSecurityContextId();
+            if (scid != null && scid.equals(signingSecurityContextId))
+                return true;
+        }
+
+        // Check for processor results, in case this was an incoming request
+        ProcessorResult reqProcessorResults = relatedRequestMessage.getSecurityKnob().getProcessorResult();
+        XmlSecurityToken[] reqTokens = reqProcessorResults.getXmlSecurityTokens();
+        for (XmlSecurityToken token : reqTokens) {
+            if (token instanceof EncryptedKey) {
+                EncryptedKey ek = (EncryptedKey) token;
+                if (ek.isPossessionProved() && ek.getEncryptedKeySHA1().equals(signingEncryptedKeySha1))
+                    return true;
+            }
+
+            if (token instanceof SecurityContextToken) {
+                SecurityContextToken sct = (SecurityContextToken) token;
+                if (sct.isPossessionProved() && sct.getContextIdentifier() != null && sct.getContextIdentifier().equals(signingSecurityContextId))
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -312,12 +371,15 @@ public class WSSecurityProcessorUtils {
      * @param wssResults The WSS processing results
      * @param identityTarget The target identity (may be null)
      * @param checkSigningTokenIsCredential True to check that the signing token is a credential if any identity is permitted
+     * @param relatedRequestMessage a related request message whose EncryptedKey and WS-SecureConversation tokens whose secret keys are known to the Gateway are to be recognized as valid signing tokens
+     *                              for the current target message (as long as a specific signing credentials have not been asked-for in the auth context), or null
      * @return The signed elements, may be empty but never null.
      */
     public static SignedElement[] filterSignedElementsByIdentity( final AuthenticationContext authContext,
                                                                   final ProcessorResult wssResults,
                                                                   final IdentityTarget identityTarget,
-                                                                  final boolean checkSigningTokenIsCredential ) {
+                                                                  final boolean checkSigningTokenIsCredential,
+                                                                  final Message relatedRequestMessage) {
         final List<SignedElement> signedElementsForIdentity = new ArrayList<SignedElement>();
 
         final SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
@@ -326,7 +388,8 @@ public class WSSecurityProcessorUtils {
                     authContext,
                     wssResults,
                     new ParsedElement[0],
-                    checkSigningTokenIsCredential ) ) {
+                    checkSigningTokenIsCredential,
+                    relatedRequestMessage) ) {
                 signedElementsForIdentity.addAll( Arrays.asList(signedElements) );
             }
         } else {

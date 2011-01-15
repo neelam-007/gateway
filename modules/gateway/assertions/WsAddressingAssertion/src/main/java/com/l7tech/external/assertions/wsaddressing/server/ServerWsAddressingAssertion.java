@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.message.Message;
+import com.l7tech.message.MessageRole;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
@@ -13,13 +14,13 @@ import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.*;
-import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.DomElementCursor;
+import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
@@ -28,12 +29,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.namespace.QName;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collection;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -296,7 +292,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             throw new AddressingProcessingException("Message does not contain any WSS security", AssertionStatus.FALSIFIED);
         }
 
-        return WSSecurityProcessorUtils.filterSignedElementsByIdentity( authContext, wssResults, assertion.getIdentityTarget(), requireCredentialSigningToken );
+        return WSSecurityProcessorUtils.filterSignedElementsByIdentity( authContext, wssResults, assertion.getIdentityTarget(), requireCredentialSigningToken, msg.getRelated(MessageRole.REQUEST) );
     }
 
     /**

@@ -1764,7 +1764,7 @@ public class WssProcessorImpl implements WssProcessor {
         // If this request did not include a matching EncryptedKey, but we have a cached secret key matching
         //    this EncryptedKeySHA1, we'll create a new virtual EncryptedKey and add it to this request.
 
-        SecurityTokenResolver resolver = securityTokenResolver;
+        EncryptedKeyCache resolver = securityTokenResolver;
         byte[] cachedSecretKey = resolver == null ? null : resolver.getSecretKeyByEncryptedKeySha1(eksha1);
         EncryptedKey found = findEncryptedKey(securityTokens, eksha1);
 

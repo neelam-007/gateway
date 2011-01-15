@@ -118,7 +118,7 @@ public interface SecurityKnob extends MessageKnob {
     List<WssDecorator.DecorationResult> getDecorationResults(String actor);
 
     /**
-     * @return all decoration results applied to the message, for all actors
+     * @return all decoration results applied to the message, for all actors.  May be empty but never null.
      */
     List<WssDecorator.DecorationResult> getAllDecorationResults();
 

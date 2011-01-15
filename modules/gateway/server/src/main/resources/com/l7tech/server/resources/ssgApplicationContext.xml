@@ -1039,7 +1039,7 @@
 
     <!-- server Wss Decorator -->
     <bean id="wssDecorator" class="com.l7tech.security.xml.decorator.WssDecoratorImpl">
-        <property name="securityTokenResolver" ref="securityTokenResolver"/>
+        <property name="encryptedKeyCache" ref="encryptedKeyCache"/>
     </bean>
 
     <!-- server Message Processor -->
@@ -1223,6 +1223,8 @@
             </list>
         </constructor-arg>
     </bean>
+
+    <alias name="securityTokenResolver" alias="encryptedKeyCache"/>
 
     <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager" depends-on="systemAuditListener">
         <constructor-arg ref="clusterPropertyManager"/>

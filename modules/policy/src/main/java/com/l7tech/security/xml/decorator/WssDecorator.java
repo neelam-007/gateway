@@ -6,16 +6,15 @@
 
 package com.l7tech.security.xml.decorator;
 
-import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.message.Message;
+import com.l7tech.util.InvalidDocumentFormatException;
+import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
-import java.security.GeneralSecurityException;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.Map;
 import java.util.Set;
-
-import org.xml.sax.SAXException;
 
 /**
  * Creates a Security header and decorates a message according to instructions passed in.
@@ -48,6 +47,13 @@ public interface WssDecorator {
          * @return the SecretKey encoded into an included EncryptedKey, or null if no EncryptedKey was generated.
          */
         SecretKey getEncryptedKeySecretKey();
+
+        /**
+         * If a WS-SecureConversation session was used to decorate the message, this records the WSSC session identifier that was used.
+         *
+         * @return the WSSC session identifier string, or null.
+         */
+        String getWsscSecurityContextId();
 
         /**
          * Retrieves the signature values added by the decorator and their encryption status in the decorated message.

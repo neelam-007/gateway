@@ -21,8 +21,8 @@ import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathExpression;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -34,6 +34,8 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  * Decorate messages with WssDecorator and then send them through WssProcessor
@@ -490,6 +492,9 @@ public class WssRoundTripTest {
 
             @Override
             public SecretKey getEncryptedKeySecretKey() { return null; }
+
+            @Override
+            public String getWsscSecurityContextId() { return null; }
 
             @Override
             public Map<String, Boolean> getSignatures() {

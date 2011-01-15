@@ -1,24 +1,25 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.security.token.*;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.Pair;
+import com.l7tech.message.Message;
+import com.l7tech.message.MessageRole;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.security.token.*;
+import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
-import com.l7tech.message.Message;
+import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationContext;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Collection;
-import java.util.Arrays;
 
 /**
  * Enforces that a specific element in a message is signed.
@@ -86,7 +87,8 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
                         context.getAuthenticationContext(message),
                         wssResults,
                         new ParsedElement[0], // we validate that the right elements are signed elsewhere
-                        requireCredentialSigningToken
+                        requireCredentialSigningToken,
+                        message.getRelated(MessageRole.REQUEST)
                     ) &&
                     isAcceptedSignatureDigestAlgorithms(elements);
         }

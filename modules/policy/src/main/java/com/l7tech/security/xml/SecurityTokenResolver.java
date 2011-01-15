@@ -14,7 +14,7 @@ import java.math.BigInteger;
 /**
  * Interface implemented by entities capable of lookup up X.509 certificate by their SHA1 thumbprint, SKI, or KeyName.
  */
-public interface SecurityTokenResolver {
+public interface SecurityTokenResolver extends EncryptedKeyCache {
     /**
      * Look up a certificate by its base64-ed SHA1 thumbprint.
      *
@@ -90,24 +90,6 @@ public interface SecurityTokenResolver {
      * @return the private key that was found, or null if one was not found.
      */
     SignerInfo lookupPrivateKeyByIssuerAndSerial( X500Principal issuer, BigInteger serial );
-
-    /**
-     * Look up an EncryptedKey by its EncryptedKeySHA1.
-     *
-     * @param encryptedKeySha1 the identifier to look up.  Never null or empty.
-     * @return the matching EncryptedKey token, or null if no match was found.  The returned token is unmodifiable.
-     * @see com.l7tech.security.xml.processor.WssProcessorUtil#makeEncryptedKey
-     */
-    byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1);
-
-    /**
-     * Report that an EncryptedKey was decrypted, so it can be saved for later reuse by its EncryptedKeySHA1.
-     *
-     * @param encryptedKeySha1 the identifier to store, in the form of an EncryptedKeySHA1 string, which is the base64
-     *                         encoded ciphertext of the secret key.  Must not be null or empty.
-     * @param secretKey  the unwrapped SecretKey that came from the EncryptedKey with the specified EncryptedKeySha1.
-     */
-    void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey);
 
     /**
      * Look up a cached subject confirmation secret key by the SAML AssertionID it arrived in.

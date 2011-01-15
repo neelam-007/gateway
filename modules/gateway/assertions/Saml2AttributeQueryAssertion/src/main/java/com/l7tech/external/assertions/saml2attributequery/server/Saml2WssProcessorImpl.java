@@ -591,7 +591,7 @@ public class Saml2WssProcessorImpl {
         // If this request did not include a matching EncryptedKey, but we have a cached secret key matching
         //    this EncryptedKeySHA1, we'll create a new virtual EncryptedKey and add it to this request.
 
-        SecurityTokenResolver resolver = securityTokenResolver;
+        EncryptedKeyCache resolver = securityTokenResolver;
         byte[] cachedSecretKey = resolver == null ? null : resolver.getSecretKeyByEncryptedKeySha1(eksha1);
         EncryptedKey found = findEncryptedKey(securityTokens, eksha1);
 
@@ -1267,7 +1267,7 @@ public class Saml2WssProcessorImpl {
         private final String elementWsuId;
         private final byte[] encryptedKeyBytes;
         private final SignerInfo signerInfo;
-        private SecurityTokenResolver tokenResolver;
+        private EncryptedKeyCache tokenResolver;
         private String encryptedKeySHA1 = null;
         private byte[] secretKeyBytes = null;
 
