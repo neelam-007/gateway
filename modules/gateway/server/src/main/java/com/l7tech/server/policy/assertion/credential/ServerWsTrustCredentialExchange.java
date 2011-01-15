@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.security.wstrust.WsTrustConfigException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.common.http.*;
 import com.l7tech.message.Message;
@@ -134,7 +135,9 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 // Create RST
                 Document rstDoc;
                 GenericHttpRequestParams params;
-                WsTrustConfig wstConfig = WsTrustConfigFactory.getDefaultWsTrustConfig();
+                WsTrustConfig wstConfig = assertion.getWsTrustNamespace()==null ?
+                        WsTrustConfigFactory.getDefaultWsTrustConfig() :
+                        WsTrustConfigFactory.getWsTrustConfigForNamespaceUri( assertion.getWsTrustNamespace() );
                 TokenServiceClient tokenServiceClient = new TokenServiceClient(wstConfig);
                 rstDoc = tokenServiceClient.createRequestSecurityTokenMessage(null,
                                                                               assertion.getRequestType(),
@@ -219,6 +222,9 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             return AssertionStatus.FAILED;
         } catch (InvalidDocumentFormatException e) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
+            return AssertionStatus.FAILED;
+        } catch ( WsTrustConfigException e ) {
+            auditor.logAndAudit(AssertionMessages.WSTRUST_NOT_SUPPORTED, assertion.getWsTrustNamespace());
             return AssertionStatus.FAILED;
         }
     }

@@ -22,6 +22,8 @@ public final class WsTrustRequestType implements Serializable {
                 "http://schemas.xmlsoap.org/ws/2005/02/trust/Issue", // TFIM beta
                 "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Issue", // TFIM GA
                 "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue",  // WS-SX 2005-12
+                // NOTE : added to end of list since existing config may reference by index                    
+                "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue",
             });
 
     public static final WsTrustRequestType VALIDATE =
@@ -29,6 +31,7 @@ public final class WsTrustRequestType implements Serializable {
                 "http://schemas.xmlsoap.org/ws/2005/02/trust/Validate", // TFIM beta
                 "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Validate", // TFIM GA
                 "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Validate",  // WS-SX 2005-12
+                "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Validate",
             });
 
     public static final WsTrustRequestType RENEW =
@@ -36,6 +39,7 @@ public final class WsTrustRequestType implements Serializable {
                 "http://schemas.xmlsoap.org/ws/2005/02/trust/Renew", // TFIM beta
                 "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Renew", // TFIM GA
                 "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Renew",  // WS-SX 2005-12
+                "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Renew",
             });
 
     public static final WsTrustRequestType CANCEL =
@@ -43,6 +47,7 @@ public final class WsTrustRequestType implements Serializable {
                 "http://schemas.xmlsoap.org/ws/2005/02/trust/Cancel", // TFIM beta
                 "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Cancel", // TFIM GA
                 "http://docs.oasis-open.org/ws-sx/ws-trust/200512/Cancel",  // WS-SX 2005-12
+                "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Cancel", 
             });
 
     private final String name;

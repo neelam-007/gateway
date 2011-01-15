@@ -391,6 +391,7 @@ public class AssertionMessages extends Messages {
     public static final M WSTRUST_ORIGINAL_TOKEN_NOT_XML  = m(6205, Level.INFO, "Original security token was not XML; cannot remove from request");
     public static final M WSTRUST_MULTI_TOKENS            = m(6206, Level.WARNING, "Multiple exchangeable Security Tokens found in request");
     public static final M WSTRUST_SERVER_HTTP_FAILED      = m(6207, Level.WARNING, "HTTP failure talking to WS-Trust server");
+    public static final M WSTRUST_NOT_SUPPORTED           = m(6208, Level.WARNING, "Unsupported WS-Trust namespace: {0}");
 
     //ServerRegex
     public static final M REGEX_PATTERN_INVALID   = m(6300, Level.WARNING, "Assertion has failed because of regex pattern ''{0}'' compile error: {1}");

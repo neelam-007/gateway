@@ -196,55 +196,68 @@ public abstract class WsTrustConfig {
             DomUtils.setTextContent( expiresElement, ISO8601Date.format(new Date(System.currentTimeMillis()+lifetime)));
         }
 
-        // Add Base, if provided.  Base is not required to be the same token type as the token type we are requesting.
         if (base != null) {
-            Element baseEl = DomUtils.createAndPrependElementNS(rst, "Base", getWstNs(), "wst");
-            Element tokenEl = base.asElement();
-            if (tokenEl == null) throw new IllegalStateException("Couldn't get Element for Base security token");
-
-            // it is not possible to tell which of the declared namespaces are "used"
-            // so we just ensure that all declared namespaces are available in the
-            // token request
-            Map requiredNamespaces = DomUtils.getNamespaceMap(tokenEl);
-            Map declaredNamespaces = DomUtils.getNamespaceMap(baseEl);
-
-            // import token to rst doc
-            Element importedTokenElement = (Element) msg.importNode(tokenEl, true);
-
-            // add any missing namespace decls
-            NamedNodeMap attrs = importedTokenElement.getAttributes();
-            Document factory = importedTokenElement.getOwnerDocument();
-            for (Map.Entry<String,String> entry : (Set<Map.Entry<String,String>>) requiredNamespaces.entrySet()) {
-                String prefix = entry.getKey();
-                String namespace = entry.getValue();
-
-                if ( !namespace.equals( declaredNamespaces.get(prefix) ) ) {
-                    // then prefix is not in scope or is declared but for a
-                    // different namespace
-                    if ("".equals(prefix)) {
-                        // Add NS if not redeclared on token element (default NS)
-                        if (attrs.getNamedItem(XMLConstants.XMLNS_ATTRIBUTE) == null) {
-                            Attr nsAttribute = factory.createAttributeNS(DomUtils.XMLNS_NS, XMLConstants.XMLNS_ATTRIBUTE);
-                            nsAttribute.setValue(namespace);
-                            attrs.setNamedItem(nsAttribute);    
-                        }
-                    } else {
-                        // Add NS if not redeclared on token element
-                        if (attrs.getNamedItemNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, prefix) == null) {
-                            Attr nsAttribute = factory.createAttributeNS(
-                                    XMLConstants.XMLNS_ATTRIBUTE_NS_URI,
-                                    XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix);
-                            nsAttribute.setValue(namespace);
-                            attrs.setNamedItem(nsAttribute);
-                        }
-                    }
-                }
-            }
-
-            baseEl.appendChild(importedTokenElement);
+            addXmlSecurityToken( base, msg, rst );
         }
 
         return msg;
+    }
+
+    protected void addXmlSecurityToken( final XmlSecurityToken base,
+                                        final Document rstDocument,
+                                        final Element rstElement ) {
+        final Element tokenElement = base.asElement();
+        if (tokenElement == null) throw new IllegalStateException("Couldn't get Element for base security token");
+
+        final Element securityHeader = SoapUtil.makeSecurityElement(rstDocument, SoapConstants.SECURITY_NAMESPACE, null, null, false);
+
+        SoapUtil.addTimestamp( securityHeader, SoapConstants.WSU_NAMESPACE, null, true, 0, 300000 );
+
+        appendToken( rstDocument, securityHeader, tokenElement );
+    }
+
+    protected void appendToken( final Document factory,
+                                final Element targetEl,
+                                final Element tokenEl ) {
+        // it is not possible to tell which of the declared namespaces are "used"
+        // so we just ensure that all declared namespaces are available in the
+        // token request
+        Map requiredNamespaces = DomUtils.getNamespaceMap(tokenEl);
+        Map declaredNamespaces = DomUtils.getNamespaceMap(targetEl);
+
+        // import token to rst doc
+        Element importedTokenElement = (Element) factory.importNode(tokenEl, true);
+
+        // add any missing namespace decls
+        NamedNodeMap attrs = importedTokenElement.getAttributes();
+        for (Map.Entry<String,String> entry : (Set<Map.Entry<String,String>>) requiredNamespaces.entrySet()) {
+            String prefix = entry.getKey();
+            String namespace = entry.getValue();
+
+            if ( !namespace.equals( declaredNamespaces.get(prefix) ) ) {
+                // then prefix is not in scope or is declared but for a
+                // different namespace
+                if ("".equals(prefix)) {
+                    // Add NS if not redeclared on token element (default NS)
+                    if (attrs.getNamedItem( XMLConstants.XMLNS_ATTRIBUTE) == null) {
+                        Attr nsAttribute = factory.createAttributeNS(DomUtils.XMLNS_NS, XMLConstants.XMLNS_ATTRIBUTE);
+                        nsAttribute.setValue(namespace);
+                        attrs.setNamedItem(nsAttribute);
+                    }
+                } else {
+                    // Add NS if not redeclared on token element
+                    if (attrs.getNamedItemNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, prefix) == null) {
+                        Attr nsAttribute = factory.createAttributeNS(
+                                XMLConstants.XMLNS_ATTRIBUTE_NS_URI,
+                                XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix);
+                        nsAttribute.setValue(namespace);
+                        attrs.setNamedItem(nsAttribute);
+                    }
+                }
+            }
+        }
+
+        targetEl.appendChild(importedTokenElement);
     }
 
     protected String getTokenUri( final SecurityTokenType securityTokenType ) {

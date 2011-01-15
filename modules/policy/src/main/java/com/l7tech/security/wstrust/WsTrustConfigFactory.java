@@ -1,8 +1,12 @@
 package com.l7tech.security.wstrust;
 
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.XmlSecurityToken;
+import com.l7tech.util.DomUtils;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.util.SyspropUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,8 +38,8 @@ public class WsTrustConfigFactory {
 
     private static final Map<String,WsTrustConfig> configs = new HashMap<String,WsTrustConfig>();
     static {
-        configs.put(WST_NAMESPACE, new OldWsTrustConfig(WST_NAMESPACE, WSP_NAMESPACE, WSA_NAMESPACE));
-        configs.put(WST_NAMESPACE2, new OldWsTrustConfig(WST_NAMESPACE2, WSP_NAMESPACE2, WSA_NAMESPACE2));
+        configs.put(WST_NAMESPACE, new OldWsTrustConfig(WST_NAMESPACE, WSP_NAMESPACE, WSA_NAMESPACE, 3));
+        configs.put(WST_NAMESPACE2, new OldWsTrustConfig(WST_NAMESPACE2, WSP_NAMESPACE2, WSA_NAMESPACE2, tscWstRequestTypeIndex));
         configs.put(WST_NAMESPACE3, new WsSxWsTrustConfig(WST_NAMESPACE3, WSP_NAMESPACE2, WSA_NAMESPACE3));
         // 1.4 uses the 1.3 namespace for elements we currently use
         configs.put(WST_NAMESPACE4, new WsSxWsTrustConfig(WST_NAMESPACE3, WSP_NAMESPACE2, WSA_NAMESPACE3));
@@ -66,17 +70,16 @@ public class WsTrustConfigFactory {
         try {
             return getWsTrustConfigForNamespaceUri(tscWstNs);
         } catch (WsTrustConfigException e) {
-            return new OldWsTrustConfig(WST_NAMESPACE2, WSP_NAMESPACE2, WSA_NAMESPACE2);
+            return new OldWsTrustConfig(WST_NAMESPACE2, WSP_NAMESPACE2, WSA_NAMESPACE2, tscWstRequestTypeIndex);
         }
     }
 
     private static class OldWsTrustConfig extends WsTrustConfig {
         private final Map<String,String> requestTypeMap;
 
-        private OldWsTrustConfig(String wstNs, String wspNs, String wsaNs) {
+        private OldWsTrustConfig(String wstNs, String wspNs, String wsaNs, int idx) {
             super(wstNs, wspNs, wsaNs);
             requestTypeMap = new HashMap<String,String>();
-            int idx = tscWstRequestTypeIndex;
             if (idx < 0 || idx >= WsTrustRequestType.ISSUE.getUris().size()) idx = DEFAULT_WST_REQUESTTYPEINDEX;
             requestTypeMap.put(WsTrustRequestType.NAME_ISSUE, WsTrustRequestType.ISSUE.getUris().get(idx));
             requestTypeMap.put(WsTrustRequestType.NAME_RENEW, WsTrustRequestType.RENEW.getUris().get(idx));
@@ -98,6 +101,22 @@ public class WsTrustConfigFactory {
             } else {
                 return securityTokenType.getWstTokenTypeUri();
             }
+        }
+
+        /**
+         * Add a token using the wst:Base element.
+         *
+         * <p>I don't think this is strictly correct for the 2005/02 version (1.2?) but
+         * possibly is necessary for FIM support (and is backwards compatible).</p>
+         */
+        @Override
+        protected void addXmlSecurityToken( final XmlSecurityToken base, final Document msg, final Element rst ) {
+            // Add Base, if provided.  Base is not required to be the same token type as the token type we are requesting.
+            Element baseEl = DomUtils.createAndPrependElementNS(rst, "Base", getWstNs(), "wst");
+            Element tokenEl = base.asElement();
+            if (tokenEl == null) throw new IllegalStateException("Couldn't get Element for Base security token");
+
+            appendToken( msg, baseEl, tokenEl );
         }
     }
 

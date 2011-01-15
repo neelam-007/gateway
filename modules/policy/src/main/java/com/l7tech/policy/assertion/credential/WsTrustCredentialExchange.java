@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
 package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.policy.assertion.Assertion;
@@ -33,7 +28,20 @@ public class WsTrustCredentialExchange extends Assertion {
     @Override
     public boolean isCredentialModifier() {
         return true;
-    }    
+    }
+
+    /**
+     * Get the WS-Trust namespace to use, null for the default namespace.
+     *
+     * @return The namespace or null.
+     */
+    public String getWsTrustNamespace() {
+        return wsTrustNamespace;
+    }
+
+    public void setWsTrustNamespace( final String wsTrustNamespace ) {
+        this.wsTrustNamespace = wsTrustNamespace;
+    }
 
     public String getTokenServiceUrl() {
         return tokenServiceUrl;
@@ -98,6 +106,7 @@ public class WsTrustCredentialExchange extends Assertion {
         return meta;
     }
 
+    private String wsTrustNamespace; // null means use system default version
     private String tokenServiceUrl;
     private String appliesTo;
     private String issuer;

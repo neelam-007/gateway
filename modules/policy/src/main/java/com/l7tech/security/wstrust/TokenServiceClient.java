@@ -122,7 +122,7 @@ public class TokenServiceClient {
      * @param clientPrivateKey   the private key of the certificate to use to sign the request
      * @param desiredTokenType   the token type being applied for
      * @param requestType        the type of RST message
-     * @param base               the base security token, null for none
+     * @param base               the base security token, null for none (typically not necessary for more recent versions of WS-Trust)
      * @param appliesToAddress   wsa:Address to use for wsp:AppliesTo, or null to leave out the AppliesTo
      * @param wstIssuerAddress   wsa:Address to use for wst:Issuer, or null to leave out the Issuer
      * @return a signed SOAP message containing a wst:RequestSecurityToken
@@ -179,7 +179,7 @@ public class TokenServiceClient {
      *
      * @param desiredTokenType   the token type being applied for
      * @param requestType        the type of RST message
-     * @param base               the base security token, null for none
+     * @param base               the base security token, null for none (typically not necessary for more recent versions of WS-Trust)
      * @param appliesToAddress   wsa:Address to use for wsp:AppliesTo, or null to leave out the AppliesTo
      * @param wstIssuerAddress   wsa:Address to use for wst:Issuer, or null to leave out the Issuer
      * @return a DOM containing a complete SOAP envelope.  Never null.
@@ -210,7 +210,7 @@ public class TokenServiceClient {
      *
      * @param desiredTokenType   the token type being applied for
      * @param requestType        the type of RST message
-     * @param base               the base security token, null for none
+     * @param base               the base security token, null for none (typically not necessary for more recent versions of WS-Trust)
      * @param appliesToAddress   wsa:Address to use for wsp:AppliesTo, or null to leave out the AppliesTo
      * @param wstIssuerAddress   wsa:Address to use for wst:Issuer, or null to leave out the Issuer
      * @param entropy            the client entropy to use, null for none
