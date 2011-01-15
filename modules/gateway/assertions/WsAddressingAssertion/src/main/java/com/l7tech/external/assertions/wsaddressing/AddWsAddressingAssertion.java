@@ -51,17 +51,6 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertionPrivateK
                     SoapConstants.WSA_NAMESPACE2));
 
     /**
-     * Listed in order of preference (newest to oldest).
-     */
-    public static final Collection<String> WSA_WSDL_NAMESPACES = Collections.unmodifiableCollection(
-            Arrays.asList(
-                    SoapConstants.WSA_WSDL_NAMESPACE_2006_05,
-                    SoapConstants.WSA_WSDL_NAMESPACE_2006_02,
-                    SoapConstants.WSA_WSDL_NAMESPACE_2005_03)
-
-    );
-
-    /**
      * Listed in order of preference.
      */
     public static final Collection<String> WSA_ACTIONS = Collections.unmodifiableCollection(

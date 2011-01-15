@@ -119,7 +119,7 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
                         if(o != null){
                             wsdlAction = o.toString();
                         } else {
-                            for(String namespaceUri: AddWsAddressingAssertion.WSA_WSDL_NAMESPACES){
+                            for(String namespaceUri: SoapConstants.WSA_WSDL_NAMESPACES){
                                 final QName qName = new QName(namespaceUri, SoapConstants.WSA_MSG_PROP_ACTION);
                                 if(map.containsKey(qName)){
                                     wsdlAction = map.get(qName).toString();
@@ -149,7 +149,7 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
                             }
                         }
 
-                        //need to look up operation with the input and ouput names, if available, as the operation name
+                        //need to look up operation with the input and output names, if available, as the operation name
                         //is not unique in the WSDL.
                         final BindingOperation lookedUpOp = binding.getBindingOperation(operation.getName(), inputName, outputName);
                         if(lookedUpOp != null){

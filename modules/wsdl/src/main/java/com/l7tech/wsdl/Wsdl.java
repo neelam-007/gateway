@@ -237,6 +237,16 @@ public class Wsdl implements Serializable {
         wsdlReader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, wsdlReader);
 
+        //register the type of the WS-Addressing Action attribute extension type which can be added to wsdl Input and Output elements.
+        final ExtensionRegistry extensionRegistry = wsdlReader.getExtensionRegistry();
+        if(extensionRegistry != null){
+            for(String namespaceUri: SoapConstants.WSA_WSDL_NAMESPACES){
+                final QName qName = new QName(namespaceUri, SoapConstants.WSA_MSG_PROP_ACTION);
+                extensionRegistry.registerExtensionAttributeType(Input.class, qName, AttributeExtensible.STRING_TYPE);
+                extensionRegistry.registerExtensionAttributeType(Output.class, qName, AttributeExtensible.STRING_TYPE);
+            }
+        }
+
         return new Wsdl(wsdlReader.readWSDL(locator));
     }
 
