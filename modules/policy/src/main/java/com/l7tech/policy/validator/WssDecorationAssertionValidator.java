@@ -49,10 +49,8 @@ public class WssDecorationAssertionValidator implements AssertionValidator {
             }
 
             if ( requiresDecoration && !seenDecoration ) {
-                final String wsSecurityAssName = new WsSecurity().meta().get(AssertionMetadata.SHORT_NAME).toString();
-                result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "This assertion will be ignored as an " +
-                        "\"" + wsSecurityAssName + "\" assertion configured to apply WS-Security with the same\n" +
-                        "message target is required to apply security.", null));
+                final String warningMessage = getRequiresDecorationMessage();
+                result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warningMessage, null));
             }
 
             if ( isWss11 && seenWss10 ) {
@@ -62,6 +60,13 @@ public class WssDecorationAssertionValidator implements AssertionValidator {
     }
 
     //- PROTECTED
+
+    protected String getRequiresDecorationMessage(){
+        final String wsSecurityAssName = new WsSecurity().meta().get(AssertionMetadata.SHORT_NAME).toString();
+        return "This assertion will be ignored as an " +
+                        "\"" + wsSecurityAssName + "\" assertion configured to apply WS-Security with the same\n" +
+                        "message target is required to apply security.";
+    }
 
     protected final Assertion assertion;
     protected final boolean requiresDecoration;
