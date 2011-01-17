@@ -1563,6 +1563,6 @@ CREATE TABLE ssg_version (
    current_version char(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
-INSERT INTO ssg_version (current_version) VALUES ("5.4.0");
+INSERT INTO ssg_version (current_version) VALUES ("5.4.1");
 
 SET FOREIGN_KEY_CHECKS = 1;
