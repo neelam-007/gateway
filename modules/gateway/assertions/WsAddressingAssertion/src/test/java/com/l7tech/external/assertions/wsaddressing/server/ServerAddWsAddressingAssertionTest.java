@@ -794,6 +794,42 @@ public class ServerAddWsAddressingAssertionTest {
         testContextVariables(context, assertion, expectedAction, false, null);
     }
 
+    /**
+     * Adding test coverage for the case when a wsaw:Action attribute is defined, and the value of the wswa namespace
+     * is not the default value. Testing the logic to fallback and try the other known ws addressing wsdl namespaces.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testActionExplicitFromWsdl_ExtensionAttributeCorrectlyHandled_NonDefaultNamespace() throws Exception{
+        final ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final AddWsAddressingAssertion assertion = new AddWsAddressingAssertion();
+
+        assertion.setAction(AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_INPUT);
+        assertion.setWsaNamespaceUri("http://www.w3.org/2005/08/addressing");
+
+        final ServerAddWsAddressingAssertion serverAssertion =
+                new ServerAddWsAddressingAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext(fauldLabMsg, null);
+        PublishedService srvc = new PublishedService();
+        srvc.setWsdlXml(fraudLabsWsdlWsAddressingNonDefaultNamespace);
+        ServiceDocumentWsdlStrategy strategy = new ServiceDocumentWsdlStrategy(Collections.<ServiceDocument>emptySet());
+        srvc.parseWsdlStrategy(strategy);
+        context.setService(srvc);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
+
+        final Message request = context.getRequest();
+
+        final String expectedAction = "http://ws.fraudlabs.com/MailBoxValidator";
+        validateActionElement(request, expectedAction);
+        //validate context variables
+        testContextVariables(context, assertion, expectedAction, false, null);
+    }
+
     // - PRIVATE
 
     private void validateActionElement(Message request, String expectedAction) throws Exception{
@@ -1826,4 +1862,72 @@ public class ServerAddWsAddressingAssertionTest {
             "    </wsdl:port>\n" +
             "  </wsdl:service>\n" +
             "</wsdl:definitions>";
+
+    private String fraudLabsWsdlWsAddressingNonDefaultNamespace = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+            "<wsdl:definitions xmlns:soap=\"http://schemas.xmlsoap.org/wsdl/soap/\" xmlns:tm=\"http://microsoft.com/wsdl/mime/textMatching/\" " +
+            "xmlns:wsaw=\"http://www.w3.org/2006/02/addressing/wsdl\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\" " +
+            "xmlns:mime=\"http://schemas.xmlsoap.org/wsdl/mime/\" xmlns:tns=\"http://ws.fraudlabs.com/\"" +
+            " xmlns:s=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap12=\"http://schemas.xmlsoap.org/wsdl/soap12/\" " +
+            "targetNamespace=\"http://ws.fraudlabs.com/\" xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\">\n" +
+            "  <wsdl:types>\n" +
+            "    <s:schema elementFormDefault=\"qualified\" targetNamespace=\"http://ws.fraudlabs.com/\">\n" +
+            "      <s:element name=\"MailBoxValidator\">\n" +
+            "        <s:complexType>\n" +
+            "          <s:sequence>\n" +
+            "            <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"EMAIL\" type=\"s:string\" />\n" +
+            "            <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"LICENSE\" type=\"s:string\" />\n" +
+            "          </s:sequence>\n" +
+            "        </s:complexType>\n" +
+            "      </s:element>\n" +
+            "      <s:element name=\"MailBoxValidatorResponse\">\n" +
+            "        <s:complexType>\n" +
+            "          <s:sequence>\n" +
+            "            <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"MailBoxValidatorResult\" type=\"tns:MAILBOX_VALIDATOR\" />\n" +
+            "          </s:sequence>\n" +
+            "        </s:complexType>\n" +
+            "      </s:element>\n" +
+            "      <s:complexType name=\"MAILBOX_VALIDATOR\">\n" +
+            "        <s:sequence>\n" +
+            "          <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"IS_SYNTAX\" type=\"s:string\" />\n" +
+            "          <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"IS_DOMAIN\" type=\"s:string\" />\n" +
+            "          <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"IS_SMTP\" type=\"s:string\" />\n" +
+            "          <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"IS_LEVEL\" type=\"s:string\" />\n" +
+            "          <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"CREDITSAVAILABLE\" type=\"s:string\" />\n" +
+            "          <s:element minOccurs=\"0\" maxOccurs=\"1\" name=\"MESSAGE\" type=\"s:string\" />\n" +
+            "        </s:sequence>\n" +
+            "      </s:complexType>\n" +
+            "      <s:element name=\"MAILBOX_VALIDATOR\" nillable=\"true\" type=\"tns:MAILBOX_VALIDATOR\" />\n" +
+            "    </s:schema>\n" +
+            "  </wsdl:types>\n" +
+            "  <wsdl:message name=\"MailBoxValidatorSoapIn\">\n" +
+            "    <wsdl:part name=\"parameters\" element=\"tns:MailBoxValidator\" />\n" +
+            "  </wsdl:message>\n" +
+            "  <wsdl:message name=\"MailBoxValidatorSoapOut\">\n" +
+            "    <wsdl:part name=\"parameters\" element=\"tns:MailBoxValidatorResponse\" />\n" +
+            "  </wsdl:message>\n" +
+            "  <wsdl:portType name=\"mailboxvalidatorSoap\">\n" +
+            "    <wsdl:operation name=\"MailBoxValidator\">\n" +
+            "      <wsdl:input message=\"tns:MailBoxValidatorSoapIn\" wsaw:Action=\"http://ws.fraudlabs.com/MailBoxValidator\"/>\n" +
+            "      <wsdl:output message=\"tns:MailBoxValidatorSoapOut\" wsaw:Action=\"http://ws.fraudlabs.com/MailBoxValidatorResponse\"/>\n" +
+            "    </wsdl:operation>\n" +
+            "  </wsdl:portType>\n" +
+            "  <wsdl:binding name=\"mailboxvalidatorSoap\" type=\"tns:mailboxvalidatorSoap\">\n" +
+            "    <soap:binding transport=\"http://schemas.xmlsoap.org/soap/http\" />\n" +
+            "    <wsdl:operation name=\"MailBoxValidator\">\n" +
+            "      <soap:operation soapAction=\"http://ws.fraudlabs.com/MailBoxValidator\" style=\"document\" />\n" +
+            "      <wsdl:input>\n" +
+            "        <soap:body use=\"literal\" />\n" +
+            "      </wsdl:input>\n" +
+            "      <wsdl:output>\n" +
+            "        <soap:body use=\"literal\" />\n" +
+            "      </wsdl:output>\n" +
+            "    </wsdl:operation>\n" +
+            "  </wsdl:binding>\n" +
+            "  <wsdl:service name=\"mailboxvalidator\">\n" +
+            "    <wsdl:port name=\"mailboxvalidatorSoap\" binding=\"tns:mailboxvalidatorSoap\">\n" +
+            "      <soap:address location=\"http://ws2.fraudlabs.com/mailboxvalidator.asmx\" />\n" +
+            "    </wsdl:port>\n" +
+            "  </wsdl:service>\n" +
+            "</wsdl:definitions>";
+
 }

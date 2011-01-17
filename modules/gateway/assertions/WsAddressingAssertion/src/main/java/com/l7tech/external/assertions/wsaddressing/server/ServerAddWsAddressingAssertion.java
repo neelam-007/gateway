@@ -115,6 +115,11 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
 
                     if(map != null && !map.isEmpty()){
                         final QName actionQName = new QName(SoapConstants.WSA_WSDL_LATEST, SoapConstants.WSA_MSG_PROP_ACTION);
+                        //If the WSDLReader was correctly configured, then the type of the Action property should
+                        //be a String. If it is incorrectly configured e.g. the extension attribute has not been registered,
+                        //then the type may be either a String or a QName. Either way, a String is the expected type,
+                        //so toString is simply called on the value from the map. If a QName is returned, it will fail
+                        //checking if it's a URI below.
                         final Object o = map.get(actionQName);
                         if(o != null){
                             wsdlAction = o.toString();

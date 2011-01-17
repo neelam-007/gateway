@@ -137,6 +137,7 @@ public class Wsdl implements Serializable {
         WSDLReader wsdlReader = fac.newWSDLReader();
         wsdlReader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, wsdlReader);
+        configureExtensionAttributes(wsdlReader);
         return new Wsdl(wsdlReader.readWSDL(documentBaseURI, source));
     }
 
@@ -159,6 +160,7 @@ public class Wsdl implements Serializable {
         WSDLReader reader = fac.newWSDLReader();
         reader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, reader);
+        configureExtensionAttributes(reader);
         return new Wsdl(reader.readWSDL(documentBaseURI, wsdlDocument));
     }
 
@@ -236,17 +238,7 @@ public class Wsdl implements Serializable {
         WSDLReader wsdlReader = fac.newWSDLReader();
         wsdlReader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, wsdlReader);
-
-        //register the type of the WS-Addressing Action attribute extension type which can be added to wsdl Input and Output elements.
-        final ExtensionRegistry extensionRegistry = wsdlReader.getExtensionRegistry();
-        if(extensionRegistry != null){
-            for(String namespaceUri: SoapConstants.WSA_WSDL_NAMESPACES){
-                final QName qName = new QName(namespaceUri, SoapConstants.WSA_MSG_PROP_ACTION);
-                extensionRegistry.registerExtensionAttributeType(Input.class, qName, AttributeExtensible.STRING_TYPE);
-                extensionRegistry.registerExtensionAttributeType(Output.class, qName, AttributeExtensible.STRING_TYPE);
-            }
-        }
-
+        configureExtensionAttributes(wsdlReader);
         return new Wsdl(wsdlReader.readWSDL(locator));
     }
 
@@ -269,6 +261,7 @@ public class Wsdl implements Serializable {
         WSDLReader reader = fac.newWSDLReader();
         reader.setFeature("javax.wsdl.verbose", false);
         disableSchemaExtensions(fac, reader);
+        configureExtensionAttributes(reader);
         return new Wsdl(reader.readWSDL(documentBaseURI, inputSource));
     }
 
@@ -1743,6 +1736,28 @@ public class Wsdl implements Serializable {
         }
     }
 
+    /**
+     * Register known Attribute extensions which require correct conversion from WSDL XML to the WSDL4J object model.
+     *
+     * E.g. If an attribute's type is anyURI, and a value of 'http://example.com' is supplied, if the document
+     * defines a namespace prefix of 'http', then WSDL4J will automatically convert this URI attribute value
+     * into a QName (it's not possible to reconstruct the original URL, as the QName does not contain the prefix).
+     * @param wsdlReader the WSDLReader to configure.
+     */
+    private static void configureExtensionAttributes(final WSDLReader wsdlReader){
+        //register the type of the WS-Addressing Action attribute extension type which can be added to wsdl Input and Output elements.
+        final ExtensionRegistry extensionRegistry = wsdlReader.getExtensionRegistry();
+        if(extensionRegistry != null){
+            for(String namespaceUri: SoapConstants.WSA_WSDL_NAMESPACES){
+                final QName qName = new QName(namespaceUri, SoapConstants.WSA_MSG_PROP_ACTION);
+                extensionRegistry.registerExtensionAttributeType(Input.class, qName, AttributeExtensible.STRING_TYPE);
+                extensionRegistry.registerExtensionAttributeType(Output.class, qName, AttributeExtensible.STRING_TYPE);
+            }
+        }
+
+        //add any more extension attributes which need to be configured
+    }
+    
     private static final class CachedDocumentResolver implements WSDLLocator {
         private final Logger logger;
         private final String uri;
