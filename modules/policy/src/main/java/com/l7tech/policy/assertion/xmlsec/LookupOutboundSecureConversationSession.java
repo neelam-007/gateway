@@ -10,8 +10,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
@@ -93,6 +92,12 @@ public class LookupOutboundSecureConversationSession extends MessageTargetableAs
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(serviceUrl == null? "" : serviceUrl);
+        final Set<String> allVars = new LinkedHashSet<String>();
+        final String[] strings = Syntax.getReferencedNames(serviceUrl == null? "" : serviceUrl);
+
+        allVars.addAll(Arrays.asList(strings));
+        allVars.addAll(Arrays.asList(super.getVariablesUsed()));
+
+        return allVars.toArray(new String[allVars.size()]);
     }
 }
