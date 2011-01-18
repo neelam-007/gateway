@@ -27,6 +27,7 @@ public class BuildRstSoapRequest extends Assertion implements UsesVariables, Set
 
     public static final long SYSTEM_LIFETIME = -1;
 
+    public static final String DEFAULT_VARIABLE_PREFIX = "requestBuilder";
     public static final String VARIABLE_RST_REQUEST = "rstRequest";
     public static final String VARIABLE_CLIENT_ENTROPY = "clientEntropy";
 
@@ -163,7 +164,6 @@ public class BuildRstSoapRequest extends Assertion implements UsesVariables, Set
     //- PRIVATE
 
     private static final String ASSERTION_BASIC_NAME = "Build RST SOAP Request";
-    private static final String DEFAULT_VARIABLE_PREFIX = "requestBuilder";
     private static final String META_INITIALIZED = BuildRstSoapRequest.class.getName() + ".metadataInitialized";
 
     private SecurityTokenType tokenType;

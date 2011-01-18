@@ -29,7 +29,7 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
 
     private String serviceUrl;
     private String securityContextTokenVarName = ProcessRstrSoapResponse.DEFAULT_VARIABLE_PREFIX + "." + ProcessRstrSoapResponse.VARIABLE_TOKEN;
-    private String clientEntropy = "${" + BuildRstSoapRequest.VARIABLE_RST_REQUEST + "." + BuildRstSoapRequest.VARIABLE_CLIENT_ENTROPY + "}";
+    private String clientEntropy = "${" + BuildRstSoapRequest.DEFAULT_VARIABLE_PREFIX + "." + BuildRstSoapRequest.VARIABLE_CLIENT_ENTROPY + "}";
     private String serverEntropy = "${" + ProcessRstrSoapResponse.DEFAULT_VARIABLE_PREFIX + "." + ProcessRstrSoapResponse.VARIABLE_SERVER_ENTROPY + "}";
     private String fullKey = "${" + ProcessRstrSoapResponse.DEFAULT_VARIABLE_PREFIX + "." + ProcessRstrSoapResponse.VARIABLE_FULL_KEY + "}";
     private String creationTime = "${" + ProcessRstrSoapResponse.DEFAULT_VARIABLE_PREFIX + "." + ProcessRstrSoapResponse.VARIABLE_CREATE_TIME + "}";
