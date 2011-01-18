@@ -22,7 +22,7 @@ public class LookupOutboundSecureConversationSession extends MessageTargetableAs
     public static final String DEFAULT_VARIABLE_PREFIX = "scLookup";
     public static final String VARIABLE_SESSION = "session";
 
-    private static final String ASSERTION_BASIC_NAME = "Lookup Outbound Secure Conversation Session";
+    private static final String ASSERTION_BASIC_NAME = "Look Up Outbound Secure Conversation Session";
     private static final String META_INITIALIZED = LookupOutboundSecureConversationSession.class.getName() + ".metadataInitialized";
 
     private String serviceUrl;
@@ -60,7 +60,7 @@ public class LookupOutboundSecureConversationSession extends MessageTargetableAs
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, ASSERTION_BASIC_NAME);
-        meta.put(AssertionMetadata.DESCRIPTION, "Lookup an outbound secure conversation session mapped to the authenticated user and the service.");
+        meta.put(AssertionMetadata.DESCRIPTION, "Look up an outbound secure conversation session mapped to the authenticated user and the service.");
 
         // Add to palette folder(s)
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
