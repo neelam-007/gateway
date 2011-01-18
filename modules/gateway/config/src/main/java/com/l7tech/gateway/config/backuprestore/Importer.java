@@ -263,7 +263,7 @@ public final class Importer{
         }
 
         if(!failedComponents.isEmpty()){
-            return new ImportExportUtilities.UtilityResult(PARTIAL_SUCCESS, failedComponents, null);
+            return new ImportExportUtilities.UtilityResult(PARTIAL_SUCCESS, failedComponents, restartMaybeRequired);
         }
 
         return new ImportExportUtilities.UtilityResult(SUCCESS, restartMaybeRequired);
@@ -329,7 +329,7 @@ public final class Importer{
         }
 
         if(!failedComponents.isEmpty()){
-            return new ImportExportUtilities.UtilityResult(PARTIAL_SUCCESS, failedComponents, null);
+            return new ImportExportUtilities.UtilityResult(PARTIAL_SUCCESS, failedComponents, restartMaybeRequired);
         }
 
         return new ImportExportUtilities.UtilityResult(SUCCESS, restartMaybeRequired);

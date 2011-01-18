@@ -1213,6 +1213,15 @@ public class ImportExportUtilities {
             this.rebootMaybeRequired = false;
         }
 
+        UtilityResult(final Status status,
+                      final List<String> failedComponents,
+                      final boolean rebootMaybeRequired) {
+            this.status = status;
+            this.failedComponents = failedComponents;
+            this.exception = null;
+            this.rebootMaybeRequired = rebootMaybeRequired;
+        }
+
         UtilityResult(final Status status){
             this.status = status;
             this.rebootMaybeRequired = false;
@@ -1220,7 +1229,8 @@ public class ImportExportUtilities {
             this.exception = null;
         }
 
-        UtilityResult(final Status status, boolean rebootMaybeRequired){
+        UtilityResult(final Status status,
+                      final boolean rebootMaybeRequired){
             this.status = status;
             this.rebootMaybeRequired = rebootMaybeRequired;
             this.failedComponents = null;
