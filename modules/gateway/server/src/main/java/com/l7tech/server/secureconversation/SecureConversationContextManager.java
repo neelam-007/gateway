@@ -19,8 +19,11 @@ import java.util.logging.Logger;
  */
 public abstract class SecureConversationContextManager<KT> {
 
-    public SecureConversationContextManager( final Config config, final boolean isInbound ) {
+    public SecureConversationContextManager( final Logger logger,
+                                             final Config config,
+                                             final boolean isInbound ) {
         this.isInbound = isInbound;
+        this.logger = logger;
         this.config = validated(config);
 
         String maxSessionsPropertyName = isInbound? "wss.secureConversation.maxSessions" : "outbound.secureConversation.maxSessions";
@@ -192,7 +195,6 @@ public abstract class SecureConversationContextManager<KT> {
         return vc;
     }
 
-    private static final Logger logger = Logger.getLogger(SecureConversationContextManager.class.getName());
     private static final Random random = new SecureRandom();
     private static final long MIN_SESSIONS = 1;
     private static final long MAX_SESSIONS = 1000000;
@@ -212,6 +214,7 @@ public abstract class SecureConversationContextManager<KT> {
     protected static final int MAX_KEY_SIZE = SyspropUtil.getInteger("com.l7tech.security.wssc.maxLength", 512);
     protected static final String PROP_DEFAULT_KEY_SIZE = "com.l7tech.security.secureconversation.defaultSecretLengthInBytes";
 
+    private final Logger logger;
     /**
      * keys: identifier (string)
      * values: SecureConversationSession objects

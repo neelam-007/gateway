@@ -1,8 +1,5 @@
 package com.l7tech.security.xml;
 
-import com.l7tech.security.wstrust.RstInfo;
-import com.l7tech.security.wstrust.RstrInfo;
-import com.l7tech.security.wstrust.TokenServiceClient;
 import com.l7tech.util.*;
 import org.w3c.dom.Element;
 
@@ -12,7 +9,6 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.logging.Level;
 
 /**
  * Implement mechanism described in WS-Secure Conversation to derive
@@ -43,7 +39,6 @@ public class SecureConversationKeyDeriver {
     private static final String ELE_LENGTH = "Length";
     private static final String ELE_LABEL = "Label";
     private static final String ELE_NONCE = "Nonce";
-    public static final String LOG_SECRET_VALUES = "com.l7tech.security.wstrust.debug.logSecretValues";
 
 
     private static String nullAsNull(String s) {
@@ -235,41 +230,4 @@ public class SecureConversationKeyDeriver {
             }
         }
     };
-
-    /**
-     * Combine information from a parsed RST and RSTR to extract the session identifier and session shared secret.
-     *
-     * @param req parsed RST info.  Required.
-     * @param resp  parsed RSTR info.  Required.
-     * @return a Pair containing the session identifier string and shared secret byte array.  Never null.
-     * @throws com.l7tech.util.InvalidDocumentFormatException if there is missing client or server entropy, or a missing security context identifier in the RSTR.
-     * @throws java.security.InvalidKeyException may occur if current crypto policy disallows HMac with long keys
-     * @throws java.security.NoSuchAlgorithmException if no HMacSHA1 service available from current security providers
-     */
-    public static Pair<String,byte[]> createSecureConversationSession(RstInfo req, RstrInfo resp) throws InvalidDocumentFormatException, InvalidKeyException, NoSuchAlgorithmException {
-
-        // Currently only combined-entropy mode is supported
-        if ((req.decodedNonce == null))
-            throw new InvalidDocumentFormatException("Error while computing shared secret: missing client entropy value from RST");
-        if ((resp.decodedNonce == null))
-            throw new InvalidDocumentFormatException("Error while computing shared secret: missing server entropy value from RSTR");
-
-        // ----> Note: need to handle client/server only entropy aswell
-        // TODO support client-only and server-only entropy, as well as combined entropy
-
-        // derive the sharedSecret
-        final int keySizeBytes = req.keySize / 8;
-        byte[] secret = pSHA1(req.decodedNonce, resp.decodedNonce, keySizeBytes);
-        if (TokenServiceClient.log.isLoggable(Level.FINEST) && SyspropUtil.getBoolean(LOG_SECRET_VALUES, false))
-            TokenServiceClient.log.log(Level.FINEST, "shared secret computed, length = {0}; value = {1}", new Object[] {secret.length, HexUtils.encodeBase64(secret)});
-
-
-        if (resp.identifier == null || resp.identifier.length() <= 0 )
-            throw new InvalidDocumentFormatException("Error while computing shared secret: missing security context identifier");
-
-        if (TokenServiceClient.log.isLoggable(Level.FINER))
-            TokenServiceClient.log.log(Level.FINER, "SC context created for {0} ==> key length bytes: {1}", new Object[] {resp.identifier, secret.length});
-
-        return new Pair<String,byte[]>(resp.identifier, secret);
-    }
 }

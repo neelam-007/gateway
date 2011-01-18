@@ -13,14 +13,17 @@ import com.l7tech.util.SyspropUtil;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 /**
  * @author ghuang
  */
 public class InboundSecureConversationContextManager extends SecureConversationContextManager<String> implements SecurityContextFinder {
 
+    //- PUBLIC
+
     public InboundSecureConversationContextManager( final Config config ) {
-        super(config, true);
+        super(logger, config, true);
     }
 
     /**
@@ -102,6 +105,10 @@ public class InboundSecureConversationContextManager extends SecureConversationC
         saveSession(session.getIdentifier(), session);
         return session;
     }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger( InboundSecureConversationContextManager.class.getName() );
 
     private int calculateKeySize( final int requestedKeySize,
                                   final String namespace ) {

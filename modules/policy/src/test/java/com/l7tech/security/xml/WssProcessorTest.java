@@ -1049,7 +1049,8 @@ public class WssProcessorTest {
 
 
         // Reconstruct WS-SC session using parsed RST and RSTR messages along with knowledge of private key
-        final Pair<String, byte[]> session = SecureConversationKeyDeriver.createSecureConversationSession(rstInfo, rstrInfo);
+        final byte[] sharedKey = SecureConversationKeyDeriver.pSHA1( rstInfo.decodedNonce, rstrInfo.decodedNonce, Integer.parseInt(rstrInfo.keySize)/8 );
+        final Pair<String, byte[]> session = new Pair<String,byte[]>( rstrInfo.identifier, sharedKey );
         final SecurityContextFinder scFinder = new SecurityContextFinder() {
             @Override
             public SecurityContext getSecurityContext(String securityContextIdentifier) {

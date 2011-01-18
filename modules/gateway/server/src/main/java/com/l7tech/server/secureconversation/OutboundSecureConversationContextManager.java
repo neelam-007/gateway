@@ -3,15 +3,22 @@ package com.l7tech.server.secureconversation;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The outbound session map uses the concatenation of User ID and Service URL (rather than Session Identifier) as a lookup key.
@@ -20,8 +27,12 @@ import java.io.Serializable;
  */
 public class OutboundSecureConversationContextManager extends SecureConversationContextManager<OutboundSecureConversationContextManager.OutboundSessionKey> {
 
+    //- PUBLIC
+
+    public static final String LOG_SECRET_VALUES = "com.l7tech.security.wstrust.debug.logSecretValues";
+
     public OutboundSecureConversationContextManager( final Config config ) {
-        super(config, false);
+        super(logger, config, false);
     }
 
     /**
@@ -136,11 +147,12 @@ public class OutboundSecureConversationContextManager extends SecureConversation
      * @param serviceUrl The URL of the service that creates a SCT (must not be null)
      * @param credentials The credentials used to authenticate
      * @param namespace The WS-SecureConversation namespace in use (may be null)
+     * @param sessionIdentifier The external session identifier
      * @param creationTime: The time of the session created.  Its unit is milliseconds.  It must be greater than 0.
      * @param expirationTime: The time of the session expired.  Its unit is milliseconds.  It must be greater than 0.
-     * @param requestSharedSecret: The request full key (may be null)
-     * @param requestClientEntropy The request client entropy (may be null)
-     * @param requestServerEntropy The request server entropy (may be null)
+     * @param requestSharedSecret: The full key (may be null)
+     * @param requestClientEntropy The client entropy (may be null)
+     * @param requestServerEntropy The server entropy (may be null)
      * @return the newly created session
      */
     public SecureConversationSession createContextForUser(final User sessionOwner,
@@ -175,7 +187,13 @@ public class OutboundSecureConversationContextManager extends SecureConversation
             if (requestClientEntropy.length >= MIN_CLIENT_ENTROPY_BYTES && requestClientEntropy.length <= MAX_CLIENT_ENTROPY_BYTES) {
                 if (requestServerEntropy != null) {
                     if (requestServerEntropy.length >= MIN_SERVER_ENTROPY_BYTES && requestServerEntropy.length <= MAX_SERVER_ENTROPY_BYTES) {
-                        sharedSecret = null;
+                        try {
+                            sharedSecret = deriveSharedKey( sessionIdentifier, requestClientEntropy, requestServerEntropy, 32 );
+                        } catch ( InvalidKeyException e ) {
+                            throw new SessionCreationException( "Error creating shared key: " + ExceptionUtils.getMessage(e), e );
+                        } catch ( NoSuchAlgorithmException e ) {
+                            throw new SessionCreationException( "Error creating shared key: " + ExceptionUtils.getMessage(e), e );
+                        }
                         clientEntropy = requestClientEntropy;
                         serverEntropy = requestServerEntropy;
                     } else {
@@ -212,10 +230,46 @@ public class OutboundSecureConversationContextManager extends SecureConversation
         return session;
     }
 
+    // - PROTECTED
+
     @Override
     protected void validateSessionKey( final OutboundSessionKey sessionKey ) throws SessionCreationException {
         if ( !sessionKey.isValid() ) {
             throw new SessionCreationException( "Unable to create session for user (not a persistent identity)" );
         }
+    }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger( OutboundSecureConversationContextManager.class.getName() );
+
+    /**
+     * Combine information from a parsed RST and RSTR to extract the session identifier and session shared secret.
+     *
+     * @param externalId The external session identifier. Required.
+     * @param clientEntropy The client entropy to use. Required.
+     * @param serverEntropy The client entropy to use. Required.
+     * @param keySizeBytes The size of the key to generate. Required.
+     * @return the shared secret byte array.  Never null.
+     * @throws java.security.InvalidKeyException may occur if current crypto policy disallows HMac with long keys
+     * @throws java.security.NoSuchAlgorithmException if no HMacSHA1 service available from current security providers
+     */
+    private byte[] deriveSharedKey( final String externalId,
+                                    final byte[] clientEntropy,
+                                    final byte[] serverEntropy,
+                                    final int keySizeBytes ) throws InvalidKeyException, NoSuchAlgorithmException {
+        if (clientEntropy == null) throw new IllegalArgumentException("client entropy is required");
+        if (serverEntropy == null) throw new IllegalArgumentException("server entropy is required");
+
+        // Derive the shared secret
+        byte[] secret = SecureConversationKeyDeriver.pSHA1(clientEntropy, serverEntropy, keySizeBytes);
+        if ( logger.isLoggable(Level.FINEST) && SyspropUtil.getBoolean(LOG_SECRET_VALUES, false))
+            logger.log(Level.FINEST, "Shared secret computed, length = {0}; value = {1}", new Object[] {secret.length, HexUtils.encodeBase64(secret)});
+
+
+        if ( logger.isLoggable(Level.FINER) )
+            logger.log(Level.FINER, "SC context created for {0} ==> key length bytes: {1}", new Object[] {externalId, secret.length});
+
+        return secret;
     }
 }
