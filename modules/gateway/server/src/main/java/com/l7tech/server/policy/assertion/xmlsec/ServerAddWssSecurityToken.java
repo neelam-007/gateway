@@ -116,7 +116,7 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
 
         SamlAssertion samlAssertion;
         try {
-            samlAssertion = SamlAssertion.newInstance(samlDoc.getDocumentElement());
+            samlAssertion = SamlAssertion.newInstance(samlDoc.getDocumentElement(), securityTokenResolver);
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_BAD_SAML_XML, null, e);
             return AssertionStatus.SERVER_ERROR;
