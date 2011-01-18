@@ -318,13 +318,13 @@ public class SoapConstants {
         VALUETYPE_SAML4, // SAML 1.1 assertion from STP 1.1
         VALUETYPE_SAML5, // SAML 2.0 assertion
     };
-    public static final String VALUETYPE_SAML_ASSERTIONID = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertionID"; // from a DRAFT spec?
-    public static final String VALUETYPE_SAML_ASSERTIONID2 = "http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID";
-    public static final String VALUETYPE_SAML_ASSERTIONID3 = "http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLID";
+    public static final String VALUETYPE_SAML_ASSERTIONID_DRAFT_2004 = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertionID"; // from a DRAFT spec?
+    public static final String VALUETYPE_SAML_ASSERTIONID_SAML11 = "http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID";
+    public static final String VALUETYPE_SAML_ASSERTIONID_SAML20 = "http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLID";
     public static final String[] VALUETYPE_SAML_ASSERTIONID_ARRAY = {
-        VALUETYPE_SAML_ASSERTIONID,
-        VALUETYPE_SAML_ASSERTIONID2, // SAML 1.1 assertion id ref (STP 1.0 and 1.1)
-        VALUETYPE_SAML_ASSERTIONID3, // SAML 2.0 assertion id ref (STP 1.1)
+            VALUETYPE_SAML_ASSERTIONID_DRAFT_2004,
+            VALUETYPE_SAML_ASSERTIONID_SAML11, // SAML 1.1 assertion id ref (STP 1.0 and 1.1)
+            VALUETYPE_SAML_ASSERTIONID_SAML20, // SAML 2.0 assertion id ref (STP 1.1)
     };
     
     public static final String SAML_NAMESPACE = "urn:oasis:names:tc:SAML:1.0:assertion";   // SAML 1.1

@@ -6,6 +6,7 @@ package com.l7tech.security.xml.decorator;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.UsernameToken;
+import com.l7tech.security.xml.KeyInfoDetails;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.security.xml.processor.SecurityContext;
@@ -216,38 +217,49 @@ public class DecorationRequirements {
     }
 
     /**
-     * If this is set along with EncryptedKey, then signing and encryption will use a KeyInfo that uses
-     * a KeyInfo of #EncryptedKeySHA1 containing this string, which must be the Base64-encoded
+     * If this is set along with EncryptedKey, then signing and encryption will use a KeyInfo or KeyIdentifier that uses
+     * the specified reference information.
+     * <p/>
+     * See {@link com.l7tech.security.xml.KeyInfoDetails#makeEncryptedKeySha1Ref(java.lang.String)} in order to use
+     * a KeyInfo of #EncryptedKeySHA1 containing the EncryptedKeySHA1 string, which must be the Base64-encoded
      * SHA1 hash of the raw octets of the key (that is, the the pre-Base64-encoding octets of the
      * CipherValue in the EncryptedKey token being referenced).
      * <p/>
      * The EncryptedKey will be assumed already to be known to the recipient.  It is the callers
-     * responsibility to ensure that the recipient will recognize this encryptedKeySha1 hash.
+     * responsibility to ensure that the recipient will recognize this key identifier mechanism.
      * <p/>
      * This value will not be used unless both it and {@link #setEncryptedKey} are set to non-null values.
-     * EncryptedKey should return the actual key to use for the signing and encryption.
+     * {@link @getEncryptedKey} should return the actual secret key to use (if only as a derivation source) for the signing and encryption.
+     * <p/>
      *
-     * @param encryptedKeySha1 the base64-encoded SHA1 hash of the key octets from an EncryptedKey, or null
-     *                         to disable use of #EncryptedKeySHA1 KeyInfo for signature and encryption blocks.
+     * @param encryptedKeyReferenceInfo the key identifier value and valuetype to use when referring to the encrypted key.
+     *                         For example, to cause uses of the corresponding secret to point to it via EncryptedKeySHA1
+     *                         referenes, this would contain (as the value) the base64-encoded SHA1 hash of the key octets
+     *                         from an EncryptedKey.
+     *                         <p/>
+     *                         If this is null, a secret key provided with {@link #setEncryptedKey(byte[])} will not
+     *                         be used for signing or encryption (either directly or via derived keys) unless
+     *                         the decorator needs to create a new EncryptedKey token (in which case it may use
+     *                         the specified key material rather than generating fresh material).
      */
-    public void setEncryptedKeySha1(String encryptedKeySha1) {
-        this.encryptedKeySha1 = encryptedKeySha1;
+    public void setEncryptedKeyReferenceInfo(KeyInfoDetails encryptedKeyReferenceInfo) {
+        this.encryptedKeyReferenceInfo = encryptedKeyReferenceInfo;
     }
 
     /**
      * @return  the base64-encoded SHA1 hash of the key octets from an EncryptedKey, or null
      *          to disable use of #EncryptedKeySHA1 KeyInfo for signature and encryption blocks.
-     * @see #setEncryptedKeySha1
+     * @see #setEncryptedKeyReferenceInfo
      */
-    public String getEncryptedKeySha1() {
-        return encryptedKeySha1;
+    public KeyInfoDetails getEncryptedKeyReferenceInfo() {
+        return encryptedKeyReferenceInfo;
     }
 
     /**
      * Set the actual secret key bytes to use for signing and encryption when using #EncryptedKeySHA1 style
      * KeyInfos inside signature and encryption blocks.  See {@link #setEncryptedKey} for more information.
      * <p/>
-     * If {@link #getEncryptedKeySha1()} returns null, no EncryptedKeySHA1 references will be generated.  However,
+     * If {@link #getEncryptedKeyReferenceInfo} returns null, no EncryptedKeySHA1 references will be generated.  However,
      * if a new EncryptedKey is generated anyway, it will prefer to use this secret key, if it is non-null,
      *  rather than generating a new one.
      *
@@ -491,7 +503,7 @@ public class DecorationRequirements {
         return senderSamlToken != null || secureConversationSession != null ||
           (senderMessageSigningCertificate != null && senderMessageSigningPrivateKey != null) ||
           (encryptUsernameToken && usernameTokenCredentials != null) ||
-          (encryptedKey != null && encryptedKeySha1 != null);
+          (encryptedKey != null && encryptedKeyReferenceInfo != null);
     }
 
     /**
@@ -755,7 +767,7 @@ public class DecorationRequirements {
         recipientCertificate = null;
         secureConversationSession = null;
         encryptedKey = null;
-        encryptedKeySha1 = null;
+        encryptedKeyReferenceInfo = null;
         kerberosTicket = null;
         includeKerberosTicket = false;
         kerberosTicketId = null;
@@ -823,7 +835,7 @@ public class DecorationRequirements {
     private KeyInfoInclusionType keyInfoInclusionType = KeyInfoInclusionType.CERT;
     private KeyInfoInclusionType encryptionKeyInfoInclusionType = KeyInfoInclusionType.STR_SKI;
     private byte[] encryptedKey = null;
-    private String encryptedKeySha1 = null;
+    private KeyInfoDetails encryptedKeyReferenceInfo = null;
     private Set<String> signatureConfirmations = new HashSet<String>();
     private KerberosServiceTicket kerberosTicket = null;
     private boolean includeKerberosTicket = false;

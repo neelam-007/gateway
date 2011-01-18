@@ -12,8 +12,10 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.token.EncryptedKey;
+import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernameTokenImpl;
+import com.l7tech.security.xml.KeyInfoDetails;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
@@ -24,6 +26,7 @@ import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAsserti
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -142,7 +145,10 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
                 try {
                     byte[] secretKeyBytes = encryptedKey.getSecretKey();
                     dreq.setEncryptedKey(secretKeyBytes);
-                    dreq.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
+                    String valueTypeUri = SamlSecurityToken.VERSION_2_0 == samlAssertion.getVersionId()
+                            ? SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML20
+                            : SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11;
+                    dreq.setEncryptedKeyReferenceInfo(KeyInfoDetails.makeKeyId(samlAssertion.getAssertionId(), false, valueTypeUri));
                 } catch (InvalidDocumentFormatException e) {
                     auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE, null, e);
                 } catch (GeneralSecurityException e) {

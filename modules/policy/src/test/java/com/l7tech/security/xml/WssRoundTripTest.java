@@ -95,11 +95,11 @@ public class WssRoundTripTest {
 
         // Make a second request using the same encrypted key and token resolver
         ntd2.td.securityTokenResolver = ntd.td.securityTokenResolver;
-        ntd2.td.req.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
+        ntd2.td.req.setEncryptedKeyReferenceInfo(KeyInfoDetails.makeEncryptedKeySha1Ref(encryptedKey.getEncryptedKeySHA1()));
 
         DecorationRequirements reqs = ntd2.td.req;
         reqs.setEncryptedKey(encryptedKey.getSecretKey());
-        reqs.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
+        reqs.setEncryptedKeyReferenceInfo(KeyInfoDetails.makeEncryptedKeySha1Ref(encryptedKey.getEncryptedKeySHA1()));
 
         Document doc = ntd2.td.c.message;
         new WssDecoratorImpl().decorateMessage(new Message(doc,0), reqs);

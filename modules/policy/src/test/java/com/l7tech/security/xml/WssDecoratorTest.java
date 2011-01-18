@@ -188,7 +188,7 @@ public class WssDecoratorTest {
 
 
             req.setKeyInfoInclusionType(keyInfoInclusionType);
-            req.setEncryptedKeySha1(encryptedKeySha1);
+            req.setEncryptedKeyReferenceInfo(KeyInfoDetails.makeEncryptedKeySha1Ref(encryptedKeySha1));
             if (signatureConfirmations != null) {
                 for(String confirmedSignature : signatureConfirmations)
                 req.addSignatureConfirmation(confirmedSignature);
@@ -210,7 +210,7 @@ public class WssDecoratorTest {
                     // Use KeyInfo #EncryptedKeySHA1, referencing implicit EncryptedKey which recipient is expected
                     // to already possess.
                     req.setEncryptedKey(secureConversationKey);
-                    req.setEncryptedKeySha1(encryptedKeySha1);
+                    req.setEncryptedKeyReferenceInfo(KeyInfoDetails.makeEncryptedKeySha1Ref(encryptedKeySha1));
                 }
             }
         }

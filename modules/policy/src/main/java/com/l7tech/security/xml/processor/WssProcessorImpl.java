@@ -1236,7 +1236,7 @@ public class WssProcessorImpl implements WssProcessor {
                 }
 
                 derivationSource = xst;
-            } else if ( SoapConstants.VALUETYPE_SAML_ASSERTIONID2.equals(valueType) ) {
+            } else if ( SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11.equals(valueType) ) {
                 if (securityTokenResolver == null) {
                     throw new ProcessorException("Unable to process DerivedKeyToken - it references a SAMLAssertionID, but no security token resolver is available");
                 }

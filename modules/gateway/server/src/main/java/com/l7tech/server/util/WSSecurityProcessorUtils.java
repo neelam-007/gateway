@@ -11,6 +11,7 @@ import com.l7tech.message.SecurityKnob;
 import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.*;
+import com.l7tech.security.xml.KeyInfoDetails;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
@@ -684,7 +685,7 @@ public class WSSecurityProcessorUtils {
             if ( encryptedKey.isUnwrapped() ) {
                 try {
                     decoration.setEncryptedKey( encryptedKey.getSecretKey() );
-                    decoration.setEncryptedKeySha1( encryptedKey.getEncryptedKeySHA1() );
+                    decoration.setEncryptedKeyReferenceInfo(KeyInfoDetails.makeEncryptedKeySha1Ref( encryptedKey.getEncryptedKeySHA1() ));
                     set = true;
                 } catch (InvalidDocumentFormatException e) {
                     throw new IllegalStateException(); // can't happen, it's unwrapped already

@@ -247,12 +247,12 @@ public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRst
                 // Set ID or AssertionID
                 tokenInfo.put(SAML_ASSERTION_ID, root.getAttribute("AssertionID"));
                 // Set ValueType
-                tokenInfo.put(SAML_VALUE_TYPE, SoapConstants.VALUETYPE_SAML_ASSERTIONID2);
+                tokenInfo.put(SAML_VALUE_TYPE, SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11);
             } else if (SoapConstants.SAML_NAMESPACE2.equals(rootNS)) { // SAML 2.0
                 // Set ID or AssertionID
                 tokenInfo.put(SAML_ASSERTION_ID, root.getAttribute("ID"));
                 // Set ValueType
-                tokenInfo.put(SAML_VALUE_TYPE, SoapConstants.VALUETYPE_SAML_ASSERTIONID3);
+                tokenInfo.put(SAML_VALUE_TYPE, SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML20);
             } else {
                 String errorMessage = "The SAML namespace is invalid.";
                 RstSoapMessageProcessor.generateSoapFaultResponse(

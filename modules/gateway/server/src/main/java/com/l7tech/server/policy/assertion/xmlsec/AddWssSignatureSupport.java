@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.SecurityToken;
+import com.l7tech.security.xml.KeyInfoDetails;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.xml.SignerInfo;
@@ -147,7 +148,7 @@ public class AddWssSignatureSupport implements AuditHaver {
             // Try to sign response using an existing EncryptedKey already known to the requestor,
             // using #EncryptedKeySHA1 KeyInfo reference, instead of making an RSA signature,
             // which is expensive.
-            if (wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null) {
+            if (wssReq.getEncryptedKeyReferenceInfo() == null || wssReq.getEncryptedKey() == null) {
                 // No EncryptedKeySHA1 reference on response yet; create one
                 for ( LoginCredentials credentials : context.getAuthenticationContext( context.getRequest() ).getCredentials() ) {
                     SecurityToken[] tokens = credentials.getSecurityTokens();
@@ -158,7 +159,7 @@ public class AddWssSignatureSupport implements AuditHaver {
                             if (ek.isUnwrapped()) {
                                 try {
                                     wssReq.setEncryptedKey(ek.getSecretKey());
-                                    wssReq.setEncryptedKeySha1(ek.getEncryptedKeySHA1());
+                                    wssReq.setEncryptedKeyReferenceInfo(KeyInfoDetails.makeEncryptedKeySha1Ref(ek.getEncryptedKeySHA1()));
                                 } catch ( InvalidDocumentFormatException e) {
                                     throw new IllegalStateException(e); // Can't happen - it's unwrapped already
                                 } catch (GeneralSecurityException e) {
@@ -176,7 +177,7 @@ public class AddWssSignatureSupport implements AuditHaver {
             wssReq.setPreferredSigningTokenType(DecorationRequirements.PreferredSigningTokenType.X509);
             wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
             wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
-        } else if ((wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null)
+        } else if ((wssReq.getEncryptedKeyReferenceInfo() == null || wssReq.getEncryptedKey() == null)
             && wssReq.getKerberosTicket() == null) {
             // No luck with #EncryptedKeySHA1 or Kerberos, so we'll have to do a full RSA signature using our own cert.
             wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);

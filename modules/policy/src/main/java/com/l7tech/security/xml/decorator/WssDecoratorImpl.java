@@ -282,7 +282,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 if (sct != null) {
                     signatureInfo = processSecureConversationSigningToken( dreq, c, securityHeader, signList, sct, session );
                 } else if (dreq.getEncryptedKey() != null &&
-                           dreq.getEncryptedKeySha1() != null) {
+                           dreq.getEncryptedKeyReferenceInfo() != null) {
                     signatureInfo = processEncryptedKeySigningToken( c, securityHeader, signList );
                 } else if (addedKerberosBst != null) {
                     signatureInfo = processKerberosSigningToken( c, securityHeader, signList, addedKerberosBst );
@@ -334,7 +334,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 encryptWithSecureConversationToken( c, securityHeader, xencDesiredNextSibling, sct, session, elementsToEncrypt );
             } else if (addedEncKey != null && addedEncKeyXmlEncKey != null) {
                 encryptWithGeneratedEncryptedKeyToken( c, securityHeader, xencDesiredNextSibling, addedEncKey, addedEncKeyXmlEncKey, elementsToEncrypt );
-            } else if (dreq.getEncryptedKeySha1() != null &&
+            } else if (dreq.getEncryptedKeyReferenceInfo() != null &&
                        dreq.getEncryptedKey() != null) {
                 encryptWithEncryptedKeyToken( c, securityHeader, xencDesiredNextSibling, elementsToEncrypt );
             } else if (addedKerberosBst != null) {
@@ -497,7 +497,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                final Element securityHeader,
                                                final Element xencDesiredNextSibling,
                                                final Element[] elementsToEncrypt ) throws DecoratorException, GeneralSecurityException {
-        final String eksha = c.dreq.getEncryptedKeySha1();
+        final KeyInfoDetails eksha = c.dreq.getEncryptedKeyReferenceInfo();
         final byte[] ekkey = c.dreq.getEncryptedKey();
 
         // Encrypt using a reference to an implicit EncryptedKey that the recipient is assumed
@@ -507,7 +507,7 @@ public class WssDecoratorImpl implements WssDecorator {
             DerivedKeyToken dkt = addDerivedKeyToken(c,
                                                      securityHeader,
                                                      xencDesiredNextSibling,
-                                                     KeyInfoDetails.makeEncryptedKeySha1Ref(eksha),
+                                                     eksha,
                                                      getKeyLengthInBytesForAlgorithm(c.dreq.getEncryptionAlgorithm()),
                                                      ekkey,
                                                      "DerivedKey");
@@ -521,8 +521,6 @@ public class WssDecoratorImpl implements WssDecorator {
                                       KeyInfoDetails.makeUriReference(dktId, dkt.getTokenType()));
         } else {
             // Reference the EncryptedKey directly
-            final KeyInfoDetails keyInfoDetails = KeyInfoDetails.makeEncryptedKeySha1Ref(eksha);
-
             final String encryptionAlgorithm = c.dreq.getEncryptionAlgorithm();
             XencUtil.XmlEncKey encKey = generateXmlEncKey(encryptionAlgorithm);
             encKey = new XencUtil.XmlEncKey(encKey.getAlgorithm(), ekkey);
@@ -531,7 +529,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                       xencDesiredNextSibling,
                                       elementsToEncrypt,
                                       encKey,
-                                      keyInfoDetails);
+                                      eksha);
         }
     }
 
@@ -664,8 +662,8 @@ public class WssDecoratorImpl implements WssDecorator {
             throw new InvalidDocumentFormatException("Unable to decorate: SAML Assertion has missing or empty AssertionID/ID");
 
         String samlValueType = saml11 ?
-            SoapConstants.VALUETYPE_SAML_ASSERTIONID2 :
-            SoapConstants.VALUETYPE_SAML_ASSERTIONID3;
+            SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11 :
+            SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML20;
 
         final KeyInfoDetails signatureKeyInfo;
         if ( SyspropUtil.getBoolean(PROPERTY_SAML_USE_URI_REF) ) {
@@ -739,13 +737,14 @@ public class WssDecoratorImpl implements WssDecorator {
                                                            final Set<Element> signList ) throws NoSuchAlgorithmException, InvalidKeyException, DecoratorException {
         final SignatureInfo signatureInfo;// Use a reference to an implicit EncryptedKey that the recipient is assumed to already possess
         // (possibly because we got it from them originally)
+        final KeyInfoDetails dktKeyinfoDetails = c.dreq.getEncryptedKeyReferenceInfo();
         if (c.dreq.isUseDerivedKeys()) {
             // Derive a key from the implicit ephemeral key
             DerivedKeyToken derivedKeyToken =
                     addDerivedKeyToken(c,
                                        securityHeader,
                                        null,
-                                       KeyInfoDetails.makeEncryptedKeySha1Ref(c.dreq.getEncryptedKeySha1()),
+                                       dktKeyinfoDetails,
                                        getKeyLengthInBytesForAlgorithm(c.dreq.getEncryptionAlgorithm()),
                                        c.dreq.getEncryptedKey(),
                                        "DerivedKey");
@@ -759,8 +758,7 @@ public class WssDecoratorImpl implements WssDecorator {
         } else {
             // Use the implicit ephemeral key directly
             signatureInfo = new SignatureInfo(
-                new SecretKeySpec(c.dreq.getEncryptedKey(), "SHA1"),
-                KeyInfoDetails.makeEncryptedKeySha1Ref(c.dreq.getEncryptedKeySha1()) );
+                new SecretKeySpec(c.dreq.getEncryptedKey(), "SHA1"), dktKeyinfoDetails);
         }
         return signatureInfo;
     }
@@ -1197,8 +1195,8 @@ public class WssDecoratorImpl implements WssDecorator {
                 if (assId == null || assId.length() < 1)
                     throw new InvalidDocumentFormatException("Unable to decorate: SAML Assertion has missing or empty AssertionID/ID");
                 String samlValueType = saml11 ?
-                    SoapConstants.VALUETYPE_SAML_ASSERTIONID2 :
-                    SoapConstants.VALUETYPE_SAML_ASSERTIONID3;
+                    SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11 :
+                    SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML20;
                 Element str = addSamlSecurityTokenReference(securityHeader, assId, samlValueType);
                 ref = template.createReference("#" + getOrCreateWsuId(c, str, "SamlSTR"));
                 Element strTransform = createStrTransform(c, domFactory, DS_PREFIX);
