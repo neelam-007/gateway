@@ -77,7 +77,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         final User user = authenticationResult.getUser();
         if (user == null) {
             auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "No authenticated user found in the target message.");
-            return AssertionStatus.FALSIFIED;
+            return AssertionStatus.AUTH_FAILED;
         }
 
         // Get Service URL (Note: no need to check if serviceUrl is null, since the GUI of the assertion dialog has validated Service URL not to be null.)
