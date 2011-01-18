@@ -349,6 +349,7 @@ public class GatewayFeatureSets {
             ass(BuildRstSoapRequest.class),
             ass(BuildRstrSoapResponse.class),
             ass(ProcessRstrSoapResponse.class),
+            ass(EstablishOutboundSecureConversation.class),
             ass(WssVersionAssertion.class),
             ass(WssConfigurationAssertion.class),
             ass(AddWssUsernameToken.class),

@@ -136,7 +136,9 @@ public class OutboundSecureConversationContextManager extends SecureConversation
      * @param serviceUrl The URL of the service that creates a SCT (must not be null)
      * @param credentials The credentials used to authenticate
      * @param namespace The WS-SecureConversation namespace in use (may be null)
-     * @param sessionDuration: its unit is milliseconds.  It must be greater than 0.
+     * @param creationTime: The time of the session created.  Its unit is milliseconds.  It must be greater than 0.
+     * @param expirationTime: The time of the session expired.  Its unit is milliseconds.  It must be greater than 0.
+     * @param requestSharedSecret: The request full key (may be null)
      * @param requestClientEntropy The request client entropy (may be null)
      * @param requestServerEntropy The request server entropy (may be null)
      * @return the newly created session
@@ -146,10 +148,11 @@ public class OutboundSecureConversationContextManager extends SecureConversation
                                                           final LoginCredentials credentials,
                                                           final String namespace,
                                                           final String sessionIdentifier,
-                                                          final long sessionDuration,
+                                                          final long creationTime,
+                                                          final long expirationTime,
+                                                          final byte[] requestSharedSecret,
                                                           final byte[] requestClientEntropy,
-                                                          final byte[] requestServerEntropy,
-                                                          final byte[] requestSharedSecret) throws SessionCreationException {
+                                                          final byte[] requestServerEntropy) throws SessionCreationException {
         final byte[] sharedSecret;
         final byte[] clientEntropy;
         final byte[] serverEntropy;
@@ -192,15 +195,14 @@ public class OutboundSecureConversationContextManager extends SecureConversation
             throw new SessionCreationException("Unable to create a session: there are no shared secret and client entropy to create a session key");
         }
 
-        final long time = System.currentTimeMillis();
         final SecureConversationSession session = new SecureConversationSession(
             namespace,
             sessionIdentifier,
             clientEntropy,
             serverEntropy,
             sharedSecret,
-            time,
-            time + sessionDuration,
+            creationTime,
+            expirationTime,
             sessionOwner,
             credentials
         );

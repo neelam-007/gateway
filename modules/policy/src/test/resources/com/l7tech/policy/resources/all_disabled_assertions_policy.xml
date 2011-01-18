@@ -311,6 +311,9 @@
         <L7p:ProcessRstrSoapResponse>
             <L7p:Enabled booleanValue="false"/>
         </L7p:ProcessRstrSoapResponse>
+        <L7p:EstablishOutboundSecureConversation>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:EstablishOutboundSecureConversation>
         <L7p:RemoveElement>
             <L7p:Enabled booleanValue="false"/>
         </L7p:RemoveElement>

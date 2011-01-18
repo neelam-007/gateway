@@ -724,6 +724,8 @@ public class ExpandVariablesTest {
         final UserBean user = new UserBean("Alice");
         user.setUniqueIdentifier("1");
 
+        long creationTime = System.currentTimeMillis();
+
         // Create a secure conversation session
         SecureConversationSession session = outboundContextManager.createContextForUser(
             user,
@@ -731,10 +733,11 @@ public class ExpandVariablesTest {
             LoginCredentials.makeLoginCredentials( new HttpBasicToken(user.getLogin(), "password".toCharArray()), HttpBasic.class ),
             "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512",
             "fake_session_identifier",
-            2*60*1000,
+            creationTime,
+            creationTime + 2*60*1000,
+            generateNewSecret(64),
             null,
-            null,
-            generateNewSecret(64)
+            null
         );
 
         // Set the variable, scLookup.session

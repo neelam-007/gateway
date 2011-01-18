@@ -94,16 +94,19 @@ public class ServerLookupOutboundSecureConversationSessionTest {
     }
 
     private SecureConversationSession addNewSession(User user, String serviceUrl, String sessionId) throws SessionCreationException {
+        long creationTime = System.currentTimeMillis();
+
         return outboundContextManager.createContextForUser(
             user,
             serviceUrl,
             LoginCredentials.makeLoginCredentials( new HttpBasicToken(user.getLogin(), "password".toCharArray()), HttpBasic.class ),
             "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512",
             sessionId,
-            2*60*1000,
+            creationTime,
+            creationTime + 2*60*1000,
+            generateNewSecret(64),
             null,
-            null,
-            generateNewSecret(64)
+            null
         );
     }
 

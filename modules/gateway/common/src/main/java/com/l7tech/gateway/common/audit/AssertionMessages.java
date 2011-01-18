@@ -791,5 +791,7 @@ public class AssertionMessages extends Messages {
     public static final M RSTR_PROCESSOR_UNEXPECTED_TOKEN = m(9354, Level.WARNING, "Expected token of type ''{0}'', but found: {1}");
 
     public static final M OUTBOUND_SECURE_CONVERSATION_LOOKUP_FAILURE  = m(9380, Level.WARNING, "Session Lookup Failure: {0}");
+    public static final M OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE  = m(9381, Level.WARNING, "Outbound Secure Conversation Establishment Failure: {0}");
+    
     // Highest ID reserved for AssertionMessages = 99999
 }

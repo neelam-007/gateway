@@ -18,7 +18,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NA
 public class ProcessRstrSoapResponse extends MessageTargetableAssertion {
 
     //- PUBLIC
-
+    public static final String DEFAULT_VARIABLE_PREFIX = "rstrResponseProcessor";
     public static final String VARIABLE_TOKEN = "token";
     public static final String VARIABLE_CREATE_TIME = "createTime";
     public static final String VARIABLE_EXPIRY_TIME = "expiryTime";
@@ -94,7 +94,6 @@ public class ProcessRstrSoapResponse extends MessageTargetableAssertion {
     //- PRIVATE
 
     private static final String ASSERTION_BASIC_NAME = "Process RSTR Response";
-    private static final String DEFAULT_VARIABLE_PREFIX = "rstrResponseProcessor";
     private static final String META_INITIALIZED = ProcessRstrSoapResponse.class.getName() + ".metadataInitialized";
 
     private SecurityTokenType tokenType = SecurityTokenType.UNKNOWN;

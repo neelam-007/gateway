@@ -171,6 +171,7 @@
         <L7p:BuildRstSoapRequest/>
         <L7p:BuildRstrSoapResponse/>
         <L7p:ProcessRstrSoapResponse/>
+        <L7p:EstablishOutboundSecureConversation/>
         <L7p:RemoveElement/>
         <L7p:AddWssUsernameToken/>
         <L7p:AuditRecordToXml/>
