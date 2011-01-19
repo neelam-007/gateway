@@ -737,7 +737,8 @@ public class ExpandVariablesTest {
             creationTime + 2*60*1000,
             generateNewSecret(64),
             null,
-            null
+            null,
+            0
         );
 
         // Set the variable, scLookup.session

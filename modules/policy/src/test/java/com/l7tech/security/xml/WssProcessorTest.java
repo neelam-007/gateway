@@ -1045,12 +1045,20 @@ public class WssProcessorTest {
         processor.setSecurityTokenResolver(resolver);
         pr = processor.processMessage();
         assertBodyWasSigned(pr, d);
-        RstrInfo rstrInfo = RstrInfo.parseRstrElement(SoapUtil.getPayloadElement(rstr.getXmlKnob().getDocumentReadOnly()));
+        RstrInfo rstrInfo = RstrInfo.parseRstrElement(SoapUtil.getPayloadElement(rstr.getXmlKnob().getDocumentReadOnly()), null);
 
 
         // Reconstruct WS-SC session using parsed RST and RSTR messages along with knowledge of private key
-        final byte[] sharedKey = SecureConversationKeyDeriver.pSHA1( rstInfo.decodedNonce, rstrInfo.decodedNonce, Integer.parseInt(rstrInfo.keySize)/8 );
-        final Pair<String, byte[]> session = new Pair<String,byte[]>( rstrInfo.identifier, sharedKey );
+        final byte[] sharedKey = SecureConversationKeyDeriver.pSHA1( rstInfo.decodedNonce, rstrInfo.getEntropy(), rstrInfo.isKeySizePresent() ? rstrInfo.getKeySize()/8 : 32 );
+        // get the sct Identifier
+        String identifier = null;
+        if ( rstrInfo.getToken() != null ) {
+            Element tokenIdentifier = XmlUtil.findOnlyOneChildElementByName(rstrInfo.getToken(), SoapConstants.WSSC_NAMESPACE_ARRAY, "Identifier");
+            if (tokenIdentifier != null) {
+                identifier = XmlUtil.getTextValue(tokenIdentifier);
+            }
+        }
+        final Pair<String, byte[]> session = new Pair<String,byte[]>( identifier, sharedKey );
         final SecurityContextFinder scFinder = new SecurityContextFinder() {
             @Override
             public SecurityContext getSecurityContext(String securityContextIdentifier) {

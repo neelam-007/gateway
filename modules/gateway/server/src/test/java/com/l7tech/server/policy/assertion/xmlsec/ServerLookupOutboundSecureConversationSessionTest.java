@@ -106,7 +106,8 @@ public class ServerLookupOutboundSecureConversationSessionTest {
             creationTime + 2*60*1000,
             generateNewSecret(64),
             null,
-            null
+            null,
+            0
         );
     }
 

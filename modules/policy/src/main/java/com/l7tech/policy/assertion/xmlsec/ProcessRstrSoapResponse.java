@@ -23,6 +23,7 @@ public class ProcessRstrSoapResponse extends MessageTargetableAssertion {
     public static final String VARIABLE_CREATE_TIME = "createTime";
     public static final String VARIABLE_EXPIRY_TIME = "expiryTime";
     public static final String VARIABLE_SERVER_ENTROPY = "serverEntropy";
+    public static final String VARIABLE_KEY_SIZE = "keySize";
     public static final String VARIABLE_FULL_KEY = "fullKey";
 
     public ProcessRstrSoapResponse() {
@@ -51,6 +52,7 @@ public class ProcessRstrSoapResponse extends MessageTargetableAssertion {
                 new VariableMetadata(variablePrefix + "." + VARIABLE_CREATE_TIME, false, false, null, false),
                 new VariableMetadata(variablePrefix + "." + VARIABLE_EXPIRY_TIME, false, false, null, false),
                 new VariableMetadata(variablePrefix + "." + VARIABLE_SERVER_ENTROPY, false, false, null, false),
+                new VariableMetadata(variablePrefix + "." + VARIABLE_KEY_SIZE, false, false, null, false, DataType.INTEGER),
                 new VariableMetadata(variablePrefix + "." + VARIABLE_FULL_KEY, false, false, null, false),
         });
     }
@@ -61,6 +63,7 @@ public class ProcessRstrSoapResponse extends MessageTargetableAssertion {
             VARIABLE_CREATE_TIME,
             VARIABLE_EXPIRY_TIME,
             VARIABLE_SERVER_ENTROPY,
+            VARIABLE_KEY_SIZE,
             VARIABLE_FULL_KEY,
         };
     }

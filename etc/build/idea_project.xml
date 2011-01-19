@@ -18,7 +18,7 @@
             <entry name=".+\.(properties|xml|html|dtd|tld)"/>
             <entry name=".+\.(gif|png|jpeg|jpg)"/>
             <entry name=".+\.(xsd|wsdl|txt|css|js|ico)"/>
-            <entry name=".+\.(cer|crt|ks|pfx)"/>
+            <entry name=".+\.(cer|crt|ks|pfx|p12)"/>
         </resourceExtensions>
         <wildcardResourcePatterns>
             <entry name="?*.properties"/>
@@ -41,6 +41,7 @@
             <entry name="?*.db"/>
             <entry name="?*.ks"/>
             <entry name="?*.pfx"/>
+            <entry name="?*.p12"/>
             <entry name="?*.index"/>
             <entry name="?*.sql"/>
             <entry name="com.l7tech.*"/>

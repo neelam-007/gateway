@@ -3,6 +3,8 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.EstablishOutboundSecureConversation;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
 
@@ -17,55 +19,50 @@ import java.text.DecimalFormat;
 /**
  * @author ghuang
  */
-public class EstablishOutboundSecureConversationPropertiesDialog extends AssertionPropertiesEditorSupport<EstablishOutboundSecureConversation> {
+public class EstablishOutboundSecureConversationPropertiesDialog extends AssertionPropertiesOkCancelSupport<EstablishOutboundSecureConversation> {
     private JPanel mainPanel;
     private JTextField serviceUrlTextField;
     private JTextField sctVarNameTextField;
     private JTextField clientEntropyTextField;
     private JTextField serverEntropyTextField;
+    private JTextField keySizeTextField;
     private JTextField fullKeyTextField;
     private JTextField creationTimeTextField;
     private JTextField expirationTimeTextField;
     private JFormattedTextField maxLifetimeTextField;
     private JComboBox maxLifetimeUnitComboBox;
-    private JButton okButton;
-    private JButton cancelButton;
     private JCheckBox useSystemDefaultCheckBox;
 
-    private EstablishOutboundSecureConversation assertion;
     private TimeUnit oldTimeUnit;
-    private boolean confirmed;
 
-    public EstablishOutboundSecureConversationPropertiesDialog(Window owner, EstablishOutboundSecureConversation assertion) {
-        super(owner, assertion);
+    public EstablishOutboundSecureConversationPropertiesDialog( final Window owner,
+                                                                final EstablishOutboundSecureConversation assertion) {
+        super(EstablishOutboundSecureConversation.class, owner, assertion, true);
+        initComponents();
         setData(assertion);
-        initialize();
     }
 
     @Override
-    public boolean isConfirmed() {
-        return confirmed;
+    public void setData( final EstablishOutboundSecureConversation assertion ) {
+        modelToView(assertion);
     }
 
     @Override
-    public void setData(EstablishOutboundSecureConversation assertion) {
-        this.assertion = assertion;
-    }
-
-    @Override
-    public EstablishOutboundSecureConversation getData(EstablishOutboundSecureConversation assertion) {
+    public EstablishOutboundSecureConversation getData( final EstablishOutboundSecureConversation assertion ) {
         viewToModel(assertion);
         return assertion;
     }
 
-    private void initialize() {
-        setContentPane(mainPanel);
-        setModal(true);
-        getRootPane().setDefaultButton(okButton);
-        Utilities.centerOnScreen(this);
-        Utilities.setEscKeyStrokeDisposes(this);
+    @Override
+    protected JPanel createPropertyPanel() {
+        return mainPanel;
+    }
 
-        DocumentListener validationListener = new RunOnChangeListener(new Runnable() {
+    @Override
+    protected void initComponents() {
+        super.initComponents();
+
+        final DocumentListener validationListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
                 SwingUtilities.invokeLater(new Runnable() {
@@ -119,28 +116,21 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
             }
         });
 
-        okButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onOK();
-            }
-        });
-
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onCancel();
-            }
-        });
-
-        modelToView();
+        pack();
+        Utilities.centerOnParentWindow(this);
     }
 
-    private void modelToView() {
+    @Override
+    protected void configureView() {
+        enableOrDisableComponents();
+    }
+
+    private void modelToView(EstablishOutboundSecureConversation assertion) {
         serviceUrlTextField.setText(assertion.getServiceUrl());
         sctVarNameTextField.setText(assertion.getSecurityContextTokenVarName());
         clientEntropyTextField.setText(assertion.getClientEntropy());
         serverEntropyTextField.setText(assertion.getServerEntropy());
+        keySizeTextField.setText(assertion.getKeySize());
         fullKeyTextField.setText(assertion.getFullKey());
         creationTimeTextField.setText(assertion.getCreationTime());
         expirationTimeTextField.setText(assertion.getExpirationTime());
@@ -162,6 +152,7 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
         assertion.setSecurityContextTokenVarName(sctVarNameTextField.getText());
         assertion.setClientEntropy(clientEntropyTextField.getText());
         assertion.setServerEntropy(serverEntropyTextField.getText());
+        assertion.setKeySize(keySizeTextField.getText());
         assertion.setFullKey(fullKeyTextField.getText());
         assertion.setCreationTime(creationTimeTextField.getText());
         assertion.setExpirationTime(expirationTimeTextField.getText());
@@ -186,7 +177,17 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
                 formatDouble((double)EstablishOutboundSecureConversation.MIN_SESSION_DURATION / multiplier), true,   // MIN: 1 min
                 formatDouble((double)EstablishOutboundSecureConversation.MAX_SESSION_DURATION / multiplier), true); // MAX: 24 hrs
 
-        okButton.setEnabled(serviceUrlOk && validLifetime);
+        boolean validKeySize = true;
+        try {
+            if ( Syntax.getReferencedNames( keySizeTextField.getText() ).length == 0 &&
+                 !ValidationUtils.isValidInteger( keySizeTextField.getText(), true, 0, 100000 )) {
+                validKeySize = false;
+            }
+        } catch ( VariableNameSyntaxException e ) {
+            validKeySize = false;
+        }
+
+        getOkButton().setEnabled(!isReadOnly() && serviceUrlOk && validLifetime && validKeySize);
     }
 
     private double formatDouble(double doubleNum) {
@@ -194,12 +195,4 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
         return Double.parseDouble(formatter.format(doubleNum));
     }
 
-    private void onOK() {
-        confirmed = true;
-        dispose();
-    }
-
-    private void onCancel() {
-        dispose();
-    }
 }

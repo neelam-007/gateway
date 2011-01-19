@@ -4,11 +4,13 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.util.Config;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ValidatedConfig;
 import org.apache.commons.collections.map.LRUMap;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
@@ -136,12 +138,12 @@ public abstract class SecureConversationContextManager<KT> {
         return session;
     }
 
-    public long getDefaultSessionDuration() {
+    public final long getDefaultSessionDuration() {
         String defaultSessionDurationPropName = isInbound? "wss.secureConversation.defaultSessionDuration" : "outbound.secureConversation.defaultSessionDuration";
         return config.getTimeUnitProperty( defaultSessionDurationPropName, DEFAULT_SESSION_DURATION );
     }
 
-    protected void checkExpiredSessions() {
+    protected final void checkExpiredSessions() {
         final long now = System.currentTimeMillis();
         long last;
         synchronized( sessions ) {
@@ -167,19 +169,28 @@ public abstract class SecureConversationContextManager<KT> {
         }
     }
 
-    protected byte[] generateNewSecret(int length) {
+    protected final byte[] generateNewSecret(int length) {
         // return some random secret
         final byte[] output = new byte[length];
         random.nextBytes(output);
         return output;
     }
 
-    protected String randomUuid() {
+    protected final String randomUuid() {
         // return some random encoded string
         final byte[] output = new byte[20];
         random.nextBytes(output);
         return HexUtils.hexDump(output);
     }
+
+    protected final int getDefaultKeySize( final String namespace ) {
+        // allow default size to be overridden per namespace (by index) if desired
+        final int nsIndex = namespace==null? -1 : Arrays.asList( SoapConstants.WSSC_NAMESPACE_ARRAY ).indexOf( namespace );
+        return nsIndex < 0 ?
+                SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE, 32) :
+                SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE + "." + nsIndex, SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE, 32) );
+    }
+
 
     private Config validated( final Config config ) {
         final ValidatedConfig vc = new ValidatedConfig( config, logger );

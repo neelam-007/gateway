@@ -14,7 +14,7 @@ import com.l7tech.util.TimeUnit;
 import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
-import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_ACTION_NAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * @author ghuang
@@ -25,12 +25,13 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
     public static final String VARIABLE_SESSION = "outboundSC.session";
 
     private static final String ASSERTION_BASIC_NAME = "Establish Outbound Secure Conversation";
-    private static final String META_INITIALIZED = BuildRstSoapRequest.class.getName() + ".metadataInitialized";
+    private static final String META_INITIALIZED = EstablishOutboundSecureConversation.class.getName() + ".metadataInitialized";
 
     private String serviceUrl;
     private String securityContextTokenVarName = ProcessRstrSoapResponse.DEFAULT_VARIABLE_PREFIX + "." + ProcessRstrSoapResponse.VARIABLE_TOKEN;
     private String clientEntropy = "${" + BuildRstSoapRequest.DEFAULT_VARIABLE_PREFIX + "." + BuildRstSoapRequest.VARIABLE_CLIENT_ENTROPY + "}";
     private String serverEntropy = "${" + ProcessRstrSoapResponse.DEFAULT_VARIABLE_PREFIX + "." + ProcessRstrSoapResponse.VARIABLE_SERVER_ENTROPY + "}";
+    private String keySize = "${" + ProcessRstrSoapResponse.DEFAULT_VARIABLE_PREFIX + "." + ProcessRstrSoapResponse.VARIABLE_KEY_SIZE + "}";
     private String fullKey = "${" + ProcessRstrSoapResponse.DEFAULT_VARIABLE_PREFIX + "." + ProcessRstrSoapResponse.VARIABLE_FULL_KEY + "}";
     private String creationTime = "${" + ProcessRstrSoapResponse.DEFAULT_VARIABLE_PREFIX + "." + ProcessRstrSoapResponse.VARIABLE_CREATE_TIME + "}";
     private String expirationTime = "${" + ProcessRstrSoapResponse.DEFAULT_VARIABLE_PREFIX + "." + ProcessRstrSoapResponse.VARIABLE_EXPIRY_TIME + "}";
@@ -68,6 +69,14 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
 
     public void setServerEntropy(String serverEntropy) {
         this.serverEntropy = serverEntropy;
+    }
+
+    public String getKeySize() {
+        return keySize;
+    }
+
+    public void setKeySize( final String keySize ) {
+        this.keySize = keySize;
     }
 
     public String getFullKey() {
@@ -126,21 +135,21 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
 
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<String, String[]>();
-        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
+        meta.put(CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, ASSERTION_BASIC_NAME);
-        meta.put(AssertionMetadata.DESCRIPTION, "Establish Outbound WS-Secure Conversation");
+        meta.put(SHORT_NAME, ASSERTION_BASIC_NAME);
+        meta.put(DESCRIPTION, "Establish Outbound WS-Secure Conversation");
 
         // Add to palette folder(s)
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/trust.png");
+        meta.put(PALETTE_FOLDERS, new String[]{"xmlSecurity"});
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/trust.png");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
 
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/trust.png");
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.EstablishOutboundSecureConversationPropertiesDialog");
+        meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/trust.png");
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.EstablishOutboundSecureConversationPropertiesDialog");
         meta.put(PROPERTIES_ACTION_NAME, "Outbound Secure Conversation Establishment Properties");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
@@ -150,9 +159,9 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
 
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
+        return mergeVariablesSet(new VariableMetadata[] {
             new VariableMetadata(VARIABLE_SESSION, false, false, null, false, DataType.UNKNOWN),
-        };
+        });
     }
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
@@ -160,15 +169,16 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
     public String[] getVariablesUsed() {
         final Set<String> allVars = new LinkedHashSet<String>();
         final String[] strings = Syntax.getReferencedNames(
-            (serviceUrl == null? "" : serviceUrl) +
-            (securityContextTokenVarName == null? "" : securityContextTokenVarName) +
-            (clientEntropy == null? "" : clientEntropy) +
-            (serverEntropy == null? "" : serverEntropy) +
-            (fullKey == null? "" : fullKey) +
-            (creationTime == null? "" : creationTime) +
-            (expirationTime == null? "" : expirationTime)
+                serviceUrl,
+                clientEntropy,
+                serverEntropy,
+                keySize,
+                fullKey,
+                creationTime,
+                expirationTime
         );
 
+        allVars.add( securityContextTokenVarName );
         allVars.addAll(Arrays.asList(strings));
         allVars.addAll(Arrays.asList(super.getVariablesUsed()));
 

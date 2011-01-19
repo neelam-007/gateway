@@ -153,6 +153,7 @@ public class OutboundSecureConversationContextManager extends SecureConversation
      * @param requestSharedSecret: The full key (may be null)
      * @param requestClientEntropy The client entropy (may be null)
      * @param requestServerEntropy The server entropy (may be null)
+     * @param keySizeBits The key size in bits (0 for not specified)
      * @return the newly created session
      */
     public SecureConversationSession createContextForUser(final User sessionOwner,
@@ -164,7 +165,8 @@ public class OutboundSecureConversationContextManager extends SecureConversation
                                                           final long expirationTime,
                                                           final byte[] requestSharedSecret,
                                                           final byte[] requestClientEntropy,
-                                                          final byte[] requestServerEntropy) throws SessionCreationException {
+                                                          final byte[] requestServerEntropy,
+                                                          final int keySizeBits ) throws SessionCreationException {
         final byte[] sharedSecret;
         final byte[] clientEntropy;
         final byte[] serverEntropy;
@@ -187,8 +189,13 @@ public class OutboundSecureConversationContextManager extends SecureConversation
             if (requestClientEntropy.length >= MIN_CLIENT_ENTROPY_BYTES && requestClientEntropy.length <= MAX_CLIENT_ENTROPY_BYTES) {
                 if (requestServerEntropy != null) {
                     if (requestServerEntropy.length >= MIN_SERVER_ENTROPY_BYTES && requestServerEntropy.length <= MAX_SERVER_ENTROPY_BYTES) {
+                        final int keySize = keySizeBits == 0 ? getDefaultKeySize( namespace ) : (keySizeBits+7) / 8;
+                        if ( keySize < MIN_KEY_SIZE || keySize > MAX_KEY_SIZE  ) {
+                            throw new SessionCreationException("Unable to create a session: the key size is not in the valid range from " +
+                                MIN_KEY_SIZE + " bytes to " + MAX_KEY_SIZE + "bytes.");
+                        }
                         try {
-                            sharedSecret = deriveSharedKey( sessionIdentifier, requestClientEntropy, requestServerEntropy, 32 );
+                            sharedSecret = deriveSharedKey( sessionIdentifier, requestClientEntropy, requestServerEntropy, keySize );
                         } catch ( InvalidKeyException e ) {
                             throw new SessionCreationException( "Error creating shared key: " + ExceptionUtils.getMessage(e), e );
                         } catch ( NoSuchAlgorithmException e ) {

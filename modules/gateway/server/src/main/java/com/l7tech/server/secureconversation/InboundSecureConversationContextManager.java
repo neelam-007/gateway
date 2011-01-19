@@ -113,12 +113,7 @@ public class InboundSecureConversationContextManager extends SecureConversationC
     private int calculateKeySize( final int requestedKeySize,
                                   final String namespace ) {
         final int size;
-
-        // allow default size to be overridden per namespace (by index) if desired
-        final int nsIndex = namespace==null? -1 : Arrays.asList( SoapConstants.WSSC_NAMESPACE_ARRAY ).indexOf( namespace );
-        final int defaultSize = nsIndex < 0 ?
-                SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE, 32) :
-                SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE + "." + nsIndex, SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE, 32) );
+        final int defaultSize = getDefaultKeySize( namespace );
 
         if ( requestedKeySize > 0 ) {
             // convert to size in bytes rounding up

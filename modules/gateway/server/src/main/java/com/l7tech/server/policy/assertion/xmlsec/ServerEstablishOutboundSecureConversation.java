@@ -27,6 +27,7 @@ import org.w3c.dom.Element;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -84,12 +85,13 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         }
 
         // 3. Get Service URL (Note: no need to check if serviceUrl is null, since the GUI of the assertion dialog has validated Service URL not to be null.)
-        final String serviceUrl = ExpandVariables.process(assertion.getServiceUrl(), context.getVariableMap(variablesUsed, auditor), auditor);
+        final Map<String,Object> variableMap = context.getVariableMap( variablesUsed, auditor );
+        final String serviceUrl = ExpandVariables.process(assertion.getServiceUrl(), variableMap, auditor);
 
         // 4. Get the session identifier and the namespace of WS-Secure Conversation
         String sessionId;
         String wsscNamespace;
-        String tokenVarName = ExpandVariables.process(assertion.getSecurityContextTokenVarName(), context.getVariableMap(variablesUsed, auditor), auditor);
+        String tokenVarName = ExpandVariables.process(assertion.getSecurityContextTokenVarName(), variableMap, auditor);
         try {
             Element sctEl = (Element) context.getVariable(tokenVarName);
             wsscNamespace = getSecureConversationNamespace(sctEl);
@@ -117,8 +119,8 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         long creationTime;
         long expirationTime;
         final long now = System.currentTimeMillis();
-        final String creationTimeStr = ExpandVariables.process(assertion.getCreationTime(), context.getVariableMap(variablesUsed, auditor), auditor);
-        final String expirationTimeStr = ExpandVariables.process(assertion.getExpirationTime(), context.getVariableMap(variablesUsed, auditor), auditor);
+        final String creationTimeStr = ExpandVariables.process(assertion.getCreationTime(), variableMap, auditor);
+        final String expirationTimeStr = ExpandVariables.process(assertion.getExpirationTime(), variableMap, auditor);
 
         // 5.1 Get the creation time
         if (! isEmptyString(creationTimeStr)) {
@@ -170,13 +172,21 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         }
 
         // 6. Get the full key, client entropy, or server entropy
-        final String fullKey = ExpandVariables.process(assertion.getFullKey(), context.getVariableMap(variablesUsed, auditor), auditor);
-        final String clientEntropyStr = ExpandVariables.process(assertion.getClientEntropy(), context.getVariableMap(variablesUsed, auditor), auditor);
-        final String serverEntropyStr = ExpandVariables.process(assertion.getServerEntropy(), context.getVariableMap(variablesUsed, auditor), auditor);
+        final String fullKey = ExpandVariables.process(assertion.getFullKey(), variableMap, auditor);
+        final String clientEntropyStr = ExpandVariables.process(assertion.getClientEntropy(), variableMap, auditor);
+        final String serverEntropyStr = ExpandVariables.process(assertion.getServerEntropy(), variableMap, auditor);
+        final String keySizeStr = ExpandVariables.process(assertion.getKeySize(), variableMap, auditor);
 
         final byte[] sharedSecret = isEmptyString(fullKey)? null : HexUtils.decodeBase64(fullKey);
         final byte[] clientEntropy = isEmptyString(clientEntropyStr)? null : HexUtils.decodeBase64(clientEntropyStr);
         final byte[] serverEntropy = isEmptyString(serverEntropyStr)? null : HexUtils.decodeBase64(serverEntropyStr);
+        final int keySize;
+        try {
+            keySize = keySizeStr.isEmpty() ? 0 : Integer.parseInt( keySizeStr );
+        } catch ( NumberFormatException nfe ) {
+            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Invalid key size: " + keySizeStr );
+            return AssertionStatus.FALSIFIED;
+        }
 
         // 7. Create a new outbound secure conversation session
         SecureConversationSession session;
@@ -191,7 +201,8 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
                 expirationTime,
                 sharedSecret,
                 clientEntropy,
-                serverEntropy
+                serverEntropy,
+                keySize
             );
         } catch (SessionCreationException e) {
             auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, e.getMessage());
