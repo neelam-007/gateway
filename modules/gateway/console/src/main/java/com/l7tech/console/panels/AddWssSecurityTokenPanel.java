@@ -179,14 +179,18 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         assertion.setTokenType(type);
         assertion.setProtectTokens(signTokenCheckBox.isSelected());
 
-        if (bstRadio.isSelected()) {
-            assertion.setKeyReference(KeyReference.BST.getName());
-        } else if (strRadio.isSelected()) {
-            assertion.setKeyReference(KeyReference.SKI.getName());
-        } else if (issuerSerialRadio.isSelected()) {
-            assertion.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
+        if (SecurityTokenType.WSS_USERNAME.equals(type)) {
+            if (bstRadio.isSelected()) {
+                assertion.setKeyReference(KeyReference.BST.getName());
+            } else if (strRadio.isSelected()) {
+                assertion.setKeyReference(KeyReference.SKI.getName());
+            } else if (issuerSerialRadio.isSelected()) {
+                assertion.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
+            } else {
+                throw new IllegalStateException("Neither BST nor SKI nor IssuerSerial selected");
+            }
         } else {
-            throw new IllegalStateException("Neither BST nor SKI nor IssuerSerial selected");
+            assertion.setKeyReference(null);
         }
 
         assertion.setUsername(null);
