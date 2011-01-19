@@ -34,7 +34,10 @@ import java.util.logging.Logger;
  */
 public class ServerEstablishOutboundSecureConversation extends AbstractMessageTargetableServerAssertion<EstablishOutboundSecureConversation> {
     private static final Logger logger = Logger.getLogger(ServerEstablishOutboundSecureConversation.class.getName());
-    private static final String CONFIG_DEFAULT_SESSION_DURATION = "outbound.secureConversation.defaultSessionDuration";
+    private static final String DEFAULT_SESSION_DURATION = "outbound.secureConversation.defaultSessionDuration";
+    private static final String SESSION_PRE_EXPIRY_AGE = "outbound.secureConversationSession.preExpiryAge";
+    private static final long MIN_SESSION_PRE_EXPIRY_AGE = 0;
+    private static final long MAX_SESSION_PRE_EXPIRY_AGE = 2*60*60*1000; // 2 hours
 
     private final Auditor auditor;
     private final Config config;
@@ -60,7 +63,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
             return AssertionStatus.AUTH_FAILED;
         }
 
-        // Get User  Login Credential
+        // 1. Get User  Login Credential
         LoginCredentials loginCredentials = null;
         for (LoginCredentials cred: authContext.getCredentials()) {
             if (authenticationResult.matchesSecurityToken(cred.getSecurityToken())) {
@@ -73,17 +76,17 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
             return AssertionStatus.AUTH_FAILED;
         }
 
-        // Get Authenticated User
+        // 2. Get Authenticated User
         final User user = authenticationResult.getUser();
         if (user == null) {
             auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "No authenticated user found in the target message.");
             return AssertionStatus.AUTH_FAILED;
         }
 
-        // Get Service URL (Note: no need to check if serviceUrl is null, since the GUI of the assertion dialog has validated Service URL not to be null.)
+        // 3. Get Service URL (Note: no need to check if serviceUrl is null, since the GUI of the assertion dialog has validated Service URL not to be null.)
         final String serviceUrl = ExpandVariables.process(assertion.getServiceUrl(), context.getVariableMap(variablesUsed, auditor), auditor);
-        
-        // Get the session identifier and the namespace of WS-Secure Conversation
+
+        // 4. Get the session identifier and the namespace of WS-Secure Conversation
         String sessionId;
         String wsscNamespace;
         String tokenVarName = ExpandVariables.process(assertion.getSecurityContextTokenVarName(), context.getVariableMap(variablesUsed, auditor), auditor);
@@ -110,13 +113,14 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
             return AssertionStatus.FALSIFIED;
         }
 
-        // Get the session creation time and the expiration time
+        // 5. Get the creation time and the expiration time of the session and validate them.
         long creationTime;
         long expirationTime;
-        long now = System.currentTimeMillis();
+        final long now = System.currentTimeMillis();
+        final String creationTimeStr = ExpandVariables.process(assertion.getCreationTime(), context.getVariableMap(variablesUsed, auditor), auditor);
+        final String expirationTimeStr = ExpandVariables.process(assertion.getExpirationTime(), context.getVariableMap(variablesUsed, auditor), auditor);
 
-        String creationTimeStr = ExpandVariables.process(assertion.getCreationTime(), context.getVariableMap(variablesUsed, auditor), auditor);
-        String expirationTimeStr = ExpandVariables.process(assertion.getExpirationTime(), context.getVariableMap(variablesUsed, auditor), auditor);
+        // 5.1 Get the creation time
         if (! isEmptyString(creationTimeStr)) {
             try {
                 creationTime = ISO8601Date.parse(creationTimeStr).getTime();
@@ -127,6 +131,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         } else {
             creationTime = now;
         }
+        // 5.2 Get the expiration time
         if (! isEmptyString(expirationTimeStr)) {
             try {
                 expirationTime = ISO8601Date.parse(expirationTimeStr).getTime();
@@ -137,26 +142,34 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         }  else {
             expirationTime = Long.MAX_VALUE;
         }
-
+        // 5.3 Apply Pre-expiry age on the expiration time
+        long preExpiryAge = config.getTimeUnitProperty(SESSION_PRE_EXPIRY_AGE, TimeUnit.MINUTES.toMillis(1)); // Default: 1 minute
+        if (expirationTime != Long.MAX_VALUE) {
+            expirationTime -= preExpiryAge;
+            if (expirationTime < 0) {
+                expirationTime = 0;
+            }
+        }
+        // 5.4 Check the maximum expiry period against  "Maximum Expiry Period".
         long maxExpiryPeriod;
         if (assertion.isUseSystemDefaultSessionDuration()) {
-            maxExpiryPeriod = config.getTimeUnitProperty(CONFIG_DEFAULT_SESSION_DURATION, TimeUnit.HOURS.toMillis(2));
+            maxExpiryPeriod = config.getTimeUnitProperty(DEFAULT_SESSION_DURATION, TimeUnit.HOURS.toMillis(2)); // Default: 2 hrs
         } else {
             maxExpiryPeriod = assertion.getMaxLifetime();
         }
-        if (maxExpiryPeriod == 0) {
-            if (expirationTime - creationTime < 0) {
-                auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The session expiration time is before the session creation time.");
-                return AssertionStatus.FALSIFIED;
-            } else if (expirationTime < now) {
-                auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The session (ID: " + sessionId + ") has expired.");
-                return AssertionStatus.FALSIFIED;
-            }
-        }  else if (maxExpiryPeriod < (expirationTime - creationTime)) {
+        if (maxExpiryPeriod > 0 && maxExpiryPeriod < (expirationTime - creationTime)) {
             expirationTime = creationTime + maxExpiryPeriod;
         }
+        // 5.5 Validate the expiration time against the creation time and check if the session has expired
+        if (expirationTime - creationTime < 0) {
+            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Invalid Session Time: the session expiration time is before the session creation time.");
+            return AssertionStatus.FALSIFIED;
+        } else if (expirationTime < now) {
+            auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The session (ID: " + sessionId + ") has expired.");
+            return AssertionStatus.FALSIFIED;
+        }
 
-        // Get the full key, client entropy, or server entropy
+        // 6. Get the full key, client entropy, or server entropy
         final String fullKey = ExpandVariables.process(assertion.getFullKey(), context.getVariableMap(variablesUsed, auditor), auditor);
         final String clientEntropyStr = ExpandVariables.process(assertion.getClientEntropy(), context.getVariableMap(variablesUsed, auditor), auditor);
         final String serverEntropyStr = ExpandVariables.process(assertion.getServerEntropy(), context.getVariableMap(variablesUsed, auditor), auditor);
@@ -165,7 +178,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         final byte[] clientEntropy = isEmptyString(clientEntropyStr)? null : HexUtils.decodeBase64(clientEntropyStr);
         final byte[] serverEntropy = isEmptyString(serverEntropyStr)? null : HexUtils.decodeBase64(serverEntropyStr);
 
-        // Create a new outbound secure conversation session
+        // 7. Create a new outbound secure conversation session
         SecureConversationSession session;
         try {
             session = securityContextManager.createContextForUser(
@@ -185,7 +198,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
             return AssertionStatus.FALSIFIED;
         }
 
-        // Set the variable, outboundSC.session
+        // 8. Set the variable, outboundSC.session
         context.setVariable(EstablishOutboundSecureConversation.VARIABLE_SESSION, session);
 
         return AssertionStatus.NONE;
@@ -200,11 +213,14 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         return str == null || str.trim().isEmpty();
     }
 
-    private static Config validated( final Config config ) {
-        final ValidatedConfig vc = new ValidatedConfig( config, logger );
+    private static Config validated(final Config config) {
+        final ValidatedConfig vc = new ValidatedConfig(config, logger);
 
-        vc.setMinimumValue( CONFIG_DEFAULT_SESSION_DURATION, EstablishOutboundSecureConversation.MIN_SESSION_DURATION );
-        vc.setMaximumValue( CONFIG_DEFAULT_SESSION_DURATION, EstablishOutboundSecureConversation.MAX_SESSION_DURATION );
+        vc.setMinimumValue(DEFAULT_SESSION_DURATION, EstablishOutboundSecureConversation.MIN_SESSION_DURATION);  // 1 min
+        vc.setMaximumValue(DEFAULT_SESSION_DURATION, EstablishOutboundSecureConversation.MAX_SESSION_DURATION); // 24 hrs
+
+        vc.setMinimumValue(SESSION_PRE_EXPIRY_AGE, MIN_SESSION_PRE_EXPIRY_AGE);  // 0
+        vc.setMaximumValue(SESSION_PRE_EXPIRY_AGE, MAX_SESSION_PRE_EXPIRY_AGE); // 2 hrs
 
         return vc;
     }
@@ -217,7 +233,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
                 return namespace;
             }
         }
-        
+
         return null;
     }
 }

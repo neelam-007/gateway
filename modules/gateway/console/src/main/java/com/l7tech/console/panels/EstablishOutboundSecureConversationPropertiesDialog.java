@@ -183,8 +183,8 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
         int multiplier = ((TimeUnit) maxLifetimeUnitComboBox.getSelectedItem()).getMultiplier();
         boolean validLifetime = useSystemDefaultCheckBox.isSelected() ||
             ValidationUtils.isValidDouble(maxLifetimeTextField.getText().trim(), false,
-                formatDouble((double)EstablishOutboundSecureConversation.MIN_SESSION_DURATION / multiplier), true,
-                formatDouble((double)EstablishOutboundSecureConversation.MAX_SESSION_DURATION / multiplier), true);
+                formatDouble((double)EstablishOutboundSecureConversation.MIN_SESSION_DURATION / multiplier), true,   // MIN: 1 min
+                formatDouble((double)EstablishOutboundSecureConversation.MAX_SESSION_DURATION / multiplier), true); // MAX: 24 hrs
 
         okButton.setEnabled(serviceUrlOk && validLifetime);
     }
