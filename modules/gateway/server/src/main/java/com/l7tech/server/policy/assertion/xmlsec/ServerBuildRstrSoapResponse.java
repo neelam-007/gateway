@@ -6,13 +6,16 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xmlsec.BuildRstrSoapResponse;
 import com.l7tech.security.xml.XencUtil;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
@@ -34,7 +37,7 @@ import java.util.logging.Logger;
 /**
  * @author ghuang
  */
-public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRstrSoapResponse> {
+public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServerAssertion<BuildRstrSoapResponse> {
     private static final Logger logger = Logger.getLogger(ServerBuildRstrSoapResponse.class.getName());
 
     private static final String IS_SCT = "token.info.is.sct";
@@ -47,22 +50,24 @@ public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRst
     private final InboundSecureConversationContextManager scContextManager;
     private final Auditor auditor;
     private final String[] variablesUsed;
+    private final AddWssEncryptionSupport addWssEncryptionSupport;
 
     public ServerBuildRstrSoapResponse( final BuildRstrSoapResponse assertion,
                                         final BeanFactory factory ) {
-        super(assertion, assertion, assertion, assertion, logger);
+        super(assertion, assertion);
         auditor = factory instanceof ApplicationContext?
                 new Auditor(this, (ApplicationContext)factory, logger) :
                 new LogOnlyAuditor(logger);
         variablesUsed = assertion.getVariablesUsed();
         scContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
+        addWssEncryptionSupport = new AddWssEncryptionSupport(auditor, logger, new MessageTargetableSupport(TargetMessageType.RESPONSE), assertion, assertion);
     }
 
     @Override
-    protected AssertionStatus doCheckRequest(PolicyEnforcementContext context,
-                                             Message message,
-                                             String messageDescription,
-                                             AuthenticationContext authContext) throws IOException, PolicyAssertionException {
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message message,
+                                              final String messageDescription,
+                                              final AuthenticationContext authenticationContext ) throws IOException, PolicyAssertionException {
 
         // Get all related info from the target SOAP message.  RstSoapMessageProcessor checks the syntax and the semantics of the target SOAP message.
         final Map<String, String> rstParameters = RstSoapMessageProcessor.getRstParameters(message, assertion.isResponseForIssuance());
@@ -463,44 +468,17 @@ public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRst
                 }
                 rstrBuilder.append("<wst:ComputedKey>").append(psha1AlgUri).append("</wst:ComputedKey>\n");
             } else {
-                final X509Certificate clientCert = getClientCertificate( context, parameters );
-                String secretXml;
-                try {
-                    String keyEncAlg = Boolean.parseBoolean(parameters.get(RstSoapMessageProcessor.HAS_KEY_ENCRYPTION_ALGORITHM))?
-                        parameters.get(RstSoapMessageProcessor.KEY_ENCRYPTION_ALGORITHM) : SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO;
-
-                    secretXml = clientCert != null?
-                        produceEncryptedKeyXml(session.getSharedSecret(), clientCert, wsseNS, keyEncAlg) :
-                        produceBinarySecretXml(session.getSharedSecret(), parameters.get(RstSoapMessageProcessor.WST_NS));
-                } catch (GeneralSecurityException e) {
-                    RstSoapMessageProcessor.generateSoapFaultResponse(
-                        context,
-                        parameters,
-                        getRstrResponseVariable(),
-                        RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
-                        "Request invalid"
-                    );
-
-                    auditor.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Response encryption failure"}, e);
-                    throw new AssertionStatusException(AssertionStatus.FAILED);
-                }
-
+                final String secretXml = produceBinarySecretOrEncryptedKey( context, parameters, wsseNS, "SymmetricKey", session.getSharedSecret() );
                 rstrBuilder.append(secretXml).append("\n");
             }
             rstrBuilder.append("</wst:RequestedProofToken>\n");
 
             // Build Entropy
             if ( session.hasEntropy() ) {
-                String wsuId = "uuid-" + UUID.randomUUID().toString();
-                String secret = HexUtils.encodeBase64(session.getServerEntropy(), true);
-                String typeNonce = parameters.get(RstSoapMessageProcessor.WST_NS) + "/Nonce";
-                if ( SoapUtil.WST_NAMESPACE.equals( parameters.get(RstSoapMessageProcessor.WST_NS) ) ) {
-                    typeNonce = SoapConstants.WST_BINARY_SECRET_NONCE_TYPE_URI;
-                }
+                final String entropyXml = produceBinarySecretOrEncryptedKey( context, parameters, wsseNS, "Nonce", session.getServerEntropy() );
                 rstrBuilder
                     .append("<wst:Entropy>\n")
-                    .append("<wst:BinarySecret Type=\"").append(typeNonce).append("\" wsu:Id=\"").append(wsuId).append("\">")
-                    .append(secret).append("</wst:BinarySecret>\n")
+                    .append( entropyXml ).append("\n")
                     .append("</wst:Entropy>\n");
             }
         } else {
@@ -535,11 +513,42 @@ public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRst
         return rstrBuilder.toString();
     }
 
+    private String produceBinarySecretOrEncryptedKey( final PolicyEnforcementContext context,
+                                                      final Map<String, String> parameters,
+                                                      final String wsseNS,
+                                                      final String binarySecretType,
+                                                      final byte[] data ) throws PolicyAssertionException {
+        final String secretXml;
+
+        final X509Certificate clientCert = getClientCertificate( context, parameters );
+        try {
+            String keyEncAlg = Boolean.parseBoolean(parameters.get( RstSoapMessageProcessor.HAS_KEY_ENCRYPTION_ALGORITHM))?
+                parameters.get(RstSoapMessageProcessor.KEY_ENCRYPTION_ALGORITHM) : SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO;
+
+            secretXml = clientCert != null?
+                produceEncryptedKeyXml(data, clientCert, wsseNS, keyEncAlg) :
+                produceBinarySecretXml(data, parameters.get(RstSoapMessageProcessor.WST_NS), binarySecretType);
+        } catch ( GeneralSecurityException e) {
+            RstSoapMessageProcessor.generateSoapFaultResponse(
+                context,
+                parameters,
+                getRstrResponseVariable(),
+                RstSoapMessageProcessor.WST_FAULT_CODE_INVALID_REQUEST,
+                "Request invalid"
+            );
+
+            auditor.logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Response encryption failure"}, e);
+            throw new AssertionStatusException( AssertionStatus.FAILED);
+        }
+
+        return secretXml;
+    }
+
     private X509Certificate getClientCertificate( final PolicyEnforcementContext context,
                                                   final Map<String, String> parameters ) throws PolicyAssertionException {
         final AddWssEncryptionContext encryptionContext;
         try {
-           encryptionContext = buildEncryptionContext( context );
+           encryptionContext = addWssEncryptionSupport.buildEncryptionContext( context );
         } catch ( AddWssEncryptionSupport.MultipleTokensException e ) {
             RstSoapMessageProcessor.generateSoapFaultResponse(
                 context,
@@ -568,9 +577,17 @@ public class ServerBuildRstrSoapResponse extends ServerAddWssEncryption<BuildRst
     }
 
     // This method is modified from the method "produceBinarySecretXml" in TokenServiceImpl.
-    private String produceBinarySecretXml(final byte[] sharedSecret, final String wstNS) {
+    private String produceBinarySecretXml(final byte[] sharedSecret, final String wstNS, final String type) {
         StringBuilder output = new StringBuilder();
-        output.append("<wst:BinarySecret Type=\"").append(wstNS).append("/SymmetricKey" + "\">");
+
+        String fullType;
+        if ( SoapUtil.WST_NAMESPACE.equals( wstNS ) ) {
+            fullType = "http://schemas.xmlsoap.org/ws/2004/04/security/trust/" + type;
+        } else {
+            fullType = wstNS + "/" + type;
+        }
+
+        output.append("<wst:BinarySecret Type=\"").append(fullType).append("\">");
         output.append(HexUtils.encodeBase64(sharedSecret, true));
         output.append("</wst:BinarySecret>");
         return output.toString();

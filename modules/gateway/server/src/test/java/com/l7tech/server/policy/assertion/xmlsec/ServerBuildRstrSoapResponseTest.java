@@ -17,6 +17,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.util.Functions;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.MissingRequiredElementException;
@@ -33,6 +34,7 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
@@ -122,17 +124,22 @@ public class ServerBuildRstrSoapResponseTest {
 
     @Test
     public void testSecureConversationResponse() throws Exception {
-        doResponse( false, false, generateContextToken() );
+        doResponse( false, false, generateContextToken(false) );
     }
 
     @Test
     public void testSecureConversationResponseWithEntropy() throws Exception {
-        doResponse( true, false, generateContextToken()  );
+        doResponse( true, false, generateContextToken(true)  );
     }
 
     @Test
     public void testSecureConversationResponseWithClientCert() throws Exception {
-        doResponse( false, true, generateContextToken()  );
+        doSecureConversationResponse( true, false, true, generateContextToken(false), null, null, getEncryptedKeyValidationCallback() );
+    }
+
+    @Test
+    public void testSecureConversationResponseWithClientCertAndEntropy() throws Exception {
+        doSecureConversationResponse( true, true, true, generateContextToken(true), null, null, getEncryptedKeyValidationCallback() );
     }
 
     @Test
@@ -273,7 +280,7 @@ public class ServerBuildRstrSoapResponseTest {
 
     @Test
     public void testNamespaceConsistency() throws Exception {
-        final String[] tokens = new String[]{ generateContextToken(), getSaml11Token(), getSaml20Token() };
+        final String[] tokens = new String[]{ generateContextToken(false), getSaml11Token(), getSaml20Token() };
         
         for ( final String token : tokens ) {
             logger.info( "Testing for token with NS: " + XmlUtil.parse( token ).getDocumentElement().getNamespaceURI() );
@@ -407,11 +414,14 @@ public class ServerBuildRstrSoapResponseTest {
 
         if ( clientCert ) {
             final MockProcessorResult mockResult = new MockProcessorResult(){
+                final X509BinarySecurityTokenImpl token = new X509BinarySecurityTokenImpl( TestDocuments.getWssInteropAliceCert(), null);
+                {
+                   token.onPossessionProved();
+                }
+
                 @Override
                 public XmlSecurityToken[] getXmlSecurityTokens() {
                     try {
-                        final X509BinarySecurityTokenImpl token = new X509BinarySecurityTokenImpl( TestDocuments.getWssInteropAliceCert(), null);
-                        token.onPossessionProved();
                         return new  XmlSecurityToken[]{ token };
                     } catch ( Exception e ) {
                         throw new RuntimeException(e);
@@ -419,6 +429,7 @@ public class ServerBuildRstrSoapResponseTest {
                 }
             };
             request.getSecurityKnob().setProcessorResult( mockResult );
+            context.getAuthenticationContext( request ).addCredentials( LoginCredentials.makeLoginCredentials( mockResult.getXmlSecurityTokens()[0], null ));
         }
 
         final AssertionStatus status = serverBuildRstrSoapResponse.checkRequest( context );
@@ -430,6 +441,19 @@ public class ServerBuildRstrSoapResponseTest {
         if ( validationCallback != null ) validationCallback.call( rstrDoc );
 
         ensureValidMessage( rstrDoc );
+    }
+
+    private Functions.UnaryVoid<Document> getEncryptedKeyValidationCallback() {
+        return new Functions.UnaryVoid<Document>(){
+            @Override
+            public void call( final Document document ) {
+                final NodeList encryptedKeyList = document.getElementsByTagNameNS( "http://www.w3.org/2001/04/xmlenc#", "EncryptedKey" );
+                assertTrue( "Encrypted key(s) in response", encryptedKeyList.getLength() > 0 );
+
+                final NodeList binarySecretList = document.getElementsByTagNameNS( "*", "BinarySecret" );
+                assertTrue( "No binary secrets in response", binarySecretList.getLength() == 0 );
+            }
+        };
     }
 
     private String getSaml11Token() {
@@ -462,12 +486,15 @@ public class ServerBuildRstrSoapResponseTest {
                 "</saml2:Assertion>";
     }
 
-    private String generateContextToken() throws SessionCreationException {
+    private String generateContextToken(final boolean entropy) throws SessionCreationException {
         final String token;
         final String id = contextManager.createContextForUser(
                 new UserBean( "Alice" ),
                 LoginCredentials.makeLoginCredentials( new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class ),
-                "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512" ).getIdentifier();
+                "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512",
+                300000,
+                entropy ? HexUtils.randomBytes(32) : null,
+                256 ).getIdentifier();
 
         token =
                 "<wsc:SecurityContextToken\n" +
