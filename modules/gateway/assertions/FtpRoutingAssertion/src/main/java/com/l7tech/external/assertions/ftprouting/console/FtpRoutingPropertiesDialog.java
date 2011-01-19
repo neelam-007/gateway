@@ -4,12 +4,7 @@
 
 package com.l7tech.external.assertions.ftprouting.console;
 
-import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.event.PolicyListener;
-import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
-import com.l7tech.console.panels.CancelableOperationDialog;
-import com.l7tech.console.panels.PrivateKeysComboBox;
-import com.l7tech.console.panels.RoutingDialogUtils;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
@@ -18,15 +13,13 @@ import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
 import com.l7tech.gateway.common.transport.ftp.FtpTestException;
 import com.l7tech.gui.NumberField;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -39,6 +32,7 @@ import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -48,7 +42,7 @@ import java.util.concurrent.Callable;
  * @author rmak
  * @since SecureSpan 4.0
  */
-public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport<FtpRoutingAssertion> {
+public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSupport<FtpRoutingAssertion> {
 
     private JPanel _mainPanel;
     private JRadioButton _ftpUnsecuredRadioButton;
@@ -69,78 +63,46 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
     private PrivateKeysComboBox _clientCertsComboBox;
     private JTextField _timeoutTextField;               // blank allowed
     private JButton _testButton;
-    private JButton _okButton;
-    private JButton _cancelButton;
     private JRadioButton wssIgnoreRadio;
     private JRadioButton wssCleanupRadio;
     private JRadioButton wssRemoveRadio;
-    private JLabel portStatusLabel;
     private JComboBox messageSource;
     private JCheckBox contextVariableInPassword;
     private char echoChar;
+    private AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
+    private InputValidator validators;
 
     public static final int DEFAULT_PORT_FTP = 21;
-
-    private FtpRoutingAssertion _assertion;
-    private boolean _wasOkButtonPressed = false;
-    private EventListenerList _listenerList = new EventListenerList();
-
-    private AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
-
+    private static final ResourceBundle resources = ResourceBundle.getBundle( FtpRoutingPropertiesDialog.class.getName() );
+    
     /**
      * Creates new form ServicePanel
      * @param owner  parent for dialog
      * @param a      assertion to edit
      */
     public FtpRoutingPropertiesDialog(Window owner, FtpRoutingAssertion a) {
-        super(owner, a);
-        _assertion = a;
+        super(FtpRoutingAssertion.class,  owner, a, true);
         initComponents();
-        initFormData();
+        setData(a);
     }
 
-    /**
-     * Notify the listeners
-     *
-     * @param a the assertion
-     */
-    private void fireEventAssertionChanged(final Assertion a) {
-        final CompositeAssertion parent = a.getParent();
-        if (parent == null)
-          return;
-
-        SwingUtilities.invokeLater(
-          new Runnable() {
-              @Override
-              public void run() {
-                  int[] indices = new int[parent.getChildren().indexOf(a)];
-                  PolicyEvent event = new
-                    PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
-                  EventListener[] listeners = _listenerList.getListeners(PolicyListener.class);
-                  for (EventListener listener : listeners) {
-                      ((PolicyListener)listener).assertionsChanged(event);
-                  }
-              }
-          });
+    @Override
+    protected JPanel createPropertyPanel() {
+        return _mainPanel;
     }
 
     /**
      * This method is called from within the static factory to
      * initialize the form.
      */
-    private void initComponents() {
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-
-        final Container contentPane = getContentPane();
-        contentPane.setLayout(new BorderLayout());
-        contentPane.add(_mainPanel, BorderLayout.CENTER);
-        Utilities.setEscKeyStrokeDisposes(this);
-
+    @Override
+    protected void initComponents() {
         final ActionListener securityListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableComponents();
-                setDefaultPortNumber();
+                final int port = getDefaultPortNumber();
+                _portNumberTextField.setText(Integer.toString(port));
             }
         };
         _ftpUnsecuredRadioButton.addActionListener(securityListener);
@@ -241,48 +203,61 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
             }
         });
 
-        _okButton.addActionListener(new ActionListener() {
+        messageSource.addItem(new MessageTargetableSupport(TargetMessageType.REQUEST));
+        messageSource.addItem(new MessageTargetableSupport(TargetMessageType.RESPONSE));
+
+        //validators
+        validators = new InputValidator(this, getResourceString("errorTitle"));
+        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("hostNameLabel"),_hostNameTextField,null));
+        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("specifyPatternLabel"),_filenamePatternTextField,null));
+        validators.addRule(validators.constrainTextFieldToBeNonEmpty(getResourceString("usernameLabel"),_userNameTextField,null));
+
+        validators.addRule(new InputValidator.ComponentValidationRule(_clientCertsComboBox) {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                MessageTargetableSupport selected = (MessageTargetableSupport) messageSource.getSelectedItem();
-                if (TargetMessageType.OTHER == selected.getTarget() && ! getPredecessorVariables().keySet().contains(selected.getOtherTargetMessageVariable())) {
-                    JOptionPane.showMessageDialog(_okButton, "Undefined context variable for message source: " + selected.getOtherTargetMessageVariable());
-                    return;
+            public String getValidationError() {
+                if(_useClientCertCheckBox.isSelected() && _clientCertsComboBox.getSelectedIndex() == -1){
+                    return getResourceString("clientCertError");
                 }
-                getData(_assertion);
-                fireEventAssertionChanged(_assertion);
-                _wasOkButtonPressed = true;
-                dispose();
+                return null;
             }
         });
 
-        _cancelButton.addActionListener(new ActionListener() {
+        validators.addRule(new InputValidator.ComponentValidationRule(_portNumberTextField) {
             @Override
-            public void actionPerformed(ActionEvent evt) {
-                FtpRoutingPropertiesDialog.this.dispose();
+            public String getValidationError() {
+                boolean portIsValid = isPortValid();
+                if(!portIsValid){
+                    final int port = getDefaultPortNumber();
+                    return MessageFormat.format(getResourceString("portError"),port);
+
+                }
+                return null;
             }
         });
 
-        populateReqMsgSrcComboBox();
+        super.initComponents();
     }
 
-    private void populateReqMsgSrcComboBox() {
-        messageSource.removeAllItems();
-        messageSource.setSelectedIndex(-1);
+    private String getResourceString(String key){
+        final String value = resources.getString(key);
+        if(value.endsWith(":")){
+            return value.substring(0, value.lastIndexOf(":"));
+        }
+        return value;
+    }
 
-        MessageTargetableSupport currentMessageSource = _assertion.getRequestTarget();
+    private void populateReqMsgSrcComboBox(FtpRoutingAssertion assertion) {
+        MessageTargetableSupport currentMessageSource = assertion.getRequestTarget();
         TargetMessageType sourceTarget = currentMessageSource != null ? currentMessageSource.getTarget() : null;
         String contextVariableSourceTarget = sourceTarget == TargetMessageType.OTHER ? currentMessageSource.getOtherTargetMessageVariable() : null;
 
-        messageSource.addItem(new MessageTargetableSupport(TargetMessageType.REQUEST));
-        messageSource.addItem(new MessageTargetableSupport(TargetMessageType.RESPONSE));
 
         if (sourceTarget == TargetMessageType.REQUEST)
             messageSource.setSelectedIndex(0);
         else if (sourceTarget == TargetMessageType.RESPONSE)
             messageSource.setSelectedIndex(1);
 
-        final Map<String, VariableMetadata> predecessorVariables = getPredecessorVariables();
+        final Map<String, VariableMetadata> predecessorVariables = getPredecessorVariables(assertion);
 
         final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
         for (String variableName : predecessorVariableNames) {
@@ -302,14 +277,14 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         }
     }
 
-    private Map<String, VariableMetadata> getPredecessorVariables() {
-        return  (_assertion.getParent() != null) ? SsmPolicyVariableUtils.getVariablesSetByPredecessors( _assertion ) :
+    private Map<String, VariableMetadata> getPredecessorVariables(FtpRoutingAssertion assertion) {
+        return  (assertion.getParent() != null) ? SsmPolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
                 (getPreviousAssertion() != null)? SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() ) :
                 Collections.<String, VariableMetadata>emptyMap();
     }
 
-    private void initFormData() {
-        final FtpSecurity security = _assertion.getSecurity();
+    private void modelToView(FtpRoutingAssertion assertion) {
+        final FtpSecurity security = assertion.getSecurity();
         if (security == null || security == FtpSecurity.FTP_UNSECURED) {
             _ftpUnsecuredRadioButton.doClick(0);
         } else if (security == FtpSecurity.FTPS_EXPLICIT) {
@@ -318,46 +293,47 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
             _ftpsImplicitRadioButton.doClick(0);
         }
 
-        _verifyServerCertCheckBox.setSelected(_assertion.isVerifyServerCert());
-        _hostNameTextField.setText(_assertion.getHostName());
-        _portNumberTextField.setText(_assertion.getPort());
-        _directoryTextField.setText(_assertion.getDirectory());
+        _verifyServerCertCheckBox.setSelected(assertion.isVerifyServerCert());
+        _hostNameTextField.setText(assertion.getHostName());
+        _portNumberTextField.setText(assertion.getPort());
+        _directoryTextField.setText(assertion.getDirectory());
 
-        if (_assertion.getFileNameSource() == null || _assertion.getFileNameSource() == FtpFileNameSource.AUTO) {
+        if (assertion.getFileNameSource() == null || assertion.getFileNameSource() == FtpFileNameSource.AUTO) {
             _filenameAutoRadioButton.doClick(0);
-        } else if (_assertion.getFileNameSource() == FtpFileNameSource.PATTERN) {
+        } else if (assertion.getFileNameSource() == FtpFileNameSource.PATTERN) {
             _filenamePatternRadioButton.doClick(0);
         }
-        _filenamePatternTextField.setText(_assertion.getFileNamePattern());
+        _filenamePatternTextField.setText(assertion.getFileNamePattern());
 
-        if (_assertion.getCredentialsSource() == null || _assertion.getCredentialsSource() == FtpCredentialsSource.PASS_THRU) {
+        if (assertion.getCredentialsSource() == null || assertion.getCredentialsSource() == FtpCredentialsSource.PASS_THRU) {
             _credentialsPassThruRadioButton.doClick(0);
-        } else if (_assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
+        } else if (assertion.getCredentialsSource() == FtpCredentialsSource.SPECIFIED) {
             _credentialsSpecifyRadioButton.doClick(0);
-            _userNameTextField.setText(_assertion.getUserName());
-            _passwordField.setText(_assertion.getPassword());
-            _passwordField.enableInputMethods(_assertion.isPasswordUsesContextVariables());
-            contextVariableInPassword.setSelected(_assertion.isPasswordUsesContextVariables());
+            _userNameTextField.setText(assertion.getUserName());
+            _passwordField.setText(assertion.getPassword());
+            _passwordField.enableInputMethods(assertion.isPasswordUsesContextVariables());
+            contextVariableInPassword.setSelected(assertion.isPasswordUsesContextVariables());
         }
 
-        _useClientCertCheckBox.setSelected(_assertion.isUseClientCert());
-        _clientCertsComboBox.select(_assertion.getClientCertKeystoreId(), _assertion.getClientCertKeyAlias());
+        _useClientCertCheckBox.setSelected(assertion.isUseClientCert());
+        _clientCertsComboBox.select(assertion.getClientCertKeystoreId(), assertion.getClientCertKeyAlias());
 
-        _timeoutTextField.setText(Integer.toString(_assertion.getTimeout() / 1000));
+        _timeoutTextField.setText(Integer.toString(assertion.getTimeout() / 1000));
 
-        RoutingDialogUtils.configSecurityHeaderRadioButtons(_assertion, -1, null, secHdrButtons);
+        RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
 
+        populateReqMsgSrcComboBox(assertion);
         messageSource.setRenderer( new TextListCellRenderer<MessageTargetable>( getMessageNameFunction("Default", null), null, false ) );
 
         enableOrDisableComponents();
     }
 
-    private void setDefaultPortNumber() {
+    private int getDefaultPortNumber() {
         int port = DEFAULT_PORT_FTP;
         if (_ftpsImplicitRadioButton.isSelected()) {
             port = FtpRoutingAssertion.DEFAULT_FTPS_IMPLICIT_PORT;
         }
-        _portNumberTextField.setText(Integer.toString(port));
+        return port;
     }
 
     /**
@@ -372,57 +348,45 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         _useClientCertCheckBox.setEnabled(isFtps);
         _clientCertsComboBox.setEnabled(_useClientCertCheckBox.isEnabled() && _useClientCertCheckBox.isSelected());
 
-        final boolean canTest = _hostNameTextField.getText().length() != 0
+        final boolean canTest = !_hostNameTextField.getText().trim().isEmpty()
                 && _credentialsSpecifyRadioButton.isSelected()
-                && _userNameTextField.getText().length() != 0
+                && !_userNameTextField.getText().trim().isEmpty()
                 && (!_useClientCertCheckBox.isSelected() || _clientCertsComboBox.getSelectedIndex() != -1);
         _testButton.setEnabled(canTest);
-
-        boolean portStatusLabelVisible = setPortStatusLabelVisibility();
-
-        final boolean canOK = _hostNameTextField.getText().length() != 0
-                && !(_filenamePatternRadioButton.isSelected() && _filenamePatternTextField.getText().length() == 0)
-                && !(_credentialsSpecifyRadioButton.isSelected() && _userNameTextField.getText().length() == 0)
-                && (!_useClientCertCheckBox.isSelected() || _clientCertsComboBox.getSelectedIndex() != -1)
-                && (! portStatusLabelVisible);
-        _okButton.setEnabled(!isReadOnly() && canOK);
     }
 
     /**
-     * Set the visibility of the port status label depending on if the port number is between 1 and 65535.
-     * @return true if the port numbere is valid, false otherwise.
+     * @return Return true iff the port number is between 1 and 65535 or references a context variable.
      */
-    private boolean setPortStatusLabelVisibility() {
-        boolean portStatusLabelVisible = false;
+    private boolean isPortValid() {
+        boolean isValid;
         String portStr = _portNumberTextField.getText();
         try {
             int port = Integer.parseInt(portStr);
-            portStatusLabelVisible = (port <= 0) || (port > 65535);
+            isValid = port > 0 && port < 65535;
         } catch (NumberFormatException e) {
             // must be using context variable
-            if (Syntax.getReferencedNames(portStr).length < 1)
-                portStatusLabelVisible = true;
+            isValid = Syntax.getReferencedNames(portStr).length > 0;
         }
-        portStatusLabel.setVisible(portStatusLabelVisible);
-        return portStatusLabelVisible;
+        return isValid;
     }
 
-    @Override
-    public boolean isConfirmed() {
-        return _wasOkButtonPressed;
-    }
 
     @Override
     public void setData(FtpRoutingAssertion assertion) {
-        this._assertion = assertion;
         messageSource.setModel( buildMessageSourceComboBoxModel(assertion) );
         messageSource.setSelectedItem( new MessageTargetableSupport(assertion.getRequestTarget()) );
-        initFormData();
+        modelToView(assertion);
     }
 
     /** Copies view into model. */
     @Override
     public FtpRoutingAssertion getData(FtpRoutingAssertion assertion) {
+        final String error = validators.validate();
+        if(error != null){
+            throw new ValidationException(error);
+        }
+        
         if (_ftpUnsecuredRadioButton.isSelected()) {
             assertion.setSecurity(FtpSecurity.FTP_UNSECURED);
             _verifyServerCertCheckBox.setSelected(false);
@@ -438,9 +402,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
 
         assertion.setHostName(_hostNameTextField.getText());
 
-        if (_portNumberTextField.getText().length() == 0) {
-            setDefaultPortNumber();
-        }
         assertion.setPort(_portNumberTextField.getText());
 
         assertion.setDirectory(_directoryTextField.getText());
@@ -471,19 +432,13 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
             assertion.setClientCertKeyAlias(_clientCertsComboBox.getSelectedKeyAlias());
         }
 
-        if (_timeoutTextField.getText().length() == 0) {
+        if (_timeoutTextField.getText().trim().isEmpty()) {
             _timeoutTextField.setText(Integer.toString(FtpRoutingAssertion.DEFAULT_TIMEOUT / 1000));
         }
         assertion.setTimeout(Integer.parseInt(_timeoutTextField.getText()) * 1000);
 
         RoutingDialogUtils.configSecurityHeaderHandling(assertion, -1, secHdrButtons);
-
         return assertion;
-    }
-
-    @Override
-    protected void configureView() {
-        enableOrDisableComponents();
     }
 
     /**
