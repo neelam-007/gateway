@@ -29,6 +29,12 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
     private String encryptionAlgorithmUri;
     private String keyWrappingAlgorithmUri;
 
+    public WssConfigurationAssertion() {
+        // Point at response by default, like our historical decoration requirements assertions.
+        // Per SetsVaraibles contract, changes to decoration requirements count as modification of the target message.
+        super(TargetMessageType.RESPONSE, true);
+    }
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();

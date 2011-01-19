@@ -12,7 +12,8 @@ public class WrapSSTR extends DelegatingSecurityTokenResolver {
     public WrapSSTR(X509Certificate cert, PrivateKey key, SecurityTokenResolver rest) throws CertificateEncodingException {
         super(rest == null 
         ? new SecurityTokenResolver[] { new SimpleSecurityTokenResolver(cert, key) }
-        : new SecurityTokenResolver[] { new SimpleSecurityTokenResolver(cert, key), rest });
+        : ( key == null ? new SecurityTokenResolver[] { rest } : new SecurityTokenResolver[] { new SimpleSecurityTokenResolver(cert, key), rest }));
+
     }
 
     public void addCerts(X509Certificate[] newcerts) throws CertificateEncodingException {

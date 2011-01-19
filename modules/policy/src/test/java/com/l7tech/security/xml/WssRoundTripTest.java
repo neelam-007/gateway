@@ -888,4 +888,10 @@ public class WssRoundTripTest {
         }
         return false;
     }
+    
+    @Test
+    public void testSamlSecretKeyHokSubjectConfirmation() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SamlSecretKeyHokSubjectConfirmation",
+                wssDecoratorTest.getSignWithSamlHokSecretKeyTestDocument()), false);
+    }
 }

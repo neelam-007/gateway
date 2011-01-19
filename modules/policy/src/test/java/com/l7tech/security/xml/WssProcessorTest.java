@@ -1141,7 +1141,7 @@ public class WssProcessorTest {
      * @throws GeneralSecurityException if there is an error reading a keystore file.
      * @throws AliasNotFoundException if one of the keystores does not contain exactly one suitable private key entry.
      */
-    private static SignerInfo[] loadPrivateKeys(String prefix, String suffix, char[] password, String... aliases) throws IOException, GeneralSecurityException, AliasNotFoundException {
+    static SignerInfo[] loadPrivateKeys(String prefix, String suffix, char[] password, String... aliases) throws IOException, GeneralSecurityException, AliasNotFoundException {
         List<SignerInfo> ret = new ArrayList<SignerInfo>();
         for (String alias : aliases) {
             if (alias == null)

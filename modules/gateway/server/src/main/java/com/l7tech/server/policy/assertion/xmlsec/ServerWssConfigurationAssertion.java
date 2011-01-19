@@ -10,13 +10,12 @@ import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.IOException;
 import java.security.KeyStoreException;
@@ -32,11 +31,9 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
     private final KeyInfoInclusionType encKeyReference;
     private final SignerInfo signerInfo;
 
-    public ServerWssConfigurationAssertion(final WssConfigurationAssertion assertion, BeanFactory beanFactory) throws PolicyAssertionException {
+    public ServerWssConfigurationAssertion(final WssConfigurationAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws PolicyAssertionException {
         super(assertion, assertion);
-        this.auditor = beanFactory instanceof ApplicationContext
-                       ? new Auditor(this, (ApplicationContext)beanFactory, logger)
-                       : new LogOnlyAuditor(logger);
+        this.auditor = new Auditor(this, beanFactory, eventPub, logger);
 
         SignerInfo signer = null;
         if (beanFactory != null) {

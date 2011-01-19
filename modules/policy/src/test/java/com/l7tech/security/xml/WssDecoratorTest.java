@@ -16,6 +16,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
+import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.token.UsernameTokenImpl;
 import com.l7tech.security.token.http.HttpBasicToken;
@@ -25,10 +26,7 @@ import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.Pair;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
@@ -39,6 +37,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.GeneralSecurityException;
@@ -216,13 +215,14 @@ public class WssDecoratorTest {
         }
     }
 
-    private void runTest(final TestDocument d) throws Exception {
+    private WssDecorator.DecorationResult runTest(final TestDocument d) throws Exception {
         WssDecorator decorator = new WssDecoratorImpl();
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
 
-        decorator.decorateMessage(new Message(d.c.message,0), d.req);
+        WssDecorator.DecorationResult results = decorator.decorateMessage(new Message(d.c.message,0), d.req);
 
         log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
+        return results;
     }
 
     @Test
@@ -1274,5 +1274,42 @@ public class WssDecoratorTest {
         dreq.getElementsToEncrypt().add(c.body);
         dreq.setSignatureMessageDigest("SHA-384");
         return new TestDocument(c, dreq, server.right, null);
+    }
+    
+    @Test
+    public void testSignWithSamlHokSecretKey() throws Exception {
+        runTest(getSignWithSamlHokSecretKeyTestDocument());
+    }
+
+    TestDocument getSignWithSamlHokSecretKeyTestDocument() throws Exception {
+
+        // Get hold of a SAML HoK token with secret key subject confirmation.
+        // We currently don't support generating such beasts (and have no current requirement to do so)
+        // but we have a test document that uses one.  We'll extract the token from it and use it to decorate placeorder_cleartext.
+        final Document wcfInitialReq = TestDocuments.getTestDocument(TestDocuments.DIR + "wcf_unum/00_cl_rst_sct.xml");
+        Element samlElement = (Element) wcfInitialReq.getElementsByTagNameNS(SoapUtil.SAML_NAMESPACE, "Assertion").item(0);
+        assertNotNull(samlElement);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        XmlUtil.canonicalize(samlElement, baos);
+        String samlString = baos.toString();
+
+        // Parse extracted SAML assertion and unwrap secret key using recipient private key
+        SignerInfo[] privateKeys = WssProcessorTest.loadPrivateKeys(TestDocuments.DIR + "wcf_unum/", ".p12", "password".toCharArray(),
+                "bookstoreservice_com", "bookstorests_com");
+        final SimpleSecurityTokenResolver resolver = new SimpleSecurityTokenResolver(null, privateKeys);
+        SamlAssertion samlAssertion = SamlAssertion.newInstance(XmlUtil.stringToDocument(samlString).getDocumentElement(), resolver);
+        EncryptedKey subjectConfirmationEncryptedKey = samlAssertion.getSubjectConfirmationEncryptedKey(resolver, null);
+
+        // Create decoration requirements that will decorate placeorder_cleartext with this assertion
+        Context c = new Context();
+        DecorationRequirements dreq = new DecorationRequirements();
+        dreq.setSenderSamlToken(samlAssertion);
+        dreq.getElementsToSign().add(c.body);
+        dreq.getElementsToEncrypt().add(c.body);
+        dreq.setEncryptedKey(subjectConfirmationEncryptedKey.getSecretKey());
+        dreq.setEncryptedKeyReferenceInfo(KeyInfoDetails.makeKeyId(samlAssertion.getAssertionId(), false, SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11));
+        dreq.setUseDerivedKeys(true);
+
+        return new TestDocument(c, dreq, null, resolver);
     }
 }
