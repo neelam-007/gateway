@@ -72,8 +72,8 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
                 WssDecorationConfig wdc2 = (WssDecorationConfig) assertion;
 
                 // Check for the same key reference types (BST, Issuer/Serial, etc)
-                if ( (wdc1.getKeyReference() == null && wdc2.getKeyReference() != null) ||
-                     (wdc1.getKeyReference() != null && !wdc1.getKeyReference().equals(wdc2.getKeyReference()))) {
+                if ( (wdc1.getKeyReference() != null && wdc2.getKeyReference() != null) &&
+                     (!wdc1.getKeyReference().equals(wdc2.getKeyReference()))) {
                     String message = "Multiple signing assertions present with different \"Key Reference/Certificate Inclusion\" selections. The same \"Key Reference/Certificate Inclusion\" type should be used for these assertions.";
                     result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, path, message, null));                                        
                 }
