@@ -781,17 +781,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
             if (status == HttpConstants.STATUS_OK && outerContentType == null) {
-                String defaultContentType = serverConfig.getPropertyCached( "ioHttpDefaultContentType" );
-                if ( defaultContentType != null ) {
-                    try {
-                        outerContentType = ContentTypeHeader.parseValue(defaultContentType);
-                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_DEFCONTENTTYPE);
-                    } catch ( IOException ioe ) {
-                        logger.log( Level.WARNING,
-                                "Error processing default content type '"+ExceptionUtils.getMessage( ioe )+"'.", 
-                                ExceptionUtils.getDebugException(ioe));
-                    }
-                }
+                outerContentType = getDefaultContentType(false);
             }
 
             // Handle missing content type error
@@ -799,6 +789,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOCONTENTTYPE, Integer.toString(status));
                 responseOk = false;
             } else if (assertion.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
+                if ( outerContentType==null ) outerContentType = getDefaultContentType(true);
                 destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream,maxBytes);
                 responseOk = false;
             } else if (status >= HttpConstants.STATUS_ERROR_RANGE_START && assertion.isFailOnErrorStatus() && !passthroughSoapFault) {
@@ -823,6 +814,24 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             responseOk = false;
         }
         return responseOk;
+    }
+
+    private ContentTypeHeader getDefaultContentType( final boolean ensureDefault ) {
+        ContentTypeHeader contentTypeHeader = ensureDefault ? ContentTypeHeader.OCTET_STREAM_DEFAULT : null;
+
+        String defaultContentType = serverConfig.getPropertyCached( "ioHttpDefaultContentType" );
+        if ( defaultContentType != null ) {
+            try {
+                contentTypeHeader = ContentTypeHeader.parseValue(defaultContentType);
+                auditor.logAndAudit( AssertionMessages.HTTPROUTE_RESPONSE_DEFCONTENTTYPE);
+            } catch ( IOException ioe ) {
+                logger.log( Level.WARNING,
+                        "Error processing default content type '"+ ExceptionUtils.getMessage( ioe )+"'.",
+                        ExceptionUtils.getDebugException(ioe));
+            }
+        }
+
+        return contentTypeHeader;
     }
 
     private URL getProtectedServiceUrl(PublishedService service, PolicyEnforcementContext context) throws WSDLException, MalformedURLException {
