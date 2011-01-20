@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 public class ServerEstablishOutboundSecureConversation extends AbstractMessageTargetableServerAssertion<EstablishOutboundSecureConversation> {
     private static final Logger logger = Logger.getLogger(ServerEstablishOutboundSecureConversation.class.getName());
     private static final String DEFAULT_SESSION_DURATION = "outbound.secureConversation.defaultSessionDuration";
-    private static final String SESSION_PRE_EXPIRY_AGE = "outbound.secureConversationSession.preExpiryAge";
+    private static final String SESSION_PRE_EXPIRY_AGE = "outbound.secureConversation.sessionPreExpiryAge";
     private static final long MIN_SESSION_PRE_EXPIRY_AGE = 0;
     private static final long MAX_SESSION_PRE_EXPIRY_AGE = 2*60*60*1000; // 2 hours
 
