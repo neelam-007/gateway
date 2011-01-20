@@ -59,7 +59,7 @@ public class UsernameTokenImpl implements UsernameToken {
      *
      * @param username the username to include.  Must not be null.
      * @param password the password to include, or null to omit the password.
-     * @param created created date, or null to allow one to be generated.
+     * @param created created date, null to allow one to be generated, or empty string to include no timestamp.
      * @param nonce nonce, or null to omit it.
      * @param digest true if the password element should be digested; false to use plaintext.
      */

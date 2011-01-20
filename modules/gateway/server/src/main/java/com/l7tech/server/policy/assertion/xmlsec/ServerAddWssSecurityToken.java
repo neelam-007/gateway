@@ -190,7 +190,17 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
             return applyUsernameTokenGatheredCredentialsDecorationRequirements(context, message, messageDescription, authContext);
         }
 
-        dreq.setSignUsernameToken(assertion.isProtectTokens());
+        final boolean signing = assertion.isProtectTokens();
+        dreq.setSignUsernameToken(signing);
+        if (signing) {
+            // Ensure some signing key is confiured (Bug #9677)
+            addWssSignatureSupport.applySignatureDecorationRequirements(context, message, messageDescription, authContext, new AddWssSignatureSupport.SignedElementSelector() {
+                @Override
+                public int selectElementsToSign(PolicyEnforcementContext context, AuthenticationContext authContext, Document soapmsg, DecorationRequirements wssReq, Message targetMessage) throws PolicyAssertionException {
+                    return 1;
+                }
+            });
+        }
         return ServerAddWssUsernameToken.applyUsernameTokenSpecifiedCredentialsDecorationRequirements(addWssEncryptionSupport, context, message, messageDescription, assertion.getRecipientContext(),
                 assertion.getUsername(), assertion.isIncludePassword() ? assertion.getPassword() : null, variableNames,
                 assertion.isIncludeCreated(), assertion.isEncrypt(), assertion.isIncludeNonce(), assertion.isDigest(), this);
