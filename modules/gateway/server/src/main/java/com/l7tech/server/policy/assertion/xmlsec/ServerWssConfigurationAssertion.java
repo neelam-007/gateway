@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.security.KeyStoreException;
 import java.util.logging.Logger;
 
+import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.*;
+
 /**
  * Server side implementation for {@link com.l7tech.policy.assertion.xmlsec.WssConfigurationAssertion}.
  */
@@ -59,6 +61,14 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
         dreq.setIncludeTimestamp(assertion.isAddTimestamp());
         dreq.setSignTimestamp(assertion.isSignTimestamp());
         dreq.setProtectTokens(assertion.isProtectTokens());
+
+        //adding this assertion to a policy removes the default signing behaviour for WS-Addressing headers.
+        if(assertion.isSignWsAddressingHeaders()){
+            dreq.setWsaHeaderSignStrategy(ALWAYS_SIGN_WSA_HEADERS);
+        } else {
+            dreq.setWsaHeaderSignStrategy(NEVER_SIGN_WSA_HEADERS);
+        }
+
         if (assertion.getEncryptionAlgorithmUri() != null)
             dreq.setEncryptionAlgorithm(assertion.getEncryptionAlgorithmUri());
         if (assertion.getKeyWrappingAlgorithmUri() != null)

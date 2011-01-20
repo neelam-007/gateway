@@ -22,6 +22,7 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
     private boolean addTimestamp = true;
     private boolean signTimestamp = true;
     private boolean protectTokens = true;
+    private boolean signWsAddressingHeaders;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
     private String digestAlgorithmName;
@@ -172,5 +173,18 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
 
     public void setSignTimestamp(boolean signTimestamp) {
         this.signTimestamp = signTimestamp;
+    }
+
+    public boolean isSignWsAddressingHeaders() {
+        return signWsAddressingHeaders;
+    }
+
+    /**
+     * Configure whether WS-Addressing headers should be signed or not.
+     *
+     * @param signWsAddressingHeaders Can be null.
+     */
+    public void setSignWsAddressingHeaders(boolean signWsAddressingHeaders) {
+        this.signWsAddressingHeaders = signWsAddressingHeaders;
     }
 }

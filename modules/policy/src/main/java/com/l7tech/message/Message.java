@@ -102,6 +102,15 @@ public final class Message implements Closeable {
     }
 
     /**
+     * Create a Message pre-initialized with a Document. Message can have an unlimited first part size.
+     *
+     * @param doc the Document to use.  Must not be null.
+     */
+    public Message(Document doc){
+        initialize(doc, 0);
+    }
+
+    /**
      * Initialize, or re-initialize, a Message with a MIME facet attached to the specified InputStream.
      * <p>
      * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,

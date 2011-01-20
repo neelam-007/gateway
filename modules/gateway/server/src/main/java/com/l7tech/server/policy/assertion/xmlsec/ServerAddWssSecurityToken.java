@@ -244,7 +244,7 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
                 return 1;
             }
         };
-        return addWssSignatureSupport.applySignatureDecorationRequirements(context, message, messageDescription, authContext, true, signedElementSelector);
+        return addWssSignatureSupport.applySignatureDecorationRequirements(context, message, messageDescription, authContext, signedElementSelector);
     }
 
     @Override

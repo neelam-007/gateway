@@ -72,6 +72,13 @@ public interface SecurityKnob extends MessageKnob {
     DecorationRequirements[] getDecorationRequirements();
 
     /**
+     * Tests whether there already exist decoration requirements for this message.
+     *
+     * @return true if decoration requirements have already been added.
+     */
+    boolean hasDecorationRequirements();
+
+    /**
      * Get the decorations that should be applied to this Message some time in the future,
      * creating a new default set of decorations if there are no decorations pending.
      *
@@ -94,6 +101,15 @@ public interface SecurityKnob extends MessageKnob {
      * @return the DecorationRequirements for this recipient, possibly newly created.  Never null.
      */
     DecorationRequirements getAlternateDecorationRequirements(XmlSecurityRecipientContext recipient);
+
+    /**
+     * Tests whether there are decoration requirements for the specified recipient for this message. If the recipient
+     * is null or is local, then this is the same as calling #hasDecorationRequirements().
+     *
+     * @param recipient the recipient whose decoration requirements we want to check exist or not.
+     * @return true if the decoration requirements for the recipient are found.
+     */
+    boolean hasAlternateDecorationRequirements(XmlSecurityRecipientContext recipient);
 
     /**
      * Gets the WSS version that the policy associates with a message target.
@@ -153,4 +169,13 @@ public interface SecurityKnob extends MessageKnob {
      * @return true if there are any (pending) WSS 11 decorations, or false otherwise.
      */
     boolean hasWss11Decorations();
+
+    /**
+     * Signal to the SecurityKnob, that when it creates DecorationRequirements to configure them not to sign
+     * WS-Addressing headers by default. This allows assertions (Add WS-Addressing) to stop the default behaviour
+     * of signing any found WS-Addressing headers when WS-Security is applied. This also avoids assertions having
+     * to add decoration requirements just to record this, which causes a security header to be added.
+     * @param recipient Which recipient to track this for. Can be null.
+     */
+    void flagDoNotSignWsaAddressing(XmlSecurityRecipientContext recipient);
 }

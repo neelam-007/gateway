@@ -20,10 +20,19 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
+import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.*;
+
 /**
  * @author mike
  */
 public class DecorationRequirements {
+
+    public DecorationRequirements() {
+    }
+
+    public DecorationRequirements(final WsaHeaderSigningStrategy wsaHeaderSignStrategy) {
+        this.wsaHeaderSignStrategy = wsaHeaderSignStrategy;
+    }
 
     public X509Certificate getRecipientCertificate() {
         return recipientCertificate;
@@ -808,6 +817,28 @@ public class DecorationRequirements {
         this.preferredSigningTokenType = preferredSigningTokenType;
     }
 
+    /**
+     * Determine if any WS-Addressing headers found in the target message should be signed.
+     * 
+     * @return true if found headers should be signed, false otherwise.
+     */
+    public WsaHeaderSigningStrategy getWsaHeaderSignStrategy() {
+        return wsaHeaderSignStrategy;
+    }
+
+    /**
+     * Set whether the WSS decorator should look for and sign any found WS-Addressing headers.
+
+     * Null - default behaviour (sign WSA headers if found and something else is being signed)
+     * True - always sign
+     * False - never sign
+     *
+     * @param wsaHeaderSignStrategy true to sign any found WS-Addressing headers
+     */
+    public void setWsaHeaderSignStrategy(WsaHeaderSigningStrategy wsaHeaderSignStrategy) {
+        this.wsaHeaderSignStrategy = wsaHeaderSignStrategy;
+    }
+
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderMessageSigningCertificate = null;
     private PrivateKey senderMessageSigningPrivateKey = null;
@@ -848,4 +879,16 @@ public class DecorationRequirements {
     private String signatureMessageDigest = null;
     private PreferredSigningTokenType preferredSigningTokenType = null;
     private WsSecurityVersion wssVersion = null;
+    private WsaHeaderSigningStrategy wsaHeaderSignStrategy = DEFAULT_WSA_HEADER_SIGNING_BEHAVIOUR;
+
+    public enum WsaHeaderSigningStrategy {
+        NEVER_SIGN_WSA_HEADERS,
+        ALWAYS_SIGN_WSA_HEADERS,
+        //Default behaviour is to sign any found WSA headers when something else is also being signed.
+        //this is pre 5.4.1 behaviour and is retained. Post 5.4.1 can also specify explicitly that headers should
+        //always be signed or never signed.
+        //Note: If WS-Addressing header elements were explicitly added by the WS-Addressing assertion, these will be
+        //in the signature regardless of the signing strategy, just not any other headers which were already in the message.
+        DEFAULT_WSA_HEADER_SIGNING_BEHAVIOUR
+    }
 }

@@ -7,24 +7,33 @@ package com.l7tech.external.assertions.wsaddressing.server;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.wsaddressing.AddWsAddressingAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.AuditHaver;
 import com.l7tech.message.Message;
+import com.l7tech.message.SecurityKnob;
 import com.l7tech.message.SoapKnob;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.xmlsec.ServerAddWssSignature;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.policy.assertion.xmlsec.AddWssSignatureSupport;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
 import javax.xml.namespace.QName;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,11 +41,13 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsAddressingAssertion> {
+import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.*;
+
+public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableServerAssertion<AddWsAddressingAssertion> {
 
     public ServerAddWsAddressingAssertion(final AddWsAddressingAssertion assertion,
                                           final ApplicationContext applicationContext ) throws PolicyAssertionException {
-        super(assertion, assertion, assertion, applicationContext, logger, false);
+        super(assertion, assertion);
         this.auditor = applicationContext != null ? new Auditor(this, applicationContext, logger) : new LogOnlyAuditor(logger);
         this.variablesUsed = assertion.getVariablesUsed();
         //validate required fields
@@ -48,50 +59,71 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
             throw new PolicyAssertionException(assertion, "Action message addressing property is required.");
         }
 
+        final AuditHaver auditHaver = new AuditHaver() {
+            @Override
+            public Audit getAuditor() {
+                return auditor;
+            }
+        };
+        this.addWssSignatureSupport = (assertion.isSignMessageProperties()) ?
+                new AddWssSignatureSupport(auditHaver, assertion, applicationContext, true , Assertion.isResponse(assertion))
+                : null;
     }
 
     @Override
-    public boolean hasDecorationRequirements() {
-        return assertion.isSignMessageProperties();
+    protected Audit getAuditor() {
+        return auditor;
     }
 
+    @SuppressWarnings({"UnusedAssignment", "ThrowableResultOfMethodCallIgnored"})
     @Override
-    protected int addDecorationRequirements(final PolicyEnforcementContext context,
-                                            final AuthenticationContext authContext,
-                                            final Document soapmsg,
-                                            final DecorationRequirements wssReq,
-                                            final Message targetMessage) throws PolicyAssertionException {
+    protected AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
+                                             final Message message,
+                                             final String messageDescription,
+                                             final AuthenticationContext authContext) throws IOException, PolicyAssertionException {
+        try {
+            if (!message.isSoap()) {
+                auditor.logAndAudit(AssertionMessages.MESSAGE_NOT_SOAP, messageDescription, "Cannot add WS-Addressing headers");
+                return AssertionStatus.NOT_APPLICABLE;
+            }
+        } catch (SAXException e) {
+            throw new CausedIOException(e);
+        }
+        
         final Element header;
         final String soapAction;
+        final SecurityKnob securityKnob;
         try {
-            final SoapKnob soapKnob = targetMessage.getSoapKnob();
+            final SoapKnob soapKnob = message.getSoapKnob();
             soapAction = soapKnob.getSoapAction();
-            final Document writeDoc = targetMessage.getXmlKnob().getDocumentWritable();
+            securityKnob = message.getSecurityKnob();
+            final Document writeDoc = message.getXmlKnob().getDocumentWritable();
             header = SoapUtil.getOrMakeHeader(writeDoc);
         } catch (Exception e) {
             String msg = "Cannot get XML document from target message: " + ExceptionUtils.getMessage(e);
+            //noinspection ThrowableResultOfMethodCallIgnored
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, ExceptionUtils.getDebugException(e));
-            return -1;
-        } 
+            return AssertionStatus.SERVER_ERROR;
+        }
 
         final List<Element> elementsToSign = new ArrayList<Element>();
         try {
             final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
-            
+
             String wsaNs = resolveProperty(assertion.getWsaNamespaceUri(), vars);
 
             if(!ValidationUtils.isValidUri(wsaNs)){
                 auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_NAMESPACE, wsaNs, "Namespace is not a valid URI");
-                return -1;
+                return AssertionStatus.FAILED;
             } else if (!new URI(wsaNs).isAbsolute()) {
                 auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_NAMESPACE, wsaNs, "Namespace is not an absolute URI");
-                return -1;
+                return AssertionStatus.FAILED;
             }
 
             String resolvedAction = resolveProperty(assertion.getAction(), vars);
             if(resolvedAction == null){
                 auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_ACTION_SUPPLIED);
-                return -1;
+                return AssertionStatus.FAILED;
             }
 
             if (AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_INPUT.equals(resolvedAction) ||
@@ -99,7 +131,7 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
                 final Pair<Binding,Operation> pair = context.getBindingAndOperation();
                 String wsdlAction = null;
                 if(pair != null){
-                    final Operation operation = pair.right; 
+                    final Operation operation = pair.right;
                     Map map = null;
                     if(AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_OUTPUT.equals(resolvedAction)){
                         final Output output = operation.getOutput();
@@ -133,7 +165,7 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
                             }
                         }
                     }
-                    
+
                     if(wsdlAction == null && AddWsAddressingAssertion.ACTION_EXPLICIT_FROM_WSDL_INPUT.equals(resolvedAction)){
                         //check binding for soapAction ONLY when dealing with the INPUT, there is no fallback for
                         //output, as the soap binding extension element only allows a soap action for a request to be specified.
@@ -165,20 +197,20 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
 
                 if(wsdlAction == null || wsdlAction.trim().isEmpty()){
                     auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_WSDL_ACTION_FOUND);
-                    return -1;
+                    return AssertionStatus.FAILED;
                 }
                 resolvedAction = wsdlAction;
             } else if (AddWsAddressingAssertion.ACTION_FROM_TARGET_MESSAGE.equals(resolvedAction)){
                 if (soapAction == null || soapAction.trim().isEmpty()) {
                     auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_NO_SOAP_ACTION);
-                    return -1;
+                    return AssertionStatus.FAILED;
                 }
                 resolvedAction = soapAction;
             }
 
             if (!ValidationUtils.isValidUri(resolvedAction)) {
                 auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, new String[]{resolvedAction, SoapConstants.WSA_MSG_PROP_ACTION});
-                return -1;
+                return AssertionStatus.FAILED;
             }
 
             //set action context variable.
@@ -198,7 +230,7 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
             if(msgIdToUse != null){
                 if (!ValidationUtils.isValidUri(msgIdToUse)) {
                     auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, new String[]{msgIdToUse, SoapConstants.WSA_MSG_PROP_MESSAGE_ID});
-                    return -1;
+                    return AssertionStatus.FAILED;
                 }
                 //set message id context variable
                 context.setVariable(assertion.getVariablePrefix() +"." + AddWsAddressingAssertion.SUFFIX_MESSAGE_ID, msgIdToUse);
@@ -259,15 +291,39 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
         } catch (Exception e) {
             String msg = "Cannot add WS-Addressing element to target message: " + ExceptionUtils.getMessage(e);
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, ExceptionUtils.getDebugException(e));
-            return -1;
+            return AssertionStatus.FAILED;
         }
 
         if(assertion.isSignMessageProperties()){
-            wssReq.getElementsToSign().addAll(elementsToSign);
-            return elementsToSign.size();
+            final AddWssSignatureSupport.SignedElementSelector signedElSelector = new AddWssSignatureSupport.SignedElementSelector() {
+                @Override
+                public int selectElementsToSign(final PolicyEnforcementContext context,
+                                                final AuthenticationContext authContext,
+                                                final Document soapmsg,
+                                                final DecorationRequirements wssReq,
+                                                final Message targetMessage) throws PolicyAssertionException {
+                    wssReq.getElementsToSign().addAll(elementsToSign);
+                    //we need to set this explicitly as a previous assertion may have turned signing off
+                    //e.g. if there was a 'Configure WS-Security decoration' assertion in the policy.
+                    wssReq.setWsaHeaderSignStrategy(ALWAYS_SIGN_WSA_HEADERS);
+                    return elementsToSign.size();
+                }
+            };
+
+            return addWssSignatureSupport.applySignatureDecorationRequirements(
+                    context, message, messageDescription, authContext, signedElSelector);
+        } else {
+            final XmlSecurityRecipientContext recipient = assertion.getRecipientContext();
+            if(securityKnob.hasAlternateDecorationRequirements(recipient)){
+                final DecorationRequirements wssReq = securityKnob.getAlternateDecorationRequirements(assertion.getRecipientContext());
+                wssReq.setWsaHeaderSignStrategy(NEVER_SIGN_WSA_HEADERS);
+            } else {
+                //don't create decoration requirements unless they are needed.
+                securityKnob.flagDoNotSignWsaAddressing(recipient);
+            }
         }
 
-        return 0;
+        return AssertionStatus.NONE;
     }
 
     private static class InvalidRuntimeValueException extends Exception{
@@ -276,15 +332,15 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
         }
     }
 
-
     /**
      * Convert a string variable into it's expanded form in the case it references any variables.
      *
      * @param vars Available context variables
      * @param maybeAVariable String. Must not be null and must not be the empty string
      * @return resolved String.
-     * @throws InvalidRuntimeValueException
+     * @throws InvalidRuntimeValueException if the String value maybeAVariable cannot be processed.
      */
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     private String getStringVariable(final Map<String, Object> vars, String maybeAVariable)
             throws InvalidRuntimeValueException{
         //explicitly checking as exception throw below should only happen for the case when a string resolves to nothing.
@@ -347,5 +403,6 @@ public class ServerAddWsAddressingAssertion extends ServerAddWssSignature<AddWsA
     // - PRIVATE
     private final Auditor auditor;
     private final String[] variablesUsed;
+    private final AddWssSignatureSupport addWssSignatureSupport;
     private static final Logger logger = Logger.getLogger(ServerAddWsAddressingAssertion.class.getName());
 }

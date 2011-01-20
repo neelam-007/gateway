@@ -73,14 +73,13 @@ public class AddWssSignatureSupport implements AuditHaver {
      * @param message the target message.  Required.
      * @param messageDescription the target message description.  Required.
      * @param authContext the authentication context.  Required.
-     * @param editInPlace if true, we'll edit the decoration requirements in the target message; if false, we'll create a new DecorationRequirements instance.
      * @param signedElementSelector a {@link com.l7tech.server.policy.assertion.xmlsec.AddWssSignatureSupport.SignedElementSelector} that will add elementsToSign to the decoration requriements.  Required.
      * @return AssertionStatus.NONE upon success; NOT_APPLICABLE if target message isn't SOAP; FALSIFIED if failIfNotSigning and no elements are selected for signing; SERVER_ERROR on XML Parsing error.
      *         In all cases, any required auditing will already have been done.
      * @throws IOException if there is an error reading the target message
      * @throws com.l7tech.policy.assertion.PolicyAssertionException if addDecorationRequirements indicates a misconfigured assertion
      */
-    public AssertionStatus applySignatureDecorationRequirements(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext, boolean editInPlace, SignedElementSelector signedElementSelector)
+    public AssertionStatus applySignatureDecorationRequirements(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext, SignedElementSelector signedElementSelector)
             throws IOException, PolicyAssertionException {
         Audit auditor = auditHaver.getAuditor();
 
@@ -122,12 +121,7 @@ public class AddWssSignatureSupport implements AuditHaver {
         }
 
 
-        final DecorationRequirements wssReq;
-        if (editInPlace) {
-            wssReq = securityKnob.getAlternateDecorationRequirements(recipient);
-        } else {
-            wssReq = new DecorationRequirements();
-        }
+        final DecorationRequirements wssReq = securityKnob.getAlternateDecorationRequirements(recipient);
 
         int howMany = signedElementSelector.selectElementsToSign(context, authContext, soapmsg, wssReq, message);
         if (howMany < 0) {

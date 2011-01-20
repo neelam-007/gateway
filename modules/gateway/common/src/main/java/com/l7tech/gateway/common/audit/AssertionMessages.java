@@ -11,9 +11,10 @@ import java.util.logging.Level;
  */
 public class AssertionMessages extends Messages {
 
-    // Generic Assersion Message
+    // Generic Assertion Message
     public static final M REQUESTWSS_NO_SECURITY     = m(4302, Level.INFO, "Request did not contain any WSS level security");
     public static final M ASSERTION_MISCONFIGURED    = m(4304, Level.WARNING, false, false, "Assertion configuration error: {0}"); // Provided as less-drastic alternative to throwing PolicyAssertionException
+    public static final M MESSAGE_NOT_SOAP           = m(4305, Level.WARNING, "{0} message not soap; {1}"); 
 
     // ServerHttpRoutingAssertion messages
     public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.WARNING, "Could not initialize SSL Context");

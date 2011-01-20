@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
+import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.*;
+
 /**
  * Provides access to a {@link SecurityKnob} from a {@link Message}.
  */
@@ -23,12 +25,13 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
     private ProcessorResult processorResult = null;
     private final List<SecurityToken> tokens = new ArrayList<SecurityToken>();
     private DecorationRequirements decorationRequirements = null;
-    private Map<String,DecorationRequirements> decorationRequirementsForAlternateRecipients = new HashMap<String,DecorationRequirements>();
+    private Map<String,RecipientContext> recipientContextForAlternateRecipients = new HashMap<String,RecipientContext>();
     private ProcessorResultFactory lazyProcessor = null;
     private WsSecurityVersion wsSecurityVersion;
     private Map<String,List<WssDecorator.DecorationResult>> decorationResults = new HashMap<String, List<WssDecorator.DecorationResult>>();
     private boolean signatureConfirmationValidated = false;
     private boolean needsSignatureConfirmations = false;
+    private DecorationRequirements.WsaHeaderSigningStrategy wsaHeaderSignStrategy = DEFAULT_WSA_HEADER_SIGNING_BEHAVIOUR;
 
     /**
      * @param message  the Message that owns this aspect
@@ -90,21 +93,35 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
      */
     @Override
     public DecorationRequirements[] getDecorationRequirements() {
-        Set<String> keys = decorationRequirementsForAlternateRecipients.keySet();
-        int arraysize = keys.size();
-        if (decorationRequirements != null) {
-            arraysize += 1;
-        }
-        DecorationRequirements[] output = new DecorationRequirements[arraysize];
-        int i = 0;
+        final Set<String> keys = recipientContextForAlternateRecipients.keySet();
+        final List<DecorationRequirements> allReqs = new ArrayList<DecorationRequirements>(keys.size());//max size
+
         for (String key : keys) {
-            output[i] = decorationRequirementsForAlternateRecipients.get(key);
-            i++;
+            final RecipientContext recipientCtx = recipientContextForAlternateRecipients.get(key);
+            if(recipientCtx.decorationRequirements != null){
+                allReqs.add(recipientCtx.decorationRequirements);
+            }
         }
         if (decorationRequirements != null) {
-            output[arraysize-1] = decorationRequirements;
+            allReqs.add(decorationRequirements);
         }
-        return output;
+        return allReqs.toArray(new DecorationRequirements[allReqs.size()]);
+    }
+
+    @Override
+    public boolean hasAlternateDecorationRequirements(XmlSecurityRecipientContext recipient) {
+        if (recipient == null || recipient.localRecipient()) {
+            return hasDecorationRequirements();
+        }
+
+        boolean hasDecReqs = false;
+        String actor = recipient.getActor();
+        if(recipientContextForAlternateRecipients.containsKey(actor)){
+            final RecipientContext recipientCtx = recipientContextForAlternateRecipients.get(actor);
+            hasDecReqs = recipientCtx != null;
+        }
+        
+        return hasDecReqs;
     }
 
     @Override
@@ -112,23 +129,37 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
         if (recipient == null || recipient.localRecipient()) {
             return getOrMakeDecorationRequirements();
         }
+
         String actor = recipient.getActor();
-        DecorationRequirements output = decorationRequirementsForAlternateRecipients.get(actor);
-        if (output == null) {
-            output = new DecorationRequirements();
-            X509Certificate clientCert;
-            clientCert = recipient.getX509Certificate();
+        RecipientContext recipientCtx = recipientContextForAlternateRecipients.get(actor);
+        if(recipientCtx == null){
+            recipientCtx = new RecipientContext();
+            recipientContextForAlternateRecipients.put(actor, recipientCtx);
+        }
+
+        DecorationRequirements output;
+        if(recipientCtx.decorationRequirements == null){
+            output = new DecorationRequirements(recipientCtx.signWsaHeaderStrategy);
+            X509Certificate clientCert = recipient.getX509Certificate();
             output.setRecipientCertificate(clientCert);
             output.setSecurityHeaderActor(actor);
-            decorationRequirementsForAlternateRecipients.put(actor, output);
+            recipientCtx.decorationRequirements = output;
+        } else {
+            output = recipientCtx.decorationRequirements;
         }
+
         return output;
+    }
+
+    @Override
+    public boolean hasDecorationRequirements() {
+        return decorationRequirements != null;
     }
 
     @Override
     public DecorationRequirements getOrMakeDecorationRequirements() {
         if (decorationRequirements == null) {
-            decorationRequirements = new DecorationRequirements();
+            decorationRequirements = new DecorationRequirements(wsaHeaderSignStrategy);
         }
         return decorationRequirements;
     }
@@ -136,7 +167,7 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
     @Override
     public void removeAllDecorationRequirements() {
         decorationRequirements = null;
-        decorationRequirementsForAlternateRecipients = new HashMap<String,DecorationRequirements>();
+        recipientContextForAlternateRecipients = new HashMap<String,RecipientContext>();
     }
 
     @Override
@@ -214,4 +245,46 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
             return super.getKnob(c);
         }
     }
+
+    @Override
+    public void flagDoNotSignWsaAddressing(XmlSecurityRecipientContext recipient) {
+        if (recipient == null || recipient.localRecipient()) {
+            wsaHeaderSignStrategy = NEVER_SIGN_WSA_HEADERS;
+        } else {
+            String actor = recipient.getActor();
+            final RecipientContext recipientCtx = recipientContextForAlternateRecipients.get(actor);
+            if(recipientCtx != null){
+                recipientCtx.signWsaHeaderStrategy = NEVER_SIGN_WSA_HEADERS;
+            } else {
+                recipientContextForAlternateRecipients.put(actor,
+                        new RecipientContext(NEVER_SIGN_WSA_HEADERS));
+            }
+        }
+    }
+
+    /**
+     * Hold information relating to an alternate Recipient.
+     * Stores DecorationRequirements, if they exist.
+     * Stores a WsaHeaderSigningStrategy which specifies the behaviour required for WS-Addressing header signing, should a
+     * DecorationRequirement be created for the recipient.
+     */
+    private static class RecipientContext{
+        // - PRIVATE
+
+        private RecipientContext() {
+        }
+
+        private RecipientContext(DecorationRequirements.WsaHeaderSigningStrategy signWsaHeaderStrategy) {
+            this.signWsaHeaderStrategy = signWsaHeaderStrategy;
+        }
+
+        private DecorationRequirements decorationRequirements;
+        /**
+         * This is simply a flag. Once DecorationRequirements have been created this value should never be used again.
+         * After decoration requirements have been created, any changes to the wsa header signing strategy should be
+         * made directly within the decoration requirements.
+         */
+        private DecorationRequirements.WsaHeaderSigningStrategy signWsaHeaderStrategy = DEFAULT_WSA_HEADER_SIGNING_BEHAVIOUR;
+    }
+
 }

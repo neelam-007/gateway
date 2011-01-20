@@ -26,15 +26,16 @@ import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
+import junit.framework.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayOutputStream;
@@ -45,6 +46,8 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1312,4 +1315,120 @@ public class WssDecoratorTest {
 
         return new TestDocument(c, dreq, null, resolver);
     }
+
+    /**
+     * Validate behaviour of WS-Addressing header signing behaviour.
+     * Tests default signing of incoming WSA headers when somthing else is being signed, and not signed when nothing
+     * else is. Tests explicit signing when it's requested and tests explicit not signing when it's requested.
+     * 
+     * @throws Exception
+     */
+    @Test
+    @BugNumber(9661)
+    public void testSignWsaAddressingBehaviour() throws Exception{
+        WssDecorator decorator = new WssDecoratorImpl();
+        DecorationRequirements decReq = new DecorationRequirements();
+
+        Message msg = new Message(XmlUtil.parse(soapMsgWithWsaHeaders));
+
+        WssDecorator.DecorationResult result = decorator.decorateMessage( msg, decReq);
+
+        Map<String,Boolean> signatures = result.getSignatures();
+        Assert.assertEquals("Nothing should have been signed", 0, signatures.size());
+
+        Pair<X509Certificate, PrivateKey> server = new TestCertificateGenerator().subject("cn=testserver").generateWithKey();
+
+        //reset and test always behaviour
+        decorator = new WssDecoratorImpl();
+        decReq = new DecorationRequirements();
+        msg = new Message(XmlUtil.parse(soapMsgWithWsaHeaders));
+
+        decReq.setRecipientCertificate(server.left);
+        decReq.setWsaHeaderSignStrategy(DecorationRequirements.WsaHeaderSigningStrategy.ALWAYS_SIGN_WSA_HEADERS);
+        result = decorator.decorateMessage( msg, decReq);
+
+        signatures = result.getSignatures();
+        Assert.assertEquals("Headers should have been signed", 1, signatures.size());
+
+        //reset and test never behaviour
+        decorator = new WssDecoratorImpl();
+        decReq = new DecorationRequirements();
+        msg = new Message(XmlUtil.parse(soapMsgWithWsaHeaders));
+
+        decReq.setWsaHeaderSignStrategy(DecorationRequirements.WsaHeaderSigningStrategy.NEVER_SIGN_WSA_HEADERS);
+
+        result = decorator.decorateMessage( msg, decReq);
+        signatures = result.getSignatures();
+
+        Assert.assertEquals("Nothing should have been signed", 0, signatures.size());
+
+        //reset and test default behaviour - nothing is being signed
+        decorator = new WssDecoratorImpl();
+        decReq = new DecorationRequirements();
+        msg = new Message(XmlUtil.parse(soapMsgWithWsaHeaders));
+
+        //just for illustration, this is the default
+        decReq.setWsaHeaderSignStrategy(DecorationRequirements.WsaHeaderSigningStrategy.DEFAULT_WSA_HEADER_SIGNING_BEHAVIOUR);
+
+        result = decorator.decorateMessage( msg, decReq);
+        signatures = result.getSignatures();
+
+//        System.out.println(XmlUtil.nodeToFormattedString(msg.getXmlKnob().getDocumentReadOnly()));
+        Assert.assertEquals("Nothing should have been signed", 0, signatures.size());
+
+        //test and test default behaviour - something is being signed, so WSA headers should be signed.
+        decorator = new WssDecoratorImpl();
+        decReq = new DecorationRequirements();
+        msg = new Message(XmlUtil.parse(soapMsgWithWsaHeaders));
+
+        decReq.setRecipientCertificate(server.left);
+        //just for illustration, this is the default
+        decReq.setWsaHeaderSignStrategy(DecorationRequirements.WsaHeaderSigningStrategy.DEFAULT_WSA_HEADER_SIGNING_BEHAVIOUR);
+        decReq.setSignTimestamp(true);
+        result = decorator.decorateMessage( msg, decReq);
+        System.out.println(XmlUtil.nodeToFormattedString(msg.getXmlKnob().getDocumentReadOnly()));
+
+        signatures = result.getSignatures();
+        Assert.assertEquals("Headers should have been signed", 1, signatures.size());
+
+        //confirm elements are part of signature
+        NodeList foundNodes = msg.getXmlKnob().getDocumentReadOnly().getDocumentElement().getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "Reference");
+        boolean foundMessage = false;
+        boolean foundAction = false;
+
+        for(int i = 0; i < foundNodes.getLength(); i++){
+            Node node = foundNodes.item(i);
+            NamedNodeMap nodeMap = node.getAttributes();
+            Node uriAttributeNode = nodeMap.getNamedItem("URI");
+            if(uriAttributeNode != null){
+                String uri = uriAttributeNode.getNodeValue();
+                if(uri.contains("MessageID-")){
+                    foundMessage = true;
+                } else if(uri.contains("Action-")){
+                    foundAction = true;
+                }
+            }
+        }
+
+        Assert.assertTrue("Action should have been signed", foundAction);
+        Assert.assertTrue("Message should have been signed", foundMessage);
+    }
+
+    private String soapMsgWithWsaHeaders = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
+            "    xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+            "    <s:Header>\n" +
+            "        <wsa:MessageID\n" +
+            "            wsu:Id=\"MessageID-1-c964f617e4a522c1be2318c705c8226b\"\n" +
+            "            xmlns:wsa=\"http://www.w3.org/2005/08/addressing\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\">MessageId-7ed352fd-3834-eb5d-a295-69a191c964aa</wsa:MessageID>\n" +
+            "        <wsa:Action wsu:Id=\"Action-0-03bf5da2ac59e7fd95baab5734a040a7\"\n" +
+            "            xmlns:wsa=\"http://www.w3.org/2005/08/addressing\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\">http://ws.fraudlabs.com/MailBoxValidator</wsa:Action>\n" +
+            "    </s:Header>\n" +
+            "    <s:Body>\n" +
+            "        <tns:MailBoxValidator xmlns:tns=\"http://ws.fraudlabs.com/\">\n" +
+            "            <tns:EMAIL>string</tns:EMAIL>\n" +
+            "            <tns:LICENSE>string</tns:LICENSE>\n" +
+            "        </tns:MailBoxValidator>\n" +
+            "    </s:Body>\n" +
+            "</s:Envelope>";
 }

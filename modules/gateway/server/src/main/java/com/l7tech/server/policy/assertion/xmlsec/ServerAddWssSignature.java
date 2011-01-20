@@ -61,23 +61,12 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
                                               final Message message,
                                               final String messageDescription,
                                               final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
-        return addWssSignatureSupport.applySignatureDecorationRequirements(context, message, messageDescription, authContext, hasDecorationRequirements(), new AddWssSignatureSupport.SignedElementSelector() {
+        return addWssSignatureSupport.applySignatureDecorationRequirements(context, message, messageDescription, authContext, new AddWssSignatureSupport.SignedElementSelector() {
             @Override
             public int selectElementsToSign(PolicyEnforcementContext context, AuthenticationContext authContext, Document soapmsg, DecorationRequirements wssReq, Message targetMessage) throws PolicyAssertionException {
                 return addDecorationRequirements(context, authContext, soapmsg, wssReq, targetMessage);
             }
         });
-    }
-
-    /**
-     * If this method returns true, then any decoration requirements added via addDecorationRequirements will be
-     * added to the target message. Override if a subclass wants to control when it needs to decorate based on it's
-     * configuration.
-     *
-     * @return true when decoration requirements should be incorporated with the target message.
-     */
-    public boolean hasDecorationRequirements(){
-        return true;
     }
 
     /** @see AddWssSignatureSupport.SignedElementSelector#selectElementsToSign */

@@ -29,6 +29,7 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
     private JCheckBox signSecurityTokensCheckBox;
     private JCheckBox addTimestampCheckBox;
     private JTabbedPane tabbedPane1;
+    private JCheckBox signWSAddressingHeadersCheckBox;
 
     private static final String UNCHANGED = "<Unchanged>";
 
@@ -52,6 +53,7 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
         addTimestampCheckBox.setSelected(assertion.isAddTimestamp());
         signTimestampCheckBox.setSelected(assertion.isSignTimestamp());
         signSecurityTokensCheckBox.setSelected(assertion.isProtectTokens());
+        signWSAddressingHeadersCheckBox.setSelected(assertion.isSignWsAddressingHeaders());
     }
 
     @Override
@@ -68,6 +70,7 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
         assertion.setAddTimestamp(addTimestampCheckBox.isSelected());
         assertion.setSignTimestamp(signTimestampCheckBox.isSelected());
         assertion.setProtectTokens(signSecurityTokensCheckBox.isSelected());
+        assertion.setSignWsAddressingHeaders(signWSAddressingHeadersCheckBox.isSelected());
         return assertion;
     }
 
