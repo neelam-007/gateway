@@ -531,7 +531,8 @@ public class PathValidator {
             }
         } else if (a instanceof AddWssSecurityToken) {
             // bugzilla 2753, 2421
-            if (((AddWssSecurityToken)a).isIncludePassword() && !seenUsernamePasswordCredentials(REQUEST_TARGET_NAME)) { // NOTE: this assertion always gets request creds
+            final AddWssSecurityToken awst = (AddWssSecurityToken) a;
+            if (awst.isIncludePassword() && awst.isUseLastGatheredCredentials() && !seenUsernamePasswordCredentials(REQUEST_TARGET_NAME)) { // NOTE: this assertion always gets request creds
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   bundle.getString("assertion.missingpasswordcollection"), null));
             }

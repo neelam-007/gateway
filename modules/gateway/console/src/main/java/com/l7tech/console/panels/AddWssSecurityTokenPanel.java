@@ -174,8 +174,9 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
     @Override
     protected void doUpdateModel() {
         SecurityTokenType type = (SecurityTokenType)tokenTypeCombo.getSelectedItem();
-        includePasswordCheckBox.setEnabled(type == SecurityTokenType.WSS_USERNAME);
-        assertion.setIncludePassword(includePasswordCheckBox.isSelected());
+        final boolean canIncludePass = type == SecurityTokenType.WSS_USERNAME;
+        includePasswordCheckBox.setEnabled(canIncludePass);
+        assertion.setIncludePassword(canIncludePass && includePasswordCheckBox.isSelected());
         assertion.setTokenType(type);
         assertion.setProtectTokens(signTokenCheckBox.isSelected());
 
