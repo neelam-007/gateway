@@ -95,7 +95,7 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
         final SecurityKnob securityKnob;
         try {
             final SoapKnob soapKnob = message.getSoapKnob();
-            soapAction = soapKnob.getSoapAction();
+            soapAction = SoapUtil.stripQuotes(soapKnob.getSoapAction());//ok if soap action is null
             securityKnob = message.getSecurityKnob();
             final Document writeDoc = message.getXmlKnob().getDocumentWritable();
             header = SoapUtil.getOrMakeHeader(writeDoc);
