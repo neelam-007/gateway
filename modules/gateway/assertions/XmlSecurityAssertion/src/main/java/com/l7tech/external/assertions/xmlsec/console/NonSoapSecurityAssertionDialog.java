@@ -4,6 +4,7 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
 import com.l7tech.external.assertions.xmlsec.HasVariablePrefix;
+import com.l7tech.external.assertions.xmlsec.NonSoapCheckVerifyResultsAssertion;
 import com.l7tech.external.assertions.xmlsec.NonSoapSecurityAssertionBase;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -25,6 +26,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     private JPanel controlsBelowXpath;
     private JPanel variablePrefixPanel;
     private TargetVariablePanel variablePrefixField;
+    private JTextField variablePrefixTextField;
     private JLabel variablePrefixLabel;
 
     private final XpathExpression defaultXpathExpression;
@@ -49,15 +51,32 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
         defaultXpathExpression = new XpathExpression(assertion.getDefaultXpathExpressionString(), assertion.getDefaultNamespaceMap());
 
 
-        variablePrefixField = new TargetVariablePanel();
+
         variablePrefixPanel.setLayout(new BorderLayout());
-        variablePrefixPanel.add(variablePrefixField, BorderLayout.CENTER);
-        variablePrefixField.addChangeListener(new ChangeListener(){
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                getOkButton().setEnabled(!variablePrefixField.isVisible() || variablePrefixField.isEntryValid());
-            }
-        });
+        if(assertion instanceof NonSoapCheckVerifyResultsAssertion)
+        {
+            variablePrefixTextField = new JTextField();
+            variablePrefixPanel.add(variablePrefixTextField, BorderLayout.CENTER);
+            variablePrefixTextField.addActionListener(new RunOnChangeListener(){
+                @Override
+                public void run() {
+                    getOkButton().setEnabled(!variablePrefixTextField.isVisible());
+                }
+            });
+        }
+        else
+        {
+            variablePrefixField = new TargetVariablePanel();
+            variablePrefixPanel.setLayout(new BorderLayout());
+            variablePrefixPanel.add(variablePrefixField, BorderLayout.CENTER);
+            variablePrefixField.addChangeListener(new ChangeListener(){
+                @Override
+                public void stateChanged(ChangeEvent e) {
+                    getOkButton().setEnabled(!variablePrefixField.isVisible() || variablePrefixField.isEntryValid());
+                }
+            });
+
+        }
 
         this.assertion = assertion;
     }
@@ -125,12 +144,17 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     @Override
     public void setData(AT assertion) {
         setXpathExpression(assertion.getXpathExpression());
-        if (assertion instanceof HasVariablePrefix) {
+        if (assertion instanceof NonSoapCheckVerifyResultsAssertion)
+        {
+            variablePrefixTextField.setText(((NonSoapCheckVerifyResultsAssertion) assertion).getVariablePrefix());
+        }
+        else if (assertion instanceof HasVariablePrefix) {
             HasVariablePrefix hvp = (HasVariablePrefix) assertion;
             String variablePrefix = hvp.getVariablePrefix();
             variablePrefixField.setVariable(variablePrefix == null ? "" : variablePrefix);
             variablePrefixField.setAssertion(assertion);
             variablePrefixField.setSuffixes(hvp.suffixes());
+            variablePrefixField.setAcceptEmpty(true);
             variablePrefixField.setVisible(true);
             variablePrefixLabel.setVisible(true);
         } else {
@@ -142,7 +166,12 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     @Override
     public AT getData(AT assertion) throws ValidationException {
         assertion.setXpathExpression(getXpathExpression());
-        if (assertion instanceof HasVariablePrefix) {
+        if (assertion instanceof NonSoapCheckVerifyResultsAssertion)
+        {
+            String variablePrefix = variablePrefixTextField.getText().trim();
+            ((NonSoapCheckVerifyResultsAssertion) assertion).setVariablePrefix(variablePrefix.length() < 1 ? null : variablePrefix);
+        }
+        else if (assertion instanceof HasVariablePrefix) {
             HasVariablePrefix hvp = (HasVariablePrefix) assertion;
             String variablePrefix = variablePrefixField.getVariable().trim();
             hvp.setVariablePrefix(variablePrefix.length() < 1 ? null : variablePrefix);
