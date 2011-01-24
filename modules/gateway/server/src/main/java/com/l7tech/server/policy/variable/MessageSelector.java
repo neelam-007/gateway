@@ -11,10 +11,8 @@ import com.l7tech.common.mime.PartInfo;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.X509SigningSecurityToken;
-import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -52,7 +50,6 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
 
     // NOTE: Variable names must be lower case
     private static final String WSS_PREFIX = "wss.";
-    private static final String WSS_PROCESSOR_RESULT_SCT_ID = "processor.result.sct.id";
     private static final String WSS_CERT_COUNT = WSS_PREFIX + "certificates.count";
     private static final String WSS_CERT_VALUES_PREFIX = WSS_PREFIX + "certificates.value.";
     private static final String WSS_SIGN_CERT_COUNT = WSS_PREFIX + "signingcertificates.count";
@@ -426,31 +423,6 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
             }
             else if (WSS_SIGN_CERT_COUNT.equals(lname)) {
                 return new Selection(getCertificateCount(context, true), null);
-            } else if (WSS_PROCESSOR_RESULT_SCT_ID.equals(lname)) {
-                ProcessorResult pr = context.getSecurityKnob().getProcessorResult();
-                if (pr == null) {
-                    if (strict) {
-                        String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
-                        throw new IllegalArgumentException(msg);
-                    }
-                    return null;
-                }
-
-                XmlSecurityToken[] tokens = pr.getXmlSecurityTokens();
-                for (XmlSecurityToken token : tokens) {
-                    if (token instanceof SecurityContextToken) {
-                        SecurityContextToken sct = (SecurityContextToken) token;
-                        if (sct.isPossessionProved())
-                            return new Selection(sct.getContextIdentifier(), null);
-                    }
-                }
-
-                if (strict) {
-                    String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
-                    throw new IllegalArgumentException(msg);
-                }
-
-                return null;
             } else { // cert value request
                 String prefix = getCertValPrefix(lname);
                 String rname = prefix == null ? null : lname.substring(prefix.length());
