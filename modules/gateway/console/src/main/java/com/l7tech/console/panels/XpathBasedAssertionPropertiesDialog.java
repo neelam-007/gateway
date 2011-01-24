@@ -753,6 +753,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         varPrefixField = new TargetVariablePanel();
         varPrefixFieldPanel.setLayout(new BorderLayout());
         varPrefixFieldPanel.add(varPrefixField, BorderLayout.CENTER);
+        varPrefixField.setAcceptEmpty(true);
         varPrefixField.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {

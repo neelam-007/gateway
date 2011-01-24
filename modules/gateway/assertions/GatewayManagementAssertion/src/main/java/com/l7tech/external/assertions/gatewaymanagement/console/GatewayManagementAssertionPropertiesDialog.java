@@ -58,6 +58,7 @@ public class GatewayManagementAssertionPropertiesDialog extends AssertionPropert
         variablePrefixTextField = new TargetVariablePanel();
         variablePrefixTextFieldPanel.setLayout(new BorderLayout());
         variablePrefixTextFieldPanel.add(variablePrefixTextField, BorderLayout.CENTER);
+        variablePrefixTextField.setAcceptEmpty(true);
         variablePrefixTextField.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
