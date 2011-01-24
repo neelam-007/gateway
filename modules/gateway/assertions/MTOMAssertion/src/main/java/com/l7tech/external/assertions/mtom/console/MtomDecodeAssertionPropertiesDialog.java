@@ -97,15 +97,16 @@ public class MtomDecodeAssertionPropertiesDialog extends MtomAssertionProperties
     private TargetVariablePanel messageTargetVariableNameTextField;
     private JCheckBox removePackagingCheckBox;
 
-    private void enableAndDisableControls() {
+    private void enableAndDisableControls() {                
+        messageTargetVariableNameTextField.setEnabled(
+                messageTargetComboBox.getSelectedItem()!=null &&
+                ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget()==TargetMessageType.OTHER );
+
         boolean validSource = messageSourceComboBox.getSelectedItem() != null;
         boolean validMessage = messageTargetComboBox.getSelectedItem()==null ||
                 ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget()!=TargetMessageType.OTHER ||
                 messageTargetVariableNameTextField.isEntryValid();
 
-        messageTargetVariableNameTextField.setEnabled(
-                messageTargetComboBox.getSelectedItem()!=null &&
-                ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget()==TargetMessageType.OTHER );
 
         getOkButton().setEnabled( validSource && validMessage && !isReadOnly() );
     }

@@ -161,15 +161,17 @@ public class MtomEncodeAssertionPropertiesDialog extends MtomAssertionProperties
     private JButton removeButton;
 
     private void enableAndDisableControls() {
+        
+        messageTargetVariableNameTextField.setEnabled(
+                messageTargetComboBox.getSelectedItem()!=null &&
+                ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget()==TargetMessageType.OTHER );
+
         boolean validSource = messageSourceComboBox.getSelectedItem() != null;
         boolean validThreshold = ValidationUtils.isValidInteger( optimizationThresholdTextField.getText(), false, 0, 9999 );
         boolean validMessage = messageTargetComboBox.getSelectedItem()==null ||
                 ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget()!=TargetMessageType.OTHER ||
                 messageTargetVariableNameTextField.isEntryValid();
 
-        messageTargetVariableNameTextField.setEnabled(
-                messageTargetComboBox.getSelectedItem()!=null &&
-                ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget()==TargetMessageType.OTHER );
 
         getOkButton().setEnabled( validSource && validThreshold && validMessage && !isReadOnly() );
 

@@ -932,8 +932,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
      * @return <code>true</code> if response messge destination is valid, <code>false</code> if invalid
      */
     private void validateResMsgDest() {
+        resMsgDestVariableTextField.setEnabled(resMsgDestVariableRadioButton.isSelected());          
         boolean ok =  resMsgDestDefaultRadioButton.isSelected() || resMsgDestVariableTextField.isEntryValid();
-        resMsgDestVariableTextField.setEnabled(resMsgDestVariableRadioButton.isSelected());
         okButton.setEnabled(ok);
         refreshDialog();
     }
