@@ -32,6 +32,7 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
     private JFormattedTextField maxLifetimeTextField;
     private JComboBox maxLifetimeUnitComboBox;
     private JCheckBox useSystemDefaultCheckBox;
+    private JCheckBox allowUsingSessionCheckBox;
 
     private TimeUnit oldTimeUnit;
 
@@ -145,6 +146,8 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
         useSystemDefaultCheckBox.setSelected(defaultSelected);
         maxLifetimeTextField.setEnabled(! defaultSelected);
         maxLifetimeUnitComboBox.setEnabled(! defaultSelected);
+
+        allowUsingSessionCheckBox.setSelected(assertion.isAllowInboundMsgUsingSession());
     }
 
     private void viewToModel(EstablishOutboundSecureConversation assertion) {
@@ -165,6 +168,8 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
             assertion.setTimeUnit(timeUnit);
             assertion.setMaxLifetime((long)(lifetime * timeUnit.getMultiplier()));
         }
+
+        assertion.setAllowInboundMsgUsingSession(allowUsingSessionCheckBox.isSelected());
     }
 
     private void enableOrDisableComponents() {

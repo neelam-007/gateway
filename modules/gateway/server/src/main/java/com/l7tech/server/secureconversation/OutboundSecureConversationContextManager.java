@@ -31,8 +31,9 @@ public class OutboundSecureConversationContextManager extends SecureConversation
 
     public static final String LOG_SECRET_VALUES = "com.l7tech.security.wstrust.debug.logSecretValues";
 
-    public OutboundSecureConversationContextManager( final Config config ) {
+    public OutboundSecureConversationContextManager( final Config config, final InboundSecureConversationContextManager inboundSessionManager ) {
         super(logger, config, false);
+        this.inboundSessionManager = inboundSessionManager;
     }
 
     /**
@@ -166,7 +167,8 @@ public class OutboundSecureConversationContextManager extends SecureConversation
                                                           final byte[] requestSharedSecret,
                                                           final byte[] requestClientEntropy,
                                                           final byte[] requestServerEntropy,
-                                                          final int keySizeBits ) throws SessionCreationException {
+                                                          final int keySizeBits,
+                                                          final boolean copyToInboundCache ) throws SessionCreationException {
         final byte[] sharedSecret;
         final byte[] clientEntropy;
         final byte[] serverEntropy;
@@ -234,6 +236,11 @@ public class OutboundSecureConversationContextManager extends SecureConversation
 
         saveSession(sessionKey, session);
 
+        if (copyToInboundCache) {
+            session.setCopiedIntoInboundCache(true);
+            inboundSessionManager.saveSession(sessionIdentifier, session);
+        }
+
         return session;
     }
 
@@ -244,6 +251,22 @@ public class OutboundSecureConversationContextManager extends SecureConversation
         if ( !sessionKey.isValid() ) {
             throw new SessionCreationException( "Unable to create session for user (not a persistent identity)" );
         }
+    }
+
+    @Override
+    public boolean cancelSession(OutboundSessionKey sessionKey) {
+        boolean cancelled = false;
+        final SecureConversationSession session = getSession(sessionKey);
+
+        if (session != null) {
+            cancelled = super.cancelSession(sessionKey);
+        }
+
+        if (cancelled && session.isCopiedIntoInboundCache()) {
+            cancelled = inboundSessionManager.cancelSession(session.getIdentifier());
+        }
+
+        return cancelled;
     }
 
     //- PRIVATE
@@ -279,4 +302,8 @@ public class OutboundSecureConversationContextManager extends SecureConversation
 
         return secret;
     }
+
+    // PRIVATE
+
+    private final InboundSecureConversationContextManager inboundSessionManager;
 }

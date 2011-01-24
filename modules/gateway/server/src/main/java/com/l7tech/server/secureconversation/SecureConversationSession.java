@@ -128,14 +128,23 @@ public class SecureConversationSession implements SecurityContext, DecorationReq
         return getSecConvNamespaceUsed();
     }
 
+    public boolean isCopiedIntoInboundCache() {
+        return copiedIntoInboundSessionCache;
+    }
+
+    public void setCopiedIntoInboundCache(boolean copiedIntoInboundCache) {
+        this.copiedIntoInboundSessionCache = copiedIntoInboundCache;
+    }
+
     private final String identifier;
     private final byte[] sharedSecret;
     private final byte[] clientEntropy;
     private final byte[] serverEntropy;
-    private int keySize;
     private final long expiration;
     private final long creation;
     private final User usedBy;
     private final LoginCredentials credentials;
     private final String secConvNamespaceUsed;
+
+    private boolean copiedIntoInboundSessionCache; // A flag indicates whether an outbound session is copied into the inbound session cache.
 }

@@ -38,8 +38,9 @@ import static org.junit.Assert.*;
  */
 public class ServerCancelSecurityContextTest {
 
-    private static final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ) );
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager( new MockConfig( new Properties() ) );
+    private static final MockConfig mockConfig = new MockConfig(new Properties());
+    private static final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager( mockConfig );
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig, inboundContextManager );
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
 
     static {

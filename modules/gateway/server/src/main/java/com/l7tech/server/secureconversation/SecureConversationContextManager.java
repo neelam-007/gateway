@@ -72,7 +72,7 @@ public abstract class SecureConversationContextManager<KT> {
      * @param sessionKey The key for the session to cancel
      * @return True if cancelled, false if the session was not found.
      */
-    public final boolean cancelSession( final KT sessionKey ) {
+    public boolean cancelSession( final KT sessionKey ) {
         final boolean cancelled;
 
         synchronized (sessions) {

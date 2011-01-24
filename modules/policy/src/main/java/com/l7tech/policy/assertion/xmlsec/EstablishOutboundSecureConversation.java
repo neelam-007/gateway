@@ -38,6 +38,7 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
     private TimeUnit timeUnit = TimeUnit.MINUTES;
     private long maxLifetime; // Unit: milliseconds.
     private boolean useSystemDefaultSessionDuration = true;
+    private boolean allowInboundMsgUsingSession; // A flag indicates whether inbound request messages are allowed to use this outbound session.
 
     public String getServiceUrl() {
         return serviceUrl;
@@ -125,6 +126,14 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
 
     public void setUseSystemDefaultSessionDuration(boolean useSystemDefaultSessionDuration) {
         this.useSystemDefaultSessionDuration = useSystemDefaultSessionDuration;
+    }
+
+    public boolean isAllowInboundMsgUsingSession() {
+        return allowInboundMsgUsingSession;
+    }
+
+    public void setAllowInboundMsgUsingSession(boolean allowInboundMsgUsingSession) {
+        this.allowInboundMsgUsingSession = allowInboundMsgUsingSession;
     }
 
     @Override

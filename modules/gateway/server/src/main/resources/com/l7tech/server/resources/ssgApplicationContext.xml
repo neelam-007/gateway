@@ -1883,6 +1883,7 @@
 
     <bean id="outboundSecureConversationContextManager" class="com.l7tech.server.secureconversation.OutboundSecureConversationContextManager">
         <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="inboundSecureConversationContextManager"/>
     </bean>
 
     <bean id="kerberosSessionContextManager" class="com.l7tech.server.security.kerberos.KerberosSessionContextManager"/>

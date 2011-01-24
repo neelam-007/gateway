@@ -202,7 +202,8 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
                 sharedSecret,
                 clientEntropy,
                 serverEntropy,
-                keySize
+                keySize,
+                assertion.isAllowInboundMsgUsingSession()
             );
         } catch (SessionCreationException e) {
             auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, e.getMessage());

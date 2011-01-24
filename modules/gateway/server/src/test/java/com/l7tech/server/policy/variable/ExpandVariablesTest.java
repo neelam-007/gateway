@@ -31,6 +31,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import com.l7tech.server.policy.assertion.ServerXpathAssertion;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.test.BugNumber;
@@ -67,7 +68,8 @@ public class ExpandVariablesTest {
     private static final Audit audit = new LogOnlyAuditor(logger);
     private static final String TINY_BODY = "<blah/>";
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(new MockConfig(new Properties()));
+    private static final MockConfig mockConfig = new MockConfig(new Properties());
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig, new InboundSecureConversationContextManager(mockConfig) );
 
     static {
         beanFactory.addBean( "outboundSecureConversationContextManager", outboundContextManager );
@@ -738,7 +740,8 @@ public class ExpandVariablesTest {
             generateNewSecret(64),
             null,
             null,
-            0
+            0,
+            false
         );
 
         // Set the variable, scLookup.session

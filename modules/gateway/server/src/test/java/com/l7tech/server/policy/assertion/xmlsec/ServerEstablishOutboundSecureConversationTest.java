@@ -14,6 +14,7 @@ import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
@@ -37,7 +38,8 @@ import static org.junit.Assert.assertNotNull;
  */
 public class ServerEstablishOutboundSecureConversationTest {
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager( new MockConfig( new Properties() ) );
+    private static final MockConfig mockConfig = new MockConfig(new Properties());
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig, new InboundSecureConversationContextManager(mockConfig) );
 
     static {
         beanFactory.addBean("outboundSecureConversationContextManager", outboundContextManager);
