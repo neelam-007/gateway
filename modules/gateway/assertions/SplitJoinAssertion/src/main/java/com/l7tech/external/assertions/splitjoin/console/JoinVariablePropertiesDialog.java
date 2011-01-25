@@ -67,7 +67,7 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
     }
 
     private void validateData() throws ValidationException {
-        String message = VariableMetadata.validateName(VariablePrefixUtil.fixVariableName(sourceVariableTextField.getText()));
+        String message = JoinAssertion.containsValidVariables(sourceVariableTextField.getText());
         String propertyName = "sourceVariable";
 
         if (message != null) {
