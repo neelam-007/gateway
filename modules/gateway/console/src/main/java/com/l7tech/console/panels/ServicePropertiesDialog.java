@@ -115,6 +115,7 @@ public class ServicePropertiesDialog extends JDialog {
     private JRadioButton soapVersionUnspecifiedButton;
     private JRadioButton soapVersion11Button;
     private JRadioButton soapVersion12Button;
+    private JButton checkForResolutionConflictsButton;
     private String ssgURL;
     private final boolean canUpdate;
     private final boolean canTrace;
@@ -307,6 +308,13 @@ public class ServicePropertiesDialog extends JDialog {
             }
         });
 
+        checkForResolutionConflictsButton.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed( final ActionEvent e ) {
+                checkResolution();
+            }
+        } );
+
         uriField.addKeyListener(new KeyListener() {
             @Override
             public void keyPressed(KeyEvent e) {}
@@ -415,10 +423,10 @@ public class ServicePropertiesDialog extends JDialog {
                         showErrorMessage("Cannot find", "Cannot determine if any proxied UDDI info was published to the service from the Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
                         return;
                     } catch (DeleteException e1) {
-                        showErrorMessage("Cannot delete", "Cannot remove exsiting UDDI information from Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
+                        showErrorMessage("Cannot delete", "Cannot remove existing UDDI information from Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
                         return;
                     } catch (UpdateException e1) {
-                        showErrorMessage("Cannot delete", "Cannot remove exsiting UDDI information from Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
+                        showErrorMessage("Cannot delete", "Cannot remove existing UDDI information from Gateway: " + ExceptionUtils.getMessage(e1), ExceptionUtils.getDebugException(e1), true);
                         return;
                     }
                 }
@@ -679,6 +687,73 @@ public class ServicePropertiesDialog extends JDialog {
 
     private void help() {
         Actions.invokeHelp(this);
+    }
+
+    private void checkResolution() {
+        final PublishedService service = new PublishedService(subject);
+        String newURI = null;
+        if (customURIRadio.isSelected()) {
+            newURI = uriField.getText();
+            // remove leading '/'s
+            if (newURI != null) {
+                newURI = newURI.trim();
+                while (newURI.startsWith("//")) {
+                    newURI = newURI.substring(1);
+                }
+                if (!newURI.startsWith("/")) newURI = "/" + newURI;
+            }
+        }
+        if (newURI != null && (newURI.length() < 1 || newURI.equals("/"))) newURI = null;
+        service.setRoutingUri(newURI);
+        service.setLaxResolution(laxResolutionCheckbox.isSelected());
+
+        if (newWSDLUrl != null) {
+            try {
+                service.setWsdlUrl(
+                        newWSDLUrl.toLowerCase().startsWith("http:") ||
+                        newWSDLUrl.toLowerCase().startsWith("https:") ||
+                        newWSDLUrl.toLowerCase().startsWith("file:")
+                                ? newWSDLUrl : null);
+            } catch (MalformedURLException e) {
+                logger.log( Level.WARNING, "Invalid WSDL URL:" + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            }
+        }
+
+        if (newWSDL != null) {
+            try {
+                subject.setWsdlXml( XmlUtil.nodeToString(newWSDL));
+            } catch (IOException e) {
+                logger.log( Level.WARNING, "Invalid WSDL:" + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            }
+        }
+
+        try {
+            final ServiceAdmin.ResolutionReport report = Registry.getDefault().getServiceManager().generateResolutionReport( service, getServiceDocuments() );
+            if ( report.isSuccess() ) {
+                DialogDisplayer.showMessageDialog( this, "No Conflicts", "The service resolves successfully.", null );
+            } else {
+                final String message = report.toString();
+                final FontMetrics fontMetrics = getFontMetrics(getFont());
+                final int width = Utilities.computeStringWidth(fontMetrics, message);
+                final int height = Utilities.computeStringHeight(fontMetrics, message);
+                final Object object;
+                if( width > 600 || height > 100 ){
+                    object = Utilities.getTextDisplayComponent( message, 600, 100, -1, -1 );
+                } else {
+                    object = message;
+                }
+                final JOptionPane pane = new JOptionPane(object, JOptionPane.WARNING_MESSAGE);
+                final JDialog dialog = pane.createDialog(this,  "Service Resolution Conflicts");
+                dialog.setMinimumSize( dialog.getContentPane().getMinimumSize() );
+                dialog.setPreferredSize( new Dimension( 720, 200 ) );
+                dialog.setResizable( true );
+                dialog.pack();
+                Utilities.centerOnParentWindow( dialog );
+                DialogDisplayer.display( dialog );
+            }
+        } catch ( FindException e ) {
+            showErrorMessage( "Error Checking for Resolution Conflicts", ExceptionUtils.getMessage( e ), e, true);
+        }
     }
 
     private void cancel() {

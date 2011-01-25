@@ -557,33 +557,39 @@
         <constructor-arg ref="licenseManager"/>
     </bean>
 
+    <bean id="resolutionConfigurationManager" class="com.l7tech.server.transport.ResolutionConfigurationManagerImpl" parent="hibernateBean"/>
+
+    <bean id="serviceResolutionManager" class="com.l7tech.server.service.resolution.ServiceResolutionManager">
+        <constructor-arg index="0" ref="resolutionConfigurationManager"/>
+        <constructor-arg index="1" value="Default"/>
+        <constructor-arg index="2">
+            <list>
+                <bean class="com.l7tech.server.service.resolution.RequirePathResolver"><constructor-arg ref="auditorFactory"/></bean> <!-- This must be first -->
+                <bean class="com.l7tech.server.service.resolution.ServiceOidResolver"><constructor-arg ref="auditorFactory"/></bean>
+                <bean class="com.l7tech.server.service.resolution.UriResolver"><constructor-arg ref="auditorFactory"/></bean>
+                <bean class="com.l7tech.server.service.resolution.CaseInsensitiveUriResolver"><constructor-arg ref="auditorFactory"/></bean>
+                <bean class="com.l7tech.server.service.resolution.SoapActionResolver"><constructor-arg ref="auditorFactory"/></bean>
+                <bean class="com.l7tech.server.service.resolution.UrnResolver"><constructor-arg ref="auditorFactory"/></bean>
+            </list>
+        </constructor-arg>
+        <constructor-arg index="3">
+            <list>
+                <bean class="com.l7tech.server.service.resolution.SoapVersionResolver"><constructor-arg ref="auditorFactory"/></bean>
+                <bean class="com.l7tech.server.service.resolution.SoapOperationResolver">
+                    <constructor-arg ref="auditorFactory"/>
+                    <constructor-arg ref="serviceDocumentManager"/>
+                </bean>
+            </list>
+        </constructor-arg>
+    </bean>
+
     <!-- service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache" depends-on="wsdlStrategyServiceDocumentsInitializer">
         <constructor-arg index="0" ref="policyCache"/>
         <constructor-arg index="1" ref="transactionManager"/>
         <constructor-arg index="2" ref="serviceManager"/>
         <constructor-arg index="3" ref="serviceUsageManager"/>
-        <constructor-arg index="4">
-            <bean class="com.l7tech.server.service.resolution.ServiceResolutionManager">
-                <constructor-arg index="0">
-                    <list>
-                        <bean class="com.l7tech.server.service.resolution.ServiceOidResolver"><constructor-arg ref="auditorFactory"/></bean>
-                        <bean class="com.l7tech.server.service.resolution.UriResolver"><constructor-arg ref="auditorFactory"/></bean>
-                        <bean class="com.l7tech.server.service.resolution.SoapActionResolver"><constructor-arg ref="auditorFactory"/></bean>
-                        <bean class="com.l7tech.server.service.resolution.UrnResolver"><constructor-arg ref="auditorFactory"/></bean>
-                    </list>
-                </constructor-arg>
-                <constructor-arg index="1">
-                    <list>
-                        <bean class="com.l7tech.server.service.resolution.SoapOperationResolver">
-                            <constructor-arg ref="auditorFactory"/>
-                            <constructor-arg ref="serviceDocumentManager"/>
-                        </bean>
-                        <bean class="com.l7tech.server.service.resolution.SoapVersionResolver"><constructor-arg ref="auditorFactory"/></bean>
-                    </list>
-                </constructor-arg>
-            </bean>
-        </constructor-arg>
+        <constructor-arg index="4" ref="serviceResolutionManager"/>
         <constructor-arg index="5" ref="clusterInfoManager"/>
         <constructor-arg index="6" >
             <bean class="com.l7tech.server.util.ManagedTimer">
@@ -833,7 +839,6 @@
 
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
-        <constructor-arg ref="resolutionManager"/>
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="serviceAliasManager"/>
     </bean>
@@ -842,9 +847,13 @@
     <bean id="serviceAliasManager" class="com.l7tech.server.service.ServiceAliasManagerImpl" parent="hibernateBean" />
 
     <!-- server side resolution manager -->
-    <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ReolutionManagerImpl" depends-on="wsdlStrategyServiceDocumentsInitializer">
-        <constructor-arg index="0" ref="auditorFactory"/>
-        <property name="sessionFactory" ref="sessionFactory"/>
+    <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ReolutionManagerImpl">
+        <constructor-arg>
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="serviceCache"/>
+                <constructor-arg value="com.l7tech.server.service.ServiceCacheResolver"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <!-- server side trusted cert manager -->
@@ -1291,6 +1300,7 @@
                 <ref bean="serviceManager" />
                 <ref bean="securePasswordManager" />
                 <ref bean="httpConfigurationManager" />
+                <ref bean="resolutionConfigurationManager" />
             </list>
         </property>
         <property name="timer">

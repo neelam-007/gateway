@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
@@ -26,14 +23,12 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Attempts to resolve services using the QNames of the payload elements.
  * @author alex
  */
 public class SoapOperationResolver extends NameValueServiceResolver<List<QName>> {
-    private static final Logger logger = Logger.getLogger(SoapOperationResolver.class.getName());
     private static final List<List<QName>> EMPTY = Collections.emptyList();
     private final ServiceDocumentManager serviceDocumentManager;
 
@@ -44,7 +39,7 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
     }
 
     @Override
-    protected List<List<QName>> doGetTargetValues( final PublishedService service ) throws ServiceResolutionException {
+    protected List<List<QName>> buildTargetValues( final PublishedService service ) throws ServiceResolutionException {
         try {
             if (!service.isSoap()) {
                 auditor.logAndAudit(MessageProcessingMessages.SR_SOAPOPERATION_NOT_SOAP);
@@ -170,10 +165,4 @@ public class SoapOperationResolver extends NameValueServiceResolver<List<QName>>
     public boolean usesMessageContent() {
         return true;
     }
-
-    @Override
-    public Set<List<QName>> getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException {
-        throw new UnsupportedOperationException();
-    }
-
 }

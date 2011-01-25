@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.service;
 
 import com.l7tech.objectmodel.FindException;
@@ -65,7 +62,7 @@ import java.util.logging.Logger;
  */
 public class ServiceCache
         extends ApplicationObjectSupport
-        implements InitializingBean, DisposableBean, ApplicationListener
+        implements InitializingBean, DisposableBean, ApplicationListener, ServiceCacheResolver
 {
     private static final Logger logger = Logger.getLogger(ServiceCache.class.getName());
 
@@ -385,6 +382,7 @@ public class ServiceCache
      * @return the cached version of the service that this request resolve to. null if no match
      * @throws ServiceResolutionException on resolution error
      */
+    @Override
     public PublishedService resolve(Message req, ResolutionListener rl) throws ServiceResolutionException {
         rwlock.readLock().lock();
         try {
@@ -396,6 +394,45 @@ public class ServiceCache
                     auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED_CATCHALL, result.getName(), result.getId());
             }
             return result;
+        } finally {
+            rwlock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Resolve the given resolution parameters to the matching service.
+     *
+     * @param path The service path (ignored if null)
+     * @param soapAction The SOAP action (ignored if null)
+     * @param namespace The namespace (ignored if null)
+     * @throws ServiceResolutionException If an error occurs
+     * @returns The services that match the given resolution parameters
+     */
+    public Collection<PublishedService> resolve( final String path,
+                                                 final String soapAction,
+                                                 final String namespace ) throws ServiceResolutionException {
+        rwlock.readLock().lock();
+        try {
+            Collection<PublishedService> serviceSet = Collections.unmodifiableCollection(services.values());
+            return serviceResolutionManager.resolve( path, soapAction, namespace, serviceSet );
+        } finally {
+            rwlock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Check that the given published service resolves without conflicts.
+     *
+     * @param service The service to check
+     * @throws NonUniqueServiceResolutionException If the service is not resolvable
+     * @throws ServiceResolutionException If an error occurs
+     */
+    @Override
+    public void checkResolution( final PublishedService service ) throws ServiceResolutionException {
+        rwlock.readLock().lock();
+        try {
+            Collection<PublishedService> serviceSet = Collections.unmodifiableCollection(services.values());
+            serviceResolutionManager.checkResolution( service, serviceSet );
         } finally {
             rwlock.readLock().unlock();
         }
@@ -688,6 +725,20 @@ public class ServiceCache
     }
 
     /**
+     * Get all cached services.
+     *
+     * @return The services.
+     */
+    public Collection<PublishedService> getCachedServices() {
+        rwlock.readLock().lock();
+        try {
+            return  Collections.unmodifiableCollection(services.values());
+        } finally {
+            rwlock.readLock().unlock();
+        }
+    }
+
+    /**
      * gets a service from the cache
      */
     public PublishedService getCachedService(long oid) {
@@ -735,43 +786,6 @@ public class ServiceCache
         }
         return out;
     }
-
-    public Collection<PublishedService> getCachedServicesByURI(String uri) {
-        Collection<PublishedService> foundServices = null;
-        // if uri param provided, narrow down list using it
-        if (uri != null) {
-            try {
-                foundServices = serviceManager.findAll();
-            } catch (FindException fe) {
-                logger.severe("Failed to determine the list of available services. " + ExceptionUtils.getMessage(fe));
-                return null;
-            }
-
-            
-            Set<PublishedService> serviceSubset = new HashSet<PublishedService>();
-            serviceSubset.addAll(foundServices);
-            Map<UriResolver.URIResolutionParam, List<Long>> uriToServiceMap = new HashMap<UriResolver.URIResolutionParam, List<Long>>();
-            for (PublishedService s : serviceSubset) {
-                String psUri = s.getRoutingUri();
-                if (psUri == null) psUri = "";
-                UriResolver.URIResolutionParam up = new UriResolver.URIResolutionParam(psUri);
-                List<Long> listedServicesForThatURI = uriToServiceMap.get(up);
-                if (listedServicesForThatURI == null) {
-                    listedServicesForThatURI = new ArrayList<Long>();
-                    uriToServiceMap.put(up, listedServicesForThatURI);
-                }
-                listedServicesForThatURI.add(s.getOid());
-            }
-            Result res = UriResolver.doResolve(uri, serviceSubset, uriToServiceMap, null);
-            if (res.getMatches() == null || res.getMatches().size() == 0) {
-                logger.warning("URI param '" + uri + "' did not resolve any service.");
-            }
-
-            foundServices = res.getMatches();
-        }
-        return foundServices;
-    }
-
 
     /**
      * get all current per-node service stats.

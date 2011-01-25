@@ -1,5 +1,6 @@
 package com.l7tech.server.transport;
 
+import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
@@ -35,18 +36,24 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class TransportAdminImpl implements TransportAdmin {
     private final SsgConnectorManager connectorManager;
+    private final ResolutionConfigurationManager resolutionConfigurationManager;
     private final DefaultKey defaultKeystore;
     private ConcurrentMap<String, SSLContext> testSslContextByProviderName = new ConcurrentHashMap<String, SSLContext>();
 
-    public TransportAdminImpl(SsgConnectorManager connectorManager, DefaultKey defaultKeystore) {
+    public TransportAdminImpl( final SsgConnectorManager connectorManager,
+                               final ResolutionConfigurationManager resolutionConfigurationManager,
+                               final DefaultKey defaultKeystore ) {
         this.connectorManager = connectorManager;
+        this.resolutionConfigurationManager = resolutionConfigurationManager;
         this.defaultKeystore = defaultKeystore;
     }
 
+    @Override
     public Collection<SsgConnector> findAllSsgConnectors() throws FindException {
         return connectorManager.findAll();
     }
 
+    @Override
     public SsgConnector findSsgConnectorByPrimaryKey(long oid) throws FindException {
         return connectorManager.findByPrimaryKey(oid);
     }
@@ -55,13 +62,14 @@ public class TransportAdminImpl implements TransportAdmin {
      * Check if the specified connector represents the current admin connection.
      *
      * @param oid  the oid of the connector to examine.
-     * @return true if this apears to match the current thread's active admin connection
+     * @return true if this appears to match the current thread's active admin connection
      */
     private boolean isCurrentAdminConnection(long oid) {
         long currentConnection = ConnectionIdValve.getConnectorOid();
         return oid == currentConnection;
     }
 
+    @Override
     public long saveSsgConnector(SsgConnector connector) throws SaveException, UpdateException, CurrentAdminConnectionException {
         if (isCurrentAdminConnection(connector.getOid()))
             throw new CurrentAdminConnectionException("Unable to modify connector for current admin connection");
@@ -73,6 +81,7 @@ public class TransportAdminImpl implements TransportAdmin {
         }
     }
 
+    @Override
     public void deleteSsgConnector(long oid) throws DeleteException, FindException, CurrentAdminConnectionException {
         if (isCurrentAdminConnection(oid))
             throw new CurrentAdminConnectionException("Unable to delete connector for current admin connection");
@@ -98,6 +107,7 @@ public class TransportAdminImpl implements TransportAdmin {
         }
     }
 
+    @Override
     public String[] getAllCipherSuiteNames() {
         return ArrayUtils.union(
                 getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10)).getSupportedSSLParameters().getCipherSuites(),
@@ -105,6 +115,7 @@ public class TransportAdminImpl implements TransportAdmin {
         );
     }
 
+    @Override
     public String[] getDefaultCipherSuiteNames() {
         // intersection would result in defaults with better security, but union is more likely to result in defaults
         // that can actually complete a handshake, given the widest possible variety of enabled TLS versions
@@ -114,6 +125,7 @@ public class TransportAdminImpl implements TransportAdmin {
         );
     }
 
+    @Override
     public InetAddress[] getAvailableBindAddresses() {
         try {
             List<InetAddress> ret = new ArrayList<InetAddress>();
@@ -144,5 +156,26 @@ public class TransportAdminImpl implements TransportAdmin {
     @Override
     public boolean isUseIpv6() {
         return InetAddressUtil.isUseIpv6();
+    }
+
+    @Override
+    public ResolutionConfiguration getResolutionConfigurationByName( final String name ) throws FindException {
+        return resolutionConfigurationManager.findByUniqueName( name );
+    }
+
+    @Override
+    public long saveResolutionConfiguration( final ResolutionConfiguration configuration ) throws SaveException {
+        final long oid;
+        if ( configuration.getOid() == ResolutionConfiguration.DEFAULT_OID ) {
+            oid = resolutionConfigurationManager.save( configuration );
+        } else {
+            oid = configuration.getOid();
+            try {
+                resolutionConfigurationManager.update( configuration );
+            } catch ( UpdateException e ) {
+                throw new SaveException( ExceptionUtils.getMessage(e), e );
+            }
+        }
+        return oid;
     }
 }

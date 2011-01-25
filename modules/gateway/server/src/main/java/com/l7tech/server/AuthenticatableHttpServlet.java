@@ -25,7 +25,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.PolicyManager;
-import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.ServletUtils;
@@ -75,7 +75,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
     protected ServerConfig serverConfig;
     protected PolicyManager policyManager;
-    protected ServiceManager serviceManager;
+    protected ServiceCache serviceCache;
     protected ClientCertManager clientCertManager;
     protected WspReader wspReader;
     protected IdentityProviderFactory identityProviderFactory;
@@ -94,7 +94,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         clientCertManager = getBean("clientCertManager", ClientCertManager.class);
         identityProviderFactory = getBean("identityProviderFactory", IdentityProviderFactory.class);
         licenseManager = getBean("licenseManager",LicenseManager.class);
-        serviceManager = getBean("serviceManager", ServiceManager.class);
+        serviceCache = getBean("serviceCache", ServiceCache.class);
         policyManager = getBean("policyManager", PolicyManager.class);
         wspReader = getBean("wspReader", WspReader.class);
     }
@@ -594,11 +594,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     }
 
     protected PublishedService resolveService(long oid) {
-        try {
-            return serviceManager.findByPrimaryKey(oid);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Cannot retrieve service " + oid, e);
-            return null;
-        }
+         return serviceCache.getCachedService(oid);
     }
 }

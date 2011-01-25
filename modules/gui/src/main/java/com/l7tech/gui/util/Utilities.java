@@ -1302,6 +1302,30 @@ public class Utilities {
     }
 
     /**
+     * Calculates the height of the given text (which may be on multiple lines)
+     *
+     * @param fontMetrics The font metrics to use.
+     * @param text The text
+     * @return The height of the text
+     */
+    public static int computeStringHeight( final FontMetrics fontMetrics, final String text ) {
+        int height;
+
+        if ( text.indexOf( '\n' ) >= 0 ) {
+            int index = -1;
+            int count = 1;
+            while ( index<text.length() && (index=text.indexOf( '\n', index+1 )) >= 0 ) {
+                count++;
+            }
+            height = count * fontMetrics.getHeight();
+        } else {
+            height = fontMetrics.getHeight();
+        }
+
+        return height;
+    }
+
+    /**
      * Get a scrolling component to use for text display.
      *
      * <p>This uses a minimum width of 600 and a minimum height of 100.</p>

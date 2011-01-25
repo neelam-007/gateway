@@ -156,6 +156,7 @@
                 <value>com.l7tech.gateway.common.log.SinkConfiguration</value>
                 <value>com.l7tech.gateway.common.resources.HttpConfiguration</value>
                 <value>com.l7tech.gateway.common.resources.ResourceEntry</value>
+                <value>com.l7tech.gateway.common.transport.ResolutionConfiguration</value>
                 <value>com.l7tech.gateway.common.security.RevocationCheckPolicy</value>
                 <value>com.l7tech.security.cert.TrustedCert</value>
                 <value>com.l7tech.identity.cert.CertEntryRow</value>

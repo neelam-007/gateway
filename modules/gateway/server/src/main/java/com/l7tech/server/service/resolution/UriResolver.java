@@ -1,11 +1,9 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
@@ -15,10 +13,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -47,8 +45,22 @@ import java.util.regex.Pattern;
  * @author franco
  */
 public class UriResolver extends ServiceResolver<String> {
+
     public UriResolver( final Auditor.AuditorFactory auditorFactory ) {
+        this( auditorFactory, true );
+    }
+
+    protected UriResolver( final Auditor.AuditorFactory auditorFactory,
+                           final boolean caseSensitive ) {
         super( auditorFactory );
+        this.caseSensitive = caseSensitive;
+    }
+
+    @Override
+    public void configure( final ResolutionConfiguration resolutionConfiguration ) {
+        super.configure( resolutionConfiguration );
+        enableCaseSensitivity.set( resolutionConfiguration.isPathCaseSensitive() );
+        enableOriginalUrlHeader.set( resolutionConfiguration.isUseL7OriginalUrl() );
     }
 
     @Override
@@ -56,8 +68,8 @@ public class UriResolver extends ServiceResolver<String> {
         return false;
     }
 
-    public static Result doResolve(String requestValue, Collection<PublishedService> serviceSubset,
-                                 Map<URIResolutionParam, List<Long>> uriToServiceMap, Auditor auditor) {
+    private Result doResolve( final String requestValue,
+                              final Collection<PublishedService> serviceSubset ) {
         List<Long> res = uriToServiceMap.get(new URIResolutionParam(requestValue));
         if (res != null && res.size() > 0) {
             if (auditor != null) {
@@ -111,21 +123,50 @@ public class UriResolver extends ServiceResolver<String> {
     }
 
     @Override
-    public Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
+    public void populateResolutionParameters( final Message request, final Map<String, Object> parameters ) throws ServiceResolutionException {
+        if ( !appliesToMessage(request) ) {
+            parameters.put( PROP_APPLICABLE, false );
+            return; // don't process request value
+        }
+
+        final String value = getRequestValue( request );
+        parameters.put( PROP_VALUE, value );
+    }
+
+    @Override
+    public Collection<Map<String, Object>> generateResolutionParameters( final PublishedService service,
+                                                                         final Collection<Map<String, Object>> parameterCollection ) throws ServiceResolutionException {
+        final List<String> values = buildTargetValues( service );
+        final List<Map<String,Object>> resultParameterList = new ArrayList<Map<String,Object>>( parameterCollection.size() * values.size() );
+
+        for ( final String value : values ) {
+            for ( final Map<String, Object> parameters : parameterCollection ) {
+                final Map<String, Object> resultParameters = new HashMap<String, Object>( parameters );
+                resultParameters.put( PROP_VALUE, value );
+                resultParameterList.add( resultParameters );
+            }
+        }
+
+        return resultParameterList;
+    }
+
+    @Override
+    public Result resolve( Map<String,Object> parameters, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
+        if ( caseSensitive != enableCaseSensitivity.get() ) return Result.NOT_APPLICABLE;
+        final Boolean applicable = (Boolean) parameters.get( PROP_APPLICABLE );
+        if ( applicable!=null && !applicable ) return Result.NOT_APPLICABLE;
+        final String requestValue = transformValue((String) parameters.get( PROP_VALUE ));
+
         rwlock.readLock().lock();
         try {
-            // since this only applies to http messages, we dont want to narrow down subset if msg is not http
-            if (!appliesToMessage(request))
-                return Result.NOT_APPLICABLE;
-            String requestValue = getRequestValue(request);
             // first look at repetitive failures
             if (knownToFail.contains(requestValue)) { // why is this suspicious?
                 auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_CACHEDFAIL, requestValue);
                 return Result.NO_MATCH;
             }
-            Result res = doResolve(requestValue, serviceSubset, uriToServiceMap, auditor);
+            Result res = doResolve(requestValue, serviceSubset);
             if (res == Result.NO_MATCH) {
-                // todo, this could be exploted as an attack. we should either not try to do this or
+                // todo, this could be exploited as an attack. we should either not try to do this or
                 // we should have a worker thread making sure this does not grow too big
                 knownToFail.add(requestValue);
             }
@@ -133,6 +174,16 @@ public class UriResolver extends ServiceResolver<String> {
         } finally {
             rwlock.readLock().unlock();
         }
+    }
+
+    private String transformValue( final String value ) {
+        String resultValue = value;
+
+        if ( !caseSensitive && value != null ) {
+            resultValue = value.toLowerCase();
+        }
+
+        return resultValue;
     }
 
     private static boolean isInSubset(Collection<PublishedService> serviceSubset, List<Long> criteria) {
@@ -155,17 +206,6 @@ public class UriResolver extends ServiceResolver<String> {
     }
 
     @Override
-    public void serviceCreated(PublishedService service) {
-        rwlock.writeLock().lock();
-        try {
-            createnolock(service);
-            knownToFail.clear();
-        } finally {
-            rwlock.writeLock().unlock();
-        }
-    }
-
-    @Override
     public void serviceDeleted(PublishedService service) {
         rwlock.writeLock().lock();
         try {
@@ -176,34 +216,39 @@ public class UriResolver extends ServiceResolver<String> {
     }
 
     @Override
-    public void serviceUpdated(PublishedService service) {
+    public void serviceUpdated(PublishedService service) throws ServiceResolutionException {
         rwlock.writeLock().lock();
         try {
-            deletenolock(service);
-            createnolock(service);
-            knownToFail.clear();
+            serviceDeleted(service);
+            serviceCreated(service);
         } finally {
             rwlock.writeLock().unlock();
         }
     }
 
     @Override
-    public Set<String> getDistinctParameters(PublishedService candidateService) {
-        throw new UnsupportedOperationException();
-    }
-
-    public String doGetTargetValue(PublishedService service) {
+    protected List<String> buildTargetValues( final PublishedService service ) {
         String uri = service.getRoutingUri();
         if (uri == null) uri = "";
-        return uri;
+        return Collections.singletonList( transformValue(uri) );
     }
 
-    private URIResolutionParam getTargetValue(PublishedService service) {
-        return new URIResolutionParam(doGetTargetValue(service));
+    @Override
+    protected void updateServiceValues( final PublishedService service,
+                                        final List<String> targetValues ) {
+        rwlock.writeLock().lock();
+        try {
+            for ( final String targetValue : targetValues ) {
+                createnolock(service, targetValue);
+            }
+            knownToFail.clear();
+        } finally {
+            rwlock.writeLock().unlock();
+        }
     }
 
-    private void createnolock(PublishedService service) {
-        URIResolutionParam uriparam = getTargetValue(service);
+    private void createnolock( final PublishedService service, final String targetValue ) {
+        final URIResolutionParam uriparam = new URIResolutionParam(targetValue);
         List<Long> listedServicesForThatURI = uriToServiceMap.get(uriparam);
         if (listedServicesForThatURI == null) {
             listedServicesForThatURI = new ArrayList<Long>();
@@ -256,14 +301,16 @@ public class UriResolver extends ServiceResolver<String> {
         HttpRequestKnob httpReqKnob = request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null) {
             FtpRequestKnob ftpReqKnob = request.getKnob(FtpRequestKnob.class);
-            if (ftpReqKnob == null) return null;
+            if (ftpReqKnob == null) throw new ServiceResolutionException("Unable to access HTTP or FTP path.");
             String uri = ftpReqKnob.getRequestUri();
             if (uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
             auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_REAL_URI, uri);
             return uri;
         }
-        String originalUrl;
-        originalUrl = httpReqKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
+
+        final String originalUrl = enableOriginalUrlHeader.get() ?
+                httpReqKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL) :
+                null;
         if (originalUrl == null) {
             String uri = httpReqKnob.getRequestUri();
             if (uri == null || uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";
@@ -346,10 +393,12 @@ public class UriResolver extends ServiceResolver<String> {
         }
     }
 
+    private final boolean caseSensitive;
     private final ArrayList<String> knownToFail = new ArrayList<String>();
     private final Map<URIResolutionParam, List<Long>> uriToServiceMap = new HashMap<URIResolutionParam, List<Long>>();
     private final Map<Long, URIResolutionParam> servicetoURIMap = new HashMap<Long, URIResolutionParam>();
-    private final Logger logger = Logger.getLogger(getClass().getName());
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock(false);
     private static final URIResolutionParam CATCHALLRESOLUTION = new URIResolutionParam("/*");
+    private final AtomicBoolean enableCaseSensitivity = new AtomicBoolean(true);
+    private final AtomicBoolean enableOriginalUrlHeader = new AtomicBoolean(true);
 }

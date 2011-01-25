@@ -1,9 +1,6 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.server.audit.Auditor;
@@ -25,13 +22,23 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author alex
  */
 public class UrnResolver extends WsdlOperationServiceResolver<String> {
+
+    private final AtomicBoolean enabled = new AtomicBoolean(true);
+
     public UrnResolver( final Auditor.AuditorFactory auditorFactory ) {
         super( auditorFactory );
+    }
+
+    @Override
+    public void configure( final ResolutionConfiguration resolutionConfiguration ) {
+        super.configure( resolutionConfiguration );
+        enabled.set( resolutionConfiguration.isUseSoapBodyChildNamespace() );
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -69,6 +76,11 @@ public class UrnResolver extends WsdlOperationServiceResolver<String> {
     }
 
     @Override
+    public boolean isApplicableToMessage( final Message msg ) throws ServiceResolutionException {
+        return enabled.get() && super.isApplicableToMessage( msg );
+    }
+
+    @Override
     protected String getRequestValue(Message request) throws ServiceResolutionException {
         try {
             if (request.isSoap()) {
@@ -103,5 +115,10 @@ public class UrnResolver extends WsdlOperationServiceResolver<String> {
     @Override
     public boolean usesMessageContent() {
         return true;
+    }
+
+    @Override
+    protected boolean isApplicableToConflicts() {
+        return enabled.get();
     }
 }

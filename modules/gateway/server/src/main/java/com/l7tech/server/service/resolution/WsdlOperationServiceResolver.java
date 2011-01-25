@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.server.audit.Auditor;
@@ -22,7 +19,7 @@ public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceRe
     }
 
     @Override
-    protected List<T> doGetTargetValues(PublishedService service) throws ServiceResolutionException {
+    protected List<T> buildTargetValues(PublishedService service) throws ServiceResolutionException {
         // non soap services do not have those parameters
         if (!service.isSoap()) {
             return Collections.emptyList();
@@ -52,9 +49,8 @@ public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceRe
     /**
      * a set of distinct parameters for this service
      * @param candidateService object from which to extract parameters from
-     * @return a Set containing distinct strings
+     * @return a Set containing distinct strings (which may be null)
      */
-    @Override
     public Set<T> getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException {
         Set<T> out = new HashSet<T>();
         // non soap services do not have those parameters
@@ -62,20 +58,8 @@ public abstract class WsdlOperationServiceResolver<T> extends NameValueServiceRe
             out.add(null);
             return out;
         }
-        try {
-            Wsdl wsdl = candidateService.parsedWsdl();
-            // fla bugfix for 1827 soap bindings only should be considered for soap web services
-            wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
-            Iterator operations = wsdl.getBindingOperations().iterator();
-            BindingOperation operation;
-            while (operations.hasNext()) {
-                operation = (BindingOperation)operations.next();
-                Set<T> values = getTargetValues(wsdl.getDefinition(), operation);
-                out.addAll(values); // Bug 1741: Ensure we don't return an empty set, it confuses ResolutionManager.
-            }
-        } catch ( WSDLException we ) {
-            throw new ServiceResolutionException("Error accessing service WSDL '"+we.getMessage()+"'.", we);
-        }
+
+        out.addAll( buildTargetValues( candidateService ) );
         
         return out;
     }

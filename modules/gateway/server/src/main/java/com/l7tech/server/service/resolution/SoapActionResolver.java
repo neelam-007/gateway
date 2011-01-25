@@ -1,9 +1,7 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
+import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.HasSoapAction;
 import com.l7tech.message.Message;
 import com.l7tech.message.HttpRequestKnob;
@@ -17,13 +15,23 @@ import javax.wsdl.Definition;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author alex
  */
 public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
+
+    private final AtomicBoolean enabled = new AtomicBoolean(true);
+
     public SoapActionResolver( final Auditor.AuditorFactory auditorFactory ) {
         super( auditorFactory );
+    }
+
+    @Override
+    public void configure( final ResolutionConfiguration resolutionConfiguration ) {
+        super.configure( resolutionConfiguration );
+        enabled.set( resolutionConfiguration.isUseSoapAction() );
     }
 
     @Override
@@ -58,6 +66,8 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
 
     @Override
     public boolean isApplicableToMessage(Message request) {
+        if (!enabled.get()) return false;
+
         // Filter out requests for which resolution by soap action is not appropriate.
         //
         MimeKnob mimeKnob = request.getKnob(MimeKnob.class);
@@ -91,5 +101,10 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
         } else {
             return true;
         }
+    }
+
+    @Override
+    protected boolean isApplicableToConflicts() {
+        return enabled.get();
     }
 }

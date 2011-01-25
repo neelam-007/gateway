@@ -1,9 +1,11 @@
 package com.l7tech.server.wsdm.util;
 
 import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.server.wsdm.faults.ResourceUnknownFault;
 import com.l7tech.gateway.common.service.PublishedService;
 
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.Collection;
@@ -62,19 +64,24 @@ public class EsmUtils {
         if (matcher.find() && matcher.groupCount() == 1) {
             String serviceUri = matcher.group(1);
             logger.info("Looking up service(s) that match uri prefix " + serviceUri);
-            Collection<PublishedService> foundServices = serviceCache.getCachedServicesByURI(serviceUri);
-            if (foundServices == null || foundServices.isEmpty()) {
-                logger.warning("No services were found matching uri prefix " + serviceUri);
-                return null;
-            }
+            try {
+                Collection<PublishedService> foundServices = serviceCache.resolve(serviceUri, null, null);
+                if (foundServices == null || foundServices.isEmpty()) {
+                    logger.warning("No services were found matching uri prefix " + serviceUri);
+                    return null;
+                }
 
-            if (foundServices.size() > 1) {
-                throw new ResourceUnknownFault("Multiple services match uri prefix " + serviceUri + ". Use serviceoid instead");
-            } else {
-                PublishedService ps = foundServices.iterator().next();
-                String id = ps.getId();
-                logger.info("Found matching service (name=" + ps.getName() + ",id=" + id + ") for uri prefix " + serviceUri + ".");
-                return ps.getId();
+                if (foundServices.size() > 1) {
+                    throw new ResourceUnknownFault("Multiple services match uri prefix " + serviceUri + ". Use serviceoid instead");
+                } else {
+                    PublishedService ps = foundServices.iterator().next();
+                    String id = ps.getId();
+                    logger.info("Found matching service (name=" + ps.getName() + ",id=" + id + ") for uri prefix " + serviceUri + ".");
+                    return ps.getId();
+                }
+            } catch ( ServiceResolutionException e ) {
+                logger.log( Level.WARNING, "Error finding services for uri prefix " + serviceUri, e );
+                return null;
             }
         }
 

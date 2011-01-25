@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.message.Message;
@@ -17,30 +13,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author alex
  */
 public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
+
     public NameValueServiceResolver( final Auditor.AuditorFactory auditorFactory ) {
         super( auditorFactory );
     }
 
     @Override
-    public void serviceCreated(PublishedService service) throws ServiceResolutionException {
-        final List<T> targetValues = getTargetValues(service);
-        final Long oid = service.getOid();
-
-        _rwlock.writeLock().lock();
-        try {
-            serviceOidToValueListMap.put( oid, targetValues );
-
-            for ( T targetValue : targetValues ) {
-                Map<Long, PublishedService> serviceMap = getServiceMap(targetValue);
-                serviceMap.put(oid, service);
-            }
-        } finally {
-            _rwlock.writeLock().unlock();
-        }
-    }
-
-    @Override
-    public void serviceDeleted(PublishedService service) {
+    public void serviceDeleted( final PublishedService service ) {
         Long oid = service.getOid();
 
         _rwlock.writeLock().lock();
@@ -56,7 +35,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
     }
 
     @Override
-    public void serviceUpdated(PublishedService service) throws ServiceResolutionException {
+    public void serviceUpdated( final PublishedService service ) throws ServiceResolutionException {
         _rwlock.writeLock().lock();
         try {
             serviceDeleted(service);
@@ -66,10 +45,27 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
         }
     }
 
-    protected List<T> getTargetValues(PublishedService service) throws ServiceResolutionException {
+    @Override
+    protected void updateServiceValues( final PublishedService service, final List<T> targetValues ) {
+        final Long oid = service.getOid();
+
+        _rwlock.writeLock().lock();
+        try {
+            serviceOidToValueListMap.put( oid, targetValues );
+
+            for ( T targetValue : targetValues ) {
+                Map<Long, PublishedService> serviceMap = getServiceMap(targetValue);
+                serviceMap.put(oid, service);
+            }
+        } finally {
+            _rwlock.writeLock().unlock();
+        }
+    }
+
+    protected List<T> getTargetValues( final PublishedService service ) throws ServiceResolutionException {
         if ( service.getOid() == PublishedService.DEFAULT_OID ) {
             // Don't ever cache values for a service with a to-be-determined OID
-            return doGetTargetValues(service);
+            return buildTargetValues(service);
         } else {
             Long oid = service.getOid();
             Lock read = _rwlock.readLock();
@@ -77,7 +73,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
             try {
                 List<T> values = serviceOidToValueListMap.get(oid);
                 if ( values == null ) {
-                    values = doGetTargetValues(service);
+                    values = buildTargetValues(service);
                     read.unlock();
                     read = null;
                     _rwlock.writeLock().lock();
@@ -93,8 +89,6 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
             }
         }
     }
-
-    protected abstract List<T> doGetTargetValues(PublishedService service) throws ServiceResolutionException;
 
     protected abstract T getRequestValue(Message request) throws ServiceResolutionException;
 
@@ -121,9 +115,57 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
     }
 
     @Override
-    public final Result resolve(Message request, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
-        if (!isApplicableToMessage(request)) return Result.NOT_APPLICABLE;
-        T value = getRequestValue(request);
+    public void populateResolutionParameters( final Message request, final Map<String, Object> parameters ) throws ServiceResolutionException {
+        if ( !isApplicableToMessage(request) ) {
+            parameters.put( PROP_APPLICABLE, false );
+            return; // don't process request value
+        }
+
+        final T value = getRequestValue( request );
+        parameters.put( PROP_VALUE, value ); // adding a value means this resolver will later be used (even if the value is null).
+    }
+
+    @Override
+    public Collection<Map<String, Object>> generateResolutionParameters( final PublishedService service,
+                                                                         final Collection<Map<String, Object>> parameterCollection ) throws ServiceResolutionException {
+        if ( !isApplicableToConflicts() ) {
+            final List<Map<String,Object>> resultParameterList = new ArrayList<Map<String,Object>>( parameterCollection.size() );
+
+            for ( final Map<String, Object> parameters : parameterCollection ) {
+                final Map<String, Object> resultParameters = new HashMap<String, Object>( parameters );
+                resultParameters.put( PROP_APPLICABLE, false );
+                resultParameterList.add( resultParameters );
+            }
+
+            return resultParameterList;
+        } else {
+            // use doGetTargetValues since we don't want to use cached values
+            final Set<T> values = new HashSet<T>( buildTargetValues( service ) );
+            if ( values.isEmpty() ) {
+                return parameterCollection;
+            }
+
+            final List<Map<String,Object>> resultParameterList = new ArrayList<Map<String,Object>>( Math.max( 10, parameterCollection.size() * values.size() ) );
+
+            for ( final T value : values ) {
+                for ( final Map<String, Object> parameters : parameterCollection ) {
+                    final Map<String, Object> resultParameters = new HashMap<String, Object>( parameters );
+                    resultParameters.put( PROP_VALUE, value );
+                    resultParameterList.add( resultParameters );
+                }
+            }
+
+            return resultParameterList;
+        }
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    @Override
+    public final Result resolve( final Map<String,Object> parameters, 
+                                 final Collection<PublishedService> serviceSubset ) throws ServiceResolutionException {
+        final Boolean applicable = (Boolean) parameters.get( PROP_APPLICABLE );
+        if ( (applicable!=null && !applicable) || !parameters.containsKey( PROP_VALUE )) return Result.NOT_APPLICABLE;
+        T value = (T) parameters.get( PROP_VALUE );
         return resolve(value, serviceSubset);
     }
 
@@ -153,5 +195,6 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
     protected final Map<Long, List<T>> serviceOidToValueListMap = new HashMap<Long, List<T>>();
     protected final ReadWriteLock _rwlock = new ReentrantReadWriteLock(false);
 
-    public abstract boolean isApplicableToMessage(Message msg) throws ServiceResolutionException;
+    protected boolean isApplicableToConflicts(){ return false; }
+    protected abstract boolean isApplicableToMessage(Message msg) throws ServiceResolutionException;
 }

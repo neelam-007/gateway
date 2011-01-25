@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.objectmodel;
 
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -83,6 +80,7 @@ public enum EntityType implements Comparable<EntityType> {
 
     HTTP_CONFIGURATION("HTTP Options", true),
     RESOURCE_ENTRY("Global Resource", true),
+    RESOLUTION_CONFIGURATION("Service Resolution Configuration", true),
     ;
 
     private final String name;

@@ -8,6 +8,7 @@ import com.l7tech.util.Functions;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,15 +18,29 @@ import java.util.List;
  */
 public class HttpRequestKnobStub extends HttpRequestKnobAdapter {
     private final GenericHttpRequestParams headerHolder = new GenericHttpRequestParams();
+    private final String requestUri;
 
     public HttpRequestKnobStub() {
+        this( null );
     }
 
     public HttpRequestKnobStub(List<HttpHeader> headers) {
-        for (HttpHeader header : headers)
-            headerHolder.addExtraHeader(header);
+        this( headers, null );
     }
 
+    public HttpRequestKnobStub( final List<HttpHeader> headers,
+                                final String requestUri ) {
+        for (HttpHeader header : headers==null?Collections.<HttpHeader>emptyList():headers)
+            headerHolder.addExtraHeader(header);
+        this.requestUri = requestUri;
+    }
+
+    @Override
+    public String getRequestUri() {
+        return requestUri;
+    }
+
+    @Override
     public String[] getHeaderNames() {
         try {
             Collection<String> ret = Functions.map(headerHolder.getExtraHeaders(), Functions.<String, HttpHeader>getterTransform(GenericHttpHeader.class.getMethod("getName")));
@@ -35,6 +50,7 @@ public class HttpRequestKnobStub extends HttpRequestKnobAdapter {
         }
     }
 
+    @Override
     public String[] getHeaderValues(String name) {
         List<String> ret = new ArrayList<String>();
         for (HttpHeader header : headerHolder.getExtraHeaders()) {
@@ -44,10 +60,17 @@ public class HttpRequestKnobStub extends HttpRequestKnobAdapter {
         return ret.toArray(new String[ret.size()]);
     }
 
+    @Override
     public String getHeaderSingleValue(String name) throws IOException {
         String[] ret = getHeaderValues(name);
         if (ret.length > 1) throw new IOException("More than one value for header " + name);
         return ret.length < 1 ? null : ret[0];
+    }
+
+    @Override
+    public String getHeaderFirstValue( final String name ) {
+        final String[] values = getHeaderValues( name );
+        return values==null||values.length<1 ? null : values[0];
     }
 
     public void replaceHeader(String name, String value) {

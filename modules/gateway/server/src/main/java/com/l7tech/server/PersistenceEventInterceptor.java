@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.audit.AdminAuditRecord;
@@ -26,7 +23,6 @@ import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.*;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.logon.LogonInfo;
-import com.l7tech.server.service.resolution.ResolutionParameters;
 import com.l7tech.server.wsdm.subscription.Subscription;
 import com.l7tech.server.uddi.UDDIRegistrySubscription;
 import com.l7tech.server.uddi.UDDIBusinessServiceStatus;
@@ -86,7 +82,6 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         noAuditClassNames.add(AttributePredicate.class.getName());
         noAuditClassNames.add(FolderPredicate.class.getName());
         noAuditClassNames.add(EntityFolderAncestryPredicate.class.getName());
-        noAuditClassNames.add(ResolutionParameters.class.getName());
         noAuditClassNames.add(UDDIProxiedService.class.getName());
         noAuditClassNames.add("com.l7tech.server.ems.monitoring.SystemMonitoringNotificationRule");
         noAuditClassNames.add("com.l7tech.server.ems.monitoring.SsgClusterNotificationSetup");

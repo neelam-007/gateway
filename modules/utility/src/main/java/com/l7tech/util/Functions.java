@@ -86,9 +86,19 @@ public final class Functions {
         R call(P1 p1, P2 p2, P3 p3);
     }
 
+    /** A function that takes three arguments, returns a value and may throw one type of exception. */
+    public interface TernaryThrows<R, P1, P2, P3, E extends Throwable> {
+        R call(P1 p1, P2 p2, P3 p3) throws E;
+    }
+
     /** A function that takes three arguments and returns void. */
     public interface TernaryVoid<P1, P2, P3> {
         void call(P1 p1, P2 p2, P3 p3);
+    }
+
+    /** A function that takes three arguments, returns void and may throw one type of exception */
+    public interface TernaryVoidThrows<P1, P2, P3, E extends Throwable> {
+        void call(P1 p1, P2 p2, P3 p3) throws E;
     }
 
     /** A function that takes four arguments and returns a value. */

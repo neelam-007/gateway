@@ -18,8 +18,12 @@ import com.l7tech.util.CollectionUpdate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
@@ -375,7 +379,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
 
     @Transactional(readOnly=true)
     @Administrative(licensed=false)
-    public Collection<UDDIRegistryInfo> getUDDIRegistryInfo();
+    Collection<UDDIRegistryInfo> getUDDIRegistryInfo();
 
     @Transactional(readOnly=true)
     @Secured(types=EntityType.SERVICE_TEMPLATE, stereotype= MethodStereotype.FIND_ENTITIES)
@@ -389,4 +393,169 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      */
     @Secured(types=EntityType.SERVICE_TEMPLATE, stereotype= MethodStereotype.FIND_ENTITY)
     ServiceTemplate createSecurityTokenServiceTemplate(String wsTrustNamespace);
+
+    @Transactional(readOnly=true)
+    @Secured(stereotype=MethodStereotype.GET_PROPERTY_OF_ENTITY,relevantArg=0)
+    ResolutionReport generateResolutionReport( PublishedService service, Collection<ServiceDocument> serviceDocuments ) throws FindException;
+
+    class ResolutionReport implements Serializable {
+        private final boolean resolvesByPath;
+        private final ConflictInfo[] conflicts;
+
+        public ResolutionReport( final boolean resolvesByPath,
+                                 final ConflictInfo[] conflicts ) {
+            this.resolvesByPath = resolvesByPath;
+            this.conflicts = conflicts;
+        }
+
+        public ConflictInfo[] getConflicts() {
+            return conflicts;
+        }
+
+        public boolean isResolvesByPath() {
+            return resolvesByPath;
+        }
+
+        public boolean isSuccess() {
+            return resolvesByPath && (conflicts==null || conflicts.length==0);
+        }
+
+        public String toString() {
+            final StringBuilder builder = new StringBuilder();
+
+            builder.append( "Resolves using FTP/HTTP: ");
+            builder.append( resolvesByPath ? "Yes" : "No");
+            if ( conflicts!=null && conflicts.length > 0 ) {
+                builder.append( "\n\n" );
+                builder.append( "Conflicting services:" );
+
+                List<ConflictInfo> conflictList = Arrays.asList( conflicts );
+                Collections.sort( conflictList );
+                long lastServiceId = -1;
+                for ( final ConflictInfo conflict : conflicts ) {
+                    if ( conflict.getServiceOid() != lastServiceId ) {
+                        lastServiceId = conflict.getServiceOid();
+                        builder.append( "\n  Service: " );
+                        builder.append( conflict.getServiceDisplayName() );
+                    }
+
+                    builder.append( "\n    NS: " ).append( conflict.getSoapPayloadNamespace() );
+                    builder.append( ", Action: " ).append( conflict.getSoapAction() );
+                }
+            }
+
+            return builder.toString();
+        }
+    }
+
+    class ConflictInfo implements Serializable, Comparable<ConflictInfo> {
+        private final long serviceOid;
+        private final String serviceName;
+        private final String serviceDisplayName;
+        private final String soapAction;
+        private final String soapPayloadNamespace;
+        private final String path;
+
+        public ConflictInfo( final String path,
+                             final String serviceDisplayName,
+                             final String serviceName,
+                             final long serviceOid,
+                             final String soapAction,
+                             final String soapPayloadNamespace ) {
+            this.path = path;
+            this.serviceDisplayName = serviceDisplayName;
+            this.serviceName = serviceName;
+            this.serviceOid = serviceOid;
+            this.soapAction = soapAction;
+            this.soapPayloadNamespace = soapPayloadNamespace;
+        }
+
+        public String getPath() {
+            return path == null ?  "" : path;
+        }
+
+        public String getServiceDisplayName() {
+            return serviceDisplayName;
+        }
+
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        public long getServiceOid() {
+            return serviceOid;
+        }
+
+        public String getSoapAction() {
+            return soapAction == null ? "" : soapAction;
+        }
+
+        public String getSoapPayloadNamespace() {
+            return soapPayloadNamespace == null ? "" : soapPayloadNamespace;
+        }
+
+        private int compareMaybeNull( final String text1,
+                                      final String text2 ) {
+            if ( text1 == null || text2 == null ) {
+                if ( text1 != null ) {
+                    return 1;
+                } else if ( text2 != null ) {
+                    return -1;                    
+                } else {
+                    return 0;
+                }
+            } else {
+                return text1.compareTo( text2 );
+            }
+        }
+
+        @Override
+        public int compareTo( final ConflictInfo other ) {
+            int value = Long.valueOf( serviceOid ).compareTo( other.getServiceOid() );
+
+            if ( value == 0 ) {
+                value = compareMaybeNull( path, other.getPath() );
+            }
+            if ( value == 0 ) {
+                value = compareMaybeNull( soapPayloadNamespace, other.getSoapPayloadNamespace() );
+            }
+            if ( value == 0 ) {
+                value = compareMaybeNull( soapAction, other.getSoapAction() );
+            }
+
+            return value;
+        }
+
+        @SuppressWarnings({ "RedundantIfStatement" })
+        @Override
+        public boolean equals( final Object o ) {
+            if ( this == o ) return true;
+            if ( o == null || getClass() != o.getClass() ) return false;
+
+            final ConflictInfo that = (ConflictInfo) o;
+
+            if ( serviceOid != that.serviceOid ) return false;
+            if ( path != null ? !path.equals( that.path ) : that.path != null ) return false;
+            if ( serviceDisplayName != null ? !serviceDisplayName.equals( that.serviceDisplayName ) : that.serviceDisplayName != null )
+                return false;
+            if ( serviceName != null ? !serviceName.equals( that.serviceName ) : that.serviceName != null )
+                return false;
+            if ( soapAction != null ? !soapAction.equals( that.soapAction ) : that.soapAction != null ) return false;
+            if ( soapPayloadNamespace != null ? !soapPayloadNamespace.equals( that.soapPayloadNamespace ) : that.soapPayloadNamespace != null )
+                return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) (serviceOid ^ (serviceOid >>> 32));
+            result = 31 * result + (serviceName != null ? serviceName.hashCode() : 0);
+            result = 31 * result + (serviceDisplayName != null ? serviceDisplayName.hashCode() : 0);
+            result = 31 * result + (soapAction != null ? soapAction.hashCode() : 0);
+            result = 31 * result + (soapPayloadNamespace != null ? soapPayloadNamespace.hashCode() : 0);
+            result = 31 * result + (path != null ? path.hashCode() : 0);
+            return result;
+        }
+    }
 }

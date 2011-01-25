@@ -1,11 +1,9 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.HasServiceOid;
@@ -14,7 +12,7 @@ import com.l7tech.server.audit.Auditor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,6 +25,9 @@ import java.util.regex.Pattern;
  */
 public class ServiceOidResolver extends NameValueServiceResolver<String> {
     private final Pattern[] regexPatterns;
+    // when disabled we still support HasServiceOid for hard coded service resolution
+    private final AtomicBoolean enabled = new AtomicBoolean(true);
+    private final AtomicBoolean enableOriginalUrlHeader = new AtomicBoolean(true);
 
     public ServiceOidResolver( final Auditor.AuditorFactory auditorFactory ) {
         super( auditorFactory );
@@ -46,7 +47,14 @@ public class ServiceOidResolver extends NameValueServiceResolver<String> {
     }
 
     @Override
-    protected List<String> doGetTargetValues(PublishedService service) {
+    public void configure( final ResolutionConfiguration resolutionConfiguration ) {
+        super.configure( resolutionConfiguration );
+        enabled.set( resolutionConfiguration.isUseServiceOid() );
+        enableOriginalUrlHeader.set( resolutionConfiguration.isUseL7OriginalUrl() );
+    }
+
+    @Override
+    protected List<String> buildTargetValues(PublishedService service) {
         return Arrays.asList(Long.toString(service.getOid()));
     }
 
@@ -61,24 +69,27 @@ public class ServiceOidResolver extends NameValueServiceResolver<String> {
         HasServiceOid hso = request.getKnob( HasServiceOid.class );
         if ( hso != null && hso.getServiceOid() > 0 ) return Long.toString( hso.getServiceOid() );
 
-        if (regexPatterns == null) { // compile failed
+        if ( !enabled.get() || regexPatterns == null) { // compile failed
             return null;
         }
         
         HttpRequestKnob httpReqKnob = request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null) return null;
-        String originalUrl;
-        originalUrl = httpReqKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
 
-        if (originalUrl == null) {
-            auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_NOHEADER, SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
-        } else {
-            final String match = findMatch(originalUrl);
-            if (match != null) {
-                auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_HEADER_MATCH, SecureSpanConstants.HttpHeaders.ORIGINAL_URL, originalUrl); 
-                return match;
+        if ( enableOriginalUrlHeader.get() ) {
+            String originalUrl;
+            originalUrl = httpReqKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
+
+            if (originalUrl == null) {
+                auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_NOHEADER, SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
+            } else {
+                final String match = findMatch(originalUrl);
+                if (match != null) {
+                    auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_HEADER_MATCH, SecureSpanConstants.HttpHeaders.ORIGINAL_URL, originalUrl);
+                    return match;
+                }
+                auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_HEADER_NOMATCH, SecureSpanConstants.HttpHeaders.ORIGINAL_URL, originalUrl);
             }
-            auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_HEADER_NOMATCH, SecureSpanConstants.HttpHeaders.ORIGINAL_URL, originalUrl);
         }
 
         String requestURI = httpReqKnob.getRequestUri();
@@ -94,6 +105,9 @@ public class ServiceOidResolver extends NameValueServiceResolver<String> {
     private String findMatch(String originalUrl) {
         for (Pattern regexPattern : regexPatterns) {
             Matcher matcher = regexPattern.matcher(originalUrl);
+            // note that the below group count check excludes one of the regex expressions
+            // this seems like a fortunate bug since services can (and do) use the serviceoid
+            // query parameter unrelated to service resolution
             if (matcher.find() && matcher.groupCount() == 1) {
                 return matcher.group(1);
             }
@@ -104,11 +118,6 @@ public class ServiceOidResolver extends NameValueServiceResolver<String> {
     @Override
     public boolean usesMessageContent() {
         return false;
-    }
-
-    @Override
-    public Set<String> getDistinctParameters(PublishedService candidateService) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

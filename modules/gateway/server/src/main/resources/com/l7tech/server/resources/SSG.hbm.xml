@@ -114,17 +114,6 @@
 
         <many-to-one class="com.l7tech.objectmodel.folder.Folder" name="folder" lazy="false" column="parent_folder_oid"/>
     </class>
-
-    <class name="com.l7tech.server.service.resolution.ResolutionParameters" table="service_resolution" lazy="false">
-        <id name="oid" column="objectid" type="long">
-            <generator class="hilo"/>
-        </id>
-        <property name="urn" column="urn" type="string"/>
-        <property name="uri" column="uri" type="string"/>
-        <property name="soapaction" column="soapaction" type="string"/>
-        <property name="serviceid" column="serviceid" type="long"/>
-        <property name="digested" column="digested" type="string"/>
-    </class>
   
     <class name="com.l7tech.gateway.common.cluster.ServiceUsage" table="service_usage" lazy="false">
         <composite-id>

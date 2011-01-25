@@ -23,6 +23,7 @@ import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
@@ -271,6 +272,16 @@ public class RegistryStub extends Registry {
             @Override
             public boolean isUseIpv6() {
                 return InetAddressUtil.isUseIpv6();
+            }
+
+            @Override
+            public ResolutionConfiguration getResolutionConfigurationByName( final String name ) {
+                return null;
+            }
+
+            @Override
+            public long saveResolutionConfiguration( final ResolutionConfiguration configuration ) {
+                return 0;
             }
         };
     }

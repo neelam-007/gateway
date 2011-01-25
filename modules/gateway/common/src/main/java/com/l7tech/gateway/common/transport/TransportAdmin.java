@@ -10,7 +10,7 @@ import java.net.InetAddress;
 import java.util.Collection;
 
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
-import static com.l7tech.objectmodel.EntityType.SSG_CONNECTOR;
+import static com.l7tech.objectmodel.EntityType.*;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 
 /**
@@ -134,4 +134,12 @@ public interface TransportAdmin {
      * @return true if IPv6 is enabled on the gateway
      */
     boolean isUseIpv6();
+
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITY,types=RESOLUTION_CONFIGURATION)
+    ResolutionConfiguration getResolutionConfigurationByName( final String name ) throws FindException;
+
+    @Secured(stereotype=SAVE_OR_UPDATE,types=RESOLUTION_CONFIGURATION)
+    long saveResolutionConfiguration( ResolutionConfiguration configuration ) throws SaveException;
+
 }

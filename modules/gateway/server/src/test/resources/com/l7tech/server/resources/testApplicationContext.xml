@@ -36,6 +36,8 @@
         <property name="serviceManager" ref="serviceManager"/>
     </bean>
 
+    <bean id="resolutionConfigurationManager" class="com.l7tech.server.transport.ResolutionConfigurationManagerStub"/>
+
     <!-- service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub" depends-on="wsdlStrategyServiceDocumentsInitializer">
         <constructor-arg index="0" ref="policyCache"/>
@@ -44,7 +46,9 @@
         <constructor-arg index="3" ref="serviceUsageManager"/>
         <constructor-arg index="4">
             <bean class="com.l7tech.server.service.resolution.ServiceResolutionManager">
-                <constructor-arg index="0">
+                <constructor-arg index="0" ref="resolutionConfigurationManager"/>
+                <constructor-arg index="1" value="Default"/>
+                <constructor-arg index="2">
                     <list>
                         <bean class="com.l7tech.server.service.resolution.ServiceOidResolver"><constructor-arg ref="auditorFactory"/></bean>
                         <bean class="com.l7tech.server.service.resolution.UriResolver"><constructor-arg ref="auditorFactory"/></bean>
@@ -52,7 +56,7 @@
                         <bean class="com.l7tech.server.service.resolution.UrnResolver"><constructor-arg ref="auditorFactory"/></bean>
                     </list>
                 </constructor-arg>
-                <constructor-arg index="1">
+                <constructor-arg index="3">
                     <list>
                         <bean class="com.l7tech.server.service.resolution.SoapOperationResolver">
                             <constructor-arg ref="auditorFactory"/>
@@ -60,7 +64,8 @@
                         </bean>
                     </list>
                 </constructor-arg>
-            </bean>        </constructor-arg>
+            </bean>
+        </constructor-arg>
         <constructor-arg index="5" ref="clusterInfoManager"/>
         <constructor-arg index="6"><null/></constructor-arg>
     </bean>

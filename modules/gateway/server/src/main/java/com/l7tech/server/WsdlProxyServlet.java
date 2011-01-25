@@ -91,7 +91,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private static final String PROPERTY_WSSP_ATTACH = "com.l7tech.server.wssp";
     private static final String PROPERTY_WSDL_IMPORT_PROXY = "wsdlImportProxyEnabled";
 
-    private ServerConfig serverConfig;
     private FilterManager wsspFilterManager;
     private FilterManager clientPolicyFilterManager;
     private SoapActionResolver sactionResolver;
@@ -107,7 +106,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         WebApplicationContext appcontext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
-        serverConfig = appcontext.getBean("serverConfig", ServerConfig.class);
         clientPolicyFilterManager = appcontext.getBean("policyFilterManager", FilterManager.class);
         wsspFilterManager = appcontext.getBean("wsspolicyFilterManager", FilterManager.class);
         serviceDocumentManager = appcontext.getBean("serviceDocumentManager", ServiceDocumentManager.class);
@@ -242,72 +240,17 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             // no service seems to be requested
             return null;
         }
-        // get all current services
-        Collection<PublishedService> services = serviceManager.findAll();
-        if ( !permitDisabledService ) {
-            services = removeDisabledServices( services );
-        }
 
-        // if uri param provided, narrow down list using it
-        if (uriparam != null) {
-            Set<PublishedService> serviceSubset = new HashSet<PublishedService>();
-            serviceSubset.addAll(services);
-            Map<UriResolver.URIResolutionParam, List<Long>> uriToServiceMap = new HashMap<UriResolver.URIResolutionParam, List<Long>>();
-            for (PublishedService s : serviceSubset) {
-                String uri = s.getRoutingUri();
-                if (uri == null) uri = "";
-                UriResolver.URIResolutionParam up = new UriResolver.URIResolutionParam(uri);
-                List<Long> listedServicesForThatURI = uriToServiceMap.get(up);
-                if (listedServicesForThatURI == null) {
-                    listedServicesForThatURI = new ArrayList<Long>();
-                    uriToServiceMap.put(up, listedServicesForThatURI);
-                }
-                listedServicesForThatURI.add(s.getOid());
-            }
-            Result res = UriResolver.doResolve(uriparam, serviceSubset, uriToServiceMap, null);
-            if (res.getMatches() == null || res.getMatches().size() == 0) {
-                throw new FindException("URI param '" + uriparam + "' did not resolve any service.");
-            }
-            if (res.getMatches().size() == 1) {
-                return res.getMatches().iterator().next();
-            }
-            services = res.getMatches();
+        Collection<PublishedService> services;
+        try {
+            services = serviceCache.resolve( uriparam, sactionparam, nsparam );
+        } catch ( ServiceResolutionException e ) {
+            throw new FindException("Error resolving service.", e);
         }
-        // narrow it down using soapaction (if provided)
-        if (sactionparam != null) {
-            for (Iterator iterator = services.iterator(); iterator.hasNext();) {
-                PublishedService publishedService = (PublishedService) iterator.next();
-                try {
-                    Set sactionparams = sactionResolver.getDistinctParameters(publishedService);
-                    if (!sactionparams.contains(sactionparam)) iterator.remove();
-                } catch (ServiceResolutionException sre) { // ignore this service
-                    logger.log(Level.WARNING, "Could not process service with oid '"+publishedService.getOid()+"'.", sre);
-                }
-            }
-            if (services.size() == 1) {
-                return services.iterator().next();
-            }
-            if (services.size() == 0) {
-                throw new FindException("SoapAction param '" + sactionparam + "' did not resolve any service.");
-            }
-        }
-        // narrow it down using ns (if provided)
-        if (nsparam != null) {
-            for (Iterator iterator = services.iterator(); iterator.hasNext();) {
-                PublishedService publishedService = (PublishedService) iterator.next();
-                try {
-                    Set nsparams = nsResolver.getDistinctParameters(publishedService);
-                    if (!nsparams.contains(nsparam)) iterator.remove();
-                } catch (ServiceResolutionException sre) { // ignore this service
-                    logger.log(Level.WARNING, "Could not process service with oid '"+publishedService.getOid()+"'.", sre);
-                }
-            }
-            if (services.size() == 1) {
-                return services.iterator().next();
-            }
-            if (services.size() == 0) {
-                throw new FindException("ns param '" + nsparam + "' did not resolve any service.");
-            }
+        services = removeDisabledServices( services );
+
+        if (services.size() == 1) {
+            return services.iterator().next();
         }
 
         // could not narrow it down enough -> throw AmbiguousServiceException
@@ -324,7 +267,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
         for ( PublishedService service : services ) {
             if ( !service.isDisabled() ) {
-                filteredServices.add( service );                   
+                filteredServices.add( service );
             }
         }
 
@@ -590,7 +533,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 final Set<String> portNames = new HashSet<String>();
                 if ( serviceElement == null ) {
                     serviceElement = XmlUtil.createAndAppendElementNS( wsdl.getDocumentElement(), ELEMENT_SERVICE, NAMESPACE_WSDL, wsdlPrefix );
-                    serviceElement.setAttribute( ATTR_NAME, "Service-" + UUID.nameUUIDFromBytes( serviceRandom ).toString() );
+                    serviceElement.setAttributeNS( null, ATTR_NAME, "Service-" + UUID.nameUUIDFromBytes( serviceRandom ).toString() );
                 } else {
                     for ( Element svcElement : XmlUtil.findChildElementsByName( wsdl.getDocumentElement(), NAMESPACE_WSDL, ELEMENT_SERVICE )) {
                         for ( Element portElement : XmlUtil.findChildElementsByName( svcElement, NAMESPACE_WSDL, ELEMENT_PORT )) {
@@ -601,11 +544,11 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
                 if ( !portNames.contains( bindingName ) ) {
                     final Element portElement = XmlUtil.createAndAppendElementNS( serviceElement, ELEMENT_PORT, NAMESPACE_WSDL, wsdlPrefix );
-                    portElement.setAttribute( ATTR_NAME, bindingName );
-                    portElement.setAttribute( ELEMENT_BINDING, XmlUtil.getOrCreatePrefixForNamespace( portElement, targetNamespace, "tns" )+ ":" + bindingName );
+                    portElement.setAttributeNS( null, ATTR_NAME, bindingName );
+                    portElement.setAttributeNS( null, ELEMENT_BINDING, XmlUtil.getOrCreatePrefixForNamespace( portElement, targetNamespace, "tns" )+ ":" + bindingName );
 
                     final Element addressElement = XmlUtil.createAndAppendElementNS( portElement, ELEMENT_ADDRESS, bindingNs, soapPrefix );
-                    addressElement.setAttribute( ATTR_LOCATION, location );
+                    addressElement.setAttributeNS( null, ATTR_LOCATION, location );
                 }
             }
         }
@@ -815,7 +758,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     private ListResults listAllServices() throws FindException {
-        final Collection<PublishedService> allServices = Functions.grep(serviceManager.findAll(), new Functions.Unary<Boolean, PublishedService>() {
+        final Collection<PublishedService> allServices = Functions.grep(serviceCache.getCachedServices(), new Functions.Unary<Boolean, PublishedService>() {
             @Override
             public Boolean call(PublishedService publishedService) {
                 return !publishedService.isDisabled();
@@ -841,7 +784,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             throws IOException, FindException
     {
         // get all services
-        final Collection<PublishedService> allServices = serviceManager.findAll();
+        final Collection<PublishedService> allServices = serviceCache.getCachedServices();
 
         // prepare output collection
         final Collection<PublishedService> output = new ArrayList<PublishedService>();

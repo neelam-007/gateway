@@ -133,6 +133,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem manageGlobalResourcesMenuItem = null;
     private JMenuItem manageClusterPropertiesMenuItem = null;
     private JMenuItem manageRolesMenuItem = null;
+    private JMenuItem manageServiceResolutionMenuItem = null;
     private JMenuItem dashboardMenuItem;
     private JMenuItem manageClusterLicensesMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
@@ -162,6 +163,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
     private ManageKerberosAction manageKerberosAction = null;
     private ManageRolesAction manageRolesAction = null;
+    private ManageResolutionConfigurationAction manageServiceResolutionAction = null;
     private HomeAction homeAction = new HomeAction();
     private NewGroupAction newInernalGroupAction;
     private NewLdapProviderAction newLDAPProviderAction;
@@ -977,6 +979,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageTrustedEsmUsersAction());
             menu.add(getManageUDDIRegistriesAction());
             menu.add(getManageHttpConfigurationAction());
+            menu.add(getManageServiceResolutionMenuItem());
 
             menu.add(getCustomGlobalActionsMenu());
 
@@ -2358,6 +2361,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageTrustedEsmUsersAction());
             menu.add(getManageUDDIRegistriesAction());
             menu.add(getManageHttpConfigurationAction());
+            menu.add(getManageServiceResolutionMenuItem());
 
             menu.add(getCustomGlobalActionsMenu());
 
@@ -3271,12 +3275,29 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageRolesMenuItem;
     }
 
+    public JMenuItem getManageServiceResolutionMenuItem() {
+        if (manageServiceResolutionMenuItem == null) {
+            manageServiceResolutionMenuItem = new JMenuItem(getManageServiceResolutionAction());
+            manageServiceResolutionMenuItem.setText( "Manage Service Resolution" );
+            manageServiceResolutionMenuItem.setMnemonic( 0 );
+        }
+        return manageServiceResolutionMenuItem;
+    }
+
     private Action getManageRolesAction() {
         if (manageRolesAction == null) {
             manageRolesAction = new ManageRolesAction();
             disableUntilLogin(manageRolesAction);
         }
         return manageRolesAction;
+    }
+
+    private Action getManageServiceResolutionAction() {
+        if (manageServiceResolutionAction == null) {
+            manageServiceResolutionAction = new ManageResolutionConfigurationAction();
+            disableUntilLogin(manageServiceResolutionAction);
+        }
+        return manageServiceResolutionAction;
     }
 
     public JMenuItem getManageCertificatesMenuItem() {

@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.service;
 
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
@@ -17,7 +14,6 @@ import com.l7tech.policy.Policy;
 import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.event.system.ServiceCacheEvent;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
@@ -54,16 +50,14 @@ public class ServiceManagerImp
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ServiceAdmin.ROLE_NAME_TYPE_SUFFIX));
 
-    private final ResolutionManager resolutionManager;
     private final RoleManager roleManager;
 
     private ApplicationContext spring;
     private final ServiceAliasManager serviceAliasManager;
 
 
-    public ServiceManagerImp(ResolutionManager resolutionManager, RoleManager roleManager, ServiceAliasManager serviceAliasManager) {
+    public ServiceManagerImp(RoleManager roleManager, ServiceAliasManager serviceAliasManager) {
         this.roleManager = roleManager;
-        this.resolutionManager = resolutionManager;
         this.serviceAliasManager = serviceAliasManager;
     }
 
@@ -113,21 +107,7 @@ public class ServiceManagerImp
         logger.info("Saved service #" + oid);
         service.setOid(oid);
 
-        // 2. record resolution parameters
-        try {
-            resolutionManager.recordResolutionParameters(service);
-        } catch (DuplicateObjectException e) {
-            String msg = "Error saving service. Duplicate resolution parameters";
-            logger.info(msg + " " + e.getMessage());
-            logger.log(Level.FINE, msg, ExceptionUtils.getDebugException(e));
-            throw e;
-        } catch (UpdateException e) {
-            String msg = "cannot save service's resolution parameters.";
-            logger.log(Level.WARNING, msg, e);
-            throw new SaveException(msg, e);
-        }
-
-        // 3. Service now has correct oid so update the associated policy with the right name
+        // 2. Service now has correct oid so update the associated policy with the right name
         try {
             updatePolicyName( service, policy );
             Object key = getHibernateTemplate().save( policy );
@@ -142,22 +122,13 @@ public class ServiceManagerImp
             throw new SaveException(msg, e);
         }
 
-        // 4. update cache on callback
+        // 3. update cache on callback
         spring.publishEvent(new ServiceCacheEvent.Updated(service));
         return service.getOid();
     }
 
     @Override
     public void update(PublishedService service) throws UpdateException {
-        // try recording resolution parameters
-        try {
-            resolutionManager.recordResolutionParameters(service);
-        } catch (DuplicateObjectException e) {
-            String msg = "cannot update service. duplicate resolution parameters";
-            logger.log(Level.INFO, msg, ExceptionUtils.getDebugException(e));
-            throw new UpdateException(msg, e);
-        }
-
         updatePolicyName(service, service.getPolicy());
         try {
             super.update(service);
@@ -199,7 +170,6 @@ public class ServiceManagerImp
     public void delete(PublishedService service) throws DeleteException {
         super.delete(service);
 
-        resolutionManager.deleteResolutionParameters(service.getOid());
         logger.info("Deleted service " + service.getName() + " #" + service.getOid());
         spring.publishEvent(new ServiceCacheEvent.Deleted(service));
     }

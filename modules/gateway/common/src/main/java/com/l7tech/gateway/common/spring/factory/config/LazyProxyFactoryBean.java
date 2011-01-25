@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.spring.factory.config;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.atomic.AtomicReference;
@@ -85,7 +86,11 @@ public class LazyProxyFactoryBean extends AbstractFactoryBean implements Applica
                 reference.set(target);
             }
 
-            return method.invoke(target, args);
+            try {
+                return method.invoke(target, args);
+            } catch ( InvocationTargetException e ) {
+                throw e.getCause();
+            }
         }
     }
 }

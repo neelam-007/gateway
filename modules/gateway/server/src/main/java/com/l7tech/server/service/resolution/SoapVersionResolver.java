@@ -7,10 +7,9 @@ import com.l7tech.xml.soap.SoapVersion;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 /**
- * A resolver that filters based on SOAP envelope URIs.
+ * A resolver that filters based on SOAP version.
  * <p/>
  * This resolver is based on the content type of first part of the message, so it needn't use the message contents.
  */
@@ -20,7 +19,7 @@ public class SoapVersionResolver extends NameValueServiceResolver<String> {
     }
 
     @Override
-    protected List<String> doGetTargetValues(PublishedService service) throws ServiceResolutionException {
+    protected List<String> buildTargetValues(PublishedService service) throws ServiceResolutionException {
         SoapVersion ver = service.getSoapVersion();
         if (ver.getContentType() == null ) {
             return Arrays.asList(SoapVersion.SOAP_1_1.getContentType(), SoapVersion.SOAP_1_2.getContentType());
@@ -50,10 +49,5 @@ public class SoapVersionResolver extends NameValueServiceResolver<String> {
     @Override
     public boolean usesMessageContent() {
         return false;
-    }
-
-    @Override
-    public Set<String> getDistinctParameters(PublishedService candidateService) throws ServiceResolutionException {
-        throw new UnsupportedOperationException();
     }
 }

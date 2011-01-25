@@ -3,6 +3,7 @@ package com.l7tech.server.service;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.service.*;
+import com.l7tech.gateway.common.transport.ResolutionConfiguration;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
@@ -15,8 +16,12 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
+import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
+import com.l7tech.server.service.resolution.ResolutionManager;
+import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.tokenservice.SecurityTokenServiceTemplateRegistry;
+import com.l7tech.server.transport.ResolutionConfigurationManager;
 import com.l7tech.server.uddi.ServiceWsdlUpdateChecker;
 import com.l7tech.server.uddi.UDDIHelper;
 import com.l7tech.server.uddi.UDDITemplateManager;
@@ -59,6 +64,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     private final ServiceTemplateManager serviceTemplateManager;
     private final ServiceDocumentResolver serviceDocumentResolver;
     private final SecurityTokenServiceTemplateRegistry tokenServiceTemplateRegistry;
+    private final ResolutionManager resolutionManager;
+    private final ResolutionConfigurationManager resolutionConfigurationManager;
 
     private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
     private final ExecutorService validatorExecutor;
@@ -90,7 +97,9 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                             ServiceDocumentResolver serviceDocumentResolver,
                             UDDIRegistryAdmin uddiRegistryAdmin,
                             ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker,
-                            SecurityTokenServiceTemplateRegistry tokenServiceTemplateRegistry)
+                            SecurityTokenServiceTemplateRegistry tokenServiceTemplateRegistry,
+                            ResolutionManager resolutionManager,
+                            ResolutionConfigurationManager resolutionConfigurationManager)
     {
         this.licenseManager = licenseManager;
         this.uddiHelper = uddiHelper;
@@ -108,6 +117,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         this.uddiRegistryAdmin = uddiRegistryAdmin;
         this.uddiServiceWsdlUpdateChecker = uddiServiceWsdlUpdateChecker;
         this.tokenServiceTemplateRegistry = tokenServiceTemplateRegistry;
+        this.resolutionManager = resolutionManager;
+        this.resolutionConfigurationManager = resolutionConfigurationManager;
 
         int maxConcurrency = validated(serverConfig).getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
         BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
@@ -650,6 +661,41 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     @Override
     public ServiceTemplate createSecurityTokenServiceTemplate(String wsTrustNamespace) {
         return tokenServiceTemplateRegistry.createServiceTemplate(wsTrustNamespace);
+    }
+
+    @Override
+    public ResolutionReport generateResolutionReport( final PublishedService service,
+                                                      final Collection<ServiceDocument> serviceDocuments ) throws FindException {
+        if ( serviceDocuments != null ) {
+            service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
+        }
+
+        final ResolutionConfiguration configuration = resolutionConfigurationManager.findByUniqueName( "Default" );
+        final boolean pathRequired = configuration!= null && configuration.isPathRequired();
+
+        final Collection<ConflictInfo> conflictInformation = new ArrayList<ConflictInfo>();
+        try {
+            resolutionManager.checkDuplicateResolution( service );
+        } catch ( NonUniqueServiceResolutionException e ) {
+            for ( final Long serviceOid : e.getConflictingServices() ) {
+                for ( final Triple<String,String,String> parameters : e.getParameters( serviceOid ) ) {
+                    conflictInformation.add( new ConflictInfo(
+                        parameters.left,
+                        e.getServiceName( serviceOid, true ),
+                        e.getServiceName( serviceOid, false ),
+                        serviceOid,
+                        parameters.right,
+                        parameters.middle
+                    ) );
+                }
+            }
+        } catch ( ServiceResolutionException e ) {
+            throw new FindException( ExceptionUtils.getMessage(e) );
+        }
+
+        return new ResolutionReport(
+                service.getRoutingUri()!=null||!pathRequired,
+                conflictInformation.toArray(new ConflictInfo[conflictInformation.size()]) );
     }
 
     /**

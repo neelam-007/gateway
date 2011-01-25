@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.io.PortRange;
 import com.l7tech.common.io.PortRanges;
+import com.l7tech.console.action.ManageResolutionConfigurationAction;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -35,6 +36,7 @@ public class SsgConnectorManagerWindow extends JDialog {
     private JScrollPane mainScrollPane;
     private JLabel conflictLabel;
     private JButton interfacesButton;
+    private JButton serviceResolutionButton;
     private ConnectorTable connectorTable;
 
     private PermissionFlags flags;
@@ -108,6 +110,8 @@ public class SsgConnectorManagerWindow extends JDialog {
                 InterfaceTagsDialog.show(SsgConnectorManagerWindow.this, null);
             }
         });
+
+        serviceResolutionButton.setAction( new ManageResolutionConfigurationAction( this ) );
 
         conflictLabel.setText(" ");
 

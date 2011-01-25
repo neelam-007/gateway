@@ -227,6 +227,8 @@
         <constructor-arg ref="uddiRegistryAdmin"/>
         <constructor-arg ref="uddiServiceWsdlUpdateChecker"/>
         <constructor-arg ref="securityTokenServiceTemplateRegistry"/>
+        <constructor-arg ref="resolutionManager"/>
+        <constructor-arg ref="resolutionConfigurationManager"/>
     </bean>
 
     <bean id="folderAdmin" class="com.l7tech.server.folder.FolderAdminImpl">
@@ -306,6 +308,7 @@
 
     <bean id="transportAdmin" class="com.l7tech.server.transport.TransportAdminImpl">
         <constructor-arg ref="ssgConnectorManager"/>
+        <constructor-arg ref="resolutionConfigurationManager"/>
         <constructor-arg ref="defaultKey"/>
     </bean>
 

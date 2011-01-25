@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.*;
 import com.l7tech.server.*;
+import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.util.ExceptionUtils;
@@ -512,7 +513,7 @@ public class MigrationManagerImpl implements MigrationManager {
                 PublishedService service = (PublishedService) entity;
                 service.parseWsdlStrategy(new ServiceDocumentWsdlStrategy(findServiceDocuments(header, bundle.getExportedEntities())));
                 resolutionManager.checkDuplicateResolution(service);
-            } catch (DuplicateObjectException e) {
+            } catch (NonUniqueServiceResolutionException e) {
                 errors.add("Service resolution error: " + ExceptionUtils.getMessage(e));
             } catch (ServiceResolutionException e) {
                 errors.add("Error getting service resolution parameters: " + ExceptionUtils.getMessage(e));
