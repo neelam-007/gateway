@@ -151,7 +151,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
                 if (tmp != null) out.setCn(tmp.toString());
                 tmp = LdapUtils.extractOneAttributeValue(attributes, userType.getPasswdAttrName());
                 // todo, something about the passwd type
-                if (tmp != null) {
+                if (tmp instanceof byte[]) {
                     byte[] tmp2 = (byte[]) tmp;
                     out.setPassword(new String(tmp2));
                 }
