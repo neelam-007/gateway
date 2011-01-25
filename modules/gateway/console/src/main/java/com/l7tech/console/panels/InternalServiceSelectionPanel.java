@@ -48,16 +48,14 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
                 updateTemplateFields(servicesChooser.getSelectedItem());                
             }
         });
-
+        
+        serviceUri.setDocument(new FilterDocument(128, null));
         serviceUri.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
             public void run() {
                 notifyListeners();
             }
         }
         ));
-
-        serviceUri.setDocument(new FilterDocument(128, null));
-
         serviceUri.addKeyListener(new KeyListener() {
             public void keyPressed(KeyEvent e) {
                 //always start with "/" for URI
