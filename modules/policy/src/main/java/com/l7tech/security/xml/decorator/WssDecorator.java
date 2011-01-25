@@ -1,12 +1,7 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.security.xml.decorator;
 
 import com.l7tech.message.Message;
+import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.xml.sax.SAXException;
 
@@ -54,6 +49,13 @@ public interface WssDecorator {
          * @return the WSSC session identifier string, or null.
          */
         String getWsscSecurityContextId();
+
+        /**
+         * If a WS-SecureConversation was used, this returns the context that was used.
+         *
+         * @return the WSSC context, or null.
+         */
+        SecurityContext getWsscSecurityContext();
 
         /**
          * Retrieves the signature values added by the decorator and their encryption status in the decorated message.

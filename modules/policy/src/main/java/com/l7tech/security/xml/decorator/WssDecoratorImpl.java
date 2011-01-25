@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- *
- */
 package com.l7tech.security.xml.decorator;
 
 import com.ibm.xml.dsig.*;
@@ -19,6 +15,7 @@ import com.l7tech.security.keys.AesKey;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.xml.*;
+import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.security.xml.processor.X509SigningSecurityTokenImpl;
@@ -82,7 +79,7 @@ public class WssDecoratorImpl implements WssDecorator {
         private NamespaceFactory nsf = new NamespaceFactory();
         private byte[] lastEncryptedKeyBytes = null;
         private SecretKey lastEncryptedKeySecretKey = null;
-        private String lastWsscSecurityContextId = null;
+        private DecorationRequirements.SecureConversationSession lastWsscSecurityContext = null;
         private AttachmentEntityResolver attachmentResolver;
         private Map<String,Boolean> signatures = new HashMap<String, Boolean>();
         private Set<String> encryptedSignatures = new HashSet<String>();
@@ -243,7 +240,7 @@ public class WssDecoratorImpl implements WssDecorator {
         if (session != null) {
             if (session.getId() == null)
                 throw new DecoratorException("If SecureConversation Session is specified, but it has no session ID");
-            c.lastWsscSecurityContextId = session.getId();
+            c.lastWsscSecurityContext = session;
             if (session.getSCNamespace() != null) {
                 for (String wsscNS: SoapConstants.WSSC_NAMESPACE_ARRAY) {
                     if (session.getSCNamespace().equals( wsscNS )) {
@@ -898,7 +895,12 @@ public class WssDecoratorImpl implements WssDecorator {
 
             @Override
             public String getWsscSecurityContextId() {
-                return c.lastWsscSecurityContextId;
+                return c.lastWsscSecurityContext != null ? c.lastWsscSecurityContext.getId() : null;
+            }
+
+            @Override
+            public SecurityContext getWsscSecurityContext() {
+                return c.lastWsscSecurityContext;
             }
 
             @Override

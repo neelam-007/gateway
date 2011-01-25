@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.security.xml.decorator;
 
 import com.l7tech.kerberos.KerberosServiceTicket;
@@ -281,7 +278,6 @@ public class DecorationRequirements {
     /**
      * @return symmetric key for signing and encryption, or null to disable use of #EncryptedKeySHA1.
      * @see #setEncryptedKey
-     * @see #setEncryptedKeySha1
      */
     public byte[] getEncryptedKey() {
         return encryptedKey;
@@ -388,14 +384,14 @@ public class DecorationRequirements {
         // todo: check for other WSS11 decorations -- encrypted headers, when they will be supported
     }
 
-    public interface SecureConversationSession {
+    public interface SecureConversationSession extends SecurityContext {
         String getId();
         byte[] getSecretKey();
         String getSCNamespace();
     }
 
     /** A simple implementation of SecureConversationSession for users with simple needs. */
-    public static class SimpleSecureConversationSession implements SecureConversationSession, SecurityContext {
+    public static class SimpleSecureConversationSession implements SecureConversationSession {
         private String id;
         private byte[] key;
         private String ns;

@@ -18,7 +18,7 @@ class SecurityContextTokenImpl extends SigningSecurityTokenImpl implements Secur
         super(secConTokEl);
         this.secContext = secContext;
         this.identifier = identifier;
-        this.elementWsuId = SoapUtil.getElementWsuId(secConTokEl);
+        this.elementWsuId = secConTokEl!=null ? SoapUtil.getElementWsuId(secConTokEl) : null;
     }
 
     public SecurityContext getSecurityContext() {

@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.security.xml;
 
 import com.l7tech.common.io.XmlUtil;
@@ -495,6 +492,9 @@ public class WssRoundTripTest {
 
             @Override
             public String getWsscSecurityContextId() { return null; }
+
+            @Override
+            public SecurityContext getWsscSecurityContext() { return null; }
 
             @Override
             public Map<String, Boolean> getSignatures() {

@@ -18,6 +18,7 @@ import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorValidationException;
 import com.l7tech.security.xml.processor.SecurityContext;
+import com.l7tech.security.xml.processor.SecurityContextFinder;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
@@ -46,7 +47,7 @@ public class WSSecurityProcessorUtils {
      * Get the processor result for the given message, running the processor if necessary.
      *
      * @param msg The message whose security is being evaluated
-     * @param messageDescriptionForLogging A description for the mesage being evaluated
+     * @param messageDescriptionForLogging A description for the message being evaluated
      * @param securityTokenResolver The resolver to use to locate security tokens
      * @param audit The auditor to use for errors.
      * @return The processor result or null.
@@ -64,6 +65,7 @@ public class WSSecurityProcessorUtils {
         try {
             final WssProcessorImpl impl = new WssProcessorImpl(msg);
             impl.setSecurityTokenResolver(securityTokenResolver);
+            impl.setSecurityContextFinder(buildContextualFinder(msg));
 
             WssSettings settings = getWssSettings();
             impl.setSignedAttachmentSizeLimit(settings.signedAttachmentMaxSize);
@@ -698,6 +700,27 @@ public class WSSecurityProcessorUtils {
         return set;
     }
 
+    private static SecurityContextFinder buildContextualFinder( final Message message ) {
+        SecurityContextFinder contextualFinder = null;
+
+        final Message relatedRequest = message.getRelated( MessageRole.REQUEST );
+        if ( relatedRequest != null ) {
+            contextualFinder = new SecurityContextFinder() {
+                @Override
+                public SecurityContext getSecurityContext( final String securityContextIdentifier ) {
+                    for ( final WssDecorator.DecorationResult result : relatedRequest.getSecurityKnob().getAllDecorationResults() ) {
+                        if ( securityContextIdentifier.equals( result.getWsscSecurityContextId() ) ) {
+                            return result.getWsscSecurityContext();
+                        }
+                    }
+                    return null;
+                }
+            };
+        }
+
+        return contextualFinder;
+    }
+
     private static WssSettings getWssSettings() {
         WssSettings wssSettings = wssSettingsReference.get();
 
@@ -718,7 +741,7 @@ public class WSSecurityProcessorUtils {
     }
 
     private static class MultipleTokenException extends Exception {
-        public MultipleTokenException( String message ) {
+        private MultipleTokenException( String message ) {
             super( message );
         }
     }

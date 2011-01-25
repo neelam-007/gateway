@@ -25,6 +25,7 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.validator.DefaultPolicyValidator.DeferredValidate;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.util.Functions;
 import com.l7tech.wsdl.Wsdl;
 
@@ -84,6 +85,7 @@ public class PathValidator {
     boolean seenResponse = false;
     boolean seenParsing = false;
     boolean seenRouting = false;
+    boolean seenResponseSecurityToken = false;
 
     private final static class MessageTargetContext {
         private Set<Class<? extends Assertion>> seenAssertionClasses = new HashSet<Class<? extends Assertion>>();
@@ -185,6 +187,10 @@ public class PathValidator {
             validateRegex((Regex)a);
         } else if (a instanceof HtmlFormDataAssertion) {
             processHtmlFormDataAssertion((HtmlFormDataAssertion)a);
+        } else if (a instanceof AddWssSecurityToken) {
+            processAddWssSecurityToken((AddWssSecurityToken)a);
+        } else if (a instanceof AddWssUsernameToken) {
+            if ( ((AddWssUsernameToken)a).isEncrypt() ) setSeenResponseSecurityToken();
         }
 
         if (a instanceof XslTransformation) {
@@ -302,6 +308,14 @@ public class PathValidator {
             result.addWarning(new PolicyValidatorResult.Warning(htmlFormDataAssertion, assertionPath,
                                                                 bundle.getString("assertion.routing.shouldbebefore"),
                                                                 null));
+        }
+    }
+
+    private void processAddWssSecurityToken( final AddWssSecurityToken addSecurityToken ) {
+        if ( addSecurityToken.getTokenType() == SecurityTokenType.WSSC_CONTEXT ||
+             addSecurityToken.getTokenType() == SecurityTokenType.WSS_ENCRYPTEDKEY ||
+             (addSecurityToken.getTokenType() == SecurityTokenType.WSS_USERNAME && addSecurityToken.isEncrypt())) {
+            setSeenResponseSecurityToken();
         }
     }
 
@@ -482,7 +496,8 @@ public class PathValidator {
                  !haveSeen(targetName, ASSERTION_SECURECONVERSATION) &&
                  !seenSamlSecurity(a) &&
                  !haveSeen(targetName, ASSERTION_ENCRYPTEDUSERNAMETOKEN) &&
-                 !haveSeen(targetName, ASSERTION_KERBEROSTICKET))
+                 !haveSeen(targetName, ASSERTION_KERBEROSTICKET) &&
+                 !(Assertion.isRequest(a) || haveSeenResponseSecurityToken()))
             {
                 final String actor = assertionToActor(a);
                 final String msg;
@@ -820,6 +835,14 @@ public class PathValidator {
 
     private boolean haveSeen(String targetName, Class<? extends Assertion> assertionClass) {
         return getMessageTargetContext(targetName).seenAssertionClasses.contains(assertionClass);
+    }
+
+    private void setSeenResponseSecurityToken() {
+        seenResponseSecurityToken = true;
+    }
+
+    private boolean haveSeenResponseSecurityToken() {
+        return seenResponseSecurityToken;
     }
 
     private boolean haveSeenInstanceOf(String targetName, Class<? extends Assertion> assertionClass) {

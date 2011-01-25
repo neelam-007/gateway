@@ -1267,10 +1267,10 @@ public class WssProcessorImpl implements WssProcessor {
             else {
                 XmlSecurityToken tok = findSecurityContextTokenBySessionId(ref);
 
-                // WCF Unum support - WCF service responses do not include the SecurityContextToken in the message, just the Identifier as the Id
-                if (tok == null && SoapConstants.VALUETYPE_SECURECONV2.equals(refEl.getAttribute("ValueType"))) {
+                // The SecurityContextToken may not be in this message, try lookup by ID
+                if (tok == null && refEl.getAttribute("ValueType").endsWith("/sct") ) {
                     SecurityContext sctx = securityContextFinder.getSecurityContext(ref);
-                    if (sctx != null) tok = new SecurityContextTokenImpl(sctx, derivedKeyEl, ref);
+                    if (sctx != null) tok = new SecurityContextTokenImpl(sctx, null, ref);
                 }
 
                 derivationSource = tok;
