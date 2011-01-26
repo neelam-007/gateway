@@ -130,16 +130,12 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         ldapCombo.setModel(new DefaultComboBoxModel(populateLdapProviders()));
         cacheSizeSpinner.setModel(new SpinnerNumberModel(assertion.getCacheSize(), 0, 100000, 1));
         validator.addRule(new InputValidator.NumberSpinnerValidationRule(cacheSizeSpinner, "Cache size"));
-        InputValidator.NumberSpinnerValidationRule.validateOnChange( validator, cachePeriodSpinner );
         cachePeriodSpinner.setModel(new SpinnerNumberModel((int)assertion.getCachePeriod(), 0, null, 1));
         validator.addRule(new InputValidator.NumberSpinnerValidationRule(cachePeriodSpinner, "Cache maximum age"));
-        InputValidator.NumberSpinnerValidationRule.validateOnChange( validator, cachePeriodSpinner );
         maximumResultsSpinner.setModel( new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1) );
         validator.addRule(new InputValidator.NumberSpinnerValidationRule(maximumResultsSpinner, "Maximum results"));
-        InputValidator.NumberSpinnerValidationRule.validateOnChange( validator, maximumResultsSpinner );
         maximumResultsSpinner.getEditor().setPreferredSize( cachePeriodSpinner.getEditor().getPreferredSize() );
 
-        validator.disableButtonWhenInvalid(okBut);
         validator.constrainTextFieldToBeNonEmpty("Search Filter", searchField, new InputValidator.ComponentValidationRule(searchField) {
             @Override
             public String getValidationError() {
