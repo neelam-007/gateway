@@ -1,14 +1,19 @@
 package com.l7tech.external.assertions.cache.server;
 
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -115,6 +120,7 @@ public class SsgCache {
         private final long timeStamp;
         private final String contentType;
         private final StashManager stashManager;
+        private final ReadWriteLock stashManagerLock = new ReentrantReadWriteLock(); // ReentrantReadWriteLock supports lock downgrade
 
         public Entry(StashManager stashManager, String contentType) {
             this.timeStamp = System.currentTimeMillis();
@@ -126,12 +132,90 @@ public class SsgCache {
             return timeStamp;
         }
 
-        public StashManager getStashManager() {
-            return stashManager;
-        }
-
         public String getContentType() {
             return contentType;
+        }
+
+        /**
+         * Get the size of the entry.
+         *
+         * @return The size, suitable for use with putData.
+         * @see #putData(byte[])
+         */
+        public int getDataSize() {
+            final long size;
+
+            stashManagerLock.readLock().lock();
+            try {
+                size = stashManager.getSize( 0 );
+            } finally {
+                stashManagerLock.readLock().unlock();
+            }
+
+            if ( size > Integer.MAX_VALUE || size < 0) {
+                return 0;
+            }
+
+            return (int) size;
+        }
+
+        /**
+         * Put the data for this entry into the given byte array.
+         *
+         * @param buffer The buffer which must be large enough for the data.
+         * @throws NoSuchPartException If this entry has no part 0.
+         * @throws IOException If an error occurs
+         */
+        public void putData( final byte[] buffer ) throws NoSuchPartException, IOException {
+            InputStream in = null;
+            Lock writeLock = stashManagerLock.writeLock();
+            writeLock.lock();
+            try {
+                if ( stashManager.isByteArrayAvailable( 0 ) ) {
+                    final byte[] data = stashManager.recallBytes( 0 );
+                    stashManagerLock.readLock().lock();
+                    try {
+                        writeLock.unlock(); // downgrade to read lock for copy
+                        writeLock = null;
+                        System.arraycopy( data, 0, buffer, 0, data.length );
+                    } finally {
+                        stashManagerLock.readLock().unlock();
+                    }
+                } else {
+                    in = stashManager.recall(0);
+                    stashManagerLock.readLock().lock();
+                    try {
+                        writeLock.unlock(); // downgrade to read lock for copy
+                        writeLock = null;
+                        final int read = in.read( buffer );
+                        if ( read != buffer.length ) {
+                            throw new IOException( "Partial read " + read + "/" + buffer.length );
+                        }
+                    } finally {
+                        stashManagerLock.readLock().unlock();
+                    }
+                }
+            } finally {
+                ResourceUtils.closeQuietly( in );
+                if ( writeLock != null ) writeLock.unlock();
+            }
+        }
+
+        private boolean tryClose() {
+            boolean closed = false;
+
+            if ( stashManagerLock.writeLock().tryLock() ) {
+                try {
+                    closed = true;
+                    stashManager.close();
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Exception while closing StashManager: " + ExceptionUtils.getMessage(e), e);
+                } finally {
+                    stashManagerLock.writeLock().unlock();
+                }
+            }
+
+            return closed;
         }
     }
 
@@ -178,6 +262,7 @@ public class SsgCache {
             return name + "[" + maxEntries + ", " + maxAgeMillis + "ms, " + maxSizeBytes + "bytes]";
         }
 
+        @SuppressWarnings({ "RedundantIfStatement" })
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -234,11 +319,17 @@ public class SsgCache {
     void cleanup() {
         Entry entry;
         int count = 0;
+        int deferredCount = 0;
         while((entry = removed.poll()) != null) {
-            closeEntry(entry);
-            count++;
+            if ( closeEntry(entry) ) {
+                count++;
+            } else {
+                // try again later
+                removed.add(entry);
+                deferredCount++;
+            }
         }
-        logger.log(Level.FINE, "Cache " + config.name + ": cleaned up " + count +" entries.");
+        logger.log(Level.FINE, "Cache " + config.name + ": cleaned up " + count +" entries, deferred " + deferredCount +" entries.");
     }
 
     // - PRIVATE
@@ -252,13 +343,10 @@ public class SsgCache {
     // entries removed from cache; background thread in SsgCacheManager will close() them
     private final ConcurrentLinkedQueue<Entry> removed = new ConcurrentLinkedQueue<Entry>();
 
-    private void closeEntry(Entry entry) {
-        if (entry != null) try {
-            synchronized (entry) {
-                entry.stashManager.close();
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Exception while closing StashManager: " + ExceptionUtils.getMessage(e), e);
-        }
+    /**
+     * @return true if closed.
+     */
+    private boolean closeEntry(Entry entry) {
+        return entry == null || entry.tryClose();
     }
 }

@@ -1,19 +1,18 @@
 package com.l7tech.external.assertions.cache.server;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.external.assertions.cache.CacheLookupAssertion;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
-import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.external.assertions.cache.CacheLookupAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 
@@ -86,8 +85,8 @@ public class ServerCacheLookupAssertion extends AbstractMessageTargetableServerA
             try {
                 byte[] bodyBytes;
                 try {
-                    bodyInputStream = cachedEntry.getStashManager().recall(0);
-                    bodyBytes = IOUtils.slurpStream(bodyInputStream);
+                    bodyBytes = new byte[ cachedEntry.getDataSize() ];
+                    cachedEntry.putData( bodyBytes );
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "Exception while retrieving cached information: " + ExceptionUtils.getMessage(e), e);
                     return AssertionStatus.FAILED;
