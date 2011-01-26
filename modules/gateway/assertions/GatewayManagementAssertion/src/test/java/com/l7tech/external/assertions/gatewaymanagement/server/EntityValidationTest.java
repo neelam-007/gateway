@@ -497,11 +497,7 @@ public class EntityValidationTest {
         service.setRoutingUri( "/service/23141123541535232" );
         invalid( service, "service with routing uri " + service.getRoutingUri() );
 
-        // Test "*[?|&]serviceoid=3421" is not permitted
-        service.setRoutingUri( "/path?serviceoid=123" );
-        invalid( service, "service with routing uri " + service.getRoutingUri() );
-
-        service.setRoutingUri( "/path?a=b&serviceoid=12y3&e=f" );
+        service.setRoutingUri( "/service/23141123541535232/any/path/here" );
         valid( service, "service with routing uri " + service.getRoutingUri() );
     }
 

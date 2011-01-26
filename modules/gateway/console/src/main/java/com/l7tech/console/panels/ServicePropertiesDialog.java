@@ -983,7 +983,7 @@ public class ServicePropertiesDialog extends JDialog {
 
         for (Pattern regexPattern : compiled) {
             Matcher matcher = regexPattern.matcher(newURI);
-            if (matcher.find() && matcher.groupCount() >= 1) {
+            if (matcher.find() && matcher.groupCount() == 1) {
                 return true;
             }
         }

@@ -458,7 +458,6 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     @Pattern.List( {
             @Pattern(regexp="(?!/ssg).*", message="must not start with '/ssg'"),
             @Pattern(regexp="(?!.*?/service/\\d+$).*"),
-            @Pattern(regexp="(?!.*?[\\?&]serviceoid=\\d+(?:\\&|$)).*"),
             @Pattern(regexp="/.+")
     } )
     public String getRoutingUri() {
