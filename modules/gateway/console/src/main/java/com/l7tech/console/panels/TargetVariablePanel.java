@@ -4,7 +4,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.policy.SsmPolicyVariableUtils;
-import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
@@ -44,6 +43,8 @@ public class TargetVariablePanel  extends JPanel {
 
     private String[] suffixes = null;
     private boolean acceptEmpty = false;
+    private boolean valueWillBeRead = false;
+    private boolean valueWillBeWritten = true;
 
     private static ResourceBundle resources = ResourceBundle.getBundle(TargetVariablePanel.class.getName());
     private final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
@@ -203,11 +204,27 @@ public class TargetVariablePanel  extends JPanel {
         this.acceptEmpty = acceptEmpty;
     }
 
+    public boolean isValueWillBeRead() {
+        return valueWillBeRead;
+    }
+
+    public void setValueWillBeRead(boolean valueWillBeRead) {
+        this.valueWillBeRead = valueWillBeRead;
+    }
+
+    public boolean isValueWillBeWritten() {
+        return valueWillBeWritten;
+    }
+
+    public void setValueWillBeWritten(boolean valueWillBeWritten) {
+        this.valueWillBeWritten = valueWillBeWritten;
+    }
+
     /**
      * Validates values in various fields and sets the status labels as appropriate.
      */
     private synchronized void validateFields() {
-        if(isEnabled()== false) {
+        if(!isEnabled()) {
             entryValid = true ;
             return;
         }
@@ -232,36 +249,74 @@ public class TargetVariablePanel  extends JPanel {
             suffixField.setToolTipText(reconstructLongStringByAddingLineBreakTags(validateNameResult, 58));
         }
         else {
+            final boolean exists;
+            final boolean builtin;
+            final boolean unsettable;
             final VariableMetadata meta = BuiltinVariables.getMetadata(variableName);
-            if (meta == null) {
-                if (Syntax.getMatchingName(variableName, predecessorVariables) == null) {
-                    statusLabel.setText(resources.getString(suffixes!=null?"ok.prefix":"label.ok"));
-                } else {
-                    statusLabel.setText(resources.getString("ok.overwrite"));
-                }
-                statusLabel.setIcon(OK_ICON);
+            if (meta != null) {
+                exists = true;
+                builtin = true;
+                unsettable = !meta.isSettable();
             } else {
-                if (meta.isSettable()) {
-                    statusLabel.setIcon(OK_ICON);
-                    statusLabel.setText(resources.getString("ok.built.in.settable"));
-                } else {
-                    entryValid = false;
-                    statusLabel.setIcon(WARNING_ICON);
-                    statusLabel.setText(resources.getString("built.in.not.settable"));
-                }
+                exists = Syntax.getMatchingName(variableName, predecessorVariables) != null;
+                builtin = false;
+                unsettable = false;
             }
-        }
 
-        if(entryValid && suffixes!=null){
+            final String okPrefix = suffixes != null ? "ok.prefix" : "label.ok";
+            final String label;
+            if (valueWillBeWritten) {
+                if (unsettable) {
+                    entryValid = false;
+                    label = "built.in.not.settable";
+                } else {
+                    entryValid = true;
+                    label = builtin ? "ok.built.in.settable" : (exists || isAtLeastOneSuffixOverwritten()) ? "ok.overwrite" : okPrefix;
+                }
+            } else if (valueWillBeRead) {
+                if (!exists || !isEverySuffixPresentInPredecessors()) {
+                    entryValid = false;
+                    label = "invalid.notfound";
+                } else {
+                    entryValid = true;
+                    label = okPrefix;
+                }
+            } else {
+                entryValid = true;
+                label = "label.ok";
+            }
+            statusLabel.setIcon(entryValid ? OK_ICON : WARNING_ICON);
+            statusLabel.setText(resources.getString(label));
+
+        }
+    }
+
+    private boolean isAtLeastOneSuffixOverwritten() {
+        boolean ret = false;
+        if (suffixes != null) {
             final String variablePrefix = getVariable();
             for (String suffix: suffixes) {
                 if (predecessorVariables.contains(variablePrefix + "." + suffix)) {
-                    statusLabel.setText(resources.getString("ok.overwrite"));
-                    statusLabel.setIcon(OK_ICON);
+                    ret = true;
                     break;
                 }
             }
         }
+        return ret;
+    }
+
+    private boolean isEverySuffixPresentInPredecessors() {
+        boolean ret = true;
+        if (suffixes != null) {
+            final String variablePrefix = getVariable();
+            for (String suffix: suffixes) {
+                if (!predecessorVariables.contains(variablePrefix + "." + suffix)) {
+                    ret = false;
+                    break;
+                }
+            }
+        }
+        return ret;
     }
 
     private void clearVariableNameStatus() {

@@ -23,7 +23,6 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
@@ -31,12 +30,13 @@ import com.l7tech.xml.saml.SamlAssertion;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
-import java.util.Map;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
@@ -101,27 +101,53 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
     }
 
     private AssertionStatus addSamlAssertion(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext, DecorationRequirements dreq) {
-        String assertionTemplate = assertion.getSamlAssertionTemplate();
-        if (assertionTemplate == null || assertionTemplate.length() < 1) {
-            auditor.logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, "no SAML assertion template was provided");
+        String assertionVar = assertion.getSamlAssertionVariable();
+        if (assertionVar == null || assertionVar.length() < 1) {
+            auditor.logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, "no SAML assertion variable was provided");
             return AssertionStatus.SERVER_ERROR;
         }
 
-        Map<String, Object> varMap = context.getVariableMap(variableNames, auditor);
-        String samlXml = ExpandVariables.process(assertionTemplate, varMap, auditor);
-        Document samlDoc;
+        Element samlElement;
         try {
-            samlDoc = XmlUtil.stringToDocument(samlXml);
+            Object samlVal = context.getVariable(assertionVar);
+
+            // Unwrap singleton array or collection
+            if (samlVal instanceof Object[]) {
+                Object[] vals = (Object[]) samlVal;
+                if (vals.length == 1)
+                    samlVal = vals[0];
+            } else if (samlVal instanceof Collection) {
+                Collection vals = (Collection) samlVal;
+                if (vals.size() == 1)
+                    samlVal = vals.iterator().next();
+            }
+
+            // Deal with Element, Document, String value
+            if (samlVal instanceof Element) {
+                samlElement = (Element) samlVal;
+            } else if (samlVal instanceof Document) {
+                samlElement = ((Document) samlVal).getDocumentElement();
+            } else if (samlVal instanceof CharSequence) {
+                String samlXml = samlVal.toString();
+                samlElement = XmlUtil.stringToDocument(samlXml).getDocumentElement();
+            } else {
+                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML);
+                return AssertionStatus.SERVER_ERROR;
+            }
+
+        } catch (NoSuchVariableException e) {
+            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE_WARNING, assertionVar);
+            return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_BAD_SAML_XML, null, e);
+            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML, null, e);
             return AssertionStatus.SERVER_ERROR;
         }
 
         SamlAssertion samlAssertion;
         try {
-            samlAssertion = SamlAssertion.newInstance(samlDoc.getDocumentElement(), securityTokenResolver);
+            samlAssertion = SamlAssertion.newInstance(samlElement, securityTokenResolver);
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_BAD_SAML_XML, null, e);
+            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML, null, e);
             return AssertionStatus.SERVER_ERROR;
         }
 

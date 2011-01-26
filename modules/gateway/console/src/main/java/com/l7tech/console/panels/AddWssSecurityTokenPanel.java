@@ -32,7 +32,8 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
     private JCheckBox encryptUsernameTokenCheckBox;
     private JRadioButton useLastGatheredRequestRadioButton;
     private JRadioButton useSpecifiedCredentialsRadioButton;
-    private JTextArea samlAssertionXmlTextArea;
+    private JPanel samlVariablePanel;
+    private TargetVariablePanel samlTargetVariablePanel;
     private JTextField wsscSessionVariableField;
     private JTabbedPane propertiesTabbedPane;
     private JCheckBox signTokenCheckBox;
@@ -81,6 +82,13 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         tokenTypeCombo.setSelectedItem(tokenType);
         tokenTypeCombo.addActionListener(updater);
 
+        samlTargetVariablePanel = new TargetVariablePanel();
+        samlTargetVariablePanel.setAssertion(assertion);
+        samlTargetVariablePanel.setValueWillBeWritten(false);
+        samlTargetVariablePanel.setValueWillBeRead(true);
+        samlVariablePanel.setLayout(new BorderLayout());
+        samlVariablePanel.add(samlTargetVariablePanel, BorderLayout.CENTER);
+
         if (SecurityTokenType.WSS_USERNAME == tokenType) {
             includePasswordCheckBox.setEnabled(true);
             includePasswordCheckBox.setSelected(assertion.isIncludePassword());
@@ -109,7 +117,7 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         } else if (SecurityTokenType.WSSC_CONTEXT == tokenType) {
             wsscSessionVariableField.setText(assertion.getWsscSessionVariable() == null ? "" : assertion.getWsscSessionVariable());
         } else if (SecurityTokenType.SAML_ASSERTION == tokenType) {
-            samlAssertionXmlTextArea.setText(assertion.getSamlAssertionTemplate() == null ? "" : assertion.getSamlAssertionTemplate());
+            samlTargetVariablePanel.setVariable(assertion.getSamlAssertionVariable() == null ? "" : assertion.getSamlAssertionVariable());
         } else if (SecurityTokenType.WSS_ENCRYPTEDKEY == tokenType) {
             // No extra configuration for this type, currently.
         }
@@ -208,7 +216,7 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         assertion.setDigest(digestPasswordCheckBox.isSelected());
         assertion.setEncrypt(encryptUsernameTokenCheckBox.isSelected());
 
-        assertion.setSamlAssertionTemplate(SecurityTokenType.SAML_ASSERTION == type ? samlAssertionXmlTextArea.getText() : null);
+        assertion.setSamlAssertionVariable(SecurityTokenType.SAML_ASSERTION == type ? samlTargetVariablePanel.getVariable() : null);
 
         assertion.setWsscSessionVariable(SecurityTokenType.WSSC_CONTEXT == type ? wsscSessionVariableField.getText() : null);
     }

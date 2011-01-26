@@ -47,7 +47,7 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     private String username;
     private String password;
     private String wsscSessionVariable;
-    private String samlAssertionTemplate;
+    private String samlAssertionVariable;
 
     public AddWssSecurityToken() {
         super(TargetMessageType.RESPONSE, true);
@@ -213,12 +213,12 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
         this.wsscSessionVariable = wsscSessionVariable;
     }
 
-    public String getSamlAssertionTemplate() {
-        return samlAssertionTemplate;
+    public String getSamlAssertionVariable() {
+        return samlAssertionVariable;
     }
 
-    public void setSamlAssertionTemplate(String samlAssertionTemplate) {
-        this.samlAssertionTemplate = samlAssertionTemplate;
+    public void setSamlAssertionVariable(String samlAssertionVariable) {
+        this.samlAssertionVariable = samlAssertionVariable;
     }
 
     @Override
@@ -245,11 +245,12 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
         StringBuilder allRefs = new StringBuilder();
         if ( username != null ) allRefs.append( username );
         if ( password != null ) allRefs.append( password );
-        if ( samlAssertionTemplate != null ) allRefs.append( samlAssertionTemplate );
         String[] referencedVariables = Syntax.getReferencedNames( allRefs.toString() );
         vars.addAll( Arrays.asList(referencedVariables));
         if (wsscSessionVariable != null && wsscSessionVariable.length() > 0)
             vars.add(wsscSessionVariable);
+        if (samlAssertionVariable != null && samlAssertionVariable.length() > 0)
+            vars.add(samlAssertionVariable);
 
         return vars.toArray(new String[vars.size()]);
     }

@@ -625,7 +625,7 @@ public class AssertionMessages extends Messages {
     public static final M ADD_WSS_TOKEN_NO_USERNAME      = m(7902, Level.WARNING, true, false, "Credentials were available, but no username could be found");
     public static final M ADD_WSS_TOKEN_NO_PASSWORD      = m(7903, Level.WARNING, true, false, "Password inclusion was requested, but no password could be found");
     public static final M ADD_WSS_TOKEN_NOT_SESSION      = m(7904, Level.WARNING, false, false, "Specified context variable exists but does not contain a WS-SecureConversation session");
-    public static final M ADD_WSS_TOKEN_BAD_SAML_XML     = m(7905, Level.WARNING, false, false, "Expanded SAML assertion template was not valid SAML assertion XML");
+    public static final M ADD_WSS_TOKEN_NOT_SAML         = m(7905, Level.WARNING, false, false, "SAML assertion variable did not contain a valid SAML assertion");
     public static final M ADD_WSS_TOKEN_MULTIPLE_REQ_TOKENS = m(7906, Level.INFO, false, false, "Unable to identify the encryption recipient because we are decorating a response to a request with multiple eligible tokens.  Encryption recipient must be specified explicitly.");
     public static final M ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE = m(7907, Level.WARNING, false, false, "The SAML assertion uses a secret key for subject confirmation, but the Gateway does not already possess this key, and is unable to unwrap it from the EncryptedKey");
 
