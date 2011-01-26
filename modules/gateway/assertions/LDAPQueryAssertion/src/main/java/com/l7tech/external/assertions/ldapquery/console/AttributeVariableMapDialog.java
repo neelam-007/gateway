@@ -37,7 +37,7 @@ public class AttributeVariableMapDialog extends JDialog {
 
     private static final String MV_USE_FIRST = "Use first value";
     private static final String MV_JOIN_COMMAS = "Join with commas";
-    private static final String MV_MULTIVALUED = "Set multi-valued context variable";
+    private static final String MV_MULTIVALUED = "Set multivalued context variable";
     private static final String MV_FAIL = "Fail assertion";
     private static final String[] MV_MODEL = { MV_USE_FIRST, MV_JOIN_COMMAS, MV_MULTIVALUED, MV_FAIL };
 
