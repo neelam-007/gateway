@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels;
 
 import com.l7tech.common.http.HttpMethod;
@@ -12,14 +9,14 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -55,6 +52,7 @@ public class PublishNonSoapServiceWizard extends Wizard {
         setTitle("Publish XML Application Wizard");
 
         getButtonHelp().addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(PublishNonSoapServiceWizard.this);
             }
@@ -62,9 +60,10 @@ public class PublishNonSoapServiceWizard extends Wizard {
 
     }
 
-    protected void finish(ActionEvent evt) {
-        PublishedService service = new PublishedService();
-        ArrayList allAssertions = new ArrayList();
+    @Override
+    protected void finish( final ActionEvent evt ) {
+        final PublishedService service = new PublishedService();
+        ArrayList<Assertion> allAssertions = new ArrayList<Assertion>();
         try {
             // get the assertions from the all assertion
             if (panel2 != null)
@@ -83,29 +82,49 @@ public class PublishNonSoapServiceWizard extends Wizard {
             service.setName(panel1.getPublishedServiceName());
             service.setRoutingUri(panel1.getRoutingURI());
 
-            long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
-            Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+            final Runnable saver = new Runnable(){
+                @Override
+                public void run() {
+                    try {
+                        long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
+                        Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+                        service.setOid(oid);
+                        PublishNonSoapServiceWizard.this.notify(new ServiceHeader(service));
+                        PublishNonSoapServiceWizard.super.finish(evt);
+                    } catch ( Exception e ) {
+                        handlePublishError( service, e );
+                    }
+                }
+            };
 
-            service.setOid(oid);
-            PublishNonSoapServiceWizard.this.notify(new ServiceHeader(service));
-        } catch (Exception e) {
-            final String message = "Unable to save the service '" + service.getName() + "'\n";
-            if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                JOptionPane.showMessageDialog(this,
-                  message +
-                  "because an existing service is already using the URI " + service.getRoutingUri(),
-                  "Service already exists",
-                  JOptionPane.ERROR_MESSAGE);
+            if ( ServicePropertiesDialog.hasResolutionConflict( service, null ) ) {
+                final String message =
+                      "Resolution parameters conflict for service '" + service.getName() + "'\n" +
+                      "because an existing service is already using the URI " + service.getRoutingUri() + "\n\n" +
+                      "Do you want to save this service?";
+                DialogDisplayer.showConfirmDialog(this, message, "Service Resolution Conflict", JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult( final int option ) {
+                        if (option == JOptionPane.YES_OPTION) {
+                            saver.run();
+                        }
+                    }
+                });
             } else {
-                logger.log(Level.INFO, message, e);
-                JOptionPane.showMessageDialog(this,
-                  message,
-                  "Error",
-                  JOptionPane.ERROR_MESSAGE);
+                saver.run();
             }
-            return;
+        } catch (Exception e) {
+            handlePublishError( service, e );
         }
-        super.finish(evt);
+    }
+
+    private void handlePublishError( final PublishedService service, final Exception e ) {
+        final String message = "Unable to save the service '" + service.getName() + "'\n";
+        logger.log( Level.INFO, message, e);
+        JOptionPane.showMessageDialog(this,
+          message,
+          "Error",
+          JOptionPane.ERROR_MESSAGE);
     }
 
     private void notify(EntityHeader header) {

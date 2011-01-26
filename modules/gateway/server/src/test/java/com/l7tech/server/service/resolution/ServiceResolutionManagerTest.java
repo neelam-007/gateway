@@ -83,6 +83,7 @@ public class ServiceResolutionManagerTest {
 
     @Test
     public void testResolutionUriPathRequired() throws Exception {
+        // test services when path is not required
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
         Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
         message.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/warehouse") );

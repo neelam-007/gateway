@@ -227,7 +227,7 @@
         <constructor-arg ref="uddiRegistryAdmin"/>
         <constructor-arg ref="uddiServiceWsdlUpdateChecker"/>
         <constructor-arg ref="securityTokenServiceTemplateRegistry"/>
-        <constructor-arg ref="resolutionManager"/>
+        <constructor-arg ref="serviceCache"/>
         <constructor-arg ref="resolutionConfigurationManager"/>
     </bean>
 

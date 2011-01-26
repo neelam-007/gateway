@@ -11,14 +11,9 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.*;
 import com.l7tech.server.*;
-import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
-import com.l7tech.server.service.resolution.ResolutionManager;
-import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
-import com.l7tech.gateway.common.service.ServiceDocument;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -40,12 +35,10 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private EntityCrud entityCrud;
     private PropertyResolverFactory resolverFactory;
-    private ResolutionManager resolutionManager;
 
-    public MigrationManagerImpl(EntityCrud entityCrud, PropertyResolverFactory resolverFactory, ResolutionManager resolutionManager) {
+    public MigrationManagerImpl(EntityCrud entityCrud, PropertyResolverFactory resolverFactory) {
         this.entityCrud = entityCrud;
         this.resolverFactory = resolverFactory;
-        this.resolutionManager = resolutionManager;
     }
 
     @Override
@@ -368,8 +361,6 @@ public class MigrationManagerImpl implements MigrationManager {
             ((PublishedService)entity).setDisabled(((PublishedService)onTarget).isDisabled());
         }
 
-        checkServiceResolution(header, entity, bundle);
-
         if (!dryRun) {
             entityCrud.update(entity);
             // todo: need more reliable method of retrieving the new version;
@@ -389,8 +380,6 @@ public class MigrationManagerImpl implements MigrationManager {
 
         if (entity instanceof PublishedService)
             ((PublishedService) entity).setDisabled(!enableServices);
-
-        checkServiceResolution(header, entity, bundle);
 
         if (!dryRun) {
             if (entity instanceof PersistentEntity)
@@ -503,38 +492,6 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         return errors;
-    }
-
-    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    private Collection<String> checkServiceResolution(ExternalEntityHeader header, Entity entity, MigrationBundle bundle) {
-        Collection<String> errors = new HashSet<String>();
-        if (header.getType() == EntityType.SERVICE) {
-            try {
-                PublishedService service = (PublishedService) entity;
-                service.parseWsdlStrategy(new ServiceDocumentWsdlStrategy(findServiceDocuments(header, bundle.getExportedEntities())));
-                resolutionManager.checkDuplicateResolution(service);
-            } catch (NonUniqueServiceResolutionException e) {
-                errors.add("Service resolution error: " + ExceptionUtils.getMessage(e));
-            } catch (ServiceResolutionException e) {
-                errors.add("Error getting service resolution parameters: " + ExceptionUtils.getMessage(e));
-            }
-        }
-        return errors;
-    }
-
-    private Collection<ServiceDocument> findServiceDocuments( final ExternalEntityHeader serviceHeader, final Map<ExternalEntityHeader, Entity> entities  ) {
-        Collection<ServiceDocument> serviceDocuments = new ArrayList<ServiceDocument>();
-
-        for (ExternalEntityHeader header : entities.keySet()) {
-            if (header.getType() == EntityType.SERVICE_DOCUMENT ) {
-                ServiceDocument serviceDocument = (ServiceDocument) entities.get(header);
-                if ( serviceDocument.getServiceId() == serviceHeader.getOid()  ) {
-                    serviceDocuments.add( serviceDocument );
-                }
-            }
-        }
-
-        return serviceDocuments;
     }
 
     private void findDependenciesRecursive(MigrationMetadata result, ExternalEntityHeader header, Set<ExternalEntityHeader> visited) throws MigrationApi.MigrationException, PropertyResolverException {

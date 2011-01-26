@@ -35,8 +35,7 @@ public class RequirePathResolver extends ServiceResolver<Void> {
     @Override
     public Result resolve( final Map<String, Object> parameters,
                            final Collection<PublishedService> serviceSubset ) throws ServiceResolutionException {
-        final Boolean applicable = (Boolean) parameters.get( PROP_APPLICABLE );
-        if ( !requirePath.get() || (applicable!=null && !applicable) || !parameters.containsKey( PROP_VALUE )) return Result.NOT_APPLICABLE;
+        if (!parameters.containsKey( PROP_VALUE )) return Result.NOT_APPLICABLE;
 
         final Set<PublishedService> output = new HashSet<PublishedService>();
         for ( final PublishedService service : serviceSubset ) {
@@ -51,18 +50,9 @@ public class RequirePathResolver extends ServiceResolver<Void> {
     @Override
     public void populateResolutionParameters( final Message request,
                                               final Map<String, Object> parameters ) throws ServiceResolutionException {
-        if ( !appliesToMessage(request) ) {
-            parameters.put( PROP_APPLICABLE, false );
-            return; // don't process request value
+        if ( appliesToMessage(request) ) {
+            parameters.put( PROP_VALUE, null );
         }
-
-        parameters.put( PROP_VALUE, null );
-    }
-
-    @Override
-    public Collection<Map<String, Object>> generateResolutionParameters( final PublishedService service,
-                                                                         final Collection<Map<String, Object>> parameterCollection ) throws ServiceResolutionException {
-        return parameterCollection;
     }
 
     @Override
@@ -86,6 +76,6 @@ public class RequirePathResolver extends ServiceResolver<Void> {
     private final AtomicBoolean requirePath = new AtomicBoolean(false);
 
     private boolean appliesToMessage( final Message message ) {
-        return (message.getKnob(HttpRequestKnob.class) != null) || (message.getKnob(FtpRequestKnob.class) != null);
+        return requirePath.get() && (message.getKnob(HttpRequestKnob.class) != null) || (message.getKnob(FtpRequestKnob.class) != null);
     }
 }

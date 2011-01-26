@@ -1,22 +1,17 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.uddi.UDDIServiceControl;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -26,6 +21,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.uddi.WsdlPortInfo;
 
@@ -159,19 +155,11 @@ public class PublishServiceWizard extends Wizard {
         super(parent, firstPanel);
         setTitle("Publish SOAP Web Service Wizard");
         wizardInput = saBundle;
-        addWizardListener(new WizardListener() {
-            @Override
-            public void wizardSelectionChanged(WizardEvent e) {
-                // dont care
-            }
+        addWizardListener(new WizardAdapter() {
             @Override
             public void wizardFinished(WizardEvent e) {
                 completedBundle = false;
                 completeTask();
-            }
-            @Override
-            public void wizardCanceled(WizardEvent e) {
-                // dont care
             }
         });
         getButtonHelp().addActionListener(new ActionListener() {
@@ -225,62 +213,110 @@ public class PublishServiceWizard extends Wizard {
             newService.setDefaultRoutingUrl( saBundle.isServiceControlRequired() ? wsdlPortInfo.getAccessPointURL() : null);
             newService.setRoutingUri(saBundle.service.getRoutingUri());
 
-            long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(newService, saBundle.getServiceDocuments());
-            saBundle.service.setOid(oid);
-            Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+            final Frame parent = TopComponents.getInstance().getTopParent();
+            final Collection<ServiceDocument> serviceDocuments = saBundle.getServiceDocuments();
+            saveServiceWithResolutionCheck( parent, newService, serviceDocuments, new Functions.UnaryVoidThrows<Long,Exception>(){
+                @Override
+                public void call( final Long oid ) throws Exception {
+                    saBundle.service.setOid(oid);
+                    Registry.getDefault().getSecurityProvider().refreshPermissionCache();
 
-            PublishServiceWizard.this.notify(new ServiceHeader(saBundle.service));
+                    PublishServiceWizard.this.notify(new ServiceHeader(saBundle.service));
 
-            //was the service created from UDDI, if the WSDL url still matches what was saved, then
-            //record this
-            if( saBundle.isServiceControlRequired() ){
-                UDDIServiceControl uddiServiceControl = new UDDIServiceControl(oid, wsdlPortInfo.getUddiRegistryOid(),
-                        wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(),
-                        wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
-                        wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),
-                        wsdlPortInfo.getWsdlPortBindingNamespace(), true);
+                    //was the service created from UDDI, if the WSDL url still matches what was saved, then
+                    //record this
+                    if( saBundle.isServiceControlRequired() ){
+                        UDDIServiceControl uddiServiceControl = new UDDIServiceControl(oid, wsdlPortInfo.getUddiRegistryOid(),
+                                wsdlPortInfo.getBusinessEntityKey(), wsdlPortInfo.getBusinessEntityName(),
+                                wsdlPortInfo.getBusinessServiceKey(), wsdlPortInfo.getBusinessServiceName(),
+                                wsdlPortInfo.getWsdlServiceName(), wsdlPortInfo.getWsdlPortName(), wsdlPortInfo.getWsdlPortBinding(),
+                                wsdlPortInfo.getWsdlPortBindingNamespace(), true);
 
-                try {
-                    Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getLastUddiMonitoredTimeStamp());
-                } catch (Exception e) {
-                    final String msg = "Error: " + ExceptionUtils.getMessage(e);
-                    logger.log(Level.WARNING, msg, e);
-                    DialogDisplayer.showMessageDialog(this, msg, "Cannot put WSDL under UDDI control", JOptionPane.ERROR_MESSAGE, null);
+                        try {
+                            Registry.getDefault().getUDDIRegistryAdmin().saveUDDIServiceControlOnly(uddiServiceControl, wsdlPortInfo.getAccessPointURL(), wsdlPortInfo.getLastUddiMonitoredTimeStamp());
+                        } catch (Exception e) {
+                            final String msg = "Error: " + ExceptionUtils.getMessage(e);
+                            logger.log(Level.WARNING, msg, e);
+                            DialogDisplayer.showMessageDialog(parent, msg, "Cannot put WSDL under UDDI control", JOptionPane.ERROR_MESSAGE, null);
+                        }
+                    }
                 }
-            }
+            }, new Functions.UnaryVoid<Exception>(){
+                @Override
+                public void call( final Exception e ) {
+                    handlePublishError( e );
+                }
+            } );
         } catch (Exception e) {
-            if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                logger.log(Level.WARNING, "Cannot publish service as is (duplicate)");
-                String msg = "This Web service cannot be saved as is because its resolution\n" +
-                             "parameters (SOAPAction, namespace, and possibly routing URI)\n" +
-                             "are already used by an existing published service.\n\nWould " +
-                             "you like to publish this service using a different routing URI?";
-                DialogDisplayer.showConfirmDialog(null, msg, "Service Resolution Conflict", JOptionPane.YES_NO_OPTION, new DialogDisplayer.OptionListener() {
+            handlePublishError( e );
+        }
+    }
+
+    private void handlePublishError( final Exception e ) {
+        logger.log( Level.WARNING, "Cannot publish service as is", e);
+        DialogDisplayer.showMessageDialog(null,
+          "Unable to save the service '" + saBundle.service.getName() + "'\n",
+          "Error",
+          JOptionPane.ERROR_MESSAGE, null);
+    }
+
+    /**
+     * Save a published service with a resolution check.
+     *
+     * <p>This is for SOAP services. Any exception thrown in the success
+     * callback will be dispatched to the error callback.</p>
+     * 
+     * @param parent The parent for any dialogs (may be null)
+     * @param newService  The service to be saved (required)
+     * @param newServiceDocuments (may be null)
+     * @param callback The callback for success
+     * @param errorCallback The callback for errors
+     */
+    public static void saveServiceWithResolutionCheck( final Frame parent,
+                                                       final PublishedService newService,
+                                                       final Collection<ServiceDocument> newServiceDocuments,
+                                                       final Functions.UnaryVoidThrows<Long,Exception> callback,
+                                                       final Functions.UnaryVoid<Exception> errorCallback ) {
+            if ( ServicePropertiesDialog.hasResolutionConflict( newService, newServiceDocuments ) ) {
+                String msg = "The resolution parameters (SOAPAction, namespace, and possibly\n" +
+                             "routing URI) for this Web service are already used by an existing\n" +
+                             "published service.\n\nWould you like to publish this service using" +
+                             " a different routing URI?";
+                DialogDisplayer.showConfirmDialog(parent, msg, "Service Resolution Conflict", JOptionPane.YES_NO_CANCEL_OPTION, new DialogDisplayer.OptionListener() {
                     @Override
                     public void reportResult(int option) {
                         if (option == JOptionPane.YES_OPTION) {
                             // get new routing URI
-                            SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(PublishServiceWizard.this, saBundle.getService());
-                            dlg.pack();
-                            Utilities.centerOnScreen(dlg);
-                            dlg.setVisible(true);
-                            if (dlg.wasSubjectAffected()) {
-                                completeTask();
-                            } else {
-                                logger.info("Service publication aborted.");
-                            }
-                        } else {
-                            logger.info("Service publication aborted.");
+                            final SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(parent, newService);
+                            DialogDisplayer.display( dlg, new Runnable(){
+                                @Override
+                                public void run() {
+                                    if ( dlg.wasSubjectAffected() ) {
+                                        saveServiceWithResolutionCheck( parent, newService, newServiceDocuments, callback, errorCallback );
+                                    } else {
+                                        savePublishedService( newService, newServiceDocuments, callback, errorCallback );
+                                    }
+                                }
+                            } );
+                        } else if (option == JOptionPane.NO_OPTION){
+                            savePublishedService( newService, newServiceDocuments, callback, errorCallback );
                         }
                     }
                 });
             } else {
-                logger.log(Level.WARNING, "Cannot publish service as is", e);
-                DialogDisplayer.showMessageDialog(null,
-                  "Unable to save the service '" + saBundle.service.getName() + "'\n",
-                  "Error",
-                  JOptionPane.ERROR_MESSAGE, null);
+                savePublishedService( newService, newServiceDocuments, callback, errorCallback );
             }
+        }
+
+    private static void savePublishedService( final PublishedService newService,
+                                              final Collection<ServiceDocument> newServiceDocuments,
+                                              final Functions.UnaryVoidThrows<Long, Exception> callback,
+                                              final Functions.UnaryVoid<Exception> errorCallback ) {
+        try {
+            long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(newService, newServiceDocuments);
+            callback.call( oid );
+        } catch ( Exception e ) {
+            errorCallback.call(e);
         }
     }
 
@@ -304,16 +340,16 @@ public class PublishServiceWizard extends Wizard {
 
     /**
      * Prune empty composite assertions, and return the updated
-     * asseriton tree.
+     * assertion tree.
      * If the root composite has no children return null.
      *
      * @param oom the input composite assertion
-     * @return trhe composite assertion with pruned children
+     * @return the composite assertion with pruned children
      *         or null
      */
     private CompositeAssertion
       pruneEmptyCompositeAssertions(CompositeAssertion oom) {
-        // fla, added, i have't found how, but the wizard somehow populates all children with null elements
+        // fla, added, i haven't found how, but the wizard somehow populates all children with null elements
         // this causes problems later on since we now support returning an empty policy (all with no children)
         List<Assertion> children = new ArrayList<Assertion>();
         for (Object o : oom.getChildren()) {
@@ -337,7 +373,7 @@ public class PublishServiceWizard extends Wizard {
     }
 
     /**
-     * notfy the listeners
+     * notify the listeners
      *
      * @param header
      */

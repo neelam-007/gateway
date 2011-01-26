@@ -116,46 +116,19 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
 
     @Override
     public void populateResolutionParameters( final Message request, final Map<String, Object> parameters ) throws ServiceResolutionException {
-        if ( !isApplicableToMessage(request) ) {
-            parameters.put( PROP_APPLICABLE, false );
-            return; // don't process request value
+        if ( isApplicableToMessage(request) ) {
+            final T value = getRequestValue( request );
+            parameters.put( PROP_VALUE, value );
         }
-
-        final T value = getRequestValue( request );
-        parameters.put( PROP_VALUE, value ); // adding a value means this resolver will later be used (even if the value is null).
     }
 
     @Override
     public Collection<Map<String, Object>> generateResolutionParameters( final PublishedService service,
                                                                          final Collection<Map<String, Object>> parameterCollection ) throws ServiceResolutionException {
         if ( !isApplicableToConflicts() ) {
-            final List<Map<String,Object>> resultParameterList = new ArrayList<Map<String,Object>>( parameterCollection.size() );
-
-            for ( final Map<String, Object> parameters : parameterCollection ) {
-                final Map<String, Object> resultParameters = new HashMap<String, Object>( parameters );
-                resultParameters.put( PROP_APPLICABLE, false );
-                resultParameterList.add( resultParameters );
-            }
-
-            return resultParameterList;
+            return parameterCollection;
         } else {
-            // use doGetTargetValues since we don't want to use cached values
-            final Set<T> values = new HashSet<T>( buildTargetValues( service ) );
-            if ( values.isEmpty() ) {
-                return parameterCollection;
-            }
-
-            final List<Map<String,Object>> resultParameterList = new ArrayList<Map<String,Object>>( Math.max( 10, parameterCollection.size() * values.size() ) );
-
-            for ( final T value : values ) {
-                for ( final Map<String, Object> parameters : parameterCollection ) {
-                    final Map<String, Object> resultParameters = new HashMap<String, Object>( parameters );
-                    resultParameters.put( PROP_VALUE, value );
-                    resultParameterList.add( resultParameters );
-                }
-            }
-
-            return resultParameterList;
+            return super.generateResolutionParameters( service, parameterCollection );
         }
     }
 
@@ -163,8 +136,7 @@ public abstract class NameValueServiceResolver<T> extends ServiceResolver<T> {
     @Override
     public final Result resolve( final Map<String,Object> parameters, 
                                  final Collection<PublishedService> serviceSubset ) throws ServiceResolutionException {
-        final Boolean applicable = (Boolean) parameters.get( PROP_APPLICABLE );
-        if ( (applicable!=null && !applicable) || !parameters.containsKey( PROP_VALUE )) return Result.NOT_APPLICABLE;
+        if (!parameters.containsKey( PROP_VALUE )) return Result.NOT_APPLICABLE;
         T value = (T) parameters.get( PROP_VALUE );
         return resolve(value, serviceSubset);
     }

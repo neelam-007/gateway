@@ -434,7 +434,7 @@
                     <properties/>
                     <border type="none" title="Original UDDI Business Service"/>
                     <children>
-                      <component id="b0908" class="javax.swing.JLabel" binding="uddiRegistryLabel">
+                      <component id="b0908" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -442,7 +442,7 @@
                           <text value="UDDI Registry"/>
                         </properties>
                       </component>
-                      <component id="c7ba" class="javax.swing.JLabel" binding="businessServiceNameLabel">
+                      <component id="c7ba" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -450,7 +450,7 @@
                           <text value="BusinessService Name"/>
                         </properties>
                       </component>
-                      <component id="3b228" class="javax.swing.JLabel" binding="businessServiceKeyLabel">
+                      <component id="3b228" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -458,7 +458,7 @@
                           <text value="BusinessService serviceKey"/>
                         </properties>
                       </component>
-                      <component id="e2b19" class="javax.swing.JLabel" binding="wsdlPortLabel">
+                      <component id="e2b19" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -535,7 +535,7 @@
                           <editable value="false"/>
                         </properties>
                       </component>
-                      <component id="959ad" class="javax.swing.JLabel" binding="wsdlBindingLabel">
+                      <component id="959ad" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -554,7 +554,7 @@
                           <enabled value="true"/>
                         </properties>
                       </component>
-                      <component id="c4d6b" class="javax.swing.JLabel" binding="wsdlBindingNamespaceLabel">
+                      <component id="c4d6b" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -639,7 +639,7 @@
           </grid>
         </children>
       </tabbedpane>
-      <grid id="56d4d" layout-manager="GridLayoutManager" row-count="1" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="56d4d" layout-manager="GridLayoutManager" row-count="1" column-count="6" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="10" left="10" bottom="10" right="10"/>
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
@@ -649,7 +649,7 @@
         <children>
           <component id="f3714" class="javax.swing.JButton" binding="helpButton">
             <constraints>
-              <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="&amp;Help"/>
@@ -657,7 +657,7 @@
           </component>
           <component id="df283" class="javax.swing.JButton" binding="okButton">
             <constraints>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="&amp;OK"/>
@@ -665,7 +665,7 @@
           </component>
           <component id="5ada0" class="javax.swing.JButton" binding="cancelButton">
             <constraints>
-              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="&amp;Cancel"/>
@@ -679,6 +679,14 @@
           <component id="6225e" class="javax.swing.JLabel" binding="readOnlyWarningLabel">
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value=""/>
+            </properties>
+          </component>
+          <component id="96b92" class="javax.swing.JLabel" binding="resolutionConflictWarningLabel">
+            <constraints>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value=""/>

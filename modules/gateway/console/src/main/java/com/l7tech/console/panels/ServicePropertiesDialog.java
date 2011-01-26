@@ -91,7 +91,6 @@ public class ServicePropertiesDialog extends JDialog {
     private JTextField oidField;
     private JTextField policyGuidField;
     private JCheckBox enableWSSSecurityProcessingCheckBox;
-    private JLabel readOnlyWarningLabel;
     private JButton selectButton;
     private JButton clearButton;
     private JCheckBox wsdlUnderUDDIControlCheckBox;
@@ -100,22 +99,18 @@ public class ServicePropertiesDialog extends JDialog {
     private JTextField bsNameTextField;
     private JTextField bsKeyTextField;
     private JTextField wsdlPortTextField;
-    private JLabel businessServiceNameLabel;
-    private JLabel businessServiceKeyLabel;
-    private JLabel wsdlPortLabel;
-    private JLabel uddiRegistryLabel;
     private JCheckBox monitoringEnabledCheckBox;
     private JCheckBox monitoringDisableServicecheckBox;
     private JCheckBox monitoringUpdateWsdlCheckBox;
-    private JLabel wsdlBindingLabel;
     private JTextField wsdlBindingTextField;
-    private JLabel wsdlBindingNamespaceLabel;
     private JTextField wsdlBindingNamespaceTextField;
     private JCheckBox tracingCheckBox;
     private JRadioButton soapVersionUnspecifiedButton;
     private JRadioButton soapVersion11Button;
     private JRadioButton soapVersion12Button;
     private JButton checkForResolutionConflictsButton;
+    private JLabel readOnlyWarningLabel;
+    private JLabel resolutionConflictWarningLabel;
     private String ssgURL;
     private final boolean canUpdate;
     private final boolean canTrace;
@@ -135,6 +130,9 @@ public class ServicePropertiesDialog extends JDialog {
             this.canUpdate = false;
             this.canTrace = false;
         } else {
+            if (hasResolutionConflict(svc, null)) {
+                resolutionConflictWarningLabel.setText("Service has resolution conflict");
+            }
             this.canUpdate = hasUpdatePermission;
             this.canTrace = hasTracePermission;
         }
@@ -408,7 +406,7 @@ public class ServicePropertiesDialog extends JDialog {
                                 return;
                             }
                         } else {
-                            String errorMsg = "";
+                            String errorMsg;
                             if(serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.OVERWRITE){
                                 errorMsg = "BusinessService in UDDI has been overwritten. Please remove before deleting";
                             }else if(serviceInfo.getPublishType() == UDDIProxiedServiceInfo.PublishType.ENDPOINT){
@@ -624,6 +622,16 @@ public class ServicePropertiesDialog extends JDialog {
         return pep != null && pep.isEditingPublishedService() && subject.getOid() == pep.getPublishedServiceOid() && pep.isUnsavedChanges();
     }
 
+    public static boolean hasResolutionConflict( final PublishedService subject,
+                                                 final Collection<ServiceDocument> subjectDocuments ) {
+        try {
+            return !Registry.getDefault().getServiceManager().generateResolutionReport( subject, subjectDocuments ).isSuccess();
+        } catch ( FindException e ) {
+            logger.log( Level.WARNING, "Error checking for service resolution conflict" );
+        }
+        return false;
+    }
+
     /**
      * Set the editor text to the given WSDL optionally making abstract
      *
@@ -731,6 +739,9 @@ public class ServicePropertiesDialog extends JDialog {
             final ServiceAdmin.ResolutionReport report = Registry.getDefault().getServiceManager().generateResolutionReport( service, getServiceDocuments() );
             if ( report.isSuccess() ) {
                 DialogDisplayer.showMessageDialog( this, "No Conflicts", "The service resolves successfully.", null );
+                // this warning label doesn't show the "live" state but it seems useful
+                // to clear it when the conflict is known to be resolved.
+                resolutionConflictWarningLabel.setText( "" );
             } else {
                 final String message = report.toString();
                 final FontMetrics fontMetrics = getFontMetrics(getFont());

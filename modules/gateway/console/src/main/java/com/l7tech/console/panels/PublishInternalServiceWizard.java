@@ -3,8 +3,8 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -12,11 +12,8 @@ import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
-import com.l7tech.gateway.common.service.ServiceDocument;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -25,7 +22,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.util.Set;
-import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,11 +48,7 @@ public class PublishInternalServiceWizard extends Wizard {
         templateHolder = new ServiceTemplateHolder(templates);
         wizardInput = templateHolder;
 
-        addWizardListener(new WizardListener() {
-            @Override
-            public void wizardSelectionChanged(WizardEvent e) {
-                // dont care
-            }
+        addWizardListener(new WizardAdapter() {
             @Override
             public void wizardFinished(WizardEvent e) {
                 try {
@@ -64,10 +56,6 @@ public class PublishInternalServiceWizard extends Wizard {
                 } catch (MalformedURLException e1) {
                     throw new RuntimeException(e1);
                 }
-            }
-            @Override
-            public void wizardCanceled(WizardEvent e) {
-                // dont care
             }
         });
         getButtonHelp().addActionListener(new ActionListener() {
@@ -100,43 +88,25 @@ public class PublishInternalServiceWizard extends Wizard {
             service.setDisabled(false);
         }
 
-        try {
-            long oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(service, toSave.getServiceDocuments());
-            service.setOid(oid);
-            Registry.getDefault().getSecurityProvider().refreshPermissionCache();
-
-            PublishInternalServiceWizard.this.notify(new ServiceHeader(service));
-        } catch (Exception e) {
-            if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                logger.log(Level.WARNING, "Cannot publish service as is (duplicate)");
-                String msg = "This Web service cannot be saved as is because its resolution\n" +
-                             "parameters (SOAPAction, namespace, and possibly routing URI)\n" +
-                             "are already used by an existing published service.\n\nWould " +
-                             "you like to publish this service using a different routing URI?";
-                int answer = JOptionPane.showConfirmDialog(null, msg, "Service Resolution Conflict", JOptionPane.YES_NO_OPTION);
-                if (answer == JOptionPane.YES_OPTION) {
-                    // get new routing URI
-                    SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(this, service);
-                    dlg.pack();
-                    Utilities.centerOnScreen(dlg);
-                    dlg.setVisible(true);
-                    if (dlg.wasSubjectAffected()) {
-                        completeTask(service);
-                    } else {
-                        logger.info("Service publication aborted.");
-                    }
-                } else {
-                    logger.info("Service publication aborted.");
-                }
-            } else {
+        final Frame parent = TopComponents.getInstance().getTopParent();
+        final PublishedService newService = service;
+        PublishServiceWizard.saveServiceWithResolutionCheck( parent, service, toSave.getServiceDocuments(), new Functions.UnaryVoidThrows<Long,Exception>(){
+            @Override
+            public void call( final Long oid ) throws Exception {
+                newService.setOid(oid);
+                Registry.getDefault().getSecurityProvider().refreshPermissionCache();
+                PublishInternalServiceWizard.this.notify(new ServiceHeader(newService));
+            }
+        }, new Functions.UnaryVoid<Exception>(){
+            @Override
+            public void call( final Exception e ) {
                 logger.log(Level.WARNING, "Cannot publish service as is", e);
                 JOptionPane.showMessageDialog(null,
-                  "Unable to save the service '" + service.getName() + "'\n",
+                  "Unable to save the service '" + newService.getName() + "'\n",
                   "Error",
                   JOptionPane.ERROR_MESSAGE);
             }
-        }
-
+        });
     }
 
     public static WizardStepPanel getSteps() {
@@ -162,7 +132,7 @@ public class PublishInternalServiceWizard extends Wizard {
     }
 
     /**
-     * notfy the listeners
+     * notify the listeners
      *
      * @param header
      */

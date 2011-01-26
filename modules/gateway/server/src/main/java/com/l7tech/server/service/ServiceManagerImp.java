@@ -24,6 +24,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.wsdl.WSDLException;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashMap;
@@ -107,7 +108,16 @@ public class ServiceManagerImp
         logger.info("Saved service #" + oid);
         service.setOid(oid);
 
-        // 2. Service now has correct oid so update the associated policy with the right name
+        // 2. check wsdl
+        if ( service.isSoap() ) {
+            try {
+                service.parsedWsdl();
+            } catch ( WSDLException e ) {
+                throw new SaveException( "Error accessing WSDL for service:" + ExceptionUtils.getMessage(e) );
+            }
+        }
+
+        // 3. Service now has correct oid so update the associated policy with the right name
         try {
             updatePolicyName( service, policy );
             Object key = getHibernateTemplate().save( policy );
@@ -122,13 +132,22 @@ public class ServiceManagerImp
             throw new SaveException(msg, e);
         }
 
-        // 3. update cache on callback
+        // 4. update cache on callback
         spring.publishEvent(new ServiceCacheEvent.Updated(service));
         return service.getOid();
     }
 
     @Override
     public void update(PublishedService service) throws UpdateException {
+        // check wsdl
+        if ( service.isSoap() ) {
+            try {
+                service.parsedWsdl();
+            } catch ( WSDLException e ) {
+                throw new UpdateException( "Error accessing WSDL for service:" + ExceptionUtils.getMessage(e) );
+            }
+        }
+
         updatePolicyName(service, service.getPolicy());
         try {
             super.update(service);

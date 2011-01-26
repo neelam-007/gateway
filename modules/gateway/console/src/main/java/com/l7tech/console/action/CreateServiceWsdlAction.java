@@ -22,8 +22,8 @@ import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -46,14 +46,13 @@ import javax.wsdl.xml.WSDLWriter;
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
-import java.net.ConnectException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The <code>PublishServiceAction</code> action invokes the pubish
+ * The <code>PublishServiceAction</code> action invokes the publish
  * service wizard.
  */
 public class CreateServiceWsdlAction extends SecureAction {
@@ -74,7 +73,7 @@ public class CreateServiceWsdlAction extends SecureAction {
     }
 
     /**
-     * @return the aciton description
+     * @return the action description
      */
     @Override
     public String getDescription() {
@@ -134,8 +133,7 @@ public class CreateServiceWsdlAction extends SecureAction {
          */
         @Override
         public void wizardFinished(WizardEvent we) {
-            PublishedService service;
-            boolean tryToPublish = false;
+            final PublishedService service;
             boolean isEdit = false;
             if (existingService == null) {
                 service = new PublishedService();
@@ -178,7 +176,7 @@ public class CreateServiceWsdlAction extends SecureAction {
 
                 // assign empty policy
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
-                final List children = Arrays.asList(ra);
+                final List<Assertion> children = Arrays.<Assertion>asList(ra);
                 WspWriter.writePolicy(new AllAssertion(children), bo);
 
                 service.getPolicy().setXml(bo.toString());
@@ -199,8 +197,6 @@ public class CreateServiceWsdlAction extends SecureAction {
 
                 service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(sourceDocs) );                
                 service.setWsdlXml(sw.toString());
-
-                tryToPublish = true;
             } catch (Exception e) {
                 Frame w = TopComponents.getInstance().getTopParent();
                 log.log(Level.WARNING, "error saving service", e);
@@ -210,50 +206,25 @@ public class CreateServiceWsdlAction extends SecureAction {
                   JOptionPane.ERROR_MESSAGE, null);
             }
 
-            while (tryToPublish) {
-                tryToPublish = false;
-                try {
-                    long oid;
-                    if (sourceDocs == null)
-                        oid = Registry.getDefault().getServiceManager().savePublishedService(service);
-                    else
-                        oid = Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(service, sourceDocs);
-
+            final Frame parent = TopComponents.getInstance().getTopParent();
+            PublishServiceWizard.saveServiceWithResolutionCheck( parent, service, sourceDocs, new Functions.UnaryVoidThrows<Long,Exception>(){
+                @Override
+                public void call( final Long oid ) throws Exception {
                     Registry.getDefault().getSecurityProvider().refreshPermissionCache();
                     service.setOid(oid);
                     serviceAdded( new ServiceHeader(service) );
-                } catch (Exception e) {
-                    Frame w = TopComponents.getInstance().getTopParent();
-                    if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                        String msg = "This Web service cannot be saved as is because its resolution\n" +
-                                     "parameters are already used by an existing published service.\n\nWould " +
-                                     "you like to publish this service using a different routing URI?";
-                        int answer = JOptionPane.showConfirmDialog(null, msg, "Service Resolution Conflict", JOptionPane.YES_NO_OPTION);
-                        if (answer == JOptionPane.YES_OPTION) {
-                            // get new routing URI
-                            SoapServiceRoutingURIEditor dlg =
-                                    new SoapServiceRoutingURIEditor(TopComponents.getInstance().getTopParent(), service);
-                            dlg.pack();
-                            Utilities.centerOnScreen(dlg);
-                            dlg.setVisible(true);
-                            if (dlg.wasSubjectAffected()) {
-                                tryToPublish = true;
-                            } else {
-                                logger.info("Service publication aborted.");
-                            }
-                        } else {
-                            logger.info("Service publication aborted.");
-                        }
-                    } else if (ExceptionUtils.causedBy(e, ConnectException.class)) {
-                        log.log(Level.WARNING, "the connection to the Gateway is lost.", e);
-                        ErrorManager.getDefault().notify(Level.WARNING, e, "");
-                    }
-                    else {
-                        log.log(Level.WARNING, "error saving service", e);
-                        DialogDisplayer.showMessageDialog(w, null, "Unable to save the service '" + service.getName() + "'\n", null);
+                }
+            }, new Functions.UnaryVoid<Exception>(){
+                @Override
+                public void call( final Exception e ) {
+                    if (ExceptionUtils.causedBy(e, RuntimeException.class)) {
+                        ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving service");
+                    } else {
+                        log.log(Level.WARNING, "Error saving service", e);
+                        DialogDisplayer.showMessageDialog(parent, null, "Unable to save the service '" + service.getName() + "'", null);
                     }
                 }
-            }
+            });
         }
 
         /**

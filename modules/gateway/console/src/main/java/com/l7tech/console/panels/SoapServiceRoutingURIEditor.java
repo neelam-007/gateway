@@ -1,9 +1,3 @@
-/**
- * LAYER 7 TECHNOLOGIES, INC<br/>
- *
- * User: flascell<br/>
- * Date: Jan 24, 2005<br/>
- */
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
@@ -25,7 +19,7 @@ import java.net.MalformedURLException;
 /**
  * A dialog to view/edit the routing URI parameter of a soap web service.
  *
- * @author flascelles@layer7-tech.com
+ * @author flascelles@layer7tech.com
  */
 public class SoapServiceRoutingURIEditor extends JDialog {
     private JTextField uriField;
@@ -67,6 +61,11 @@ public class SoapServiceRoutingURIEditor extends JDialog {
         setInitialValues();
         enableSpecificControls();
         updateURL();
+
+        setMinimumSize(getContentPane().getMinimumSize());
+        pack();
+        Utilities.centerOnParentWindow(this);
+        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     private void setInitialValues() {

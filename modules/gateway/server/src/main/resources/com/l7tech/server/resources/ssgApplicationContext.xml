@@ -846,16 +846,6 @@
     <!--service side service alias manager-->
     <bean id="serviceAliasManager" class="com.l7tech.server.service.ServiceAliasManagerImpl" parent="hibernateBean" />
 
-    <!-- server side resolution manager -->
-    <bean id="resolutionManager" class="com.l7tech.server.service.resolution.ReolutionManagerImpl">
-        <constructor-arg>
-            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
-                <constructor-arg value="serviceCache"/>
-                <constructor-arg value="com.l7tech.server.service.ServiceCacheResolver"/>
-            </bean>
-        </constructor-arg>
-    </bean>
-
     <!-- server side trusted cert manager -->
     <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TrustedCertManagerImp"
           parent="hibernateBean" depends-on="clusterPropertyCache">
@@ -1774,7 +1764,6 @@
           </bean>
       </constructor-arg>
       <constructor-arg ref="propertyResolverFactory"/>
-      <constructor-arg ref="resolutionManager"/>
     </bean>
 
     <bean id="wsdlStrategyServiceDocumentsInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">

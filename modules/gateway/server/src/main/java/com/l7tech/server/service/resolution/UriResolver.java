@@ -124,37 +124,16 @@ public class UriResolver extends ServiceResolver<String> {
 
     @Override
     public void populateResolutionParameters( final Message request, final Map<String, Object> parameters ) throws ServiceResolutionException {
-        if ( !appliesToMessage(request) ) {
-            parameters.put( PROP_APPLICABLE, false );
-            return; // don't process request value
+        if ( appliesToMessage(request) ) {
+            final String value = getRequestValue( request );
+            parameters.put( PROP_VALUE, value );
         }
-
-        final String value = getRequestValue( request );
-        parameters.put( PROP_VALUE, value );
-    }
-
-    @Override
-    public Collection<Map<String, Object>> generateResolutionParameters( final PublishedService service,
-                                                                         final Collection<Map<String, Object>> parameterCollection ) throws ServiceResolutionException {
-        final List<String> values = buildTargetValues( service );
-        final List<Map<String,Object>> resultParameterList = new ArrayList<Map<String,Object>>( parameterCollection.size() * values.size() );
-
-        for ( final String value : values ) {
-            for ( final Map<String, Object> parameters : parameterCollection ) {
-                final Map<String, Object> resultParameters = new HashMap<String, Object>( parameters );
-                resultParameters.put( PROP_VALUE, value );
-                resultParameterList.add( resultParameters );
-            }
-        }
-
-        return resultParameterList;
     }
 
     @Override
     public Result resolve( Map<String,Object> parameters, Collection<PublishedService> serviceSubset) throws ServiceResolutionException {
         if ( caseSensitive != enableCaseSensitivity.get() ) return Result.NOT_APPLICABLE;
-        final Boolean applicable = (Boolean) parameters.get( PROP_APPLICABLE );
-        if ( applicable!=null && !applicable ) return Result.NOT_APPLICABLE;
+        if (!parameters.containsKey( PROP_VALUE )) return Result.NOT_APPLICABLE;
         final String requestValue = transformValue((String) parameters.get( PROP_VALUE ));
 
         rwlock.readLock().lock();

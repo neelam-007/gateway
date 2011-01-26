@@ -17,7 +17,6 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
-import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.tokenservice.SecurityTokenServiceTemplateRegistry;
@@ -47,7 +46,6 @@ import java.util.logging.Logger;
  * @noinspection OverloadedMethodsWithSameNumberOfParameters,ValidExternallyBoundObject,NonJaxWsWebServices
  */
 public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
-    private static final String PROP_ALLOW_DUPLICATE_LAX_URI = "com.l7tech.server.service.soap.allowDuplicateLaxUri";
     private static final ServiceHeader[] EMPTY_ENTITY_HEADER_ARRAY = new ServiceHeader[0];
 
     private final AssertionLicense licenseManager;
@@ -64,7 +62,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     private final ServiceTemplateManager serviceTemplateManager;
     private final ServiceDocumentResolver serviceDocumentResolver;
     private final SecurityTokenServiceTemplateRegistry tokenServiceTemplateRegistry;
-    private final ResolutionManager resolutionManager;
+    private final ServiceCache serviceCache;
     private final ResolutionConfigurationManager resolutionConfigurationManager;
 
     private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
@@ -98,7 +96,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                             UDDIRegistryAdmin uddiRegistryAdmin,
                             ServiceWsdlUpdateChecker uddiServiceWsdlUpdateChecker,
                             SecurityTokenServiceTemplateRegistry tokenServiceTemplateRegistry,
-                            ResolutionManager resolutionManager,
+                            ServiceCache serviceCache,
                             ResolutionConfigurationManager resolutionConfigurationManager)
     {
         this.licenseManager = licenseManager;
@@ -117,7 +115,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
         this.uddiRegistryAdmin = uddiRegistryAdmin;
         this.uddiServiceWsdlUpdateChecker = uddiServiceWsdlUpdateChecker;
         this.tokenServiceTemplateRegistry = tokenServiceTemplateRegistry;
-        this.resolutionManager = resolutionManager;
+        this.serviceCache = serviceCache;
         this.resolutionConfigurationManager = resolutionConfigurationManager;
 
         int maxConcurrency = validated(serverConfig).getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
@@ -275,10 +273,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
         long oid;
         try {
-            if (service.getRoutingUri() != null && (!service.isSoap() || service.isLaxResolution()) && !SyspropUtil.getBoolean(PROP_ALLOW_DUPLICATE_LAX_URI, false)) {
-                checkLaxSoapServiceUriCollision(service);
-            }
-
             if (!isDefaultOid(service)) {
                 // UPDATING EXISTING SERVICE
                 oid = service.getOid();
@@ -324,26 +318,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
             throw new SaveException(e);
         }
         return oid;
-    }
-
-    private void checkLaxSoapServiceUriCollision(PublishedService subject) throws FindException, DuplicateObjectException {
-        final String routingUri = subject.getRoutingUri();
-        if (routingUri == null)
-            return;
-
-        Collection<PublishedService> servs = serviceManager.findByRoutingUri(routingUri);
-        for (PublishedService serv : servs) {
-            // Can't collide with yourself
-            if (serv.getOid() == subject.getOid())
-                continue;
-
-            // SOAP services in strict mode will be caught by the usual service resolution collision checking
-            if (serv.isSoap() && !serv.isLaxResolution())
-                continue;
-
-            if (routingUri.equals(serv.getRoutingUri()))
-                throw new DuplicateObjectException("The routing URI is the same as that used by another non-SOAP or lax SOAP service.");
-        }
     }
 
     @Override
@@ -675,7 +649,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
 
         final Collection<ConflictInfo> conflictInformation = new ArrayList<ConflictInfo>();
         try {
-            resolutionManager.checkDuplicateResolution( service );
+            serviceCache.checkResolution( service );
         } catch ( NonUniqueServiceResolutionException e ) {
             for ( final Long serviceOid : e.getConflictingServices() ) {
                 for ( final Triple<String,String,String> parameters : e.getParameters( serviceOid ) ) {
