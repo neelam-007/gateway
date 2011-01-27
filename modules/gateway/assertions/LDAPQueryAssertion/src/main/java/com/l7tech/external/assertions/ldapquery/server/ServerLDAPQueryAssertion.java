@@ -365,7 +365,8 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
         }
 
         protected String getStringValue( final int index ) throws Exception {
-            return attribute.get( index ).toString();
+            final Object value = attribute.get( index );
+            return value==null ? null : value.toString();
         }
     }
 
