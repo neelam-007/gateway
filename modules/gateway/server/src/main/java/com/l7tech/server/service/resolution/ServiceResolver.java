@@ -73,6 +73,8 @@ public abstract class ServiceResolver<T> {
      *
      * <p>Resolvers that cache service information should override this method.</p>
      *
+     * <p>This method may be called multiple times for a service (e.g. when disabled).</p>
+     *
      * @param service The published service that is no longer available for resolution.
      */
     public void serviceDeleted( PublishedService service ) {

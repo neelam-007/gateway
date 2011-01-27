@@ -240,8 +240,7 @@ public class UriResolver extends ServiceResolver<String> {
     private void deletenolock(PublishedService service) {
         URIResolutionParam uriparam = servicetoURIMap.get(service.getOid());
         if (uriparam == null) {
-            logger.warning("deletion invoked but service does not seem to exist in resolver cache " + service.getOid());
-            return;
+            return; // already deleted
         }
         List<Long> listedServicesForThatURI = uriToServiceMap.get(uriparam);
         listedServicesForThatURI.remove(service.getOid());
