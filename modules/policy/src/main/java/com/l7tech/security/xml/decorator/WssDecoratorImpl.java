@@ -249,7 +249,7 @@ public class WssDecoratorImpl implements WssDecorator {
                     }
                 }
             }
-            sct = addSecurityContextToken(c, securityHeader, session.getId());
+            sct = addOrFindSecurityContextToken(c, securityHeader, session.getId());
             if (dreq.isProtectTokens() && !signList.isEmpty())
                 signList.add(sct);
         }
@@ -1104,16 +1104,24 @@ public class WssDecoratorImpl implements WssDecorator {
         return new DerivedKeyToken(dkt, derivedKey, tokenType);
     }
 
-    private Element addSecurityContextToken(Context c, Element securityHeader, String id) {
+    // Find an existing SCT in the header with the specified ID or else add a new one
+    private Element addOrFindSecurityContextToken(Context c, Element securityHeader, String id) throws TooManyChildElementsException {
         NamespaceFactory namespaceFactory = c.nsf;
-        Element sct = DomUtils.createAndAppendElementNS(securityHeader,
-                                                       SoapConstants.SECURITY_CONTEXT_TOK_EL_NAME,
-                                                       namespaceFactory.getWsscNs(),
-                                                       "wssc");
-        Element identifier = DomUtils.createAndAppendElementNS(sct,
-                                                              "Identifier",
-                                                              namespaceFactory.getWsscNs(),
-                                                              "wssc");
+        final String wsscNs = namespaceFactory.getWsscNs();
+
+        // Check for existing SCT
+        List<Element> scts = XmlUtil.findChildElementsByName(securityHeader, wsscNs, SoapConstants.SECURITY_CONTEXT_TOK_EL_NAME);
+        for (Element sct : scts) {
+            Element idEl = XmlUtil.findOnlyOneChildElementByName(sct, wsscNs, "Identifier");
+            if (idEl != null) {
+                String idStr = XmlUtil.getTextValue(idEl);
+                if (idStr.equals(id))
+                    return sct;
+            }
+        }
+
+        Element sct = DomUtils.createAndAppendElementNS(securityHeader, SoapConstants.SECURITY_CONTEXT_TOK_EL_NAME, wsscNs, "wssc");
+        Element identifier = DomUtils.createAndAppendElementNS(sct, "Identifier", wsscNs, "wssc");
         identifier.appendChild(DomUtils.createTextNode(identifier, id));
         return sct;
     }
