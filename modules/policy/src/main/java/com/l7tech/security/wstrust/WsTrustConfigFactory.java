@@ -110,7 +110,10 @@ public class WsTrustConfigFactory {
          * possibly is necessary for FIM support (and is backwards compatible).</p>
          */
         @Override
-        protected void addXmlSecurityToken( final XmlSecurityToken base, final Document msg, final Element rst ) {
+        protected void addXmlSecurityToken( final WsTrustRequestType requestType,
+                                            final XmlSecurityToken base,
+                                            final Document msg,
+                                            final Element rst ) {
             // Add Base, if provided.  Base is not required to be the same token type as the token type we are requesting.
             Element baseEl = DomUtils.createAndPrependElementNS(rst, "Base", getWstNs(), "wst");
             Element tokenEl = base.asElement();

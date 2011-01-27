@@ -197,23 +197,29 @@ public abstract class WsTrustConfig {
         }
 
         if (base != null) {
-            addXmlSecurityToken( base, msg, rst );
+            addXmlSecurityToken( requestType, base, msg, rst );
         }
 
         return msg;
     }
 
-    protected void addXmlSecurityToken( final XmlSecurityToken base,
+    protected void addXmlSecurityToken( final WsTrustRequestType requestType,
+                                        final XmlSecurityToken base,
                                         final Document rstDocument,
                                         final Element rstElement ) {
         final Element tokenElement = base.asElement();
         if (tokenElement == null) throw new IllegalStateException("Couldn't get Element for base security token");
 
-        final Element securityHeader = SoapUtil.makeSecurityElement(rstDocument, SoapConstants.SECURITY_NAMESPACE, null, null, false);
+        if ( requestType == WsTrustRequestType.VALIDATE ) {
+            final Element validateTargetElement = DomUtils.createAndAppendElementNS(rstElement, "ValidateTarget", getWstNs(), "wst");
+            appendToken( rstDocument, validateTargetElement, tokenElement );
+        } else {
+            final Element securityHeader = SoapUtil.makeSecurityElement(rstDocument, SoapConstants.SECURITY_NAMESPACE, null, null, false);
 
-        SoapUtil.addTimestamp( securityHeader, SoapConstants.WSU_NAMESPACE, null, true, 0, 300000 );
+            SoapUtil.addTimestamp( securityHeader, SoapConstants.WSU_NAMESPACE, null, true, 0, 300000 );
 
-        appendToken( rstDocument, securityHeader, tokenElement );
+            appendToken( rstDocument, securityHeader, tokenElement );
+        }
     }
 
     protected void appendToken( final Document factory,
