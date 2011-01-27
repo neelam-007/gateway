@@ -138,7 +138,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             sendBackError(res, HttpServletResponse.SC_NOT_FOUND, e.getMessage());
             return;
         } catch (AmbiguousServiceException e) {
-            logger.log(Level.INFO, "Service request ambiguous", e);
+            logger.log(Level.INFO, "Service request ambiguous: "  + ExceptionUtils.getMessage( e ) );
             sendBackError(res, HttpServletResponse.SC_MULTIPLE_CHOICES, e.getMessage());
             return;
         }
