@@ -83,11 +83,11 @@ class GroupCache {
         long cacheAddedTime = groups.getTimestamp();
         if ( cacheAddedTime + maxAge > System.currentTimeMillis() ) {
             if (logger.isLoggable(Level.FINE))
-                logger.log(Level.FINE, "Cache hit for user {1} from IdP \"{2}\"", new String[] {login, idp.getConfig().getName()});
+                logger.log(Level.FINE, "Cache hit for user {0} from IdP \"{1}\"", new String[] {login, idp.getConfig().getName()});
             return (Set<IdentityHeader>) groups.getCachedObject();
         } else {
             if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Cache expiry for user {1} is stale on IdP \"{2}\"; will revalidate", new String[] { login, idp.getConfig().getName()});
+                logger.log(Level.FINE, "Cache expiry for user {0} is stale on IdP \"{1}\"; will revalidate", new String[] { login, idp.getConfig().getName()});
             }
             return null;
         }
@@ -126,7 +126,7 @@ class GroupCache {
             this.cache.store(ckey, groupPrincipals);
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE,
-                           "Cached group membership principals for user {n0} on IdP \"{1}\"",
+                           "Cached group membership principals for user {0} on IdP \"{1}\"",
                            new String[]{u.getLogin(), idp.getConfig().getName()});
 
             return groupSet;
