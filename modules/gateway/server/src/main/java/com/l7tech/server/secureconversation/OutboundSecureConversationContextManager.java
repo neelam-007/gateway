@@ -263,7 +263,12 @@ public class OutboundSecureConversationContextManager extends SecureConversation
         }
 
         if (cancelled && session.isCopiedIntoInboundCache()) {
-            cancelled = inboundSessionManager.cancelSession(session.getIdentifier());
+            final String inboundSessionId = session.getIdentifier();
+            final SecureConversationSession inboundSession = inboundSessionManager.getSession(inboundSessionId);
+
+            if (inboundSession != null) {
+                cancelled = inboundSessionManager.cancelSession(session.getIdentifier());
+            }
         }
 
         return cancelled;
