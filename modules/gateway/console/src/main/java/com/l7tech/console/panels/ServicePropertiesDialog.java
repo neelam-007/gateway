@@ -625,7 +625,7 @@ public class ServicePropertiesDialog extends JDialog {
     public static boolean hasResolutionConflict( final PublishedService subject,
                                                  final Collection<ServiceDocument> subjectDocuments ) {
         try {
-            return !Registry.getDefault().getServiceManager().generateResolutionReport( subject, subjectDocuments ).isSuccess();
+            return !subject.isDisabled() && !Registry.getDefault().getServiceManager().generateResolutionReport( subject, subjectDocuments ).isSuccess();
         } catch ( FindException e ) {
             logger.log( Level.WARNING, "Error checking for service resolution conflict" );
         }
@@ -699,46 +699,19 @@ public class ServicePropertiesDialog extends JDialog {
 
     private void checkResolution() {
         final PublishedService service = new PublishedService(subject);
-        String newURI = null;
-        if (customURIRadio.isSelected()) {
-            newURI = uriField.getText();
-            // remove leading '/'s
-            if (newURI != null) {
-                newURI = newURI.trim();
-                while (newURI.startsWith("//")) {
-                    newURI = newURI.substring(1);
-                }
-                if (!newURI.startsWith("/")) newURI = "/" + newURI;
-            }
-        }
-        if (newURI != null && (newURI.length() < 1 || newURI.equals("/"))) newURI = null;
-        service.setRoutingUri(newURI);
-        service.setLaxResolution(laxResolutionCheckbox.isSelected());
-
-        if (newWSDLUrl != null) {
-            try {
-                service.setWsdlUrl(
-                        newWSDLUrl.toLowerCase().startsWith("http:") ||
-                        newWSDLUrl.toLowerCase().startsWith("https:") ||
-                        newWSDLUrl.toLowerCase().startsWith("file:")
-                                ? newWSDLUrl : null);
-            } catch (MalformedURLException e) {
-                logger.log( Level.WARNING, "Invalid WSDL URL:" + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
-            }
-        }
-
-        if (newWSDL != null) {
-            try {
-                subject.setWsdlXml( XmlUtil.nodeToString(newWSDL));
-            } catch (IOException e) {
-                logger.log( Level.WARNING, "Invalid WSDL:" + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
-            }
-        }
+        service.setDisabled( !enableRadio.isSelected() );
+        service.setRoutingUri( getRoutingUri() );
+        service.setLaxResolution( laxResolutionCheckbox.isSelected() );
+        setWsdl( service );
 
         try {
             final ServiceAdmin.ResolutionReport report = Registry.getDefault().getServiceManager().generateResolutionReport( service, getServiceDocuments() );
             if ( report.isSuccess() ) {
-                DialogDisplayer.showMessageDialog( this, "No Conflicts", "The service resolves successfully.", null );
+                if ( service.isDisabled() ) {
+                    DialogDisplayer.showMessageDialog( this, "No Conflicts", "The service resolves successfully, but is disabled.\nTo use this service it must be enabled.", null );
+                } else {
+                    DialogDisplayer.showMessageDialog( this, "No Conflicts", "The service resolves successfully.", null );
+                }
                 // this warning label doesn't show the "live" state but it seems useful
                 // to clear it when the conflict is known to be resolved.
                 resolutionConflictWarningLabel.setText( "" );
@@ -767,6 +740,45 @@ public class ServicePropertiesDialog extends JDialog {
         }
     }
 
+    private String getRoutingUri() {
+        String newURI = null;
+        if (customURIRadio.isSelected()) {
+            newURI = uriField.getText();
+            // remove leading '/'s
+            if (newURI != null) {
+                newURI = newURI.trim();
+                while (newURI.startsWith("//")) {
+                    newURI = newURI.substring(1);
+                }
+                if (!newURI.startsWith("/")) newURI = "/" + newURI;
+            }
+        }
+        if (newURI != null && (newURI.length() < 1 || newURI.equals("/"))) newURI = null;
+        return newURI;
+    }
+
+    private void setWsdl( final PublishedService service ) {
+        if (newWSDLUrl != null) {
+            try {
+                service.setWsdlUrl(
+                        newWSDLUrl.toLowerCase().startsWith("http:") ||
+                        newWSDLUrl.toLowerCase().startsWith("https:") ||
+                        newWSDLUrl.toLowerCase().startsWith("file:")
+                                ? newWSDLUrl : null);
+            } catch ( MalformedURLException e) {
+                logger.log( Level.WARNING, "Invalid WSDL URL:" + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            }
+        }
+
+        if (newWSDL != null) {
+            try {
+                service.setWsdlXml( XmlUtil.nodeToString(newWSDL));
+            } catch ( IOException e) {
+                logger.log( Level.WARNING, "Invalid WSDL:" + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            }
+        }
+    }
+
     private void cancel() {
         this.dispose();
     }
@@ -791,18 +803,9 @@ public class ServicePropertiesDialog extends JDialog {
             return;
         }
         // validate the uri
-        String newURI = null;
-        if (customURIRadio.isSelected()) {
-            newURI = uriField.getText();
-            // remove leading '/'s
-            if (newURI != null) {
-                newURI = newURI.trim();
-                while (newURI.startsWith("//")) {
-                    newURI = newURI.substring(1);
-                }
-                if (!newURI.startsWith("/")) newURI = "/" + newURI;
-                uriField.setText(newURI);
-            }
+        final String newURI = getRoutingUri();
+        if (newURI != null) {
+            uriField.setText(newURI);
             try {
                 new URL(ssgURL + newURI);
             } catch (MalformedURLException e) {
@@ -845,7 +848,6 @@ public class ServicePropertiesDialog extends JDialog {
         // set the new data into the edited subject
         subject.setName(name);
         subject.setDisabled(!enableRadio.isSelected());
-        if (newURI != null && (newURI.length() < 1 || newURI.equals("/"))) newURI = null;
         subject.setRoutingUri(newURI);
         EnumSet<HttpMethod> methods = EnumSet.noneOf(HttpMethod.class);
         if (getCheck.isSelected()) {
@@ -867,26 +869,7 @@ public class ServicePropertiesDialog extends JDialog {
         subject.setLaxResolution(laxResolutionCheckbox.isSelected());
         subject.setWssProcessingEnabled(enableWSSSecurityProcessingCheckBox.isSelected());
         subject.setTracingEnabled(tracingCheckBox.isSelected());
-
-        if (newWSDLUrl != null) {
-            try {
-                subject.setWsdlUrl(
-                        newWSDLUrl.toLowerCase().startsWith("http:") ||
-                        newWSDLUrl.toLowerCase().startsWith("https:") ||
-                        newWSDLUrl.toLowerCase().startsWith("file:")
-                                ? newWSDLUrl : null);
-            } catch (MalformedURLException e) {
-                throw new RuntimeException("Invalid URL", e);
-            }
-        }
-
-        if (newWSDL != null) {
-            try {
-                subject.setWsdlXml( XmlUtil.nodeToString(newWSDL));
-            } catch (IOException e) {
-                throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
-            }
-        }
+        setWsdl( subject );
 
         if ( wsdlUnderUDDIControlCheckBox.isSelected() && originalServiceEndPoint != null ) {
             subject.setDefaultRoutingUrl(originalServiceEndPoint);
