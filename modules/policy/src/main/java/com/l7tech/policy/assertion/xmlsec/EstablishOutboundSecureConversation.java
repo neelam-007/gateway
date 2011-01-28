@@ -3,9 +3,7 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -156,6 +154,18 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+
+        // Set up smart Getter for nice, informative policy node name, for GUI
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<EstablishOutboundSecureConversation>() {
+            @Override
+            public String getAssertionName(EstablishOutboundSecureConversation assertion, boolean decorate) {
+                if (! decorate) return ASSERTION_BASIC_NAME;
+
+                String serviceUrl = assertion.getServiceUrl();
+                if (serviceUrl == null || serviceUrl.trim().isEmpty()) return ASSERTION_BASIC_NAME;
+                else return AssertionUtils.decorateName(assertion, ASSERTION_BASIC_NAME + " to " + serviceUrl);
+            }
+        });
 
         meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/trust.png");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.EstablishOutboundSecureConversationPropertiesDialog");

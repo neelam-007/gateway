@@ -23,6 +23,8 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
 
     //- PUBLIC
 
+    public static final String ASSERTION_BASIC_NAME = "Cancel Security Context";
+
     public enum AuthorizationType {
         /**
          * Any user can cancel the token (authorization not required)
@@ -91,7 +93,7 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
             return meta;
 
         // Set description for GUI
-        meta.put(SHORT_NAME, "Cancel Security Context");
+        meta.put(SHORT_NAME, ASSERTION_BASIC_NAME);
         meta.put(DESCRIPTION, "Cancel a security context associated with an outbound/inbound secure conversation.");
 
         // Add to palette folder(s)
@@ -100,6 +102,18 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+
+        // Set up smart Getter for nice, informative policy node name, for GUI
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<CancelSecurityContext>() {
+            @Override
+            public String getAssertionName(CancelSecurityContext assertion, boolean decorate) {
+                if (! decorate) return ASSERTION_BASIC_NAME;
+
+                String serviceUrl = assertion.getOutboundServiceUrl();
+                if (serviceUrl == null || serviceUrl.trim().isEmpty()) return ASSERTION_BASIC_NAME;
+                else return AssertionUtils.decorateName(assertion, ASSERTION_BASIC_NAME + " to " + serviceUrl);
+            }
+        });
 
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.CancelSecurityContextPropertiesDialog");
         meta.put(PROPERTIES_ACTION_NAME, "Security Context Cancellation Properties");
