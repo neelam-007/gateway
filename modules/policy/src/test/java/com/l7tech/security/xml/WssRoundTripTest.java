@@ -22,6 +22,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -632,6 +633,22 @@ public class WssRoundTripTest {
             }
         }
 
+        if (td.req.isEncryptSignature()) {
+            Map<Node,Boolean> encryptedSigs = new HashMap<Node, Boolean>();
+            for (ParsedElement enc : encrypted) {
+                final Element element = enc.asElement();
+                if ("Signature".equals(element.getLocalName()) && SoapUtil.DIGSIG_URI.equals(element.getNamespaceURI())) {
+                    encryptedSigs.put(element, true);
+                }
+            }
+
+            NodeList allSigs = incomingSoapDocument.getElementsByTagNameNS(SoapUtil.DIGSIG_URI, "Signature");
+            for (int i = 0; i < allSigs.getLength(); ++i) {
+                Node element = allSigs.item(i);
+                assertTrue("Signature shall have been encrypted", Boolean.TRUE.equals(encryptedSigs.get(element)));
+            }
+        }
+
         // Ensure signature method and hash algorithm are those requested
         if (!td.req.getElementsToSign().isEmpty() && td.req.getSenderMessageSigningPrivateKey() != null && td.req.getSignatureMessageDigest() != null) {
             SupportedSignatureMethods sigmeth = SupportedSignatureMethods.fromKeyAndMessageDigest(td.req.getSenderMessageSigningPrivateKey().getAlgorithm(), td.req.getSignatureMessageDigest());
@@ -894,4 +911,17 @@ public class WssRoundTripTest {
         runRoundTripTest(new NamedTestDocument("SamlSecretKeyHokSubjectConfirmation",
                 wssDecoratorTest.getSignWithSamlHokSecretKeyTestDocument()), false);
     }
+
+    @Test
+    @BugNumber(9749)
+    public void testEncryptedSignature() throws Exception {
+        runRoundTripTest(new NamedTestDocument("EncryptedSignature", wssDecoratorTest.getEncryptedSignatureTestDocument()), false);
+    }
+
+    @Test
+    @BugNumber(9749)
+    public void testWholeElementEncryption() throws Exception {
+        runRoundTripTest(new NamedTestDocument("EncryptedSignature", wssDecoratorTest.getTestWholeElementEncryptionTestDocument()), false);
+    }
+
 }

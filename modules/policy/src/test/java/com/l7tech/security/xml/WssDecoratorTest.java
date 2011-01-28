@@ -1399,7 +1399,7 @@ public class WssDecoratorTest {
         boolean foundMessage = false;
         boolean foundAction = false;
 
-        for(int i = 0; i < foundNodes.getLength(); i++){
+        for(int i = 0; i < foundNodes.getLength(); i++) {
             Node node = foundNodes.item(i);
             NamedNodeMap nodeMap = node.getAttributes();
             Node uriAttributeNode = nodeMap.getNamedItem("URI");
@@ -1415,6 +1415,42 @@ public class WssDecoratorTest {
 
         Assert.assertTrue("Action should have been signed", foundAction);
         Assert.assertTrue("Message should have been signed", foundMessage);
+    }
+
+    @Test
+    @BugNumber(9749)
+    public void testEncryptedSignature() throws Exception {
+        runTest(getEncryptedSignatureTestDocument());
+    }
+
+    TestDocument getEncryptedSignatureTestDocument() throws Exception {
+        final Context c = new Context();
+        DecorationRequirements dreq = new DecorationRequirements();
+        dreq.setSenderMessageSigningCertificate(TestDocuments.getEttkServerCertificate());
+        dreq.setSenderMessageSigningPrivateKey(TestDocuments.getEttkServerPrivateKey());
+        dreq.setRecipientCertificate(TestDocuments.getDotNetServerCertificate());
+        dreq.setProtectTokens(true);
+        dreq.setEncryptSignature(true);
+        dreq.addElementToSign(c.body);
+        dreq.addElementToEncrypt(c.body);
+        return new TestDocument(c, dreq, TestDocuments.getDotNetServerPrivateKey(), null);
+    }
+
+    @Test
+    @BugNumber(9749)
+    public void testWholeElementEncryption() throws Exception {
+        runTest(getTestWholeElementEncryptionTestDocument());
+    }
+
+    TestDocument getTestWholeElementEncryptionTestDocument() throws Exception {
+        final Context c = new Context();
+        DecorationRequirements dreq = new DecorationRequirements();
+        dreq.setSenderMessageSigningCertificate(TestDocuments.getEttkServerCertificate());
+        dreq.setSenderMessageSigningPrivateKey(TestDocuments.getEttkServerPrivateKey());
+        dreq.setRecipientCertificate(TestDocuments.getDotNetServerCertificate());
+        dreq.addElementToSign(c.body);
+        dreq.addElementToEncrypt(c.productid, new ElementEncryptionConfig(false));
+        return new TestDocument(c, dreq, TestDocuments.getDotNetServerPrivateKey(), null);
     }
 
     private String soapMsgWithWsaHeaders = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
