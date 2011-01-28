@@ -250,7 +250,7 @@ public class AddWsAddressingAssertion extends MessageTargetableAssertionPrivateK
 
     public static class AddWsAddressingAssertionValidator extends WssDecorationAssertionValidator{
         public AddWsAddressingAssertionValidator(AddWsAddressingAssertion assertion) {
-            super(assertion, false, assertion.isSignMessageProperties());
+            super(assertion, false, assertion.isSignMessageProperties() && !Assertion.isResponse( assertion ));
         }
 
         @Override
