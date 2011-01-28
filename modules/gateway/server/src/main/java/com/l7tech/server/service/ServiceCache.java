@@ -195,26 +195,30 @@ public class ServiceCache
             @Override
             public void afterCompletion(int status) {
                 if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    // get service. version property must be up-to-date
-                    PublishedService svcnow;
-                    try {
-                        svcnow = serviceManager.findByPrimaryKey(updated.getService().getOid());
-                    } catch (FindException e) {
-                        svcnow = null;
-                        logger.log(Level.WARNING, "could not get service back", e);
-                    }
-
-                    if (svcnow != null) {
-                        try {
-                            cache(svcnow);
-                            TarariLoader.compile();
-                        } catch (Exception e) {
-                            logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
-                        }
-                    }
+                    // reload service. version property must be up-to-date
+                    loadServiceToCache( updated.getService().getOid() );
                 }
             }
         });
+    }
+
+    private void loadServiceToCache( final long serviceOid ) {
+        PublishedService publishedService;
+        try {
+            publishedService = serviceManager.findByPrimaryKey(serviceOid);
+        } catch ( FindException e) {
+            publishedService = null;
+            logger.log( Level.WARNING, "could not get service back", e);
+        }
+
+        if (publishedService != null) {
+            try {
+                cache(publishedService);
+                TarariLoader.compile();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
     }
 
     protected void initializeServiceCache() throws ObjectModelException {
@@ -679,6 +683,11 @@ public class ServiceCache
 
     private void handleValidPolicy( final Policy policy  ) {
         PublishedService service = getCachedServiceByPolicy( policy.getOid() );
+
+        if ( service!=null && service.getPolicy()!=null && service.getPolicy().getVersion() != policy.getVersion() ) {
+            logger.fine("service " + service.getOid() + " to be updated in cache because of outdated policy.");
+            loadServiceToCache( service.getOid() );
+        }
 
         // if it is not cached then it will be disabled later
         if ( service != null && isDisabled(service) ) {
