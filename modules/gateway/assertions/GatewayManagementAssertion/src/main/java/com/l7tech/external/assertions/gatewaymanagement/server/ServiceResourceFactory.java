@@ -212,7 +212,7 @@ public class ServiceResourceFactory extends EntityManagerResourceFactory<Service
         service.setLaxResolution( isLaxResolution( getServiceMapping(serviceDetail.getServiceMappings(), ServiceDetail.SoapMapping.class) ) );
         service.getPolicy().setXml( policyHelper.validatePolicySyntax(policyResource.getContent()) );
         setProperties( service, serviceDetail.getProperties(), PublishedService.class );
-        setSoapVersion( service, serviceDetail.getProperties().get( "soapVersion" ) );
+        setSoapVersion( service, serviceDetail.getProperties()==null ? null : serviceDetail.getProperties().get( "soapVersion" ) );
         addWsdl( service, serviceDocuments, wsdlResources );
         service.parseWsdlStrategy( new ServiceDocumentWsdlStrategy(serviceDocuments) );
 
