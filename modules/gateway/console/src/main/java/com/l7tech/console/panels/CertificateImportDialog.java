@@ -40,7 +40,7 @@ public class CertificateImportDialog extends JDialog {
                                     final Collection<X509Certificate[]> certificateChains ) {
         super( parent, bundle.getString("dialog.title"), CertificateImportDialog.DEFAULT_MODALITY_TYPE );
         setContentPane(contentPane);
-        getRootPane().setDefaultButton(cancelButton);
+        getRootPane().setDefaultButton(okButton);
         setDefaultCloseOperation(CertificateImportDialog.DISPOSE_ON_CLOSE);
 
         okButton.addActionListener(new ActionListener() {
