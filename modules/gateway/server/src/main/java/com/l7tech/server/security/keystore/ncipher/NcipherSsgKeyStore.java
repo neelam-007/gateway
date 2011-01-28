@@ -180,12 +180,12 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     private synchronized Pair<String, KeyStore> createNewKeyStore() throws KeyStoreException {
         logger.info("Creating new keystore within nCipher security world");
         KeyStore keystore = JceProvider.getInstance().getKeyStore(KEYSTORE_TYPE);
-        BufferPoolByteArrayOutputStream os = null;
+        PoolByteArrayOutputStream os = null;
         try {
             keystore.load(null, null);
 
             // Now initialize the keystore and record its identifier
-            os = new BufferPoolByteArrayOutputStream();
+            os = new PoolByteArrayOutputStream();
             keystore.store(os, null);
             String keystoreMetadata = os.toString(Charsets.UTF8);
 
@@ -203,10 +203,10 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
 
     private synchronized byte[] keyStoreToBytes(String keystoreMetadata, KeyStore keyStore) throws KeyStoreException {
         logger.info("Merging nCipher keystore data from local disk to database");
-        BufferPoolByteArrayOutputStream os = null;
+        PoolByteArrayOutputStream os = null;
         try {
             // Now initialize the keystore and record its identifier
-            os = new BufferPoolByteArrayOutputStream();
+            os = new PoolByteArrayOutputStream();
             keyStore.store(os, null);
             String savedMetadata = os.toString(Charsets.UTF8);
             if (!keystoreMetadata.equals(savedMetadata))

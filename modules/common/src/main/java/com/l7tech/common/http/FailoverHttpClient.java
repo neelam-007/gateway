@@ -3,7 +3,7 @@
  */
 package com.l7tech.common.http;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.failover.FailoverStrategy;
@@ -152,7 +152,7 @@ public class FailoverHttpClient implements GenericHttpClient {
                                 factory = inputStreamFactory;
                             } else if (inputStream != null) {
                                 // Need to buffer the input stream ourselves before using it up
-                                BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                                PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
                                 if (logger != null)
                                     logger.finer("Buffering request body");
                                 try {

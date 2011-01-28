@@ -274,7 +274,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                     }
 
                     if (!stealthMode) {
-                        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
                         final byte[] responseBytes;
                         try {
                             IOUtils.copyStream(responseStream, baos);

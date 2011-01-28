@@ -966,7 +966,7 @@ public class MessageProcessor {
         } else {
             final Charset encoding = request.getMimeKnob().getOuterContentType().getEncoding();
             if (LogFlags.logAttachments && request.getMimeKnob().isMultipart()) {
-                BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
                 try {
                     InputStream bodyStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
                     IOUtils.copyStream(bodyStream, baos);
@@ -1023,7 +1023,7 @@ public class MessageProcessor {
             log.info("Got response from Gateway (reformatted):\n" + logStr);
         } else {
             if (!response.isXml() || (LogFlags.logAttachments && respMime.isMultipart())) {
-                BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
                 try {
                     InputStream bodyStream = respMime.getEntireMessageBodyAsInputStream();
                     IOUtils.copyStream(bodyStream, baos);

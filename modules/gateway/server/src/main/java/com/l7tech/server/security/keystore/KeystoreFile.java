@@ -2,7 +2,7 @@ package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import org.hibernate.annotations.Proxy;
 
@@ -62,7 +62,7 @@ public class KeystoreFile extends NamedEntityImp {
         if ( xmlProperties == null ) {
             Map<String, String> properties = this.properties;
             if ( properties == null ) return null;
-            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
             try {
                 XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
                 xe.writeObject(properties);

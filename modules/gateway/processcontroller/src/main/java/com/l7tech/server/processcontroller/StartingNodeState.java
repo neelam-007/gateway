@@ -3,7 +3,7 @@
  */
 package com.l7tech.server.processcontroller;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.config.node.PCNodeConfig;
@@ -158,7 +158,7 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
         private final String node;
         private final String what;
         private final InputStream is;
-        private final BufferPoolByteArrayOutputStream os;
+        private final PoolByteArrayOutputStream os;
         private final AtomicBoolean quitter;
 
         public OutputCollectorThread(String node, String what, InputStream is, AtomicBoolean quitter) {
@@ -166,7 +166,7 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
             this.node = node;
             this.what = what;
             this.is = is;
-            this.os = new BufferPoolByteArrayOutputStream(16384);
+            this.os = new PoolByteArrayOutputStream(16384);
             this.quitter = quitter;
             setDaemon(true);
         }

@@ -571,7 +571,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         final JmsEndpoint outboundRequestEndpoint = endpointCfg.getEndpoint();
 
         javax.jms.Message outboundRequestMsg;
-        BufferPoolByteArrayOutputStream outputStream = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream outputStream = new PoolByteArrayOutputStream();
         final byte[] outboundRequestBytes;
         com.l7tech.message.Message requestMessage;
         try {

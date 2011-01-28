@@ -4,7 +4,7 @@ import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
@@ -104,10 +104,10 @@ public class StandardReportSettings extends NamedEntityImp implements JSON.Conve
             if (settingsProps.size() < 1) {
                 settingsPropsXml = "";
             } else {
-                BufferPoolByteArrayOutputStream output = null;
+                PoolByteArrayOutputStream output = null;
                 java.beans.XMLEncoder encoder = null;
                 try {
-                    output = new BufferPoolByteArrayOutputStream();
+                    output = new PoolByteArrayOutputStream();
                     encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
                     encoder.writeObject(settingsProps);
                     encoder.close(); // writes closing XML tag

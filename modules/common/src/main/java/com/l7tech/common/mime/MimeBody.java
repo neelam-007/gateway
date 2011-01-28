@@ -936,7 +936,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                 return null;
 
             InputStream is = null;
-            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream((int)len);
+            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream((int)len);
             try {
                 is = stashManager.recall(ordinal);
                 IOUtils.copyStream(is = decodeIfNecessary(is, false), baos);

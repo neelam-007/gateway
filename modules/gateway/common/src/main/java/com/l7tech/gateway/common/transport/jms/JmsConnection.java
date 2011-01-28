@@ -5,7 +5,7 @@
 package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import org.hibernate.annotations.Proxy;
 
@@ -225,7 +225,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         if (properties == null) {
             setProperties("");
         } else {
-            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
             try {
                 properties.storeToXML(baos, null, ENCODING.name());
                 setProperties(baos.toString(ENCODING));

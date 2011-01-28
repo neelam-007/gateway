@@ -4,7 +4,7 @@ import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.xml.SecureConversationKeyDeriver;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
@@ -95,7 +95,7 @@ public class OutboundSecureConversationContextManager extends SecureConversation
         public String toStringIdentifier() {
             String identifier;
 
-            BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
+            PoolByteArrayOutputStream bos = new PoolByteArrayOutputStream();
             try {
                 ObjectOutputStream oos = new ObjectOutputStream( new NonCloseableOutputStream(bos) );
                 oos.writeObject( this );

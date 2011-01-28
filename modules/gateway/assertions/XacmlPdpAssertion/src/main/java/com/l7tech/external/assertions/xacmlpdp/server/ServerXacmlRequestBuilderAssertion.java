@@ -1167,7 +1167,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
          */
         private void addElementAsAttributeValue(final Element parentElement, final Element elementToAddToParent) {
             try {
-                final BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(4096);
+                final PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream(4096);
                 XmlUtil.canonicalize(elementToAddToParent, baos);
                 final String nodeAsText = baos.toString(Charsets.UTF8);
                 final Element nsSelfContainedNode = XmlUtil.parse(nodeAsText).getDocumentElement();

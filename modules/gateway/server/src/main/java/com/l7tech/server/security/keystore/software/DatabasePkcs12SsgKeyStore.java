@@ -8,7 +8,7 @@ import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.KeystoreFileManager;
 import com.l7tech.server.security.keystore.SsgKeyStore;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
@@ -130,7 +130,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
     }
 
     private byte[] keyStoreToBytes(KeyStore keystore) throws KeyStoreException {
-        BufferPoolByteArrayOutputStream outputStream = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream outputStream = new PoolByteArrayOutputStream();
         try {
             keystore.store(outputStream, password);
             return outputStream.toByteArray();

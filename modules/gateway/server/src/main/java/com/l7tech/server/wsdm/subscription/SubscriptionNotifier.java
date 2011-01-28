@@ -694,7 +694,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         Element paramElement = XmlUtil.findFirstChildElement(XmlUtil.stringAsDocument(referenceParams).getDocumentElement());
         while(paramElement != null) {
             paramElement.setAttributeNS(Namespaces.WSA, "IsReferenceParameter", "true");
-            final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+            final PoolByteArrayOutputStream out = new PoolByteArrayOutputStream(1024);
             try {
                 XmlUtil.nodeToOutputStreamWithXss4j(paramElement, out);
                 result.append(out.toString(Charsets.UTF8));

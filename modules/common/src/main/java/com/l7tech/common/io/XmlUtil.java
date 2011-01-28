@@ -642,7 +642,7 @@ public class XmlUtil extends DomUtils {
      * @throws IOException If and error occurs during serialization.
      */
     public static String nodeToString( final Node node, final boolean doctype ) throws IOException {
-        final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+        final PoolByteArrayOutputStream out = new PoolByteArrayOutputStream(1024);
         try {
             if ( doctype ) {
                 nodeToOutputStreamWithXMLSerializer( node, out, getTransparentXMLSerializer(false) );
@@ -656,7 +656,7 @@ public class XmlUtil extends DomUtils {
     }
 
     public static byte[] toByteArray(Node node) throws IOException {
-        final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+        final PoolByteArrayOutputStream out = new PoolByteArrayOutputStream(1024);
         try {
             nodeToOutputStream(node, out);
             return out.toByteArray();
@@ -666,7 +666,7 @@ public class XmlUtil extends DomUtils {
     }
 
     public static byte[] toByteArray(Node node, String encoding) throws IOException {
-        final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+        final PoolByteArrayOutputStream out = new PoolByteArrayOutputStream(1024);
         try {
             nodeToOutputStream(node, out, encoding);
             return out.toByteArray();
@@ -676,7 +676,7 @@ public class XmlUtil extends DomUtils {
     }
 
     public static String nodeToFormattedString(Node node) throws IOException {
-        final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+        final PoolByteArrayOutputStream out = new PoolByteArrayOutputStream(1024);
         try {
             nodeToFormattedOutputStream(node, out);
             return out.toString(Charsets.UTF8);

@@ -2,7 +2,7 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.ClassLoaderObjectInputStream;
 import com.l7tech.policy.assertion.UnknownAssertion;
@@ -97,7 +97,7 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
      * convert a serializable object to a base64 String
      */
     private String objectToBase64(Serializable obj) throws IOException {
-        BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream bos = new PoolByteArrayOutputStream();
         try {
             ObjectOutputStream oos = new ObjectOutputStream(bos);
             oos.writeObject(obj);

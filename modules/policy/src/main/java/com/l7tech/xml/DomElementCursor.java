@@ -7,7 +7,7 @@ package com.l7tech.xml;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.DomUtils;
 import com.l7tech.xml.xpath.CompiledXpath;
@@ -236,7 +236,7 @@ public class DomElementCursor extends ElementCursor {
     }
 
     public String asString() throws IOException {
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(4096);
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream(4096);
         XmlUtil.canonicalize(cur, baos);
         return baos.toString(Charsets.UTF8);
     }
@@ -277,7 +277,7 @@ public class DomElementCursor extends ElementCursor {
     }
 
     public byte[] canonicalize(String[] inclusiveNamespacePrefixes) throws IOException {
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
         try {
             XmlUtil.canonicalize(cur, baos);
             return baos.toByteArray();

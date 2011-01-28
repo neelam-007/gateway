@@ -3,7 +3,7 @@ package com.l7tech.gateway.common.log;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Pair;
 import org.hibernate.annotations.Proxy;
@@ -180,7 +180,7 @@ public class SinkConfiguration extends NamedEntityImp {
             Map<String, String> properties = this.properties;
             List<String> hosts = this.syslogHosts;
             if ( properties == null ) return null;
-            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
             try {
                 //noinspection IOResourceOpenedButNotSafelyClosed
                 XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));

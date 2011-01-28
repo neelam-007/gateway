@@ -7,7 +7,7 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.http.HttpHeader;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.MimeKnob;
@@ -67,11 +67,11 @@ public class MessageLogger implements RequestInterceptor {
     private static String toString(MimeKnob mk) {
         String responseStr = null;
         InputStream is = null;
-        BufferPoolByteArrayOutputStream baos = null;
+        PoolByteArrayOutputStream baos = null;
         try {
             if (mk != null) {
                 is = mk.getFirstPart().getInputStream(false);
-                baos = new BufferPoolByteArrayOutputStream();
+                baos = new PoolByteArrayOutputStream();
                 IOUtils.copyStream(is, baos);
                 responseStr = baos.toString();
             }

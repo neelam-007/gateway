@@ -13,7 +13,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
@@ -51,9 +51,9 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion<InverseHt
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Message request = context.getRequest();
         MimeKnob reqMime = request.getMimeKnob();
-        BufferPoolByteArrayOutputStream baos = null;
+        PoolByteArrayOutputStream baos = null;
         try {
-            baos = new BufferPoolByteArrayOutputStream(512);
+            baos = new PoolByteArrayOutputStream(512);
             for (int i = 0; i < assertion.getFieldNames().length; i++) {
                 String fieldName = assertion.getFieldNames()[i];
                 try {

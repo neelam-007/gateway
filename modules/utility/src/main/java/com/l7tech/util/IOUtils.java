@@ -79,7 +79,7 @@ public class IOUtils {
      * @throws OutOfMemoryError if the stream is too big to fit into memory
      */
     public static byte[] slurpStream(InputStream stream) throws IOException {
-        BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(4096);
+        PoolByteArrayOutputStream out = new PoolByteArrayOutputStream(4096);
         try {
             copyStream(stream, out);
             return out.toByteArray();

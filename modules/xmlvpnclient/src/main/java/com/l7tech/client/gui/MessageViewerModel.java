@@ -4,7 +4,7 @@ import com.l7tech.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.HttpHeadersKnob;
 import com.l7tech.message.Message;
@@ -511,7 +511,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      */
     public void onMessageError(final Throwable t) {
         if (!isRecordErrors()) return;
-        final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
+        final PoolByteArrayOutputStream b = new PoolByteArrayOutputStream(2048);
         PrintStream p = null;
         try {
             //noinspection IOResourceOpenedButNotSafelyClosed
@@ -534,7 +534,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      */
     public void onReplyError(final Throwable t) {
         if (!isRecordErrors()) return;
-        final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
+        final PoolByteArrayOutputStream b = new PoolByteArrayOutputStream(2048);
         PrintStream p = null;
         try {
             //noinspection IOResourceOpenedButNotSafelyClosed
@@ -566,7 +566,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     // can be called from any thread
     public void onPolicyError(Ssg ssg, PolicyAttachmentKey binding, Throwable error) {
         if (!isRecordErrors()) return;
-        final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
+        final PoolByteArrayOutputStream b = new PoolByteArrayOutputStream(2048);
         PrintStream p = null;
         try {
             //noinspection IOResourceOpenedButNotSafelyClosed

@@ -8,7 +8,7 @@ import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 
 import javax.persistence.Column;
@@ -68,7 +68,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         if ( xmlProperties == null ) {
             Map<String, String> properties = this.properties;
             if ( properties == null ) return null;
-            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
             try {
                 XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
                 xe.writeObject(properties);

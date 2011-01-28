@@ -780,7 +780,7 @@ public class XOPUtils {
                                                             final String contentId,
                                                             final String contentType,
                                                             final int contentLength ) throws XOPException {
-        BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream os = new PoolByteArrayOutputStream();
 
         try {
             if ( !mainPart ) os.write( MimeUtil.CRLF );

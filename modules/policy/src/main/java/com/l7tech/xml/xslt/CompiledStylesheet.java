@@ -1,6 +1,6 @@
 package com.l7tech.xml.xslt;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.tarari.TarariMessageContext;
@@ -74,7 +74,7 @@ public class CompiledStylesheet {
         assert tmc != null;
         assert tarariStylesheet != null;
 
-        BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream(4096);
+        PoolByteArrayOutputStream os = new PoolByteArrayOutputStream(4096);
         try {
             tarariStylesheet.transform(tmc, os, varsUsed, t.getVariableGetter(), errorListener);
             output.setBytes(os.toByteArray());
@@ -93,7 +93,7 @@ public class CompiledStylesheet {
         ec.moveToDocumentElement();
         final Document doctotransform = ec.asDomElement().getOwnerDocument();
 
-        final BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream(4096);
+        final PoolByteArrayOutputStream os = new PoolByteArrayOutputStream(4096);
         final StreamResult sr = new StreamResult(os);
 
         try {

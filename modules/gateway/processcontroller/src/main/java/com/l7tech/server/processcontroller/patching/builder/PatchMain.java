@@ -56,8 +56,8 @@ public class PatchMain {
             "com.l7tech.util.BufferPool",
             "com.l7tech.util.BufferPool$Pool",
             "com.l7tech.util.BufferPool$HugePool",
-            "com.l7tech.util.BufferPoolByteArrayOutputStream",
-            "com.l7tech.util.BufferPoolByteArrayOutputStream$1",
+            "com.l7tech.util.PoolByteArrayOutputStream",
+            "com.l7tech.util.PoolByteArrayOutputStream$1",
         };
     }
 

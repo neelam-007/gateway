@@ -1108,7 +1108,7 @@ public class SoapUtil extends SoapConstants {
     }
 
     public static byte[] soapMessageToByteArray(SOAPMessage msg) throws IOException, SOAPException {
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(4096);
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream(4096);
         try {
             msg.writeTo(baos);
             return baos.toByteArray();

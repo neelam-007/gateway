@@ -5,7 +5,7 @@
 
 package com.l7tech.xml.tarari;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.xpath.CompiledXpath;
@@ -293,7 +293,7 @@ class TarariElementCursor extends ElementCursor {
         of.setOmitXmlDeclaration(true);
         if (inclusiveNamespacePrefixes != null && inclusiveNamespacePrefixes.length > 0)
             of.setC14nInclusivePrefixList(new ArrayList<String>(Arrays.asList(inclusiveNamespacePrefixes)));
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
         try {
             XmlResult xr = new XmlResult(baos);
             c.writeTo(of, xr);

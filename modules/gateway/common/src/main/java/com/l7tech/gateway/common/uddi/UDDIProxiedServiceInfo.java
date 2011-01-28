@@ -10,7 +10,7 @@ import javax.persistence.CascadeType;
 
 import com.l7tech.uddi.UDDIKeyedReference;
 import com.l7tech.uddi.UDDIUtilities;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
@@ -383,10 +383,10 @@ public class UDDIProxiedServiceInfo extends PersistentEntityImp {
             if (props.size() < 1) {
                 propsXml = "";
             } else {
-                BufferPoolByteArrayOutputStream output = null;
+                PoolByteArrayOutputStream output = null;
                 java.beans.XMLEncoder encoder = null;
                 try {
-                    output = new BufferPoolByteArrayOutputStream();
+                    output = new PoolByteArrayOutputStream();
                     encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
                     encoder.setExceptionListener( new ExceptionListener() {
                         @Override

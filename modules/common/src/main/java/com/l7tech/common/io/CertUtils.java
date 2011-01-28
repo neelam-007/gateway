@@ -344,7 +344,7 @@ public class CertUtils {
      * @throws java.io.IOException if there is a problem encoding the cert
      */
     public static String encodeAsPEM(byte[] cert) throws IOException {
-        BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream bos = new PoolByteArrayOutputStream();
         try {
             Charset encoding = Charsets.UTF8;
             bos.write(PEM_CERT_BEGIN_MARKER.getBytes(encoding));
@@ -366,7 +366,7 @@ public class CertUtils {
      * @throws java.io.IOException if there is a problem encoding the CSR
      */
     public static String encodeCsrAsPEM(byte[] csr) throws IOException {
-        BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream bos = new PoolByteArrayOutputStream();
         try {
             Charset encoding = Charsets.UTF8;
             bos.write(PEM_CSR_BEGIN_MARKER.getBytes(encoding));

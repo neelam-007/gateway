@@ -5,7 +5,7 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Pair;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlObject;
@@ -90,7 +90,7 @@ class Saml2AttributeStatementValidate extends SamlStatementValidate {
     }
 
     private static String canonicalize(Node node) throws IOException {
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
         XmlUtil.canonicalize(node, baos);
         return baos.toString();
     }

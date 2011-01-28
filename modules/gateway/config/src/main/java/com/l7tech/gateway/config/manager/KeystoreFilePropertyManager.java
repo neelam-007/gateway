@@ -216,7 +216,7 @@ public class KeystoreFilePropertyManager {
         final String xml;
         if ( properties == null )
             throw new NullPointerException("properties");
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
         try {
             XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
             xe.writeObject(properties);

@@ -637,7 +637,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         PrivateKey privateKey = entry.getPrivateKey();
         Certificate[] certChain = entry.getCertificateChain();
 
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
         KeyStore keystore = KeyStore.getInstance("PKCS12", new BouncyCastleProvider());
         try {
             keystore.load(null, p12passphrase);

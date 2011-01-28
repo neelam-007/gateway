@@ -1,6 +1,6 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
@@ -113,7 +113,7 @@ class NestedZipFile implements Closeable {
                 if (recordFiles != null)
                     recordFiles.put(entry.getName(), entry.getSize());
 
-                BufferPoolByteArrayOutputStream bout = new BufferPoolByteArrayOutputStream();
+                PoolByteArrayOutputStream bout = new PoolByteArrayOutputStream();
                 try {
                     IOUtils.copyStream(zipIn, bout);
                     byte[] fileBytes = bout.toByteArray();

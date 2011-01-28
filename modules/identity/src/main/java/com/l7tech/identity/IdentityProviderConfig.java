@@ -87,10 +87,10 @@ public class IdentityProviderConfig extends NamedEntityImp {
             if (props.size() < 1) {
                 propsXml = "";
             } else {
-                BufferPoolByteArrayOutputStream output = null;
+                PoolByteArrayOutputStream output = null;
                 java.beans.XMLEncoder encoder = null;
                 try {
-                    output = new BufferPoolByteArrayOutputStream();
+                    output = new PoolByteArrayOutputStream();
                     encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
                     encoder.setExceptionListener( new ExceptionListener() {
                         @Override
@@ -156,10 +156,10 @@ public class IdentityProviderConfig extends NamedEntityImp {
                 filteredProps.remove(unexportablePropKey);
             }
 
-            BufferPoolByteArrayOutputStream output = null;
+            PoolByteArrayOutputStream output = null;
             java.beans.XMLEncoder encoder = null;
             try {
-                output = new BufferPoolByteArrayOutputStream();
+                output = new PoolByteArrayOutputStream();
                 encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
                 encoder.setExceptionListener( new ExceptionListener() {
                     @Override

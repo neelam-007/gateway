@@ -6,7 +6,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
@@ -61,10 +61,10 @@ public class DefaultHttpProxyManager {
         String value;
 
         if ( httpProxyConfiguration != null ) {
-            BufferPoolByteArrayOutputStream output = null;
+            PoolByteArrayOutputStream output = null;
             java.beans.XMLEncoder encoder = null;
             try {
-                output = new BufferPoolByteArrayOutputStream();
+                output = new PoolByteArrayOutputStream();
                 encoder = new XMLEncoder(new NonCloseableOutputStream(output));
                 encoder.setExceptionListener( new ExceptionListener() {
                     @Override

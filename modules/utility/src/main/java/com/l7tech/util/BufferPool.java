@@ -123,10 +123,10 @@ public class BufferPool {
 
     /**
      * Return a no-longer-needed buffer to the pool.  The buffer need not have been allocated using this class
-     * originally, as long as it is larger than {@link #MIN_BUFFER_SIZE},
+     * originally, as long as it is larger than {@link #getMinBufferSize()},
      * although allocating all buffers through this class will help ensure that the buffer sizes stay reasonable.
      *
-     * @param buffer the buffer to return to the pool. No action is taken if this is null or smaller than {@link #MIN_BUFFER_SIZE}.
+     * @param buffer the buffer to return to the pool. No action is taken if this is null or smaller than {@link #getMinBufferSize()}.
      */
     public static void returnBuffer(byte[] buffer) {
         if (buffer == null || buffer.length < MIN_BUFFER_SIZE)
@@ -157,6 +157,13 @@ public class BufferPool {
         if (size < HUGE_THRESHOLD)
             throw new IllegalArgumentException("size must be greater than 1mb");
         return hugePool.getOrCreateBuffer(size);
+    }
+
+    /**
+     * @return the size of the smallest buffer that will ever be accepted by {@link #returnBuffer}.
+     */
+    public static int getMinBufferSize() {
+        return MIN_BUFFER_SIZE;
     }
 
     /**

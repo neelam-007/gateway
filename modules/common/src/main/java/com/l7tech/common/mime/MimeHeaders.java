@@ -4,7 +4,7 @@
 
 package com.l7tech.common.mime;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.CausedIOException;
 
 import java.io.IOException;
@@ -162,7 +162,7 @@ public class MimeHeaders {
      * @return the MIME headers re-encoded as a byte array.
      */
     public byte[] toByteArray() throws IOException {
-        BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(128);
+        PoolByteArrayOutputStream out = new PoolByteArrayOutputStream(128);
         try {
             write(out);
             return out.toByteArray();

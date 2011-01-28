@@ -8,7 +8,7 @@ package com.l7tech.common.mime;
 
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.BufferPool;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 
 import java.io.*;
 
@@ -77,7 +77,7 @@ public class HybridStashManager implements StashManager {
             return;
         }
 
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(initialBuffer);
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream(initialBuffer);
         byte[] buff = null;
         try {
             buff = BufferPool.getBuffer(16384);

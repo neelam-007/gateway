@@ -1015,7 +1015,7 @@ public class WsspWriter {
      * @throws PolicyAssertionException
      */
     public static String policyToXml(Policy p, String srcUri, String dstUri) throws PolicyAssertionException {
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
         try {
             PolicyFactory.getPolicyWriter(PolicyFactory.StAX_POLICY_WRITER).writePolicy(p, baos);
             String xml = baos.toString(Charsets.UTF8);

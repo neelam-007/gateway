@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
@@ -139,10 +139,10 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
         if (settingsMap.isEmpty()) {
             settingsPropsXml = "";
         } else {
-            BufferPoolByteArrayOutputStream output = null;
+            PoolByteArrayOutputStream output = null;
             java.beans.XMLEncoder encoder = null;
             try {
-                output = new BufferPoolByteArrayOutputStream();
+                output = new PoolByteArrayOutputStream();
                 encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
                 encoder.writeObject(settingsMap);
                 encoder.close(); // writes closing XML tag

@@ -93,7 +93,7 @@ public class Subscribe extends ESMMethod {
             Element refParams = XmlUtil.findOnlyOneChildElementByName(consumerReferenceEl, Namespaces.WSA, "ReferenceParameters");
             if(refParams != null) {
                 checkUnallowedNamespaces(refParams);
-                final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+                final PoolByteArrayOutputStream out = new PoolByteArrayOutputStream(1024);
                 try {
                     XmlUtil.nodeToOutputStreamWithXss4j(refParams, out);
                     referenceParams = out.toString(Charsets.UTF8);

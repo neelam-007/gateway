@@ -14,7 +14,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.util.ModuleClassLoader;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
@@ -130,9 +130,9 @@ public class CustomAssertionsRegistrarImpl
         Set<AssertionModule> modules = assertionRegistry.getLoadedModules();
         if ( modules != null ) {
 
-            BufferPoolByteArrayOutputStream baos = null;
+            PoolByteArrayOutputStream baos = null;
             try {
-                baos= new BufferPoolByteArrayOutputStream(64*1024);
+                baos= new PoolByteArrayOutputStream(64*1024);
                 ZipOutputStream zipOut = null;
                 try {
                     for ( AssertionModule module : modules ) {

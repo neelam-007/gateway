@@ -186,7 +186,7 @@ public class TemplateCompiler {
         element = (Element)element.cloneNode(false);
         element.removeAttribute("occurs");
         element.removeAttribute("pic");
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
         try {
             XmlUtil.canonicalize(element, baos);
             String elStr = baos.toString();

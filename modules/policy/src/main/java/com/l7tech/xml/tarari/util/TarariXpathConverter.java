@@ -3,7 +3,7 @@ package com.l7tech.xml.tarari.util;
 
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ComparisonOperator;
 import com.l7tech.xml.xpath.FastXpath;
@@ -130,7 +130,7 @@ public class TarariXpathConverter {
         XprLexer xprLexer = new XprLexer(new StringReader(in.toString()));
 
         // Build output stream
-        BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream out = new PoolByteArrayOutputStream();
 
         // Convert the xpath
         try {

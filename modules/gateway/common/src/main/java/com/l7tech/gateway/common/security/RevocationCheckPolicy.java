@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.security;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import org.hibernate.annotations.Proxy;
 
@@ -158,7 +158,7 @@ public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
             if ( policyItems == null || policyItems.isEmpty())
                 return null;
 
-            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
             try {
                 XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
                 xe.writeObject(new ArrayList<RevocationCheckPolicyItem>(policyItems));

@@ -7,7 +7,7 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.http.HttpHeader;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 
 import javax.mail.internet.HeaderTokenizer;
@@ -168,7 +168,7 @@ public class MimeHeader implements HttpHeader {
     /** @return the ENTIRE header string, including name and trailing CRLF, ie "Content-Type: text/xml; charset=utf-8\r\n" */
     @Override
     public String toString() {
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
         try {
             write(baos);
             return baos.toString(ENCODING);
@@ -183,7 +183,7 @@ public class MimeHeader implements HttpHeader {
     public String getFullValue() {
         if (fullValue != null)
             return fullValue;
-        BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(32);
+        PoolByteArrayOutputStream out = new PoolByteArrayOutputStream(32);
         try {
             writeFullValue(out);
             return fullValue = out.toString(ENCODING);

@@ -6,7 +6,7 @@
 
 package com.l7tech.common.mime;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.BufferPool;
 
@@ -26,10 +26,10 @@ public class ByteArrayStashManager implements StashManager {
     }
 
     public void stash(int ordinal, InputStream in) throws IOException {
-        BufferPoolByteArrayOutputStream baos = null;
+        PoolByteArrayOutputStream baos = null;
         try {
             while (thrown.size() <= ordinal) thrown.add(null);
-            baos = new BufferPoolByteArrayOutputStream(4096);
+            baos = new PoolByteArrayOutputStream(4096);
             IOUtils.copyStream(in, baos);
 
             int length = baos.size();

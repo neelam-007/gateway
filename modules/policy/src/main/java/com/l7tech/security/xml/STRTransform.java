@@ -75,7 +75,7 @@ public class STRTransform extends Transform {
         Hashtable ht = new Hashtable();
         ht.put("", ""); // default ns should be included even if not utilized
 
-        BufferPoolByteArrayOutputStream bo = new BufferPoolByteArrayOutputStream(4096);
+        PoolByteArrayOutputStream bo = new PoolByteArrayOutputStream(4096);
         Writer wr = null;
         try {
             wr = new OutputStreamWriter(bo, Charsets.UTF8);

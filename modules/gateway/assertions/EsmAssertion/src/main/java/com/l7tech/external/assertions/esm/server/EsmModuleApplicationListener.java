@@ -21,7 +21,7 @@ import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
@@ -152,7 +152,7 @@ public class EsmModuleApplicationListener implements ApplicationListener {
         Map<String, String> esmNotifyPolicyTags = new HashMap<String, String>();
         Assertion allAss = new AllAssertion(Arrays.asList(new HttpRoutingAssertion("${esmNotificationUrl}")));
         String polXml;
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
         try {
             WspWriter.writePolicy(allAss, baos);
             polXml = baos.toString(Charsets.UTF8);

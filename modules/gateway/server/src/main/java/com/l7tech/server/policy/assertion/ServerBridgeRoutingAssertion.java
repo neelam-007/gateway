@@ -727,9 +727,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                 private RerunnableHttpRequest.InputStreamFactory getInputStreamFactory() throws GenericHttpException {
                     if(isf==null) {
-                        BufferPoolByteArrayOutputStream baos = null;
+                        PoolByteArrayOutputStream baos = null;
                         try {
-                            baos = new BufferPoolByteArrayOutputStream();
+                            baos = new PoolByteArrayOutputStream();
                             IOUtils.copyStream(is, baos);
                             final byte[] data = baos.toByteArray();
                             isf = new RerunnableHttpRequest.InputStreamFactory() {

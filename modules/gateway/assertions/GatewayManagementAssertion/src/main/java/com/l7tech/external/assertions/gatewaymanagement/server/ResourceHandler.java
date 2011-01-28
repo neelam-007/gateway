@@ -7,7 +7,7 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.StaleUpdateException;
 import com.l7tech.policy.PolicyDeletionForbiddenException;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import com.sun.ws.management.AccessDeniedFault;
@@ -417,10 +417,10 @@ public class ResourceHandler extends DefaultHandler implements Enumeratable {
             SOAPElement[] elements = transferRequest.getChildren( transferRequest.getBody() );
             if ( elements.length > 0 && elements[0] != null ) {
                 SOAPElement element = elements[0];
-                BufferPoolByteArrayOutputStream out = null;
+                PoolByteArrayOutputStream out = null;
                 InputStream in = null;
                 try {
-                    out = new BufferPoolByteArrayOutputStream(4096);
+                    out = new PoolByteArrayOutputStream(4096);
                     XmlUtil.canonicalize( element, out );
                     in = out.toInputStream();
                     resource = XmlUtil.parse( in );

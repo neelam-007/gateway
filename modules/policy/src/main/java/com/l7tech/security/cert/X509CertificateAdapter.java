@@ -1,6 +1,6 @@
 package com.l7tech.security.cert;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
 
@@ -29,11 +29,11 @@ public class X509CertificateAdapter extends XmlAdapter<String, X509Certificate> 
     }
 
     public String marshal(X509Certificate value) throws Exception {
-        BufferPoolByteArrayOutputStream outBuf ;
+        PoolByteArrayOutputStream outBuf ;
         ObjectOutputStream outStream = null;
         
         try{
-            outBuf = new BufferPoolByteArrayOutputStream(1024);
+            outBuf = new PoolByteArrayOutputStream(1024);
             outStream = new ObjectOutputStream(outBuf);
             outStream.writeObject(value);
             byte [] bytes = outBuf.detachPooledByteArray();

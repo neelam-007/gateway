@@ -1,6 +1,6 @@
 package com.l7tech.server.security.keystore.ncipher;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
@@ -41,7 +41,7 @@ class NcipherKeyStoreData implements Serializable {
      */
     byte[] toBytes() throws KeyStoreException {
         validate();
-        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(8192);
+        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream(8192);
         try {
             final ObjectOutputStream oos = new ObjectOutputStream(baos);
             oos.writeObject(this);

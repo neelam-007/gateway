@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.jdbc;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
@@ -123,10 +123,10 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
             if (additionalProps.size() < 1) {
                 additionalPropsXml = "";
             } else {
-                BufferPoolByteArrayOutputStream output = null;
+                PoolByteArrayOutputStream output = null;
                 java.beans.XMLEncoder encoder = null;
                 try {
-                    output = new BufferPoolByteArrayOutputStream();
+                    output = new PoolByteArrayOutputStream();
                     encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
                     encoder.writeObject(additionalProps);
                     encoder.close(); // writes closing XML tag
