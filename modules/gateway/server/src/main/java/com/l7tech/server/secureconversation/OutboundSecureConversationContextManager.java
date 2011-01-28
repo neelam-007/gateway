@@ -178,6 +178,15 @@ public class OutboundSecureConversationContextManager extends SecureConversation
 
         final OutboundSessionKey sessionKey = new OutboundSessionKey( sessionOwner, serviceUrl );
 
+        // Check if there exists an outbound session with the same session key.
+        // If found, then overwrite that session by canceling that session first and then creating a new session.
+        // If not found, then just create a new session.
+        final SecureConversationSession existingSession = getSession(sessionKey);
+        if (existingSession != null) {
+            cancelSession(sessionKey);
+            logger.warning("Secure Conversation Session with the session identifier '" + existingSession.getIdentifier() + "' has been overwritten.");
+        }
+
         if (requestSharedSecret != null) {
             if (requestSharedSecret.length >= MIN_SHARED_SECRET_BYTES && requestSharedSecret.length <= MAX_SHARED_SECRET_BYTES) {
                 sharedSecret = requestSharedSecret;
