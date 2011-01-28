@@ -48,7 +48,7 @@
                 </constraints>
                 <properties>
                   <horizontalAlignment value="4"/>
-                  <toolTipText value="&lt;html&gt;The value of &quot;Maximum Expiry Time&quot; is between 0 and 100 years.&lt;br&gt;The value zero means not enforcing to check token expiration.&lt;/html&gt;"/>
+                  <toolTipText value="&lt;html&gt;Maximum Expiry Time must be between 0 and 100 years.&lt;br&gt;Enter zero to disable&#10;the Maximum Expiration Time check.&lt;/html&gt;"/>
                 </properties>
               </component>
               <component id="bc5ed" class="javax.swing.JComboBox" binding="timeUnitComboBox">
