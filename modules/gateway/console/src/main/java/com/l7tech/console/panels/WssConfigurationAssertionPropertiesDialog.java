@@ -27,6 +27,7 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
     private JCheckBox useDerivedKeysCheckBox;
     private JCheckBox signTimestampCheckBox;
     private JCheckBox signSecurityTokensCheckBox;
+    private JCheckBox encryptSignatureCheckBox;
     private JCheckBox addTimestampCheckBox;
     private JTabbedPane tabbedPane1;
     private JCheckBox signWSAddressingHeadersCheckBox;
@@ -53,6 +54,7 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
         addTimestampCheckBox.setSelected(assertion.isAddTimestamp());
         signTimestampCheckBox.setSelected(assertion.isSignTimestamp());
         signSecurityTokensCheckBox.setSelected(assertion.isProtectTokens());
+        encryptSignatureCheckBox.setSelected(assertion.isEncryptSignature());
         signWSAddressingHeadersCheckBox.setSelected(assertion.isSignWsAddressingHeaders());
     }
 
@@ -70,6 +72,7 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
         assertion.setAddTimestamp(addTimestampCheckBox.isSelected());
         assertion.setSignTimestamp(signTimestampCheckBox.isSelected());
         assertion.setProtectTokens(signSecurityTokensCheckBox.isSelected());
+        assertion.setEncryptSignature(encryptSignatureCheckBox.isSelected());
         assertion.setSignWsAddressingHeaders(signWSAddressingHeadersCheckBox.isSelected());
         return assertion;
     }

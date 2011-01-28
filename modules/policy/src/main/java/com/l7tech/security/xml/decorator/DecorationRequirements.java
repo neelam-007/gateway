@@ -3,6 +3,7 @@ package com.l7tech.security.xml.decorator;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.UsernameToken;
+import com.l7tech.security.xml.ElementEncryptionConfig;
 import com.l7tech.security.xml.KeyInfoDetails;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.WsSecurityVersion;
@@ -17,7 +18,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
-import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.*;
+import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.DEFAULT_WSA_HEADER_SIGNING_BEHAVIOUR;
 
 /**
  * @author mike
@@ -127,7 +128,7 @@ public class DecorationRequirements {
     /**
      * populate this with Element objects
      */
-    public Set<Element> getElementsToEncrypt() {
+    public Map<Element, ElementEncryptionConfig> getElementsToEncrypt() {
         return elementsToEncrypt;
     }
 
@@ -158,8 +159,13 @@ public class DecorationRequirements {
         this.encryptionAlgorithm = encryptionAlgorithm;
     }
 
+    public void addElementToSign(Element element) {
+        getElementsToSign().add(element);
+    }
+
     /**
      * populate this with Element objects
+     * @return the current set of elements to sign.  never null
      */
     public Set<Element> getElementsToSign() {
         return elementsToSign;
@@ -382,6 +388,14 @@ public class DecorationRequirements {
                 ? wssVersion.equals(WsSecurityVersion.WSS11)
                 : !signatureConfirmations.isEmpty() || encryptUsernameToken;
         // todo: check for other WSS11 decorations -- encrypted headers, when they will be supported
+    }
+
+    public void addElementToEncrypt(Element element) {
+        addElementToEncrypt(element, new ElementEncryptionConfig(true));
+    }
+
+    public void addElementToEncrypt(Element element, ElementEncryptionConfig config) {
+        getElementsToEncrypt().put(element, config);
     }
 
     public interface SecureConversationSession extends SecurityContext {
@@ -756,6 +770,19 @@ public class DecorationRequirements {
         this.protectTokens = protectTokens;
     }
 
+    public boolean isEncryptSignature() {
+        return encryptSignature;
+    }
+
+    /**
+     * Set whether the signature should be encrypted.
+     * 
+     * @param encryptSignature true to encrypt any Signature we add to the message.
+     */
+    public void setEncryptSignature(boolean encryptSignature) {
+        this.encryptSignature = encryptSignature;
+    }
+
     /**
      * Gets the signature message digest string (i.e. SHA-1, SHA-256, etc).
      *
@@ -844,7 +871,7 @@ public class DecorationRequirements {
     private SecureConversationSession secureConversationSession = null;
     private boolean includeTimestamp = true;
     private boolean signTimestamp;
-    private Set<Element> elementsToEncrypt = new LinkedHashSet<Element>();
+    private Map<Element, ElementEncryptionConfig> elementsToEncrypt = new LinkedHashMap<Element, ElementEncryptionConfig>();
     private String encryptionAlgorithm = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
     private String keyEncryptionAlgorithm = null;
     private Set<Element> elementsToSign = new LinkedHashSet<Element>();
@@ -869,6 +896,7 @@ public class DecorationRequirements {
     private String kerberosTicketId = null;
     private boolean includeKerberosTicketId = false;
     private boolean encryptUsernameToken = false;
+    private boolean encryptSignature = false;
     private boolean useDerivedKeys = false;
     private boolean suppressSamlStrTransform = false;
     private boolean protectTokens = false;

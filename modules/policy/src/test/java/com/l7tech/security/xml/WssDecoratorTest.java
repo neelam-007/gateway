@@ -46,7 +46,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -182,7 +181,11 @@ public class WssDecoratorTest {
 
             initSecureConvSource(secureConversationKey, encryptedKeySha1);
 
-            if (elementsToEncrypt != null) req.getElementsToEncrypt().addAll(Arrays.asList(elementsToEncrypt));
+            if (elementsToEncrypt != null) {
+                for (Element element : elementsToEncrypt) {
+                    req.addElementToEncrypt(element);
+                }
+            }
             if (encryptionAlgorithm != null) req.setEncryptionAlgorithm(encryptionAlgorithm);
             if (elementsToSign != null) req.getElementsToSign().addAll(Arrays.asList(elementsToSign));
             if (signTimestamp) req.setSignTimestamp(true);
@@ -1274,7 +1277,7 @@ public class WssDecoratorTest {
         dreq.setSenderMessageSigningCertificate(client.left);
         dreq.setSenderMessageSigningPrivateKey(client.right);
         dreq.getElementsToSign().add(c.body);
-        dreq.getElementsToEncrypt().add(c.body);
+        dreq.addElementToEncrypt(c.body);
         dreq.setSignatureMessageDigest("SHA-384");
         return new TestDocument(c, dreq, server.right, null);
     }
@@ -1308,7 +1311,7 @@ public class WssDecoratorTest {
         DecorationRequirements dreq = new DecorationRequirements();
         dreq.setSenderSamlToken(samlAssertion);
         dreq.getElementsToSign().add(c.body);
-        dreq.getElementsToEncrypt().add(c.body);
+        dreq.addElementToEncrypt(c.body);
         dreq.setEncryptedKey(subjectConfirmationEncryptedKey.getSecretKey());
         dreq.setEncryptedKeyReferenceInfo(KeyInfoDetails.makeKeyId(samlAssertion.getAssertionId(), false, SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11));
         dreq.setUseDerivedKeys(true);

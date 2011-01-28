@@ -11,7 +11,6 @@ import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.console.xmlviewer.ExchangerDocument;
 import com.l7tech.console.xmlviewer.Viewer;
 import com.l7tech.console.xmlviewer.ViewerToolBar;
@@ -120,7 +119,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private JButton namespaceButton;
     private JLabel hardwareAccelStatusLabel;
     private JPanel speedIndicatorPanel;
-    private JPanel encryptionConfigPanel;
+    private JPanel encryptionAlgorithmsPanel;
     private JPanel signatureResponseConfigPanel;
     private JComboBox signatureDigestComboBox;
     private JPanel signatureDigestAlgorithmPanel;
@@ -156,6 +155,9 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private JCheckBox acceptSha256;
     private JCheckBox acceptSha384;
     private JCheckBox acceptSha512;
+    private JPanel encryptionConfigPanel;
+    private JRadioButton encryptElementContentsOnlyRadioButton;
+    private JRadioButton encryptEntireElementIncludingRadioButton;
     private List<JCheckBox> acceptedDigestCheckboxes;
     private final boolean showHardwareAccelStatus;
     private boolean wasOk = false;
@@ -845,6 +847,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
     private void initializeEncryptionConfig() {
         if (!isEncryption) {
+            encryptionAlgorithmsPanel.setVisible(false);
             encryptionConfigPanel.setVisible(false);
             return;
         }
@@ -860,6 +863,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             aes192CheckBox.setSelected(XencAlgorithm.AES_192_CBC.getXEncName().equals(xencAlgorithm));
             aes256CheckBox.setSelected(XencAlgorithm.AES_256_CBC.getXEncName().equals(xencAlgorithm));
             tripleDESCheckBox.setSelected(XencAlgorithm.TRIPLE_DES_CBC.getXEncName().equals(xencAlgorithm));
+
+            boolean contentsOnly = responseWssConfidentiality.isEncryptContentsOnly();
+            encryptElementContentsOnlyRadioButton.setSelected(contentsOnly);
+            encryptEntireElementIncludingRadioButton.setSelected(!contentsOnly);
 
         } else if (assertion instanceof RequireWssEncryptedElement) {
             RequireWssEncryptedElement requestWssConfidentiality = (RequireWssEncryptedElement)assertion;
@@ -913,8 +920,9 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                             "Please select a single encryption method.", null);
                 return false;
             }
-            WssEncryptElement responseWssConfidentiality = (WssEncryptElement)assertion;
-            responseWssConfidentiality.setXEncAlgorithm(xencAlgorithmList.get(0));
+            WssEncryptElement wssEncryptElement = (WssEncryptElement)assertion;
+            wssEncryptElement.setXEncAlgorithm(xencAlgorithmList.get(0));
+            wssEncryptElement.setEncryptContentsOnly(encryptElementContentsOnlyRadioButton.isSelected());
 
         } else if (assertion instanceof RequireWssEncryptedElement) {
             RequireWssEncryptedElement requestWssConfidentiality = (RequireWssEncryptedElement)assertion;

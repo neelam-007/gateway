@@ -74,8 +74,9 @@ public class X509BinarySecurityTokenImpl extends X509SigningSecurityTokenImpl {
      * @param domFactory The Document that will own the BST fragment.
      * @param certificate The certificate for the BST
      * @param wssePrefix The namespace prefix for the WS-Security namespace
-     * @param wssePrefix The namespace URI for the WS-Security namespace
+     * @param wsseNs The namespace URI for the WS-Security namespace
      * @return A new X509SigningSecurityTokenImpl
+     * @throws java.security.cert.CertificateEncodingException if the specified certificate cannot be encoded
      */
     public static X509SigningSecurityTokenImpl createBinarySecurityToken( final Document domFactory,
                                                                           final X509Certificate certificate,
@@ -97,8 +98,10 @@ public class X509BinarySecurityTokenImpl extends X509SigningSecurityTokenImpl {
      * @param domFactory The Document that will own the BST fragment.
      * @param certificate The certificate for the BST
      * @param wssePrefix The namespace prefix for the WS-Security namespace
-     * @param wssePrefix The namespace URI for the WS-Security namespace
-     * @return A new X509SigningSecurityTokenImpl 
+     * @param wsseNs The namespace URI for the WS-Security namespace
+     * @param securityTokenType the token type the new token should return, either BST or issuer/serial.  required
+     * @return A new X509SigningSecurityTokenImpl
+     * @throws CertificateEncodingException if the specified certificate cannot be encoded.
      */
     public static X509SigningSecurityTokenImpl createBinarySecurityToken( final Document domFactory,
                                                                           final X509Certificate certificate,

@@ -458,7 +458,7 @@ public class WssRoundTripTest {
         WssProcessor trogdor = new WssProcessorImpl();
 
         // save a record of the literal encrypted elements before they get messed with
-        final Set<Element> elementSet = td.req.getElementsToEncrypt();
+        final Set<Element> elementSet = td.req.getElementsToEncrypt().keySet();
         final Element[] elementsToEncrypt = elementSet.toArray(new Element[elementSet.size()]);
         Element[] elementsBeforeEncryption = new Element[elementsToEncrypt.length];
         for (int i = 0; i < elementsToEncrypt.length; i++) {

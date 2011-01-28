@@ -63,6 +63,7 @@ public class WssDecoratorImpl implements WssDecorator {
     public WssDecoratorImpl() {
     }
 
+    @SuppressWarnings({"UnusedDeclaration"})
     public EncryptedKeyCache getEncryptedKeyCache() {
         return encryptedKeyCache;
     }
@@ -93,6 +94,7 @@ public class WssDecoratorImpl implements WssDecorator {
     }
 
     /**
+     * @param includeNanoseconds if true, we will include a nanosecond-granular date.  Otherwise it will be microsecond-granular for compatibility with other implementations.
      * @return random extra microseconds to add to the timestamp to make it more unique, or zero to not bother.
      */
     private static long getExtraTime( final Boolean includeNanoseconds ) {
@@ -122,7 +124,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 dreq.getSecurityHeaderActor(), dreq.isSecurityHeaderActorNamespaced(),
                 mustUnderstand, dreq.isSecurityHeaderReusable());
         Set<Element> signList = dreq.getElementsToSign();
-        Set<Element> cryptList = dreq.getElementsToEncrypt();
+        Map<Element, ElementEncryptionConfig> cryptList = dreq.getElementsToEncrypt();
         Set<String> signPartList = dreq.getPartsToSign();
 
         Element timestamp = null;
@@ -184,7 +186,7 @@ public class WssDecoratorImpl implements WssDecorator {
             }
         }
 
-        Element addedUsernameTokenHolder = null; // dummy element to hold fully-encrypted usernametoken.  will be removed later
+        Element addedUsernameTokenHolder = null; // dummy element to hold fully-encrypted usernametoken.  will be removed later when we move the encrypted token to its final location
         if (dreq.getUsernameTokenCredentials() != null) {
             Element usernameToken = createUsernameToken(securityHeader, dreq.getUsernameTokenCredentials());
             if (dreq.isSignUsernameToken()) signList.add(usernameToken);
@@ -197,7 +199,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 addedUsernameTokenHolder.appendChild(usernameToken);
                 if (dreq.isSignUsernameToken())
                     signList.add(usernameToken);
-                cryptList.add(addedUsernameTokenHolder);
+                cryptList.put(addedUsernameTokenHolder, new ElementEncryptionConfig(true));
             }
         }
 
@@ -317,31 +319,36 @@ public class WssDecoratorImpl implements WssDecorator {
             for(int i=0; i < sigValues.getLength(); i++) {
                 c.signatures.put(sigValues.item(i).getTextContent(), isEncrypted(cryptList, sigValues.item(i)));
             }
+        } else {
+            signature = null;
+        }
+
+        if (signature != null && c.dreq.isEncryptSignature()) {            
+            cryptList.put(signature, new ElementEncryptionConfig(false));
         }
 
         if (cryptList.size() > 0) {
             // report any signature values that are getting encrypted by this decoration
-            for (Element encrypted : cryptList) {
+            for (Element encrypted : cryptList.keySet()) {
                 NodeList sigValues = encrypted.getElementsByTagNameNS(SoapConstants.DIGSIG_URI, "SignatureValue");
                 for(int i=0; i < sigValues.getLength(); i++) {
                     c.encryptedSignatures.add(sigValues.item(i).getTextContent());
                 }
             }
 
-            final Element[] elementsToEncrypt = cryptList.toArray(new Element[cryptList.size()]);
             if (sct != null) {
-                encryptWithSecureConversationToken( c, securityHeader, xencDesiredNextSibling, sct, session, elementsToEncrypt );
+                encryptWithSecureConversationToken( c, securityHeader, xencDesiredNextSibling, sct, session, cryptList );
             } else if (addedEncKey != null && addedEncKeyXmlEncKey != null) {
-                encryptWithGeneratedEncryptedKeyToken( c, securityHeader, xencDesiredNextSibling, addedEncKey, addedEncKeyXmlEncKey, elementsToEncrypt );
+                encryptWithGeneratedEncryptedKeyToken( c, securityHeader, xencDesiredNextSibling, addedEncKey, addedEncKeyXmlEncKey, cryptList );
             } else if (dreq.getEncryptedKeyReferenceInfo() != null &&
                        dreq.getEncryptedKey() != null) {
-                encryptWithEncryptedKeyToken( c, securityHeader, xencDesiredNextSibling, elementsToEncrypt );
+                encryptWithEncryptedKeyToken( c, securityHeader, xencDesiredNextSibling, cryptList );
             } else if (addedKerberosBst != null) {
-                encryptWithKerberosToken( c, securityHeader, xencDesiredNextSibling, addedKerberosBst, elementsToEncrypt );
+                encryptWithKerberosToken( c, securityHeader, xencDesiredNextSibling, addedKerberosBst, cryptList );
             } else if (dreq.getKerberosTicket() != null) {
-                encryptWithKerberosSHA1Token( c, securityHeader, xencDesiredNextSibling, elementsToEncrypt );
+                encryptWithKerberosSHA1Token( c, securityHeader, xencDesiredNextSibling, cryptList );
             } else if (dreq.getRecipientCertificate() != null) {
-                encryptWithX509Token( c, securityHeader, xencDesiredNextSibling, elementsToEncrypt );
+                encryptWithX509Token( c, securityHeader, xencDesiredNextSibling, cryptList );
             } else
                 throw new DecoratorException("Encryption is requested, but there is no recipient key.");
 
@@ -425,7 +432,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private void encryptWithX509Token( final Context c,
                                        final Element securityHeader,
                                        final Element xencDesiredNextSibling,
-                                       final Element[] elementsToEncrypt ) throws GeneralSecurityException, DecoratorException {
+                                       final Map<Element, ElementEncryptionConfig> cryptList ) throws GeneralSecurityException, DecoratorException {
         // Encrypt to recipient's certificate
         String encryptionAlgorithm = c.dreq.getEncryptionAlgorithm();
 
@@ -434,7 +441,7 @@ public class WssDecoratorImpl implements WssDecorator {
                         securityHeader,
                         c.dreq.getRecipientCertificate(),
                         c.dreq.getEncryptionKeyInfoInclusionType(),
-                        elementsToEncrypt,
+                        cryptList,
                         encKey,
                         c.dreq.getKeyEncryptionAlgorithm(),
                         xencDesiredNextSibling);
@@ -443,7 +450,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private void encryptWithKerberosSHA1Token( final Context c,
                                                final Element securityHeader,
                                                final Element xencDesiredNextSibling,
-                                               final Element[] elementsToEncrypt ) throws DecoratorException, GeneralSecurityException {
+                                               final Map<Element, ElementEncryptionConfig> cryptList ) throws DecoratorException, GeneralSecurityException {
         // Derive key using KerberosSHA1 reference
         c.nsf.setWsscNs( SoapConstants.WSSC_NAMESPACE2);
         String kerbSha1 = KerberosUtils.getBase64Sha1(c.dreq.getKerberosTicket().getGSSAPReqTicket());
@@ -460,7 +467,7 @@ public class WssDecoratorImpl implements WssDecorator {
         addEncryptedReferenceList(c,
                                   securityHeader,
                                   xencDesiredNextSibling,
-                                  elementsToEncrypt,
+                                  cryptList,
                                   dktEncKey,
                                   KeyInfoDetails.makeUriReference(dktId, dkt.getTokenType()));
     }
@@ -469,7 +476,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                            final Element securityHeader,
                                            final Element xencDesiredNextSibling,
                                            final Element addedKerberosBst,
-                                           final Element[] elementsToEncrypt ) throws DecoratorException, GeneralSecurityException {
+                                           final Map<Element, ElementEncryptionConfig> cryptList ) throws DecoratorException, GeneralSecurityException {
         // Derive key using direct URI reference
         c.nsf.setWsscNs( SoapConstants.WSSC_NAMESPACE2);
         KeyInfoDetails kerbUriRef = KeyInfoDetails.makeUriReference(
@@ -485,17 +492,17 @@ public class WssDecoratorImpl implements WssDecorator {
         String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
         XencUtil.XmlEncKey dktEncKey = new XencUtil.XmlEncKey(c.dreq.getEncryptionAlgorithm(), dkt.derivedKey);
         addEncryptedReferenceList(c,
-                                          securityHeader,
-                                          xencDesiredNextSibling,
-                                          elementsToEncrypt,
-                                          dktEncKey,
-                                          KeyInfoDetails.makeUriReference(dktId, dkt.getTokenType()));
+                                  securityHeader,
+                                  xencDesiredNextSibling,
+                                  cryptList,
+                                  dktEncKey,
+                                  KeyInfoDetails.makeUriReference(dktId, dkt.getTokenType()));
     }
 
     private void encryptWithEncryptedKeyToken( final Context c,
                                                final Element securityHeader,
                                                final Element xencDesiredNextSibling,
-                                               final Element[] elementsToEncrypt ) throws DecoratorException, GeneralSecurityException {
+                                               final Map<Element, ElementEncryptionConfig> cryptList ) throws DecoratorException, GeneralSecurityException {
         final KeyInfoDetails eksha = c.dreq.getEncryptedKeyReferenceInfo();
         final byte[] ekkey = c.dreq.getEncryptedKey();
 
@@ -515,7 +522,7 @@ public class WssDecoratorImpl implements WssDecorator {
             addEncryptedReferenceList(c,
                                       securityHeader,
                                       xencDesiredNextSibling,
-                                      elementsToEncrypt,
+                                      cryptList,
                                       dktEncKey,
                                       KeyInfoDetails.makeUriReference(dktId, dkt.getTokenType()));
         } else {
@@ -526,7 +533,7 @@ public class WssDecoratorImpl implements WssDecorator {
             addEncryptedReferenceList(c,
                                       securityHeader,
                                       xencDesiredNextSibling,
-                                      elementsToEncrypt,
+                                      cryptList,
                                       encKey,
                                       eksha);
         }
@@ -537,7 +544,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                         final Element xencDesiredNextSibling,
                                                         final Element addedEncKey,
                                                         final XencUtil.XmlEncKey addedEncKeyXmlEncKey,
-                                                        final Element[] elementsToEncrypt ) throws DecoratorException, GeneralSecurityException {
+                                                        final Map<Element, ElementEncryptionConfig> cryptList ) throws DecoratorException, GeneralSecurityException {
         if (c.dreq.isUseDerivedKeys()) {
             // Derive a new key and use for encryption
             DerivedKeyToken dkt = addDerivedKeyToken(c,
@@ -552,7 +559,7 @@ public class WssDecoratorImpl implements WssDecorator {
             addEncryptedReferenceList(c,
                                       securityHeader,
                                       xencDesiredNextSibling,
-                                      elementsToEncrypt,
+                                      cryptList,
                                       dktEncKey,
                                       KeyInfoDetails.makeUriReference(dktId, dkt.getTokenType()));
         } else {
@@ -561,7 +568,7 @@ public class WssDecoratorImpl implements WssDecorator {
             addEncryptedReferenceList(c,
                                       addedEncKey,
                                       xencDesiredNextSibling,
-                                      elementsToEncrypt,
+                                      cryptList,
                                       addedEncKeyXmlEncKey,
                                       KeyInfoDetails.makeUriReference(encKeyId, SoapConstants.VALUETYPE_ENCRYPTED_KEY));
         }
@@ -572,7 +579,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                      final Element xencDesiredNextSibling,
                                                      final Element sct,
                                                      final DecorationRequirements.SecureConversationSession session,
-                                                     final Element[] elementsToEncrypt ) throws DecoratorException, GeneralSecurityException {
+                                                     final Map<Element, ElementEncryptionConfig> cryptList ) throws DecoratorException, GeneralSecurityException {
         // Encrypt using Secure Conversation session
         if (session == null)
             throw new DecoratorException("Encryption is requested with SecureConversationSession, but session is null");
@@ -583,7 +590,7 @@ public class WssDecoratorImpl implements WssDecorator {
         addEncryptedReferenceList(c,
                                   securityHeader,
                                   xencDesiredNextSibling,
-                                  elementsToEncrypt,
+                                  cryptList,
                                   encKey,
                                   KeyInfoDetails.makeUriReference(dktId, derivedKeyToken.getTokenType()));
     }
@@ -611,7 +618,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                       securityHeader,
                                       c.dreq.getRecipientCertificate(),
                                       c.dreq.getEncryptionKeyInfoInclusionType(),
-                                      new Element[0],
+                                      Collections.<Element,ElementEncryptionConfig>emptyMap(),
                                       addedEncKeyXmlEncKey,
                                       c.dreq.getKeyEncryptionAlgorithm(),
                                       null);
@@ -864,10 +871,11 @@ public class WssDecoratorImpl implements WssDecorator {
         return signatureInfo;
     }
 
-    private boolean isEncrypted(Set<Element> cryptList, Node node) {
+    private boolean isEncrypted(Map<Element, ElementEncryptionConfig> cryptList, Node node) {
         Node n = node;
         while(n != null) {
-            if (cryptList.contains(n))
+            //noinspection SuspiciousMethodCalls
+            if (cryptList.keySet().contains(n))
                 return true;
             n = n.getParentNode();
         }
@@ -977,9 +985,11 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param securityHeader        security header being created.  Must not be null.
      * @param desiredNextSibling    next sibling, or null to append new element to securityHeader
      * @param session               WS-SC session to use.  Must not be null.
+     * @param securityContextToken  SCT used to refer to the specified session.  Required.
      * @return the newly-added DerivedKeyToken.  Never null.
-     * @throws NoSuchAlgorithmException
-     * @throws InvalidKeyException
+     * @throws InvalidKeyException may occur if current crypto policy disallows HMac with long keys
+     * @throws NoSuchAlgorithmException if no HMacSHA1 service available from current security providers
+     * @throws DecoratorException if the SCT element has conflicting IDs
      */
     private DerivedKeyToken addDerivedKeyToken(Context c,
                                                Element securityHeader,
@@ -1028,11 +1038,12 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param securityHeader        security header being created.  Must not be null.
      * @param desiredNextSibling    next sibling, or null to append new element to securityHeader
      * @param keyInfoDetail         info for SecurityTokenReference referring back to the derivation source.  Must not be null.
+     * @param length                length of key to derive in bytes
      * @param derivationSourceSecretKey  raw bytes of secret key material from which to derive a new key.  Must not be null or empty.
      * @param derivationLabel            the string to use as the Label parameter in key derivation.  Must not be null or empty.
      * @return the newly-added DerivedKeyToken.  Never null.
-     * @throws NoSuchAlgorithmException
-     * @throws InvalidKeyException
+     * @throws InvalidKeyException may occur if current crypto policy disallows HMac with long keys
+     * @throws NoSuchAlgorithmException if no HMacSHA1 service available from current security providers
      */
     private DerivedKeyToken addDerivedKeyToken( final Context c,
                                                 final Element securityHeader,
@@ -1141,6 +1152,8 @@ public class WssDecoratorImpl implements WssDecorator {
      *                               Must be provided if senderSigningKey is an RSA or DSA key.
      * @param messageDigestAlgorithm the message digest algorithm to use.  A null value means the default digest will be used for the signing key type.
      * @param elementsToSign         an array of elements that should be signed.  Must be non-null references to elements in the Document being processed.  Must not be null or empty.
+     * @param partsToSign            content-IDs of MIME parts to include in signature, omitting any leading "cid:" prefix.  Required, but may be empty.
+     * @param signPartHeaders        whether to cover signed MIME part's MIME headers in the signature
      * @param securityHeader         the Security header to which the new ds:Signature element should be added.  May not be null.
      * @param keyInfoDetails         the KeyInfoDetails to use to create the KeyInfo.  Must not be null.
      * @param suppressSamlStrDereference true if Signature references to SAML Assertions should be generated using
@@ -1151,6 +1164,7 @@ public class WssDecoratorImpl implements WssDecorator {
      *
      * @throws DecoratorException             if the signature could not be created with this message and these decoration requirements.
      * @throws InvalidDocumentFormatException if the message format is too invalid to overlook.
+     * @throws CertificateEncodingException if the provided senderSigningCert cannot be encoded.
      */
     private Element addSignature(final Context c,
                                  Key senderSigningKey,
@@ -1162,7 +1176,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                  Element securityHeader,
                                  KeyInfoDetails keyInfoDetails,
                                  boolean suppressSamlStrDereference)
-            throws DecoratorException, InvalidDocumentFormatException, IOException, CertificateEncodingException {
+            throws DecoratorException, InvalidDocumentFormatException, CertificateEncodingException {
         final String DS_PREFIX = "ds";
 
         if (elementsToSign == null || elementsToSign.length < 1) return null;
@@ -1366,7 +1380,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private Element addEncryptedReferenceList(Context c,
                                               Element newParent,
                                               Element desiredNextSibling,
-                                              Element[] elementsToEncrypt,
+                                              Map<Element, ElementEncryptionConfig> cryptList,
                                               XencUtil.XmlEncKey encKey,
                                               KeyInfoDetails keyInfoDetails)
       throws GeneralSecurityException, DecoratorException {
@@ -1386,7 +1400,9 @@ public class WssDecoratorImpl implements WssDecorator {
         String xenc = referenceList.getPrefix();
 
         int numElementsEncrypted = 0;
-        for (Element element : elementsToEncrypt) {
+        for (Map.Entry<Element, ElementEncryptionConfig> entry : cryptList.entrySet()) {
+            Element element = entry.getKey();
+            boolean encryptContentsOnly = entry.getValue().isEncryptContentsOnly();
             if (DomUtils.elementIsEmpty(element)) {
                 logger.fine("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
                 continue;
@@ -1394,7 +1410,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
             Element encryptedElement;
             try {
-                encryptedElement = XencUtil.encryptElement(element, encKey);
+                encryptedElement = XencUtil.encryptElement(element, encKey, encryptContentsOnly);
             } catch (XencUtil.XencException e) {
                 throw new DecoratorException(e.getMessage(), e);
             }
@@ -1427,12 +1443,12 @@ public class WssDecoratorImpl implements WssDecorator {
                                      final Element securityHeader,
                                      final X509Certificate recipientCertificate,
                                      final KeyInfoInclusionType recipientKeyReferenceType,
-                                     final Element[] elementsToEncrypt,
+                                     final Map<Element, ElementEncryptionConfig> cryptList,
                                      final XencUtil.XmlEncKey encKey,
                                      final String algorithm,
                                      final Element desiredNextSibling )
-      throws GeneralSecurityException, DecoratorException {
-
+      throws GeneralSecurityException, DecoratorException
+    {
         if (recipientCertificate == null) {
             throw new DecoratorException("Unable to create EncryptedKey: no encryption recipient certificate has been specified");
         }
@@ -1509,14 +1525,17 @@ public class WssDecoratorImpl implements WssDecorator {
         Element referenceList = DomUtils.createAndAppendElementNS(encryptedKey, SoapConstants.REFLIST_EL_NAME, xencNs, xenc);
 
         int numElementsEncrypted = 0;
-        for (Element element : elementsToEncrypt) {
+        for (Map.Entry<Element, ElementEncryptionConfig> entry : cryptList.entrySet()) {
+            Element element = entry.getKey();
+            boolean encryptContentsOnly = entry.getValue().isEncryptContentsOnly();
+
             if (DomUtils.elementIsEmpty(element)) {
                 logger.fine("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
                 continue;
             }
             Element encryptedElement;
             try {
-                encryptedElement = XencUtil.encryptElement(element, encKey);
+                encryptedElement = XencUtil.encryptElement(element, encKey, encryptContentsOnly);
             } catch (XencUtil.XencException e) {
                 throw new DecoratorException(e.getMessage(), e);
             }

@@ -33,7 +33,7 @@ public class WssxInteropMessageGeneratorTest {
         gen.dreq().setEncryptionAlgorithm("http://www.w3.org/2001/04/xmlenc#aes256-cbc");
         gen.dreq().setEncryptUsernameToken(true);
         gen.dreq().getElementsToSign().clear();
-        gen.dreq().getElementsToEncrypt().add(SoapUtil.getBodyElement(gen.doc));
+        gen.dreq().addElementToEncrypt(SoapUtil.getBodyElement(gen.doc));
         gen.dreq().setRecipientCertificate(gen.getBobInfo().getCertificate());
         gen.dreq().setTimestampTimeoutMillis(2000000000);
         log.info(XmlUtil.nodeToFormattedString(gen.generateRequest()));
@@ -50,7 +50,7 @@ public class WssxInteropMessageGeneratorTest {
         gen.dreq().setSignTimestamp(true);
         gen.dreq().setEncryptionAlgorithm("http://www.w3.org/2001/04/xmlenc#aes256-cbc");
         final Element bodyEl = SoapUtil.getBodyElement(gen.doc);
-        gen.dreq().getElementsToEncrypt().add(bodyEl);
+        gen.dreq().addElementToEncrypt(bodyEl);
         gen.dreq().getElementsToSign().add(bodyEl);
         gen.dreq().setRecipientCertificate(gen.getBobInfo().getCertificate());
         gen.dreq().setTimestampTimeoutMillis(2000000000);
@@ -68,7 +68,7 @@ public class WssxInteropMessageGeneratorTest {
         gen.dreq().setSignTimestamp(true);
         gen.dreq().setEncryptionAlgorithm("http://www.w3.org/2001/04/xmlenc#aes256-cbc");
         final Element bodyEl = SoapUtil.getBodyElement(gen.doc);
-        gen.dreq().getElementsToEncrypt().add(bodyEl);
+        gen.dreq().addElementToEncrypt(bodyEl);
         gen.dreq().getElementsToSign().add(bodyEl);
         gen.dreq().setTimestampTimeoutMillis(2000000000);
         gen.generateRequest();

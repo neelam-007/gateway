@@ -22,6 +22,7 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
     private boolean addTimestamp = true;
     private boolean signTimestamp = true;
     private boolean protectTokens = true;
+    private boolean encryptSignature = false;
     private boolean signWsAddressingHeaders;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
@@ -75,6 +76,14 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
     @Override
     public void setProtectTokens(boolean protectTokens) {
         this.protectTokens = protectTokens;
+    }
+
+    public boolean isEncryptSignature() {
+        return encryptSignature;
+    }
+
+    public void setEncryptSignature(boolean encryptSignature) {
+        this.encryptSignature = encryptSignature;
     }
 
     @Override

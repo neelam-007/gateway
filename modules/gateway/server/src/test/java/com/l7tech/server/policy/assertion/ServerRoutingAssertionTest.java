@@ -115,7 +115,7 @@ public class ServerRoutingAssertionTest {
             DecorationRequirements dreq = new DecorationRequirements();
             dreq.setSecurityHeaderActor("alfred");
             dreq.setRecipientCertificate(TestDocuments.getEttkServerCertificate());
-            dreq.getElementsToEncrypt().add(SoapUtil.getBodyElement(message.getXmlKnob().getDocumentWritable()));
+            dreq.addElementToEncrypt(SoapUtil.getBodyElement(message.getXmlKnob().getDocumentWritable()));
             decorator.decorateMessage(message, dreq);
         }
 
@@ -131,7 +131,7 @@ public class ServerRoutingAssertionTest {
             DecorationRequirements dreq = new DecorationRequirements();
             dreq.setSecurityHeaderActor("alfred");
             dreq.setRecipientCertificate(TestDocuments.getEttkServerCertificate());
-            dreq.getElementsToEncrypt().add(SoapUtil.getBodyElement(message.getXmlKnob().getDocumentWritable()));
+            dreq.addElementToEncrypt(SoapUtil.getBodyElement(message.getXmlKnob().getDocumentWritable()));
             decorator.decorateMessage(message, dreq);
         }
 

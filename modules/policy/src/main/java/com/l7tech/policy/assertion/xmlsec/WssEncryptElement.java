@@ -50,6 +50,14 @@ public class WssEncryptElement extends XmlSecurityAssertionBase implements Reque
         return xencKeyAlgorithm;
     }
 
+    public boolean isEncryptContentsOnly() {
+        return encryptContentsOnly;
+    }
+
+    public void setEncryptContentsOnly(boolean encryptContentsOnly) {
+        this.encryptContentsOnly = encryptContentsOnly;
+    }
+
     public void setKeyEncryptionAlgorithm(String keyEncryptionAlgorithm) {
         this.xencKeyAlgorithm = keyEncryptionAlgorithm;
     }
@@ -129,4 +137,5 @@ public class WssEncryptElement extends XmlSecurityAssertionBase implements Reque
     private String xencAlgorithm = XencUtil.AES_128_CBC;
     private String xencKeyAlgorithm = null;
     private String keyReference = KeyReference.SKI.getName();
+    private boolean encryptContentsOnly = true;
 }

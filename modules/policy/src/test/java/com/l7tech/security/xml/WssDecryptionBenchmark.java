@@ -65,7 +65,7 @@ public class WssDecryptionBenchmark {
         req.setIncludeTimestamp(true);
         req.setSignTimestamp(true);
         req.getElementsToSign().add(body);
-        req.getElementsToEncrypt().add(body);
+        req.addElementToEncrypt(body);
         decorator.decorateMessage(message, req);
 
         decoratedXml = XmlUtil.nodeToString(message.getXmlKnob().getDocumentReadOnly());

@@ -131,7 +131,7 @@ public class WssRoundTripPerformanceTester {
                 WssDecoratorImpl decorator = new WssDecoratorImpl();
                 DecorationRequirements dr = new DecorationRequirements();
                 dr.setRecipientCertificate(RECIP_RSA.getCertificate());
-                dr.getElementsToEncrypt().add(SoapUtil.getBodyElement(doc));
+                dr.addElementToEncrypt(SoapUtil.getBodyElement(doc));
                 Message mess = new Message(doc,0);
                 decorator.decorateMessage(mess, dr);
                 return mess;
@@ -170,7 +170,7 @@ public class WssRoundTripPerformanceTester {
         WssDecoratorImpl decorator = new WssDecoratorImpl();
         DecorationRequirements dr = new DecorationRequirements();
         dr.setRecipientCertificate(recipient.getCertificate());
-        dr.getElementsToEncrypt().add(SoapUtil.getBodyElement(doc));
+        dr.addElementToEncrypt(SoapUtil.getBodyElement(doc));
         Message mess = new Message(doc,0);
         decorator.decorateMessage(mess, dr);
         return mess;

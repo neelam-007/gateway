@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
+import com.l7tech.security.xml.ElementEncryptionConfig;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.jaxen.JaxenException;
@@ -66,7 +67,9 @@ public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertio
             DecorationRequirements wssReqs = context.getWssRequirements(data);
             if (serverCert != null && data.getRecipientContext().localRecipient())
                     wssReqs.setRecipientCertificate(serverCert);
-            wssReqs.getElementsToEncrypt().addAll(elements);
+            for (Element element : elements) {
+                wssReqs.addElementToEncrypt(element, new ElementEncryptionConfig(data.isEncryptContentsOnly()));
+            }
             if (data.getXEncAlgorithm() !=null) {
                 wssReqs.setEncryptionAlgorithm(data.getXEncAlgorithm());
             }

@@ -5,6 +5,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
+import com.l7tech.security.xml.ElementEncryptionConfig;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
@@ -18,6 +19,7 @@ import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
 import org.jaxen.JaxenException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -105,7 +107,7 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
         try {
             soapmsg = message.getXmlKnob().getDocumentReadOnly();
 
-            final List selectedElements;
+            final List<Element> selectedElements;
             try {
                 selectedElements = compiledXpath.getCompiledXpath().rawSelectElements(soapmsg,
                         new PolicyEnforcementContextXpathVariableFinder(context));
@@ -119,8 +121,9 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
                 return AssertionStatus.FALSIFIED;
             }
             DecorationRequirements wssReq = message.getSecurityKnob().getAlternateDecorationRequirements(encryptionContext.getRecipientContext());
-            //noinspection unchecked
-            wssReq.getElementsToEncrypt().addAll(selectedElements);
+            for (Element element : selectedElements) {
+                wssReq.addElementToEncrypt(element, new ElementEncryptionConfig(assertion.isEncryptContentsOnly()));
+            }
             wssReq.setEncryptionAlgorithm(assertion.getXEncAlgorithm());
             wssReq.setKeyEncryptionAlgorithm(assertion.getKeyEncryptionAlgorithm());
             String keyReference = assertion.getKeyReference();

@@ -61,6 +61,7 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
         dreq.setIncludeTimestamp(assertion.isAddTimestamp());
         dreq.setSignTimestamp(assertion.isSignTimestamp());
         dreq.setProtectTokens(assertion.isProtectTokens());
+        dreq.setEncryptSignature(assertion.isEncryptSignature());
 
         //adding this assertion to a policy removes the default signing behaviour for WS-Addressing headers.
         if(assertion.isSignWsAddressingHeaders()){

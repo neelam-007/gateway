@@ -77,6 +77,14 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
         this.xencKeyAlgorithm = keyEncryptionAlgorithm;
     }
 
+    public boolean isEncryptContentsOnly() {
+        return encryptContentsOnly;
+    }
+
+    public void setEncryptContentsOnly(boolean encryptContentsOnly) {
+        this.encryptContentsOnly = encryptContentsOnly;
+    }
+
     final static String baseName = "Require Encrypted Element";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RequireWssEncryptedElement>(){
@@ -121,4 +129,5 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
 
     private String xencKeyAlgorithm;
     private Set<String> xEncAlgorithmList; // Store all encrption algorithms user chose
+    private boolean encryptContentsOnly = true;
 }

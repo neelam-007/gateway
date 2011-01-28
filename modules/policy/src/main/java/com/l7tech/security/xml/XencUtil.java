@@ -24,6 +24,7 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -128,8 +129,37 @@ public class XencUtil {
     public static Element encryptElement(Element element, XmlEncKey encKey)
       throws XencException, GeneralSecurityException
     {
+        return encryptElement(element, encKey, true);
+    }
 
+    /**
+     * Encrypt the specified element.  Returns the new EncryptedData element.
+     *
+     * @param element  the element to encrypt.  Required.
+     * @param encKey  with the algorithm and the key
+     *                The encryption algorithm is one of (http://www.w3.org/2001/04/xmlenc#aes128-cbc,
+     *                http://www.w3.org/2001/04/xmlenc#tripledes-cbc, etc)
+     * @param encryptContentsOnly if true, will use Content encryption; otherwise, will use Element encryption
+     * @return the EncryptedData element that replaces the specified element (content or entire element, depending on value of encryptContentsOnly).
+     * @throws java.security.GeneralSecurityException if there is a problem encrypting the element
+     * @throws XencUtil.XencException if there is a problem encrypting the element
+     */
+    public static Element encryptElement(Element element, XmlEncKey encKey, boolean encryptContentsOnly)
+      throws XencException, GeneralSecurityException
+    {
         Document soapMsg = element.getOwnerDocument();
+
+        if (false && !encryptContentsOnly) {
+            final Node parent = element.getParentNode();
+            if (parent != null) {
+                Element wrapper = soapMsg.createElement("wrapper");
+                parent.insertBefore(wrapper, element);
+                parent.removeChild(element);
+                wrapper.appendChild(element);
+                element = wrapper;
+            }
+        }
+
 
         CipherData cipherData = new CipherData();
         cipherData.setCipherValue(new CipherValue());
@@ -139,7 +169,7 @@ public class XencUtil {
         EncryptedData encData = new EncryptedData();
         encData.setCipherData(cipherData);
         encData.setEncryptionMethod(encMethod);
-        encData.setType(EncryptedData.CONTENT);
+        encData.setType(encryptContentsOnly ? EncryptedData.CONTENT : EncryptedData.ELEMENT);
         final Element encDataElement;
         try {
             encDataElement = encData.createElement(soapMsg, true);
@@ -155,7 +185,7 @@ public class XencUtil {
         if (symmetricProvider != null)
             af.setProvider(symmetricProvider.getName());
         ec.setAlgorithmFactory(af);
-        ec.setEncryptedType(encDataElement, EncryptedData.CONTENT, null, null);
+        ec.setEncryptedType(encDataElement, encryptContentsOnly ? EncryptedData.CONTENT : EncryptedData.ELEMENT, null, null);
 
         ec.setData(element);
         ec.setKey(encKey.getSecretKey());
