@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.remoting.RemoteAccessException;
 
 /**
@@ -59,7 +60,7 @@ public class AuditAlertChecker {
                     auditWatcher.alertsAvailable(alertTime!=0, alertTime);
                 }
             }
-            
+
             if (alertTime!=0) {
                 stopTimer();
             } else {
@@ -67,7 +68,9 @@ public class AuditAlertChecker {
             }
         } catch (RemoteAccessException e) {
             // bzilla #3741, we may no longer be connected
-            logger.log(Level.WARNING, "Could not access Gateway to update this. Perhaps the connection to the Gateway timed out.", e);
+            logger.log(Level.WARNING, "Cannot connect to Gateway to check for audit alerts.", ExceptionUtils.getDebugException(e));
+            //bug 9648 - allow handler chain to correctly manage this remote exception
+            throw e;
         }
     }
 
