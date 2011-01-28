@@ -26,7 +26,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 @ProcessesRequest
 @RequiresSOAP(wss=true)
 public class SecureConversation extends SecurityHeaderAddressableSupport implements SetsVariables {
-    public static final String VARIABLE_INBOUND_SC_SESSION_ID = "inboundSC.session.id";
+    public static final String VARIABLE_INBOUND_SC_SESSION = "inboundSC.session";
 
     /**
      *Secure Conversation is always credential source
@@ -53,7 +53,7 @@ public class SecureConversation extends SecurityHeaderAddressableSupport impleme
     @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
-            new VariableMetadata(VARIABLE_INBOUND_SC_SESSION_ID, false, false, null, false, DataType.STRING),
+            new VariableMetadata(VARIABLE_INBOUND_SC_SESSION, false, false, null, false, DataType.UNKNOWN),
         };
     }
 }

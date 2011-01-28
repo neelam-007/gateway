@@ -128,8 +128,8 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                     return AssertionStatus.BAD_REQUEST;
                 }
 
-                // After everything goes OK, then set the variable.
-                context.setVariable(SecureConversation.VARIABLE_INBOUND_SC_SESSION_ID, contextId);
+                // After everything goes OK, then set the context variable, inboundSC.session.
+                context.setVariable(SecureConversation.VARIABLE_INBOUND_SC_SESSION, session);
 
                 return AssertionStatus.NONE;
             }
