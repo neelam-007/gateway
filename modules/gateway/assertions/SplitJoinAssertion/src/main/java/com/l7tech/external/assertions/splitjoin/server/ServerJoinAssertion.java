@@ -86,12 +86,12 @@ public class ServerJoinAssertion extends AbstractServerAssertion<JoinAssertion> 
     private Object[] getInputVariables(PolicyEnforcementContext context) throws NoSuchVariableException{
         List<Object> objs = new ArrayList<Object>();      
 
-        String refString = inputVariable.replaceAll("\\[.\\]","");
+        String refString = inputVariable.replaceAll("\\[.?.\\]","");
         List <String> refs = TextUtils.getTokensFromString(refString,DEFAULT_MV_DELIMITER);
         Map<String,Object> map = context.getVariableMap(refs.toArray(new String[refs.size()]),auditor);
 
         List<String> tokens  = TextUtils.getTokensFromString(inputVariable,DEFAULT_MV_DELIMITER);
-        Pattern regexPattern = Pattern.compile("\\[.\\],?");
+        Pattern regexPattern = Pattern.compile("\\[.?.\\],?");
 
         for(String token : tokens){
 

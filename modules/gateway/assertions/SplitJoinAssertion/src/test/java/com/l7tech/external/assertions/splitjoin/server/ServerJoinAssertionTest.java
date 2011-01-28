@@ -98,12 +98,12 @@ public class ServerJoinAssertionTest {
     @Test
     public void testJoinListOfVariables() throws Exception {
         final PolicyEnforcementContext context = getContext();
-        context.setVariable("a", new String[]{"There are" , "", " ", "", "remaining."});
+        context.setVariable("a", new String[]{"There are" , "", " ", "","","","","","","", "remaining."});
         context.setVariable("b", new String[]{"2", "widgets"});
         context.setVariable("c",new String[]{"Please order more"});
 
         JoinAssertion assertion = new JoinAssertion();
-        assertion.setInputVariable("a[0], b[0], b[1], a[4], c, b[1]");
+        assertion.setInputVariable("a[0], b[0], b[1], a[10], c, b[1]");
         assertion.setJoinSubstring(" ");
         assertion.setOutputVariable("output");
 
