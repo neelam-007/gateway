@@ -721,16 +721,21 @@ public class ServicePropertiesDialog extends JDialog {
                 final int width = Utilities.computeStringWidth(fontMetrics, message);
                 final int height = Utilities.computeStringHeight(fontMetrics, message);
                 final Object object;
+                final boolean large;
                 if( width > 600 || height > 100 ){
                     object = Utilities.getTextDisplayComponent( message, 600, 100, -1, -1 );
+                    large = true;
                 } else {
                     object = message;
+                    large = false;
                 }
                 final JOptionPane pane = new JOptionPane(object, JOptionPane.WARNING_MESSAGE);
                 final JDialog dialog = pane.createDialog(this,  "Service Resolution Conflicts");
-                dialog.setMinimumSize( dialog.getContentPane().getMinimumSize() );
-                dialog.setPreferredSize( new Dimension( 720, 200 ) );
-                dialog.setResizable( true );
+                if ( large ) {
+                    dialog.setMinimumSize( dialog.getContentPane().getMinimumSize() );
+                    dialog.setPreferredSize( new Dimension( 720, 200 ) );
+                    dialog.setResizable( true );
+                }
                 dialog.pack();
                 Utilities.centerOnParentWindow( dialog );
                 DialogDisplayer.display( dialog );
