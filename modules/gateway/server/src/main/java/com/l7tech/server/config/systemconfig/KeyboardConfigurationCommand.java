@@ -4,12 +4,8 @@ import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
 import com.l7tech.server.config.commands.BaseConfigurationCommand;
 import com.l7tech.util.ExceptionUtils;
-import org.apache.commons.lang.StringUtils;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,7 +18,7 @@ public class KeyboardConfigurationCommand extends BaseConfigurationCommand<Keybo
 
     @Override
     public boolean execute() {
-        return loadKeys() & writeConfigFile(KEYBOARD_CONFIG_FILE, configBean.getKeyboardConfig());
+        return loadKeys() && writeConfigFile(KEYBOARD_CONFIG_FILE, configBean.getKeyboardConfig());
     }
 
 
