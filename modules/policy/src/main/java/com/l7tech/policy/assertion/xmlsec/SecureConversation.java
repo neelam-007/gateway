@@ -2,8 +2,11 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
 
 /**
  * This assertion requires the client to establish a secure conversation prior
@@ -22,7 +25,9 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
  */
 @ProcessesRequest
 @RequiresSOAP(wss=true)
-public class SecureConversation extends SecurityHeaderAddressableSupport {
+public class SecureConversation extends SecurityHeaderAddressableSupport implements SetsVariables {
+    public static final String VARIABLE_INBOUND_SC_SESSION_ID = "inboundSC.session.id";
+
     /**
      *Secure Conversation is always credential source
      *
@@ -43,5 +48,12 @@ public class SecureConversation extends SecurityHeaderAddressableSupport {
         meta.put(AssertionMetadata.CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         return meta;
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        return new VariableMetadata[] {
+            new VariableMetadata(VARIABLE_INBOUND_SC_SESSION_ID, false, false, null, false, DataType.STRING),
+        };
     }
 }
