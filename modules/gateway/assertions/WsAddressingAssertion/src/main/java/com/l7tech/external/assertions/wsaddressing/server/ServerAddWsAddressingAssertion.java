@@ -8,21 +8,16 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.wsaddressing.AddWsAddressingAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.AuditHaver;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.message.SoapKnob;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.server.policy.assertion.xmlsec.AddWssSignatureSupport;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
@@ -35,13 +30,9 @@ import javax.wsdl.*;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.*;
 
 public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableServerAssertion<AddWsAddressingAssertion> {
 
@@ -58,16 +49,6 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
         if(assertion.getAction() == null){
             throw new PolicyAssertionException(assertion, "Action message addressing property is required.");
         }
-
-        final AuditHaver auditHaver = new AuditHaver() {
-            @Override
-            public Audit getAuditor() {
-                return auditor;
-            }
-        };
-        this.addWssSignatureSupport = (assertion.isSignMessageProperties()) ?
-                new AddWssSignatureSupport(auditHaver, assertion, applicationContext, true , Assertion.isResponse(assertion))
-                : null;
     }
 
     @Override
@@ -92,11 +73,9 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
         
         final Element header;
         final String soapAction;
-        final SecurityKnob securityKnob;
         try {
             final SoapKnob soapKnob = message.getSoapKnob();
             soapAction = SoapUtil.stripQuotes(soapKnob.getSoapAction());//ok if soap action is null
-            securityKnob = message.getSecurityKnob();
             final Document writeDoc = message.getXmlKnob().getDocumentWritable();
             header = SoapUtil.getOrMakeHeader(writeDoc);
         } catch (Exception e) {
@@ -106,7 +85,6 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
             return AssertionStatus.SERVER_ERROR;
         }
 
-        final List<Element> elementsToSign = new ArrayList<Element>();
         try {
             final Map<String, Object> vars = context.getVariableMap(variablesUsed, auditor);
 
@@ -209,14 +187,14 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
             }
 
             if (!ValidationUtils.isValidUri(resolvedAction)) {
-                auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, new String[]{resolvedAction, SoapConstants.WSA_MSG_PROP_ACTION});
+                auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, resolvedAction, SoapConstants.WSA_MSG_PROP_ACTION);
                 return AssertionStatus.FAILED;
             }
 
             //set action context variable.
             context.setVariable(assertion.getVariablePrefix() + "." + AddWsAddressingAssertion.SUFFIX_ACTION, resolvedAction);
             int elementNumber = 0;
-            elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_ACTION, resolvedAction, elementNumber++, false));
+            addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_ACTION, resolvedAction, elementNumber++, false);
 
             final String resolvedMessageId = resolveProperty(assertion.getMessageId(), vars);
 
@@ -229,62 +207,60 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
 
             if(msgIdToUse != null){
                 if (!ValidationUtils.isValidUri(msgIdToUse)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, new String[]{msgIdToUse, SoapConstants.WSA_MSG_PROP_MESSAGE_ID});
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_WARN, msgIdToUse, SoapConstants.WSA_MSG_PROP_MESSAGE_ID);
                     return AssertionStatus.FAILED;
                 }
                 //set message id context variable
                 context.setVariable(assertion.getVariablePrefix() +"." + AddWsAddressingAssertion.SUFFIX_MESSAGE_ID, msgIdToUse);
-                elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_MESSAGE_ID, msgIdToUse, elementNumber++, false));
+                addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_MESSAGE_ID, msgIdToUse, elementNumber++, false);
             }
 
             final String destination = resolveProperty(assertion.getDestination(), vars);
             if(destination != null){
                 if (!ValidationUtils.isValidUri(destination)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, new String[]{destination, SoapConstants.WSA_MSG_PROP_DESTINATION});
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, destination, SoapConstants.WSA_MSG_PROP_DESTINATION);
                 } else {
-                    elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_DESTINATION, destination, elementNumber++, false));
+                    addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_DESTINATION, destination, elementNumber++, false);
                 }
             }
 
             final String from = resolveProperty(assertion.getSourceEndpoint(), vars);
             if(from != null){
                 if (!ValidationUtils.isValidUri(from)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, new String[]{from, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT});
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, from, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT);
                 } else {
-                    elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT, from, elementNumber++, true));
+                    addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_SOURCE_ENDPOINT, from, elementNumber++, true);
                 }
             }
 
             final String replyTo = resolveProperty(assertion.getReplyEndpoint(), vars);
             if(replyTo != null){
                 if (!ValidationUtils.isValidUri(replyTo)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, new String[]{replyTo, SoapConstants.WSA_MSG_PROP_REPLY_TO});
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, replyTo, SoapConstants.WSA_MSG_PROP_REPLY_TO);
                 } else {
-                    elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_REPLY_TO, replyTo, elementNumber++, true));
+                    addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_REPLY_TO, replyTo, elementNumber++, true);
                 }
             }
 
             final String faultTo = resolveProperty(assertion.getFaultEndpoint(), vars);
             if(faultTo != null){
                 if (!ValidationUtils.isValidUri(faultTo)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, new String[]{faultTo, SoapConstants.WSA_MSG_PROP_FAULT_TO});
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, faultTo, SoapConstants.WSA_MSG_PROP_FAULT_TO);
                 } else {
-                    elementsToSign.add(addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_FAULT_TO, faultTo, elementNumber++, true));
+                    addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_FAULT_TO, faultTo, elementNumber++, true);
                 }
             }
 
             final String relatesMsgId = resolveProperty(assertion.getRelatesToMessageId(), vars);
             if(relatesMsgId != null){
                 if (!ValidationUtils.isValidUri(relatesMsgId)) {
-                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, new String[]{relatesMsgId, SoapConstants.WSA_MSG_PROP_RELATES_TO});
+                    auditor.logAndAudit(AssertionMessages.ADD_WS_ADDRESSING_INVALID_URI_VALUE_INFO, relatesMsgId, SoapConstants.WSA_MSG_PROP_RELATES_TO);
                 } else {
                     final Element relatesToEl =
                             addElementToHeader(header, wsaNs, SoapConstants.WSA_MSG_PROP_RELATES_TO, relatesMsgId, elementNumber++, false);
                     final String prefix = DomUtils.getOrCreatePrefixForNamespace(relatesToEl, wsaNs, "wsa");
                     relatesToEl.setAttributeNS(wsaNs, prefix + ":" + SoapConstants.WSA_MSG_PROP_RELATES_TO_RELATIONSHIP_TYPE,
                                                       SoapConstants.WSA_MSG_PROP_RELATIONSHIP_REPLY_NAMESPACE);
-
-                    elementsToSign.add(relatesToEl);
                 }
             }
 
@@ -292,35 +268,6 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
             String msg = "Cannot add WS-Addressing element to target message: " + ExceptionUtils.getMessage(e);
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
-        }
-
-        if(assertion.isSignMessageProperties()){
-            final AddWssSignatureSupport.SignedElementSelector signedElSelector = new AddWssSignatureSupport.SignedElementSelector() {
-                @Override
-                public int selectElementsToSign(final PolicyEnforcementContext context,
-                                                final AuthenticationContext authContext,
-                                                final Document soapmsg,
-                                                final DecorationRequirements wssReq,
-                                                final Message targetMessage) throws PolicyAssertionException {
-                    wssReq.getElementsToSign().addAll(elementsToSign);
-                    //we need to set this explicitly as a previous assertion may have turned signing off
-                    //e.g. if there was a 'Configure WS-Security decoration' assertion in the policy.
-                    wssReq.setWsaHeaderSignStrategy(ALWAYS_SIGN_WSA_HEADERS);
-                    return elementsToSign.size();
-                }
-            };
-
-            return addWssSignatureSupport.applySignatureDecorationRequirements(
-                    context, message, messageDescription, authContext, signedElSelector);
-        } else {
-            final XmlSecurityRecipientContext recipient = assertion.getRecipientContext();
-            if(securityKnob.hasAlternateDecorationRequirements(recipient)){
-                final DecorationRequirements wssReq = securityKnob.getAlternateDecorationRequirements(assertion.getRecipientContext());
-                wssReq.setWsaHeaderSignStrategy(NEVER_SIGN_WSA_HEADERS);
-            } else {
-                //don't create decoration requirements unless they are needed.
-                securityKnob.flagDoNotSignWsaAddressing(recipient);
-            }
         }
 
         return AssertionStatus.NONE;
@@ -403,6 +350,5 @@ public class ServerAddWsAddressingAssertion extends AbstractMessageTargetableSer
     // - PRIVATE
     private final Auditor auditor;
     private final String[] variablesUsed;
-    private final AddWssSignatureSupport addWssSignatureSupport;
     private static final Logger logger = Logger.getLogger(ServerAddWsAddressingAssertion.class.getName());
 }

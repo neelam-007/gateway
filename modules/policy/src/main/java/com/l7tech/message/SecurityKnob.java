@@ -169,13 +169,4 @@ public interface SecurityKnob extends MessageKnob {
      * @return true if there are any (pending) WSS 11 decorations, or false otherwise.
      */
     boolean hasWss11Decorations();
-
-    /**
-     * Signal to the SecurityKnob, that when it creates DecorationRequirements to configure them not to sign
-     * WS-Addressing headers by default. This allows assertions (Add WS-Addressing) to stop the default behaviour
-     * of signing any found WS-Addressing headers when WS-Security is applied. This also avoids assertions having
-     * to add decoration requirements just to record this, which causes a security header to be added.
-     * @param recipient Which recipient to track this for. Can be null.
-     */
-    void flagDoNotSignWsaAddressing(XmlSecurityRecipientContext recipient);
 }

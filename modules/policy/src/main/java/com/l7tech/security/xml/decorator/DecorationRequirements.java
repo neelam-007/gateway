@@ -28,10 +28,6 @@ public class DecorationRequirements {
     public DecorationRequirements() {
     }
 
-    public DecorationRequirements(final WsaHeaderSigningStrategy wsaHeaderSignStrategy) {
-        this.wsaHeaderSignStrategy = wsaHeaderSignStrategy;
-    }
-
     public X509Certificate getRecipientCertificate() {
         return recipientCertificate;
     }

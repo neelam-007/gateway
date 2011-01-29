@@ -82,8 +82,6 @@ public class AddWsAddressingPropertiesDialog extends AssertionPropertiesOkCancel
             namespaceComboBox.setSelectedItem(AddWsAddressingAssertion.DEFAULT_NAMESPACE);
         }
 
-        signMessageAddressingPropertiesCheckBox.setSelected(assertion.isSignMessageProperties());
-
         targetVariablePanel.setVariable(assertion.getVariablePrefix());
         targetVariablePanel.setAssertion(assertion);
     }
@@ -118,8 +116,6 @@ public class AddWsAddressingPropertiesDialog extends AssertionPropertiesOkCancel
         final String wsaNamespaceUri = namespaceComboBox.getEditor().getItem().toString().trim();
         assertion.setWsaNamespaceUri((wsaNamespaceUri.isEmpty())? null : wsaNamespaceUri);
 
-        assertion.setSignMessageProperties(signMessageAddressingPropertiesCheckBox.isSelected());
-        
         final String variablePrefix = targetVariablePanel.getVariable();
         assertion.setVariablePrefix((variablePrefix.isEmpty())? AddWsAddressingAssertion.VARIABLE_PREFIX : variablePrefix);
 
@@ -176,7 +172,6 @@ public class AddWsAddressingPropertiesDialog extends AssertionPropertiesOkCancel
     
     private JPanel contentPane;
     private JComboBox namespaceComboBox;
-    private JCheckBox signMessageAddressingPropertiesCheckBox;
     private JComboBox actionComboBox;
     private JComboBox toComboBox;
     private JComboBox fromComboBox;
