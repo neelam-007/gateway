@@ -1587,7 +1587,10 @@ public class WssDecoratorImpl implements WssDecorator {
     private String createWsuId(Context c, Element element, String basename) throws DecoratorException {
         byte[] randbytes = new byte[16];
         rand.nextBytes(randbytes);
-        String id = basename + "-" + c.count++ + "-" + HexUtils.hexDump(randbytes);
+
+        String prefix = SoapUtil.DISCLOSE_ELEMENT_NAME_IN_WSU_ID ? basename : "id";
+
+        String id = prefix + "-" + c.count++ + "-" + HexUtils.hexDump(randbytes);
 
         if (c.idToElementCache.get(id) != null)
             throw new DecoratorException("Duplicate wsu:ID generated: " + id); // can't happen

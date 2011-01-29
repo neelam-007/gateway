@@ -45,6 +45,9 @@ import static com.l7tech.xml.soap.SoapVersion.SOAP_1_1;
 public class SoapUtil extends SoapConstants {
     public static final Logger log = Logger.getLogger(SoapUtil.class.getName());
 
+    public static final String PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID = "com.l7tech.xml.soap.discloseElementNameInWsuId";
+    public static final boolean DISCLOSE_ELEMENT_NAME_IN_WSU_ID = SyspropUtil.getBoolean(PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID, false);
+
     // Bug #6478
     public static final String PROPERTY_MUSTUNDERSTAND = "com.l7tech.common.security.xml.decorator.secHdrMustUnderstand";
 
@@ -425,7 +428,8 @@ public class SoapUtil extends SoapConstants {
         if (id != null)
             return id;
 
-        id = generateUniqueId(node.getLocalName(), baseNumber);
+        final String prefix = DISCLOSE_ELEMENT_NAME_IN_WSU_ID ? node.getLocalName() : null;
+        id = generateUniqueId(prefix, baseNumber);
         setWsuId(node, SoapConstants.WSU_NAMESPACE, id);
         return id;
     }
