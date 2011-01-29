@@ -153,6 +153,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
             }
         }
         // 5.4 Check the maximum expiry period against  "Maximum Expiry Period".
+        // If "Maximum Expiry Period" is zero, then don't check the creation time and the expiration time against "Maximum Expiry Period". 
         long maxExpiryPeriod;
         if (assertion.isUseSystemDefaultSessionDuration()) {
             maxExpiryPeriod = config.getTimeUnitProperty(DEFAULT_SESSION_DURATION, TimeUnit.HOURS.toMillis(2)); // Default: 2 hrs

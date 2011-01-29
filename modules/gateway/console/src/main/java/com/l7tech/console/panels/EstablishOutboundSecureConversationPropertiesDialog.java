@@ -5,6 +5,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.EstablishOutboundSecureConversation;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
+import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
 
@@ -15,6 +16,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 
 /**
  * @author ghuang
@@ -117,6 +119,9 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
             }
         });
 
+        creationTimeTextField.getDocument().addDocumentListener(validationListener);
+        expirationTimeTextField.getDocument().addDocumentListener(validationListener);
+
         pack();
         Utilities.centerOnParentWindow(this);
     }
@@ -177,10 +182,31 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
         boolean serviceUrlOk = serviceUrl != null && !serviceUrl.trim().isEmpty();
 
         int multiplier = ((TimeUnit) maxLifetimeUnitComboBox.getSelectedItem()).getMultiplier();
-        boolean validLifetime = useSystemDefaultCheckBox.isSelected() ||
-            ValidationUtils.isValidDouble(maxLifetimeTextField.getText().trim(), false,
+        String maxLifeTime = maxLifetimeTextField.getText().trim();
+        boolean validLifetime = useSystemDefaultCheckBox.isSelected() || "0".equals(maxLifeTime) ||
+            ValidationUtils.isValidDouble(maxLifeTime, false,
                 formatDouble((double)EstablishOutboundSecureConversation.MIN_SESSION_DURATION / multiplier), true,   // MIN: 1 min
                 formatDouble((double)EstablishOutboundSecureConversation.MAX_SESSION_DURATION / multiplier), true); // MAX: 24 hrs
+
+        boolean validCreationTime = true;
+        try {
+            String creationTimeStr = creationTimeTextField.getText();
+            if (Syntax.getReferencedNames(creationTimeStr).length == 0) {
+                ISO8601Date.parse(creationTimeStr).getTime();
+            }
+        } catch (ParseException e) {
+            validCreationTime = false;
+        }
+
+        boolean validExpirationTime = true;
+        try {
+            String expirationTimeStr = expirationTimeTextField.getText();
+            if (Syntax.getReferencedNames(expirationTimeStr).length == 0) {
+                ISO8601Date.parse(expirationTimeStr).getTime();
+            }
+        } catch (ParseException e) {
+            validCreationTime = false;
+        }
 
         boolean validKeySize = true;
         try {
@@ -192,7 +218,7 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
             validKeySize = false;
         }
 
-        getOkButton().setEnabled(!isReadOnly() && serviceUrlOk && validLifetime && validKeySize);
+        getOkButton().setEnabled(!isReadOnly() && serviceUrlOk && validCreationTime && validExpirationTime && validLifetime && validKeySize);
     }
 
     private double formatDouble(double doubleNum) {

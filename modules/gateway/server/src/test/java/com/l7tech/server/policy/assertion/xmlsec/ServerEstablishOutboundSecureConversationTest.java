@@ -116,10 +116,18 @@ public class ServerEstablishOutboundSecureConversationTest {
         assertEquals( "Outbound Secure Conversation Session Expired:", AssertionStatus.FALSIFIED, status);
 
         // Test 2: Not Expired
+        // 2.1: Set "Maximum Expiry Period" to zero, then the session is not expired.
+        establishmentAssertion.setUseSystemDefaultSessionDuration(false);
+        establishmentAssertion.setMaxLifetime(0);
+        cancelSession();
+        status = serverEstablishmentAssertion.doCheckRequest(context, request, "", context.getAuthenticationContext(request));
+        assertEquals( "Outbound Secure Conversation Session Not Expired:", AssertionStatus.NONE, status);
+
+        // 2.2: Set "Maximum Expiry Period" to the System Default Session Duration (2 hours), then the session will not be expired.
         establishmentAssertion.setUseSystemDefaultSessionDuration(true); // The system default of Max Expiry Period is 2 hours.
         cancelSession();
         status = serverEstablishmentAssertion.doCheckRequest(context, request, "", context.getAuthenticationContext(request));
-        assertEquals( "Outbound Secure Conversation Session Note Expired:", AssertionStatus.NONE, status);
+        assertEquals( "Outbound Secure Conversation Session Not Expired:", AssertionStatus.NONE, status);
 
         // The following two tests to verify the new expiration time
 
@@ -131,8 +139,8 @@ public class ServerEstablishOutboundSecureConversationTest {
         SecureConversationSession session = (SecureConversationSession) context.getVariable("outboundSC.session");
         final long defaultPreExpiryAge = 60*1000; // The default value of the pre-expiry age is 1 minute.
 
-        long expectedExpiryationTime = expirationTime - defaultPreExpiryAge; // Since the system default max expiry period is 2 hours, which is greater than [(expirationTime - creationTime) - defaultPreExpiryAge)].
-        assertEquals( "New Expiration Time:", expectedExpiryationTime, session.getExpiration());
+        long expectedExpirationTime = expirationTime - defaultPreExpiryAge; // Since the system default max expiry period is 2 hours, which is greater than [(expirationTime - creationTime) - defaultPreExpiryAge)].
+        assertEquals( "New Expiration Time:", expectedExpirationTime, session.getExpiration());
 
         // Test 4: "Maximum Expiry Period" is less than [(expirationTime - creationTime) - defaultPreExpiryAge)]
         establishmentAssertion.setUseSystemDefaultSessionDuration(false);
@@ -143,8 +151,8 @@ public class ServerEstablishOutboundSecureConversationTest {
         serverEstablishmentAssertion.doCheckRequest(context, request, "", context.getAuthenticationContext(request));
         session = (SecureConversationSession) context.getVariable("outboundSC.session");
 
-        expectedExpiryationTime = creationTime + maxExpiryPeriod; // Since the system default max expiry period is 30 minutes, which is less than  [(expirationTime - creationTime) - defaultPreExpiryAge)].
-        assertEquals( "New Expiration Time:", expectedExpiryationTime, session.getExpiration());
+        expectedExpirationTime = creationTime + maxExpiryPeriod; // Since the system default max expiry period is 30 minutes, which is less than  [(expirationTime - creationTime) - defaultPreExpiryAge)].
+        assertEquals( "New Expiration Time:", expectedExpirationTime, session.getExpiration());
     }
 
     private User user(final long userId, final String login) {
