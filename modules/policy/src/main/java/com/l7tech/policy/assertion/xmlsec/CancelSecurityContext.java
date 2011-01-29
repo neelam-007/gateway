@@ -8,6 +8,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.util.TextUtils;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -111,7 +112,8 @@ public class CancelSecurityContext extends MessageTargetableAssertion {
 
                 String serviceUrl = assertion.getOutboundServiceUrl();
                 if (serviceUrl == null || serviceUrl.trim().isEmpty()) return ASSERTION_BASIC_NAME;
-                else return AssertionUtils.decorateName(assertion, ASSERTION_BASIC_NAME + " to " + serviceUrl);
+                else return AssertionUtils.decorateName(assertion, ASSERTION_BASIC_NAME + " to " +
+                        (serviceUrl.length() <= 128? serviceUrl : TextUtils.truncateStringAtEnd(serviceUrl, 128)));
             }
         });
 

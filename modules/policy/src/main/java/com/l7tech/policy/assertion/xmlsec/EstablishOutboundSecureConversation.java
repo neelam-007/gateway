@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.TextUtils;
 import com.l7tech.util.TimeUnit;
 
 import java.util.*;
@@ -163,7 +164,8 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
 
                 String serviceUrl = assertion.getServiceUrl();
                 if (serviceUrl == null || serviceUrl.trim().isEmpty()) return ASSERTION_BASIC_NAME;
-                else return AssertionUtils.decorateName(assertion, ASSERTION_BASIC_NAME + " to " + serviceUrl);
+                else return AssertionUtils.decorateName(assertion, ASSERTION_BASIC_NAME + " to " +
+                        (serviceUrl.length() <= 128? serviceUrl : TextUtils.truncateStringAtEnd(serviceUrl, 128)));
             }
         });
 
