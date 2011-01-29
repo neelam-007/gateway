@@ -1348,7 +1348,7 @@ public class DomUtils {
      *
      * @param doc the Document to examine.  Required.
      * @param idAttributeConfig a configuration of which ID attributes to recognize.  Required.
-     *                          See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection} for a way to make one of these.
+     *                          See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection)} for a way to make one of these.
      *                          Also see {@link SoapConstants} for some pregenerated configurations.
      * @return a Map from ID attribute values to the Element instance that owned the corresponding attribute.  Never null.
      * @throws InvalidDocumentFormatException  if more than one ID attribute contained the same value.
@@ -1374,7 +1374,7 @@ public class DomUtils {
      *
      * @param element  the element to examine.  Required.
      * @param idAttributeConfig  Configuration of which elements are to be recognized as ID attributes.  Required.
-     *                           See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection} for a way to make one of these.
+     *                           See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection)} for a way to make one of these.
      *                          Also see {@link SoapConstants} for some pregenerated configurations.
      * @return the ID attribute value, or null if the element did not appear to have an ID attribute or it did but it was empty.  Never empty.
      * @throws InvalidDocumentFormatException  if the element contained more than one attribute recognized as an ID attribute.
@@ -1393,7 +1393,7 @@ public class DomUtils {
      *
      * @param element  the element to examine.  Required.
      * @param idAttributeConfig  Configuration of which elements are to be recognized as ID attributes.  Required.
-     *                           See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection} for a way to make one of these.
+     *                           See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection)} for a way to make one of these.
      *                          Also see {@link SoapConstants} for some pregenerated configurations.
      * @return the ID attribute node, or null if the element did not appear to have an ID attribute.
      * @throws InvalidDocumentFormatException  if the element contained more than one attribute recognized as an ID attribute.
@@ -1442,7 +1442,7 @@ public class DomUtils {
      * @param doc  the document to search.  Required.
      * @param elementId  the ID value to search for.  Required.
      * @param idAttributeConfig  Configuration of which elements are to be recognized as ID attributes.  Required.
-     *                           See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection} for a way to make one of these.
+     *                           See {@link IdAttributeConfig#makeIdAttributeConfig(java.util.Collection)} for a way to make one of these.
      *                          Also see {@link SoapConstants} for some pregenerated configurations.
      * @return the first Element in the document that has the requested ID attribute value.
      * @throws InvalidDocumentFormatException  if the element contained more than one attribute recognized as an ID attribute.
