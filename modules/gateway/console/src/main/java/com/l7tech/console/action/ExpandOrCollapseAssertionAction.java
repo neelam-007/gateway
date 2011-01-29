@@ -25,6 +25,9 @@ public class ExpandOrCollapseAssertionAction extends NodeAction {
         this.expand = expand;
     }
 
+    @Override
+    public boolean supportMultipleSelection(){return true;}
+
     /**
      *  Expand/collapse a selected assertion node.  If there are multiple assertion nodes selected, then these selected nodes will be expanded/collapsed.
      */

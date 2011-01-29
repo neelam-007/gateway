@@ -25,10 +25,7 @@ import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.HtmlUtil;
-import com.l7tech.gui.util.ImageCache;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
@@ -625,6 +622,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         policyTree.setShowsRootHandles(true);
         policyTree.setAlignmentX(Component.LEFT_ALIGNMENT);
         policyTree.setAlignmentY(Component.TOP_ALIGNMENT);
+        policyTree.getSelectionModel().addTreeSelectionListener(ClipboardActions.getTreeUpdateListener());
         policyTreePane = new NumberedPolicyTreePane(policyTree);
         policyTreePane.setNumbersVisible( Boolean.valueOf(preferences.getString( SHOW_ASSERTION_NUMBERS, "false" )) );
         return policyTreePane;
@@ -1043,34 +1041,52 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return false;
     }
 
-    public void updateActions(final AssertionTreeNode node, Action[] actions) {
-        for (int i = 0; i < actions.length; i++) {
-            Action action = actions[i];
-            if (action instanceof SavePolicyAction) {
+    public Action[] updateActions(final AssertionTreeNode node, Action[] actions) {
+
+        List <Action> actionList = new ArrayList <Action>();
+        boolean hasMultiSelected = policyTree.getSelectionCount() > 1;
+
+        for (Action action :actions) {
+             if (action instanceof SavePolicyAction) {
                 if (((SavePolicyAction)action).isActivateAsWell()) {
-                    actions[i] = policyEditorToolbar.buttonSaveAndActivate.getAction();
-                    actions[i].setEnabled(policyEditorToolbar.buttonSaveAndActivate.isEnabled());
+                    action = policyEditorToolbar.buttonSaveAndActivate.getAction();
+                    action.setEnabled(policyEditorToolbar.buttonSaveAndActivate.isEnabled());
                 } else {
-                    actions[i] = policyEditorToolbar.buttonSaveOnly.getAction();
-                    actions[i].setEnabled(policyEditorToolbar.buttonSaveOnly.isEnabled());
+                    action = policyEditorToolbar.buttonSaveOnly.getAction();
+                    action.setEnabled(policyEditorToolbar.buttonSaveOnly.isEnabled());
                 }
             } else if (action instanceof ValidatePolicyAction) {
-                actions[i] = policyEditorToolbar.buttonValidate.getAction();
-                actions[i].setEnabled(policyEditorToolbar.buttonValidate.isEnabled());
-            } else if (action instanceof AssertionMoveUpAction) {
-                actions[i] = getAssertionMoveUpAction(node, action.isEnabled());
-            } else if (action instanceof AssertionMoveDownAction) {
-                actions[i] = getAssertionMoveDownAction(node, action.isEnabled());
-            } else if (action instanceof DeleteAssertionAction) {
-                actions[i] = getDeleteAssertionAction(node, action.isEnabled());
-            } else if (action instanceof SelectMessageTargetAction) {
-                actions[i] = getSelectMessageTargetAction(node, (SelectMessageTargetAction)action);
-            } else if (action instanceof SelectIdentityTargetAction) {
-                actions[i] = getSelectIdentityTargetAction(node, (SelectIdentityTargetAction)action);
-            } else if (action instanceof SelectIdentityTagAction) {
-                actions[i] = getSelectIdentityTagAction(node, (SelectIdentityTagAction)action);
+                action = policyEditorToolbar.buttonValidate.getAction();
+                action.setEnabled(policyEditorToolbar.buttonValidate.isEnabled());
+            }
+
+            if(action instanceof BaseAction)
+            {
+                if(hasMultiSelected){
+                    if(((BaseAction) action).supportMultipleSelection())
+                    {
+                        if (action instanceof AssertionMoveUpAction) {
+                            action = getAssertionMoveUpAction(node, action.isEnabled());
+                        } else if (action instanceof AssertionMoveDownAction) {
+                            action = getAssertionMoveDownAction(node, action.isEnabled());
+                        } else if (action instanceof DeleteAssertionAction) {
+                            action = getDeleteAssertionAction(node, action.isEnabled());
+                        } else if (action instanceof SelectMessageTargetAction) {
+                            action = getSelectMessageTargetAction(node, (SelectMessageTargetAction)action);
+                        } else if (action instanceof SelectIdentityTargetAction) {
+                            action = getSelectIdentityTargetAction(node, (SelectIdentityTargetAction)action);
+                        } else if (action instanceof SelectIdentityTagAction) {
+                            action = getSelectIdentityTagAction(node, (SelectIdentityTagAction)action);
+                        }
+                        actionList.add(action);
+                    }
+                }
+                else {
+                    actionList.add(action);
+                }
             }
         }
+        return actionList.toArray(new Action[actionList.size()]);
     }
 
     /**

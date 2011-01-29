@@ -60,6 +60,9 @@ public class SelectIdentityTagAction extends NodeAction {
     }
 
     @Override
+    public boolean supportMultipleSelection(){return true;}
+
+    @Override
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
         final AssertionIdentityTagSelector dlg = new AssertionIdentityTagSelector(mw, identityTagable, readOnly);

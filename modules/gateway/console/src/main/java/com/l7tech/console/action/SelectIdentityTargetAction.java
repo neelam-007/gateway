@@ -56,6 +56,9 @@ public class SelectIdentityTargetAction extends NodeAction {
     }
 
     @Override
+    public boolean supportMultipleSelection(){return true;}
+
+    @Override
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
         final IdentityTargetSelector dlg = new IdentityTargetSelector(mw, readOnly, context, identityTargetable );

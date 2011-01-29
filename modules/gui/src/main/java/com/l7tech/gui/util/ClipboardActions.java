@@ -6,6 +6,8 @@
 package com.l7tech.gui.util;
 
 import javax.swing.*;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.datatransfer.*;
@@ -87,8 +89,17 @@ public class ClipboardActions {
             updateClipboardActions();
         }
     };
+    private static final TreeSelectionListener TREE_LISTENER =  new TreeSelectionListener() {
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {
+                ClipboardActions.updateClipboardActions();
+            }
+        };
 
 
+    public static TreeSelectionListener getTreeUpdateListener(){
+        return TREE_LISTENER;
+    }
     /**
      * Global "cut" action, enabled if current focus owner has a transfer handler allowing cut.
      * <p/>
@@ -269,7 +280,12 @@ public class ClipboardActions {
             else
                 acceptCopy = hasAction(am, "l7copy", "copy") && ((actions & TransferHandler.COPY) != TransferHandler.NONE);
 
-            acceptCopyAll = hasAction(am, "copyAll", null) && acceptCopy;
+            // disable copy all if multiple items are selected in a tree
+            boolean isTreeMultiSel = false;
+            if( jc instanceof JTree){
+                isTreeMultiSel = ((JTree)jc).getSelectionCount() >1;
+            }
+            acceptCopyAll = hasAction(am, "copyAll", null) && acceptCopy && !isTreeMultiSel;
 
             Boolean cutHint = checkProp(jc, CUT_HINT);
             if (cutHint != null)

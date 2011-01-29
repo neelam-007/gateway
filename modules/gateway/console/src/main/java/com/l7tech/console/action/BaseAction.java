@@ -219,6 +219,10 @@ public abstract class BaseAction extends AbstractAction {
         return null;
     }
 
+    /**
+     * Informs if the action is implemented to handle multiple selection.
+     */
+    public boolean supportMultipleSelection(){return false;}
 
     /**
      * Actually perform the action.

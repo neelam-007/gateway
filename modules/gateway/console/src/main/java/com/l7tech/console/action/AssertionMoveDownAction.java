@@ -47,6 +47,8 @@ public class AssertionMoveDownAction extends SecureAction {
         return "com/l7tech/console/resources/Down16.gif";
     }
 
+    public boolean supportMultipleSelection(){return true;}
+    
     /** Actually perform the action.
      * This is the method which should be called programmatically.
      * note on threading usage: do not access GUI components

@@ -588,7 +588,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                             }
 
                             if (policyEditorPanel != null) {
-                                policyEditorPanel.updateActions(node, actions);
+                                actions = policyEditorPanel.updateActions(node, actions);
                             }
                             JPopupMenu menu = getPopupMenu(actions);
                             if (menu != null) {

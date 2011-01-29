@@ -40,6 +40,9 @@ public class AddOneOrMoreAssertionAction extends PolicyUpdatingAssertionAction {
         this.insertPosition = insertPosition;
     }
 
+    @Override
+    public boolean supportMultipleSelection(){return true;}
+
     /**
      * Actually perform the action.
      * This is the method which should be called programmatically.

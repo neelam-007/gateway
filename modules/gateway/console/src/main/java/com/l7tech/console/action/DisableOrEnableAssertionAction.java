@@ -31,6 +31,9 @@ public abstract class DisableOrEnableAssertionAction extends NodeAction {
         policyTreeModel = (PolicyTreeModel) TopComponents.getInstance().getPolicyTree().getModel();
     }
 
+    @Override
+    public boolean supportMultipleSelection(){return true;}
+
     public void performAction() {
         // Perform a disable/enable action on selected assertion(s) - could be a single assertion or
         // multiple assertions.  Also, perform disable/enable on descendant or ancestor if applicable

@@ -60,6 +60,9 @@ public class SelectMessageTargetAction extends NodeAction {
     }
 
     @Override
+    public boolean supportMultipleSelection(){return true;}
+
+    @Override
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
         final AssertionMessageTargetSelector dlg = new AssertionMessageTargetSelector(mw, messageTargetable, readOnly);
