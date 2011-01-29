@@ -34,6 +34,8 @@ public class UserSelector implements ExpandVariables.Selector<User> {
             }
         } else if (Identity.ATTR_PROVIDER_OID.equalsIgnoreCase(name)) {
             return new Selection(user.getProviderId());
+        } else if ("providerId".equalsIgnoreCase(name)) {
+            return new Selection(user.getProviderId());
         } else if ("id".equalsIgnoreCase(name)) {
             return new Selection(user.getId());
         } else if ("login".equalsIgnoreCase(name)) {
