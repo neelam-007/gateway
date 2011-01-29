@@ -252,7 +252,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 }
             }
             sct = addOrFindSecurityContextToken(c, securityHeader, session.getId());
-            if (dreq.isProtectTokens() && !signList.isEmpty())
+            if (dreq.isProtectTokens())
                 signList.add(sct);
         }
 

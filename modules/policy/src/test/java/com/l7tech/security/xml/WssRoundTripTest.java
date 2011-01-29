@@ -291,6 +291,19 @@ public class WssRoundTripTest {
     }
 
     @Test
+    @BugNumber(9687)
+    public void testSigningWithSecureConversation_protectTokens_emptySignList() throws Exception {
+        final NamedTestDocument ntd = new NamedTestDocument("SigningAndEncryptionWithSecureConversation",
+                wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument());
+        // As of Bug #9687 fix, protectTokens should force a signature even if elementsToSign is empty.
+        ntd.td.req.setProtectTokens(true);
+        ntd.td.req.setSignTimestamp(false);
+        ntd.td.req.getElementsToEncrypt().clear();
+        ntd.td.req.getElementsToSign().clear();
+        runRoundTripTest(ntd, false);
+    }
+
+    @Test
     public void testSigningAndEncryptionWithSecureConversationWss11() throws Exception {
         NamedTestDocument ntd = new NamedTestDocument("SigningAndEncryptionWithSecureConversation",
                                                wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument());
@@ -631,6 +644,12 @@ public class WssRoundTripTest {
                 final boolean signingTokenElWasSigned = signedDomElements.contains(signingTokenEl);
                 assertTrue("ProtectTokens implies that all signing tokens were signed", signingTokenElWasSigned);
             }
+
+            // If a WS-SC SCT is included and protectTokens is set, the SCT shall be signed (Bug #9687)
+            SecurityContextToken sct = findSecurityContextToken(r);
+            if (sct != null) {
+                assertTrue("SecurityContextToken shall always be signed if protectTokens is asserted", isElementSigned(sct.asElement(), r));
+            }
         }
 
         if (td.req.isEncryptSignature()) {
@@ -697,6 +716,25 @@ public class WssRoundTripTest {
             }
         }
         return usernameToken;
+    }
+
+    private SecurityContextToken findSecurityContextToken(ProcessorResult r) {
+        XmlSecurityToken[] tokens = r.getXmlSecurityTokens();
+        for (XmlSecurityToken token : tokens) {
+            if (token instanceof SecurityContextToken) {
+                return (SecurityContextToken) token;
+            }
+        }
+        return null;
+    }
+
+    private boolean isElementSigned(Element e, ProcessorResult r) {
+        SignedElement[] signed = r.getElementsThatWereSigned();
+        for (SignedElement signedElement : signed) {
+            if (signedElement.asElement() == e)
+                return true;
+        }
+        return false;
     }
 
     private void checkEncryptedUsernameToken(WssDecoratorTest.TestDocument td, UsernameToken usernameToken, ProcessorResult r, SigningSecurityToken timestampSigner) {
