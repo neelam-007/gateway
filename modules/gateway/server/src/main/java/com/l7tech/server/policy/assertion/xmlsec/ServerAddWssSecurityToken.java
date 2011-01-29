@@ -151,7 +151,7 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
             return AssertionStatus.SERVER_ERROR;
         }
 
-        dreq.setSenderSamlToken(samlAssertion);
+        dreq.setSenderSamlToken(samlAssertion, assertion.isProtectTokens());
         dreq.setSenderMessageSigningPrivateKey(addWssSignatureSupport.getSignerInfo().getPrivate());
 
         if (samlAssertion.hasSubjectConfirmationEncryptedKey()) {
