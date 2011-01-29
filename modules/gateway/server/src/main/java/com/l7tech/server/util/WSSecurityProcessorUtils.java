@@ -117,7 +117,7 @@ public class WSSecurityProcessorUtils {
         boolean valid = true;
 
         final SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
-        final List<LoginCredentials> credentials = authContext.getCredentials();
+        final List<LoginCredentials> credentials = authContext == null ? null : authContext.getCredentials();
         final SigningSecurityToken[] tokens = checkSigningTokenIsCredential ?
                 getSigningSecurityTokens(credentials) :
                 null;
@@ -132,7 +132,7 @@ public class WSSecurityProcessorUtils {
                     final SigningSecurityToken signingToken = signedElement.getSigningSecurityToken();
                     if ( tokens==null || ArrayUtils.contains(tokens, signingToken) ) {
                         signatureElement = signedElement.getSignatureElement();
-                    } else if (relatedRequestMessage != null && credentials.isEmpty() && (signingToken instanceof EncryptedKey || signingToken instanceof SecurityContextToken)) {
+                    } else if (relatedRequestMessage != null && (credentials == null || credentials.isEmpty()) && (signingToken instanceof EncryptedKey || signingToken instanceof SecurityContextToken)) {
                         // If the policy does not require specific signing credentials, permit response signature using an EncryptedKey or WS-SC session from a corresponding request (if any)
                         if (isTokenRecognizedEncryptedKeyOrWsscSession(signingToken, relatedRequestMessage)) {
                             signatureElement = signedElement.getSignatureElement();
