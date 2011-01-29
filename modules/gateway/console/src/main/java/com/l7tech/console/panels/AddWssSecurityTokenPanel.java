@@ -34,7 +34,8 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
     private JRadioButton useSpecifiedCredentialsRadioButton;
     private JPanel samlVariablePanel;
     private TargetVariablePanel samlTargetVariablePanel;
-    private JTextField wsscSessionVariableField;
+    private JPanel wsscSessionVariablePanel;
+    private TargetVariablePanel wsscSessionVariableTargetVariablePanel;
     private JTabbedPane propertiesTabbedPane;
     private JCheckBox signTokenCheckBox;
 
@@ -89,6 +90,13 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         samlVariablePanel.setLayout(new BorderLayout());
         samlVariablePanel.add(samlTargetVariablePanel, BorderLayout.CENTER);
 
+        wsscSessionVariableTargetVariablePanel = new TargetVariablePanel();
+        wsscSessionVariableTargetVariablePanel.setAssertion(assertion);
+        wsscSessionVariableTargetVariablePanel.setValueWillBeWritten(false);
+        wsscSessionVariableTargetVariablePanel.setValueWillBeRead(true);
+        wsscSessionVariablePanel.setLayout(new BorderLayout());
+        wsscSessionVariablePanel.add(wsscSessionVariableTargetVariablePanel, BorderLayout.CENTER);
+
         if (SecurityTokenType.WSS_USERNAME == tokenType) {
             includePasswordCheckBox.setEnabled(true);
             includePasswordCheckBox.setSelected(assertion.isIncludePassword());
@@ -115,7 +123,7 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
                 useSpecifiedCredentialsRadioButton.setSelected(true);
             }
         } else if (SecurityTokenType.WSSC_CONTEXT == tokenType) {
-            wsscSessionVariableField.setText(assertion.getWsscSessionVariable() == null ? "" : assertion.getWsscSessionVariable());
+            wsscSessionVariableTargetVariablePanel.setVariable(assertion.getWsscSessionVariable() == null ? "" : assertion.getWsscSessionVariable());
         } else if (SecurityTokenType.SAML_ASSERTION == tokenType) {
             samlTargetVariablePanel.setVariable(assertion.getSamlAssertionVariable() == null ? "" : assertion.getSamlAssertionVariable());
         } else if (SecurityTokenType.WSS_ENCRYPTEDKEY == tokenType) {
@@ -218,7 +226,7 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
 
         assertion.setSamlAssertionVariable(SecurityTokenType.SAML_ASSERTION == type ? samlTargetVariablePanel.getVariable() : null);
 
-        assertion.setWsscSessionVariable(SecurityTokenType.WSSC_CONTEXT == type ? wsscSessionVariableField.getText() : null);
+        assertion.setWsscSessionVariable(SecurityTokenType.WSSC_CONTEXT == type ? wsscSessionVariableTargetVariablePanel.getVariable() : null);
     }
 
     @Override
