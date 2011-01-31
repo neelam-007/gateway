@@ -251,10 +251,19 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
         if (services.size() == 1) {
             return services.iterator().next();
+        } else if ( services.isEmpty() ) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append( "Parameters " );
+            if ( uriparam != null ) builder.append( "uri='" ).append( uriparam ).append( "', " );
+            if ( nsparam != null ) builder.append( "ns='" ).append( nsparam ).append( "', " );
+            if ( sactionparam != null ) builder.append( "soapaction='" ).append( sactionparam ).append( "', " );
+            builder.setLength( builder.length()-2 ); // trim last ", "
+            builder.append( " did not resolve any service." );
+            throw new FindException( builder.toString() );
         }
 
         // could not narrow it down enough -> throw AmbiguousServiceException
-        StringBuffer names = new StringBuffer();
+        final StringBuilder names = new StringBuilder();
         for (PublishedService service : services) {
             names.append(service.getName()).append(" ");
         }

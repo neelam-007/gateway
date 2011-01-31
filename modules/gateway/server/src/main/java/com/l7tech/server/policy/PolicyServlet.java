@@ -352,7 +352,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             returnError(res, "internal error" + e.getMessage());
             return;
         } catch(IllegalStateException ise) { // invalid service
-            returnError(res, "internal error" + ise.getMessage());
+            returnError(res, "Error: " + ise.getMessage());
             return;
         } catch(UnsupportedOperationException uoe) {
             returnError(res, "internal error" + uoe.getMessage());
