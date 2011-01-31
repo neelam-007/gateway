@@ -78,6 +78,11 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
         this.protectTokens = protectTokens;
     }
 
+    @Override
+    public boolean isUsingProtectTokens() {
+        return true;
+    }
+
     public boolean isEncryptSignature() {
         return encryptSignature;
     }

@@ -180,7 +180,8 @@ public class AddWssSignatureSupport implements AuditHaver {
 
         // how was the keyreference requested?
         String keyReference = wssConfig.getKeyReference();
-        wssReq.setProtectTokens(wssConfig.isProtectTokens());
+        if (wssConfig.isUsingProtectTokens())
+            wssReq.setProtectTokens(wssConfig.isProtectTokens());
         if (keyReference == null || KeyReference.BST.getName().equals(keyReference)) {
             wssReq.setKeyInfoInclusionType(KeyInfoInclusionType.CERT);
         } else if (KeyReference.SKI.getName().equals(keyReference)) {

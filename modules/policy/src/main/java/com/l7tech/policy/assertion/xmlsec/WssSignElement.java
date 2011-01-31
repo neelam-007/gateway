@@ -81,6 +81,12 @@ public class WssSignElement extends XmlSecurityAssertionBase implements WssDecor
     }
 
     @Override
+    public boolean isUsingProtectTokens() {
+        // Exposed via "Signed" checkbox in XPathBasedAssertion GUI
+        return true;
+    }
+
+    @Override
     public String getDigestAlgorithmName() {
         return digestAlgorithmName;
     }

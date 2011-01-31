@@ -101,6 +101,11 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     }
 
     @Override
+    public boolean isUsingProtectTokens() {
+        return true;
+    }
+
+    @Override
     public String getDigestAlgorithmName() {
         return this.digestAlgorithmName;
     }

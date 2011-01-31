@@ -79,7 +79,7 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
                 }
 
                 // Check for the same token protection settings
-                if ( wdc1.isProtectTokens() != wdc2.isProtectTokens() ) {
+                if ( wdc1.isUsingProtectTokens() && wdc2.isUsingProtectTokens() && wdc1.isProtectTokens() != wdc2.isProtectTokens() ) {
                     String message = "Multiple signing assertions present with different token signature requirements";
                     result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, path, message, null));
                 }

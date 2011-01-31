@@ -40,6 +40,11 @@ public interface WssDecorationConfig extends SecurityHeaderAddressable {
     void setProtectTokens(boolean protectTokens);
 
     /**
+     * @return true if the value of {@link #isProtectTokens()} is to be used at runtime; false if it is to be ignored.
+     */
+    boolean isUsingProtectTokens();
+
+    /**
      * Get the digest algorithm to use for the SignatureMethod and DigestMethod.
      *
      * @return the preferred digest algorithm name (ie, "SHA-384").  May be null.

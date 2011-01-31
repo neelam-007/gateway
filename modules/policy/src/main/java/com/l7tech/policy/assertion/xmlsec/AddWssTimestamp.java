@@ -148,6 +148,12 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
     }
 
     @Override
+    public boolean isUsingProtectTokens() {
+        // Not exposed in GUI, so don't use at runtime and don't show validator warnings about it        
+        return false;
+    }
+
+    @Override
     public String getDigestAlgorithmName() {
         return digestAlgorithmName;
     }
