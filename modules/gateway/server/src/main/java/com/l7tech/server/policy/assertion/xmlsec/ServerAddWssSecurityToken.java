@@ -24,6 +24,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.saml.SamlAssertion;
@@ -111,6 +112,11 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
         try {
             Object samlVal = context.getVariable(assertionVar);
 
+            if (null == samlVal) {
+                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML, "SAML variable is null");
+                return AssertionStatus.SERVER_ERROR;
+            }
+
             // Unwrap singleton array or collection
             if (samlVal instanceof Object[]) {
                 Object[] vals = (Object[]) samlVal;
@@ -131,7 +137,7 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
                 String samlXml = samlVal.toString();
                 samlElement = XmlUtil.stringToDocument(samlXml).getDocumentElement();
             } else {
-                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML);
+                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML, "SAML variable is unsupported type: " + samlVal.getClass().getName());
                 return AssertionStatus.SERVER_ERROR;
             }
 
@@ -139,7 +145,8 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
             auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE_WARNING, assertionVar);
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML, null, e);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         }
 
@@ -147,7 +154,8 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
         try {
             samlAssertion = SamlAssertion.newInstance(samlElement, securityTokenResolver);
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML, null, e);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         }
 
