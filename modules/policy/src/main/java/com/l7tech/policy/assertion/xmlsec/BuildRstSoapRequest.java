@@ -196,7 +196,7 @@ public class BuildRstSoapRequest extends Assertion implements UsesVariables, Set
     private static final String ASSERTION_TYPED_NAME = "Build RST SOAP {0} Request";
     private static final String META_INITIALIZED = BuildRstSoapRequest.class.getName() + ".metadataInitialized";
 
-    private SecurityTokenType tokenType;
+    private SecurityTokenType tokenType = SecurityTokenType.UNKNOWN;
     private WsTrustRequestType requestType = WsTrustRequestType.ISSUE;
     private SoapVersion soapVersion;
     private String wsTrustNamespace;

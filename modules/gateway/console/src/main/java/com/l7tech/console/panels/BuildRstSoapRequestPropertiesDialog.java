@@ -47,7 +47,7 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
         assertion.setWsTrustNamespace( (String)wsTrustNsComboBox.getSelectedItem() );
         assertion.setIssuerAddress( getNonEmpty( issuerTextField ) );
         assertion.setAppliesToAddress( getNonEmpty( appliesToTextField ) );
-        assertion.setTargetTokenVariable( getNonEmpty(targetTokenTextField.getVariable() ) );
+        assertion.setTargetTokenVariable( getNonEmpty( targetTokenVariablePanel.getVariable() ) );
         assertion.setKeySize( (Integer)keySizeComboBox.getSelectedItem() > 0 ? (Integer)keySizeComboBox.getSelectedItem() : null );
         if ( tokenLifetimeCheckBox.isSelected() ) {
             if ( useSystemDefaultCheckBox.isSelected() ) {
@@ -62,7 +62,7 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
             assertion.setLifetimeTimeUnit( null );
         }
         assertion.setIncludeClientEntropy( includeClientEntropyCheckBox.isSelected() );
-        assertion.setVariablePrefix( varPrefixTextField.getVariable() );
+        assertion.setVariablePrefix( varPrefixVariablePanel.getVariable() );
 
         return assertion;
     }
@@ -94,15 +94,15 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
         oldTimeUnit = (TimeUnit)lifetimeTimeUnitComboBox.getSelectedItem();
         includeClientEntropyCheckBox.setSelected( assertion.isIncludeClientEntropy() );
 
-        targetTokenTextField.setAssertion( assertion );
-        targetTokenTextField.setValueWillBeWritten( false );
-        targetTokenTextField.setValueWillBeRead( true );
-        targetTokenTextField.setAcceptEmpty( true );
-        targetTokenTextField.setVariable( assertion.getTargetTokenVariable()==null ? "" : assertion.getTargetTokenVariable() );
+        targetTokenVariablePanel.setAssertion( assertion );
+        targetTokenVariablePanel.setValueWillBeWritten( false );
+        targetTokenVariablePanel.setValueWillBeRead( true );
+        targetTokenVariablePanel.setAcceptEmpty( true );
+        targetTokenVariablePanel.setVariable( assertion.getTargetTokenVariable()==null ? "" : assertion.getTargetTokenVariable() );
 
-        varPrefixTextField.setAssertion( assertion );
-        varPrefixTextField.setSuffixes( BuildRstSoapRequest.getVariableSuffixes() );
-        varPrefixTextField.setVariable( assertion.getVariablePrefix() );
+        varPrefixVariablePanel.setAssertion( assertion );
+        varPrefixVariablePanel.setSuffixes( BuildRstSoapRequest.getVariableSuffixes() );
+        varPrefixVariablePanel.setVariable( assertion.getVariablePrefix() );
 
         enableOrDisableComponents();
     }
@@ -119,16 +119,17 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
         super.initComponents();
 
         // Components and layout
-        targetTokenTextField = new TargetVariablePanel();
+        targetTokenVariablePanel = new TargetVariablePanel();
         tokenVariablePanel.setLayout(new BorderLayout());
-        tokenVariablePanel.add(targetTokenTextField, BorderLayout.CENTER);
+        tokenVariablePanel.add( targetTokenVariablePanel, BorderLayout.CENTER);
 
-        varPrefixTextField = new TargetVariablePanel();
+        varPrefixVariablePanel = new TargetVariablePanel();
         varPrefixPanel.setLayout(new BorderLayout());
-        varPrefixPanel.add(varPrefixTextField, BorderLayout.CENTER);
+        varPrefixPanel.add( varPrefixVariablePanel, BorderLayout.CENTER);
 
         // Models
         tokenTypeComboBox.setModel( new DefaultComboBoxModel( new Object[]{
+                SecurityTokenType.UNKNOWN,
                 SecurityTokenType.SAML2_ASSERTION,
                 SecurityTokenType.SAML_ASSERTION,
                 SecurityTokenType.WSSC_CONTEXT,
@@ -136,7 +137,7 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
         tokenTypeComboBox.setRenderer( new TextListCellRenderer<SecurityTokenType>( new Functions.Unary<String,SecurityTokenType>(){
             @Override
             public String call( final SecurityTokenType securityTokenType ) {
-                return securityTokenType.getName();
+                return securityTokenType==SecurityTokenType.UNKNOWN ? "<Not Included>" : securityTokenType.getName();
             }
         } ) );
 
@@ -211,7 +212,8 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
         });
         tokenLifetimeCheckBox.addActionListener( enableDisableListener );
         useSystemDefaultCheckBox.addActionListener( enableDisableListener );
-        varPrefixTextField.addChangeListener( enableDisableListener );
+        targetTokenVariablePanel.addChangeListener( enableDisableListener );
+        varPrefixVariablePanel.addChangeListener( enableDisableListener );
 
         // Defaults
         oldTimeUnit = TimeUnit.HOURS;
@@ -241,8 +243,8 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
     private JPanel varPrefixPanel;
     private JPanel tokenVariablePanel;
 
-    private TargetVariablePanel varPrefixTextField;
-    private TargetVariablePanel targetTokenTextField;
+    private TargetVariablePanel varPrefixVariablePanel;
+    private TargetVariablePanel targetTokenVariablePanel;
     private TimeUnit oldTimeUnit;
 
     private void selectIfNotNull( final JComboBox component,
@@ -282,7 +284,7 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
 
     private void enableOrDisableComponents() {
         final boolean enableTarget = requestTypeComboBox.getSelectedItem() != WsTrustRequestType.ISSUE;
-        targetTokenTextField.setEnabled( enableTarget );
+        targetTokenVariablePanel.setEnabled( enableTarget );
 
         if ( tokenLifetimeCheckBox.isSelected() ) {
             useSystemDefaultCheckBox.setEnabled( true );
@@ -305,7 +307,11 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
                 0, false,
                 MILLIS_100_YEARS / multiplier, true);
 
-        getOkButton().setEnabled( !isReadOnly() && validLifetime && varPrefixTextField.isEntryValid() );
+        getOkButton().setEnabled(
+                !isReadOnly() &&
+                validLifetime && 
+                varPrefixVariablePanel.isEntryValid() &&
+                targetTokenVariablePanel.isEntryValid() );
     }
 
 }
