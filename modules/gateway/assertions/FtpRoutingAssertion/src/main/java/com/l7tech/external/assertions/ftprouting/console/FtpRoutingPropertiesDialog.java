@@ -96,7 +96,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
      * initialize the form.
      */
     @Override
-    protected void initComponents() {
+    protected void initComponents() {             
+        super.initComponents();
+
         final ActionListener securityListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -235,7 +237,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
             }
         });
 
-        super.initComponents();
     }
 
     private String getResourceString(String key){
@@ -348,11 +349,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         _useClientCertCheckBox.setEnabled(isFtps);
         _clientCertsComboBox.setEnabled(_useClientCertCheckBox.isEnabled() && _useClientCertCheckBox.isSelected());
 
-        final boolean canTest = !_hostNameTextField.getText().trim().isEmpty()
-                && _credentialsSpecifyRadioButton.isSelected()
-                && !_userNameTextField.getText().trim().isEmpty()
-                && (!_useClientCertCheckBox.isSelected() || _clientCertsComboBox.getSelectedIndex() != -1);
-        _testButton.setEnabled(canTest);
+
     }
 
     /**
@@ -446,6 +443,17 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
      * session log if failure.
      */
     private void testConnection() {
+        // validate for test
+        final String error = validators.validate();
+        if(error != null){
+            JOptionPane.showMessageDialog(
+                        FtpRoutingPropertiesDialog.this,
+                        error,
+                        "FTP(S) Connection Failure",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+        }
+
         try {
             final FtpRoutingAssertion a = getData(new FtpRoutingAssertion());
 
