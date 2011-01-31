@@ -205,7 +205,7 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
         try {
             wsscVal = context.getVariable(wsscVarName);
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, wsscVarName);
+            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE_WARNING, wsscVarName);
             return AssertionStatus.SERVER_ERROR;
         }
 
