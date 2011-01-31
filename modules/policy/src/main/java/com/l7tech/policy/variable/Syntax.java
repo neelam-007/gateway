@@ -186,6 +186,16 @@ public abstract class Syntax {
     }
 
     /**
+     * Get an expression that references the given variable.
+     *
+     * @param name The name (may be null)
+     * @return The expression or null if the name was null
+     */
+    public static String getVariableExpression( final String name ) {
+        return name == null ? null : SYNTAX_PREFIX + name + SYNTAX_SUFFIX;        
+    }
+
+    /**
      * Validate that a string value contains only context variable references.
      *
      * @param toValidate String which should only reference variables. Cannot be null

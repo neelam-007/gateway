@@ -8,6 +8,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
+import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.xml.soap.SoapVersion;
 
 import javax.swing.*;
@@ -41,10 +42,12 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
     @Override
     public BuildRstSoapRequest getData( final BuildRstSoapRequest assertion ) throws ValidationException {
         assertion.setTokenType( (SecurityTokenType)tokenTypeComboBox.getSelectedItem() );
+        assertion.setRequestType( (WsTrustRequestType)requestTypeComboBox.getSelectedItem() );
         assertion.setSoapVersion( (SoapVersion)soapVersionComboBox.getSelectedItem() );
         assertion.setWsTrustNamespace( (String)wsTrustNsComboBox.getSelectedItem() );
         assertion.setIssuerAddress( getNonEmpty( issuerTextField ) );
         assertion.setAppliesToAddress( getNonEmpty( appliesToTextField ) );
+        assertion.setTargetTokenVariable( getNonEmpty(targetTokenTextField.getVariable() ) );
         assertion.setKeySize( (Integer)keySizeComboBox.getSelectedItem() > 0 ? (Integer)keySizeComboBox.getSelectedItem() : null );
         if ( tokenLifetimeCheckBox.isSelected() ) {
             if ( useSystemDefaultCheckBox.isSelected() ) {
@@ -67,6 +70,7 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
     @Override
     public void setData( final BuildRstSoapRequest assertion ) {
         selectIfNotNull( tokenTypeComboBox, assertion.getTokenType() );
+        selectIfNotNull( requestTypeComboBox, assertion.getRequestType() );
         selectIfNotNull( soapVersionComboBox, assertion.getSoapVersion() );
         selectIfNotNull( wsTrustNsComboBox, assertion.getWsTrustNamespace() );
         setIfNotNull( issuerTextField, assertion.getIssuerAddress() );
@@ -90,6 +94,12 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
         oldTimeUnit = (TimeUnit)lifetimeTimeUnitComboBox.getSelectedItem();
         includeClientEntropyCheckBox.setSelected( assertion.isIncludeClientEntropy() );
 
+        targetTokenTextField.setAssertion( assertion );
+        targetTokenTextField.setValueWillBeWritten( false );
+        targetTokenTextField.setValueWillBeRead( true );
+        targetTokenTextField.setAcceptEmpty( true );
+        targetTokenTextField.setVariable( assertion.getTargetTokenVariable()==null ? "" : assertion.getTargetTokenVariable() );
+
         varPrefixTextField.setAssertion( assertion );
         varPrefixTextField.setSuffixes( BuildRstSoapRequest.getVariableSuffixes() );
         varPrefixTextField.setVariable( assertion.getVariablePrefix() );
@@ -109,6 +119,10 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
         super.initComponents();
 
         // Components and layout
+        targetTokenTextField = new TargetVariablePanel();
+        tokenVariablePanel.setLayout(new BorderLayout());
+        tokenVariablePanel.add(targetTokenTextField, BorderLayout.CENTER);
+
         varPrefixTextField = new TargetVariablePanel();
         varPrefixPanel.setLayout(new BorderLayout());
         varPrefixPanel.add(varPrefixTextField, BorderLayout.CENTER);
@@ -125,6 +139,9 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
                 return securityTokenType.getName();
             }
         } ) );
+
+        // WsTrustRequestType.RENEW is not included since we don't currently implement support for "wsc:Instance"
+        requestTypeComboBox.setModel( new DefaultComboBoxModel(new WsTrustRequestType[] {WsTrustRequestType.CANCEL, WsTrustRequestType.ISSUE, WsTrustRequestType.VALIDATE}) );
 
         soapVersionComboBox.setModel( new DefaultComboBoxModel( new Object[]{
                 SoapVersion.SOAP_1_2,
@@ -177,6 +194,7 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
                 enableOrDisableComponents();
             }
         };
+        requestTypeComboBox.addActionListener( enableDisableListener );
         tokenLifetimeTextField.getDocument().addDocumentListener( enableDisableListener );
         lifetimeTimeUnitComboBox.addActionListener(new ActionListener() {
             @Override
@@ -209,6 +227,7 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
 
     private JPanel mainPanel;
     private JComboBox tokenTypeComboBox;
+    private JComboBox requestTypeComboBox;
     private JComboBox soapVersionComboBox;
     private JComboBox wsTrustNsComboBox;
     private JTextField issuerTextField;
@@ -220,8 +239,10 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
     private JCheckBox useSystemDefaultCheckBox;
     private JCheckBox includeClientEntropyCheckBox;
     private JPanel varPrefixPanel;
+    private JPanel tokenVariablePanel;
 
     private TargetVariablePanel varPrefixTextField;
+    private TargetVariablePanel targetTokenTextField;
     private TimeUnit oldTimeUnit;
 
     private void selectIfNotNull( final JComboBox component,
@@ -242,14 +263,27 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
     private String getNonEmpty( final JTextComponent component ) {
         String value = null;
 
-        if ( component.isEnabled() && component.getText()!=null && !component.getText().trim().isEmpty() ) {
-            value = component.getText().trim();
+        if ( component.isEnabled() ) {
+            value = getNonEmpty( component.getText() );
+        }
+
+        return value;
+    }
+
+    private String getNonEmpty( final String text ) {
+        String value = null;
+
+        if ( text!=null && !text.isEmpty() ) {
+            value = text.trim();
         }
 
         return value;
     }
 
     private void enableOrDisableComponents() {
+        final boolean enableTarget = requestTypeComboBox.getSelectedItem() != WsTrustRequestType.ISSUE;
+        targetTokenTextField.setEnabled( enableTarget );
+
         if ( tokenLifetimeCheckBox.isSelected() ) {
             useSystemDefaultCheckBox.setEnabled( true );
             if ( useSystemDefaultCheckBox.isSelected() ) {
@@ -265,8 +299,8 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
             lifetimeTimeUnitComboBox.setEnabled( false );
         }
         
-        int multiplier = ((TimeUnit) lifetimeTimeUnitComboBox.getSelectedItem()).getMultiplier();
-        boolean validLifetime = !tokenLifetimeCheckBox.isSelected() || useSystemDefaultCheckBox.isSelected() ||
+        final int multiplier = ((TimeUnit) lifetimeTimeUnitComboBox.getSelectedItem()).getMultiplier();
+        final boolean validLifetime = !tokenLifetimeCheckBox.isSelected() || useSystemDefaultCheckBox.isSelected() ||
             ValidationUtils.isValidDouble(tokenLifetimeTextField.getText().trim(), false,
                 0, false,
                 MILLIS_100_YEARS / multiplier, true);

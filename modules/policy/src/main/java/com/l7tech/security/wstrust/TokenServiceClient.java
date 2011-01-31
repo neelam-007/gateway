@@ -139,7 +139,7 @@ public class TokenServiceClient {
             throws CertificateException
     {
         try {
-            Document msg = wstConfig.makeRequestSecurityTokenMessage(soapNs, desiredTokenType, requestType, appliesToAddress, wstIssuerAddress, null, 0, 0, base);
+            Document msg = wstConfig.makeRequestSecurityTokenMessage(soapNs, desiredTokenType, requestType, appliesToAddress, wstIssuerAddress, null, 0, 0, base==null?null:base.asElement());
             Element env = msg.getDocumentElement();
             Element body = DomUtils.findFirstChildElementByName(env, env.getNamespaceURI(), "Body");
 
@@ -198,7 +198,7 @@ public class TokenServiceClient {
                                                              null,
                                                              0,
                                                              0,
-                                                             base);
+                                                             base==null?null:base.asElement());
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         }
@@ -210,7 +210,7 @@ public class TokenServiceClient {
      *
      * @param desiredTokenType   the token type being applied for
      * @param requestType        the type of RST message
-     * @param base               the base security token, null for none (typically not necessary for more recent versions of WS-Trust)
+     * @param targetTokenOrStr   the target security token or STR or null for none
      * @param appliesToAddress   wsa:Address to use for wsp:AppliesTo, or null to leave out the AppliesTo
      * @param wstIssuerAddress   wsa:Address to use for wst:Issuer, or null to leave out the Issuer
      * @param entropy            the client entropy to use, null for none
@@ -220,7 +220,7 @@ public class TokenServiceClient {
      */
     public Document createRequestSecurityTokenMessage( final SecurityTokenType desiredTokenType,
                                                        final WsTrustRequestType requestType,
-                                                       final XmlSecurityToken base,
+                                                       final Element targetTokenOrStr,
                                                        final String appliesToAddress,
                                                        final String wstIssuerAddress,
                                                        final byte[] entropy,
@@ -235,7 +235,7 @@ public class TokenServiceClient {
                                                              entropy,
                                                              keySize,
                                                              lifetime,
-                                                             base);
+                                                             targetTokenOrStr);
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         }

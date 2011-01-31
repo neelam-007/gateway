@@ -5,6 +5,8 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.AssertionNodeNameFactory;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.assertion.UsesVariables;
@@ -13,7 +15,10 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.util.TimeUnit;
+import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.xml.soap.SoapVersion;
+
+import java.text.MessageFormat;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -40,6 +45,14 @@ public class BuildRstSoapRequest extends Assertion implements UsesVariables, Set
 
     public void setTokenType( final SecurityTokenType tokenType ) {
         this.tokenType = tokenType;
+    }
+
+    public WsTrustRequestType getRequestType() {
+        return requestType;
+    }
+
+    public void setRequestType( final WsTrustRequestType requestType ) {
+        this.requestType = requestType;
     }
 
     public SoapVersion getSoapVersion() {
@@ -72,6 +85,14 @@ public class BuildRstSoapRequest extends Assertion implements UsesVariables, Set
 
     public void setAppliesToAddress( final String appliesToAddress ) {
         this.appliesToAddress = appliesToAddress;
+    }
+
+    public String getTargetTokenVariable() {
+        return targetTokenVariable;
+    }
+
+    public void setTargetTokenVariable( final String targetTokenVariable ) {
+        this.targetTokenVariable = targetTokenVariable;
     }
 
     public Integer getKeySize() {
@@ -125,7 +146,7 @@ public class BuildRstSoapRequest extends Assertion implements UsesVariables, Set
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(issuerAddress, appliesToAddress);
+        return Syntax.getReferencedNames(issuerAddress, appliesToAddress, Syntax.getVariableExpression(targetTokenVariable));
     }
 
     public static String[] getVariableSuffixes() {
@@ -143,6 +164,14 @@ public class BuildRstSoapRequest extends Assertion implements UsesVariables, Set
 
         // Set description for GUI
         meta.put(SHORT_NAME, ASSERTION_BASIC_NAME);
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<BuildRstSoapRequest>(){
+            @Override
+            public String getAssertionName( final BuildRstSoapRequest assertion, final boolean decorate ) {
+                return decorate ?
+                        AssertionUtils.decorateName(assertion, MessageFormat.format( ASSERTION_TYPED_NAME, assertion.getRequestType())) :
+                        ASSERTION_BASIC_NAME;
+            }
+        });
         meta.put(DESCRIPTION, "Build a SOAP request message containing a RequestSecurityToken element.");
 
         // Add to palette folder(s)
@@ -164,13 +193,16 @@ public class BuildRstSoapRequest extends Assertion implements UsesVariables, Set
     //- PRIVATE
 
     private static final String ASSERTION_BASIC_NAME = "Build RST SOAP Request";
+    private static final String ASSERTION_TYPED_NAME = "Build RST SOAP {0} Request";
     private static final String META_INITIALIZED = BuildRstSoapRequest.class.getName() + ".metadataInitialized";
 
     private SecurityTokenType tokenType;
+    private WsTrustRequestType requestType = WsTrustRequestType.ISSUE;
     private SoapVersion soapVersion;
     private String wsTrustNamespace;
     private String issuerAddress;
     private String appliesToAddress;
+    private String targetTokenVariable;
     private Integer keySize;
     private Long lifetime;
     private TimeUnit lifetimeTimeUnit; // for UI use only

@@ -12,6 +12,7 @@ import com.l7tech.policy.wsp.TypeMappingUtils;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
+import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.xml.xpath.XpathExpression;
 import static org.junit.Assert.*;
 import org.junit.*;
@@ -141,6 +142,7 @@ public class AllAssertionsTest {
                             o1 instanceof XpathExpression ||
                             o1 instanceof TimeUnit ||
                             o1 instanceof SecurityTokenType ||
+                            o1 instanceof WsTrustRequestType ||
                             o1.getClass().isArray() ||
                             o1.getClass().isEnum() ||
                             o1.getClass().isPrimitive() ) {

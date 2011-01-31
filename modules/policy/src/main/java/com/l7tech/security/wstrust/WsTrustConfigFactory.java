@@ -1,7 +1,6 @@
 package com.l7tech.security.wstrust;
 
 import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.util.DomUtils;
 import com.l7tech.xml.WsTrustRequestType;
 import com.l7tech.util.SyspropUtil;
@@ -111,14 +110,11 @@ public class WsTrustConfigFactory {
          */
         @Override
         protected void addXmlSecurityToken( final WsTrustRequestType requestType,
-                                            final XmlSecurityToken base,
+                                            final Element tokenEl,
                                             final Document msg,
                                             final Element rst ) {
             // Add Base, if provided.  Base is not required to be the same token type as the token type we are requesting.
             Element baseEl = DomUtils.createAndPrependElementNS(rst, "Base", getWstNs(), "wst");
-            Element tokenEl = base.asElement();
-            if (tokenEl == null) throw new IllegalStateException("Couldn't get Element for Base security token");
-
             appendToken( msg, baseEl, tokenEl );
         }
     }

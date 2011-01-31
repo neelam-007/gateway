@@ -2,7 +2,6 @@ package com.l7tech.security.wstrust;
 
 import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ISO8601Date;
@@ -125,7 +124,7 @@ public abstract class WsTrustConfig {
                                                          final byte[] entropy,
                                                          final int keySize,
                                                          final long lifetime,
-                                                         final XmlSecurityToken base) throws SAXException {
+                                                         final Element targetTokenOrStr) throws SAXException {
         // TODO fix or remove this hack: if a saml: qname will be used, declare saml NS in root element
         String extraNs = "";
         if (desiredTokenType != null && SamlSecurityToken.class.isAssignableFrom(desiredTokenType.getInterfaceClass()))
@@ -196,24 +195,27 @@ public abstract class WsTrustConfig {
             DomUtils.setTextContent( expiresElement, ISO8601Date.format(new Date(System.currentTimeMillis()+lifetime)));
         }
 
-        if (base != null) {
-            addXmlSecurityToken( requestType, base, msg, rst );
+        if (targetTokenOrStr != null) {
+            addXmlSecurityToken( requestType, targetTokenOrStr, msg, rst );
         }
 
         return msg;
     }
 
     protected void addXmlSecurityToken( final WsTrustRequestType requestType,
-                                        final XmlSecurityToken base,
+                                        final Element tokenElement,
                                         final Document rstDocument,
                                         final Element rstElement ) {
-        final Element tokenElement = base.asElement();
-        if (tokenElement == null) throw new IllegalStateException("Couldn't get Element for base security token");
-
-        if ( requestType == WsTrustRequestType.VALIDATE ) {
+        if ( requestType == WsTrustRequestType.CANCEL ) {
+            final Element cancelTargetElement = DomUtils.createAndAppendElementNS(rstElement, "CancelTarget", getWstNs(), "wst");
+            appendToken( rstDocument, cancelTargetElement, tokenElement );
+        } else if ( requestType == WsTrustRequestType.RENEW ) {
+            final Element renewTargetElement = DomUtils.createAndAppendElementNS(rstElement, "RenewTarget", getWstNs(), "wst");
+            appendToken( rstDocument, renewTargetElement, tokenElement );
+        } else if ( requestType == WsTrustRequestType.VALIDATE ) {
             final Element validateTargetElement = DomUtils.createAndAppendElementNS(rstElement, "ValidateTarget", getWstNs(), "wst");
             appendToken( rstDocument, validateTargetElement, tokenElement );
-        } else {
+        } else{
             final Element securityHeader = SoapUtil.makeSecurityElement(rstDocument, SoapConstants.SECURITY_NAMESPACE, null, null, false);
 
             SoapUtil.addTimestamp( securityHeader, SoapConstants.WSU_NAMESPACE, null, true, 0, 300000 );
