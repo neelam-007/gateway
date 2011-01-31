@@ -226,8 +226,6 @@ public class FtpServerManager extends TransportModule {
         String p = PROP_FTP_LISTENER + prefix;
         props.setProperty(p + "port", String.valueOf(connector.getPort()));
         props.setProperty(p + "server-address", address);
-        props.setProperty(p + "data-connection.passive.address", address);
-        props.setProperty(p + "data-connection.passive.external-address", address);
         props.setProperty(p + "data-connection.passive.ports", passiveRange);
         return props;
     }
