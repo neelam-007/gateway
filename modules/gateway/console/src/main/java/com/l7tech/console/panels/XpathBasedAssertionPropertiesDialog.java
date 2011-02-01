@@ -881,6 +881,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             aes192CheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.AES_192_CBC.getXEncName()));
             aes256CheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.AES_256_CBC.getXEncName()));
             tripleDESCheckBox.setSelected(xencAlgorithmlist.contains(XencAlgorithm.TRIPLE_DES_CBC.getXEncName()));
+
+            boolean contentsOnly = requestWssConfidentiality.isEncryptContentsOnly();
+            encryptElementContentsOnlyRadioButton.setSelected(contentsOnly);
+            encryptEntireElementIncludingRadioButton.setSelected(!contentsOnly);
         }
     }
 
@@ -927,6 +931,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         } else if (assertion instanceof RequireWssEncryptedElement) {
             RequireWssEncryptedElement requestWssConfidentiality = (RequireWssEncryptedElement)assertion;
             requestWssConfidentiality.setXEncAlgorithmList(xencAlgorithmList);
+            requestWssConfidentiality.setEncryptContentsOnly(encryptElementContentsOnlyRadioButton.isSelected());
         }
         return true;
     }
