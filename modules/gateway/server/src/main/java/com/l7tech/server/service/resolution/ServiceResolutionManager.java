@@ -242,6 +242,11 @@ public class ServiceResolutionManager implements ApplicationListener, Initializi
         final Collection<Pair<Map<String,Object>,PublishedService>> conflictingParameterCollection = new ArrayList<Pair<Map<String,Object>,PublishedService>>();
         final Audit audit = new LogOnlyAuditor( logger );
         for ( final Map<String,Object> parameters : parameterCollection ) {
+
+            // Enable exact matching only for conflicts
+            parameters.put( UriResolver.class.getName() + UriResolver.SUFFIX_EXACT_ONLY, Boolean.TRUE );
+            parameters.put( CaseInsensitiveUriResolver.class.getName() + CaseInsensitiveUriResolver.SUFFIX_EXACT_ONLY, Boolean.TRUE );
+
             final Collection<PublishedService> services = doResolve( audit, parameters, null, serviceSet, false );
             if ( services==null ) continue;
 

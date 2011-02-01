@@ -17,6 +17,7 @@ import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
 import com.l7tech.server.transport.ResolutionConfigurationManagerStub;
+import com.l7tech.test.BugNumber;
 import com.l7tech.xml.soap.SoapVersion;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -62,6 +63,16 @@ public class ServiceResolutionManagerTest {
         PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service2 );
         assertEquals( "Service id", 2, service2.getOid() );
+    }
+
+    @Test
+    public void testResolutionUriWild() throws Exception {
+        configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
+        message.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/wild/some/path/here") );
+        PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
+        assertNotNull( "Service null (not resolved)", service );
+        assertEquals( "Service id", 4, service.getOid() );
     }
 
     @Test
@@ -282,6 +293,19 @@ public class ServiceResolutionManagerTest {
         assertEquals( "SOAP operation resolver", Collections.singletonList( Collections.emptyList() ), r3.buildTargetValues( service ) );
     }
 
+    @BugNumber(9776)
+    @Test
+    public void testServiceConflictWild() throws Exception {
+        resolutionManager.checkResolution( service( -1, "Test1", "/wild/path", null, false ), services );      
+
+        try {
+            resolutionManager.checkResolution( service( -1, "Test2", "/wild/*", null, false ), services );
+            fail( "Service conflict expected for /wild/*" );
+        } catch ( NonUniqueServiceResolutionException e ) {
+            // expected
+        }
+    }
+
     @SuppressWarnings({ "unchecked" })
     @BeforeClass
     public static void init() {
@@ -313,6 +337,7 @@ public class ServiceResolutionManagerTest {
             si( service(1, "EmptyOpService", "/empty", SoapVersion.UNKNOWN, false), l("urn:empty:empty"), l((String)null), l(Collections.<QName>emptyList()) ),
             si( service(2, "SoapService", "/warehouse", SoapVersion.SOAP_1_1, false), l("http://warehouse.acme.com/ws/listProducts","http://warehouse.acme.com/ws/getProductDetails"), l("http://warehouse.acme.com/ws"), l(qns("http://warehouse.acme.com/ws","listProducts"),qns("http://warehouse.acme.com/ws","getProductDetails")) ),
             si( service(3, "XML", null, null, false), null, null, null ), // unresolvable other than by id
+            si( service(4, "Wild", "/wild/*", null, false), null, null, null ),
         };
 
         Collection<PublishedService> services = new ArrayList<PublishedService>();

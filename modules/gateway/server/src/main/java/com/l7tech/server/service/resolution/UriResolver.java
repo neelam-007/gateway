@@ -69,7 +69,8 @@ public class UriResolver extends ServiceResolver<String> {
     }
 
     private Result doResolve( final String requestValue,
-                              final Collection<PublishedService> serviceSubset ) {
+                              final Collection<PublishedService> serviceSubset,
+                              final boolean exactOnly ) {
         List<Long> res = uriToServiceMap.get(new URIResolutionParam(requestValue));
         if (res != null && res.size() > 0) {
             if (auditor != null) {
@@ -77,6 +78,10 @@ public class UriResolver extends ServiceResolver<String> {
             }
             Set<PublishedService> output = narrowList(serviceSubset, res);
             if (output.size() > 0) return new Result(output); // otherwise, we continue and try to find match using wildcard ones
+        }
+
+        if ( exactOnly ) {
+            return Result.NO_MATCH;
         }
 
         // otherwise, try to match using wildcards
@@ -135,6 +140,7 @@ public class UriResolver extends ServiceResolver<String> {
         if ( caseSensitive != enableCaseSensitivity.get() ) return Result.NOT_APPLICABLE;
         if (!parameters.containsKey( PROP_VALUE )) return Result.NOT_APPLICABLE;
         final String requestValue = transformValue((String) parameters.get( PROP_VALUE ));
+        final boolean exactOnly = Boolean.TRUE.equals( parameters.get( PROP_EXACT_ONLY ) );
 
         rwlock.readLock().lock();
         try {
@@ -143,8 +149,8 @@ public class UriResolver extends ServiceResolver<String> {
                 auditor.logAndAudit(MessageProcessingMessages.SR_HTTPURI_CACHEDFAIL, requestValue);
                 return Result.NO_MATCH;
             }
-            Result res = doResolve(requestValue, serviceSubset);
-            if (res == Result.NO_MATCH) {
+            Result res = doResolve(requestValue, serviceSubset, exactOnly);
+            if (res == Result.NO_MATCH && !exactOnly) {
                 // todo, this could be exploited as an attack. we should either not try to do this or
                 // we should have a worker thread making sure this does not grow too big
                 knownToFail.add(requestValue);
@@ -370,6 +376,13 @@ public class UriResolver extends ServiceResolver<String> {
             return uri.hashCode();
         }
     }
+
+    /**
+     * Boolean property for exact matching only.
+     */
+    protected static final String SUFFIX_EXACT_ONLY = ".exactOnly";
+
+    protected final String PROP_EXACT_ONLY = PROP_BASE + SUFFIX_EXACT_ONLY;
 
     private final boolean caseSensitive;
     private final ArrayList<String> knownToFail = new ArrayList<String>();
