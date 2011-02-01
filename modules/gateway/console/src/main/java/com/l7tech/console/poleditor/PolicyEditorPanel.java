@@ -1041,13 +1041,63 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return false;
     }
 
-    public Action[] updateActions(final AssertionTreeNode node, Action[] actions) {
+    public Action[] getActions (){
+        if(policyTree.getSelectionCount() == 0){
+            return new Action[0];
+        }            
+        else if(policyTree.getSelectionCount() == 1){
+            return ((AssertionTreeNode)policyTree.getLastSelectedPathComponent()).getActions();    
+        }
+        else{
+            return getActionsMultipleNodes();
+        }
+    }
+
+    private class ActionWrapped{
+        private Action action;
+        ActionWrapped (Action action) {
+            this.action = action;
+        }
+
+        @Override
+        public boolean equals(Object obj){
+            if(obj.getClass() != ActionWrapped.class)
+                return false;
+            return ((ActionWrapped)(obj)).action.getClass().getName().equals(this.action.getClass().getName());
+        }
+    }
+
+    public Action[] getActionsMultipleNodes() {
+        // merge actions
+        final TreePath[] paths = policyTree.getSelectionPaths();
+        final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+        List <ActionWrapped> mergedActions = new ArrayList<ActionWrapped>();
+        Action[] firstActions = assertionTreeNodes[0].getActions();
+        for(Action action: firstActions ){
+            mergedActions.add(new ActionWrapped(action));
+        }
+
+
+        for(int i = 1; i < assertionTreeNodes.length; ++i){
+            List<ActionWrapped> prevActions = new ArrayList<ActionWrapped>(mergedActions);
+            Action[] actions = assertionTreeNodes[i].getActions();
+            for(Action action : actions){
+                ActionWrapped wrapped = new ActionWrapped(action);
+                if( !mergedActions.contains(wrapped))
+                    mergedActions.remove(wrapped);
+                else if (action instanceof BaseAction &&!((BaseAction) action).supportMultipleSelection())
+                    mergedActions.remove(wrapped);                    
+                else
+                    prevActions.remove(wrapped);
+            }
+            mergedActions.removeAll(prevActions);
+        }
 
         List <Action> actionList = new ArrayList <Action>();
-        boolean hasMultiSelected = policyTree.getSelectionCount() > 1;
 
-        for (Action action :actions) {
-             if (action instanceof SavePolicyAction) {
+        for (ActionWrapped wrapped : mergedActions) {
+            Action action = wrapped.action;
+            if (action instanceof SavePolicyAction) {
                 if (((SavePolicyAction)action).isActivateAsWell()) {
                     action = policyEditorToolbar.buttonSaveAndActivate.getAction();
                     action.setEnabled(policyEditorToolbar.buttonSaveAndActivate.isEnabled());
@@ -1058,33 +1108,20 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             } else if (action instanceof ValidatePolicyAction) {
                 action = policyEditorToolbar.buttonValidate.getAction();
                 action.setEnabled(policyEditorToolbar.buttonValidate.isEnabled());
+            } else if (action instanceof AssertionMoveUpAction) {
+                action = getMultipleSelectedAssertionMoveUpAction( action.isEnabled());
+            } else if (action instanceof AssertionMoveDownAction) {
+                action = getMultipleSelectedAssertionMoveDownAction( action.isEnabled());
+            } else if (action instanceof DeleteAssertionAction) {
+                action = getMultipleSelectedDeleteAssertionAction( action.isEnabled());
+            } else if (action instanceof SelectMessageTargetAction) {
+                action = getMultipleSelectedSelectMessageTargetAction( (SelectMessageTargetAction)action);
+            } else if (action instanceof SelectIdentityTargetAction) {
+                action = getMultipleSelectedSelectIdentityTargetAction( (SelectIdentityTargetAction)action);
+            } else if (action instanceof SelectIdentityTagAction) {
+                action = getMultipleSelectedSelectIdentityTagAction( (SelectIdentityTagAction)action);
             }
-
-            if(action instanceof BaseAction)
-            {
-                if(hasMultiSelected){
-                    if(((BaseAction) action).supportMultipleSelection())
-                    {
-                        if (action instanceof AssertionMoveUpAction) {
-                            action = getAssertionMoveUpAction(node, action.isEnabled());
-                        } else if (action instanceof AssertionMoveDownAction) {
-                            action = getAssertionMoveDownAction(node, action.isEnabled());
-                        } else if (action instanceof DeleteAssertionAction) {
-                            action = getDeleteAssertionAction(node, action.isEnabled());
-                        } else if (action instanceof SelectMessageTargetAction) {
-                            action = getSelectMessageTargetAction(node, (SelectMessageTargetAction)action);
-                        } else if (action instanceof SelectIdentityTargetAction) {
-                            action = getSelectIdentityTargetAction(node, (SelectIdentityTargetAction)action);
-                        } else if (action instanceof SelectIdentityTagAction) {
-                            action = getSelectIdentityTagAction(node, (SelectIdentityTagAction)action);
-                        }
-                        actionList.add(action);
-                    }
-                }
-                else {
-                    actionList.add(action);
-                }
-            }
+            actionList.add(action);
         }
         return actionList.toArray(new Action[actionList.size()]);
     }
@@ -1123,20 +1160,16 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     /**
-     * @param node          Last selected node
      * @param isEnabled     Previous enabled action value
      * @return  A new action fitted based on the node selection.
      */
-    private DeleteAssertionAction getDeleteAssertionAction(final AssertionTreeNode node, boolean isEnabled) {
+    private DeleteAssertionAction getMultipleSelectedDeleteAssertionAction(boolean isEnabled) {
         final TreePath[] paths = policyTree.getSelectionPaths();
         final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
         DeleteAssertionAction action;
-        if (paths != null && paths.length > 1) {
-            action = new DeleteAssertionAction(node, assertionTreeNodes);
-        } else {
-            action = new DeleteAssertionAction(node);
-        }
-        action.setEnabled(isEnabled && canEnableAction(node, assertionTreeNodes, action));
+        action = new DeleteAssertionAction(null, assertionTreeNodes);
+
+        action.setEnabled(isEnabled && canEnableAction(null, assertionTreeNodes, action));
         return action;
     }
 
@@ -1145,35 +1178,33 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      *
      * <p>Multiple edit is only permitted if all selected items have the same setting.</p>
      */
-    private SelectMessageTargetAction getSelectMessageTargetAction( final AssertionTreeNode node,
-                                                                    final SelectMessageTargetAction selectMessageTargetAction) {
+    private SelectMessageTargetAction getMultipleSelectedSelectMessageTargetAction( final SelectMessageTargetAction selectMessageTargetAction) {
         SelectMessageTargetAction action = selectMessageTargetAction;
         if ( action.isEnabled() ) {
             final TreePath[] paths = policyTree.getSelectionPaths();
-            if ( paths != null && paths.length > 1 ) {
-                boolean sameTarget = true;
+            boolean sameTarget = true;
 
-                final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
-                final Assertion target = node.asAssertion();
-                final List<MessageTargetable> list = new ArrayList<MessageTargetable>();
-                for ( AssertionTreeNode assertionTreeNode : assertionTreeNodes ) {
-                    Assertion assertion = assertionTreeNode.asAssertion();
-                    if ( assertion instanceof MessageTargetable ) {
-                        MessageTargetable mt = (MessageTargetable) assertion;
-                        list.add(mt);
-                        sameTarget = AssertionUtils.isSameTargetMessage( target, assertion );
-                    } else {
-                        sameTarget = false;
-                    }
-                    if ( !sameTarget ) break;
-                }
-
-                if ( sameTarget ) {
-                    action = new SelectMessageTargetAction( assertionTreeNodes, list.toArray(new MessageTargetable[list.size()]) );
+            final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+            final Assertion target = assertionTreeNodes[0].asAssertion();
+            final List<MessageTargetable> list = new ArrayList<MessageTargetable>();
+            for ( AssertionTreeNode assertionTreeNode : assertionTreeNodes ) {
+                Assertion assertion = assertionTreeNode.asAssertion();
+                if ( assertion instanceof MessageTargetable ) {
+                    MessageTargetable mt = (MessageTargetable) assertion;
+                    list.add(mt);
+                    sameTarget = AssertionUtils.isSameTargetMessage( target, assertion );
                 } else {
-                    action.setEnabled( false ); // disable, since we cannot edit all at once
+                    sameTarget = false;
                 }
+                if ( !sameTarget ) break;
             }
+
+            if ( sameTarget ) {
+                action = new SelectMessageTargetAction( assertionTreeNodes, list.toArray(new MessageTargetable[list.size()]) );
+            } else {
+                action.setEnabled( false ); // disable, since we cannot edit all at once
+            }
+
         }
 
         return action;
@@ -1185,37 +1216,35 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * <p>Multiple edit is only permitted if all selected items have the same
      * setting and target the same message.</p>
      */
-    private SelectIdentityTargetAction getSelectIdentityTargetAction( final AssertionTreeNode node,
-                                                                      final SelectIdentityTargetAction selectIdentityTargetAction ) {
+    private SelectIdentityTargetAction getMultipleSelectedSelectIdentityTargetAction( final SelectIdentityTargetAction selectIdentityTargetAction ) {
         SelectIdentityTargetAction action = selectIdentityTargetAction;
         if ( action.isEnabled() ) {
             final TreePath[] paths = policyTree.getSelectionPaths();
-            if ( paths != null && paths.length > 1 ) {
-                boolean sameTarget = true;
+            boolean sameTarget = true;
 
-                final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
-                final Assertion targetAssertion = node.asAssertion();
-                final IdentityTarget target = new IdentityTarget(((IdentityTargetable) targetAssertion).getIdentityTarget());
-                final List<IdentityTargetable> list = new ArrayList<IdentityTargetable>();
-                for ( AssertionTreeNode assertionTreeNode : assertionTreeNodes ) {
-                    Assertion assertion = assertionTreeNode.asAssertion();
-                    if ( assertion instanceof IdentityTargetable ) {
-                        IdentityTargetable it = (IdentityTargetable) assertion;
-                        list.add(it);
-                        sameTarget = new IdentityTarget(it.getIdentityTarget()).equals(target) &&
-                                     AssertionUtils.isSameTargetMessage( targetAssertion, assertion );
-                    } else {
-                        sameTarget = false;
-                    }
-                    if ( !sameTarget ) break;
-                }
-
-                if ( sameTarget ) {
-                    action = new SelectIdentityTargetAction( assertionTreeNodes, list.toArray(new IdentityTargetable[list.size()]) );
+            final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+            final Assertion targetAssertion = assertionTreeNodes[0].asAssertion();
+            final IdentityTarget target = new IdentityTarget(((IdentityTargetable) targetAssertion).getIdentityTarget());
+            final List<IdentityTargetable> list = new ArrayList<IdentityTargetable>();
+            for ( AssertionTreeNode assertionTreeNode : assertionTreeNodes ) {
+                Assertion assertion = assertionTreeNode.asAssertion();
+                if ( assertion instanceof IdentityTargetable ) {
+                    IdentityTargetable it = (IdentityTargetable) assertion;
+                    list.add(it);
+                    sameTarget = new IdentityTarget(it.getIdentityTarget()).equals(target) &&
+                                 AssertionUtils.isSameTargetMessage( targetAssertion, assertion );
                 } else {
-                    action.setEnabled( false ); // disable, since we cannot edit all at once
+                    sameTarget = false;
                 }
+                if ( !sameTarget ) break;
             }
+
+            if ( sameTarget ) {
+                action = new SelectIdentityTargetAction( assertionTreeNodes, list.toArray(new IdentityTargetable[list.size()]) );
+            } else {
+                action.setEnabled( false ); // disable, since we cannot edit all at once
+            }
+
         }
 
         return action;    }
@@ -1226,103 +1255,91 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * <p>Multiple edit is only permitted if all selected items have the same
      * setting.</p>
      */
-    private SelectIdentityTagAction getSelectIdentityTagAction( final AssertionTreeNode node,
-                                                                final SelectIdentityTagAction selectIdentityTagAction ) {
+    private SelectIdentityTagAction getMultipleSelectedSelectIdentityTagAction( final SelectIdentityTagAction selectIdentityTagAction ) {
         SelectIdentityTagAction action = selectIdentityTagAction;
         if ( action.isEnabled() ) {
             final TreePath[] paths = policyTree.getSelectionPaths();
-            if ( paths != null && paths.length > 1 ) {
-                boolean sameTag = true;
+            boolean sameTag = true;
 
-                final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
-                final String idTag = ((IdentityTagable) node.asAssertion()).getIdentityTag();
-                final List<IdentityTagable> list = new ArrayList<IdentityTagable>();
-                for ( AssertionTreeNode assertionTreeNode : assertionTreeNodes ) {
-                    Assertion assertion = assertionTreeNode.asAssertion();
-                    if ( assertion instanceof IdentityTagable ) {
-                        IdentityTagable it = (IdentityTagable) assertion;
-                        list.add(it);
-                        sameTag = idTag==null && it.getIdentityTag()==null || (idTag != null && idTag.equalsIgnoreCase(it.getIdentityTag()));
-                    } else {
-                        sameTag = false;
-                    }
-                    if ( !sameTag ) break;
-                }
-
-                if ( sameTag ) {
-                    action = new SelectIdentityTagAction( assertionTreeNodes, list.toArray(new IdentityTagable[list.size()]) );
+            final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+            final String idTag = ((IdentityTagable) assertionTreeNodes[0].asAssertion()).getIdentityTag();
+            final List<IdentityTagable> list = new ArrayList<IdentityTagable>();
+            for ( AssertionTreeNode assertionTreeNode : assertionTreeNodes ) {
+                Assertion assertion = assertionTreeNode.asAssertion();
+                if ( assertion instanceof IdentityTagable ) {
+                    IdentityTagable it = (IdentityTagable) assertion;
+                    list.add(it);
+                    sameTag = idTag==null && it.getIdentityTag()==null || (idTag != null && idTag.equalsIgnoreCase(it.getIdentityTag()));
                 } else {
-                    action.setEnabled( false ); // disable, since we cannot edit all at once
+                    sameTag = false;
+                }
+                if ( !sameTag ) break;
+            }
+
+            if ( sameTag ) {
+                action = new SelectIdentityTagAction( assertionTreeNodes, list.toArray(new IdentityTagable[list.size()]) );
+            } else {
+                action.setEnabled( false ); // disable, since we cannot edit all at once
+            }
+
+        }
+
+        return action;
+    }
+
+    /**
+     * @param isEnabled     Previous enabled action value
+     * @return  A new action fitted based on the node selection.
+     */
+    private AssertionMoveUpAction getMultipleSelectedAssertionMoveUpAction(boolean isEnabled) {
+        final TreePath[] paths = policyTree.getSelectionPaths();
+        final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+        AssertionMoveUpAction action = new AssertionMoveUpAction(null) {
+                @Override
+                protected void performAction() {
+                    nodes = assertionTreeNodes;
+                    super.performAction();
+                    final JTree tree = policyTree;
+                    if (tree != null) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                tree.setSelectionPaths(paths);
+                            }
+                        });
+                    }
+                }
+            };
+
+        action.setEnabled(isEnabled && canEnableAction(null, assertionTreeNodes, action));
+        return action;
+    }
+
+    /**
+     * @param isEnabled     Previous enabled action value
+     * @return  A new action fitted based on the node selection.
+     */
+    private AssertionMoveDownAction getMultipleSelectedAssertionMoveDownAction(boolean isEnabled) {
+        final TreePath[] paths = policyTree.getSelectionPaths();
+        final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+        AssertionMoveDownAction action = new AssertionMoveDownAction(null) {
+            @Override
+            protected void performAction() {
+                nodes = assertionTreeNodes;
+                super.performAction();
+                final JTree tree = policyTree;
+                if (tree != null) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            tree.setSelectionPaths(paths);
+                        }
+                    });
                 }
             }
-        }
+        };
 
-        return action;
-    }
-
-    /**
-     * @param node          Last selected node
-     * @param isEnabled     Previous enabled action value
-     * @return  A new action fitted based on the node selection.
-     */
-    private AssertionMoveUpAction getAssertionMoveUpAction(final AssertionTreeNode node, boolean isEnabled) {
-        final TreePath[] paths = policyTree.getSelectionPaths();
-        final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
-        AssertionMoveUpAction action;
-        if (paths != null && paths.length > 1) {
-            action = new AssertionMoveUpAction(node) {
-                @Override
-                protected void performAction() {
-                    nodes = assertionTreeNodes;
-                    super.performAction();
-                    final JTree tree = policyTree;
-                    if (tree != null) {
-                        SwingUtilities.invokeLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                tree.setSelectionPaths(paths);
-                            }
-                        });
-                    }
-                }
-            };
-        } else {
-            action = new AssertionMoveUpAction(node);
-        }
-        action.setEnabled(isEnabled && canEnableAction(node, assertionTreeNodes, action));
-        return action;
-    }
-
-    /**
-     * @param node          Last selected node
-     * @param isEnabled     Previous enabled action value
-     * @return  A new action fitted based on the node selection.
-     */
-    private AssertionMoveDownAction getAssertionMoveDownAction(final AssertionTreeNode node, boolean isEnabled) {
-        final TreePath[] paths = policyTree.getSelectionPaths();
-        final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
-        AssertionMoveDownAction action;
-        if (paths != null && paths.length > 1) {
-            action = new AssertionMoveDownAction(node) {
-                @Override
-                protected void performAction() {
-                    nodes = assertionTreeNodes;
-                    super.performAction();
-                    final JTree tree = policyTree;
-                    if (tree != null) {
-                        SwingUtilities.invokeLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                tree.setSelectionPaths(paths);
-                            }
-                        });
-                    }
-                }
-            };
-        } else {
-            action = new AssertionMoveDownAction(node);
-        }
-        action.setEnabled(isEnabled && canEnableAction(node, assertionTreeNodes, action));
+        action.setEnabled(isEnabled && canEnableAction(null, assertionTreeNodes, action));
         return action;
     }
 

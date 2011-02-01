@@ -70,11 +70,12 @@ public class DeleteAssertionAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        if (node == null) {
-            throw new IllegalStateException("no node specified");
-        }
+
 
         if (nodes == null) {
+            if (node == null) {
+                throw new IllegalStateException("no node specified");
+            }
             delete(node);
         } else if (nodes.length < 2) {
             delete(nodes[0]);
