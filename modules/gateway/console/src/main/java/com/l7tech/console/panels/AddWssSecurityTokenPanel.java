@@ -189,8 +189,22 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         showPasswordCheckBox.setEnabled(enableSpecifiedSettings);
     }
 
+    private void validateData() throws AssertionPropertiesOkCancelSupport.ValidationException {
+        final Object type = tokenTypeCombo.getSelectedItem();
+        if (SecurityTokenType.WSSC_CONTEXT.equals(type)) {
+            wsscSessionVariableTargetVariablePanel.updateStatus();
+            if (!wsscSessionVariableTargetVariablePanel.isEntryValid())
+                throw new AssertionPropertiesOkCancelSupport.ValidationException(wsscSessionVariableTargetVariablePanel.getErrorMessage());
+        } else if (SecurityTokenType.SAML_ASSERTION.equals(type)) {
+            samlTargetVariablePanel.updateStatus();
+            if (!samlTargetVariablePanel.isEntryValid())
+                throw new AssertionPropertiesOkCancelSupport.ValidationException(samlTargetVariablePanel.getErrorMessage()); 
+        }
+    }
+
     @Override
     protected void doUpdateModel() {
+        validateData();
         SecurityTokenType type = (SecurityTokenType)tokenTypeCombo.getSelectedItem();
         final boolean canIncludePass = type == SecurityTokenType.WSS_USERNAME;
         includePasswordCheckBox.setEnabled(canIncludePass);
