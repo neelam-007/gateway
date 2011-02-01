@@ -660,6 +660,59 @@ public class WssDecoratorTest {
     }
 
     @Test
+    public void testSigningWithSecureConversation2005WithSct() throws Exception {
+        runTest(getSigningWithSecureConversation2005WithSctTestDocument());
+    }
+
+    public TestDocument getSigningWithSecureConversation2005WithSctTestDocument() throws Exception {
+        final Context c = new Context();
+        TestDocument td = new TestDocument(c, null, null, null, null, null, true,
+                                new Element[]{c.productid, c.accountid},
+                                new Element[]{c.body},
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
+        td.req.setSecureConversationSession(new SimpleSecureConversationSession(
+                "urn:layer7_test_sct:00001",
+                TestDocuments.getDotNetSecureConversationSharedSecret(),
+                SoapConstants.WSSC_NAMESPACE2));
+        td.req.setOmitSecurityContextToken(false);
+        return td;
+    }
+
+    @Test
+    public void testSigningWithSecureConversation2005WithoutSct() throws Exception {
+        runTest(getSigningWithSecureConversation2005WithoutSctTestDocument());
+    }
+
+    public TestDocument getSigningWithSecureConversation2005WithoutSctTestDocument() throws Exception {
+        final Context c = new Context();
+        TestDocument td = new TestDocument(c, null, null, null, null, null, true,
+                                new Element[]{c.productid, c.accountid},
+                                new Element[]{c.body},
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
+        td.req.setSecureConversationSession(new SimpleSecureConversationSession(
+                "urn:layer7_test_sct:00001",
+                TestDocuments.getDotNetSecureConversationSharedSecret(),
+                SoapConstants.WSSC_NAMESPACE2));
+        td.req.setOmitSecurityContextToken(true);
+        return td;
+    }
+
+    @Test
+    public void testSigningWithSecureConversation2004WithoutSct() throws Exception {
+        runTest(getSigningWithSecureConversation2004WithoutSctTestDocument());
+    }
+
+    public TestDocument getSigningWithSecureConversation2004WithoutSctTestDocument() throws Exception {
+        final Context c = new Context();
+        TestDocument td = new TestDocument(c, null, null, null, null, null, true,
+                                new Element[]{c.productid, c.accountid},
+                                new Element[]{c.body},
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
+        td.req.setOmitSecurityContextToken(true);
+        return td;
+    }
+
+    @Test
 	public void testSignedSamlHolderOfKeyRequest() throws Exception {
         runTest(getSignedSamlHolderOfKeyRequestTestDocument(1));
     }

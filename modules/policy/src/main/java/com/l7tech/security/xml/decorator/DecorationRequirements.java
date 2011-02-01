@@ -225,6 +225,20 @@ public class DecorationRequirements {
     }
 
     /**
+     * @return if true, decorator will avoid including an SCT in the message; instead, derived keys dervied from a wccs session will use a direct URI reference to the session ID. 
+     */
+    public boolean isOmitSecurityContextToken() {
+        return omitSecurityContextToken;
+    }
+
+    /**
+     * @param omitSecurityContextToken  true to avoid including an SCT in the message; instead, derived keys derived from a wssc session will use a direct URI reference to the session ID.
+     */
+    public void setOmitSecurityContextToken(boolean omitSecurityContextToken) {
+        this.omitSecurityContextToken = omitSecurityContextToken;
+    }
+
+    /**
      * If this is set along with EncryptedKey, then signing and encryption will use a KeyInfo or KeyIdentifier that uses
      * the specified reference information.
      * <p/>
@@ -865,6 +879,7 @@ public class DecorationRequirements {
     private boolean signUsernameToken = false;
     private SamlAssertion senderSamlToken = null;
     private SecureConversationSession secureConversationSession = null;
+    private boolean omitSecurityContextToken = false;
     private boolean includeTimestamp = true;
     private boolean signTimestamp;
     private Map<Element, ElementEncryptionConfig> elementsToEncrypt = new LinkedHashMap<Element, ElementEncryptionConfig>();

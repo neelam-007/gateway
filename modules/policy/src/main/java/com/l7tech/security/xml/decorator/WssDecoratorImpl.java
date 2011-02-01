@@ -1008,18 +1008,19 @@ public class WssDecoratorImpl implements WssDecorator {
         final KeyInfoDetails details;
         final int length;
 
-        if ( c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE) ) {
+        final boolean using2004ns = c.nsf.getWsscNs().equals(SoapConstants.WSSC_NAMESPACE);
+        length = using2004ns ? OLD_DERIVED_KEY_LENGTH : NEW_DERIVED_KEY_LENGTH;
+
+        if (using2004ns || c.dreq.isOmitSecurityContextToken()) {
             final String derivationSourceUri = session.getId();
             final String derivationSourceValueType = SoapConstants.VALUETYPE_SECURECONV;
             details = KeyInfoDetails.makeUriReferenceRaw(derivationSourceUri, derivationSourceValueType);
-            length = OLD_DERIVED_KEY_LENGTH;
         } else {
             final String derivationSourceUri = getOrCreateWsuId(c, securityContextToken, "SecurityContextToken");
             final String derivationSourceValueType = c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2) ?
                     SoapConstants.VALUETYPE_SECURECONV2 :
                     SoapConstants.VALUETYPE_SECURECONV3;
             details = KeyInfoDetails.makeUriReference(derivationSourceUri, derivationSourceValueType);
-            length =  NEW_DERIVED_KEY_LENGTH;
         }
 
         return addDerivedKeyToken(c,
@@ -1131,9 +1132,12 @@ public class WssDecoratorImpl implements WssDecorator {
             }
         }
 
+        // Add new SCT
         Element sct = DomUtils.createAndAppendElementNS(securityHeader, SoapConstants.SECURITY_CONTEXT_TOK_EL_NAME, wsscNs, "wssc");
         Element identifier = DomUtils.createAndAppendElementNS(sct, "Identifier", wsscNs, "wssc");
         identifier.appendChild(DomUtils.createTextNode(identifier, id));
+        if (c.dreq.isOmitSecurityContextToken())
+            sct.getParentNode().removeChild(sct);
         return sct;
     }
 

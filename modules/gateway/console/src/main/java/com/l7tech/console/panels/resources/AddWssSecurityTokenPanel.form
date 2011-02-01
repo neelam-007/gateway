@@ -208,7 +208,7 @@
               </vspacer>
             </children>
           </grid>
-          <grid id="d53a7" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="d53a7" layout-manager="GridLayoutManager" row-count="6" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="5" left="5" bottom="5" right="5"/>
             <constraints>
               <tabbedpane title="Secure Conversation"/>
@@ -226,12 +226,12 @@
               </component>
               <vspacer id="5e3d9">
                 <constraints>
-                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                 </constraints>
               </vspacer>
               <component id="e3f95" class="javax.swing.JLabel">
                 <constraints>
-                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text value="&lt;html&gt;When a WS-SecureConversation session is specified, it will take precedence over other ways&lt;br/&gt;of signing or encrypting when the security requirements are next applied to the target message."/>
@@ -239,7 +239,7 @@
               </component>
               <vspacer id="47611">
                 <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
                     <minimum-size width="-1" height="8"/>
                   </grid>
                 </constraints>
@@ -253,6 +253,23 @@
                 <border type="none"/>
                 <children/>
               </grid>
+              <component id="6668" class="javax.swing.JCheckBox" binding="includeSecurityContextTokenInMessageCheckBox" default-binding="true">
+                <constraints>
+                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <selected value="true"/>
+                  <text value="Include SecurityConte&amp;xtToken in message"/>
+                  <toolTipText value="Uncheck to avoid adding a SecurityContextToken to the message and to always derive keys using session ID URI references."/>
+                </properties>
+              </component>
+              <vspacer id="a1df6">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false">
+                    <minimum-size width="-1" height="8"/>
+                  </grid>
+                </constraints>
+              </vspacer>
             </children>
           </grid>
           <grid id="daec8" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

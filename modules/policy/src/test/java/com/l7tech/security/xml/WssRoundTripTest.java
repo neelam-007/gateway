@@ -304,6 +304,27 @@ public class WssRoundTripTest {
     }
 
     @Test
+    public void testSigningWithSecureConversation2005WithSct() throws Exception {
+        runRoundTripTest(new NamedTestDocument("testSigningWithSecureConversation2005WithSct",
+                wssDecoratorTest.getSigningWithSecureConversation2005WithSctTestDocument()),
+                false);
+    }
+
+    @Test
+    public void testSigningWithSecureConversation2004WithoutSct() throws Exception {
+        runRoundTripTest(new NamedTestDocument("testSigningWithSecureConversation2004WithoutSct",
+                wssDecoratorTest.getSigningWithSecureConversation2004WithoutSctTestDocument()),
+                false);
+    }
+
+    @Test
+    public void testSigningWithSecureConversation2005WithoutSct() throws Exception {
+        runRoundTripTest(new NamedTestDocument("testSigningWithSecureConversation2005WithoutSct",
+                wssDecoratorTest.getSigningWithSecureConversation2005WithoutSctTestDocument()),
+                false);
+    }
+
+    @Test
     public void testSigningAndEncryptionWithSecureConversationWss11() throws Exception {
         NamedTestDocument ntd = new NamedTestDocument("SigningAndEncryptionWithSecureConversation",
                                                wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument());
@@ -652,6 +673,31 @@ public class WssRoundTripTest {
             }
         }
 
+        if (td.req.isOmitSecurityContextToken()) {
+            // Ensure no SCT is physically present in message (virtual XmlSecurityToken is OK)
+            for (String wsscns : SoapConstants.WSSC_NAMESPACE_ARRAY) {
+                assertTrue("No SCT shall be included if omitSecurityContextToken is asserted",
+                        incomingSoapDocument.getElementsByTagNameNS(wsscns, "SecurityContextToken").getLength() == 0);
+            }
+
+            if (td.req.getSecureConversationSession() != null) {
+                // Ensure virtual SCT is present
+                boolean sawVirtualSct = false;
+                for (XmlSecurityToken token : r.getXmlSecurityTokens()) {
+                    if (token instanceof SecurityContextToken) {
+                        SecurityContextToken sct = (SecurityContextToken) token;
+                        Element elm = sct.asElement();
+                        assertNull("A virtual SCT must not be present in the document", elm.getParentNode());
+                        assertTrue("A virtual SCT should use a marker NS", elm.getNamespaceURI().contains("virtual"));
+                        sawVirtualSct = true;
+                    }
+                }
+
+                assertTrue("A virtual SCT must be present when a message was decorated with WSSC but with omitSecurityContextToken",
+                        sawVirtualSct);
+            }
+        }
+
         if (td.req.isEncryptSignature()) {
             Map<Node,Boolean> encryptedSigs = new HashMap<Node, Boolean>();
             for (ParsedElement enc : encrypted) {
@@ -764,7 +810,7 @@ public class WssRoundTripTest {
             // Martha can currently only produce messages with a single timestamp-covering signature in the default sec header
             assertTrue(signers.length == 1);
             SigningSecurityToken signer = timestampSigner = signers[0];
-            assertTrue(signer.asElement().getOwnerDocument() == rts.asElement().getOwnerDocument());
+            assertTrue(signer.asElement() == null || signer.asElement().getOwnerDocument() == rts.asElement().getOwnerDocument());
             assertTrue(signer.isPossessionProved());
 
             if (signer instanceof SamlSecurityToken) {
@@ -776,7 +822,7 @@ public class WssRoundTripTest {
             } else if (signer instanceof SecurityContextToken) {
                 SecurityContextToken sct = (SecurityContextToken)signer;
                 assertTrue("SecurityContextToken was supposed to have proven possession", sct.isPossessionProved());
-                assertEquals("WS-Security session ID was supposed to match", sct.getContextIdentifier(), WssDecoratorTest.TEST_WSSC_SESSION_ID);
+                assertEquals("WS-Security session ID was supposed to match", sct.getContextIdentifier(), td.req.getSecureConversationSession().getId());
                 assertTrue(Arrays.equals(sct.getSecurityContext().getSharedSecret(),
                                          td.req.getSecureConversationSession().getSecretKey()));
             } else if (signer instanceof EncryptedKey) {

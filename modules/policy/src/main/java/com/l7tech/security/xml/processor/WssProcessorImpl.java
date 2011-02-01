@@ -1270,7 +1270,11 @@ public class WssProcessorImpl implements WssProcessor {
                 // The SecurityContextToken may not be in this message, try lookup by ID
                 if (tok == null && refEl.getAttribute("ValueType").endsWith("/sct") ) {
                     SecurityContext sctx = securityContextFinder.getSecurityContext(ref);
-                    if (sctx != null) tok = new SecurityContextTokenImpl(sctx, null, ref);
+                    if (sctx != null) {
+                        Element elm = refEl.getOwnerDocument().createElementNS("http://layer7tech.com/ns/wssc/SCT/virtual", "SecurityContextToken");
+                        tok = new SecurityContextTokenImpl(sctx, elm, ref);
+                        securityTokens.add(tok);
+                    }
                 }
 
                 derivationSource = tok;

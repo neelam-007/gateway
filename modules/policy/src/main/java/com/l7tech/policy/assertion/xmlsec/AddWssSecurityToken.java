@@ -47,6 +47,7 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
     private String username;
     private String password;
     private String wsscSessionVariable;
+    private boolean omitSecurityContextToken = false;
     private String samlAssertionVariable;
 
     public AddWssSecurityToken() {
@@ -216,6 +217,14 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements W
 
     public void setWsscSessionVariable(String wsscSessionVariable) {
         this.wsscSessionVariable = wsscSessionVariable;
+    }
+
+    public boolean isOmitSecurityContextToken() {
+        return omitSecurityContextToken;
+    }
+
+    public void setOmitSecurityContextToken(boolean omitSecurityContextToken) {
+        this.omitSecurityContextToken = omitSecurityContextToken;
     }
 
     public String getSamlAssertionVariable() {
