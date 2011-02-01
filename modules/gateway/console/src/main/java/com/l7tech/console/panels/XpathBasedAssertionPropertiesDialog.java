@@ -91,6 +91,10 @@ import java.util.logging.Logger;
  */
 public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEditorSupport<XpathBasedAssertion> {
     static final Logger log = Logger.getLogger(XpathBasedAssertionPropertiesDialog.class.getName());
+
+    public static final boolean SHOW_WHOLE_ELEMENT_ENCRYPTION_CONFIG =
+            SyspropUtil.getBoolean("com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog.showWholeElementEncryption", false);
+
     private JPanel mainPanel;
     private JPanel messageViewerPanel;
     private JPanel messageViewerToolbarPanel;
@@ -850,6 +854,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             encryptionAlgorithmsPanel.setVisible(false);
             encryptionConfigPanel.setVisible(false);
             return;
+        }
+
+        if (!SHOW_WHOLE_ELEMENT_ENCRYPTION_CONFIG) {
+            encryptionConfigPanel.setVisible(false);
         }
 
         if (assertion instanceof WssEncryptElement) {
