@@ -256,35 +256,61 @@ public class SamlAssertionV1 extends SamlAssertion {
     private Element getSubjectConfirmationEncryptedKeyElement(boolean failIfNotPresent) throws InvalidDocumentFormatException {
         Element samlElement = asElement();
         String samlNs = samlElement.getNamespaceURI();
-        Element attributeStatement = XmlUtil.findFirstChildElementByName(samlElement, samlNs, "AttributeStatement");
-        if(attributeStatement == null) {
+        Element attrStatement = XmlUtil.findFirstChildElementByName(samlElement, samlNs, "AttributeStatement");
+        Element authnStatement = XmlUtil.findFirstChildElementByName(samlElement, samlNs, "AuthenticationStatement");
+        Element authzStatement = XmlUtil.findFirstChildElementByName(samlElement, samlNs, "AuthorizationDecisionStatement");
+
+        if (attrStatement == null && authnStatement == null && authzStatement == null) {
             if (failIfNotPresent)
-                throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain an AttributeStatement");
+                throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML 1.1 assertion, but the assertion does not contain an AttributeStatement, AuthenticationStatement, or AuthorizationDecisionStatement");
             return null;
         }
 
-        Element subject = XmlUtil.findFirstChildElementByName(attributeStatement, samlNs, "Subject");
+        int numStatements = 0;
+        Element statement = null;
+        if (attrStatement != null) {
+            statement = attrStatement;
+            numStatements++;
+        }
+        if (authnStatement != null) {
+            statement = authnStatement;
+            numStatements++;
+        }
+        if (authzStatement != null) {
+            statement = authzStatement;
+            numStatements++;
+        }
+        assert numStatements > 0;
+        //noinspection ConstantConditions
+        assert statement != null;
+        if (numStatements > 1) {
+            if (failIfNotPresent)
+                throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML 1.1 assertion, but the assertion contains more than one AttributeStatement, AuthenticationStatement, or AuthorizationDecisionStatement");
+            return null;
+        }
+
+        Element subject = XmlUtil.findOnlyOneChildElementByName(statement, samlNs, "Subject");
         if(subject == null) {
             if (failIfNotPresent)
                 throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain a Subject");
             return null;
         }
 
-        Element subjectConfirmation = XmlUtil.findFirstChildElementByName(subject, samlNs, "SubjectConfirmation");
+        Element subjectConfirmation = XmlUtil.findOnlyOneChildElementByName(subject, samlNs, "SubjectConfirmation");
         if(subjectConfirmation == null) {
             if (failIfNotPresent)
-                throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain an EncryptedKey");
+                throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain a SubjectConfirmation");
             return null;
         }
 
-        Element keyInfo = XmlUtil.findFirstChildElementByName(subjectConfirmation, SoapConstants.DIGSIG_URI, "KeyInfo");
+        Element keyInfo = XmlUtil.findOnlyOneChildElementByName(subjectConfirmation, SoapConstants.DIGSIG_URI, "KeyInfo");
         if(keyInfo == null) {
             if (failIfNotPresent)
                 throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain a KeyInfo");
             return null;
         }
 
-        Element encryptedKeyElement = XmlUtil.findFirstChildElementByName(keyInfo, SoapConstants.XMLENC_NS, "EncryptedKey");
+        Element encryptedKeyElement = XmlUtil.findOnlyOneChildElementByName(keyInfo, SoapConstants.XMLENC_NS, "EncryptedKey");
         if(encryptedKeyElement == null) {
             if (failIfNotPresent)
                 throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to a SAML assertion, but the assertion does not contain an EncryptedKey");

@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.security.cert.TestCertificateGenerator;
+import com.l7tech.security.cert.TestKeysLoader;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
@@ -1353,7 +1354,7 @@ public class WssDecoratorTest {
         String samlString = baos.toString();
 
         // Parse extracted SAML assertion and unwrap secret key using recipient private key
-        SignerInfo[] privateKeys = WssProcessorTest.loadPrivateKeys(TestDocuments.DIR + "wcf_unum/", ".p12", "password".toCharArray(),
+        SignerInfo[] privateKeys = TestKeysLoader.loadPrivateKeys(TestDocuments.DIR + "wcf_unum/", ".p12", "password".toCharArray(),
                 "bookstoreservice_com", "bookstorests_com");
         final SimpleSecurityTokenResolver resolver = new SimpleSecurityTokenResolver(null, privateKeys);
         SamlAssertion samlAssertion = SamlAssertion.newInstance(XmlUtil.stringToDocument(samlString).getDocumentElement(), resolver);
