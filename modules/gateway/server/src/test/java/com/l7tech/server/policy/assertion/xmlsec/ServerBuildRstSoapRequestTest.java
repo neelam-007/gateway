@@ -105,14 +105,17 @@ public class ServerBuildRstSoapRequestTest {
         final Element entropyElement = XmlUtil.findExactlyOneChildElementByName( rstElement, trustNs, "Entropy" );
         final Element keySizeElement = XmlUtil.findExactlyOneChildElementByName( rstElement, trustNs, "KeySize" );
         final Element lifetimeElement = XmlUtil.findExactlyOneChildElementByName( rstElement, trustNs, "Lifetime" );
+        final Element createdElement = XmlUtil.findExactlyOneChildElementByName( lifetimeElement, SoapConstants.WSU_NAMESPACE, "Created" );
+        final Element expirationElement = XmlUtil.findExactlyOneChildElementByName( lifetimeElement, SoapConstants.WSU_NAMESPACE, "Expires" );
 
         assertEquals( "Soap version", soapVersion.getNamespaceUri(), rstDoc.getDocumentElement().getNamespaceURI() );
         assertEquals( "Applies-to address", "http://appliesto/", XmlUtil.getTextValue(XmlUtil.findOnlyOneChildElement(XmlUtil.findOnlyOneChildElement( appliesToElement ))));
         assertEquals( "Issuer address", "http://issuer/", XmlUtil.getTextValue(XmlUtil.findOnlyOneChildElement( issuerElement )));
         assertFalse( "Empty entropy", XmlUtil.getTextValue(XmlUtil.findOnlyOneChildElement( entropyElement )).isEmpty() );
         assertEquals( "Key size", "256", XmlUtil.getTextValue(keySizeElement));
-        assertTrue( "Lifetime future", System.currentTimeMillis() < ISO8601Date.parse(XmlUtil.getTextValue(XmlUtil.findOnlyOneChildElement(lifetimeElement))).getTime() );
-        assertTrue( "Lifetime duration", System.currentTimeMillis()+ TimeUnit.MINUTES.toMillis(5) > ISO8601Date.parse(XmlUtil.getTextValue(XmlUtil.findOnlyOneChildElement(lifetimeElement))).getTime() );
+        assertTrue( "Creation time", System.currentTimeMillis() > ISO8601Date.parse(XmlUtil.getTextValue(createdElement)).getTime() );
+        assertTrue( "Expiration time", System.currentTimeMillis() < ISO8601Date.parse(XmlUtil.getTextValue(expirationElement)).getTime() );
+        assertTrue( "Lifetime duration", System.currentTimeMillis()+ TimeUnit.MINUTES.toMillis(5) > ISO8601Date.parse(XmlUtil.getTextValue(expirationElement)).getTime() );
 
     }
 

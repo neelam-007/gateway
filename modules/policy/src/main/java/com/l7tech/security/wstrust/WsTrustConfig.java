@@ -191,8 +191,11 @@ public abstract class WsTrustConfig {
         // Add Lifetime
         if ( lifetime > 30000 ) {
             final Element lifetimeElement = DomUtils.createAndAppendElementNS(rst, "Lifetime", getWstNs(), "wst");
+            final Element createdElement = DomUtils.createAndAppendElementNS(lifetimeElement, "Created", SoapConstants.WSU_NAMESPACE, "wsu");
             final Element expiresElement = DomUtils.createAndAppendElementNS(lifetimeElement, "Expires", SoapConstants.WSU_NAMESPACE, "wsu");
-            DomUtils.setTextContent( expiresElement, ISO8601Date.format(new Date(System.currentTimeMillis()+lifetime)));
+            final long now = System.currentTimeMillis();
+            DomUtils.setTextContent( createdElement, ISO8601Date.format(new Date(now)));
+            DomUtils.setTextContent( expiresElement, ISO8601Date.format(new Date(now + lifetime)));
         }
 
         if (targetTokenOrStr != null) {
