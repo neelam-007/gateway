@@ -78,6 +78,7 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
         });
 
         serviceUrlTextField.getDocument().addDocumentListener(validationListener);
+        keySizeTextField.getDocument().addDocumentListener(validationListener);
 
         final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.#########"));
         numberFormatter.setValueClass(Double.class);
