@@ -1011,15 +1011,20 @@ public class WssDecoratorImpl implements WssDecorator {
         final boolean using2004ns = c.nsf.getWsscNs().equals(SoapConstants.WSSC_NAMESPACE);
         length = using2004ns ? OLD_DERIVED_KEY_LENGTH : NEW_DERIVED_KEY_LENGTH;
 
+        final String derivationSourceValueType;
+        if (using2004ns) {
+            derivationSourceValueType = SoapConstants.VALUETYPE_SECURECONV;
+        } else if (c.nsf.getWsscNs().equals(SoapConstants.WSSC_NAMESPACE2)) {
+            derivationSourceValueType = SoapConstants.VALUETYPE_SECURECONV2;
+        } else {
+            derivationSourceValueType = SoapConstants.VALUETYPE_SECURECONV3;
+        }
+
         if (using2004ns || c.dreq.isOmitSecurityContextToken()) {
             final String derivationSourceUri = session.getId();
-            final String derivationSourceValueType = SoapConstants.VALUETYPE_SECURECONV;
             details = KeyInfoDetails.makeUriReferenceRaw(derivationSourceUri, derivationSourceValueType);
         } else {
             final String derivationSourceUri = getOrCreateWsuId(c, securityContextToken, "SecurityContextToken");
-            final String derivationSourceValueType = c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2) ?
-                    SoapConstants.VALUETYPE_SECURECONV2 :
-                    SoapConstants.VALUETYPE_SECURECONV3;
             details = KeyInfoDetails.makeUriReference(derivationSourceUri, derivationSourceValueType);
         }
 
