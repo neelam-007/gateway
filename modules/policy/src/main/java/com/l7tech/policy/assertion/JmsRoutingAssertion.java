@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.policy.assertion;
 
 import com.l7tech.objectmodel.EntityHeader;
@@ -13,6 +9,9 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -135,6 +134,30 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
         this.responseTarget = responseTarget;
     }
 
+    public JmsDeliveryMode getRequestDeliveryMode() {
+        return requestDeliveryMode;
+    }
+
+    public void setRequestDeliveryMode( final JmsDeliveryMode requestDeliveryMode ) {
+        this.requestDeliveryMode = requestDeliveryMode;
+    }
+
+    public String getRequestPriority() {
+        return requestPriority;
+    }
+
+    public void setRequestPriority( final String requestPriority ) {
+        this.requestPriority = requestPriority;
+    }
+
+    public String getRequestTimeToLive() {
+        return requestTimeToLive;
+    }
+
+    public void setRequestTimeToLive( final String requestTimeToLive ) {
+        this.requestTimeToLive = requestTimeToLive;
+    }
+
     public long getResponseSize(){
         return responseSize;
     }
@@ -196,7 +219,11 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
 
         meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.JmsRoutingAssertionPropertiesAction");
         meta.put(PROPERTIES_ACTION_NAME, "JMS Routing Properties");
-        
+
+        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+            new Java5EnumTypeMapping(JmsDeliveryMode.class, "jmsDeliveryMode")
+        )));
+
         return meta;
     }
 
@@ -212,9 +239,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
                 vars.addAll(Arrays.asList(Syntax.getReferencedNames(dynamicVars)));
         }
 
-        if (responseTimeout != null) {
-            vars.addAll(Arrays.asList(Syntax.getReferencedNames(responseTimeout)));
-        }
+        vars.addAll(Arrays.asList(Syntax.getReferencedNames(requestPriority, requestTimeToLive, responseTimeout)));
         vars.addAll(Arrays.asList(requestTarget.getVariablesUsed()));
         return vars.toArray(new String[vars.size()]);
     }
@@ -242,12 +267,15 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
 
     private Long endpointOid = null;
     private String endpointName = null;
-    private String responseTimeout = null;
     private JmsMessagePropertyRuleSet requestJmsMessagePropertyRuleSet;
     private JmsMessagePropertyRuleSet responseJmsMessagePropertyRuleSet;
     private JmsDynamicProperties dynamicJmsRoutingProperties;
 
     private MessageTargetableSupport requestTarget = new MessageTargetableSupport(TargetMessageType.REQUEST, false);
     private MessageTargetableSupport responseTarget = new MessageTargetableSupport(TargetMessageType.RESPONSE, true);
-    protected long responseSize = -1;
+    private JmsDeliveryMode requestDeliveryMode;
+    private String requestPriority;
+    private String requestTimeToLive;
+    private String responseTimeout = null;
+    private long responseSize = -1;
 }

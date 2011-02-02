@@ -19,7 +19,6 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -27,6 +26,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
@@ -102,7 +102,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         private boolean undefined = false;
 
         private final MessageTargetableSupport target;
-        public RequestSourceComboBoxItem(MessageTargetableSupport target) {
+        private RequestSourceComboBoxItem(MessageTargetableSupport target) {
             this.target = target;
         }
 
@@ -166,6 +166,14 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JPanel responseTargetVariablePanel;
     private JTextField responseLimitTextField;
     private JCheckBox setResponseLimitCheckBox;
+    private JCheckBox useRequestSettingsCheckBox;
+    private JLabel requestDeliveryModeLabel;
+    private JComboBox requestDeliveryModeComboBox;
+    private JLabel requestPriorityLabel;
+    private JTextField requestPriorityTextField;
+    private JLabel requestTimeToLiveLabel;
+    private JTextField requestTimeToLiveTextField;
+    private JLabel requestTimeToLiveMillisLabel;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
@@ -253,6 +261,14 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         inputValidator.constrainTextFieldToBeNonEmpty( "Queue Connection Factory Name", dynamicQCF, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "Destination Queue Name", dynamicDestQueueName, null );
         inputValidator.constrainTextFieldToBeNonEmpty( "Wait for Reply on specified queue", dynamicReplyToName, null );
+        final InputValidator.ValidationRule priorityRule =
+                inputValidator.buildTextFieldNumberRangeValidationRule( "Priority", requestPriorityTextField, 0, 9, false );
+        inputValidator.constrainTextField( requestPriorityTextField,
+                buildTextFieldContextVariableValidationRule( "Priority", requestPriorityTextField, priorityRule ) );
+        final InputValidator.ValidationRule ttlRule =
+                inputValidator.buildTextFieldNumberRangeValidationRule( "Time To Live", requestTimeToLiveTextField, 0, Long.MAX_VALUE, false );
+        inputValidator.constrainTextField( requestTimeToLiveTextField,
+                buildTextFieldContextVariableValidationRule( "Time To Live", requestPriorityTextField, ttlRule ) );
         inputValidator.constrainTextField(jmsResponseTimeout, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
@@ -288,6 +304,13 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 return null;
             }
         });
+
+        requestDeliveryModeComboBox.setModel( new DefaultComboBoxModel( JmsDeliveryMode.values() ) );
+        useRequestSettingsCheckBox.addActionListener( enableListener );
+        Utilities.enableGrayOnDisabled(requestDeliveryModeLabel);
+        Utilities.enableGrayOnDisabled(requestPriorityLabel);
+        Utilities.enableGrayOnDisabled(requestTimeToLiveLabel);
+        Utilities.enableGrayOnDisabled(requestTimeToLiveMillisLabel);
 
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
@@ -408,6 +431,16 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 assertion.setRequestJmsMessagePropertyRuleSet(requestMsgPropsPanel.getData());
                 assertion.setRequestTarget(((RequestSourceComboBoxItem)requestTargetComboBox.getSelectedItem()).getTarget());
 
+                if ( useRequestSettingsCheckBox.isSelected() ) {
+                    assertion.setRequestDeliveryMode( (JmsDeliveryMode)requestDeliveryModeComboBox.getSelectedItem() );
+                    assertion.setRequestPriority( requestPriorityTextField.getText() );
+                    assertion.setRequestTimeToLive( requestTimeToLiveTextField.getText() );
+                } else {
+                    assertion.setRequestDeliveryMode( null );
+                    assertion.setRequestPriority( null );
+                    assertion.setRequestTimeToLive( null );
+                }
+
                 assertion.setResponseJmsMessagePropertyRuleSet(responseMsgPropsPanel.getData());
                 if (saveAsContextVariableRadioButton.isSelected()) {
                     assertion.setResponseTarget(new MessageTargetableSupport(responseTargetVariable.getVariable(), true));
@@ -440,13 +473,20 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         populateReqMsgSrcComboBox();
         initResponseTarget();
-
-        enableOrDisableComponents();
     }
 
     private void enableOrDisableComponents() {
         responseTargetVariable.setEnabled(saveAsContextVariableRadioButton.isSelected());
         responseLimitTextField.setEnabled(setResponseLimitCheckBox.isSelected());
+
+        boolean enableQosComponents = useRequestSettingsCheckBox.isSelected();
+        requestDeliveryModeLabel.setEnabled( enableQosComponents );
+        requestDeliveryModeComboBox.setEnabled( enableQosComponents );
+        requestPriorityLabel.setEnabled( enableQosComponents );
+        requestPriorityTextField.setEnabled( enableQosComponents );
+        requestTimeToLiveLabel.setEnabled( enableQosComponents );
+        requestTimeToLiveTextField.setEnabled( enableQosComponents );
+        requestTimeToLiveMillisLabel.setEnabled( enableQosComponents );
     }
 
     private void populateReqMsgSrcComboBox() {
@@ -651,9 +691,20 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
 
         requestMsgPropsPanel.setData(assertion.getRequestJmsMessagePropertyRuleSet());
+        if ( assertion.getRequestDeliveryMode() != null &&
+             assertion.getRequestPriority() != null &&
+             assertion.getRequestTimeToLive() != null ) {
+            useRequestSettingsCheckBox.setSelected( true );
+            requestDeliveryModeComboBox.setSelectedItem( assertion.getRequestDeliveryMode() );
+            requestPriorityTextField.setText( assertion.getRequestPriority() );
+            requestTimeToLiveTextField.setText( assertion.getRequestTimeToLive() );
+        }
+
         responseMsgPropsPanel.setData(assertion.getResponseJmsMessagePropertyRuleSet());
         jmsResponseTimeout.setText(assertion.getResponseTimeout()==null ? "":assertion.getResponseTimeout());
         jmsResponseTimeout.setCaretPosition( 0 );
+
+        enableOrDisableComponents();
     }
 
     /**
@@ -680,6 +731,34 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     public void setPolicyPosition( final PolicyPosition policyPosition ) {
         super.setPolicyPosition( policyPosition );
         populateReqMsgSrcComboBox();
+    }
+
+    public InputValidator.ValidationRule buildTextFieldContextVariableValidationRule( final String fieldName,
+                                                                           final JTextComponent comp,
+                                                                           final InputValidator.ValidationRule nonVariableAdditionalConstraints ) {
+        if (fieldName == null) throw new IllegalArgumentException("fieldName is required");
+        if (comp == null) throw new IllegalArgumentException("comp is required");
+
+        final String mess = "The " + fieldName + " field contains an invalid variable reference.";
+        return new InputValidator.ComponentValidationRule(comp) {
+            @Override
+            public String getValidationError() {
+                if ( getComponent().isEnabled() ) {
+                    final String val = comp.getText();
+                    if ( val!=null && !val.isEmpty() ) {
+                        try {
+                            final String[] names = Syntax.getReferencedNames( val );
+                            if ( names.length > 0 ) {
+                                return null; // don't run chained validators
+                            }
+                        } catch ( IllegalArgumentException e ) {
+                            return mess;
+                        }
+                    }
+                }
+                return nonVariableAdditionalConstraints.getValidationError();
+            }
+        };
     }
 
     /**

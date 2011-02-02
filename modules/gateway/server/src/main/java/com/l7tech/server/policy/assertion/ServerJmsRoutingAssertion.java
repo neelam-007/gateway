@@ -340,16 +340,25 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                 auditor.logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_ROUTED);
 
+                final Map<String,Object> variables = context.getVariableMap( assertion.getVariablesUsed(), auditor );
                 MessageProducer jmsProducer = null;
                 try {
                     jmsProducer = JmsUtil.createMessageProducer( jmsSession, jmsOutboundDestination );
+
+                    final JmsDeliveryMode deliveryMode = assertion.getRequestDeliveryMode();
+                    final Integer priority = expandVariableAsInt( assertion.getRequestPriority(), "priority", 0, 9, variables );
+                    final Long timeToLive = expandVariableAsLong( assertion.getRequestTimeToLive(), "time to live", 0, Long.MAX_VALUE, variables );
 
                     context.routingStarted();
 
                     if ( logger.isLoggable( Level.FINE ))
                         logger.fine("Sending JMS outbound message");
 
-                    jmsProducer.send( jmsOutboundRequest );
+                    if ( deliveryMode != null && priority != null && timeToLive != null ) {
+                        jmsProducer.send( jmsOutboundRequest, deliveryMode.getValue(), priority, timeToLive );
+                    } else {
+                        jmsProducer.send( jmsOutboundRequest );
+                    }
                     messageSent = true; // no retries once sent
 
                     if ( logger.isLoggable( Level.FINE ))
@@ -371,18 +380,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         timeout = serverConfig.getIntProperty(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT, emergencyTimeoutDefault);
                     }
                     else  {
-                        try {
-                            timeout = Integer.parseInt(timeoutStr);
-                            if (timeout <= 0){
-                                timeout = serverConfig.getIntProperty(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT,emergencyTimeoutDefault);
-                                logger.info("Using server default value (" + timeout + ") for JMS response timeout.");
-                            }
-                        } catch (NumberFormatException e) {
-                            // do nothing 
-                        }
-
                         // try resolving context var
-                        timeoutStr = ExpandVariables.process(timeoutStr,context.getVariableMap( assertion.getVariablesUsed(), auditor),auditor);
+                        timeoutStr = ExpandVariables.process(timeoutStr,variables,auditor);
                         try {
                             timeout = Integer.parseInt(timeoutStr);
                             if (timeout <= 0){
@@ -390,7 +389,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                                 logger.info("Using server default value (" + timeout + ") for JMS response timeout.");
                             }
                         } catch (NumberFormatException e) {
-
                             timeout = emergencyTimeoutDefault;
                             logger.warning("Using default value (" + emergencyTimeoutDefault + ") for undefined cluster property: " + serverConfig.getClusterPropertyName(ServerConfig.PARAM_JMS_RESPONSE_TIMEOUT));
                         }
@@ -424,7 +422,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                     }
 
-                    long maxBytes = 0;
+                    long maxBytes;
                     if (assertion.getResponseSize() <0){
                         maxBytes = serverConfig.getLongProperty(PARAM_JMS_MESSAGE_MAX_BYTES, 2621440);
                     }
@@ -498,6 +496,52 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     jmsInboundDestinationHolder[0] = null;
                 }
             }
+        }
+
+        private Integer expandVariableAsInt( final String expressionValue,
+                                             final String description,
+                                             final int min,
+                                             final int max,
+                                             final Map<String, Object> variables ) {
+            final Integer value;
+
+            if ( expressionValue != null ) {
+                final String textValue = ExpandVariables.process( expressionValue, variables, auditor).trim();
+
+                if ( ValidationUtils.isValidInteger( textValue, false, min, max ) ) {
+                    value = Integer.parseInt( textValue );
+                } else {
+                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CONFIGURATION_ERROR, description + " invalid: " + textValue);
+                    throw new AssertionStatusException(AssertionStatus.FAILED);
+                }
+            } else {
+                value = null;
+            }
+
+            return value;
+        }
+
+        private Long expandVariableAsLong( final String expressionValue,
+                                           final String description,
+                                           final long min,
+                                           final long max,
+                                           final Map<String, Object> variables ) {
+            final Long value;
+
+            if ( expressionValue != null ) {
+                final String textValue = ExpandVariables.process( expressionValue, variables, auditor).trim();
+
+                if ( ValidationUtils.isValidLong( textValue, false, min, max ) ) {
+                    value = Long.parseLong( textValue );
+                } else {
+                    auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CONFIGURATION_ERROR, description + " invalid: " + textValue);
+                    throw new AssertionStatusException(AssertionStatus.FAILED);
+                }
+            } else {
+                value = null;
+            }
+
+            return value;
         }
     }
 

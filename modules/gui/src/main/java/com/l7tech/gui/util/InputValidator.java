@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.gui.util;
 
 import com.l7tech.gui.NumberField;
@@ -279,8 +274,34 @@ public class InputValidator implements FocusListener {
         int maxlen = Math.max(Long.toString(min).length(), Long.toString(max).length());
         comp.setDocument(new NumberField(maxlen + 1));
 
+        final ValidationRule rule = buildTextFieldNumberRangeValidationRule( fieldName, comp, min, max, allowEmpty );
+
+        addRuleForComponent(comp, rule);
+        return rule;
+    }
+
+    /**
+     * Build a validator for a number range. You can add this validator using addRule(...) (etc)
+     * <p/>
+     * If the field allows empty values then the text can be empty.
+     * <p/>
+     * The field will <b>not</b> be validated if it is disabled -- validation rules for disabled fields will always
+     * succeed.
+     *
+     * @param fieldName  the name of the field, for use in a generated error message.  Must not be null.
+     * @param comp  the component to validate.   Must not be null.
+     * @param min the minimum allowable value, inclusive
+     * @param max the maximum allowable value, inclusive
+     * @param allowEmpty true if an empty field value is permitted.
+     * @return the validation rule that was registered, so it can be removed later if desired.  Never null.
+     */
+    public ValidationRule buildTextFieldNumberRangeValidationRule( final String fieldName,
+                                                                   final JTextComponent comp,
+                                                                   final long min,
+                                                                   final long max,
+                                                                   final boolean allowEmpty ) {
         final String mess = "The " + fieldName + " field must be a number between " + min + " and " + max + ".";
-        ValidationRule rule = new ComponentValidationRule(comp) {
+        return new ComponentValidationRule(comp) {
             @Override
             public String getValidationError() {
                 if (!comp.isEnabled())
@@ -300,9 +321,6 @@ public class InputValidator implements FocusListener {
                 }
             }
         };
-
-        addRuleForComponent(comp, rule);
-        return rule;
     }
 
     /**
