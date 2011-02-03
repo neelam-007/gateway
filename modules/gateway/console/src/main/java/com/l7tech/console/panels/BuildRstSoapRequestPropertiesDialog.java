@@ -192,7 +192,12 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
         final RunOnChangeListener enableDisableListener = new RunOnChangeListener(){
             @Override
             protected void run() {
-                enableOrDisableComponents();
+                SwingUtilities.invokeLater( new Runnable(){
+                    @Override
+                    public void run() {
+                        enableOrDisableComponents();
+                    }
+                } );
             }
         };
         requestTypeComboBox.addActionListener( enableDisableListener );
