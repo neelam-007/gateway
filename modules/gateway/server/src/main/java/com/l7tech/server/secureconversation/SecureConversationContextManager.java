@@ -219,7 +219,7 @@ public abstract class SecureConversationContextManager<KT> {
     protected static final int MAX_CLIENT_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.clientEntropyMaxBytes", 1024 );
     protected static final int MIN_SERVER_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.serverEntropyMinBytes", 8 );
     protected static final int MAX_SERVER_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.serverEntropyMaxBytes", 1024 );
-    protected static final int MIN_SHARED_SECRET_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.sharedSecretMinBytes", 64 );
+    protected static final int MIN_SHARED_SECRET_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.sharedSecretMinBytes", 16 );
     protected static final int MAX_SHARED_SECRET_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.sharedSecretMaxBytes", 1024 );
     protected static final int MIN_KEY_SIZE = SyspropUtil.getInteger("com.l7tech.security.wssc.minLength", 16);
     protected static final int MAX_KEY_SIZE = SyspropUtil.getInteger("com.l7tech.security.wssc.maxLength", 512);
