@@ -97,25 +97,29 @@ public class ISO8601Date {
                     // frac sec
                     tok = st.nextToken();
                     if (tok.equals(".")) {
-                        // bug fixed, thx to Martin Bottcher
-                        String nt = st.nextToken();
-                        while(nt.length() < 3) {
-                            nt += "0";
+                        if (st.hasMoreTokens()) {
+                            // bug fixed, thx to Martin Bottcher
+                            String nt = st.nextToken();
+                            while(nt.length() < 3) {
+                                nt += "0";
+                            }
+                            if (nt.length() > 3) assertIsNumbers(nt.substring(3));
+                            nt = nt.substring( 0, 3 ); //Cut trailing chars..
+                            int millisec = Integer.parseInt(nt);
+                            //int millisec = Integer.parseInt(st.nextToken()) * 10;
+                            calendar.set(Calendar.MILLISECOND, millisec);
+                            if (! st.hasMoreTokens()) {
+                                return calendar;
+                            }
+                            tok = st.nextToken();
+                        } else {
+                            throw new ParseException("No seconds fragment specified", 0);
                         }
-                        if (nt.length() > 3) assertIsNumbers(nt.substring(3));
-                        nt = nt.substring( 0, 3 ); //Cut trailing chars..
-                        int millisec = Integer.parseInt(nt);
-                        //int millisec = Integer.parseInt(st.nextToken()) * 10;
-                        calendar.set(Calendar.MILLISECOND, millisec);
-                        if (! st.hasMoreTokens()) {
-                            return calendar;
-                        }
-                        tok = st.nextToken();
                     } else {
                         calendar.set(Calendar.MILLISECOND, 0);
                     }
                 } else {
-                    throw new ParseException("No secondes specified", 0);
+                    throw new ParseException("No seconds specified", 0);
                 }
             } else {
                 calendar.set(Calendar.SECOND, 0);
