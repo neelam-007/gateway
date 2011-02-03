@@ -24,7 +24,6 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -148,18 +147,6 @@ public class XencUtil {
       throws XencException, GeneralSecurityException
     {
         Document soapMsg = element.getOwnerDocument();
-
-        if (false && !encryptContentsOnly) {
-            final Node parent = element.getParentNode();
-            if (parent != null) {
-                Element wrapper = soapMsg.createElement("wrapper");
-                parent.insertBefore(wrapper, element);
-                parent.removeChild(element);
-                wrapper.appendChild(element);
-                element = wrapper;
-            }
-        }
-
 
         CipherData cipherData = new CipherData();
         cipherData.setCipherValue(new CipherValue());
