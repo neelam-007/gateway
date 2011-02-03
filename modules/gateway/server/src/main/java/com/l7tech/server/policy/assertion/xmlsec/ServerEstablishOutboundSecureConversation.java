@@ -22,6 +22,7 @@ import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.util.*;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
@@ -93,7 +94,18 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         String wsscNamespace;
         String tokenVarName = ExpandVariables.process(assertion.getSecurityContextTokenVarName(), variableMap, auditor);
         try {
-            Element sctEl = (Element) context.getVariable(tokenVarName);
+            final Object tokenVariable = context.getVariable(tokenVarName);
+            Element sctEl;
+            if ( tokenVariable instanceof Element ) {
+                sctEl = (Element) tokenVariable;
+            } else if ( tokenVariable instanceof Element[] && ((Element[])tokenVariable).length == 1  ) {
+                sctEl = ((Element[]) tokenVariable)[0];
+            } else if ( tokenVariable instanceof Document ) {
+                sctEl = ((Document) tokenVariable).getDocumentElement();
+            } else {
+                auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The security context token variable (Name: \"" + tokenVarName + "\") is of an unsupported type.");
+                return AssertionStatus.FALSIFIED;
+            }
             wsscNamespace = getSecureConversationNamespace(sctEl);
 
             Element identifierEl;
