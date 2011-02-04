@@ -4,10 +4,12 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken;
 import com.l7tech.policy.assertion.xmlsec.AddWssUsernameToken;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
+import com.l7tech.security.token.SecurityTokenType;
 
 /**
  * Policy validator for WsSecurity assertion.
@@ -25,7 +27,7 @@ public class WsSecurityValidator implements AssertionValidator {
     public void validate( final AssertionPath path,
                           final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
-        if ( errString != null && hasDefaultActorEncryption(path.getPath()) ) {
+        if ( errString != null && hasDefaultActorEncryption(path.getPath()) && !hasEncryptionToken(path.getPath())) {
             result.addError(new PolicyValidatorResult.Error(wsSecurity, path, errString, null));
         }
     }
@@ -47,7 +49,7 @@ public class WsSecurityValidator implements AssertionValidator {
     private boolean hasDefaultActorEncryption( final Assertion[] path ) {
         boolean found = false;
 
-        for ( Assertion assertion : path ) {
+        for ( final Assertion assertion : path ) {
             if ( !assertion.isEnabled() ) continue;
             if ( assertion == wsSecurity ) {
                 break;
@@ -57,6 +59,35 @@ public class WsSecurityValidator implements AssertionValidator {
                  AssertionUtils.isSameTargetMessage(wsSecurity, assertion) &&
                  ((SecurityHeaderAddressable)assertion).getRecipientContext().localRecipient() ) {
                 found = true;
+                break;
+            }
+        }
+
+        return found;
+    }
+
+    /**
+     * Check if there is a token available for use with encryption.
+     *
+     * <p>Note that an encrypted key still requires another token for the
+     * key encryption so this is not treated as an "encryption" token.</p> 
+     */
+    private boolean hasEncryptionToken( final Assertion[] path ) {
+        boolean found = false;
+
+        for ( final Assertion assertion : path ) {
+            if ( !assertion.isEnabled() ) continue;
+            if ( assertion == wsSecurity ) {
+                break;
+            }
+            if ( assertion instanceof AddWssSecurityToken &&
+                 AssertionUtils.isSameTargetMessage(wsSecurity, assertion) &&
+                 ((SecurityHeaderAddressable)assertion).getRecipientContext().localRecipient() ) {
+                final AddWssSecurityToken addWssSecurityToken = (AddWssSecurityToken) assertion;
+                found = addWssSecurityToken.getTokenType() == SecurityTokenType.WSSC_CONTEXT;
+                if ( found ) {
+                    break;
+                }
             }
         }
 
