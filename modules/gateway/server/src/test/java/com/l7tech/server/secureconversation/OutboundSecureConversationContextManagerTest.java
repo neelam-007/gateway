@@ -18,7 +18,7 @@ public class OutboundSecureConversationContextManagerTest {
         user.setProviderId( 12 );
         user.setUniqueIdentifier( "uid" );
         user.setLogin( "login" );
-        final OutboundSessionKey key = new OutboundSessionKey( user, "service url" );
+        final OutboundSessionKey key = OutboundSecureConversationContextManager.newSessionKey( user, "service url" );
         
         final String keyString = key.toStringIdentifier();
         System.out.println( keyString );

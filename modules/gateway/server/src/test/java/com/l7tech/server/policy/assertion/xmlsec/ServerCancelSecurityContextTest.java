@@ -40,7 +40,7 @@ public class ServerCancelSecurityContextTest {
 
     private static final MockConfig mockConfig = new MockConfig(new Properties());
     private static final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager( mockConfig );
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig, inboundContextManager );
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig);
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
 
     static {

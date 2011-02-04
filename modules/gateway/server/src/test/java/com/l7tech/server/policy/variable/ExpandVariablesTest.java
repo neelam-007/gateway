@@ -31,7 +31,6 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import com.l7tech.server.policy.assertion.ServerXpathAssertion;
-import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.test.BugNumber;
@@ -69,7 +68,7 @@ public class ExpandVariablesTest {
     private static final String TINY_BODY = "<blah/>";
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
     private static final MockConfig mockConfig = new MockConfig(new Properties());
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig, new InboundSecureConversationContextManager(mockConfig) );
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig);
 
     static {
         beanFactory.addBean( "outboundSecureConversationContextManager", outboundContextManager );
@@ -721,7 +720,7 @@ public class ExpandVariablesTest {
     }
 
     @Test
-    public void testSecureCovnersationSession() throws Exception {
+    public void testSecureConversationSession() throws Exception {
         //  Create a user
         final UserBean user = new UserBean("Alice");
         user.setUniqueIdentifier("1");
@@ -731,7 +730,7 @@ public class ExpandVariablesTest {
         // Create a secure conversation session
         SecureConversationSession session = outboundContextManager.createContextForUser(
             user,
-            "fake_service_url",
+            OutboundSecureConversationContextManager.newSessionKey( user, "fake_service_url" ),
             LoginCredentials.makeLoginCredentials( new HttpBasicToken(user.getLogin(), "password".toCharArray()), HttpBasic.class ),
             "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512",
             "fake_session_identifier",
@@ -740,8 +739,7 @@ public class ExpandVariablesTest {
             generateNewSecret(64),
             null,
             null,
-            0,
-            false
+            0
         );
 
         // Set the variable, scLookup.session

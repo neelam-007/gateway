@@ -13,7 +13,6 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
@@ -34,7 +33,7 @@ import static junit.framework.Assert.assertEquals;
 public class ServerLookupOutboundSecureConversationSessionTest {
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
     private static final MockConfig mockConfig = new MockConfig(new Properties());
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig, new InboundSecureConversationContextManager(mockConfig) );
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig);
     private static final String FAKE_SERVICE_URL = "fake_service_url";
     private static final String FAKE_SESSION_ID = "fake_session_identifier";
 
@@ -100,7 +99,7 @@ public class ServerLookupOutboundSecureConversationSessionTest {
 
         return outboundContextManager.createContextForUser(
             user,
-            serviceUrl,
+            OutboundSecureConversationContextManager.newSessionKey(user,serviceUrl),
             LoginCredentials.makeLoginCredentials( new HttpBasicToken(user.getLogin(), "password".toCharArray()), HttpBasic.class ),
             "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512",
             sessionId,
@@ -109,8 +108,7 @@ public class ServerLookupOutboundSecureConversationSessionTest {
             generateNewSecret(64),
             null,
             null,
-            0,
-            false
+            0
         );
     }
 

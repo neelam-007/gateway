@@ -16,6 +16,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
@@ -44,7 +45,8 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
     private final Auditor auditor;
     private final Config config;
     private final String[] variablesUsed;
-    private final OutboundSecureConversationContextManager securityContextManager;
+    private final InboundSecureConversationContextManager inboundSecurityContextManager;
+    private final OutboundSecureConversationContextManager outboundSecurityContextManager;
 
     public ServerEstablishOutboundSecureConversation(EstablishOutboundSecureConversation assertion, final BeanFactory factory) {
         super(assertion, assertion);
@@ -54,7 +56,8 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
             new LogOnlyAuditor(logger);
         config = validated(factory.getBean("serverConfig", Config.class));
         variablesUsed = assertion.getVariablesUsed();
-        securityContextManager = factory.getBean("outboundSecureConversationContextManager", OutboundSecureConversationContextManager.class);
+        inboundSecurityContextManager = factory.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
+        outboundSecurityContextManager = factory.getBean("outboundSecureConversationContextManager", OutboundSecureConversationContextManager.class);
     }
 
     @Override
@@ -87,7 +90,9 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
 
         // 3. Get Service URL (Note: no need to check if serviceUrl is null, since the GUI of the assertion dialog has validated Service URL not to be null.)
         final Map<String,Object> variableMap = context.getVariableMap( variablesUsed, auditor );
-        final String serviceUrl = ExpandVariables.process(assertion.getServiceUrl(), variableMap, auditor);
+        final String serviceUrl = assertion.isAllowInboundMsgUsingSession() ?
+                null :
+                ExpandVariables.process(assertion.getServiceUrl(), variableMap, auditor);
 
         // 4. Get the session identifier and the namespace of WS-Secure Conversation
         String sessionId;
@@ -209,20 +214,35 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         // 7. Create a new outbound secure conversation session
         SecureConversationSession session;
         try {
-            session = securityContextManager.createContextForUser(
-                user,
-                serviceUrl,
-                loginCredentials,
-                wsscNamespace,
-                sessionId,
-                creationTime,
-                expirationTime,
-                sharedSecret,
-                clientEntropy,
-                serverEntropy,
-                keySize,
-                assertion.isAllowInboundMsgUsingSession()
-            );
+            if ( assertion.isAllowInboundMsgUsingSession() ) {
+                session = inboundSecurityContextManager.createContextForUser(
+                    user,
+                    sessionId,
+                    loginCredentials,
+                    wsscNamespace,
+                    sessionId,
+                    creationTime,
+                    expirationTime,
+                    sharedSecret,
+                    clientEntropy,
+                    serverEntropy,
+                    keySize
+                );
+            } else {
+                session = outboundSecurityContextManager.createContextForUser(
+                    user,
+                    OutboundSecureConversationContextManager.newSessionKey( user, serviceUrl ),
+                    loginCredentials,
+                    wsscNamespace,
+                    sessionId,
+                    creationTime,
+                    expirationTime,
+                    sharedSecret,
+                    clientEntropy,
+                    serverEntropy,
+                    keySize
+                );
+            }
         } catch (SessionCreationException e) {
             auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, e.getMessage());
             return AssertionStatus.FALSIFIED;

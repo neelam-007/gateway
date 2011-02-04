@@ -7,12 +7,9 @@ import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.security.xml.processor.SecurityContextFinder;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.SyspropUtil;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**

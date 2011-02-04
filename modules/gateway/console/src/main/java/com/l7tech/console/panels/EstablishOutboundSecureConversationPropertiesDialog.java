@@ -10,7 +10,6 @@ import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -34,7 +33,7 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
     private JFormattedTextField maxLifetimeTextField;
     private JComboBox maxLifetimeUnitComboBox;
     private JCheckBox useSystemDefaultCheckBox;
-    private JCheckBox allowUsingSessionCheckBox;
+    private JCheckBox inboundSessionCheckBox;
 
     private TimeUnit oldTimeUnit;
 
@@ -65,7 +64,7 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
     protected void initComponents() {
         super.initComponents();
 
-        final DocumentListener validationListener = new RunOnChangeListener(new Runnable() {
+        final RunOnChangeListener validationListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
                 SwingUtilities.invokeLater(new Runnable() {
@@ -123,6 +122,8 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
         creationTimeTextField.getDocument().addDocumentListener(validationListener);
         expirationTimeTextField.getDocument().addDocumentListener(validationListener);
 
+        inboundSessionCheckBox.addActionListener( validationListener );
+
         pack();
         Utilities.centerOnParentWindow(this);
     }
@@ -133,7 +134,7 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
     }
 
     private void modelToView(EstablishOutboundSecureConversation assertion) {
-        serviceUrlTextField.setText(assertion.getServiceUrl());
+        if ( assertion.getServiceUrl()!=null ) serviceUrlTextField.setText(assertion.getServiceUrl());
         sctVarNameTextField.setText(assertion.getSecurityContextTokenVarName());
         clientEntropyTextField.setText(assertion.getClientEntropy());
         serverEntropyTextField.setText(assertion.getServerEntropy());
@@ -153,11 +154,13 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
         maxLifetimeTextField.setEnabled(! defaultSelected);
         maxLifetimeUnitComboBox.setEnabled(! defaultSelected);
 
-        allowUsingSessionCheckBox.setSelected(assertion.isAllowInboundMsgUsingSession());
+        inboundSessionCheckBox.setSelected(assertion.isAllowInboundMsgUsingSession());
+
+        enableOrDisableComponents();
     }
 
     private void viewToModel(EstablishOutboundSecureConversation assertion) {
-        assertion.setServiceUrl(serviceUrlTextField.getText());
+        assertion.setServiceUrl( serviceUrlTextField.isEnabled() ?  serviceUrlTextField.getText() : null );
         assertion.setSecurityContextTokenVarName(sctVarNameTextField.getText());
         assertion.setClientEntropy(clientEntropyTextField.getText());
         assertion.setServerEntropy(serverEntropyTextField.getText());
@@ -175,12 +178,13 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
             assertion.setMaxLifetime((long)(lifetime * timeUnit.getMultiplier()));
         }
 
-        assertion.setAllowInboundMsgUsingSession(allowUsingSessionCheckBox.isSelected());
+        assertion.setAllowInboundMsgUsingSession( inboundSessionCheckBox.isSelected() );
     }
 
     private void enableOrDisableComponents() {
-        String serviceUrl = serviceUrlTextField.getText();
-        boolean serviceUrlOk = serviceUrl != null && !serviceUrl.trim().isEmpty();
+        final boolean inbound = inboundSessionCheckBox.isSelected();
+        final String serviceUrl = serviceUrlTextField.getText();
+        final boolean serviceUrlOk = inbound || (serviceUrl != null && !serviceUrl.trim().isEmpty());
 
         int multiplier = ((TimeUnit) maxLifetimeUnitComboBox.getSelectedItem()).getMultiplier();
         String maxLifeTime = maxLifetimeTextField.getText().trim();
@@ -219,6 +223,7 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
             validKeySize = false;
         }
 
+        serviceUrlTextField.setEnabled( !inbound );
         getOkButton().setEnabled(!isReadOnly() && serviceUrlOk && validCreationTime && validExpirationTime && validLifetime && validKeySize);
     }
 

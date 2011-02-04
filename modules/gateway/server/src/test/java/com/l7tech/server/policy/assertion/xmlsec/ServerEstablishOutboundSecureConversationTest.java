@@ -39,9 +39,11 @@ import static org.junit.Assert.assertNotNull;
 public class ServerEstablishOutboundSecureConversationTest {
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
     private static final MockConfig mockConfig = new MockConfig(new Properties());
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig, new InboundSecureConversationContextManager(mockConfig) );
+    private static final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager(mockConfig);
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig);
 
     static {
+        beanFactory.addBean("inboundSecureConversationContextManager", inboundContextManager);
         beanFactory.addBean("outboundSecureConversationContextManager", outboundContextManager);
         beanFactory.addBean("serverConfig", new MockConfig(new Properties()));
     }
@@ -100,7 +102,7 @@ public class ServerEstablishOutboundSecureConversationTest {
         assertNotNull( "Session Variable Found:", session);
 
         // Look up the established session by using User and Service URL and then check if two sessions are matched.
-        OutboundSecureConversationContextManager.OutboundSessionKey sessionKey = new OutboundSecureConversationContextManager.OutboundSessionKey(user, serviceUrl);
+        OutboundSecureConversationContextManager.OutboundSessionKey sessionKey = OutboundSecureConversationContextManager.newSessionKey(user, serviceUrl);
         SecureConversationSession lookupResult = outboundContextManager.getSession(sessionKey);
         assertEquals("Session Matched:", session, lookupResult);
     }
@@ -165,7 +167,7 @@ public class ServerEstablishOutboundSecureConversationTest {
      *  Cancel the previous session, otherwise a duplicate session exception thrown
      */
     private void cancelSession() {
-        OutboundSecureConversationContextManager.OutboundSessionKey sessionKey = new OutboundSecureConversationContextManager.OutboundSessionKey(user, serviceUrl);
+        OutboundSecureConversationContextManager.OutboundSessionKey sessionKey = OutboundSecureConversationContextManager.newSessionKey(user, serviceUrl);
         outboundContextManager.cancelSession(sessionKey);
     }
 }

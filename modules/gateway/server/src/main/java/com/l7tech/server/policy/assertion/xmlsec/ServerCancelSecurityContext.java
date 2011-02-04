@@ -111,7 +111,7 @@ public class ServerCancelSecurityContext extends AbstractMessageTargetableServer
 
         final String serviceUrl = ExpandVariables.process( assertion.getOutboundServiceUrl()==null ? "" : assertion.getOutboundServiceUrl(), vars, auditor );
 
-        if ( !outboundSecureConversationContextManager.cancelSession( new OutboundSecureConversationContextManager.OutboundSessionKey( user, serviceUrl ) ) &&
+        if ( !outboundSecureConversationContextManager.cancelSession( OutboundSecureConversationContextManager.newSessionKey( user, serviceUrl ) ) &&
              assertion.isFailIfNotExist() ) {
             auditor.logAndAudit(AssertionMessages.STS_EXPIRED_SC_SESSION, "Session not found for user '"+user.getLogin()+"', service URL '"+serviceUrl+"'");
             return AssertionStatus.FALSIFIED;

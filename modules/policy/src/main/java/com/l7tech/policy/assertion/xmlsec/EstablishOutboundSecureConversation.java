@@ -162,10 +162,11 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
             public String getAssertionName(EstablishOutboundSecureConversation assertion, boolean decorate) {
                 if (! decorate) return ASSERTION_BASIC_NAME;
 
-                String serviceUrl = assertion.getServiceUrl();
-                if (serviceUrl == null || serviceUrl.trim().isEmpty()) return ASSERTION_BASIC_NAME;
-                else return AssertionUtils.decorateName(assertion, ASSERTION_BASIC_NAME + " to " +
-                        (serviceUrl.length() <= 128? serviceUrl : TextUtils.truncateStringAtEnd(serviceUrl, 128)));
+                final String serviceUrl = assertion.getServiceUrl();
+                final String name = serviceUrl == null || serviceUrl.trim().isEmpty() ?
+                        ASSERTION_BASIC_NAME :
+                        ASSERTION_BASIC_NAME + " to " + TextUtils.truncateStringAtEnd(serviceUrl, 128);
+                return AssertionUtils.decorateName(assertion, name);
             }
         });
 

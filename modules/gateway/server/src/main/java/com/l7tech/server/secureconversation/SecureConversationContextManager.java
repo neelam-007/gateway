@@ -2,24 +2,31 @@ package com.l7tech.server.secureconversation;
 
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ValidatedConfig;
 import org.apache.commons.collections.map.LRUMap;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Server-side manager that manages the inbound/outbound Secure Conversation sessions.
  */
 public abstract class SecureConversationContextManager<KT> {
+
+    public static final String LOG_SECRET_VALUES = "com.l7tech.security.wstrust.debug.logSecretValues";
 
     public SecureConversationContextManager( final Logger logger,
                                              final Config config,
@@ -72,7 +79,7 @@ public abstract class SecureConversationContextManager<KT> {
      * @param sessionKey The key for the session to cancel
      * @return True if cancelled, false if the session was not found.
      */
-    public boolean cancelSession( final KT sessionKey ) {
+    public final boolean cancelSession( final KT sessionKey ) {
         final boolean cancelled;
 
         synchronized (sessions) {
@@ -91,7 +98,7 @@ public abstract class SecureConversationContextManager<KT> {
      */
     protected void saveSession( final KT sessionKey ,
                                 final SecureConversationSession newSession ) throws SessionCreationException {
-        validateSessionKey( sessionKey );
+        validateSessionKey( sessionKey, null );
         synchronized( sessions ) {
             // Two sessions with same id is not allowed. ever (even if one is expired)
             SecureConversationSession alreadyExistingOne = (SecureConversationSession) sessions.get(sessionKey);
@@ -108,7 +115,7 @@ public abstract class SecureConversationContextManager<KT> {
      *
      * @param sessionKey The key to validate
      */
-    protected void validateSessionKey( KT sessionKey ) throws SessionCreationException {
+    protected void validateSessionKey( KT sessionKey, User user ) throws SessionCreationException {
     }
 
     /**
@@ -135,6 +142,102 @@ public abstract class SecureConversationContextManager<KT> {
                 credentials
         );
         saveSession(sessionKey, session);
+        return session;
+    }
+
+    /**
+     * Creates a new session and saves it.
+     *
+     * @param sessionOwner The user for the session (required)
+     * @param sessionKey The key for the session (must not be null)
+     * @param credentials The credentials used to authenticate
+     * @param namespace The WS-SecureConversation namespace in use (may be null)
+     * @param sessionIdentifier The external session identifier
+     * @param creationTime: The time of the session created.  Its unit is milliseconds.  It must be greater than 0.
+     * @param expirationTime: The time of the session expired.  Its unit is milliseconds.  It must be greater than 0.
+     * @param requestSharedSecret: The full key (may be null)
+     * @param requestClientEntropy The client entropy (may be null)
+     * @param requestServerEntropy The server entropy (may be null)
+     * @param keySizeBits The key size in bits (0 for not specified)
+     * @return the newly created session
+     */
+    public SecureConversationSession createContextForUser(final User sessionOwner,
+                                                          final KT sessionKey,
+                                                          final LoginCredentials credentials,
+                                                          final String namespace,
+                                                          final String sessionIdentifier,
+                                                          final long creationTime,
+                                                          final long expirationTime,
+                                                          final byte[] requestSharedSecret,
+                                                          final byte[] requestClientEntropy,
+                                                          final byte[] requestServerEntropy,
+                                                          final int keySizeBits ) throws SessionCreationException {
+        final byte[] sharedSecret;
+        final byte[] clientEntropy;
+        final byte[] serverEntropy;
+
+        if ( sessionOwner == null ) throw new SessionCreationException( "session owner is required" );
+        if ( sessionKey == null ) throw new SessionCreationException( "session key is required" );
+        validateSessionKey( sessionKey, sessionOwner );
+
+        if (requestSharedSecret != null) {
+            if (requestSharedSecret.length >= MIN_SHARED_SECRET_BYTES && requestSharedSecret.length <= MAX_SHARED_SECRET_BYTES) {
+                sharedSecret = requestSharedSecret;
+                clientEntropy = null;
+                serverEntropy = null;
+            } else {
+                throw new SessionCreationException("Unable to create a session: the shared secret length is not in the valid range from " +
+                    MIN_SHARED_SECRET_BYTES + " bytes to " + MAX_SHARED_SECRET_BYTES + "bytes.");
+            }
+        } else if (requestClientEntropy != null) {
+            if (requestClientEntropy.length >= MIN_CLIENT_ENTROPY_BYTES && requestClientEntropy.length <= MAX_CLIENT_ENTROPY_BYTES) {
+                if (requestServerEntropy != null) {
+                    if (requestServerEntropy.length >= MIN_SERVER_ENTROPY_BYTES && requestServerEntropy.length <= MAX_SERVER_ENTROPY_BYTES) {
+                        final int keySize = keySizeBits == 0 ? getDefaultKeySize( namespace ) : (keySizeBits+7) / 8;
+                        if ( keySize < MIN_KEY_SIZE || keySize > MAX_KEY_SIZE  ) {
+                            throw new SessionCreationException("Unable to create a session: the key size is not in the valid range from " +
+                                MIN_KEY_SIZE + " bytes to " + MAX_KEY_SIZE + "bytes.");
+                        }
+                        try {
+                            sharedSecret = deriveSharedKey( sessionIdentifier, requestClientEntropy, requestServerEntropy, keySize );
+                        } catch ( InvalidKeyException e ) {
+                            throw new SessionCreationException( "Error creating shared key: " + ExceptionUtils.getMessage(e), e );
+                        } catch ( NoSuchAlgorithmException e ) {
+                            throw new SessionCreationException( "Error creating shared key: " + ExceptionUtils.getMessage(e), e );
+                        }
+                        clientEntropy = requestClientEntropy;
+                        serverEntropy = requestServerEntropy;
+                    } else {
+                        throw new SessionCreationException("Unable to create a session: the server entropy length is not in the valid range from " +
+                            MIN_SERVER_ENTROPY_BYTES + " bytes to " + MAX_SERVER_ENTROPY_BYTES + "bytes.");
+                    }
+                } else {
+                    sharedSecret = requestClientEntropy;
+                    clientEntropy = null;
+                    serverEntropy = null;
+                }
+            } else {
+                throw new SessionCreationException("Unable to create a session: the client entropy length is not in the valid range from " +
+                    MIN_CLIENT_ENTROPY_BYTES + " bytes to " + MAX_CLIENT_ENTROPY_BYTES + "bytes.");
+            }
+        } else {
+            throw new SessionCreationException("Unable to create a session: there are no shared secret and client entropy to create a session key");
+        }
+
+        final SecureConversationSession session = new SecureConversationSession(
+            namespace,
+            sessionIdentifier,
+            clientEntropy,
+            serverEntropy,
+            sharedSecret,
+            creationTime,
+            expirationTime,
+            sessionOwner,
+            credentials
+        );
+
+        saveSession(sessionKey, session);
+
         return session;
     }
 
@@ -234,4 +337,34 @@ public abstract class SecureConversationContextManager<KT> {
     private final Config config;
     private long lastExpirationCheck = System.currentTimeMillis();
     private boolean isInbound;
+
+    /**
+     * Combine information from a parsed RST and RSTR to extract the session identifier and session shared secret.
+     *
+     * @param externalId The external session identifier. Required.
+     * @param clientEntropy The client entropy to use. Required.
+     * @param serverEntropy The client entropy to use. Required.
+     * @param keySizeBytes The size of the key to generate. Required.
+     * @return the shared secret byte array.  Never null.
+     * @throws InvalidKeyException may occur if current crypto policy disallows HMac with long keys
+     * @throws NoSuchAlgorithmException if no HMacSHA1 service available from current security providers
+     */
+    private byte[] deriveSharedKey( final String externalId,
+                                    final byte[] clientEntropy,
+                                    final byte[] serverEntropy,
+                                    final int keySizeBytes ) throws InvalidKeyException, NoSuchAlgorithmException {
+        if (clientEntropy == null) throw new IllegalArgumentException("client entropy is required");
+        if (serverEntropy == null) throw new IllegalArgumentException("server entropy is required");
+
+        // Derive the shared secret
+        byte[] secret = SecureConversationKeyDeriver.pSHA1(clientEntropy, serverEntropy, keySizeBytes);
+        if ( logger.isLoggable( Level.FINEST) && SyspropUtil.getBoolean( LOG_SECRET_VALUES, false))
+            logger.log(Level.FINEST, "Shared secret computed, length = {0}; value = {1}", new Object[] {secret.length, HexUtils.encodeBase64(secret)});
+
+
+        if ( logger.isLoggable(Level.FINER) )
+            logger.log(Level.FINER, "SC context created for {0} ==> key length bytes: {1}", new Object[] {externalId, secret.length});
+
+        return secret;
+    }
 }

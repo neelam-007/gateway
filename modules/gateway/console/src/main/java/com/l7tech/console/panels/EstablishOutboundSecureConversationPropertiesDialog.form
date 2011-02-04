@@ -249,14 +249,14 @@
               </component>
             </children>
           </grid>
-          <component id="31493" class="javax.swing.JCheckBox" binding="allowUsingSessionCheckBox">
+          <component id="31493" class="javax.swing.JCheckBox" binding="inboundSessionCheckBox">
             <constraints>
               <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <selected value="false"/>
-              <text value="Allow new incoming request messages to use this session"/>
-              <toolTipText value="&lt;html&gt;Check to merge outbound sessions into the Gateway's inbound session cache.&lt;br&gt;This effectively gives control of the Gateway's session cache to the target STS,&lt;br&gt;so only check this checkbox if it is necessary to do so and the target STS is trusted.&lt;/html&gt;"/>
+              <text value="This session is for use with incoming request messages"/>
+              <toolTipText value="&lt;html&gt;Check if this session will be used with inbound request messages.&lt;br&gt;This will allow the STS to impersonate the session user, so only check&lt;br&gt;this checkbox if it is necessary to do so and the target STS is trusted.&lt;/html&gt;"/>
             </properties>
           </component>
         </children>

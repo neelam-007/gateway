@@ -58,7 +58,7 @@ public class ServerLookupOutboundSecureConversationSession extends AbstractMessa
         // Lookup the outbound session
         SecureConversationSession session;
         try {
-            session = securityContextManager.getSession( new OutboundSecureConversationContextManager.OutboundSessionKey( user, serviceUrl ) );
+            session = securityContextManager.getSession( OutboundSecureConversationContextManager.newSessionKey( user, serviceUrl ) );
         } catch ( IllegalArgumentException e ) {
             auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_LOOKUP_FAILURE, e.getMessage());
             return AssertionStatus.FALSIFIED;
