@@ -170,12 +170,14 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
 
         // See if there's a wsa:MessageID
         String wsaMessageId = null;
+        final Message relatedRequestMessage = msg.getRelated( MessageRole.REQUEST );
         final SignedElement[] signedElements =  WSSecurityProcessorUtils.filterSignedElementsByIdentity(
                     authContext,
                     wssResults,
                     assertion.getIdentityTarget(),
-                    false,
-                    msg.getRelated(MessageRole.REQUEST) ); // Not checking signing token in case this assertion occurs before the credential assertion
+                    false, // Not checking signing token in case this assertion occurs before the credential assertion
+                    relatedRequestMessage,
+                    relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage ) );
         for (SignedElement signedElement : signedElements) {
             Element el = signedElement.asElement();
             if (DomUtils.elementInNamespace(el, SoapConstants.WSA_NAMESPACE_ARRAY) && SoapConstants.MESSAGEID_EL_NAME.equals(el.getLocalName())) {

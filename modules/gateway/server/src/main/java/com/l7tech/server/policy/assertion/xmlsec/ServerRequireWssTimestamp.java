@@ -101,6 +101,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
         if ( assertion.isSignatureRequired() ) {
             final Collection<ParsedElement> elements = ProcessorResultUtil.getParsedElementsForNode( wssTimestamp.asElement(), processorResult.getElementsThatWereSigned() );
 
+            final Message relatedRequestMessage = msg.getRelated( MessageRole.REQUEST );
             if ( new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
                 if ( elements.isEmpty() ||
                     (isResponse() && !isValidSignatureConfirmation(msg, processorResult, elements)) ||
@@ -109,7 +110,8 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
                         processorResult,
                         elements.toArray(new ParsedElement[elements.size()]),
                         requireCredentialSigningToken,
-                        msg.getRelated(MessageRole.REQUEST) ) ) {
+                        relatedRequestMessage,
+                        relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage )) ) {
                     auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
                     return getBadMessageStatus();
                 }

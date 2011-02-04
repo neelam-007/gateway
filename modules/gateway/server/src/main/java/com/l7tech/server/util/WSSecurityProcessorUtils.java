@@ -113,45 +113,23 @@ public class WSSecurityProcessorUtils {
                                                final ProcessorResult wssResults,
                                                final ParsedElement[] elementsToValidate,
                                                final boolean checkSigningTokenIsCredential,
-                                               final Message relatedRequestMessage ) {
-        boolean valid = true;
+                                               final Message relatedRequestMessage,
+                                               final AuthenticationContext relatedAuthContext ) {
+        boolean valid;
 
         final SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
         final List<LoginCredentials> credentials = authContext == null ? null : authContext.getCredentials();
-        final SigningSecurityToken[] tokens = checkSigningTokenIsCredential ?
-                getSigningSecurityTokens(credentials) :
-                null;
 
         // Validate that there is only a single signing identity
-        // Check for a single signature element, not token or certificate (bug 7157)
-        final Set securityTokenElements = WSSecurityProcessorUtils.getSecurityTokenElements(wssResults);
-        Element signatureElement = null;
-        for ( SignedElement signedElement : signedElements ) {
-            if (!securityTokenElements.contains(signedElement.asElement())) {
-                if (signatureElement == null) {
-                    final SigningSecurityToken signingToken = signedElement.getSigningSecurityToken();
-                    if ( tokens==null || ArrayUtils.contains(tokens, signingToken) ) {
-                        signatureElement = signedElement.getSignatureElement();
-                    } else if (relatedRequestMessage != null && (credentials == null || credentials.isEmpty()) && (signingToken instanceof EncryptedKey || signingToken instanceof SecurityContextToken)) {
-                        // If the policy does not require specific signing credentials, permit response signature using an EncryptedKey or WS-SC session from a corresponding request (if any)
-                        if (isTokenRecognizedEncryptedKeyOrWsscSession(signingToken, relatedRequestMessage)) {
-                            signatureElement = signedElement.getSignatureElement();
-                        } else {
-                            valid = false;
-                            break;
-                        }
-                    } else {
-                        valid = false;
-                        break;
-                    }
-                } else {
-                    if (signatureElement != signedElement.getSignatureElement()) {
-                        valid = false;
-                        break;
-                    }
-                }
+        final XmlSecurityToken token = getSingleSigningSecurityToken( authContext, wssResults, checkSigningTokenIsCredential, new Functions.Unary<Boolean,SigningSecurityToken>(){
+            @Override
+            public Boolean call( final SigningSecurityToken signingToken ) {
+                // If the policy does not require specific signing credentials, permit response signature using an EncryptedKey or WS-SC session from a corresponding request (if any)
+                return relatedRequestMessage != null && (credentials == null || credentials.isEmpty()) &&
+                        isTokenRecognizedEncryptedKeyOrWsscSession( signingToken, relatedRequestMessage, relatedAuthContext, checkSigningTokenIsCredential );
             }
-        }
+        } );
+        valid = token != null;
 
         // Validate that the required elements are signed
         List<Element> signed = Functions.map(Arrays.asList(signedElements), new Functions.Unary<Element, SignedElement>() {
@@ -170,7 +148,10 @@ public class WSSecurityProcessorUtils {
         return valid;
     }
 
-    private static boolean isTokenRecognizedEncryptedKeyOrWsscSession(SigningSecurityToken signingToken, Message relatedRequestMessage) {
+    private static boolean isTokenRecognizedEncryptedKeyOrWsscSession( final SigningSecurityToken signingToken,
+                                                                       final Message relatedRequestMessage,
+                                                                       final AuthenticationContext relatedRequestAuthContext,
+                                                                       final boolean checkSigningTokenIsCredential ) {
         String signingEncryptedKeySha1 = null;
         if (signingToken instanceof EncryptedKey) {
             EncryptedKey ek = (EncryptedKey) signingToken;
@@ -183,9 +164,15 @@ public class WSSecurityProcessorUtils {
             signingSecurityContextId = sct.getContextIdentifier();
         }
 
+        if ( signingEncryptedKeySha1==null && signingSecurityContextId==null ) {
+            return false;
+        }
+
         // First check for decoration results, in case this was an outgoing request
+        boolean hasResults = false;
         List<WssDecorator.DecorationResult> reqDecorationResults = relatedRequestMessage.getSecurityKnob().getAllDecorationResults();
         for (WssDecorator.DecorationResult decorationResult : reqDecorationResults) {
+            hasResults = true;
             String eksha1 = decorationResult.getEncryptedKeySha1();
             if (eksha1 != null && eksha1.equals(signingEncryptedKeySha1))
                 return true;
@@ -196,9 +183,14 @@ public class WSSecurityProcessorUtils {
         }
 
         // Check for processor results, in case this was an incoming request
-        ProcessorResult reqProcessorResults = relatedRequestMessage.getSecurityKnob().getProcessorResult();
-        XmlSecurityToken[] reqTokens = reqProcessorResults.getXmlSecurityTokens();
-        for (XmlSecurityToken token : reqTokens) {
+        if ( !hasResults ) {
+            final XmlSecurityToken token =
+                    getSingleSigningSecurityToken(
+                            relatedRequestAuthContext, 
+                            relatedRequestMessage.getSecurityKnob().getProcessorResult(),
+                            checkSigningTokenIsCredential,
+                            null );
+
             if (token instanceof EncryptedKey) {
                 EncryptedKey ek = (EncryptedKey) token;
                 if (ek.isPossessionProved() && ek.getEncryptedKeySHA1().equals(signingEncryptedKeySha1))
@@ -213,6 +205,57 @@ public class WSSecurityProcessorUtils {
         }
 
         return false;
+    }
+
+    /**
+     * Get the security token associated with a single signature in the given message.
+     *
+     * @param authenticationContext The authentication context for the message (May be null)
+     * @param wssResults The processor results (May be null)
+     * @param checkSigningTokenIsCredential True to enforce that the signing token is a (gathered) credential.
+     * @param credentialTokenValidator Callback to validate the signing token if it is not recognised and a credential token is required
+     * @return The token, or null if there is no such token.
+     */
+    private static XmlSecurityToken getSingleSigningSecurityToken( final AuthenticationContext authenticationContext,
+                                                                   final ProcessorResult wssResults,
+                                                                   final boolean checkSigningTokenIsCredential,
+                                                                   final Functions.Unary<Boolean,SigningSecurityToken> credentialTokenValidator ) {
+        XmlSecurityToken token = null;
+        final List<LoginCredentials> credentials = authenticationContext == null ? null : authenticationContext.getCredentials();
+        final SigningSecurityToken[] tokens = checkSigningTokenIsCredential ?
+                getSigningSecurityTokens(credentials) :
+                null;
+
+        // Check for a single signature element, not token or certificate (bug 7157)
+        Element signatureElement = null;
+        if ( wssResults != null ) {
+            final Set securityTokenElements = WSSecurityProcessorUtils.getSecurityTokenElements(wssResults);
+            final SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
+            for ( SignedElement signedElement : signedElements ) {
+                if (!securityTokenElements.contains(signedElement.asElement())) {
+                    if (signatureElement == null) {
+                        final SigningSecurityToken signingSecurityToken = signedElement.getSigningSecurityToken();
+                        if ( tokens==null || ArrayUtils.contains(tokens, signingSecurityToken) ) {
+                            signatureElement = signedElement.getSignatureElement();
+                            token = signingSecurityToken;
+                        } else if ( credentialTokenValidator!=null && credentialTokenValidator.call( signingSecurityToken ) ){
+                            signatureElement = signedElement.getSignatureElement();
+                            token = signingSecurityToken;
+                        } else {
+                            token = null;
+                            break;
+                        }
+                    } else {
+                        if (signatureElement != signedElement.getSignatureElement()) {
+                            token = null;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return token;
     }
 
     /**
@@ -382,7 +425,8 @@ public class WSSecurityProcessorUtils {
                                                                   final ProcessorResult wssResults,
                                                                   final IdentityTarget identityTarget,
                                                                   final boolean checkSigningTokenIsCredential,
-                                                                  final Message relatedRequestMessage) {
+                                                                  final Message relatedRequestMessage,
+                                                                  final AuthenticationContext relatedAuthContext ) {
         final List<SignedElement> signedElementsForIdentity = new ArrayList<SignedElement>();
 
         final SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
@@ -392,7 +436,8 @@ public class WSSecurityProcessorUtils {
                     wssResults,
                     new ParsedElement[0],
                     checkSigningTokenIsCredential,
-                    relatedRequestMessage) ) {
+                    relatedRequestMessage,
+                    relatedAuthContext ) ) {
                 signedElementsForIdentity.addAll( Arrays.asList(signedElements) );
             }
         } else {

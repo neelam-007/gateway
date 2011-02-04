@@ -86,7 +86,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             final Map<QName, String> addressingProperties = new HashMap<QName,String>();
             final List<Element> addressingElements = isElementsVariableUsed() ? new ArrayList<Element>() : null;
             if ( assertion.isRequireSignature() ) {
-                populateAddressingFromSignedElements(getSignedElements(context.getAuthenticationContext(msg), msg, messageDescription), addressingProperties, addressingElements);
+                populateAddressingFromSignedElements(getSignedElements(context, msg, messageDescription), addressingProperties, addressingElements);
             } else {
                 populateAddressingFromMessage(getElementCursor(msg), addressingProperties, addressingElements);
             }
@@ -266,7 +266,9 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     /**
      * Get signed elements for message of given context.
      */
-    private SignedElement[] getSignedElements(final AuthenticationContext authContext, final Message msg, final String what)
+    private SignedElement[] getSignedElements(final PolicyEnforcementContext context,
+                                              final Message msg,
+                                              final String what)
             throws AddressingProcessingException, IOException {
         ProcessorResult wssResults;
 
@@ -292,7 +294,14 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             throw new AddressingProcessingException("Message does not contain any WSS security", AssertionStatus.FALSIFIED);
         }
 
-        return WSSecurityProcessorUtils.filterSignedElementsByIdentity( authContext, wssResults, assertion.getIdentityTarget(), requireCredentialSigningToken, msg.getRelated(MessageRole.REQUEST) );
+        final Message relatedRequestMessage = msg.getRelated( MessageRole.REQUEST );
+        return WSSecurityProcessorUtils.filterSignedElementsByIdentity(
+                context.getAuthenticationContext(msg),
+                wssResults,
+                assertion.getIdentityTarget(),
+                requireCredentialSigningToken,
+                relatedRequestMessage,
+                relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage ) );
     }
 
     /**

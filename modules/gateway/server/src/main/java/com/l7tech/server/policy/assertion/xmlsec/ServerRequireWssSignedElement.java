@@ -80,6 +80,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         // This check occurs before the ParsedElements relevant to this assertion have been
         // matched. Therefore we only perform this check if there is no target identity for
         // the assertion.
+        final Message relatedRequestMessage = message.getRelated( MessageRole.REQUEST );
         if( elements.length>0 &&
            new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
             valid = (isRequest() || isValidSignatureConfirmation( message, wssResults, null )) &&
@@ -88,7 +89,8 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
                         wssResults,
                         new ParsedElement[0], // we validate that the right elements are signed elsewhere
                         requireCredentialSigningToken,
-                        message.getRelated(MessageRole.REQUEST)
+                        relatedRequestMessage,
+                        relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage )
                     ) &&
                     isAcceptedSignatureDigestAlgorithms(elements);
         }

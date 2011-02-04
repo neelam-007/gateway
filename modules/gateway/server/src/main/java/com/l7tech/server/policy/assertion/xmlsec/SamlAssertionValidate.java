@@ -324,7 +324,7 @@ public class SamlAssertionValidate {
     private X509Certificate getBodyOrTimestampSigner( final ProcessorResult wssResult )
       throws InvalidDocumentFormatException {
         final WssTimestamp timestamp = wssResult.getTimestamp();
-        final SignedElement[] signedElements = WSSecurityProcessorUtils.filterSignedElementsByIdentity(null, wssResult, null, false, null);
+        final SignedElement[] signedElements = WSSecurityProcessorUtils.filterSignedElementsByIdentity(null, wssResult, null, false, null, null);
         for (SignedElement signedElement : signedElements) {
             if (SoapUtil.isBody(signedElement.asElement())) {
                 SigningSecurityToken signingSecurityToken = signedElement.getSigningSecurityToken();
