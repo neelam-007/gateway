@@ -461,7 +461,7 @@ public class PathValidator {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   bundle.getString("assertion.routing.shouldbebefore"), null));
             } else if (a instanceof MessageTargetable) { // This warning is only for MessageTargetable assertions
-                if ( Assertion.isRequest(a) && seenResponse) {
+                if ( Assertion.isRequest(a) && seenResponse && !hasFlag(a, ValidatorFlag.MAY_TARGET_REQUEST_AFTER_RESPONSE) ) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                       bundle.getString("assertion.uncommon.requestusage"), null));
                 }

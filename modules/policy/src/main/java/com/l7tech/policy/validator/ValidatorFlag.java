@@ -9,7 +9,7 @@ package com.l7tech.policy.validator;
 public enum ValidatorFlag {
 
     /**
-     * Flagged by an assertion if, as currently configured, it must be preceeded by a signature source.
+     * Flagged by an assertion if, as currently configured, it must be preceded by a signature source.
      */
     REQUIRE_SIGNATURE,
 
@@ -25,7 +25,7 @@ public enum ValidatorFlag {
     PROCESSES_NON_LOCAL_WSS_RECIPIENT,
 
     /**
-     * Flagged by an assertion if, as currently configured, it peforms validation of the target message.
+     * Flagged by an assertion if, as currently configured, it performs validation of the target message.
      *
      * This is used to to display a validation warning message if the assertion targets the
      * request after it is routed.
@@ -41,4 +41,8 @@ public enum ValidatorFlag {
      */
     GATHERS_X509_CREDENTIALS,
 
+    /**
+     * Flagged by a MessageTargetable assertion if the assertion can meaningfully target the request message when a response is available.
+     */
+    MAY_TARGET_REQUEST_AFTER_RESPONSE
 }

@@ -4,9 +4,11 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.TimeUnit;
 
@@ -173,6 +175,12 @@ public class EstablishOutboundSecureConversation extends MessageTargetableAssert
         meta.put(POLICY_NODE_ICON, "com/l7tech/console/resources/trust.png");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.EstablishOutboundSecureConversationPropertiesDialog");
         meta.put(PROPERTIES_ACTION_NAME, "Outbound Secure Conversation Establishment Properties");
+        meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, EstablishOutboundSecureConversation>(){
+            @Override
+            public Set<ValidatorFlag> call(EstablishOutboundSecureConversation assertion) {
+                return EnumSet.of(ValidatorFlag.MAY_TARGET_REQUEST_AFTER_RESPONSE);
+            }
+        });
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
 
