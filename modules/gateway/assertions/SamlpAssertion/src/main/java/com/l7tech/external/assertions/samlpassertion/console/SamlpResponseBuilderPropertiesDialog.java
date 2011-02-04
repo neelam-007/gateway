@@ -343,6 +343,6 @@ public class SamlpResponseBuilderPropertiesDialog extends AssertionPropertiesOkC
     private JLabel encryptedAssertionsLabel;
     private JTextField encryptedAssertionsTextField;
 
-    private static final String autoString = "<<auto>>";
+    private static final String autoString = "<auto>";
     private static final ResourceBundle resources = ResourceBundle.getBundle( SamlpResponseBuilderPropertiesDialog.class.getName() );
 }

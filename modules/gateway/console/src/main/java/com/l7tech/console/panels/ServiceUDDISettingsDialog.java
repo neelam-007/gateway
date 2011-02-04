@@ -75,7 +75,7 @@ public class ServiceUDDISettingsDialog extends JDialog {//TODO rename to Publish
     private UDDIRegistry originalServiceRegistry;
     private InputValidator publishWsdlValidators;
 
-    private final static String businessEntityDefault = "<<None Selected>>";
+    private final static String businessEntityDefault = "<None Selected>";
     private String selectedBusinessName;
     private String selectedBusinessKey;
     private UDDIPublishStatus publishStatus;

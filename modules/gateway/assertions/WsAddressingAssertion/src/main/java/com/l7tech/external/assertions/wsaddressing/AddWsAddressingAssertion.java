@@ -22,10 +22,10 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 public class AddWsAddressingAssertion extends MessageTargetableAssertion {
 
     // - PUBLIC
-    public static final String MESSAGE_ID_AUTOMATIC = "<<auto>>";
-    public static final String ACTION_FROM_TARGET_MESSAGE = "<<Obtain from target message>>";
-    public static final String ACTION_EXPLICIT_FROM_WSDL_INPUT = "<<Explicit from WSDL (Input)>>";
-    public static final String ACTION_EXPLICIT_FROM_WSDL_OUTPUT = "<<Explicit from WSDL (Output)>>";
+    public static final String MESSAGE_ID_AUTOMATIC = "<auto>";
+    public static final String ACTION_FROM_TARGET_MESSAGE = "<Obtain from target message>";
+    public static final String ACTION_EXPLICIT_FROM_WSDL_INPUT = "<Explicit from WSDL (Input)>";
+    public static final String ACTION_EXPLICIT_FROM_WSDL_OUTPUT = "<Explicit from WSDL (Output)>";
     public static final String DEFAULT_NAMESPACE = SoapConstants.WSA_NAMESPACE_10;
     public static final String SUFFIX_ACTION = "action";
     public static final String SUFFIX_MESSAGE_ID = "messageId";
