@@ -174,19 +174,18 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
     }
 
     private void updateButtons() {
-        boolean enablePasswordSettings = includePasswordCheckBox.isSelected();
-        passwordField.setEnabled( enablePasswordSettings );
-        showPasswordCheckBox.setEnabled( enablePasswordSettings );
-        digestPasswordCheckBox.setEnabled( enablePasswordSettings );
+        boolean specifiedCreds = useSpecifiedCredentialsRadioButton.isSelected();
+        includeNonceCheckBox.setEnabled(specifiedCreds);
+        includeCreatedCheckBox.setEnabled(specifiedCreds);
+        usernameTextField.setEnabled(specifiedCreds);
+        digestPasswordCheckBox.setEnabled(specifiedCreds);
+        encryptUsernameTokenCheckBox.setEnabled(specifiedCreds);
 
-        boolean enableSpecifiedSettings = useSpecifiedCredentialsRadioButton.isSelected();
-        includeNonceCheckBox.setEnabled(enableSpecifiedSettings);
-        includeCreatedCheckBox.setEnabled(enableSpecifiedSettings);
-        usernameTextField.setEnabled(enableSpecifiedSettings);
-        passwordField.setEnabled(enableSpecifiedSettings);
-        digestPasswordCheckBox.setEnabled(enableSpecifiedSettings);
-        encryptUsernameTokenCheckBox.setEnabled(enableSpecifiedSettings);
-        showPasswordCheckBox.setEnabled(enableSpecifiedSettings);
+        boolean includePassword = includePasswordCheckBox.isSelected();
+        boolean specifiedPassword = specifiedCreds && includePassword;
+        passwordField.setEnabled(specifiedPassword);
+        showPasswordCheckBox.setEnabled(specifiedPassword);
+        digestPasswordCheckBox.setEnabled(specifiedPassword);
     }
 
     private void validateData() throws AssertionPropertiesOkCancelSupport.ValidationException {
