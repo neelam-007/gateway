@@ -142,6 +142,11 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
                 auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The session creation time is invalid.");
                 return AssertionStatus.FALSIFIED;
             }
+
+            // If the creation time is a future time, then reassign it to the current time.
+            if (creationTime > now) {
+                creationTime = now;
+            }
         } else {
             creationTime = now;
         }
