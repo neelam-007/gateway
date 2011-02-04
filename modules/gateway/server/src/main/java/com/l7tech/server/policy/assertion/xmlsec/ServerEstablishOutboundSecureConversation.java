@@ -172,7 +172,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         } else {
             maxExpiryPeriod = assertion.getMaxLifetime();
         }
-        if (maxExpiryPeriod > 0 && maxExpiryPeriod < (expirationTime - creationTime)) {
+        if (maxExpiryPeriod > 0 && ((expirationTime == creationTime) || maxExpiryPeriod < (expirationTime - creationTime))) {
             expirationTime = creationTime + maxExpiryPeriod;
         }
         // 5.5 Validate the expiration time against the creation time and check if the session has expired
