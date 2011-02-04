@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
@@ -16,9 +17,7 @@ import javax.swing.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.text.MessageFormat;
@@ -493,6 +492,15 @@ public class EmailListenerPropertiesDialog extends JDialog {
  	 	            selectMe = comboitems[i];
  	 	        }
  	 	    }
+            // sort services
+            Arrays.sort(comboitems,new Comparator(){
+                @Override
+                public int compare(Object o1, Object o2) {
+                    ComboItem c1 = (ComboItem)o1;
+                    ComboItem c2 = (ComboItem)o2;
+                    return c1.toString().compareToIgnoreCase(c2.toString());
+                }
+            });            
 
             serviceNameCombo.setModel(new DefaultComboBoxModel(comboitems));
  	 	    if (selectMe != null) {
