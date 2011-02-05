@@ -132,7 +132,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         validator.addRule(new InputValidator.NumberSpinnerValidationRule(cacheSizeSpinner, "Cache size"));
         cachePeriodSpinner.setModel(new SpinnerNumberModel((int)assertion.getCachePeriod(), 0, null, 1));
         validator.addRule(new InputValidator.NumberSpinnerValidationRule(cachePeriodSpinner, "Cache maximum age"));
-        maximumResultsSpinner.setModel( new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1) );
+        maximumResultsSpinner.setModel( new SpinnerNumberModel(0, 0, null, 1) );
         validator.addRule(new InputValidator.NumberSpinnerValidationRule(maximumResultsSpinner, "Maximum results"));
         maximumResultsSpinner.getEditor().setPreferredSize( cachePeriodSpinner.getEditor().getPreferredSize() );
 

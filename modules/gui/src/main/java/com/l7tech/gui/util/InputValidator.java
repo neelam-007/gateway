@@ -157,7 +157,16 @@ public class InputValidator implements FocusListener {
                 }
                 spinner.commitEdit();
             } catch (Exception e) {
-                return "'" + valueText + "' is not a number. A valid number must be between " + minimum + " and " + maximum + ".";
+                final StringBuilder errorBuilder = new StringBuilder();
+                errorBuilder.append( "'" ).append( valueText ).append( "' is not a number. A valid number must be " );
+                if ( minimum == null && maximum != null ) {
+                    errorBuilder.append( "less than or equal to " ).append( maximum ).append( "." );
+                } else if ( minimum != null && maximum == null ) {
+                    errorBuilder.append( "greater than or equal to " ).append( minimum ).append( "." );
+                } else {
+                    errorBuilder.append( "between " ).append( minimum ).append( " and " ).append( maximum ).append( "." );
+                }
+                return errorBuilder.toString();
             }
 
             return null;
