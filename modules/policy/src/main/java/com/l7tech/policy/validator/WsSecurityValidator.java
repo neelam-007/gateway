@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken;
 import com.l7tech.policy.assertion.xmlsec.AddWssUsernameToken;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
+import com.l7tech.policy.assertion.xmlsec.WssConfigurationAssertion;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
 import com.l7tech.security.token.SecurityTokenType;
 
@@ -54,8 +55,7 @@ public class WsSecurityValidator implements AssertionValidator {
             if ( assertion == wsSecurity ) {
                 break;
             }
-            if ( ( assertion instanceof WssEncryptElement ||
-                   (assertion instanceof AddWssUsernameToken && ((AddWssUsernameToken)assertion).isEncrypt() ) ) &&
+            if ( isEncryptionAssertion(assertion) &&
                  AssertionUtils.isSameTargetMessage(wsSecurity, assertion) &&
                  ((SecurityHeaderAddressable)assertion).getRecipientContext().localRecipient() ) {
                 found = true;
@@ -64,6 +64,14 @@ public class WsSecurityValidator implements AssertionValidator {
         }
 
         return found;
+    }
+
+    private boolean isEncryptionAssertion( final Assertion assertion ) {
+        return assertion instanceof WssEncryptElement ||
+               (assertion instanceof AddWssUsernameToken && ((AddWssUsernameToken)assertion).isEncrypt()) ||
+               (assertion instanceof AddWssSecurityToken && ((AddWssSecurityToken)assertion).isEncrypt() &&
+                       ((AddWssSecurityToken)assertion).getTokenType()==SecurityTokenType.WSS_USERNAME) ||
+               (assertion instanceof WssConfigurationAssertion && ((WssConfigurationAssertion)assertion).isEncryptSignature() );
     }
 
     /**
