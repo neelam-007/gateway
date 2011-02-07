@@ -152,7 +152,7 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
     }
 
     private final static String baseName = "Set Context Variable";
-    private static final int MAX_DISPLAY_LENGTH = 40;
+    private static final int MAX_DISPLAY_LENGTH = 60;
     
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SetVariableAssertion>(){
         @Override
