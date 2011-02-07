@@ -40,6 +40,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     @Override
     public WsSecurity getData( final WsSecurity assertion ) throws ValidationException {
         assertion.setApplyWsSecurity( applyWsSecurityCheckBox.isSelected() );
+        assertion.setClearDecorationRequirements( clearWsSecurityCheckBox.isSelected() );
 
         assertion.setReplaceSecurityHeader( recreateSecurityHeaderCheckBox.isSelected() );
         assertion.setRemoveUnmatchedSecurityHeaders( removeUnmatchedSecurityHeadersCheckBox.isSelected( ) );
@@ -68,6 +69,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     @Override
     public void setData( final WsSecurity assertion ) {
         applyWsSecurityCheckBox.setSelected( assertion.isApplyWsSecurity() );
+        clearWsSecurityCheckBox.setSelected( assertion.isClearDecorationRequirements() );
 
         recreateSecurityHeaderCheckBox.setSelected( assertion.isReplaceSecurityHeader() );
         removeUnmatchedSecurityHeadersCheckBox.setSelected( assertion.isRemoveUnmatchedSecurityHeaders() );
@@ -173,6 +175,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JTextField selectedCertificateSubjectTextField;
     private JTextField selectedCertificateIssuerTextField;
     private JPanel applySecuritySettingsPanel;
+    private JCheckBox clearWsSecurityCheckBox;
 
     private long recipientCertificateOid;
     private boolean isResponse;

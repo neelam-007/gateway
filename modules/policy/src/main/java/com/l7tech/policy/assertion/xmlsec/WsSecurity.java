@@ -79,6 +79,14 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
         this.useSecureSpanActor = useSecureSpanActor;
     }
 
+    public boolean isClearDecorationRequirements() {
+        return clearDecorationRequirements;
+    }
+
+    public void setClearDecorationRequirements( final boolean clearDecorationRequirements ) {
+        this.clearDecorationRequirements = clearDecorationRequirements;
+    }
+
     public boolean isUseSecurityHeaderMustUnderstand() {
         return useSecurityHeaderMustUnderstand;
     }
@@ -178,6 +186,7 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
     private boolean removeUnmatchedSecurityHeaders = false;
     private boolean useSecurityHeaderMustUnderstand = true;
     private boolean useSecureSpanActor = false;
+    private boolean clearDecorationRequirements = false;
     private boolean applyWsSecurity = true;
     private WsSecurityVersion wsSecurityVersion;
     private long recipientTrustedCertificateOid;

@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
@@ -18,6 +19,7 @@ import com.l7tech.server.identity.cert.TrustedCertCache;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.ExceptionUtils;
@@ -63,6 +65,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
 
     //- PROTECTED
 
+    @SuppressWarnings({ "deprecation" })
     @Override
     protected  AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
                                                final Message message,
@@ -131,6 +134,17 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                     }
                 }
                 SoapUtil.removeEmptySoapHeader(document);
+            }
+
+            if ( assertion.isClearDecorationRequirements() ) {
+                securityKnob.removeAllDecorationRequirements();
+                context.addDeferredAssertion( this, new AbstractServerAssertion<Assertion>(assertion){
+                    @Override
+                    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
+                        securityKnob.removeAllDecorationRequirements();
+                        return AssertionStatus.NONE;
+                    }
+                } );
             }
 
             return AssertionStatus.NONE;
@@ -221,7 +235,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                     securityHeader.removeAttributeNS( soapUri, SoapConstants.ACTOR_ATTR_NAME );
                     if ( securityHeaderActor != null ) {
                         if ( defaultNS ) {
-                            securityHeader.setAttribute( SoapConstants.ACTOR_ATTR_NAME, securityHeaderActor);
+                            securityHeader.setAttributeNS( null, SoapConstants.ACTOR_ATTR_NAME, securityHeaderActor);
                         } else {
                             SoapUtil.setSoapAttr( securityHeader, SoapConstants.ACTOR_ATTR_NAME, securityHeaderActor);
                         }
