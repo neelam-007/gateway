@@ -415,7 +415,12 @@ public class RstrInfo {
 
         if ( ( localName != null && !localName.equals( element.getLocalName() ) ) ||
              !ArrayUtils.contains( namespaces, element.getNamespaceURI() )) {
-            throw new InvalidDocumentFormatException( "Expected a wst:" + localName + " but received " + qName(element) );
+
+            if ( localName == null ) {
+                throw new InvalidDocumentFormatException( "Expected a ws-trust element but received " + qName(element) );
+            } else {
+                throw new InvalidDocumentFormatException( "Expected a wst:" + localName + " but received " + qName(element) );
+            }
         }
     }
 
