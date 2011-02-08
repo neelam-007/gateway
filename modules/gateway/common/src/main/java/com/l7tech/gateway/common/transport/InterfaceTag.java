@@ -21,7 +21,7 @@ public class InterfaceTag {
     private static final Pattern NAME_PAT = Pattern.compile("[a-zA-Z_][a-zA-Z_0-9]*");
 
     /** Pattern that matches a single InterfaceTag in String format. */
-    private static final Pattern SINGLE_PAT = Pattern.compile("([a-zA-Z_][a-zA-Z_0-9]*)\\(([0-9.,/]*)\\)");
+    private static final Pattern SINGLE_PAT = Pattern.compile("([a-zA-Z_][a-zA-Z_0-9]*)\\(([0-9a-fA-F.,:/]*)\\)");
 
     private String name;
     private Set<String> ipPatterns; // TODO use a more appropriate class for this than String
@@ -49,6 +49,10 @@ public class InterfaceTag {
         String name = matcher.group(1);
         String patString = matcher.group(2);
         String[] patArray = "".equals(patString) ? new String[0] : patString.split("\\,");
+        for ( final String pattern : patArray ) {
+            if ( !isValidPattern(pattern) ) 
+                throw new ParseException("Invalid InterfaceTag format", 0);
+        }
         return new InterfaceTag(name, new LinkedHashSet<String>(Arrays.asList(patArray)));
     }
 
