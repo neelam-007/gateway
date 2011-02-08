@@ -76,7 +76,7 @@ public class WssProcessorImpl implements WssProcessor {
 
     // WARNING : Settings must be copied in undecorateMessage
     private SecurityTokenResolver securityTokenResolver = null;
-    private SecurityContextFinder securityContextFinder = null;
+    private WrappedSecurityContextFinder securityContextFinder = new WrappedSecurityContextFinder(null);
     private long signedAttachmentSizeLimit = 0;
     private boolean rejectOnMustUnderstand = true;
     private boolean permitMultipleTimestampSignatures = false;
@@ -155,7 +155,7 @@ public class WssProcessorImpl implements WssProcessor {
      * @param securityContextFinder a security context finder for looking up ws-sc sessions, or null to disable WS-SC support.
      */
     public void setSecurityContextFinder(SecurityContextFinder securityContextFinder) {
-        this.securityContextFinder = securityContextFinder;
+        this.securityContextFinder = new WrappedSecurityContextFinder(securityContextFinder);
     }
 
     /**
@@ -353,7 +353,7 @@ public class WssProcessorImpl implements WssProcessor {
                 // now pre-processed, see processTokensAndReferences()
             } else if (securityChildToProcess.getLocalName().equals( SoapConstants.SIGNATURE_EL_NAME)) {
                 if (securityChildToProcess.getNamespaceURI().equals( SoapConstants.DIGSIG_URI)) {
-                    processSignature(securityChildToProcess, securityContextFinder);
+                    processSignature(securityChildToProcess);
                 } else {
                     logger.fine("Encountered Signature element but not of right namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ')');
@@ -372,10 +372,7 @@ public class WssProcessorImpl implements WssProcessor {
                         throw new InvalidDocumentFormatException("SecurityContextToken element found, " +
                                                                  "but its identifier was not extracted.");
                     } else {
-                        if (securityContextFinder == null)
-                            throw new ProcessorException("SecurityContextToken element found in message, but caller " +
-                                                         "did not provide a SecurityContextFinder");
-                        final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
+                        final SecurityContext secContext = securityContextFinder.getSecurityContext("SecurityContextToken", identifier);
                         if (secContext == null) {
                             throw new BadSecurityContextException(identifier);
                         }
@@ -407,7 +404,7 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             } else if (securityChildToProcess.getLocalName().equals( SoapConstants.SECURITYTOKENREFERENCE_EL_NAME)) {
                 if (DomUtils.elementInNamespace(securityChildToProcess, SoapConstants.SECURITY_URIS_ARRAY)) {
-                    processSecurityTokenReference(securityChildToProcess, securityContextFinder, true, true);
+                    processSecurityTokenReference(securityChildToProcess, true, true);
                 } else {
                     logger.fine("Encountered SecurityTokenReference element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ')');
@@ -496,7 +493,7 @@ public class WssProcessorImpl implements WssProcessor {
         while (securityChildToProcess != null) {
             if (securityChildToProcess.getLocalName().equals( SoapConstants.SECURITYTOKENREFERENCE_EL_NAME)) {
                 if (DomUtils.elementInNamespace(securityChildToProcess, SoapConstants.SECURITY_URIS_ARRAY)) {
-                    processSecurityTokenReference(securityChildToProcess, securityContextFinder, false, false);
+                    processSecurityTokenReference(securityChildToProcess, false, false);
                 }
             }
 
@@ -734,7 +731,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private KerberosSigningSecurityToken findKerberosSigningSecurityTokenBySha1( final String sha1,
-                                                                                 final Element securityTokenReference ) {
+                                                                                 final Element securityTokenReference ) throws ProcessorException {
         KerberosSigningSecurityToken kerberosSigningSecurityToken = null;
 
         for ( XmlSecurityToken xmlSecurityToken : securityTokens ) {
@@ -749,7 +746,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         if ( kerberosSigningSecurityToken == null ) {
             String identifier = KerberosUtils.getSessionIdentifier(sha1);
-            SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
+            SecurityContext secContext = securityContextFinder.getSecurityContext("Kerberos KeyIdentifier", identifier);
             if ( secContext != null && secContext.getSecurityToken() instanceof KerberosSigningSecurityToken ) {
                 KerberosSigningSecurityToken sessionToken = (KerberosSigningSecurityToken) secContext.getSecurityToken();
                 kerberosSigningSecurityToken = KerberosSigningSecurityTokenImpl.createBinarySecurityToken(
@@ -1056,13 +1053,12 @@ public class WssProcessorImpl implements WssProcessor {
      * and once during main processing.
      *
      * @param str  the SecurityTokenReference element
-     * @param securityContextFinder the context finder to perform lookups with (may be null)
      * @param logIfNothingFound True to log if the reference is missing or of an unknown type
      * @param tokenRequired True if a missing token is an error / warning
      * @throws com.l7tech.util.InvalidDocumentFormatException if STR is invalid format or points at something unsupported
      * @throws com.l7tech.security.xml.processor.ProcessorException if a securityContextFinder is required to resolve this STR, but one was not provided
      */
-    private void processSecurityTokenReference(Element str, SecurityContextFinder securityContextFinder, boolean logIfNothingFound, boolean tokenRequired )
+    private void processSecurityTokenReference(Element str, boolean logIfNothingFound, boolean tokenRequired )
             throws InvalidDocumentFormatException, ProcessorException
     {
         // Check if already processed
@@ -1162,10 +1158,6 @@ public class WssProcessorImpl implements WssProcessor {
                                " with missing or invalid KeyIdentifier/@EncodingType=" + encodingType);
                 return;
             }
-
-            if (securityContextFinder == null)
-                throw new ProcessorException("Kerberos KeyIdentifier element found in message, but caller did not " +
-                                             "provide a SecurityContextFinder");
 
             KerberosSigningSecurityToken ksst = findKerberosSigningSecurityTokenBySha1(value,str);
             if ( ksst == null && tokenRequired ) {
@@ -1269,7 +1261,7 @@ public class WssProcessorImpl implements WssProcessor {
 
                 // The SecurityContextToken may not be in this message, try lookup by ID
                 if (tok == null && refEl.getAttribute("ValueType").endsWith("/sct") ) {
-                    SecurityContext sctx = securityContextFinder.getSecurityContext(ref);
+                    SecurityContext sctx = securityContextFinder.getSecurityContext("DerivedKeyToken", ref);
                     if (sctx != null) {
                         Element elm = refEl.getOwnerDocument().createElementNS("http://layer7tech.com/ns/wssc/SCT/virtual", "SecurityContextToken");
                         tok = new SecurityContextTokenImpl(sctx, elm, ref);
@@ -1994,8 +1986,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private void processSignature(final Element sigElement,
-                                  final SecurityContextFinder securityContextFinder)
+    private void processSignature( final Element sigElement )
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, IOException
     {
         if(logger.isLoggable(Level.FINEST)) logger.finest("Processing Signature");
@@ -2029,7 +2020,7 @@ public class WssProcessorImpl implements WssProcessor {
         // Process any STR that is used within the signature
         Element keyInfoStr = DomUtils.findFirstChildElementByName(keyInfoElement, SoapConstants.SECURITY_URIS_ARRAY, "SecurityTokenReference");
         if (keyInfoStr != null) {
-            processSecurityTokenReference(keyInfoStr, securityContextFinder, false, true);
+            processSecurityTokenReference(keyInfoStr, false, true);
         }
 
         if (signingCert == null && dkt != null) {
@@ -2235,7 +2226,7 @@ public class WssProcessorImpl implements WssProcessor {
             bst = domFactory.createElementNS(wsseNs, wssePrefix+":BinarySecurityToken");
             bst.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:"+wssePrefix, wsseNs);
         }
-        bst.setAttribute("ValueType", SoapConstants.VALUETYPE_X509);
+        bst.setAttributeNS(null, "ValueType", SoapConstants.VALUETYPE_X509);
         DomUtils.setTextContent(bst, HexUtils.encodeBase64(certificate.getEncoded(), true));
         signingCertToken = new X509BinarySecurityTokenImpl(certificate, bst);
         return signingCertToken;
@@ -2259,4 +2250,19 @@ public class WssProcessorImpl implements WssProcessor {
         return clientAddress;
     }
 
+    private class WrappedSecurityContextFinder {
+        private final SecurityContextFinder securityContextFinder;
+
+        private WrappedSecurityContextFinder( final SecurityContextFinder securityContextFinder ) {
+            this.securityContextFinder = securityContextFinder;
+        }
+
+        private SecurityContext getSecurityContext( final String what,
+                                                    final String identifier ) throws ProcessorException {
+            if (securityContextFinder == null)
+                throw new ProcessorValidationException(what + " element found in message, but no SecurityContextFinder is available");
+
+            return securityContextFinder.getSecurityContext( identifier );
+        }
+    }
 }
