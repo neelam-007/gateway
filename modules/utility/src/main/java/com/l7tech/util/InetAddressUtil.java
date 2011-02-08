@@ -538,9 +538,9 @@ public class InetAddressUtil {
         String port = defaultPort;
 
         int lastColon = hostAndPossiblyPort.lastIndexOf(':');
-        if (lastColon < 0) {
+        if (lastColon < 0) { // hostname or IPv4 address
             host = hostAndPossiblyPort;
-        } else if ( hostAndPossiblyPort.startsWith("[")) {
+        } else if ( hostAndPossiblyPort.startsWith("[")) { // IPv6 host[/port]
             if (hostAndPossiblyPort.lastIndexOf(']') == lastColon -1 ) {
                 host = hostAndPossiblyPort.substring(0, lastColon);
                 try {
@@ -551,12 +551,16 @@ public class InetAddressUtil {
             } else {
                 host = hostAndPossiblyPort;
             }
-        } else {
+        } else { // hostname:port, IPv4 host:port or IPv6 host only
             host = hostAndPossiblyPort.substring(0, lastColon);
-            try {
-                port = hostAndPossiblyPort.substring(lastColon + 1, hostAndPossiblyPort.length());
-            } catch (ArrayIndexOutOfBoundsException e2) {
-                // use default port
+            if ( host.indexOf( ':' ) >= 0) {
+                host = "[" + hostAndPossiblyPort + "]";
+            } else {
+                try {
+                    port = hostAndPossiblyPort.substring(lastColon + 1, hostAndPossiblyPort.length());
+                } catch (ArrayIndexOutOfBoundsException e2) {
+                    // use default port
+                }
             }
         }
         return new Pair<String, String>(host, port);

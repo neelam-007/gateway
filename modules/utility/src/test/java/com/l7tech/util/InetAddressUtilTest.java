@@ -2,6 +2,8 @@ package com.l7tech.util;
 
 import static com.l7tech.util.InetAddressUtil.patternMatchesAddress;
 import static junit.framework.Assert.*;
+
+import com.l7tech.test.BugNumber;
 import org.junit.*;
 
 import java.net.InetAddress;
@@ -48,6 +50,34 @@ public class InetAddressUtilTest {
         assertMatches(new int[] { 192, 168, 4, 253 }, InetAddressUtil.parseDottedDecimalPrefix("192.168.4.253"));
         assertMatches(new int[] { 1, 2, 3, 4 }, InetAddressUtil.parseDottedDecimalPrefix("1.2.3.4.5.6.7.8.9"));
         assertMatches(new int[] { 0, 1, 2, 3 }, InetAddressUtil.parseDottedDecimalPrefix("256.257.258.259"));
+    }
+
+    @BugNumber(9683)
+    @Test
+    public void testGetHostAndPort() {
+        // IPv4 host tests
+        assertEquals( "IPv4 address 0.0.0.0", "0.0.0.0", InetAddressUtil.getHostAndPort("0.0.0.0", "8443").left );
+        assertEquals( "IPv4 address 0.0.0.0", "255.255.255.255", InetAddressUtil.getHostAndPort("255.255.255.255", "8443").left );
+
+        // IPv4 host:port tests
+        assertEquals( "IPv4 address 0.0.0.0:8443", "0.0.0.0", InetAddressUtil.getHostAndPort("0.0.0.0:8443", "8443").left );
+        assertEquals( "IPv4 address 255.255.255.255:8443", "255.255.255.255", InetAddressUtil.getHostAndPort("255.255.255.255:8443", "8443").left );
+
+        // IPv6 host only tests
+        assertEquals( "IPv6 address ::", "[::]", InetAddressUtil.getHostAndPort("::", "8443").left );
+        assertEquals( "IPv6 address ::1", "[::1]", InetAddressUtil.getHostAndPort("::1", "8443").left );
+        assertEquals( "IPv6 address 2222::f", "[2222::f]", InetAddressUtil.getHostAndPort("2222::f", "8443").left );
+        assertEquals( "IPv6 address abf3:FF2:0::00:23", "[abf3:FF2:0::00:23]", InetAddressUtil.getHostAndPort("abf3:FF2:0::00:23", "8443").left );
+        assertEquals( "IPv6 address cafe:babe:0000::4343:1.2.3.4", "[cafe:babe:0000::4343:1.2.3.4]", InetAddressUtil.getHostAndPort("cafe:babe:0000::4343:1.2.3.4", "8443").left );
+        assertEquals( "IPv6 address 2001:0db8:85a3:08d3:1319:8a2e:0370:7348", "[2001:0db8:85a3:08d3:1319:8a2e:0370:7348]", InetAddressUtil.getHostAndPort("2001:0db8:85a3:08d3:1319:8a2e:0370:7348", "8443").left );
+
+        // IPv6 host:port tests
+        assertEquals( "IPv6 address [::]:8443", "[::]", InetAddressUtil.getHostAndPort("[::]:8443", "8443").left );
+        assertEquals( "IPv6 address [::1]:8443", "[::1]", InetAddressUtil.getHostAndPort("[::1]:8443", "8443").left );
+        assertEquals( "IPv6 address [2222::f]:8443", "[2222::f]", InetAddressUtil.getHostAndPort("[2222::f]:8443", "8443").left );
+        assertEquals( "IPv6 address [abf3:FF2:0::00:23]:8443", "[abf3:FF2:0::00:23]", InetAddressUtil.getHostAndPort("[abf3:FF2:0::00:23]:8443", "8443").left );
+        assertEquals( "IPv6 address [cafe:babe:0000::4343:1.2.3.4]:8443", "[cafe:babe:0000::4343:1.2.3.4]", InetAddressUtil.getHostAndPort("[cafe:babe:0000::4343:1.2.3.4]:8443", "8443").left );
+        assertEquals( "IPv6 address [2001:0db8:85a3:08d3:1319:8a2e:0370:7348]:8443", "[2001:0db8:85a3:08d3:1319:8a2e:0370:7348]", InetAddressUtil.getHostAndPort("[2001:0db8:85a3:08d3:1319:8a2e:0370:7348]:8443", "8443").left );
     }
 
     private void assertMatches(int[] expect, byte[] got) {
