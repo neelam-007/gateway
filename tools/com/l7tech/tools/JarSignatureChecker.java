@@ -40,7 +40,7 @@ public class JarSignatureChecker {
         int code = 0;
 
         // error if expires in the next 6 months (ish)
-        Date errorExpiry = new Date( System.currentTimeMillis() + ( 1000L*60L*60L*24L*120L ) );
+        Date errorExpiry = new Date( System.currentTimeMillis() + ( 1000L*60L*60L*24L*90L ) );
         if ( !expiryMap.isEmpty() && expiryMap.keySet().iterator().next().before(errorExpiry) ) {
             code = 1;
         }
