@@ -268,7 +268,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         final InputValidator.ValidationRule ttlRule =
                 inputValidator.buildTextFieldNumberRangeValidationRule( "Time To Live", requestTimeToLiveTextField, 0, Long.MAX_VALUE, false );
         inputValidator.constrainTextField( requestTimeToLiveTextField,
-                buildTextFieldContextVariableValidationRule( "Time To Live", requestPriorityTextField, ttlRule ) );
+                buildTextFieldContextVariableValidationRule( "Time To Live", requestTimeToLiveTextField, ttlRule ) );
         inputValidator.constrainTextField(jmsResponseTimeout, new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
