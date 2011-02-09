@@ -2,24 +2,22 @@ package com.l7tech.external.assertions.mtom.console;
 
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.mtom.MtomEncodeAssertion;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.gui.NumberField;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
-import com.l7tech.console.util.VariablePrefixUtil;
+import com.l7tech.xml.xpath.XpathExpression;
 
 import javax.swing.*;
-import java.util.ResourceBundle;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ResourceBundle;
 
 /**
  *
@@ -59,7 +57,7 @@ public class MtomEncodeAssertionPropertiesDialog extends MtomAssertionProperties
         optimizationThresholdTextField.setText( Integer.toString(assertion.getOptimizationThreshold() / 1024) );
         alwaysEncodeCheckBox.setSelected( assertion.isAlwaysEncode() );
         failIfNotFoundCheckBox.setSelected( assertion.isFailIfNotFound() );
-        messageTargetVariableNameTextField.setAssertion(assertion);
+        messageTargetVariableNameTextField.setAssertion(assertion,getPreviousAssertion());
         DefaultListModel model = (DefaultListModel) optimizationXPathsList.getModel();
         model.clear();
         if ( assertion.getXpathExpressions() != null ) {

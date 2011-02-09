@@ -25,7 +25,6 @@ public class LookupOutboundSecureConversationSessionPropertiesDialog extends Ass
 
     public LookupOutboundSecureConversationSessionPropertiesDialog(Window owner, LookupOutboundSecureConversationSession assertion) {
         super(owner, assertion);
-        setData(assertion);
         initialize();
     }
 
@@ -37,6 +36,7 @@ public class LookupOutboundSecureConversationSessionPropertiesDialog extends Ass
     @Override
     public void setData(LookupOutboundSecureConversationSession assertion) {
         this.assertion = assertion;
+        modelToView();
     }
 
     @Override
@@ -81,7 +81,7 @@ public class LookupOutboundSecureConversationSessionPropertiesDialog extends Ass
             }
         });
 
-        modelToView();
+
     }
 
     private void modelToView() {
@@ -89,7 +89,7 @@ public class LookupOutboundSecureConversationSessionPropertiesDialog extends Ass
 
         varPrefixTextField.setSuffixes(assertion.getVariableSuffixes());
         varPrefixTextField.setVariable(assertion.getVariablePrefix());
-        varPrefixTextField.setAssertion(assertion);
+        varPrefixTextField.setAssertion(assertion,getPreviousAssertion());
     }
 
     private void viewToModel(LookupOutboundSecureConversationSession assertion) {

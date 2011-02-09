@@ -4,6 +4,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gui.widgets.ValidatedPanel;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
@@ -39,10 +40,10 @@ public class RequireWssTimestampPanel extends ValidatedPanel<RequireWssTimestamp
 
     private volatile boolean targetPanelValid = true;
 
-    public RequireWssTimestampPanel(RequireWssTimestamp model) {
+    public RequireWssTimestampPanel(RequireWssTimestamp model, Assertion prevAssertion) {
         super("expiryTime");
         this.assertion = model;
-        targetMessagePanel.setModel(model);
+        targetMessagePanel.setModel(model, prevAssertion);
         init();
     }
 

@@ -22,11 +22,9 @@ import java.util.logging.Logger;
 /**
  * A dialog to view / configure the properties of an {@link XslTransformation xslt assertion}.
  */
-public class XslTransformationPropertiesDialog extends JDialog {
+public class XslTransformationPropertiesDialog extends AssertionPropertiesOkCancelSupport<XslTransformation> {
     private static final Logger log = Logger.getLogger(XslTransformationPropertiesDialog.class.getName());
 
-    private JButton okButton;
-    private JButton cancelButton;
     private JPanel mainPanel;
     private JSpinner whichMimePartSpinner;
     private JLabel whichMimePartLabel;
@@ -38,10 +36,10 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private TargetVariablePanel messageVariablePrefixTextField;
 
     private XslTransformation assertion;
-    private final XslTransformationSpecifyPanel specifyPanel;
-    private final RegexWhiteListPanel fetchPanel;
-    private final MonitorUrlPanel specifyUrlPanel;
-    private boolean wasoked = false;
+    private XslTransformationSpecifyPanel specifyPanel;
+    private RegexWhiteListPanel fetchPanel;
+    private MonitorUrlPanel specifyUrlPanel;
+    private InputValidator inputValidator;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.XslTransformationPropertiesDialog");
 
@@ -56,18 +54,20 @@ public class XslTransformationPropertiesDialog extends JDialog {
         return resources;
     }
 
-    public XslTransformationPropertiesDialog(Frame owner, boolean modal, final boolean readOnly, XslTransformation assertion) {
-        super(owner, resources.getString("window.title"), modal);
-
-        if (assertion == null) throw new IllegalArgumentException("Xslt Transformation == null");
-
+    public XslTransformationPropertiesDialog(Frame owner, boolean modal, XslTransformation assertion) {
+        super(XslTransformation.class,owner, resources.getString("window.title"), modal);
         this.assertion = assertion;
+        initComponents();
+    }
+
+    @Override
+    protected void initComponents() {
+        super.initComponents();
 
         Utilities.setEscKeyStrokeDisposes(this);
 
         targetMessagePanel.setTitle(null);
         targetMessagePanel.setBorder(null);
-        targetMessagePanel.setModel(assertion);
         targetMessagePanel.setAllowNonMessageVariables(true);
 
         whichMimePartLabel.setLabelFor(whichMimePartSpinner);
@@ -102,10 +102,9 @@ public class XslTransformationPropertiesDialog extends JDialog {
         });
 
         whichMimePartSpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
-        InputValidator inputValidator = new InputValidator(this, resources.getString("window.title"));
+        inputValidator = new InputValidator(this, resources.getString("window.title"));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(whichMimePartSpinner, "MIME part"));
         //noinspection UnnecessaryBoxing
-        whichMimePartSpinner.setValue(new Integer(assertion.getWhichMimePart()));
 
         messageVariablePrefixTextField = new TargetVariablePanel();
         messageVariablePrefixTextFieldPanel.setLayout(new BorderLayout());
@@ -113,41 +112,9 @@ public class XslTransformationPropertiesDialog extends JDialog {
         messageVariablePrefixTextField.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
-                okButton.setEnabled(messageVariablePrefixTextField.isEntryValid()&& !readOnly);
+                getOkButton().setEnabled(messageVariablePrefixTextField.isEntryValid()&& !isReadOnly());
             }
         });
-        messageVariablePrefixTextField.setVariable(assertion.getMsgVarPrefix());
-        messageVariablePrefixTextField.setAssertion(assertion);
-        messageVariablePrefixTextField.setSuffixes(new String[] {XslTransformation.VARIABLE_NAME});
-
-        AssertionResourceInfo ri = assertion.getResourceInfo();
-        AssertionResourceType rit = ri.getType();
-        if (AssertionResourceType.MESSAGE_URL.equals(rit)) {
-            cbXslLocation.setSelectedItem(MODE_FETCH_PI_URL);
-        } else if (AssertionResourceType.SINGLE_URL.equals(rit)) {
-            cbXslLocation.setSelectedItem(MODE_SPECIFY_URL);
-        } else {
-            if (!AssertionResourceType.STATIC.equals(rit)) log.warning("Unknown AssertionResourceType, assuming static: " + rit);
-            cbXslLocation.setSelectedItem(MODE_SPECIFY_XSL);
-        }
-        updateModeComponents();
-
-        // create callbacks
-        okButton.setEnabled( !readOnly );
-        inputValidator.attachToButton(okButton, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ok();
-            }
-        });
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                cancel();
-            }
-        });
-
-        add(mainPanel);
 
         Utilities.setRequestFocusOnOpen( this );
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
@@ -194,9 +161,47 @@ public class XslTransformationPropertiesDialog extends JDialog {
         }
     }
 
-    private void ok() {
-        // validate the contents of the xml control
-        String err;
+
+
+    void displayError(String msg, String title) {
+        if (title == null) title = resources.getString("error.window.title");
+        JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
+    }
+
+
+
+    @Override
+    public void setData(XslTransformation assertion) {
+        targetMessagePanel.setModel(assertion,getPreviousAssertion(),false);
+        specifyPanel.updateModel(assertion);
+        specifyUrlPanel.updateModel(assertion);
+        fetchPanel.updateModel(assertion);
+        
+        messageVariablePrefixTextField.setVariable(assertion.getMsgVarPrefix());
+        messageVariablePrefixTextField.setAssertion(assertion,null);
+        messageVariablePrefixTextField.setSuffixes(new String[] {XslTransformation.VARIABLE_NAME});
+
+        whichMimePartSpinner.setValue(new Integer(assertion.getWhichMimePart()));
+        
+        AssertionResourceInfo ri = assertion.getResourceInfo();
+        AssertionResourceType rit = ri.getType();
+        if (AssertionResourceType.MESSAGE_URL.equals(rit)) {
+            cbXslLocation.setSelectedItem(MODE_FETCH_PI_URL);
+        } else if (AssertionResourceType.SINGLE_URL.equals(rit)) {
+            cbXslLocation.setSelectedItem(MODE_SPECIFY_URL);
+        } else {
+            if (!AssertionResourceType.STATIC.equals(rit)) log.warning("Unknown AssertionResourceType, assuming static: " + rit);
+            cbXslLocation.setSelectedItem(MODE_SPECIFY_XSL);
+        }
+        updateModeComponents();
+    }
+
+    @Override
+    public XslTransformation getData(XslTransformation assertion) throws ValidationException {
+        String err= inputValidator.validate();
+         if (err != null) {
+            throw new ValidationException(err);
+        }
 
         String mode = getCurrentFetchMode();
         if (MODE_FETCH_PI_URL.equals(mode)) {
@@ -216,37 +221,18 @@ public class XslTransformationPropertiesDialog extends JDialog {
             err = targetMessagePanel.check();
 
         if (err != null) {
-            displayError(err, null);
-            return;
+            throw new ValidationException(err);
         }
 
         targetMessagePanel.updateModel(assertion);
 
         assertion.setWhichMimePart(((Number)whichMimePartSpinner.getValue()).intValue());
         assertion.setMsgVarPrefix(messageVariablePrefixTextField.getVariable());
-
-        wasoked = true;
-        dispose();
+        return assertion;
     }
 
-    private void cancel() {
-        wasoked = false;
-        dispose();
-    }
-
-    void displayError(String msg, String title) {
-        if (title == null) title = resources.getString("error.window.title");
-        JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
-    }
-
-    public static void main(String[] args) {
-        XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(null, true, false, new XslTransformation());
-        dlg.pack();
-        dlg.setVisible(true);
-        System.exit(0);
-    }
-
-    public boolean wasOKed() {
-        return wasoked;
+    @Override
+    protected JPanel createPropertyPanel() {
+        return mainPanel;
     }
 }

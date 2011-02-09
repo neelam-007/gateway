@@ -1,19 +1,20 @@
 package com.l7tech.external.assertions.jdbcquery.console;
 
 import com.l7tech.console.panels.TargetVariablePanel;
+import com.l7tech.console.util.MutablePair;
+import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.InputValidator;
-import com.l7tech.console.util.MutablePair;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.ResourceBundle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.text.MessageFormat;
+import java.util.ResourceBundle;
 
 public class ContextVariableNamingDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.jdbcquery.console.resources.ContextVariableNamingDialog");
@@ -29,11 +30,11 @@ public class ContextVariableNamingDialog extends JDialog {
     private boolean confirmed;
     private MutablePair<String, String> namePair;
 
-    public ContextVariableNamingDialog(JDialog owner, MutablePair<String, String> namePair, String prefix,final Assertion assertion){
+    public ContextVariableNamingDialog(JDialog owner, MutablePair<String, String> namePair, String prefix,final Assertion assertion, Assertion previousAssertion){
         super(owner, resources.getString("dialog.title.context.variable.naming"));
         this.prefix = prefix;
         initialize(namePair);
-        variableNameTextField.setAssertion(assertion);
+        variableNameTextField.setAssertion(assertion,previousAssertion);
     }
 
     private void initialize(MutablePair<String, String> namePair) {

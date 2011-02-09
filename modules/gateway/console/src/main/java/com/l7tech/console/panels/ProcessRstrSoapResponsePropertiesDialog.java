@@ -41,7 +41,7 @@ public class ProcessRstrSoapResponsePropertiesDialog extends AssertionProperties
     public void setData( final ProcessRstrSoapResponse assertion ) {
         selectIfNotNull( tokenTypeComboBox, assertion.getTokenType() );
 
-        varPrefixTextField.setAssertion( assertion );
+        varPrefixTextField.setAssertion( assertion,getPreviousAssertion() );
         varPrefixTextField.setSuffixes( ProcessRstrSoapResponse.getVariableSuffixes() );
         varPrefixTextField.setVariable( assertion.getVariablePrefix() );
 

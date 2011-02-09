@@ -303,11 +303,16 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         caseInsensitivecheckBox.setSelected(regexAssertion.isCaseInsensitive());
 
         captureVariablePrefix.setVariable(nullToEmpty(regexAssertion.getCaptureVar()));
-        captureVariablePrefix.setAssertion(regexAssertion);
+        captureVariablePrefix.setAssertion(regexAssertion,getPreviousAssertion());
 
         if (regexAssertion.isAutoTarget())
             regexAssertion.setTarget(postRouting ? TargetMessageType.RESPONSE : TargetMessageType.REQUEST);
-        targetMessagePanel.setModel(regexAssertion);
+    }
+
+    @Override
+    public void setPolicyPosition( final PolicyPosition policyPosition ) {
+        super.setPolicyPosition(policyPosition);
+        targetMessagePanel.setModel(regexAssertion,getPreviousAssertion());
     }
 
     private void doTest() {

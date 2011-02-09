@@ -1,8 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.policy.PolicyPositionAware;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.ValidatedPanel;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.KeyReference;
@@ -16,7 +18,7 @@ import java.awt.event.ActionListener;
 /**
  * GUI configuration panel for the {@link AddWssSecurityToken} assertion.
  */
-public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken> {
+public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken> implements PolicyPositionAware {
     private JPanel mainPanel;
     private JComboBox tokenTypeCombo;
     private JRadioButton bstRadio;
@@ -41,7 +43,8 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
     private JCheckBox signTokenCheckBox;
 
     private final AddWssSecurityToken assertion;
-
+    private PolicyPositionAware.PolicyPosition policyPosition;
+   
     public AddWssSecurityTokenPanel(AddWssSecurityToken model) {
         super("assertion");
         this.assertion = model;
@@ -85,14 +88,14 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         tokenTypeCombo.addActionListener(updater);
 
         samlTargetVariablePanel = new TargetVariablePanel();
-        samlTargetVariablePanel.setAssertion(assertion);
+        samlTargetVariablePanel.setAssertion(assertion,getPreviousAssertion());
         samlTargetVariablePanel.setValueWillBeWritten(false);
         samlTargetVariablePanel.setValueWillBeRead(true);
         samlVariablePanel.setLayout(new BorderLayout());
         samlVariablePanel.add(samlTargetVariablePanel, BorderLayout.CENTER);
 
         wsscSessionVariableTargetVariablePanel = new TargetVariablePanel();
-        wsscSessionVariableTargetVariablePanel.setAssertion(assertion);
+        wsscSessionVariableTargetVariablePanel.setAssertion(assertion,getPreviousAssertion());
         wsscSessionVariableTargetVariablePanel.setValueWillBeWritten(false);
         wsscSessionVariableTargetVariablePanel.setValueWillBeRead(true);
         wsscSessionVariablePanel.setLayout(new BorderLayout());
@@ -252,5 +255,20 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
 
     @Override
     public void focusFirstComponent() {
+    }
+
+
+    @Override
+    public void setPolicyPosition( final PolicyPositionAware.PolicyPosition policyPosition ) {
+        this.policyPosition = policyPosition;
+    }
+
+    @Override
+    public PolicyPosition getPolicyPosition() {
+        return this.policyPosition;
+    }
+
+    protected Assertion getPreviousAssertion() {
+        return policyPosition==null ? null : policyPosition.getPreviousAssertion();
     }
 }

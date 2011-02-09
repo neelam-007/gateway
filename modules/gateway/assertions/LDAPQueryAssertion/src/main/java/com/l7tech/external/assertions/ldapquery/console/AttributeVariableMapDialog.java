@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.ldapquery.LDAPQueryAssertion;
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -41,11 +42,11 @@ public class AttributeVariableMapDialog extends JDialog {
     private static final String MV_FAIL = "Fail assertion";
     private static final String[] MV_MODEL = { MV_USE_FIRST, MV_JOIN_COMMAS, MV_MULTIVALUED, MV_FAIL };
 
-    public AttributeVariableMapDialog(Dialog owner, QueryAttributeMapping data, final LDAPQueryAssertion assertion) throws HeadlessException {
+    public AttributeVariableMapDialog(Dialog owner, QueryAttributeMapping data, final LDAPQueryAssertion assertion, final Assertion previousAssertion) throws HeadlessException {
         super(owner, "Attribute Variable Mapping", true);
         this.data = data;
         initialize();
-        variableName.setAssertion(assertion);
+        variableName.setAssertion(assertion,previousAssertion);
     }
 
     private void initialize() {

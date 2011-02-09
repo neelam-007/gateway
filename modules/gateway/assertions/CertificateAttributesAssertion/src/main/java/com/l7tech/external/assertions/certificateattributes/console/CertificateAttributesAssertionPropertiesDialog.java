@@ -4,7 +4,6 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.certificateattributes.CertificateAttributesAssertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.gui.util.RunOnChangeListener;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -42,7 +41,7 @@ public class CertificateAttributesAssertionPropertiesDialog extends AssertionPro
     @Override
     public void setData(CertificateAttributesAssertion assertion) {
         varPrefixTextField.setVariable(assertion.getVariablePrefix());
-        varPrefixTextField.setAssertion(assertion);
+        varPrefixTextField.setAssertion(assertion,getPreviousAssertion());
         varPrefixTextField.setSuffixes(assertion.getVariableSuffixes());
     }
 

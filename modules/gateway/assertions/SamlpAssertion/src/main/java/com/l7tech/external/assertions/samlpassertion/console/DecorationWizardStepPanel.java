@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.samlpassertion.console;
 
-import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.TargetMessagePanel;
+import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
 
 import javax.swing.*;
@@ -39,6 +39,6 @@ public class DecorationWizardStepPanel extends SamlpWizardStepPanel {
     public void readSettings(Object settings) throws IllegalArgumentException {
         super.readSettings(settings);
         SamlProtocolAssertion assertion = (SamlProtocolAssertion) settings;
-        targetMessagePanel.setModel(assertion);
+        targetMessagePanel.setModel(assertion,null);
     }
 }

@@ -1,26 +1,26 @@
 package com.l7tech.external.assertions.xacmlpdp.console;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
-import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.util.VariablePrefixUtil;
+import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
+import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.Collections;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -120,7 +120,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                     lastNodePanel = panel;
                     nodeSettingsPanel.add(panel.getPanel());
                 }else if(item instanceof String && XACML_REQUEST_ELEMENT.equals(node.getUserObject())) {
-                    XacmlRequestBuilderRequestPanel panel = new XacmlRequestBuilderRequestPanel(assertion);
+                    XacmlRequestBuilderRequestPanel panel = new XacmlRequestBuilderRequestPanel(assertion, getPreviousAssertion());
                     lastNodePanel = panel;
                     nodeSettingsPanel.add(panel.getPanel());
                 } else {

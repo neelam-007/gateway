@@ -9,9 +9,9 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.JmsDynamicProperties;
 import com.l7tech.policy.assertion.*;
@@ -535,12 +535,12 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             defaultResponseRadioButton.setSelected(false);
             saveAsContextVariableRadioButton.setSelected(true);
             responseTargetVariable.setVariable(responseTarget.getOtherTargetMessageVariable());
-            responseTargetVariable.setAssertion(assertion);
         } else {
             saveAsContextVariableRadioButton.setSelected(false);
             defaultResponseRadioButton.setSelected(true);
             responseTargetVariable.setVariable("");
         }
+        responseTargetVariable.setAssertion(assertion,getPreviousAssertion());
 
         if(assertion.getResponseSize()>=0){
             setResponseLimitCheckBox.setSelected(true);
@@ -731,6 +731,7 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     public void setPolicyPosition( final PolicyPosition policyPosition ) {
         super.setPolicyPosition( policyPosition );
         populateReqMsgSrcComboBox();
+        initResponseTarget();
     }
 
     public InputValidator.ValidationRule buildTextFieldContextVariableValidationRule( final String fieldName,

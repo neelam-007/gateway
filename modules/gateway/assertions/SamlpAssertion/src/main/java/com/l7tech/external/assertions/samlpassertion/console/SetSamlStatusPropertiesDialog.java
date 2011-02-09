@@ -8,11 +8,9 @@ import com.l7tech.external.assertions.samlpassertion.SamlVersion;
 import com.l7tech.external.assertions.samlpassertion.SetSamlStatusAssertion;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 
 /**
@@ -45,7 +43,7 @@ public class SetSamlStatusPropertiesDialog extends AssertionPropertiesOkCancelSu
         if ( assertion.getVariableName() != null ) {
             variableNameTextField.setVariable(assertion.getVariableName());
         }
-        variableNameTextField.setAssertion(assertion);
+        variableNameTextField.setAssertion(assertion,getPreviousAssertion());
 
     }
 

@@ -8,14 +8,19 @@ import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.table.HttpHeaderRuleTableHandler;
 import com.l7tech.console.table.HttpParamRuleTableHandler;
 import com.l7tech.console.table.HttpRuleTableHandler;
-import com.l7tech.gui.util.*;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.IpListPanel;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
-import com.l7tech.policy.variable.*;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ValidationUtils;
@@ -397,7 +402,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         inputValidator.constrainTextFieldToNumberRange("Response Limit",responseMaxSizeTextField,0,Long.MAX_VALUE,false);
 
         final String resMsgDest = assertion.getResponseMsgDest();
-        resMsgDestVariableTextField.setAssertion(assertion);
+        resMsgDestVariableTextField.setAssertion(assertion,getPreviousAssertion());
         if (resMsgDest == null) {
             resMsgDestDefaultRadioButton.doClick();
         } else {

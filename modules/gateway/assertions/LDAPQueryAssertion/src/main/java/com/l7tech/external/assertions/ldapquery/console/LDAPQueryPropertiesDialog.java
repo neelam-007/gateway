@@ -1,14 +1,14 @@
 package com.l7tech.external.assertions.ldapquery.console;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.InputValidator;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ldapquery.LDAPQueryAssertion;
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
@@ -301,7 +301,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     }
 
     private boolean edit(QueryAttributeMapping im) {
-        AttributeVariableMapDialog dlg = new AttributeVariableMapDialog(this, im, assertion);
+        AttributeVariableMapDialog dlg = new AttributeVariableMapDialog(this, im, assertion, getPreviousAssertion());
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         dlg.setVisible(true);

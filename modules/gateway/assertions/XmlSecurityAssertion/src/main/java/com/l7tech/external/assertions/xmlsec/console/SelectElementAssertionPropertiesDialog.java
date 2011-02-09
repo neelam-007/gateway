@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.xmlsec.console;
 
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.xmlsec.SelectElementAssertion;
-import com.l7tech.gui.util.RunOnChangeListener;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -56,7 +55,7 @@ public class SelectElementAssertionPropertiesDialog extends NonSoapSecurityAsser
     @Override
     public void setData(SelectElementAssertion assertion) {
         variableNameField.setVariable(nonull(assertion.getElementVariable()));
-        variableNameField.setAssertion(assertion);
+        variableNameField.setAssertion(assertion,getPreviousAssertion());
 
         super.setData(assertion);
     }

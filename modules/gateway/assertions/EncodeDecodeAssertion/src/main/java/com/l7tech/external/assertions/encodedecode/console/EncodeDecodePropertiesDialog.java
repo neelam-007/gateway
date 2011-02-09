@@ -23,12 +23,7 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /**
  * Properties dialog for Encode / Decode assertion.
@@ -65,7 +60,7 @@ public class EncodeDecodePropertiesDialog extends AssertionPropertiesOkCancelSup
         if ( assertion.getTransformType() != null ) encodeDecodeComboBox.setSelectedItem( assertion.getTransformType() );
         setText( sourceVariableTextField, assertion.getSourceVariableName() );
         targetVariableTextField.setVariable(assertion.getTargetVariableName() );
-        targetVariableTextField.setAssertion(assertion);
+        targetVariableTextField.setAssertion(assertion,getPreviousAssertion());
         if ( assertion.getTargetDataType() != null ) {
             dataTypeComboBox.setSelectedItem( assertion.getTargetDataType() );
         } else {

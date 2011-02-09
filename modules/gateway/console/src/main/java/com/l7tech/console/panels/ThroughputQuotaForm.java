@@ -7,12 +7,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.gui.util.PauseListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -21,7 +17,6 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -91,7 +86,7 @@ public class ThroughputQuotaForm extends LegacyAssertionPropertyDialog {
             }
         });
         varPrefixField.setVariable(subject.getVariablePrefix());
-        varPrefixField.setAssertion(subject);
+        varPrefixField.setAssertion(subject,getPreviousAssertion());
         varPrefixField.setSuffixes(subject.getVariableSuffixes());
         varPrefixField.setAcceptEmpty(true);
 

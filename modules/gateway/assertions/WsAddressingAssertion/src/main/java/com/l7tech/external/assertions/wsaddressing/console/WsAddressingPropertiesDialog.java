@@ -3,18 +3,13 @@ package com.l7tech.external.assertions.wsaddressing.console;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.TargetMessagePanel;
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.console.policy.SsmPolicyVariableUtils;
-import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
-import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -176,7 +171,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
     private void initData(final WsAddressingAssertion assertion) {
         this.assertion = assertion;
         targetMessageOk = true; // Since three radio buttons are grounded, the Request radio button is selected by default.
-        targetMessagePanel.setModel(assertion);
+        targetMessagePanel.setModel(assertion, getPreviousAssertion());
         requireSignatureCheckBox.setSelected(assertion.isRequireSignature());
         wsAddressing10CheckBox.setSelected(assertion.isEnableWsAddressing10());
         wsAddressing082004CheckBox.setSelected(assertion.isEnableWsAddressing200408());
@@ -187,7 +182,7 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
         }
         variablePrefixTextField.setAcceptEmpty(true);
         variablePrefixTextField.setVariable(assertion.getVariablePrefix()==null?"":assertion.getVariablePrefix());
-        variablePrefixTextField.setAssertion(assertion);
+        variablePrefixTextField.setAssertion(assertion,getPreviousAssertion());
         variablePrefixTextField.setSuffixes(assertion.getVariableSuffixes());
     }
 

@@ -595,7 +595,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             }
         }
 
-        outputMessageVariableNameField.setAssertion(assertion);
+        outputMessageVariableNameField.setAssertion(assertion,getPreviousAssertion());
         if(assertion.getOutputMessageTarget() == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
             outputMessageVariableNameField.setVariable(assertion.getOutputMessageVariableName());
         }

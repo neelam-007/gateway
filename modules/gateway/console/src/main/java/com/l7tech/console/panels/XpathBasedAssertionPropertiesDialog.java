@@ -786,7 +786,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             varPrefixField.setVariable(prefix);
             varPrefixField.setVisible(true);
             varPrefixLabel.setVisible(true);
-            varPrefixField.setAssertion(assertion);
+            varPrefixField.setAssertion(assertion,getPreviousAssertion());
         } else {
             varPrefixField.setVisible(false);
             varPrefixLabel.setVisible(false);

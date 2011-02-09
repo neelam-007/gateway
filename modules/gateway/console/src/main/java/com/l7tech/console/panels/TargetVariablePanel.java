@@ -126,8 +126,12 @@ public class TargetVariablePanel  extends JPanel {
         else validateFields();
     }
 
-    public void setAssertion(final Assertion assertion) {
-        Set<String> vars =  SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
+    public void setAssertion(final Assertion assertion, final Assertion previousAssertion) {
+        Set<String> vars =
+                (assertion.getParent() != null) ? SsmPolicyVariableUtils.getVariablesSetByPredecessors( assertion ).keySet() :
+                (previousAssertion != null)? SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( previousAssertion ).keySet() :
+                new TreeSet<String>();
+
         // convert all vars to lower
          predecessorVariables = new TreeSet<String>();
 

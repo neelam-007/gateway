@@ -1,14 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.policy.SsmPolicyVariableUtils;
-import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.gui.MaxLengthDocument;
-import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.BuildRstrSoapResponse;
-import com.l7tech.policy.assertion.xmlsec.CreateSecurityContextToken;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidationUtils;
 
@@ -16,7 +11,6 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentListener;
-import javax.swing.text.JTextComponent;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -208,7 +202,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
     private void modelToView() {
         varPrefixTextField.setSuffixes(assertion.getVariableSuffixes());
         varPrefixTextField.setVariable(assertion.getVariablePrefix());
-        varPrefixTextField.setAssertion(assertion);
+        varPrefixTextField.setAssertion(assertion,getPreviousAssertion());
 
         // Check if the response is for token issuance or token cancellation.
         if (assertion.isResponseForIssuance()) {

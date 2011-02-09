@@ -1,17 +1,18 @@
 package com.l7tech.console.tree.policy.advice;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.XslTransformationPropertiesDialog;
+import com.l7tech.console.policy.PolicyPositionAware;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 
 import javax.swing.*;
-import java.util.logging.Logger;
 import java.awt.*;
+import java.util.logging.Logger;
 
 /**
  * Invoked when a Xsl Transformation assertion is dropped in the policy tree.
@@ -31,9 +32,12 @@ public class AddXslTransformationAssertionAdvice extends AddContextSensitiveAsse
             throw new IllegalArgumentException();
         }
         super.proceed(pc);
-        XslTransformation assertion = (XslTransformation)assertions[0];
+        final XslTransformation assertion = (XslTransformation)assertions[0];
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(mw, true, false, assertion);
+        final XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(mw, true,  assertion);
+        dlg.setPolicyPosition( new PolicyPositionAware.PolicyPosition( pc.getParent().asAssertion(), pc.getChildLocation()));
+        dlg.setData(assertion);
+
         // show the dialog
         dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         dlg.pack();
@@ -41,7 +45,8 @@ public class AddXslTransformationAssertionAdvice extends AddContextSensitiveAsse
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 // make sure a xslt was entered
-                if (dlg.wasOKed()) {
+                if (dlg.isConfirmed()) {
+                    dlg.getData(assertion);
                     pc.proceed();
                 } else {
                     log.info("Xsl Transformation must have been canceled");

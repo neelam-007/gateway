@@ -4,16 +4,38 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
-import com.l7tech.policy.assertion.AssertionMetadata;
 
+import javax.swing.*;
 import java.awt.*;
 
 /**
  * @author alex
  */
-public class RequireWssTimestampDialog extends AssertionOkCancelDialog<RequireWssTimestamp> {
+public class RequireWssTimestampDialog extends AssertionPropertiesOkCancelSupport<RequireWssTimestamp> {
 
+    RequireWssTimestampPanel contentPanel;
+    final RequireWssTimestamp assertion;
     public RequireWssTimestampDialog(Frame owner, RequireWssTimestamp assertion) {
-        super(owner, assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME).toString(), new RequireWssTimestampPanel(assertion), assertion);
+        super(RequireWssTimestamp.class, owner, assertion, true);
+        this.assertion = assertion;
+        super.initComponents();
+    }
+
+
+
+    @Override
+    public void setData(RequireWssTimestamp assertion) {
+    }
+
+    @Override
+    public RequireWssTimestamp getData(RequireWssTimestamp assertion) throws ValidationException {
+        return contentPanel.getModel();
+    }
+
+    @Override
+    protected JPanel createPropertyPanel() {
+
+        contentPanel = new RequireWssTimestampPanel(assertion,getPreviousAssertion());
+        return contentPanel;
     }
 }

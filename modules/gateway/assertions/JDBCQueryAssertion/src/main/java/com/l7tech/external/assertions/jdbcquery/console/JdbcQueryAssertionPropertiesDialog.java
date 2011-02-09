@@ -3,34 +3,34 @@ package com.l7tech.external.assertions.jdbcquery.console;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.PermissionFlags;
 import com.l7tech.console.panels.TargetVariablePanel;
+import com.l7tech.console.util.MutablePair;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.MutablePair;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.MaxLengthDocument;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.external.assertions.jdbcquery.JdbcQueryAssertion;
 import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemListener;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * Properties dialog for the JDBC Query Assertion.
@@ -168,7 +168,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         populateConnectionCombobox();
         sqlQueryTextArea.setText(assertion.getSqlQuery());
         variablePrefixTextField.setVariable(assertion.getVariablePrefix());
-        variablePrefixTextField.setAssertion(assertion);
+        variablePrefixTextField.setAssertion(assertion,getPreviousAssertion());
         variablePrefixTextField.setSuffixes(getSuffixes());
         maxRecordsSpinner.setValue(assertion.getMaxRecords());
         if (assertion.getConnectionName() == null) { // This is a case where the assertion is a new one.  It means to load maxRecords from the global cluster properties.
@@ -389,7 +389,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         final MutablePair<String, String> originalPair = new MutablePair<String, String>(namePair.left, namePair.right);
 
         String suffix = variablePrefixTextField.getVariable();
-        final ContextVariableNamingDialog dlg = new ContextVariableNamingDialog(this, namePair,suffix,assertion);
+        final ContextVariableNamingDialog dlg = new ContextVariableNamingDialog(this, namePair,suffix,assertion,getPreviousAssertion());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {

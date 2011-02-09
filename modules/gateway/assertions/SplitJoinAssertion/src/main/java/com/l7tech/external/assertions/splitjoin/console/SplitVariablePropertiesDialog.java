@@ -4,8 +4,6 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.splitjoin.SplitAssertion;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ExceptionUtils;
 
@@ -69,7 +67,7 @@ public class SplitVariablePropertiesDialog extends AssertionPropertiesOkCancelSu
         }
 
         regularExpressionCheckBox.setSelected(assertion.isSplitPatternRegEx());
-        targetVariableTextField.setAssertion(assertion);
+        targetVariableTextField.setAssertion(assertion,getPreviousAssertion());
     }
 
     @Override

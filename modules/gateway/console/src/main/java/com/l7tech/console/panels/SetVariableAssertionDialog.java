@@ -93,7 +93,7 @@ public class SetVariableAssertionDialog extends LegacyAssertionPropertyDialog {
             _predecessorVariables.add(var.toLowerCase());
         }
 
-        _variableNameVarPanel.setAssertion(assertion);
+        _variableNameVarPanel.setAssertion(assertion,contextAssertion);
         _variableNameVarPanel.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {

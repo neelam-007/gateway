@@ -1,16 +1,17 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.VariablePrefixUtil;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.console.util.VariablePrefixUtil;
 
 import javax.swing.*;
-import java.awt.event.*;
 import java.awt.*;
-import java.util.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ResourceBundle;
 
 public class AssertionMessageTargetSelector extends JDialog {
     private static final ResourceBundle bundle = ResourceBundle.getBundle(AssertionMessageTargetSelector.class.getName());
@@ -105,7 +106,7 @@ public class AssertionMessageTargetSelector extends JDialog {
         setContextVarEnabled(_otherContextVariableRadioButton.isSelected());
         if ( messageTargetable instanceof Assertion ) {
             Assertion ass = (Assertion) messageTargetable;
-            if(messageTargetable.isTargetModifiedByGateway()) _contextVarTargetVariable.setAssertion(ass);
+            if(messageTargetable.isTargetModifiedByGateway()) _contextVarTargetVariable.setAssertion(ass,null);//assertion already created
         }
     }
 

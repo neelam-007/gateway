@@ -2,17 +2,15 @@ package com.l7tech.external.assertions.mtom.console;
 
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.mtom.MtomDecodeAssertion;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.console.util.VariablePrefixUtil;
 
 import javax.swing.*;
-import java.util.ResourceBundle;
 import java.awt.*;
+import java.util.ResourceBundle;
 
 /**
  *
@@ -46,7 +44,7 @@ public class MtomDecodeAssertionPropertiesDialog extends MtomAssertionProperties
         messageSourceComboBox.setModel( buildMessageSourceComboBoxModel(assertion) );
         messageSourceComboBox.setSelectedItem( new MessageTargetableSupport(assertion) );
         selectOutputTarget( assertion.getOutputTarget(), messageTargetComboBox, messageTargetVariableNameTextField );
-        messageTargetVariableNameTextField.setAssertion(assertion);
+        messageTargetVariableNameTextField.setAssertion(assertion,getPreviousAssertion());
 
         requireEncodedCheckBox.setSelected( assertion.isRequireEncoded() );
         removePackagingCheckBox.setSelected( assertion.isRemovePackaging() );

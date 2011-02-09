@@ -152,7 +152,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
             HasVariablePrefix hvp = (HasVariablePrefix) assertion;
             String variablePrefix = hvp.getVariablePrefix();
             variablePrefixField.setVariable(variablePrefix == null ? "" : variablePrefix);
-            variablePrefixField.setAssertion(assertion);
+            variablePrefixField.setAssertion(assertion,getPreviousAssertion());
             variablePrefixField.setSuffixes(hvp.suffixes());
             variablePrefixField.setAcceptEmpty(true);
             variablePrefixField.setVisible(true);

@@ -5,12 +5,7 @@ import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
-import com.l7tech.common.io.DocumentReferenceProcessor;
-import com.l7tech.common.io.ResourceDocument;
-import com.l7tech.common.io.ResourceDocumentResolver;
-import com.l7tech.common.io.ResourceDocumentResolverSupport;
-import com.l7tech.common.io.URIResourceDocument;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.*;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.ManageHttpConfigurationAction;
@@ -215,7 +210,7 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
                 clearTarget();
             }
             setOtherTargetMessageVariable(schemaValidationAssertion.getOtherTargetMessageVariable());
-        }});
+        }},getPreviousAssertion());
 
         targetMessagePanel.addActionListener(new ActionListener() {
             @Override

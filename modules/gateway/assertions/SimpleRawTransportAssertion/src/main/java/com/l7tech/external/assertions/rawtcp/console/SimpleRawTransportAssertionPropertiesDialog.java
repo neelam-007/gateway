@@ -16,9 +16,7 @@ import com.l7tech.util.Functions;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion.DEFAULT_READ_TIMEOUT;
-import static com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion.DEFAULT_RESPONSE_SIZE_LIMIT;
-import static com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion.DEFAULT_WRITE_TIMEOUT;
+import static com.l7tech.external.assertions.rawtcp.SimpleRawTransportAssertion.*;
 
 public class SimpleRawTransportAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<SimpleRawTransportAssertion> {
     private JPanel contentPane;
@@ -120,7 +118,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
             defaultResponseRadioButton.setSelected(true);
             responseContextVariableField.setVariable("");
         }
-        responseContextVariableField.setAssertion(assertion);
+        responseContextVariableField.setAssertion(assertion,getPreviousAssertion());
 
         long responseLimit = assertion.getMaxResponseBytes();
         limitMaximumResponseSizeCheckBox.setSelected(responseLimit != DEFAULT_RESPONSE_SIZE_LIMIT);

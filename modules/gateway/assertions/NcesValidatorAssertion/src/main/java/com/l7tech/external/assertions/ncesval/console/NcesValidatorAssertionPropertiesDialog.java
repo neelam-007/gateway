@@ -37,7 +37,7 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
     @Override
     public void setData(NcesValidatorAssertion assertion) {
         this.assertion = assertion;
-        targetMessagePanel.setModel(assertion);
+        targetMessagePanel.setModel(assertion,getPreviousAssertion());
         samlCheckbox.setSelected(assertion.isSamlRequired());
         validationOptionComboBox.setSelectedItem(assertion.getCertificateValidationType());                
         trustedCertsPanel.setCertificateInfos( assertion.getTrustedCertificateInfo() );

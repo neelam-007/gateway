@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.samlpassertion.console;
 
-import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.panels.TargetMessagePanel;
+import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
 import com.l7tech.gui.util.RunOnChangeListener;
 
@@ -98,7 +98,7 @@ public class TargetMessageWizardStepPanel extends SamlpWizardStepPanel {
         }
 
         // init targetMessage panel
-        targetMessagePanel.setModel(assertion);
+        targetMessagePanel.setModel(assertion,null);
     }
 
     /**

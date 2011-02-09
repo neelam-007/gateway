@@ -2,18 +2,12 @@ package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.console.policy.SsmPolicyVariableUtils;
-import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.samlpassertion.ProcessSamlAuthnRequestAssertion;
-import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.util.MissingResourceException;
@@ -59,7 +53,7 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
         }
         verifySignatureCheckBox.setSelected( assertion.isVerifySignature() );
         this.variablePrefixTextField.setVariable(assertion.getVariablePrefix() );
-        this.variablePrefixTextField.setAssertion(assertion);
+        this.variablePrefixTextField.setAssertion(assertion,getPreviousAssertion());
 
         String[] suffixes = ProcessSamlAuthnRequestAssertion.VARIABLE_SUFFIXES.toArray( new String[ProcessSamlAuthnRequestAssertion.VARIABLE_SUFFIXES.size()] );
         variablePrefixTextField.setSuffixes(suffixes);

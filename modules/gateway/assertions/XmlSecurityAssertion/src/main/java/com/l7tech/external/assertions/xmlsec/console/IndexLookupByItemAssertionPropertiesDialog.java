@@ -4,7 +4,6 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.xmlsec.IndexLookupByItemAssertion;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.AssertionMetadata;
 
 import javax.swing.*;
@@ -38,7 +37,7 @@ public class IndexLookupByItemAssertionPropertiesDialog extends AssertionPropert
         multivaluedVarNameField.setText(nonull(assertion.getMultivaluedVariableName()));
         valueToSearchForVarNameField.setText(nonull(assertion.getValueToSearchForVariableName()));
         outputVarNameField.setVariable(nonull(assertion.getOutputVariableName()));
-        outputVarNameField.setAssertion(assertion);
+        outputVarNameField.setAssertion(assertion,getPreviousAssertion());
         allowMultipleMatchesCheckBox.setSelected(assertion.isAllowMultipleMatches());
     }
 

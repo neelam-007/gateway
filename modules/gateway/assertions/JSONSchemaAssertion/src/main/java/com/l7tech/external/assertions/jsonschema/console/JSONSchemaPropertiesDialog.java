@@ -10,7 +10,6 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
-import com.l7tech.json.InvalidJsonException;
 import com.l7tech.json.JSONData;
 import com.l7tech.json.JSONFactory;
 import com.l7tech.policy.AssertionResourceInfo;
@@ -211,7 +210,7 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 clearTarget();
             }
             setOtherTargetMessageVariable(assertion.getOtherTargetMessageVariable());
-        }});
+        }},getPreviousAssertion());
     }
 
     private void readFromUrl(String url){

@@ -94,13 +94,13 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
         oldTimeUnit = (TimeUnit)lifetimeTimeUnitComboBox.getSelectedItem();
         includeClientEntropyCheckBox.setSelected( assertion.isIncludeClientEntropy() );
 
-        targetTokenVariablePanel.setAssertion( assertion );
+        targetTokenVariablePanel.setAssertion( assertion, getPreviousAssertion() );
         targetTokenVariablePanel.setValueWillBeWritten( false );
         targetTokenVariablePanel.setValueWillBeRead( true );
         targetTokenVariablePanel.setAcceptEmpty( true );
         targetTokenVariablePanel.setVariable( assertion.getTargetTokenVariable()==null ? "" : assertion.getTargetTokenVariable() );
 
-        varPrefixVariablePanel.setAssertion( assertion );
+        varPrefixVariablePanel.setAssertion( assertion, getPreviousAssertion() );
         varPrefixVariablePanel.setSuffixes( BuildRstSoapRequest.getVariableSuffixes() );
         varPrefixVariablePanel.setVariable( assertion.getVariablePrefix() );
 

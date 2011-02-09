@@ -153,7 +153,7 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
 
         varPrefixTextField.setSuffixes(assertion.getVariableSuffixes());
         varPrefixTextField.setVariable(assertion.getVariablePrefix());
-        varPrefixTextField.setAssertion(assertion);
+        varPrefixTextField.setAssertion(assertion,getPreviousAssertion());
 
         keySizeComboBox.setSelectedItem(Integer.toString(assertion.getKeySize()));
         if ( keySizeComboBox.getSelectedItem() == null ) {

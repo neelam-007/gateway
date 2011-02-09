@@ -83,7 +83,7 @@ public class AddWsAddressingPropertiesDialog extends AssertionPropertiesOkCancel
         }
 
         targetVariablePanel.setVariable(assertion.getVariablePrefix());
-        targetVariablePanel.setAssertion(assertion);
+        targetVariablePanel.setAssertion(assertion,getPreviousAssertion());
     }
 
     @Override

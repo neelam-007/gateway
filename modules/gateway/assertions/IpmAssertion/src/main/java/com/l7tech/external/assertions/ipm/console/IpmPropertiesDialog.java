@@ -1,14 +1,13 @@
 package com.l7tech.external.assertions.ipm.console;
 
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
+import com.l7tech.external.assertions.ipm.IpmAssertion;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
-import com.l7tech.external.assertions.ipm.IpmAssertion;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -140,7 +139,7 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
     public void setData(IpmAssertion assertion) {
         templateField.setText(assertion.template());
         sourceVarField.setText(assertion.getSourceVariableName());
-        destVarField.setAssertion(assertion);
+        destVarField.setAssertion(assertion,getPreviousAssertion());
         final String targetVar = assertion.getTargetVariableName();
         if (targetVar == null) {
             if (assertion.isUseResponse()) {

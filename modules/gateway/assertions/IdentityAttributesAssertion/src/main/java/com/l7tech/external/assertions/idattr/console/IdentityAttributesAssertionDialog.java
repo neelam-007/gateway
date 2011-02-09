@@ -3,21 +3,19 @@
  */
 package com.l7tech.external.assertions.idattr.console;
 
-import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.objectmodel.UsersOrGroups;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.idattr.IdentityAttributesAssertion;
-import static com.l7tech.external.assertions.idattr.IdentityAttributesAssertion.DEFAULT_VAR_PREFIX;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.mapping.*;
+import com.l7tech.objectmodel.AttributeHeader;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.AttributeHeader;
+import com.l7tech.objectmodel.UsersOrGroups;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
@@ -29,6 +27,8 @@ import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
+
+import static com.l7tech.external.assertions.idattr.IdentityAttributesAssertion.DEFAULT_VAR_PREFIX;
 
 /**
  * @author alex
@@ -86,7 +86,7 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
         String prefix = assertion.getVariablePrefix();
         if (prefix == null) prefix = DEFAULT_VAR_PREFIX;
         variablePrefixField.setVariable(prefix);
-        variablePrefixField.setAssertion(assertion);
+        variablePrefixField.setAssertion(assertion,getPreviousAssertion());
         variablePrefixField.setSuffixes(getSuffixes());
         variablePrefixField.addChangeListener(new ChangeListener(){
             @Override

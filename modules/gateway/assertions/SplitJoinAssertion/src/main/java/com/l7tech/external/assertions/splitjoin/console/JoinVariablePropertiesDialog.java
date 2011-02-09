@@ -4,7 +4,6 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.splitjoin.JoinAssertion;
-import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -58,7 +57,7 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
         if (joinString != null) { //don't test for empty, it's ok
             joinStringTextField.setText(joinString);
         }
-        targetVariablePanel.setAssertion(assertion);
+        targetVariablePanel.setAssertion(assertion,getPreviousAssertion());
     }
 
     @Override

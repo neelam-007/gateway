@@ -2,16 +2,11 @@ package com.l7tech.external.assertions.gatewaymanagement.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.console.policy.SsmPolicyVariableUtils;
-import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.gatewaymanagement.GatewayManagementAssertion;
-import com.l7tech.gui.util.PauseListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 
 /**
@@ -43,7 +38,7 @@ public class GatewayManagementAssertionPropertiesDialog extends AssertionPropert
     public void setData( final GatewayManagementAssertion assertion ) {
         this.assertion = assertion;
         this.variablePrefixTextField.setVariable( assertion.getVariablePrefix()==null ? "" : assertion.getVariablePrefix() );
-        this.variablePrefixTextField.setAssertion(assertion);
+        this.variablePrefixTextField.setAssertion(assertion,getPreviousAssertion());
 
         String[] suffixes = GatewayManagementAssertion.VARIABLE_SUFFIXES.toArray( new String[GatewayManagementAssertion.VARIABLE_SUFFIXES.size()] );
         variablePrefixTextField.setSuffixes(suffixes);

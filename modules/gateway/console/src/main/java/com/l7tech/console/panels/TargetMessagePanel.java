@@ -101,14 +101,18 @@ public class TargetMessagePanel extends JPanel {
      *
      * @param model the object whose values are to be read to configure the GUI controls.  Required.
      */
-    public void setModel(MessageTargetable model) {
-        modifyByGateway = model.isTargetModifiedByGateway() ;
+    public void setModel(MessageTargetable model , final Assertion prevAssertion) {
+        setModel(model, prevAssertion,model.isTargetModifiedByGateway());
+    }
+    public void setModel(MessageTargetable model , final Assertion prevAssertion, boolean isMessageTargetableModifiedByGateway) {
+    
+        modifyByGateway = isMessageTargetableModifiedByGateway ;
         
         if(modifyByGateway){
             otherMessageVariablePanel.add(otherMessageVariableTargetVariable, BorderLayout.CENTER);
             otherMessageVariableTargetVariable.addChangeListener(listener);
             Assertion ass = (Assertion)model;
-            otherMessageVariableTargetVariable.setAssertion(ass);
+            otherMessageVariableTargetVariable.setAssertion( ass , prevAssertion );
 
         }
         else{

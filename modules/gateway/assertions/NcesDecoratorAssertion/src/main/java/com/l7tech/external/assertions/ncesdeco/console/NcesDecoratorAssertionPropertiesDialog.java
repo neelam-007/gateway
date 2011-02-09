@@ -110,7 +110,7 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
         });
         targetMessagePanelHolder.add( targetMessagePanel );
         targetMessagePanel.setTitle("Apply NCES Decoration To");
-        targetMessagePanel.setModel(assertion);
+        targetMessagePanel.setModel(assertion,getPreviousAssertion());
         responseImmediateCheckBox = new JCheckBox("Apply immediately");
         responseImmediateCheckBox.setToolTipText("Uncheck to accumulate additional response decoration requirements");
         targetMessagePanel.setResponseExtra(responseImmediateCheckBox);
