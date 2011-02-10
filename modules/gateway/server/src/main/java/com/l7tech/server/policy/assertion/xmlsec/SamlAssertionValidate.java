@@ -220,7 +220,7 @@ public class SamlAssertionValidate {
                 }
                 // validate that the assertion is the soap:Body signer
                 if (!isBodyOrTimestampSigned(assertion.getSignedElements(), wssResults)) {
-                    Error result = new Error("Can't validate proof of posession; the SOAP Body and Timestamp are not signed with the Subject Confirmation Certificate", null);
+                    Error result = new Error("Can't validate proof of possession; the SOAP Body and Timestamp are not signed with the Subject Confirmation Certificate", null);
                     validationResults.add(result);
                     logger.finer(result.toString());
                 }
@@ -229,7 +229,7 @@ public class SamlAssertionValidate {
                 X509Certificate messageSigner = getBodyOrTimestampSigner(wssResults);
 
                 if ( messageSigner == null) {
-                    Error result = new Error("Can't validate proof of posession; the SOAP Body and Timestamp are not signed", null);
+                    Error result = new Error("Can't validate proof of possession; the SOAP Body and Timestamp are not signed", null);
                     validationResults.add(result);
                     logger.finer(result.toString());
                 } else {

@@ -176,7 +176,7 @@ public class SamlAssertionGenerator {
             if (options.isProofOfPosessionRequired()) {
                 final SignerInfo attestingEntity = options.getAttestingEntity();
                 if (attestingEntity == null) {
-                    throw new IllegalArgumentException("Proof Of posession required, without attesting entity keys");
+                    throw new IllegalArgumentException("Proof Of possession required, without attesting entity keys");
                 }
                 elementsToSign.add(bodyElement);
                 dr.setSenderSamlToken(SamlAssertion.newInstance(assertionDoc.getDocumentElement()));
