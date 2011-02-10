@@ -50,6 +50,11 @@ public class ServerApi3ScaleAuthorizeAssertion extends AbstractServerAssertion<A
         String providerKey = null;
 
         String queryStr = context.getRequest().getHttpRequestKnob().getQueryString();
+        if( queryStr == null ){
+            logger.warning("No query provided");
+            return AssertionStatus.FAILED;
+        }
+
         StringTokenizer tokenizer = new  StringTokenizer(queryStr, "&=");
         while (tokenizer.hasMoreTokens()) {
             String token = tokenizer.nextToken();

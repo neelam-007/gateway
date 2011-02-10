@@ -45,6 +45,10 @@ public class ServerApi3ScaleReportAssertion extends AbstractServerAssertion<Api3
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         String queryStr = context.getRequest().getHttpRequestKnob().getQueryString();
+        if( queryStr == null ){
+            logger.warning("No query provided");
+            return AssertionStatus.FAILED;
+        }
         StringTokenizer tokenizer = new  StringTokenizer(queryStr, "&=");
 
         String  requestAppId = null;
