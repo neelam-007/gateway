@@ -20,7 +20,7 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
      */
     private String recipientCertificateBase64 = null;
 
-    // Bulk encryption properties
+    // Symmetric encryption properties
 
     /**
      * If true, replace all contents of the element with a single EncryptedData element, but leave the open and close tags unencrypted.
@@ -28,7 +28,7 @@ public class NonSoapEncryptElementAssertion extends NonSoapSecurityAssertionBase
      */
     private boolean encryptContentsOnly = false;
 
-    /** Bulk encryption algorithm. */
+    /** Symmetric encryption algorithm. */
     private String xencAlgorithm = XencUtil.AES_128_CBC;
 
     public NonSoapEncryptElementAssertion() {
