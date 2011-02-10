@@ -35,6 +35,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Map;
@@ -87,8 +88,18 @@ public class ServerBuildRstSoapRequest extends AbstractServerAssertion<BuildRstS
                 target = ((Document) targetToken).getDocumentElement();
             } else if ( targetToken instanceof SecureConversationSession ) {
                 target = buildSecurityTokenReference( (SecureConversationSession) targetToken );
-            } else {
+            } else if ( targetToken instanceof String ) {
+                try {
+                    target = XmlUtil.parse( (String) targetToken ).getDocumentElement();
+                } catch ( SAXException e ) {
+                    auditor.logAndAudit( AssertionMessages.RST_BUILDER_ERROR, "Invalid token value: " + ExceptionUtils.getMessage(e));
+                    return AssertionStatus.FAILED;
+                }
+            } else if ( targetToken == null ) {
                 target = null;
+            } else {
+                auditor.logAndAudit( AssertionMessages.RST_BUILDER_ERROR, "Unsupported token variable type: " + targetToken.getClass() );
+                return AssertionStatus.FAILED;
             }
         } else {
             target = null;
@@ -115,7 +126,7 @@ public class ServerBuildRstSoapRequest extends AbstractServerAssertion<BuildRstS
             output.getSecurityKnob().getOrMakeDecorationRequirements().getNamespaceFactory().setWsscNs( wsTrustConfig.getWsscNs() );
         } catch ( NoSuchVariableException e ) {
             auditor.logAndAudit( AssertionMessages.RST_BUILDER_OUTPUT, e.getVariable() );
-            throw new AssertionStatusException(AssertionStatus.FAILED);
+            return AssertionStatus.FAILED;
         }
         if ( entropy != null ) {
             context.setVariable( prefix(BuildRstSoapRequest.VARIABLE_CLIENT_ENTROPY), HexUtils.encodeBase64(entropy) );

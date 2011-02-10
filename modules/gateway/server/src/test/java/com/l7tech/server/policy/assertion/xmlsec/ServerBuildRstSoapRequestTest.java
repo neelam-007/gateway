@@ -91,6 +91,39 @@ public class ServerBuildRstSoapRequestTest {
                          session );
     }
 
+    @Test
+    public void testWithStringToken() throws Exception {
+        final String trustNs = "http://docs.oasis-open.org/ws-sx/ws-trust/200512";
+        doTestWithToken( WsTrustRequestType.VALIDATE,
+                         "ValidateTarget",
+                         trustNs,
+                         getPolicyNs(trustNs),
+                         "<SecurityTokenReference xmlns=\""+SoapConstants.SECURITY_NAMESPACE+"\">reference here</SecurityTokenReference>");
+    }
+
+    @Test
+    public void testWithDocumentToken() throws Exception {
+        final String trustNs = "http://docs.oasis-open.org/ws-sx/ws-trust/200512";
+        doTestWithToken( WsTrustRequestType.VALIDATE,
+                         "ValidateTarget",
+                         trustNs,
+                         getPolicyNs(trustNs),
+                         XmlUtil.parse( "<SecurityTokenReference xmlns=\""+SoapConstants.SECURITY_NAMESPACE+"\">reference here</SecurityTokenReference>" ) );
+    }
+
+    /**
+     * Note that this test works due to unwrapping in ExpandVariables
+     */
+    @Test
+    public void testWithElementArrayToken() throws Exception {
+        final String trustNs = "http://docs.oasis-open.org/ws-sx/ws-trust/200512";
+        doTestWithToken( WsTrustRequestType.VALIDATE,
+                         "ValidateTarget",
+                         trustNs,
+                         getPolicyNs(trustNs),
+                         new Element[]{XmlUtil.parse( "<SecurityTokenReference xmlns=\""+SoapConstants.SECURITY_NAMESPACE+"\">reference here</SecurityTokenReference>" ).getDocumentElement()} );
+    }
+
     private void doTest( final String trustNs,
                          final String policyNs ) throws Exception {
         final SoapVersion soapVersion = SoapVersion.SOAP_1_2;
