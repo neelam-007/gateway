@@ -187,7 +187,7 @@ public abstract class SecureConversationContextManager<KT> {
                 serverEntropy = null;
             } else {
                 throw new SessionCreationException("Unable to create a session: the shared secret length is not in the valid range from " +
-                    MIN_SHARED_SECRET_BYTES + " bytes to " + MAX_SHARED_SECRET_BYTES + "bytes.");
+                    MIN_SHARED_SECRET_BYTES + " bytes to " + MAX_SHARED_SECRET_BYTES + " bytes.");
             }
         } else if (requestClientEntropy != null) {
             if (requestClientEntropy.length >= MIN_CLIENT_ENTROPY_BYTES && requestClientEntropy.length <= MAX_CLIENT_ENTROPY_BYTES) {
@@ -196,7 +196,7 @@ public abstract class SecureConversationContextManager<KT> {
                         final int keySize = keySizeBits == 0 ? getDefaultKeySize( namespace ) : (keySizeBits+7) / 8;
                         if ( keySize < MIN_KEY_SIZE || keySize > MAX_KEY_SIZE  ) {
                             throw new SessionCreationException("Unable to create a session: the key size is not in the valid range from " +
-                                MIN_KEY_SIZE + " bytes to " + MAX_KEY_SIZE + "bytes.");
+                                MIN_KEY_SIZE + " bytes to " + MAX_KEY_SIZE + " bytes.");
                         }
                         try {
                             sharedSecret = deriveSharedKey( sessionIdentifier, requestClientEntropy, requestServerEntropy, keySize );
@@ -209,7 +209,7 @@ public abstract class SecureConversationContextManager<KT> {
                         serverEntropy = requestServerEntropy;
                     } else {
                         throw new SessionCreationException("Unable to create a session: the server entropy length is not in the valid range from " +
-                            MIN_SERVER_ENTROPY_BYTES + " bytes to " + MAX_SERVER_ENTROPY_BYTES + "bytes.");
+                            MIN_SERVER_ENTROPY_BYTES + " bytes to " + MAX_SERVER_ENTROPY_BYTES + " bytes.");
                     }
                 } else {
                     sharedSecret = requestClientEntropy;
@@ -218,7 +218,7 @@ public abstract class SecureConversationContextManager<KT> {
                 }
             } else {
                 throw new SessionCreationException("Unable to create a session: the client entropy length is not in the valid range from " +
-                    MIN_CLIENT_ENTROPY_BYTES + " bytes to " + MAX_CLIENT_ENTROPY_BYTES + "bytes.");
+                    MIN_CLIENT_ENTROPY_BYTES + " bytes to " + MAX_CLIENT_ENTROPY_BYTES + " bytes.");
             }
         } else {
             throw new SessionCreationException("Unable to create a session: there are no shared secret and client entropy to create a session key");
