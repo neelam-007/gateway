@@ -166,7 +166,7 @@
                 </constraints>
                 <properties>
                   <labelFor value="e9e4"/>
-                  <text value="Bulk &amp;Encryption Algorithm:"/>
+                  <text value="Data &amp;Encryption Algorithm:"/>
                 </properties>
               </component>
               <vspacer id="bcc74">
