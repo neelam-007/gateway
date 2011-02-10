@@ -550,6 +550,8 @@ public class AssertionMessages extends Messages {
     public static final M OVERSIZEDTEXT_SKIP_RESPONSE_NOT_ROUTED        = m(7243, Level.FINE, "No response body to check because request has not been routed yet.");
     public static final M MESSAGE_VARIABLE_BAD_XML                      = m(7244, Level.WARNING, "Message variable {0} does not contain well-formed XML");
     public static final M MESSAGE_VARIABLE_NOT_XML                      = m(7245, Level.INFO, "Message variable {0} does not contain XML");
+    public static final M OVERSIZEDTEXT_NS_DECLARATION_EXCEEDED         = m(7246, Level.WARNING, "{0} exceeds namespace declaration limit");
+    public static final M OVERSIZEDTEXT_NS_PREFIX_DECLARATION_EXCEEDED  = m(7247, Level.WARNING, "{0} exceeds namespace prefix declaration limit");
 
     // ServerWsTrustCredentialExchange
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");

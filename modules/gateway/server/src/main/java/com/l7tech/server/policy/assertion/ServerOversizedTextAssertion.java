@@ -8,7 +8,9 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.message.Message;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.SoapValidator;
@@ -21,6 +23,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import org.springframework.context.ApplicationContext;
+import org.w3c.dom.*;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -33,6 +36,10 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,6 +56,8 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
     private final CompiledXpath matchOverdeepNesting;
     private final CompiledXpath matchExtraPayload;
     private final boolean requireValidSoap;
+    private final int nsCountLimit;
+    private final int nsPrefixCountLimit;
 
     /**
      * Create assertion instance which might be a subassertion handling only the non-Tarari-specific constraints.
@@ -84,6 +93,9 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
             // Can't happen
             throw new ServerPolicyException(data, "Invalid protection xpath: " + ExceptionUtils.getMessage(e), e);
         }
+
+        this.nsCountLimit = (data.isLimitNamespaceCount() ? data.getMaxNamespaceCount() : -1);
+        this.nsPrefixCountLimit = (data.isLimitNamespacePrefixCount() ? data.getMaxNamespacePrefixCount() : -1);
     }
 
     /**
@@ -227,6 +239,120 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
         }
 
         // Everything looks good.
+        // new check for namespace declarations - bug 9401
+        return checkNamespaceLimits(request, targetName, cursor, auditor);
+    }
+
+    /**
+     * This method performs the checks on namespace and namespace prefix declaration limits (if enabled in
+     * the assertion). This currently uses a DOM walk to achieve this so it is software only -- the use of
+     * Tarari raxj tokens should be implemented to maximize performance (ServerAcceleratedOversizedTextAssertion).
+     *
+     * @param request  the request to examine.  Must not be null.
+     * @param targetName  Message target name (request, response, or context var name).
+     * @param cursor   an ElementCursor positioned anywhere on the request to examine.  Must not be null.
+     * @param auditor  where to save audit records
+     * @return AssertionStatus.NONE if all enabled constraints were satisfied; otherwise AssertionStatus.BAD_REQUEST,
+     *         and failure has already been logged and audited using the provided auditor.
+     * @throws IOException if there is a problem reading XML from the first part's InputStream; or,
+     *                     if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
+     */
+    AssertionStatus checkNamespaceLimits(Message request, String targetName, ElementCursor cursor, Auditor auditor)
+        throws IOException
+    {
+        final boolean doNsCheck = nsCountLimit > 0;
+        final boolean doNsPrefixCheck = nsPrefixCountLimit > 0;
+        // this method should only be called after the request.isXml() returns true
+        if ((doNsCheck || doNsPrefixCheck) && request.isXml()) {
+
+            cursor.moveToRoot();
+            Pair<Set<String>, Set<String>> nsCounts = findNamespaceDeclarations(cursor.asDomElement(), nsCountLimit, nsPrefixCountLimit);
+
+            if (doNsCheck && nsCounts.left.size() > nsCountLimit) {
+                auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NS_DECLARATION_EXCEEDED, targetName);
+                return getBadMessageStatus();
+
+            } else if (doNsPrefixCheck && nsCounts.right.size() > nsPrefixCountLimit) {
+                auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NS_PREFIX_DECLARATION_EXCEEDED, targetName);
+                return getBadMessageStatus();
+            }
+        }
         return AssertionStatus.NONE;
+    }
+
+    /**
+     * For bug #9401 - see bugzilla for details
+     *
+     * This is the software only implementation to find all distinct namespace and ns prefix declarations within an
+     * xml document. This logic is copied from the DomUtils.findAllNamespaces helper method modified to include
+     * two limit arguments that will short circuit the DOM tree walk.
+     *
+     * @param element the element to parse all namespace declarations from
+     * @param nsLimit the limit on the number of distinct ns declarations
+     * @param prefixLimit the limit on the number of distinct ns prefixes
+     * @return two Sets of string values, one for namespace Uri's; the other for the namespace prefixes
+     * @see com.l7tech.util.DomUtils#findAllNamespaces(org.w3c.dom.Element)
+     */
+    private Pair<Set<String>,Set<String>> findNamespaceDeclarations(Element element, int nsLimit, int prefixLimit) {
+        Map<String,String> entries = new HashMap<String,String>();
+        NamedNodeMap foo = element.getAttributes();
+
+        Set<String> nsUrlSet = new TreeSet<String>();
+        Set<String> nsPrefixSet = new TreeSet<String>();
+
+        // Find xmlns:foo, xmlns=
+        for (int j = 0; j < foo.getLength(); j++) {
+            Attr attrNode = (Attr)foo.item(j);
+            String attPrefix = attrNode.getPrefix();
+            String attNsUri = attrNode.getNamespaceURI();
+            String attLocalName = attrNode.getLocalName();
+            String attValue = attrNode.getValue();
+
+            if (entries.get(attValue) != null) continue;
+
+            // Bug 2053: Avoid adding xmlns="" to the map
+            if (attValue != null && attValue.trim().length() > 0) {
+
+                if (("xmlns".equals(attPrefix) && DomUtils.XMLNS_NS.equals(attNsUri)) || "xmlns".equals(attLocalName)) {
+                    nsUrlSet.add(attValue);
+                    if (!"xmlns".equals(attLocalName))
+                        nsPrefixSet.add(attLocalName);
+                }
+            }
+        }
+        NodeList nodes = element.getElementsByTagName("*");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node n = nodes.item(i);
+            if (n.getNodeType() == Node.ELEMENT_NODE) {
+                NamedNodeMap foo1 = n.getAttributes();
+                // Find xmlns:foo, xmlns=
+                for (int j = 0; j < foo1.getLength(); j++) {
+                    Attr attrNode = (Attr) foo1.item(j);
+                    String attPrefix = attrNode.getPrefix();
+                    String attNsUri = attrNode.getNamespaceURI();
+                    String attLocalName = attrNode.getLocalName();
+                    String attValue = attrNode.getValue();
+
+                    if (entries.get(attValue) != null) continue;
+
+                    // Bug 2053: Avoid adding xmlns="" to the map
+                    if (attValue != null && attValue.trim().length() > 0) {
+                        if (("xmlns".equals(attPrefix) && DomUtils.XMLNS_NS.equals(attNsUri)) || "xmlns".equals(attLocalName)) {
+                            nsUrlSet.add(attValue);
+                            if (!"xmlns".equals(attLocalName))
+                                nsPrefixSet.add(attLocalName);
+                        }
+                    }
+                }
+            }
+
+            // check for limits reached
+            if (nsLimit > 0 && nsUrlSet.size() > nsLimit)
+                break;
+            else if (prefixLimit > 0 && nsPrefixSet.size() > prefixLimit)
+                break;
+        }
+
+        return new Pair<Set<String>, Set<String>>( nsUrlSet, nsPrefixSet );
     }
 }

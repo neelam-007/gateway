@@ -31,12 +31,16 @@ public class OversizedTextDialog extends AssertionPropertiesEditorSupport<Oversi
     private JTextField attrLengthField;
     private JTextField nestingDepthField;
     private JTextField payloadCountField;
+    private JTextField namespaceCountField;
+    private JTextField namespacePrefixCountField;
     private JCheckBox textLengthCheckBox;
     private JCheckBox attrLengthCheckBox;
     private JCheckBox nestingDepthCheckBox;
     private JCheckBox payloadCheckBox;
     private JCheckBox soapEnvCheckBox;
     private JCheckBox attrNameLengthCheckBox;
+    private JCheckBox namespaceCountCheckBox;
+    private JCheckBox namespacePrefixCountCheckBox;
     private JTextField attrNameLengthField;
 
     public OversizedTextDialog(Window owner, OversizedTextAssertion assertion) throws HeadlessException {
@@ -78,6 +82,8 @@ public class OversizedTextDialog extends AssertionPropertiesEditorSupport<Oversi
         soapEnvCheckBox.addChangeListener(changeListener);
         payloadCheckBox.addChangeListener(changeListener);
         attrNameLengthCheckBox.addChangeListener(changeListener);
+        namespaceCountCheckBox.addChangeListener(changeListener);
+        namespacePrefixCountCheckBox.addChangeListener(changeListener);
 
         Utilities.setEscKeyStrokeDisposes(this);
         getRootPane().setDefaultButton(okButton);
@@ -87,6 +93,8 @@ public class OversizedTextDialog extends AssertionPropertiesEditorSupport<Oversi
         Utilities.enableGrayOnDisabled(attrNameLengthField);
         Utilities.enableGrayOnDisabled(nestingDepthField);
         Utilities.enableGrayOnDisabled(payloadCountField);
+        Utilities.enableGrayOnDisabled(namespaceCountField);
+        Utilities.enableGrayOnDisabled(namespacePrefixCountField);
 
         validator.constrainTextFieldToNumberRange("text length", textLengthField, 0, Integer.MAX_VALUE);
         validator.constrainTextFieldToNumberRange("attribute length", attrLengthField, 0, Integer.MAX_VALUE);
@@ -95,6 +103,8 @@ public class OversizedTextDialog extends AssertionPropertiesEditorSupport<Oversi
         validator.constrainTextFieldToNumberRange("maximum nesting depth", nestingDepthField,
                                                   OversizedTextAssertion.MIN_NESTING_LIMIT,
                                                   OversizedTextAssertion.MAX_NESTING_LIMIT);
+        validator.constrainTextFieldToNumberRange("distinct namespace declaration", namespaceCountField, 0, Integer.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("distinct namespace prefix declaration", namespacePrefixCountField, 0, Integer.MAX_VALUE);
 
         modelToView();
         updateEnableState();
@@ -118,6 +128,12 @@ public class OversizedTextDialog extends AssertionPropertiesEditorSupport<Oversi
         final int mp = assertion.getMaxPayloadElements();
         payloadCheckBox.setSelected(mp > 0);
         payloadCountField.setText(mp > 0 ? String.valueOf(mp) : "");
+        final int ns = assertion.getMaxNamespaceCount();
+        namespaceCountField.setText(ns > 0 ? Integer.toString(ns) : "");
+        namespaceCountCheckBox.setSelected(assertion.isLimitNamespaceCount());
+        final int prefix = assertion.getMaxNamespacePrefixCount();
+        namespacePrefixCountField.setText(prefix > 0 ? Integer.toString(prefix) : "");
+        namespacePrefixCountCheckBox.setSelected(assertion.isLimitNamespacePrefixCount());
     }
 
     private void updateEnableState() {
@@ -126,6 +142,8 @@ public class OversizedTextDialog extends AssertionPropertiesEditorSupport<Oversi
         attrNameLengthField.setEnabled(attrNameLengthCheckBox.isSelected());
         nestingDepthField.setEnabled(nestingDepthCheckBox.isSelected());
         payloadCountField.setEnabled(payloadCheckBox.isSelected());
+        namespaceCountField.setEnabled(namespaceCountCheckBox.isSelected());
+        namespacePrefixCountField.setEnabled(namespacePrefixCountCheckBox.isSelected());
     }
 
     private void doCancel() {
@@ -184,10 +202,30 @@ public class OversizedTextDialog extends AssertionPropertiesEditorSupport<Oversi
                 err = "Maximum payload count must be a number.";
         }
 
+        int nsCount = assertion.getMaxNamespaceCount();
+        final boolean limitNsCount = namespaceCountCheckBox.isSelected();
+        try {
+            nsCount = limitNsCount ? Integer.parseInt(namespaceCountField.getText()) : 0;
+        } catch (NumberFormatException nfe) {
+            if (limitNsCount)
+                err = "Maximum namespace declaration count must be a number.";
+        }
+
+        int nsPrefixCount = assertion.getMaxNamespacePrefixCount();
+        final boolean limitNsPrefixCount = namespacePrefixCountCheckBox.isSelected();
+        try {
+            nsPrefixCount = limitNsPrefixCount ? Integer.parseInt(namespacePrefixCountField.getText()) : 0;
+        } catch (NumberFormatException nfe) {
+            if (limitNsPrefixCount)
+                err = "Maximum namespace prefix declaration count must be a number.";
+        }
+
         if ((limitAttrLen && attrLen < 0) ||
                 (limitTextLen && textLen < 0) ||
                 (limitNestDepth && nestDepth < 0) ||
                 (limitPayload && payloadCount < 0) ||
+                (limitNsCount && nsCount < 0) ||
+                (limitNsPrefixCount && nsPrefixCount < 0) ||
                 (limitAttrNameLen && attrNameLen < 0))
             err = "Limits must be nonnegative.";
 
@@ -201,10 +239,14 @@ public class OversizedTextDialog extends AssertionPropertiesEditorSupport<Oversi
         assertion.setMaxTextChars(textLen);
         assertion.setMaxNestingDepth(nestDepth);
         assertion.setMaxPayloadElements(payloadCount);
+        assertion.setMaxNamespaceCount(nsCount);
+        assertion.setMaxNamespacePrefixCount(nsPrefixCount);
         assertion.setLimitTextChars(limitTextLen);
         assertion.setLimitAttrChars(limitAttrLen);
         assertion.setLimitAttrNameChars(limitAttrNameLen);
         assertion.setLimitNestingDepth(limitNestDepth);
+        assertion.setLimitNamespaceCount(limitNsCount);
+        assertion.setLimitNamespacePrefixCount(limitNsPrefixCount);
         assertion.setRequireValidSoapEnvelope(soapEnvCheckBox.isSelected());
         confirmed = true;
         dispose();

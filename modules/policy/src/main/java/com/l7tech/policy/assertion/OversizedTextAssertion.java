@@ -31,6 +31,8 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
     public static final int DEFAULT_ATTR_NAME_LIMIT = 128;
     public static final int DEFAULT_NESTING_LIMIT = 32;
     public static final int DEFAULT_PAYLOAD_LIMIT = 0;     // Unlimited by default
+    public static final int DEFAULT_NAMESPACE_DECLARATON_COUNT = 0; // unlimited
+    public static final int DEFAULT_NAMESPACE_PREFIX_DECLARATION_COUNT = 0; // unlimited
     public static final int MIN_NESTING_LIMIT = 2;         // Constrain to prevent useless check
     public static final int MAX_NESTING_LIMIT = 10000;     // Constrain to prevent enormous value
 
@@ -52,6 +54,11 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
     private boolean requireValidSoapEnvelope = false;
     private boolean limitAttrNameChars = true;
     private int maxAttrNameChars = DEFAULT_ATTR_NAME_LIMIT;
+
+    private boolean limitNamespaceCount = false;
+    private int maxNamespaceCount = DEFAULT_NAMESPACE_DECLARATON_COUNT;
+    private boolean limitNamespacePrefixCount = false;
+    private int maxNamespacePrefixCount = DEFAULT_NAMESPACE_PREFIX_DECLARATION_COUNT;
 
     public OversizedTextAssertion() {
         super(false);
@@ -138,6 +145,40 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
 
     public void setMaxAttrNameChars(int maxAttrNameChars) {
         this.maxAttrNameChars = maxAttrNameChars;
+    }
+
+    public boolean isLimitNamespaceCount() {
+        return limitNamespaceCount;
+    }
+
+    public void setLimitNamespaceCount(boolean limitNamespaceCount) {
+        this.limitNamespaceCount = limitNamespaceCount;
+    }
+
+    public int getMaxNamespaceCount() {
+        return maxNamespaceCount;
+    }
+
+    public void setMaxNamespaceCount(int maxNamespaceCount) {
+        if (maxNamespaceCount < 0) maxNamespaceCount = 0;
+        this.maxNamespaceCount = maxNamespaceCount;
+    }
+
+    public boolean isLimitNamespacePrefixCount() {
+        return limitNamespacePrefixCount;
+    }
+
+    public void setLimitNamespacePrefixCount(boolean limitNamespacePrefixCount) {
+        this.limitNamespacePrefixCount = limitNamespacePrefixCount;
+    }
+
+    public int getMaxNamespacePrefixCount() {
+        return maxNamespacePrefixCount;
+    }
+
+    public void setMaxNamespacePrefixCount(int maxNamespacePrefixCount) {
+        if (maxNamespacePrefixCount < 0) maxNamespacePrefixCount = 0;
+        this.maxNamespacePrefixCount = maxNamespacePrefixCount;
     }
 
     /**
