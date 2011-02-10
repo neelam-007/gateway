@@ -129,7 +129,7 @@ public class ServerCreateSecurityContextToken extends AbstractMessageTargetableS
             newSession = scContextManager.createContextForUser(
                 authenticationResult.getUser(),
                 loginCredentials,
-                rstParameters.get(RstSoapMessageProcessor.WSC_NS),
+                RstSoapMessageProcessor.getWsscNamespace(rstParameters),
                 getSessionDuration(),
                 clientEntropy,
                 keySize

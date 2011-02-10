@@ -58,6 +58,8 @@ public class RstSoapMessageProcessor {
 
     private static final Map<String,String> trustToPolicyNsMap;
     private static final  Map<String,String> trustToAddressingNsMap;
+    private static final  Map<String,String> trustToWsscNsMap;
+
     static {
         final HashMap<String,String> trustMap = new HashMap<String,String>();
         trustMap.put( SoapConstants.WST_NAMESPACE, SoapConstants.WSP_NAMESPACE );
@@ -72,6 +74,13 @@ public class RstSoapMessageProcessor {
         addressingMap.put( SoapConstants.WST_NAMESPACE3, SoapConstants.WSA_NAMESPACE_10 );
         addressingMap.put( SoapConstants.WST_NAMESPACE4, SoapConstants.WSA_NAMESPACE_10 );
         trustToAddressingNsMap = Collections.unmodifiableMap( addressingMap );
+
+        final HashMap<String,String> wsscMap = new HashMap<String,String>();
+        wsscMap.put( SoapConstants.WST_NAMESPACE, SoapConstants.WSSC_NAMESPACE );
+        wsscMap.put( SoapConstants.WST_NAMESPACE2, SoapConstants.WSSC_NAMESPACE2 );
+        wsscMap.put( SoapConstants.WST_NAMESPACE3, SoapConstants.WSSC_NAMESPACE3 );
+        wsscMap.put( SoapConstants.WST_NAMESPACE4, SoapConstants.WSSC_NAMESPACE3 );
+        trustToWsscNsMap = Collections.unmodifiableMap( wsscMap );
     }
 
     /**
@@ -518,10 +527,26 @@ public class RstSoapMessageProcessor {
      * returned.</p>
      *
      * @param parameters The parameters to use.
-     * @return The WS-Trust namespace.
+     * @return The WS-Addressing namespace.
      */
     public static String getWsaNamespace( final Map<String, String> parameters ) {
         return getNamespace( parameters, SoapConstants.WSA_NAMESPACE_10, WSA_NS, trustToAddressingNsMap );
+    }
+
+     /**
+     * Get the WS-Secure Conversation namespace to use.
+     *
+     * <p>The namespace could be detected from the RST message or could be
+     * derived from the WS-Trust namespace.</p>
+     *
+     * <p>If a namespace cannot be determined then the default namespace is
+     * returned.</p>
+     *
+     * @param parameters The parameters to use.
+     * @return The WS-Secure Conversation namespace.
+     */
+    public static String getWsscNamespace( final Map<String, String> parameters ) {
+        return getNamespace( parameters, SoapConstants.WSSC_NAMESPACE2, WSC_NS, trustToWsscNsMap );
     }
 
     /**
@@ -534,7 +559,7 @@ public class RstSoapMessageProcessor {
      * returned.</p>
      *
      * @param parameters The parameters to use.
-     * @return The WS-Trust namespace.
+     * @return The WS-Policy namespace.
      */
     public static String getWspNamespace( final Map<String, String> parameters ) {
         return getNamespace( parameters, SoapConstants.WSP_NAMESPACE2, WSP_NS, trustToPolicyNsMap );
