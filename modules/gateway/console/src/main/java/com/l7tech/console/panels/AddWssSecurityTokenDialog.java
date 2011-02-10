@@ -14,17 +14,18 @@ public class AddWssSecurityTokenDialog extends AssertionPropertiesOkCancelSuppor
 
     public AddWssSecurityTokenDialog(Frame owner, AddWssSecurityToken assertion) {
         super(AddWssSecurityToken.class, owner, assertion, true);
-        this.assertion = assertion;         
+        this.assertion = assertion;
+        super.initComponents();
     }
 
     @Override
     public void setData(AddWssSecurityToken assertion) {
-        //
+        tokenPanel.setModel(assertion, getPreviousAssertion());
     }
 
     @Override
     public AddWssSecurityToken getData(AddWssSecurityToken assertion) throws ValidationException {
-        return tokenPanel.getModel();
+        return tokenPanel.getData();
     }
 
     @Override

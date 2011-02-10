@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.policy.PolicyPositionAware;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.ValidatedPanel;
@@ -18,7 +17,7 @@ import java.awt.event.ActionListener;
 /**
  * GUI configuration panel for the {@link AddWssSecurityToken} assertion.
  */
-public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken> implements PolicyPositionAware {
+public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken>  {
     private JPanel mainPanel;
     private JComboBox tokenTypeCombo;
     private JRadioButton bstRadio;
@@ -42,8 +41,7 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
     private JTabbedPane propertiesTabbedPane;
     private JCheckBox signTokenCheckBox;
 
-    private final AddWssSecurityToken assertion;
-    private PolicyPositionAware.PolicyPosition policyPosition;
+    private AddWssSecurityToken assertion;
    
     public AddWssSecurityTokenPanel(AddWssSecurityToken model) {
         super("assertion");
@@ -83,59 +81,22 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         });
 
         tokenTypeCombo.setModel(new DefaultComboBoxModel(AddWssSecurityToken.SUPPORTED_TOKEN_TYPES));
-        final SecurityTokenType tokenType = assertion.getTokenType();
-        tokenTypeCombo.setSelectedItem(tokenType);
         tokenTypeCombo.addActionListener(updater);
 
         samlTargetVariablePanel = new TargetVariablePanel();
-        samlTargetVariablePanel.setAssertion(assertion,getPreviousAssertion());
         samlTargetVariablePanel.setValueWillBeWritten(false);
         samlTargetVariablePanel.setValueWillBeRead(true);
         samlVariablePanel.setLayout(new BorderLayout());
         samlVariablePanel.add(samlTargetVariablePanel, BorderLayout.CENTER);
 
         wsscSessionVariableTargetVariablePanel = new TargetVariablePanel();
-        wsscSessionVariableTargetVariablePanel.setAssertion(assertion,getPreviousAssertion());
         wsscSessionVariableTargetVariablePanel.setValueWillBeWritten(false);
         wsscSessionVariableTargetVariablePanel.setValueWillBeRead(true);
         wsscSessionVariablePanel.setLayout(new BorderLayout());
         wsscSessionVariablePanel.add(wsscSessionVariableTargetVariablePanel, BorderLayout.CENTER);
 
-        if (SecurityTokenType.WSS_USERNAME == tokenType) {
-            includePasswordCheckBox.setEnabled(true);
-            includePasswordCheckBox.setSelected(assertion.isIncludePassword());
-            usernameTextField.setText( assertion.getUsername() == null ? "" : assertion.getUsername() );
-            passwordField.setText( assertion.getPassword() == null ? "" : assertion.getPassword() );
-            includePasswordCheckBox.setSelected( assertion.isIncludePassword() );
-            includeNonceCheckBox.setSelected( assertion.isIncludeNonce() );
-            includeCreatedCheckBox.setSelected( assertion.isIncludeCreated() );
-            digestPasswordCheckBox.setSelected( assertion.isDigest() );
-            encryptUsernameTokenCheckBox.setSelected( assertion.isEncrypt() );
-            if ( KeyReference.BST.getName().equals(assertion.getKeyReference()) ) {
-                bstRadio.setSelected(true);
-            } else if ( KeyReference.ISSUER_SERIAL.getName().equals(assertion.getKeyReference()) ) {
-                issuerSerialRadio.setSelected(true);
-            } else {
-                strRadio.setSelected(true);
-            }
 
-            if (assertion.isUseLastGatheredCredentials()) {
-                useSpecifiedCredentialsRadioButton.setSelected(false);
-                useLastGatheredRequestRadioButton.setSelected(true);
-            } else {
-                useLastGatheredRequestRadioButton.setSelected(false);
-                useSpecifiedCredentialsRadioButton.setSelected(true);
-            }
-        } else if (SecurityTokenType.WSSC_CONTEXT == tokenType) {
-            wsscSessionVariableTargetVariablePanel.setVariable(assertion.getWsscSessionVariable() == null ? "" : assertion.getWsscSessionVariable());
-            includeSecurityContextTokenInMessageCheckBox.setSelected(!assertion.isOmitSecurityContextToken());
-        } else if (SecurityTokenType.SAML_ASSERTION == tokenType) {
-            samlTargetVariablePanel.setVariable(assertion.getSamlAssertionVariable() == null ? "" : assertion.getSamlAssertionVariable());
-        } else if (SecurityTokenType.WSS_ENCRYPTEDKEY == tokenType) {
-            // No extra configuration for this type, currently.
-        }
 
-        signTokenCheckBox.setSelected(assertion.isProtectTokens());
 
         includePasswordCheckBox.addActionListener(updater);
 
@@ -253,22 +214,72 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         return assertion;
     }
 
+    public AddWssSecurityToken getData() {
+        doUpdateModel();
+        return assertion;
+
+    }
+
     @Override
     public void focusFirstComponent() {
     }
 
 
-    @Override
-    public void setPolicyPosition( final PolicyPositionAware.PolicyPosition policyPosition ) {
-        this.policyPosition = policyPosition;
+//    @Override
+//    public void setPolicyPosition( final PolicyPositionAware.PolicyPosition policyPosition ) {
+//        this.policyPosition = policyPosition;
+//    }
+//
+//    @Override
+//    public PolicyPosition getPolicyPosition() {
+//        return this.policyPosition;
+//    }
+//
+//    protected Assertion getPreviousAssertion() {
+//        return policyPosition==null ? null : policyPosition.getPreviousAssertion();
+//    }
+
+    public void setModel(AddWssSecurityToken model, Assertion prevAssertion){
+        this.assertion = model;
+        final SecurityTokenType tokenType = assertion.getTokenType();
+        tokenTypeCombo.setSelectedItem(tokenType);
+        samlTargetVariablePanel.setAssertion(assertion,prevAssertion);
+        wsscSessionVariableTargetVariablePanel.setAssertion(assertion,prevAssertion);
+        if (SecurityTokenType.WSS_USERNAME == tokenType) {
+            includePasswordCheckBox.setEnabled(true);
+            includePasswordCheckBox.setSelected(assertion.isIncludePassword());
+            usernameTextField.setText( assertion.getUsername() == null ? "" : assertion.getUsername() );
+            passwordField.setText( assertion.getPassword() == null ? "" : assertion.getPassword() );
+            includePasswordCheckBox.setSelected( assertion.isIncludePassword() );
+            includeNonceCheckBox.setSelected( assertion.isIncludeNonce() );
+            includeCreatedCheckBox.setSelected( assertion.isIncludeCreated() );
+            digestPasswordCheckBox.setSelected( assertion.isDigest() );
+            encryptUsernameTokenCheckBox.setSelected( assertion.isEncrypt() );
+            if ( KeyReference.BST.getName().equals(assertion.getKeyReference()) ) {
+                bstRadio.setSelected(true);
+            } else if ( KeyReference.ISSUER_SERIAL.getName().equals(assertion.getKeyReference()) ) {
+                issuerSerialRadio.setSelected(true);
+            } else {
+                strRadio.setSelected(true);
+            }
+
+            if (assertion.isUseLastGatheredCredentials()) {
+                useSpecifiedCredentialsRadioButton.setSelected(false);
+                useLastGatheredRequestRadioButton.setSelected(true);
+            } else {
+                useLastGatheredRequestRadioButton.setSelected(false);
+                useSpecifiedCredentialsRadioButton.setSelected(true);
+            }
+        } else if (SecurityTokenType.WSSC_CONTEXT == tokenType) {
+            wsscSessionVariableTargetVariablePanel.setVariable(assertion.getWsscSessionVariable() == null ? "" : assertion.getWsscSessionVariable());
+            includeSecurityContextTokenInMessageCheckBox.setSelected(!assertion.isOmitSecurityContextToken());
+        } else if (SecurityTokenType.SAML_ASSERTION == tokenType) {
+            samlTargetVariablePanel.setVariable(assertion.getSamlAssertionVariable() == null ? "" : assertion.getSamlAssertionVariable());
+        } else if (SecurityTokenType.WSS_ENCRYPTEDKEY == tokenType) {
+            // No extra configuration for this type, currently.
+        }
+
+        signTokenCheckBox.setSelected(assertion.isProtectTokens());
     }
 
-    @Override
-    public PolicyPosition getPolicyPosition() {
-        return this.policyPosition;
-    }
-
-    protected Assertion getPreviousAssertion() {
-        return policyPosition==null ? null : policyPosition.getPreviousAssertion();
-    }
 }

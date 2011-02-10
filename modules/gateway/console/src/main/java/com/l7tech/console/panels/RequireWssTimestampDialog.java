@@ -25,17 +25,18 @@ public class RequireWssTimestampDialog extends AssertionPropertiesOkCancelSuppor
 
     @Override
     public void setData(RequireWssTimestamp assertion) {
+        contentPanel.setModel(assertion,getPreviousAssertion());
     }
 
     @Override
     public RequireWssTimestamp getData(RequireWssTimestamp assertion) throws ValidationException {
-        return contentPanel.getModel();
+        return contentPanel.getData();
     }
 
     @Override
     protected JPanel createPropertyPanel() {
 
-        contentPanel = new RequireWssTimestampPanel(assertion,getPreviousAssertion());
+        contentPanel = new RequireWssTimestampPanel(assertion);
         return contentPanel;
     }
 }

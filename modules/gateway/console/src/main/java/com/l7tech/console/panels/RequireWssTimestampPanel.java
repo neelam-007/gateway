@@ -35,23 +35,20 @@ public class RequireWssTimestampPanel extends ValidatedPanel<RequireWssTimestamp
 
     private static final long MILLIS_100_YEARS = 100L * 365L * 86400L * 1000L;
 
-    private final RequireWssTimestamp assertion;
+    private RequireWssTimestamp assertion;
     private TimeUnit oldTimeUnit;
 
     private volatile boolean targetPanelValid = true;
 
-    public RequireWssTimestampPanel(RequireWssTimestamp model, Assertion prevAssertion) {
+    public RequireWssTimestampPanel(RequireWssTimestamp model) {
         super("expiryTime");
         this.assertion = model;
-        targetMessagePanel.setModel(model, prevAssertion);
         init();
     }
 
     protected void initComponents() {
         DefaultComboBoxModel comboModel = new DefaultComboBoxModel(TimeUnit.ALL);
-        final TimeUnit timeUnit = assertion.getTimeUnit();
-        oldTimeUnit = timeUnit;
-        comboModel.setSelectedItem(timeUnit);
+
         expiryTimeUnitCombo.setModel(comboModel);
             final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.####"));
         numberFormatter.setValueClass(Double.class);
@@ -66,7 +63,7 @@ public class RequireWssTimestampPanel extends ValidatedPanel<RequireWssTimestamp
             }
         });
 
-        requireSignatureCheckBox.setSelected(assertion.isSignatureRequired());
+
         requireSignatureCheckBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 checkSyntax();
@@ -77,7 +74,6 @@ public class RequireWssTimestampPanel extends ValidatedPanel<RequireWssTimestamp
                 return numberFormatter;
             }
         });
-        expiryTimeField.setValue(new Double((double)assertion.getMaxExpiryMilliseconds() / timeUnit.getMultiplier()));
         expiryTimeField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) {checkSyntax();}
             public void removeUpdate(DocumentEvent e) {checkSyntax();}
@@ -118,7 +114,13 @@ public class RequireWssTimestampPanel extends ValidatedPanel<RequireWssTimestamp
         targetMessagePanel.updateModel(assertion);
     }
 
+    @Override
     protected RequireWssTimestamp getModel() {
+        return assertion;
+    }
+
+    public  RequireWssTimestamp getData() {
+        doUpdateModel();
         return assertion;
     }
 
@@ -129,6 +131,17 @@ public class RequireWssTimestampPanel extends ValidatedPanel<RequireWssTimestamp
 
     public void focusFirstComponent() {
         expiryTimeField.requestFocus();
+    }
+
+    public void setModel(RequireWssTimestamp model, Assertion prevAssertion){
+        this.assertion = model;
+        targetMessagePanel.setModel(model, prevAssertion);
+        final TimeUnit timeUnit = assertion.getTimeUnit();
+        oldTimeUnit = timeUnit;
+        expiryTimeUnitCombo.getModel().setSelectedItem(timeUnit);
+        expiryTimeField.setValue(new Double((double)assertion.getMaxExpiryMilliseconds() / timeUnit.getMultiplier()));
+        requireSignatureCheckBox.setSelected(assertion.isSignatureRequired());
+
     }
 
 }
