@@ -93,7 +93,7 @@ public abstract class ServerNonSoapSecurityAssertion<AT extends NonSoapSecurityA
             return processAffectedElements(context, message, doc, affectedElements);
 
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.XPATH_MESSAGE_NOT_XML, assertion.getTargetName());

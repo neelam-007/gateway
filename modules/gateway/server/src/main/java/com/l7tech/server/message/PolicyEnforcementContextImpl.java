@@ -28,6 +28,7 @@ import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.util.ClassUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
 import com.l7tech.wsdl.Wsdl;
@@ -630,8 +631,8 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
 
                 if (!allowNonMessageVar)
                     throw new NoSuchVariableException(variableName,
-                            MessageFormat.format("Request message source (\"{0}\") is a context variable of the wrong type (expected={1}, actual={2}).",
-                                    variableName, Message.class, value.getClass()));
+                            MessageFormat.format("Request message source (\"{0}\") is a context variable of the wrong type (expected=Message, actual={1}).",
+                                    variableName, ClassUtils.getClassName(value.getClass())));
 
                 return createContextVariableBackedMessage(variableName, value.toString());
 

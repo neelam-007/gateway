@@ -18,6 +18,7 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SyspropUtil;
 
@@ -68,7 +69,7 @@ public class AddWssEncryptionSupport implements AuditHaver {
         try {
             return context.getTargetMessage(messageTargetable);
         } catch (NoSuchVariableException e) {
-            getAuditor().logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            getAuditor().logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             throw new AssertionStatusException(AssertionStatus.FAILED);
         }
     }

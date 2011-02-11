@@ -102,6 +102,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         try {
             requestMessage = context.getTargetMessage(assertion.getRequestTarget());
         } catch (NoSuchVariableException e) {
+            auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
 
         }
@@ -280,6 +281,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             try {
                 this.requestMessage = context.getTargetMessage(assertion.getRequestTarget());
             } catch (NoSuchVariableException e) {
+                auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
                 throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
             }
         }
@@ -621,6 +623,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         try {
             requestMessage = context.getTargetMessage(assertion.getRequestTarget());
         } catch (NoSuchVariableException e) {
+            auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
         }
         final MimeKnob mk = requestMessage.getMimeKnob();

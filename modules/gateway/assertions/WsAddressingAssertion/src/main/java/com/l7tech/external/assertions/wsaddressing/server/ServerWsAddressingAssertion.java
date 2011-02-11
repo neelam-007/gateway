@@ -78,7 +78,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             messageDescription = assertion.getTargetName();
             msg = context.getTargetMessage(assertion);
         } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            auditor.logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
         }
 

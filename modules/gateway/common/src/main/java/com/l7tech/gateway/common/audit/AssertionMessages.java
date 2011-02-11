@@ -11,10 +11,11 @@ import java.util.logging.Level;
  */
 public class AssertionMessages extends Messages {
 
-    // Generic Assertion Message
+    // Generic Assertion Messages (4330- 4399 reserved for use here)
     public static final M REQUESTWSS_NO_SECURITY     = m(4302, Level.INFO, "Request did not contain any WSS level security");
     public static final M ASSERTION_MISCONFIGURED    = m(4304, Level.WARNING, false, false, "Assertion configuration error: {0}"); // Provided as less-drastic alternative to throwing PolicyAssertionException
     public static final M MESSAGE_NOT_SOAP           = m(4305, Level.WARNING, "{0} message not soap; {1}"); 
+    public static final M MESSAGE_TARGET_ERROR       = m(4330, Level.WARNING, "Invalid target message, variable \"{0}\": {1}"); 
 
     // ServerHttpRoutingAssertion messages
     public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.WARNING, "Could not initialize SSL Context");
@@ -109,9 +110,13 @@ public class AssertionMessages extends Messages {
     // ServerRequestWssOperation messages
     public static final M REQUESTWSS_NOT_FOR_US  = m(4300, Level.FINE, "Intended for another recipient; nothing to validate");
     /** @deprecated */ @Deprecated public static final M _UNUSED_REQUIREWSS_NONSOAP     = m(4301, Level.INFO, "Request not SOAP; cannot verify WS-Security contents");
-    // Move the below message to the top "Generic Assersion Message"
+    // Move the below message to the top "Generic Assertion Messages"
     //public static final M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "Request did not contain any WSS level security");
     public static final M REQUIREWSS_NONSOAP     = m(4303, Level.INFO, "{0} message not SOAP; cannot verify WS-Security contents");
+    // 4304
+    // 4305 Used for "Generic Assertion Messages" above
+
+    // 4330- 4399 reserved for new "Generic Assertion Messages" above
 
     // ServerRequestSwAAssertion messages
     public static final M SWA_NOT_SOAP                    = m(4400, Level.WARNING, "Request not SOAP; cannot validate attachments");
@@ -595,6 +600,8 @@ public class AssertionMessages extends Messages {
     public static final M VARIABLE_NOTSET        = m(-8, Level.WARNING, "Variable cannot be set: {0}");
     public static final M VARIABLE_INVALID_VALUE = m(-9, Level.FINE, "Variable ''{0}'' should be of type ''{1}''");
     public static final M NO_SUCH_VARIABLE_WARNING       = m(-10, Level.WARNING, "No such variable: {0}");
+    // Do not add values here, these values are outside the permitted range for assertion messages
+    // (add to the "Generic Assertion Messages" section at the top)
 
     public static final M WSI_BSP_REQUEST_NON_SOAP       = m(7600, Level.INFO, "Request not SOAP; unable to check for WS-I Basic Security Profile compliance");
     public static final M WSI_BSP_RESPONSE_NON_SOAP      = m(7601, Level.INFO, false, true, "Response not SOAP; unable to check for WS-I Basic Security Profile compliance");

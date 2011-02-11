@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.ExceptionUtils;
 
 import java.io.IOException;
 
@@ -40,7 +41,7 @@ public abstract class AbstractMessageTargetableServerAssertion<AT extends Assert
         try {
             message = context.getTargetMessage(messageTargetable);
         } catch (NoSuchVariableException e) {
-            getAuditor().logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
+            getAuditor().logAndAudit(AssertionMessages.MESSAGE_TARGET_ERROR, e.getVariable(), ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
         }
 
