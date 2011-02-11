@@ -1461,13 +1461,13 @@ public class WssProcessorImpl implements WssProcessor {
             dataList = dc.getDataAsNodeList();
         } catch (XSignatureException e) {
             DsigUtil.repairXSignatureException(e);
-            logger.log(Level.WARNING, "Error decrypting", e);
+            logger.log(Level.FINE, "Error decrypting", e);
             throw new ProcessorException(e);
         } catch (StructureException e) {
-            logger.log(Level.WARNING, "Error decrypting", e);
+            logger.log(Level.FINE, "Error decrypting", e);
             throw new ProcessorException(e);
         } catch (KeyInfoResolvingException e) {
-            logger.log(Level.WARNING, "Error decrypting", e);
+            logger.log(Level.FINE, "Error decrypting", e);
             throw new ProcessorException(e);
         }
         // determine algorithm
@@ -1943,13 +1943,13 @@ public class WssProcessorImpl implements WssProcessor {
             if (refList != null)
                 decryptReferencedElements(ekTok.getSecretKey(), refList);
         } catch (ParserConfigurationException e) {
-            logger.log(Level.WARNING, "Error decrypting", e);
+            logger.log(Level.FINE, "Error decrypting", e);
             throw new ProcessorException(e);
         } catch (SAXException e) {
-            logger.log(Level.WARNING, "Error decrypting", e);
+            logger.log(Level.FINE, "Error decrypting", e);
             throw new ProcessorException(e);
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Error decrypting", e);
+            logger.log(Level.FINE, "Error decrypting", e);
             throw new ProcessorException(e);
         }
 
@@ -2046,10 +2046,10 @@ public class WssProcessorImpl implements WssProcessor {
             try {
                 signingCert.checkValidity();
             } catch (CertificateExpiredException e) {
-                logger.log(Level.WARNING, "Signing certificate expired " + signingCert.getNotAfter(), ExceptionUtils.getDebugException(e));
+                logger.log(Level.FINE, "Signing certificate expired " + signingCert.getNotAfter(), ExceptionUtils.getDebugException(e));
                 throw new ProcessorException(e);
             } catch (CertificateNotYetValidException e) {
-                logger.log(Level.WARNING, "Signing certificate is not valid until " + signingCert.getNotBefore(), ExceptionUtils.getDebugException(e));
+                logger.log(Level.FINE, "Signing certificate is not valid until " + signingCert.getNotBefore(), ExceptionUtils.getDebugException(e));
                 throw new ProcessorException(e);
             }
         }

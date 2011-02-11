@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <s:Header>
+        <wsse:Security s:actor="secure_span" s:mustUnderstand="1"
+            xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+            <wsu:Timestamp>
+                <wsu:Created>2011-02-07T22:24:20.522614291Z</wsu:Created>
+                <wsu:Expires>2011-02-07T22:29:20.522Z</wsu:Expires>
+            </wsu:Timestamp>
+            <xenc:EncryptedKey xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+                <xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-1_5"/>
+                <dsig:KeyInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
+                    <wsse:SecurityTokenReference>
+                        <wsse:KeyIdentifier
+                            EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509SubjectKeyIdentifier">CuJdE1B2dUFd1dkLZSzQ5vj6MYg=</wsse:KeyIdentifier>
+                    </wsse:SecurityTokenReference>
+                </dsig:KeyInfo>
+                <xenc:CipherData>
+                    <xenc:CipherValue>jehePvWVqtZcHvCoPaIKeak6QXuq0rU0K0zLpeTpoSTWErbJvu83yMP41jY/XPm0Kp4taZcY/kK2O4VMIsu8T3RXvxb58JDgVVtWuUaumM788/nkl95YNOkDwjFXqUl5OCa+YQClbe/YYo9KkRsJIXOTJv4mXZ+rRcWLxRfmysw=</xenc:CipherValue>
+                </xenc:CipherData>
+                <xenc:ReferenceList>
+                    <xenc:DataReference URI="#id-0-e4800f7920428ca61e1948701c6af17f"/>
+                </xenc:ReferenceList>
+            </xenc:EncryptedKey>
+        </wsse:Security>
+    </s:Header>
+    <s:Body>
+        <EncryptedData Id="id-0-e4800f7920428ca61e1948701c6af17f"
+            Type="http://www.w3.org/2001/04/xmlenc#Content" xmlns="http://www.w3.org/2001/04/xmlenc#">
+            <EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/>
+            <CipherData>
+                <CipherValue>pUGi/8m7aiJG4HIWhZn7sW+2tL0EXYlM/ycNEyhjQMGEkSwYT/Ddp+d5FKcXJFMuQa8I0Qh/3Y8UVK4DLqlTdA9pj6W/yeKnuB3fhET5hMQADXdjo9/+RONqTBvdS+12QEN+0y3xTldeWKYvD5c+BQiujy8idogZWAx3hK7lK/4m+1XkPdI6AveSDHZjfHzm7v/7EsCS0hN2UJg0ZFFozg==</CipherValue>
+            </CipherData>
+        </EncryptedData>
+    </s:Body>
+</s:Envelope>

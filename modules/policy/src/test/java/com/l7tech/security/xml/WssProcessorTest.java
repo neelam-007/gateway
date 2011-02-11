@@ -1017,6 +1017,14 @@ public class WssProcessorTest {
         return message;
     }
 
+    @Test(expected = ProcessorException.class)
+    @BugNumber(9781)
+    public void testBug9781WrongDecryptionKey() throws Exception {
+        Document d = TestDocuments.getTestDocument("com/l7tech/policy/resources/bug9781_request.xml");
+        TestDocument td = new TestDocument("testBug9781WrongDecryptionKey", d, TestDocuments.getWssInteropAliceKey(), TestDocuments.getWssInteropAliceCert(), null, null, null);
+        doTest(td);
+    }
+
     @Test
     public void testWcfTrace() throws Exception {
         // Load private keys we'll need to process the trace messages

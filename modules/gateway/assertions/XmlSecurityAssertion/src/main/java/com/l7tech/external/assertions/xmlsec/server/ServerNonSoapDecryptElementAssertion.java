@@ -123,14 +123,17 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
         dc.setEncryptedType(encryptedDataEl, EncryptedData.ELEMENT, null, null);
         dc.setKey(flexKey);
 
+        final NodeList decryptedNodes;
         try {
             dc.decrypt();
+            decryptedNodes = dc.getDataAsNodeList();
+            dc.replace();
         } catch (XSignatureException e) {
             DsigUtil.repairXSignatureException(e);
             throw e;
+        } catch (PseudoIOException e) {
+            throw new InvalidKeyException(e);
         }
-        NodeList decryptedNodes = dc.getDataAsNodeList();
-        dc.replace();
 
         // determine algorithm
         String algorithmName = XencAlgorithm.AES_128_CBC.getXEncName();
