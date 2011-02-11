@@ -6,18 +6,18 @@
 
 package com.l7tech.client.gui;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.widgets.PleaseWaitDialog;
+import com.l7tech.client.gui.dialogs.LogonDialog;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gui.TrustCertificateDialog;
-import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.PleaseWaitDialog;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgRuntime;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.client.gui.dialogs.LogonDialog;
 import com.l7tech.proxy.ssl.SslPeer;
+import com.l7tech.security.token.SecurityTokenType;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -258,9 +258,9 @@ class GuiCredentialManager extends CredentialManager {
 
         invokeOnSwingThread(new Runnable() {
             public void run() {
-                String msg = "Your password is incorrect for this client certificate, or the certificate\n" +
+                String msg = "Your password is incorrect for this client certificate, or the certificate " +
                         "and/or key store for the Gateway " + ssg +
-                        "\n is irrepairably damaged.\n\n" +
+                        " is irrepairably damaged.\n\n" +
                         "Do you want to delete and rebuild them?";
                 Gui.getInstance().getFrame().toFront();
                 Object[] certoptions = { "Destroy Certificate and Key Stores", "Cancel" };                
@@ -297,10 +297,10 @@ class GuiCredentialManager extends CredentialManager {
 
         invokeOnSwingThread(new Runnable() {
             public void run() {
-                Gui.errorMessage("You need a client certificate to communicate with the Gateway " + ssg + ", \n" +
-                                 "but it has already issued a client certificate to this account and cannot issue\n" +
-                                 "a second one.  If you have lost your client certificate, you will need to\n" +
-                                 "contact your Gateway administrator and have them revoke your old one before\n" +
+                Gui.errorMessage("You need a client certificate to communicate with the Gateway " + ssg + ", " +
+                                 "but it has already issued a client certificate to this account and cannot issue " +
+                                 "a second one.  \n\nIf you have lost your client certificate, you will need to " +
+                                 "contact your Gateway administrator and have them revoke your old one before " +
                                  "you can obtain a new one.");
             }
         });
@@ -322,7 +322,7 @@ class GuiCredentialManager extends CredentialManager {
         invokeOnSwingThread(new Runnable() {
             public void run() {
                 Gui.errorMessage(
-                        "The configured hostname for " + server + " is \"" + whatWeWanted + "\", \n" +
+                        "The configured hostname for " + server + " is \"" + whatWeWanted + "\", " +
                         "but the server presented a certificate claiming its hostname is \"" + whatWeGotInstead + "\".\n\n" +
                         "Please double check the hostname for " + server + ".");
 
