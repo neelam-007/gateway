@@ -142,6 +142,14 @@ public class WssRoundTripTest {
         }
     }
 
+
+    @Test
+    @BugNumber(9802)
+    public void testSignedAndEncryptedUsernameTokenWithEncryptedSignature() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SignedAndEncryptedUsernameTokenWithEncryptedSignature",
+                wssDecoratorTest.getSignedAndEncryptedUsernameTokenWithEncryptedSignatureTestDocument()), false);
+    }
+
     @Test
     public void testEncryptedBodySignedEnvelope() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedBodySignedEnvelope",
