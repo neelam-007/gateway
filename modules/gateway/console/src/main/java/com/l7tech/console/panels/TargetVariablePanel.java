@@ -245,7 +245,7 @@ public class TargetVariablePanel  extends JPanel {
             statusLabel.setIcon(OK_ICON);        
             statusLabel.setText(resources.getString("label.ok"));
         }
-        else if ((validateNameResult = VariableMetadata.validateName(variableName)) != null) {
+        else if ((validateNameResult = VariableMetadata.validateName(variableName, valueWillBeRead&&!valueWillBeWritten)) != null) {
             entryValid = false;
             statusLabel.setIcon(WARNING_ICON);        
             statusLabel.setText("Invalid Syntax");
@@ -262,7 +262,8 @@ public class TargetVariablePanel  extends JPanel {
                 builtin = true;
                 unsettable = !meta.isSettable();
             } else {
-                exists = Syntax.getMatchingName(variableName, predecessorVariables) != null;
+                final String name = Syntax.parse( variableName, Syntax.DEFAULT_MV_DELIMITER ).remainingName;
+                exists = Syntax.getMatchingName(name, predecessorVariables) != null;
                 builtin = false;
                 unsettable = false;
             }

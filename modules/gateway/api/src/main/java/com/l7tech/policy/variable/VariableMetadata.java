@@ -12,6 +12,11 @@ import java.util.regex.Pattern;
 public class VariableMetadata implements Serializable {
     private static final Pattern VARIABLE_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9._\\-]*$");
 
+    /**
+     * Currently the syntax pattern only permits array syntax, not multivalued since the multivalued delimiter can be changed ...
+     */
+    private static final Pattern VARIABLE_NAME_SYNTAX_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9._\\-]*(?:\\[\\d{1,7}\\])?$");
+
     private final String name;
     private final boolean prefixed;
     private final boolean multivalued;
@@ -23,7 +28,7 @@ public class VariableMetadata implements Serializable {
     public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type, String replacedBy)
         throws VariableNameSyntaxException
     {
-        assertNameIsValid(name);
+        assertNameIsValid(name,false);
         this.name = name;
         this.prefixed = prefixed;
         this.multivalued = multivalued;
@@ -119,13 +124,26 @@ public class VariableMetadata implements Serializable {
         }
     }
 
-    public static void assertNameIsValid(String name) throws VariableNameSyntaxException {
-        if (!isNameValid(name))
+    public static void assertNameIsValid(String name, boolean permitSyntax) throws VariableNameSyntaxException {
+        if (!isNameValid(name, permitSyntax))
             throw new VariableNameSyntaxException("Variable name must start with a letter or underscore, and contains optional letters, digits, underscores, dashes, or periods.");
     }
 
     public static boolean isNameValid(String name) {
-        return VARIABLE_NAME_PATTERN.matcher(name).matches();
+        return isNameValid( name, false );
+    }
+
+    /**
+     * Check if the the given variable name is valid.
+     *
+     * @param name The name to check
+     * @param permitSyntax True to allow syntax (e.g. an array index)
+     * @return true if valid
+     */
+    public static boolean isNameValid(String name, boolean permitSyntax) {
+        return permitSyntax?
+                VARIABLE_NAME_SYNTAX_PATTERN.matcher( name ).matches() :
+                VARIABLE_NAME_PATTERN.matcher(name).matches();
     }
 
     /**
@@ -135,8 +153,19 @@ public class VariableMetadata implements Serializable {
      * @return an error message describing why the specified name is not valid, or null if the name is valid.
      */
     public static String validateName(String name) {
+        return validateName( name, false );
+    }
+
+    /**
+     * Check if the specified name is valid as a context variable name.
+     *
+     * @param name the name to examine.  Required.
+     * @param permitSyntax true to permit syntax (e.g. an array index)
+     * @return an error message describing why the specified name is not valid, or null if the name is valid.
+     */
+    public static String validateName(String name, boolean permitSyntax) {
         try {
-            assertNameIsValid(name);
+            assertNameIsValid(name,permitSyntax);
             return null;
         } catch (VariableNameSyntaxException e) {
             return e.getMessage();

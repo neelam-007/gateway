@@ -10,7 +10,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken;
-import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
@@ -23,6 +23,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -38,6 +39,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -110,10 +112,11 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
 
         Element samlElement;
         try {
-            Object samlVal = context.getVariable(assertionVar);
+            final Map<String,Object> vars = context.getVariableMap( variableNames, auditor );
+            Object samlVal = ExpandVariables.processSingleVariableAsObject( Syntax.getVariableExpression(assertionVar), vars, auditor );
 
             if (null == samlVal) {
-                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML, "SAML variable is null");
+                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML, "SAML variable not found or null");
                 return AssertionStatus.SERVER_ERROR;
             }
 
@@ -141,9 +144,6 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
                 return AssertionStatus.SERVER_ERROR;
             }
 
-        } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE_WARNING, assertionVar);
-            return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
             //noinspection ThrowableResultOfMethodCallIgnored
             auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NOT_SAML, new String[] {ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
@@ -201,10 +201,9 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
             return AssertionStatus.SERVER_ERROR;
         }
 
-        final Object wsscVal;
-        try {
-            wsscVal = context.getVariable(wsscVarName);
-        } catch (NoSuchVariableException e) {
+        final Map<String,Object> vars = context.getVariableMap( variableNames, auditor );
+        final Object wsscVal = ExpandVariables.processSingleVariableAsObject( Syntax.getVariableExpression(wsscVarName), vars, auditor );
+        if ( wsscVal == null ) {
             auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE_WARNING, wsscVarName);
             return AssertionStatus.SERVER_ERROR;
         }
