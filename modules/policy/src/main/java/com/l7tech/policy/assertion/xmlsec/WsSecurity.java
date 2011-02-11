@@ -149,6 +149,8 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
 
             if (assertion.isApplyWsSecurity()) {
                 nameBuilder.append("Apply ");
+            } else if (assertion.isClearDecorationRequirements()) {
+                nameBuilder.append("Clear ");
             }
 
             nameBuilder.append("WS-Security");
