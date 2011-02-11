@@ -819,26 +819,10 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
 
-        if (!subject.isSoap() || subject.isInternal()) {
-            if (newURI == null || newURI.length() <= 0 || newURI.equals("/")) { // non-soap service cannot have null routing uri
-                String serviceType = subject.isInternal() ? "an internal" : "non-soap";
-                JOptionPane.showMessageDialog(this, "Cannot set empty URI on " + serviceType + " service");
-                return;
-            } else if (newURI.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
-                JOptionPane.showMessageDialog(this, "custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
-                return;
-            } else if (uriConflictsWithServiceOIDResolver(newURI)) {
-                JOptionPane.showMessageDialog(this, "This custom resolution path conflicts with an internal resolution mechanism.");
-                return;
-            }
-        } else {
-            if (newURI != null && newURI.length() > 0 && newURI.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
-                JOptionPane.showMessageDialog(this, "Custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX);
-                return;
-            }  else if (newURI != null && newURI.length() > 0 && uriConflictsWithServiceOIDResolver(newURI)) {
-                JOptionPane.showMessageDialog(this, "This custom resolution path conflicts with an internal resolution mechanism.");
-                return;
-            }
+        final String message = validateResolutionPath( newURI, subject.isSoap(), subject.isInternal() );
+        if ( message != null ) {
+            JOptionPane.showMessageDialog(this, message);
+            return;
         }
 
         if (!getCheck.isSelected() && !putCheck.isSelected() && !postCheck.isSelected() && !deleteCheck.isSelected() && !headCheck.isSelected()) {
@@ -956,7 +940,28 @@ public class ServicePropertiesDialog extends JDialog {
         }
     }
 
-    private boolean uriConflictsWithServiceOIDResolver(String newURI) {
+    public static String validateResolutionPath( final String path, final boolean soap, final boolean internal ) {
+        String message = null;
+        if ( !soap || internal ) {
+            if (path == null || path.length() <= 0 || path.equals("/")) { // non-soap service cannot have null routing uri
+                String serviceType = internal ? "an internal" : "non-soap";
+                message = "Cannot set empty URI on " + serviceType + " service";
+            } else if (path.startsWith( SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
+                message = "Custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX;
+            } else if (uriConflictsWithServiceOIDResolver(path)) {
+                message = "This custom resolution path conflicts with an internal resolution mechanism.";
+            }
+        } else {
+            if (path != null && path.length() > 0 && path.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) {
+                message = "Custom resolution path cannot start with " + SecureSpanConstants.SSG_RESERVEDURI_PREFIX;
+            }  else if (path != null && path.length() > 0 && uriConflictsWithServiceOIDResolver(path)) {
+                message = "This custom resolution path conflicts with an internal resolution mechanism.";
+            }
+        }
+        return message;
+    }
+
+    private static boolean uriConflictsWithServiceOIDResolver(String newURI) {
         java.util.List<Pattern> compiled = new ArrayList<Pattern>();
 
         try {

@@ -13,7 +13,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyListener;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,6 +44,7 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
     private void initComponents() {
         servicesChooser.setModel(new DefaultComboBoxModel());
         servicesChooser.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updateTemplateFields(servicesChooser.getSelectedItem());                
             }
@@ -51,23 +52,21 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
         
         serviceUri.setDocument(new FilterDocument(128, null));
         serviceUri.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            @Override
             public void run() {
                 notifyListeners();
             }
         }
         ));
-        serviceUri.addKeyListener(new KeyListener() {
+        serviceUri.addKeyListener(new KeyAdapter() {
+            @Override
             public void keyPressed(KeyEvent e) {
                 //always start with "/" for URI
-                if (!serviceUri.getText().startsWith("/")) {
+                if (!serviceUri.getText().startsWith("/") && e.getKeyChar()!='/') {
                     String uri = serviceUri.getText();
                     serviceUri.setText("/" + uri);
                 }
             }
-
-            public void keyReleased(KeyEvent e) {}
-
-            public void keyTyped(KeyEvent e) {}
         });
 
         wstNsPanel.setVisible(false);
@@ -115,10 +114,12 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
         }
     }
 
+    @Override
     public String getDescription() {
         return "Select a special service to publish";
     }
 
+    @Override
     public void readSettings(Object settings) throws IllegalArgumentException {
         updateView((PublishInternalServiceWizard.ServiceTemplateHolder)settings);
     }
@@ -129,6 +130,7 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
         java.util.List<ServiceTemplate> allTemplates = new ArrayList<ServiceTemplate>(serviceTemplateHolder.getAllTemplates());
         //noinspection unchecked
         Collections.sort( allTemplates, new ResolvingComparator(new Resolver<ServiceTemplate,String>(){
+            @Override
             public String resolve(final ServiceTemplate serviceTemplate) {
                 return serviceTemplate.getName();
             }
@@ -155,6 +157,7 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
         }
     }
 
+    @Override
     public void storeSettings(Object settings) throws IllegalArgumentException {
         updateModel((PublishInternalServiceWizard.ServiceTemplateHolder)settings);
     }
@@ -179,11 +182,22 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
         serviceTemplateHolder.setSelectedTemplate(newOne);
     }
 
+    @Override
     public String getStepLabel() {
         return "Internal Web Service Description";
     }
 
+    @Override
     public boolean canFinish() {
-        return servicesChooser.getModel().getSize() > 0 && serviceUri.getText() != null && !serviceUri.getText().trim().equals("");
+        String servicePath = serviceUri.getText();
+        if ( servicePath != null ) {
+            servicePath = servicePath.trim();
+            while ( servicePath.startsWith("//") ) {
+                servicePath = servicePath.substring(1);
+            }
+        }
+
+        return servicesChooser.getModel().getSize() > 0 &&
+                ServicePropertiesDialog.validateResolutionPath( servicePath, true, true ) == null;
     }
 }
