@@ -70,6 +70,7 @@ public class WssDecoratorTest {
     @BeforeClass
     public static void beforeClass() {
         JceProvider.init();
+        SyspropUtil.setProperty(SoapUtil.PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID, "true");
     }
 
     public static class Context {
@@ -1082,6 +1083,28 @@ public class WssDecoratorTest {
                                 new UsernameTokenImpl("testuser", "password".toCharArray()),
                                 true,
                                 true);
+    }
+
+    @Test
+    @BugNumber(9802)
+	public void testSignedAndEncryptedUsernameTokenWithEncryptedSignature() throws Exception {
+        runTest(getSignedAndEncryptedUsernameTokenWithEncryptedSignatureTestDocument());
+    }
+
+    public TestDocument getSignedAndEncryptedUsernameTokenWithEncryptedSignatureTestDocument() throws Exception {
+        final Context c = new Context();
+        final TestDocument td = new TestDocument(c, null, null, null,
+                TestDocuments.getDotNetServerCertificate(),
+                TestDocuments.getDotNetServerPrivateKey(),
+                true, null, null,
+                new Element[]{c.body},
+                null, false,
+                KeyInfoInclusionType.STR_SKI,
+                true, null, new String[]{null}, null,
+                new UsernameTokenImpl("testuser", "password".toCharArray()),
+                false, true);
+        td.req.setEncryptSignature(true);
+        return td;
     }
 
     @Test

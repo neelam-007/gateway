@@ -44,6 +44,7 @@ public class WssRoundTripTest {
 
     static {
         SyspropUtil.setProperty(WssDecoratorImpl.PROPERTY_SUPPRESS_NANOSECONDS, "true");
+        SyspropUtil.setProperty(SoapUtil.PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID, "true");
     }
 
     private static class NamedTestDocument {

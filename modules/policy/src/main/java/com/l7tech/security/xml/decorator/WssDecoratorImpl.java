@@ -85,6 +85,7 @@ public class WssDecoratorImpl implements WssDecorator {
         private Map<String,Boolean> signatures = new HashMap<String, Boolean>();
         private Set<String> encryptedSignatures = new HashSet<String>();
         private IdAttributeConfig idAttributeConfig = SoapConstants.NOSAML_ID_ATTRIBUTE_CONFIG;
+        public Map<Element,Element> wholeElementPlaintextToEncryptedMap = new HashMap<Element, Element>();
 
         private Context( final Message message,
                          final DecorationRequirements dreq ) {
@@ -186,20 +187,15 @@ public class WssDecoratorImpl implements WssDecorator {
             }
         }
 
-        Element addedUsernameTokenHolder = null; // dummy element to hold fully-encrypted usernametoken.  will be removed later when we move the encrypted token to its final location
+        Element usernameToken = null;
+        boolean relocateEncryptedUsernameToken = false;
         if (dreq.getUsernameTokenCredentials() != null) {
-            Element usernameToken = createUsernameToken(securityHeader, dreq.getUsernameTokenCredentials());
-            if (dreq.isSignUsernameToken()) signList.add(usernameToken);
+            usernameToken = createUsernameToken(securityHeader, dreq.getUsernameTokenCredentials());
+            if (dreq.isSignUsernameToken())
+                signList.add(usernameToken);
             if (dreq.isEncryptUsernameToken()) {
-                addedUsernameTokenHolder = DomUtils.createAndAppendElementNS(securityHeader,
-                                                                            "EncryptedUsernameToken",
-                                                                            usernameToken.getNamespaceURI(),
-                                                                            usernameToken.getPrefix());
-                securityHeader.removeChild(usernameToken);
-                addedUsernameTokenHolder.appendChild(usernameToken);
-                if (dreq.isSignUsernameToken())
-                    signList.add(usernameToken);
-                cryptList.put(addedUsernameTokenHolder, new ElementEncryptionConfig(true));
+                cryptList.put(usernameToken, new ElementEncryptionConfig(false));
+                relocateEncryptedUsernameToken = true;
             }
         }
 
@@ -352,14 +348,21 @@ public class WssDecoratorImpl implements WssDecorator {
             } else
                 throw new DecoratorException("Encryption is requested, but there is no recipient key.");
 
+            // Follow encrypted signature through encryption (Bug #9802)
+            if (signature != null && xencDesiredNextSibling == signature) {
+                Element encryptedSignature = c.wholeElementPlaintextToEncryptedMap.get(signature);
+                if (encryptedSignature != null)
+                    xencDesiredNextSibling = encryptedSignature;
+            }
+
             // Transform any encrypted username token into the correct form and position
-            if (addedUsernameTokenHolder != null) {
-                Element encdata = DomUtils.findFirstChildElement(addedUsernameTokenHolder);
-                if (encdata == null || !"EncryptedData".equals(encdata.getLocalName()))
-                    throw new DecoratorException("EncryptedUsernameToken does not contain EncryptedData"); // can't happen
-                addedUsernameTokenHolder.removeChild(encdata);
-                securityHeader.removeChild(addedUsernameTokenHolder);
-                securityHeader.insertBefore(encdata, xencDesiredNextSibling);
+            if (relocateEncryptedUsernameToken) {
+                Element encryptedUsernameToken = c.wholeElementPlaintextToEncryptedMap.get(usernameToken);
+                assert encryptedUsernameToken != null;
+                assert xencDesiredNextSibling != null;
+                assert xencDesiredNextSibling.getParentNode() != null;
+                securityHeader.removeChild(encryptedUsernameToken);
+                securityHeader.insertBefore(encryptedUsernameToken, xencDesiredNextSibling);
             }
         }
 
@@ -1429,6 +1432,10 @@ public class WssDecoratorImpl implements WssDecorator {
 
             keyInfoDetails.createAndAppendKeyInfoElement(c.nsf, encryptedElement);
 
+            // For each element we encrypted in whole-element mode, keep track of where it went in case we need to find it later on while decorating
+            if (!encryptContentsOnly)
+                c.wholeElementPlaintextToEncryptedMap.put(element, encryptedElement);
+
             numElementsEncrypted++;
         }
 
@@ -1551,6 +1558,11 @@ public class WssDecoratorImpl implements WssDecorator {
 
             Element dataReference = DomUtils.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
             dataReference.setAttributeNS(null, "URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
+
+            // For each element we encrypted in whole-element mode, keep track of where it went in case we need to find it later on while decorating
+            if (!encryptContentsOnly)
+                c.wholeElementPlaintextToEncryptedMap.put(element, encryptedElement);
+            
             numElementsEncrypted++;
         }
 
