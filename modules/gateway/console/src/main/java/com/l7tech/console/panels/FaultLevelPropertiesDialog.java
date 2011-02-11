@@ -186,6 +186,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
     private JCheckBox urlCheckBox;
     private JButton helpButton;
     private JCheckBox signSoapFaultCheckBox;
+    private JCheckBox alwaysReturnSoapFaultCheckBox;
 
     public FaultLevelPropertiesDialog(Frame owner, FaultLevel subject, boolean readOnly) {
         super(owner, subject, true);
@@ -320,6 +321,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
 
         urlCheckBox.setSelected(assertion.getLevelInfo().isIncludePolicyDownloadURL());
         signSoapFaultCheckBox.setSelected(assertion.getLevelInfo().isSignSoapFault());
+        alwaysReturnSoapFaultCheckBox.setSelected(assertion.getLevelInfo().isAlwaysReturnSoapFault());
     }
 
     private void ok() {
@@ -349,6 +351,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
         }
         assertion.getLevelInfo().setIncludePolicyDownloadURL(urlCheckBox.isSelected());
         assertion.getLevelInfo().setSignSoapFault(signSoapFaultCheckBox.isSelected());
+        assertion.getLevelInfo().setAlwaysReturnSoapFault(alwaysReturnSoapFaultCheckBox.isSelected());
         oked = true;
         cancel();
     }
@@ -396,6 +399,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
                 xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(false);
                 signSoapFaultCheckBox.setEnabled(false);
+                alwaysReturnSoapFaultCheckBox.setEnabled(false);
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 description = GEN_LEVEL_DESCRIPTION;
@@ -403,6 +407,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
                 xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(true);
                 signSoapFaultCheckBox.setEnabled(true);
+                alwaysReturnSoapFaultCheckBox.setEnabled(false);
                 break;
             case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
                 description = MEDIUM_LEVEL_DESCRIPTION;
@@ -410,6 +415,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
                 xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(true);
                 signSoapFaultCheckBox.setEnabled(true);
+                alwaysReturnSoapFaultCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.FULL_TRACE_FAULT:
                 description = FULL_LEVEL_DESCRIPTION;
@@ -417,6 +423,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
                 xmlContainer.setEditable(false);
                 urlCheckBox.setEnabled(true);
                 signSoapFaultCheckBox.setEnabled(true);
+                alwaysReturnSoapFaultCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
                 description = TEMPLATE_LEVEL_DESCRIPTION;
@@ -424,6 +431,7 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
                 showCustomFault();
                 urlCheckBox.setEnabled(true);
                 signSoapFaultCheckBox.setEnabled(true);
+                alwaysReturnSoapFaultCheckBox.setEnabled(true);
                 break;
             default:
                 // can't happen (unless bug)

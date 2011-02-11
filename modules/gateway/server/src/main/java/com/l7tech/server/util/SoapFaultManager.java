@@ -613,6 +613,9 @@ public class SoapFaultManager implements ApplicationContextAware {
             final Document faultDocument =
                     buildGenericFault( pec, globalStatus, isClientFault, faultString, statusTextOverride, true ).right;
 
+            // track which audit detail messages have been used to eliminate duplicate entries in "additionalInfo"
+            Set<Integer> usedMsgDetails = new TreeSet<Integer>();
+
             List<PolicyEnforcementContext.AssertionResult> results = pec.getAssertionResults();
             for (PolicyEnforcementContext.AssertionResult result : results) {
                 if (result.getStatus() == AssertionStatus.NONE && !includeSuccesses) {
@@ -626,6 +629,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 if (details != null) {
                     for (AuditDetail detail : details) {
                         int messageId = detail.getMessageId();
+                        usedMsgDetails.add(messageId);
                         // only show details FINE and higher for medium details, show all details for full details
                         if (includeSuccesses || (MessagesUtil.getAuditDetailMessageById(messageId).getLevel().intValue() >= Level.INFO.intValue())) {
                             Element detailMsgEl = faultDocument.createElementNS(FAULT_NS, "l7:detailMessage");
@@ -644,6 +648,53 @@ public class SoapFaultManager implements ApplicationContextAware {
                 Element policyResultEl = (Element)res.item(0);
                 policyResultEl.appendChild( assertionResultEl );
             }
+
+            /*
+             * [bug 9402] This handles the case where processing errors occur before the request can be passed
+             * into the message processor in which case the errors are not displayed in the "Full Detail" SOAP
+             * fault. The change below handles when the always use SOAP fault flag is set but no assertion
+             * results exists in the audit context.
+             */
+            if (pec.getFaultlevel().isAlwaysReturnSoapFault() && !auditContext.getDetails().isEmpty()) {
+
+                List<AuditDetail> fullDetailsList = new ArrayList<AuditDetail>();
+                for (List<AuditDetail> dtls : auditContext.getDetails().values()) {
+                    if (!dtls.isEmpty())
+                        fullDetailsList.addAll(dtls);
+                }
+
+                // sort by ordinal value
+                Collections.sort( fullDetailsList, new Comparator<AuditDetail>() {
+                    @Override
+                    public int compare(AuditDetail d1, AuditDetail d2) {
+                        Integer ord1 = d1.getOrdinal();
+                        Integer ord2 = d2.getOrdinal();
+                        return ord1.compareTo(ord2);
+                    }
+                });
+
+                Element additionalInfoEl = faultDocument.createElementNS(FAULT_NS, "l7:additionalInfo");
+                for (AuditDetail detail : fullDetailsList) {
+                    int messageId = detail.getMessageId();
+                    // only display the messages that have not already been shown in the assertion status loop
+                    if ((MessagesUtil.getAuditDetailMessageById(messageId).getLevel().intValue() >= Level.INFO.intValue()) && !usedMsgDetails.contains(messageId)) {
+                        Element detailMsgEl = faultDocument.createElementNS(FAULT_NS, "l7:detailMessage");
+                        detailMsgEl.setAttribute("id", Long.toString(detail.getMessageId()));
+                        detailMsgEl.setAttribute("ordinal", Integer.toString(detail.getOrdinal()));
+                        // add text node with actual message.
+                        StringBuffer messageBuffer = new StringBuffer();
+                        MessageFormat mf = new MessageFormat(getMessageById(messageId));
+                        mf.format(detail.getParams(), messageBuffer, new FieldPosition(0));
+                        detailMsgEl.setTextContent(messageBuffer.toString());
+                        additionalInfoEl.appendChild(faultDocument.importNode(detailMsgEl, true));
+                    }
+                }
+
+                NodeList res = faultDocument.getElementsByTagNameNS(FAULT_NS, "policyResult");
+                Element policyResultEl = (Element)res.item(0);
+                policyResultEl.appendChild( additionalInfoEl );
+            }
+
             output = XmlUtil.nodeToFormattedString(faultDocument);
         } catch (Exception e) {
             logger.log(Level.WARNING, "could not construct detailed fault: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );

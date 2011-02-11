@@ -38,6 +38,7 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
     private String faultTemplateHttpStatus;
     private boolean includePolicyDownloadURL = true;
     private boolean signSoapFault = false;
+    private boolean alwaysReturnSoapFault = false;
     private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
     private String[] variablesUsed = new String[0];
 
@@ -153,6 +154,14 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
 
     public void setSignSoapFault( final boolean signSoapFault ) {
         this.signSoapFault = signSoapFault;
+    }
+
+    public boolean isAlwaysReturnSoapFault() {
+        return alwaysReturnSoapFault;
+    }
+
+    public void setAlwaysReturnSoapFault(boolean alwaysReturnSoapFault) {
+        this.alwaysReturnSoapFault = alwaysReturnSoapFault;
     }
 
     @Override

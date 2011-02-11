@@ -322,7 +322,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 sendChallenge(context, hrequest, hresponse);
             } else if (context.isMalformedRequest()) {
                 logger.fine("Servlet transport returning 400 due to early parse failure");
-                hresponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                if (context.getFaultlevel() != null && context.getFaultlevel().isAlwaysReturnSoapFault())
+                    returnFault(context, hrequest, hresponse);
+                else
+                    hresponse.sendError(HttpServletResponse.SC_BAD_REQUEST); // original behavior
             } else {
                 logger.fine("servlet transport returning 500");
                 returnFault(context, hrequest, hresponse);
