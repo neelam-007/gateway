@@ -21,6 +21,7 @@ public class WsSecurityValidator implements AssertionValidator {
 
     public WsSecurityValidator( final WsSecurity wsSecurity ) {
         this.wsSecurity = wsSecurity;
+        this.versionValidator = new WssVersionAssertionValidator( wsSecurity );
         initValidationMessages();
     }
 
@@ -31,11 +32,13 @@ public class WsSecurityValidator implements AssertionValidator {
         if ( errString != null && hasDefaultActorEncryption(path.getPath()) && !hasEncryptionToken(path.getPath())) {
             result.addError(new PolicyValidatorResult.Error(wsSecurity, path, errString, null));
         }
+        versionValidator.validate( path, pvc, result );
     }
 
     //- PRIVATE
 
     private final WsSecurity wsSecurity;
+    private final WssVersionAssertionValidator versionValidator;
     private String errString;
 
     private void initValidationMessages() {

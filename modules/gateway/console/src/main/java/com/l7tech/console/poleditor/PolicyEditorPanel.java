@@ -1004,15 +1004,43 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         if (rootAssertion != null && containDisabledAssertion(rootAssertion.asAssertion())) {
             appendToMessageArea("<i>Some assertion(s) disabled.</i>");
         }
-        for (PolicyValidatorResult.Error pe : r.getErrors()) {
+        for (PolicyValidatorResult.Error pe : sort(r.getErrors())) {
             appendToMessageArea(MessageFormat.format("{0}</a> Error: {1}{2}", getValidateMessageIntro(pe), pe.getMessage(), makeFixitLink(pe)));
         }
-        for (PolicyValidatorResult.Warning pw : r.getWarnings()) {
+        for (PolicyValidatorResult.Warning pw : sort(r.getWarnings())) {
             appendToMessageArea(MessageFormat.format("{0} Warning: {1}{2}", getValidateMessageIntro(pw), pw.getMessage(), makeFixitLink(pw)));
         }
         if (r.getErrors().isEmpty() && r.getWarnings().isEmpty()) {
             appendToMessageArea("<i>Policy validated ok.</i>");
         }
+    }
+
+    private <MT extends PolicyValidatorResult.Message> List<MT> sort( final List<MT> messages ) {
+        final List<MT> sortedMessages = new ArrayList<MT>();
+        sortedMessages.addAll( messages );
+        Collections.sort( sortedMessages, new Comparator<PolicyValidatorResult.Message>(){
+            @Override
+            public int compare( final PolicyValidatorResult.Message message1,
+                                final PolicyValidatorResult.Message message2 ) {
+                final List<Integer> path1 = message1.getAssertionIndexPath();
+                final List<Integer> path2 = message2.getAssertionIndexPath();
+
+                int result = 0;
+                int index = 0;
+                while ( result == 0 && index < path1.size() && index < path2.size() ) {
+                    result = path1.get(index).compareTo( path2.get(index) );
+                    index++;
+                }
+                if ( result == 0 ) {
+                    result = Integer.valueOf( path2.size() ).compareTo( path1.size() );
+                }
+                if ( result == 0 && message1.getMessage()!=null && message2.getMessage()!=null) {
+                    result = String.CASE_INSENSITIVE_ORDER.compare( message1.getMessage(), message2.getMessage() );
+                }
+                return result;
+            }
+        } );
+        return sortedMessages;
     }
 
     private String makeFixitLink(PolicyValidatorResult.Message message) {

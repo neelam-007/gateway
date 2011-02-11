@@ -2,12 +2,14 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
+import com.l7tech.message.MessageRole;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.WssConfigurationAssertion;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.security.xml.WsSecurityVersion;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
@@ -55,8 +57,19 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
     protected AssertionStatus doCheckRequest(PolicyEnforcementContext context, Message message, String messageDescription, AuthenticationContext authContext) throws IOException, PolicyAssertionException {
         DecorationRequirements dreq = message.getSecurityKnob().getAlternateDecorationRequirements(assertion.getRecipientContext());
 
-        if (assertion.getWssVersion() != null)
+        if ( assertion.getWssVersion() != null ) {
             dreq.setWssVersion(assertion.getWssVersion());
+
+            final boolean isWss11 = assertion.getWssVersion()==WsSecurityVersion.WSS11;
+            final Message request = message.getRelated(MessageRole.REQUEST);
+            if ( request != null && !isWss11 ) {
+                // turn off signature confirmation requirement if not a WSS 1.1 response
+                request.getSecurityKnob().setNeedsSignatureConfirmations( false );
+            }
+            if ( isResponse() ) {
+                context.setResponseWss11( isWss11 );
+            }
+        }
         dreq.setUseDerivedKeys(assertion.isUseDerivedKeys());
         dreq.setIncludeTimestamp(assertion.isAddTimestamp());
         dreq.setSignTimestamp(assertion.isSignTimestamp());

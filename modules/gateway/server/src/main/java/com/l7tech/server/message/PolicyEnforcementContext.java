@@ -296,18 +296,20 @@ public interface PolicyEnforcementContext extends Closeable {
     /**
      * Check if this WS-Security version 1.1 is preferred for secured response messages.
      * <p/>
-     * This method will return true if {@link #setResponseWss11()} has been called <b>OR</b> if request processor
-     * results exist and {@link com.l7tech.security.xml.processor.ProcessorResult#isWsse11Seen()} returns
-     * true.
+     * This method will return true if {@link #setResponseWss11(boolean)} has been called with the value
+     * <code>true</code> <b>OR</b> if request processor results exist and 
+     * {@link com.l7tech.security.xml.processor.ProcessorResult#isWsse11Seen()} returns true.
      *
      * @return true if WS-Security version 1.1 is preferred for message level security in response messages.
      */
     boolean isResponseWss11();
 
     /**
-     * Mark this context as preferring to use WS-Security version 1.1 for secured response messages.
+     * Mark this context as preferring to use (or not) WS-Security version 1.1 for secured response messages.
+     *
+     * @param wss11 true to prefer WS-Security 1.1
      */
-    void setResponseWss11();
+    void setResponseWss11( boolean wss11 );
 
     void setMalformedRequest();
 

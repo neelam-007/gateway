@@ -640,15 +640,6 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
         }
     }
 
-    /**
-     * Check if this WS-Security version 1.1 is preferred for secured response messages.
-     * <p/>
-     * This method will return true if {@link #setResponseWss11()} has been called <b>OR</b> if request processor
-     * results exist and {@link ProcessorResult#isWsse11Seen()} returns
-     * true.
-     *
-     * @return true if WS-Security version 1.1 is preferred for message level security in response messages.
-     */
     @Override
     public boolean isResponseWss11() {
         if (responseWss11)
@@ -658,12 +649,9 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
 
     }
 
-    /**
-     * Mark this context as preferring to use WS-Security version 1.1 for secured response messages.
-     */
     @Override
-    public void setResponseWss11() {
-        this.responseWss11 = true;
+    public void setResponseWss11( final boolean wss11 ) {
+        this.responseWss11 = wss11;
     }
 
     private Message createContextVariableBackedMessage(final String variableName, String initialValue) {

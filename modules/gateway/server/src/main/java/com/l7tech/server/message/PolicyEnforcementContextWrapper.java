@@ -387,8 +387,8 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
-    public void setResponseWss11() {
-        delegate.setResponseWss11();
+    public void setResponseWss11( final boolean wss11 ) {
+        delegate.setResponseWss11( wss11 );
     }
 
     @Override
