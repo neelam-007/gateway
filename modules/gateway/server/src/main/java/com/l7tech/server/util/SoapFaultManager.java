@@ -655,7 +655,7 @@ public class SoapFaultManager implements ApplicationContextAware {
              * fault. The change below handles when the always use SOAP fault flag is set but no assertion
              * results exists in the audit context.
              */
-            if (pec.getFaultlevel().isAlwaysReturnSoapFault() && !auditContext.getDetails().isEmpty()) {
+            if (pec.getFaultlevel() != null && pec.getFaultlevel().isAlwaysReturnSoapFault() && !auditContext.getDetails().isEmpty()) {
 
                 List<AuditDetail> fullDetailsList = new ArrayList<AuditDetail>();
                 for (List<AuditDetail> dtls : auditContext.getDetails().values()) {
