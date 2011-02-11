@@ -256,17 +256,23 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
      *         and failure has already been logged and audited using the provided auditor.
      * @throws IOException if there is a problem reading XML from the first part's InputStream; or,
      *                     if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
+     * @throws SAXException if the XML in the first part's InputStream is not well formed
      */
     AssertionStatus checkNamespaceLimits(Message request, String targetName, ElementCursor cursor, Auditor auditor)
-        throws IOException
+        throws IOException, SAXException
     {
         final boolean doNsCheck = nsCountLimit > 0;
         final boolean doNsPrefixCheck = nsPrefixCountLimit > 0;
         // this method should only be called after the request.isXml() returns true
         if ((doNsCheck || doNsPrefixCheck) && request.isXml()) {
-
-            cursor.moveToRoot();
-            Pair<Set<String>, Set<String>> nsCounts = findNamespaceDeclarations(cursor.asDomElement(), nsCountLimit, nsPrefixCountLimit);
+            // there is no benefit of using the cursor to generate the dom element
+//            cursor.moveToRoot();
+//            Element docFromCursor = cursor.asDomElement();
+//            logger.log(Level.INFO, "doc from cursor: {0}", new String(XmlUtil.toByteArray(docFromCursor)));
+//            Pair<Set<String>, Set<String>> cursorCount = findNamespaceDeclarations(docFromCursor, nsCountLimit, nsPrefixCountLimit);
+//            logger.log(Level.INFO, "Counts from cursor ns={0}; prefixes={1}", new Object[] { cursorCount.left.size(), cursorCount.right.size() });
+            Pair<Set<String>, Set<String>> nsCounts = findNamespaceDeclarations(request.getXmlKnob().getDocumentReadOnly().getDocumentElement(), nsCountLimit, nsPrefixCountLimit);
+            logger.log(Level.INFO, "Counts ns={0}; prefixes={1}", new Object[] { nsCounts.left.size(), nsCounts.right.size() });
 
             if (doNsCheck && nsCounts.left.size() > nsCountLimit) {
                 auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NS_DECLARATION_EXCEEDED, targetName);
