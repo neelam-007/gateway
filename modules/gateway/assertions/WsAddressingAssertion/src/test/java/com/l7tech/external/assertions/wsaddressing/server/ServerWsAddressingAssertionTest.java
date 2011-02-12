@@ -7,6 +7,7 @@ import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Functions;
+import com.l7tech.util.MockConfig;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Assert;
@@ -35,7 +36,7 @@ public class ServerWsAddressingAssertionTest {
     public void testWsAddressingSigned() throws Exception {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
-        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger));
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
 
         // build test signed elements
         Document testDoc = XmlUtil.stringToDocument(MESSAGE);
@@ -97,7 +98,7 @@ public class ServerWsAddressingAssertionTest {
     public void testWsAddressing() throws Exception {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
-        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger));
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
 
         // build test signed elements
         Document testDoc = XmlUtil.stringToDocument(MESSAGE);
@@ -125,7 +126,7 @@ public class ServerWsAddressingAssertionTest {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
         wsaa.setVariablePrefix("PreFix");
-        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger));
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
 
         // build test data
         Map<QName,String> properties = new HashMap<QName,String>();
@@ -165,7 +166,7 @@ public class ServerWsAddressingAssertionTest {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
         wsaa.setVariablePrefix("PreFix");
-        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger));
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
 
         // build test data
         Map<QName,String> properties = new HashMap<QName,String>();
@@ -207,7 +208,7 @@ public class ServerWsAddressingAssertionTest {
     public void testWsaFrom() throws Exception {
         // init
         WsAddressingAssertion wsaa = new WsAddressingAssertion();
-        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger));
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
 
         // build test signed elements
         Document testDoc = XmlUtil.stringToDocument(BUG8318_MESSAGE);

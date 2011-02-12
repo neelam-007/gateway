@@ -5,6 +5,7 @@
 package com.l7tech.server.policy.assertion.credential.wss;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.token.XmlSecurityToken;
@@ -20,6 +21,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.message.Message;
+import com.l7tech.util.Config;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -38,6 +40,7 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
     public ServerWssBasic(final WssBasic data, final ApplicationContext springContext) {
         super(data, data);
         this.auditor = new Auditor(this, springContext, logger);
+        this.config = springContext.getBean("serverConfig", Config.class);
         this.securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
     }
 
@@ -65,7 +68,7 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
                 auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            if ( isRequest() ) {
+            if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, auditor);
@@ -111,5 +114,6 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private final Auditor auditor;
+    private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
 }

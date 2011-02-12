@@ -53,7 +53,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
         this.auditor = spring instanceof ApplicationContext
                 ? new Auditor(this, (ApplicationContext) spring, logger)
                 : new LogOnlyAuditor(logger);
-        this.securityTokenResolver = (SecurityTokenResolver)spring.getBean("securityTokenResolver");
+        this.securityTokenResolver = spring.getBean("securityTokenResolver",SecurityTokenResolver.class);
         this.serverConfig = spring.getBean("serverConfig", ServerConfig.class);
     }
 
@@ -83,7 +83,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
         }
 
         final ProcessorResult processorResult;
-        if ( isRequest() ) {
+        if ( isRequest() && !serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
             processorResult = msg.getSecurityKnob().getProcessorResult();
         } else {
             processorResult = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);

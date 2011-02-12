@@ -11,17 +11,25 @@ import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.XmlSecurityToken;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.processor.BadSecurityContextException;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.SecurityContextFinder;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapFaultUtils;
@@ -44,12 +52,18 @@ import java.util.logging.Logger;
  */
 public class ServerSecureConversation extends AbstractServerAssertion<SecureConversation> {
     private final Auditor auditor;
+    private final Config config;
+    private final SecurityTokenResolver securityTokenResolver;
+    private final SecurityContextFinder securityContextFinder;
     private final InboundSecureConversationContextManager inboundSecureConversationContextManager;
 
     public ServerSecureConversation(SecureConversation assertion, ApplicationContext springContext) {
         super(assertion);
         // nothing to remember from the passed assertion
         this.auditor = new Auditor(this, springContext, logger);
+        this.config = springContext.getBean("serverConfig", Config.class);
+        this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
+        this.securityContextFinder = springContext.getBean("securityContextFinder", SecurityContextFinder.class);
         this.inboundSecureConversationContextManager = springContext.getBean( "inboundSecureConversationContextManager", InboundSecureConversationContextManager.class );
     }
 
@@ -63,7 +77,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
     }
 
     @Override
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
             auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
             return AssertionStatus.NONE;
@@ -76,7 +90,20 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                 auditor.logAndAudit(AssertionMessages.SC_REQUEST_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
+            if ( !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST, true) ) {
+                wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
+            } else {
+                wssResults = WSSecurityProcessorUtils.getWssResults(context.getRequest(), "Request", securityTokenResolver, securityContextFinder, auditor, new Functions.Unary<Boolean,Throwable>(){
+                    @Override
+                    public Boolean call( final Throwable throwable ) {
+                        if ( BadSecurityContextException.class.isInstance(throwable) ) {
+                            handleInvalidSecurityContext( context );
+                            throw new AssertionStatusException(AssertionStatus.AUTH_FAILED);
+                        }
+                        return false;
+                    }
+                });
+            }
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
@@ -99,13 +126,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                 String contextId = secConTok.getContextIdentifier();
                 SecureConversationSession session = inboundSecureConversationContextManager.getSession(contextId);
                 if (session == null) {
-                    auditor.logAndAudit(AssertionMessages.SC_TOKEN_INVALID);
-                    context.setRequestPolicyViolated();
-                    // here, we must override the soapfault detail in order to send the fault required by the spec
-                    SoapFaultLevel cfault = new SoapFaultLevel();
-                    cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
-                    cfault.setFaultTemplate(SoapFaultUtils.badContextTokenFault(getSoapVersion(context), getIncomingURL(context)));
-                    context.setFaultlevel(cfault);
+                    handleInvalidSecurityContext( context );
                     return AssertionStatus.AUTH_FAILED;
                 }
                 User authenticatedUser = session.getUsedBy();
@@ -138,6 +159,16 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
         context.setAuthenticationMissing();
         context.setRequestPolicyViolated();
         return AssertionStatus.AUTH_REQUIRED;
+    }
+
+    private void handleInvalidSecurityContext( final PolicyEnforcementContext context ) {
+        auditor.logAndAudit( AssertionMessages.SC_TOKEN_INVALID);
+        context.setRequestPolicyViolated();
+        // here, we must override the soapfault detail in order to send the fault required by the spec
+        SoapFaultLevel cfault = new SoapFaultLevel();
+        cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+        cfault.setFaultTemplate( SoapFaultUtils.badContextTokenFault(getSoapVersion(context), getIncomingURL(context)));
+        context.setFaultlevel(cfault);
     }
 
     private static SoapVersion getSoapVersion(PolicyEnforcementContext context) {

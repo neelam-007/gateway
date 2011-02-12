@@ -17,6 +17,7 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.security.xml.processor.WssTimestampDate;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
@@ -64,6 +65,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
 
     private final Auditor auditor;
     private final MessageIdManager messageIdManager;
+    private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
     private final TimeSource timeSource;
 
@@ -72,8 +74,9 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
         this.auditor = spring instanceof ApplicationContext
                 ? new Auditor(this, (ApplicationContext) spring, logger)
                 : new LogOnlyAuditor(logger);
-        this.messageIdManager = (MessageIdManager)spring.getBean("distributedMessageIdManager");
-        this.securityTokenResolver = (SecurityTokenResolver)spring.getBean("securityTokenResolver");
+        this.messageIdManager = spring.getBean("distributedMessageIdManager",MessageIdManager.class);
+        this.config = spring.getBean("serverConfig", Config.class);
+        this.securityTokenResolver = spring.getBean("securityTokenResolver",SecurityTokenResolver.class);
         this.timeSource = getTimeSource();
     }
 
@@ -144,7 +147,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                 throw new AssertionStatusException(AssertionStatus.NOT_APPLICABLE);
             }
 
-            if ( isRequest() ) {
+            if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = msg.getSecurityKnob().getProcessorResult();
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(msg, targetName, securityTokenResolver, auditor);

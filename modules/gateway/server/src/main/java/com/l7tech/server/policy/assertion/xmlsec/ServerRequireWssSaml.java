@@ -14,6 +14,7 @@ import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -21,6 +22,7 @@ import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAsserti
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.Config;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TimeUnit;
 import org.springframework.beans.factory.BeanFactory;
@@ -44,6 +46,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final SamlAssertionValidate assertionValidate;
     private final Auditor auditor;
+    private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
     private final MessageIdManager messageIdManager;
     private final String[] variablesUsed;
@@ -62,6 +65,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
         assertionValidate = new SamlAssertionValidate(sa);
         variablesUsed = sa.getVariablesUsed();
         auditor = new Auditor(this, beanFactory, eventPub, logger);
+        config = beanFactory.getBean("serverConfig", Config.class);
         securityTokenResolver = beanFactory.getBean("securityTokenResolver", SecurityTokenResolver.class);
         messageIdManager = beanFactory.getBean("distributedMessageIdManager", MessageIdManager.class);
     }
@@ -97,7 +101,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
             }
 
             ProcessorResult wssResults;
-            if ( isRequest() ) {
+            if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDesc, securityTokenResolver, auditor);

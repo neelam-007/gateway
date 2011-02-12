@@ -1,5 +1,6 @@
 package com.l7tech.server.util;
 
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
@@ -15,6 +16,8 @@ import com.l7tech.security.xml.KeyInfoDetails;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
+import com.l7tech.security.xml.processor.BadSecurityContextException;
+import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorValidationException;
 import com.l7tech.security.xml.processor.SecurityContext;
@@ -27,8 +30,11 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
+import com.l7tech.xml.MessageNotSoapException;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,41 +63,92 @@ public class WSSecurityProcessorUtils {
                                                 final SecurityTokenResolver securityTokenResolver,
                                                 final Audit audit)
     {
+        return getWssResults( msg, messageDescriptionForLogging, securityTokenResolver, null, audit, null );
+    }
+
+    /**
+     * Get the processor result for the given message, running the processor if necessary.
+     *
+     * @param msg The message whose security is being evaluated
+     * @param messageDescriptionForLogging A description for the message being evaluated
+     * @param securityTokenResolver The resolver to use to locate security tokens
+     * @param securityContextFinder The finder to use to locate security contexts (null to use a contextual finder)
+     * @param audit The auditor to use for errors (may be null)
+     * @param errorCallback The callback for errors, return true if the error was handled so should not be audited (may be null)
+     * @return The processor result or null.
+     */
+    public static ProcessorResult getWssResults(final Message msg,
+                                                final String messageDescriptionForLogging,
+                                                final SecurityTokenResolver securityTokenResolver,
+                                                final SecurityContextFinder securityContextFinder,
+                                                final Audit audit,
+                                                final Functions.Unary<Boolean,Throwable> errorCallback )
+    {
         final SecurityKnob sk = msg.getKnob(SecurityKnob.class);
         final ProcessorResult existingWssResults;
         if (sk != null && null != (existingWssResults = sk.getProcessorResult()))
             return existingWssResults;
 
         try {
-            final WssProcessorImpl impl = new WssProcessorImpl(msg);
-            impl.setSecurityTokenResolver(securityTokenResolver);
-            impl.setSecurityContextFinder(buildContextualFinder(msg));
+            final boolean isSoap = msg.isSoap();
+            final boolean hasSecurity = isSoap && msg.getSoapKnob().isSecurityHeaderPresent();
 
-            WssSettings settings = getWssSettings();
-            impl.setSignedAttachmentSizeLimit(settings.signedAttachmentMaxSize);
-            impl.setRejectOnMustUnderstand(settings.rejectOnMustUnderstand);
-            impl.setPermitMultipleTimestampSignatures(settings.permitMultipleTimestampSignatures);
-            impl.setPermitUnknownBinarySecurityTokens(settings.permitUnknownBinarySecurityTokens);
-            impl.setStrictSignatureConfirmationValidation(settings.strictSignatureConfirmationValidation);
+            if ( hasSecurity ) {
+                final WssProcessorImpl impl = new WssProcessorImpl(msg);
+                impl.setSecurityTokenResolver(securityTokenResolver);
+                impl.setSecurityContextFinder(securityContextFinder != null ? securityContextFinder : buildContextualFinder(msg));
 
-            ProcessorResult wssResults = impl.processMessage();
-            msg.getSecurityKnob().setProcessorResult(wssResults); // In case someone else needs it later
-            return wssResults;
+                WssSettings settings = getWssSettings();
+                impl.setSignedAttachmentSizeLimit(settings.signedAttachmentMaxSize);
+                impl.setRejectOnMustUnderstand(settings.rejectOnMustUnderstand);
+                impl.setPermitMultipleTimestampSignatures(settings.permitMultipleTimestampSignatures);
+                impl.setPermitUnknownBinarySecurityTokens(settings.permitUnknownBinarySecurityTokens);
+                impl.setStrictSignatureConfirmationValidation(settings.strictSignatureConfirmationValidation);
+
+                ProcessorResult wssResults = impl.processMessage();
+                msg.getSecurityKnob().setProcessorResult(wssResults); // In case someone else needs it later
+                return wssResults;
+            }
         } catch (ProcessorValidationException e) {
-            if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS,
-                    new String[] { messageDescriptionForLogging, ExceptionUtils.getMessage(e) },
-                    ExceptionUtils.getDebugException( e ));
-            return null;
+            handleWssProcessingError(audit, errorCallback, messageDescriptionForLogging, e, true);
         } catch (InvalidDocumentSignatureException e) {
-            if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS,
-                    new String[] { messageDescriptionForLogging, ExceptionUtils.getMessage(e) },
-                    ExceptionUtils.getDebugException( e ));
-            return null;
+            handleWssProcessingError(audit, errorCallback, messageDescriptionForLogging, e, true);
+        } catch (BadSecurityContextException e) {
+            handleWssProcessingError(audit, errorCallback, messageDescriptionForLogging, e, true);
+        } catch ( IOException e ) {
+            handleWssProcessingError(audit, errorCallback, messageDescriptionForLogging, e, true);
+        } catch ( GeneralSecurityException e ) {
+            handleWssProcessingError(audit, errorCallback, messageDescriptionForLogging, e, true);
+        } catch ( InvalidDocumentFormatException e ) {
+            handleWssProcessingError(audit, errorCallback, messageDescriptionForLogging, e, true);
+        } catch ( ProcessorException e ) {
+            handleWssProcessingError(audit, errorCallback, messageDescriptionForLogging, e, true);
+        } catch ( SAXException e ) {
+            handleWssProcessingError(audit, errorCallback, messageDescriptionForLogging, e, true);
+        } catch ( NoSuchPartException e ) {
+            handleWssProcessingError(audit, errorCallback, messageDescriptionForLogging, e, true);
         } catch (Exception e) {
-            if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS,
-                    new String[] { messageDescriptionForLogging, ExceptionUtils.getMessage(e) },
-                    e );
-            return null;
+            handleWssProcessingError(audit, errorCallback, messageDescriptionForLogging, e, false);
+        }
+
+        return null;
+    }
+
+    private static void handleWssProcessingError( final Audit audit,
+                                                  final Functions.Unary<Boolean, Throwable> errorCallback,
+                                                  final String messageDescriptionForLogging,
+                                                  final Throwable throwable,
+                                                  final boolean debugThrowable ) {
+        boolean handled = false;
+        if ( errorCallback != null ) {
+            handled = errorCallback.call( throwable );
+        }
+
+        if ( !handled && audit != null ) {
+            audit.logAndAudit(
+                    MessageProcessingMessages.MESSAGE_VAR_BAD_WSS,
+                    new String[] { messageDescriptionForLogging, ExceptionUtils.getMessage(throwable) },
+                    debugThrowable ? ExceptionUtils.getDebugException(throwable) : throwable );
         }
     }
 

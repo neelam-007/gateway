@@ -9,13 +9,18 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.SecurityContextFinder;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.security.kerberos.KerberosSessionContextManager;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.Config;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -34,10 +39,12 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
         super(requestWssKerberos);
         this.requestWssKerberos = requestWssKerberos;
         this.auditor = new Auditor(this, springContext, logger);
+        this.config = springContext.getBean("serverConfig", Config.class);
+        this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
+        this.securityContextFinder = springContext.getBean("securityContextFinder", SecurityContextFinder.class);
         this.kerberosSessionContextManager = springContext.getBean( "kerberosSessionContextManager", KerberosSessionContextManager.class );
     }
 
-    @SuppressWarnings({"RedundantArrayCreation"})
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (!SecurityHeaderAddressableSupport.isLocalRecipient(requestWssKerberos)) {
@@ -51,7 +58,11 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_NON_SOAP);
                 return AssertionStatus.BAD_REQUEST;
             }
-            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
+            if ( !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST, true) ) {
+                wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
+            } else {
+                wssResults = WSSecurityProcessorUtils.getWssResults(context.getRequest(), "Request", securityTokenResolver, securityContextFinder, auditor, null);
+            }
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
@@ -134,6 +145,9 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
+    private final Config config;
+    private final SecurityTokenResolver securityTokenResolver;
+    private final SecurityContextFinder securityContextFinder;
     private final KerberosSessionContextManager kerberosSessionContextManager;
 
     private RequestWssKerberos requestWssKerberos;

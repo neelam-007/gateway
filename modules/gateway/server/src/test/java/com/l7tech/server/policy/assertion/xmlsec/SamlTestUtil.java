@@ -20,6 +20,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.MockConfig;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
@@ -28,6 +29,7 @@ import static org.junit.Assert.*;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
@@ -39,6 +41,7 @@ public class SamlTestUtil {
     public static SimpleSecurityTokenResolver securityTokenResolver = new SimpleSecurityTokenResolver();
     public static BeanFactory beanFactory = new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
         put("securityTokenResolver", securityTokenResolver);
+        put("serverConfig", new MockConfig(new Properties()));
         put("distributedMessageIdManager", new StubMessageIdManager());
     }});
     static final String SOAPENV =

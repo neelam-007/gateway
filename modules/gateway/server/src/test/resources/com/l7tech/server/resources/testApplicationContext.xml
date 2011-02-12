@@ -393,4 +393,13 @@
     </bean>
 
     <bean id="kerberosSessionContextManager" class="com.l7tech.server.security.kerberos.KerberosSessionContextManager"/>
+
+    <bean id="securityContextFinder" class="com.l7tech.server.security.DelegatingSecurityContextFinder">
+        <constructor-arg index="0">
+            <list>
+                <ref bean="inboundSecureConversationContextManager"/>
+                <ref bean="kerberosSessionContextManager"/>
+            </list>
+        </constructor-arg>
+    </bean>
 </beans>

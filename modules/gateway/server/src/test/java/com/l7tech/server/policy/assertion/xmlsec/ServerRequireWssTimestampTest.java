@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.LogOnlyAuditor;
@@ -14,12 +15,17 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.util.Config;
+import com.l7tech.util.MockConfig;
 import static org.junit.Assert.*;
+
 import org.junit.*;
+import org.springframework.beans.factory.BeanFactory;
 import org.xml.sax.SAXException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Logger;
 import java.io.IOException;
 
@@ -54,9 +60,7 @@ public class ServerRequireWssTimestampTest {
         final Message res = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, res);
         final SimpleSecurityTokenResolver resolver = new SimpleSecurityTokenResolver();
-        final ServerRequireWssX509Cert srwxc = new ServerRequireWssX509Cert(new RequireWssX509Cert(), new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
-            put("securityTokenResolver", resolver);
-        }}));
+        final ServerRequireWssX509Cert srwxc = new ServerRequireWssX509Cert(new RequireWssX509Cert(), makeBeanFactory(null, resolver));
 
         req.getSecurityKnob().setProcessorResult(WSSecurityProcessorUtils.getWssResults(req, "Request", resolver, new LogOnlyAuditor(logger)));
         srwxc.checkRequest(context);
@@ -65,11 +69,16 @@ public class ServerRequireWssTimestampTest {
     }
 
     private ServerRequireWssTimestamp makeSass(final ServerConfig serverConfig) {
-        final SimpleSecurityTokenResolver resolver = new SimpleSecurityTokenResolver();
-        return new ServerRequireWssTimestamp(new RequireWssTimestamp(), new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
-            put("securityTokenResolver", resolver);
-            put("serverConfig", serverConfig);
-        }}));
+        return new ServerRequireWssTimestamp(new RequireWssTimestamp(), makeBeanFactory(serverConfig,null));
+    }
+
+    private BeanFactory makeBeanFactory( final Config config,
+                                         final SecurityTokenResolver resolver ) {
+        final SecurityTokenResolver securityTokenResolver = resolver==null ? new SimpleSecurityTokenResolver() : resolver;
+        return new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("securityTokenResolver", securityTokenResolver);
+            put("serverConfig", config==null ? new MockConfig(new Properties()) : config);
+        }});
     }
 
     private ServerConfig makeServerConfig(final long futureGrace, final long pastGrace) {

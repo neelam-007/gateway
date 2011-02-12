@@ -13,8 +13,8 @@ import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
@@ -63,7 +63,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                                        final ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
         this.auditor = new Auditor(this, context, logger);
-        this.securityTokenResolver = (SecurityTokenResolver)context.getBean("securityTokenResolver");
+        this.config = context.getBean("serverConfig", Config.class);
+        this.securityTokenResolver = context.getBean("securityTokenResolver",SecurityTokenResolver.class);
     }
 
     /**
@@ -128,17 +129,21 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         return status;
     }
 
-    //- PROTECTED
+    //- PACKAGE
 
     /**
      *
      */
-    public ServerWsAddressingAssertion(final WsAddressingAssertion assertion,
-                                       final Auditor auditor) throws PolicyAssertionException {
+    ServerWsAddressingAssertion(final WsAddressingAssertion assertion,
+                                final Auditor auditor,
+                                final Config config) throws PolicyAssertionException {
         super(assertion);
         this.auditor = auditor;
+        this.config = config;
         this.securityTokenResolver = null;
     }
+
+    //- PROTECTED
 
     /**
      * Populate the given addressing properties using an element cursor
@@ -262,6 +267,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     private static final String WSA_TO = "To";
 
     private final Auditor auditor;
+    private final Config config;
 
     /**
      * Get signed elements for message of given context.
@@ -278,7 +284,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 throw new AddressingProcessingException("Message is not SOAP", AssertionStatus.NOT_APPLICABLE);
             }
 
-            if (assertion.getTarget() == TargetMessageType.REQUEST) {
+            if (assertion.getTarget() == TargetMessageType.REQUEST && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) )  {
                 wssResults = msg.getSecurityKnob().getProcessorResult();
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);

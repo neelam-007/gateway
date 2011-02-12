@@ -6,6 +6,7 @@
 package com.l7tech.server.policy.assertion.credential.wss;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.SigningSecurityToken;
@@ -26,6 +27,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.util.Config;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -45,7 +47,8 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
         super(data,data);
         this.data = data;
         this.auditor = new Auditor(this, springContext, logger);
-        this.securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
+        this.config = springContext.getBean("serverConfig", Config.class);
+        this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
 
     @Override
@@ -72,7 +75,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
                 auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            if ( isRequest() ) {
+            if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
                 message.getSecurityKnob().setNeedsSignatureConfirmations(true);
             } else {
@@ -150,6 +153,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
 
     private final EncryptedUsernameTokenAssertion data;
     private final Auditor auditor;
+    private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
 
 }

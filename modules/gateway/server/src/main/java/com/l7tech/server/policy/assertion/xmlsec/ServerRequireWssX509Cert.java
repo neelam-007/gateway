@@ -14,6 +14,7 @@ import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.AuthenticationContext;
@@ -51,6 +52,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
         this.auditor = springContext instanceof ApplicationContext
                 ? new Auditor(this, (ApplicationContext) springContext, logger)
                 : new LogOnlyAuditor(logger);
+        this.config = springContext.getBean("serverConfig", Config.class);
         this.securityTokenResolver = springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
     
@@ -78,7 +80,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
                 return getBadMessageStatus();
             }
 
-            if ( isRequest() ) {
+            if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDesc, securityTokenResolver, auditor);
@@ -183,6 +185,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
     private static final boolean strictTokenTypeCheck = SyspropUtil.getBoolean( "com.l7tech.server.policy.assertion.xmlsec.x509StrictTokenTypeCheck", true );
 
     private final Auditor auditor;
+    private final Config config;    
     private final SecurityTokenResolver securityTokenResolver;
 
     private boolean isX509Token( XmlSecurityToken tok ) {

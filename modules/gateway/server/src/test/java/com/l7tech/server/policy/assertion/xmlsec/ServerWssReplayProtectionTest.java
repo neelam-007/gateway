@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.util.MockConfig;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -16,6 +17,7 @@ import com.l7tech.util.TestTimeSource;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 
 import java.util.HashMap;
+import java.util.Properties;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -161,6 +163,7 @@ public class ServerWssReplayProtectionTest {
 
     private ServerWssReplayProtection buildServerAssertion( final WssReplayProtection wrp ) {
         return new ServerWssReplayProtection(wrp, new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+            put("serverConfig", new MockConfig(new Properties()));
             put("securityTokenResolver", new SimpleSecurityTokenResolver());
             put("distributedMessageIdManager", new MockMessageIdManager(wrp.getCustomExpiryTime()));
         }})){

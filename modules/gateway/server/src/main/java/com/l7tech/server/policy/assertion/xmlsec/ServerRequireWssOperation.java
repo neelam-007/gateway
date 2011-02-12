@@ -14,6 +14,7 @@ import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
@@ -22,6 +23,7 @@ import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAsserti
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.Config;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.message.Message;
@@ -39,6 +41,7 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
     protected final Auditor auditor;
 
     private final Logger logger;
+    private final Config config;
     private final SecurityTokenResolver securityTokenResolver;
     private final DomCompiledXpath compiledXpath;
     private final InvalidXpathException compileFailure;
@@ -49,7 +52,8 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
         super(data,data);
         this.logger = logger;
         this.auditor = new Auditor(this, context, logger);
-        this.securityTokenResolver = (SecurityTokenResolver)context.getBean("securityTokenResolver");
+        this.config = context.getBean("serverConfig", Config.class);
+        this.securityTokenResolver = context.getBean("securityTokenResolver",SecurityTokenResolver.class);
         DomCompiledXpath xp;
         InvalidXpathException fail;
         try {
@@ -94,7 +98,7 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
                 return getBadMessageStatus();
             }
 
-            if ( isRequest() ) {
+            if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = message.getSecurityKnob().getProcessorResult();
             } else {
                 wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, auditor);
