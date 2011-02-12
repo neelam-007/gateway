@@ -374,7 +374,7 @@ public class WssProcessorImpl implements WssProcessor {
                     } else {
                         final SecurityContext secContext = securityContextFinder.getSecurityContext("SecurityContextToken", identifier);
                         if (secContext == null) {
-                            throw new BadSecurityContextException(identifier);
+                            throw new BadSecurityContextException(identifier, securityChildToProcess.getNamespaceURI());
                         }
                         SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
                                                                                           securityChildToProcess,

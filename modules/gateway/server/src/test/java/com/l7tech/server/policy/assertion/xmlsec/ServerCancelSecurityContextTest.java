@@ -216,6 +216,11 @@ public class ServerCancelSecurityContextTest {
         }
 
         @Override
+        public String getWsscNamespace() {
+            return session.getSCNamespace();
+        }
+
+        @Override
         public SecurityContext getSecurityContext() {
             return session;
         }

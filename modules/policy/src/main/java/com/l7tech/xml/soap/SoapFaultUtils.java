@@ -52,14 +52,16 @@ public class SoapFaultUtils {
         return tmp.getDocumentElement();
     }
 
-    public static String badContextTokenFault(SoapVersion soapVersion, String actor) {
+    public static String badContextTokenFault( final SoapVersion soapVersion,
+                                               final String wsscNamespace,
+                                               final String actor) {
         String output;
         if(soapVersion == SoapVersion.SOAP_1_2) {
             output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                    "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\">\n" +
+                    "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE + "\" xmlns:wsc=\""+wsscNamespace+"\">\n" +
                     "  <soapenv:Body>\n" +
                     "    <soapenv:Fault>\n" +
-                    "      <soapenv:Code xmlns:wsc=\"http://schema.xmlsoap.org/ws/2005/02/sc\">\n" +
+                    "      <soapenv:Code>\n" +
                     "        <soapenv:Value>wsc:BadContextToken</soapenv:Value>\n" +
                     "      </soapenv:Code>\n" +
                     "      <soapenv:Role>@@actor@@</soapenv:Role>\n" +
@@ -68,9 +70,9 @@ public class SoapFaultUtils {
                     "</soapenv:Envelope>";
         } else {
             output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                    "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                    "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:wsc=\""+wsscNamespace+"\">\n" +
                     "  <soapenv:Body>\n" +
-                    "    <soapenv:Fault xmlns:wsc=\"http://schemas.xmlsoap.org/ws/2005/02/sc\">\n" +
+                    "    <soapenv:Fault>\n" +
                     "      <faultcode>wsc:BadContextToken</faultcode>\n" +
                     "      <faultactor>@@actor@@</faultactor>\n" +
                     "    </soapenv:Fault>\n" +

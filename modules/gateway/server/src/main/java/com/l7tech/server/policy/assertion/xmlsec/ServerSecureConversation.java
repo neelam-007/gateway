@@ -97,7 +97,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                     @Override
                     public Boolean call( final Throwable throwable ) {
                         if ( BadSecurityContextException.class.isInstance(throwable) ) {
-                            handleInvalidSecurityContext( context );
+                            handleInvalidSecurityContext( context, ((BadSecurityContextException)throwable).getWsscNamespace() );
                             throw new AssertionStatusException(AssertionStatus.AUTH_FAILED);
                         }
                         return false;
@@ -126,7 +126,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                 String contextId = secConTok.getContextIdentifier();
                 SecureConversationSession session = inboundSecureConversationContextManager.getSession(contextId);
                 if (session == null) {
-                    handleInvalidSecurityContext( context );
+                    handleInvalidSecurityContext( context, secConTok.getWsscNamespace() );
                     return AssertionStatus.AUTH_FAILED;
                 }
                 User authenticatedUser = session.getUsedBy();
@@ -161,13 +161,14 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
         return AssertionStatus.AUTH_REQUIRED;
     }
 
-    private void handleInvalidSecurityContext( final PolicyEnforcementContext context ) {
+    private void handleInvalidSecurityContext( final PolicyEnforcementContext context,
+                                               final String namespace ) {
         auditor.logAndAudit( AssertionMessages.SC_TOKEN_INVALID);
         context.setRequestPolicyViolated();
         // here, we must override the soapfault detail in order to send the fault required by the spec
         SoapFaultLevel cfault = new SoapFaultLevel();
         cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
-        cfault.setFaultTemplate( SoapFaultUtils.badContextTokenFault(getSoapVersion(context), getIncomingURL(context)));
+        cfault.setFaultTemplate( SoapFaultUtils.badContextTokenFault(getSoapVersion(context), namespace, getIncomingURL(context)));
         context.setFaultlevel(cfault);
     }
 

@@ -809,7 +809,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     SoapFaultLevel cfault = new SoapFaultLevel();
                     cfault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
                     SoapVersion version = context.getService() != null ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN;
-                    cfault.setFaultTemplate( SoapFaultUtils.badContextTokenFault(version, getIncomingURL(context)) );
+                    cfault.setFaultTemplate( SoapFaultUtils.badContextTokenFault(version, e.getWsscNamespace(), getIncomingURL(context)) );
                     context.setFaultlevel(cfault);
                     securityProcessingAssertionStatus = AssertionStatus.FAILED;
                     return false;

@@ -1350,13 +1350,19 @@ public class Saml2WssProcessorImpl {
     private static class SecurityContextTokenImpl extends SigningSecurityTokenImpl implements SecurityContextToken {
         private final SecurityContext secContext;
         private final String identifier;
+        private final String namespace;
         private final String elementWsuId;
 
         public SecurityContextTokenImpl(SecurityContext secContext, Element secConTokEl, String identifier) throws InvalidDocumentFormatException {
             super(secConTokEl);
             this.secContext = secContext;
             this.identifier = identifier;
+            this.namespace = secConTokEl!=null ? secConTokEl.getNamespaceURI() : SoapUtil.WSSC_NAMESPACE2;
             this.elementWsuId = SoapUtil.getElementWsuId(secConTokEl);
+        }
+
+        public String getWsscNamespace() {
+            return namespace;
         }
 
         public SecurityContext getSecurityContext() {
