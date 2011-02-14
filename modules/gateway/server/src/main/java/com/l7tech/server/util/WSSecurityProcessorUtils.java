@@ -30,7 +30,6 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
-import com.l7tech.xml.MessageNotSoapException;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -810,9 +809,21 @@ public class WSSecurityProcessorUtils {
             contextualFinder = new SecurityContextFinder() {
                 @Override
                 public SecurityContext getSecurityContext( final String securityContextIdentifier ) {
-                    for ( final WssDecorator.DecorationResult result : relatedRequest.getSecurityKnob().getAllDecorationResults() ) {
+                    final SecurityKnob securityKnob = relatedRequest.getSecurityKnob();
+                    for ( final WssDecorator.DecorationResult result : securityKnob.getAllDecorationResults() ) {
                         if ( securityContextIdentifier.equals( result.getWsscSecurityContextId() ) ) {
                             return result.getWsscSecurityContext();
+                        }
+                    }
+                    final ProcessorResult processorResult = securityKnob.getProcessorResult();
+                    if ( processorResult != null ) {
+                        for ( final XmlSecurityToken token : processorResult.getXmlSecurityTokens() ) {
+                            if ( token instanceof SecurityContextToken ) {
+                                final SecurityContextToken contextToken = (SecurityContextToken) token;  
+                                if ( securityContextIdentifier.equals( contextToken.getContextIdentifier() )) {
+                                    return contextToken.getSecurityContext();
+                                }
+                            }
                         }
                     }
                     return null;
