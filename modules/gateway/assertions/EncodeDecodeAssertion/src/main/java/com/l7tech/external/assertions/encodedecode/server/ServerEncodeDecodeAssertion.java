@@ -81,13 +81,8 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
             try {
                 output = context.getOrCreateTargetMessage( new MessageTargetableSupport( assertion.getTargetVariableName() ), false );
             } catch ( NoSuchVariableException e ) {
-                context.setVariable( assertion.getTargetVariableName(), null );
-                try {
-                    output = context.getOrCreateTargetMessage( new MessageTargetableSupport( assertion.getTargetVariableName() ), false );
-                } catch ( NoSuchVariableException e1 ) {
-                    auditor.logAndAudit( AssertionMessages.ENCODE_DECODE_ERROR, "Unable to create target message." );
-                    throw new AssertionStatusException( AssertionStatus.FAILED );
-                }
+                auditor.logAndAudit( AssertionMessages.ENCODE_DECODE_ERROR, "Unable to create target message." );
+                throw new AssertionStatusException( AssertionStatus.FAILED );
             }
             output.initialize( messageData.left, messageData.right, 0 );
         } else {

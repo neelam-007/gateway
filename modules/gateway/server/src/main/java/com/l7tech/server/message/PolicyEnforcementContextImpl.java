@@ -581,14 +581,14 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
                 throw new NoSuchVariableException("<NULL>");
             }
 
-            boolean variableExists = false;
+            Object currentVariable = null;
             try {
-                variableExists = getVariable( varName ) != null;
+                currentVariable = getVariable( varName );
             } catch ( NoSuchVariableException nsve ) {
                 // doesn't exist
             }
 
-            if ( variableExists ) {
+            if ( currentVariable != null && (currentVariable instanceof Message || allowNonMessageVar) ) {
                 message = getTargetMessage( targetable, allowNonMessageVar );
             } else {
                 message = new Message();

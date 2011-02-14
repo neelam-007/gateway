@@ -20,7 +20,6 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -30,7 +29,6 @@ import static org.junit.Assert.assertTrue;
  * Test the SimpleRawTransportAssertion.
  */
 public class ServerSimpleRawTransportAssertionTest {
-    private static final Logger logger = Logger.getLogger(ServerSimpleRawTransportAssertionTest.class.getName());
 
     @BeforeClass
     public static void setup() {
@@ -286,6 +284,15 @@ public class ServerSimpleRawTransportAssertionTest {
 
     @Test
     public void testRoutingToResponseMessageVariableThatAlreadyExists() throws Exception {
+        doTestRoutingToResponseMessageVariableThatAlreadyExists( new Message() );
+    }
+
+    @Test
+    public void testRoutingToResponseMessageVariableThatAlreadyExistsAsNonMessage() throws Exception {
+        doTestRoutingToResponseMessageVariableThatAlreadyExists( "" );
+    }
+
+    public void doTestRoutingToResponseMessageVariableThatAlreadyExists( final Object value ) throws Exception {
         SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
         ass.setTargetHost("127.0.0.3");
         ass.setTargetPort(2323);
@@ -295,7 +302,7 @@ public class ServerSimpleRawTransportAssertionTest {
         final String requestStr = "<defaultRequestContent/>";
         final String respContentType = "text/xml";
         PolicyEnforcementContext context = context(requestStr);
-        context.setVariable("responseVar", new Message());
+        context.setVariable("responseVar", value);
         ass.setResponseContentType(respContentType);
 
         final ByteArrayOutputStream outputCapture = new ByteArrayOutputStream();
@@ -314,27 +321,6 @@ public class ServerSimpleRawTransportAssertionTest {
         assertTrue(sockimp.closed);
     }
 
-    @Test
-    public void testRoutingToResponseMessageVariableThatAlreadyExistsAsNonMessage() throws Exception {
-        SimpleRawTransportAssertion ass = new SimpleRawTransportAssertion();
-        ass.setTargetHost("127.0.0.3");
-        ass.setTargetPort(2323);
-        ass.setResponseTarget(new MessageTargetableSupport("responseVar"));
-
-        final String requestStr = "<defaultRequestContent/>";
-        PolicyEnforcementContext context = context(requestStr);
-        context.setVariable("responseVar", "heyas");
-        ass.setResponseContentType("text/xml");
-
-        final ByteArrayOutputStream outputCapture = new ByteArrayOutputStream();
-
-        ServerSimpleRawTransportAssertion sass = new ServerSimpleRawTransportAssertion(ass, null, null);
-        final StubSocketImpl sockimp1 = new StubSocketImpl(new ByteArrayInputStream("<response/>".getBytes()), outputCapture);
-        sass.socketFactory = new StubSocketFactory(new StubSocket(sockimp1));
-
-        AssertionStatus result = sass.checkRequest(context);
-        assertEquals(AssertionStatus.SERVER_ERROR, result);
-    }
 
     @Test
     public void testRoutingFromRequestStringVariable() throws Exception {

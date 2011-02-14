@@ -470,15 +470,10 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
         try {
             requestMessage = context.getOrCreateTargetMessage( new MessageTargetableSupport(requestMessageVariableName), false );
         } catch ( NoSuchVariableException e ) {
-            context.setVariable( requestMessageVariableName, null );
-            try {
-                requestMessage = context.getOrCreateTargetMessage( new MessageTargetableSupport(requestMessageVariableName), false );
-            } catch ( NoSuchVariableException e1 ) {
-                auditor.logAndAudit( Messages.EXCEPTION_WARNING_WITH_MORE_INFO, 
-                        new String[]{"Unexpected error creating message variable"},
-                        e1 );
-                throw new AssertionStatusException( AssertionStatus.FAILED );
-            }
+            auditor.logAndAudit( Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[]{"Unexpected error creating message variable"},
+                    e );
+            throw new AssertionStatusException( AssertionStatus.FAILED );
         }
         return requestMessage;
     }
