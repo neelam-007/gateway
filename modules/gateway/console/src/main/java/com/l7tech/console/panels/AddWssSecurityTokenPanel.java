@@ -280,6 +280,9 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         }
 
         signTokenCheckBox.setSelected(assertion.isProtectTokens());
+        
+        updateVisibleTab();
+        updateButtons();
     }
 
 }
