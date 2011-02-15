@@ -18,6 +18,7 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
     private WsSecurityVersion wssVersion;
     private String keyReference;
     private boolean useDerivedKeys = false;
+    private String secureConversationNamespace;
     private boolean addTimestamp = true;
     private boolean signTimestamp = true;
     private boolean protectTokens = true;
@@ -171,6 +172,14 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
 
     public void setUseDerivedKeys(boolean useDerivedKeys) {
         this.useDerivedKeys = useDerivedKeys;
+    }
+
+    public String getSecureConversationNamespace() {
+        return secureConversationNamespace;
+    }
+
+    public void setSecureConversationNamespace( final String secureConversationNamespace ) {
+        this.secureConversationNamespace = secureConversationNamespace;
     }
 
     public boolean isAddTimestamp() {

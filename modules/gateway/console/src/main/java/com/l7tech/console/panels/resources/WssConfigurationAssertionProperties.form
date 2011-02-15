@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.WssConfigurationAssertionPropertiesDialog">
   <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-    <margin top="6" left="6" bottom="6" right="6"/>
+    <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="20" y="20" width="529" height="292"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
-      <tabbedpane id="693b1" binding="tabbedPane1" default-binding="true">
+      <tabbedpane id="693b1" default-binding="true">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
             <preferred-size width="200" height="200"/>
@@ -18,7 +18,7 @@
         <border type="none"/>
         <children>
           <grid id="2344f" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
+            <margin top="8" left="8" bottom="8" right="8"/>
             <constraints>
               <tabbedpane title="General"/>
             </constraints>
@@ -30,7 +30,8 @@
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="WS-Security Version:"/>
+                  <labelFor value="7673e"/>
+                  <text value="WS-Security &amp;Version:"/>
                 </properties>
               </component>
               <vspacer id="90128">
@@ -73,7 +74,7 @@
             </children>
           </grid>
           <grid id="82f79" layout-manager="GridLayoutManager" row-count="7" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
+            <margin top="8" left="8" bottom="8" right="8"/>
             <constraints>
               <tabbedpane title="Signing"/>
             </constraints>
@@ -153,7 +154,7 @@
             </children>
           </grid>
           <grid id="f9870" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
+            <margin top="8" left="8" bottom="8" right="8"/>
             <constraints>
               <tabbedpane title="Encryption"/>
             </constraints>
@@ -212,8 +213,8 @@
               </component>
             </children>
           </grid>
-          <grid id="2d37e" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
+          <grid id="2d37e" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="8" left="8" bottom="8" right="8"/>
             <constraints>
               <tabbedpane title="Advanced"/>
             </constraints>
@@ -230,16 +231,36 @@
                   <toolTipText value="Not currently supported when encrypting for X.509 recipient"/>
                 </properties>
               </component>
-              <hspacer id="1023f">
-                <constraints>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                </constraints>
-              </hspacer>
               <vspacer id="8f639">
                 <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                 </constraints>
               </vspacer>
+              <grid id="7b982" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="2" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="adf4d" class="javax.swing.JLabel" binding="secureConversationNsLabel">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <labelFor value="f333e"/>
+                      <text value="WS-&amp;Secure Conversation Namespace:"/>
+                    </properties>
+                  </component>
+                  <component id="f333e" class="javax.swing.JComboBox" binding="secureConversationNsComboBox">
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
             </children>
           </grid>
         </children>

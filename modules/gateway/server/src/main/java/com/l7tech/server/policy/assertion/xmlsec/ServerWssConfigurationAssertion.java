@@ -71,6 +71,9 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
             }
         }
         dreq.setUseDerivedKeys(assertion.isUseDerivedKeys());
+        if ( assertion.getSecureConversationNamespace() != null ) {
+            dreq.getNamespaceFactory().setWsscNs( assertion.getSecureConversationNamespace() );   
+        }
         dreq.setIncludeTimestamp(assertion.isAddTimestamp());
         dreq.setSignTimestamp(assertion.isSignTimestamp());
         dreq.setProtectTokens(assertion.isProtectTokens());

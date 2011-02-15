@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.policy.assertion.xmlsec.WssConfigurationAssertion;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.security.xml.SupportedDigestMethods;
@@ -24,12 +25,13 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
     private JComboBox keyEncryptionAlgCombo;
     private JComboBox signatureKeyReferenceCombo;
     private JComboBox encryptionKeyReferenceCombo;
+    private JComboBox secureConversationNsComboBox;
+    private JLabel secureConversationNsLabel;
     private JCheckBox useDerivedKeysCheckBox;
     private JCheckBox signTimestampCheckBox;
     private JCheckBox signSecurityTokensCheckBox;
     private JCheckBox encryptSignatureCheckBox;
     private JCheckBox addTimestampCheckBox;
-    private JTabbedPane tabbedPane1;
     private JCheckBox signWSAddressingHeadersCheckBox;
 
     private static final String UNCHANGED = "<Unchanged>";
@@ -51,11 +53,13 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
         setSelectedItemOrUnchangedIfNull(encryptionAlgCombo, assertion.getEncryptionAlgorithmUri());
         setSelectedItemOrUnchangedIfNull(keyEncryptionAlgCombo, assertion.getKeyWrappingAlgorithmUri());
         useDerivedKeysCheckBox.setSelected(assertion.isUseDerivedKeys());
+        setSelectedItemOrUnchangedIfNull(secureConversationNsComboBox, assertion.getSecureConversationNamespace());
         addTimestampCheckBox.setSelected(assertion.isAddTimestamp());
         signTimestampCheckBox.setSelected(assertion.isSignTimestamp());
         signSecurityTokensCheckBox.setSelected(assertion.isProtectTokens());
         encryptSignatureCheckBox.setSelected(assertion.isEncryptSignature());
         signWSAddressingHeadersCheckBox.setSelected(assertion.isSignWsAddressingHeaders());
+        enableAndDisableComponents();
     }
 
     @Override
@@ -69,6 +73,7 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
         assertion.setEncryptionAlgorithmUri((String) getSelectedItemOrNullIfUnchanged(encryptionAlgCombo));
         assertion.setKeyWrappingAlgorithmUri((String) getSelectedItemOrNullIfUnchanged(keyEncryptionAlgCombo));
         assertion.setUseDerivedKeys(useDerivedKeysCheckBox.isSelected());
+        assertion.setSecureConversationNamespace((String)getSelectedItemOrNullIfUnchanged(secureConversationNsComboBox));
         assertion.setAddTimestamp(addTimestampCheckBox.isSelected());
         assertion.setSignTimestamp(signTimestampCheckBox.isSelected());
         assertion.setProtectTokens(signSecurityTokensCheckBox.isSelected());
@@ -102,7 +107,23 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
             SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2
         }));
 
+        secureConversationNsComboBox.setModel(new DefaultComboBoxModel(prependUnchanged(SoapConstants.WSSC_NAMESPACE_ARRAY)));
+
+        final RunOnChangeListener enableDisableListener = new RunOnChangeListener(){
+            @Override
+            protected void run() {
+                enableAndDisableComponents();
+            }
+        };
+        useDerivedKeysCheckBox.addActionListener( enableDisableListener );
+
         return mainPanel;
+    }
+
+    private void enableAndDisableComponents() {
+        final boolean enableSecureConversationNs = useDerivedKeysCheckBox.isSelected();
+        secureConversationNsComboBox.setEnabled( enableSecureConversationNs );
+        secureConversationNsLabel.setEnabled( enableSecureConversationNs );
     }
 
     private static Object[] prependUnchanged(Object[] things) {
@@ -119,6 +140,6 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
 
     private static Object getSelectedItemOrNullIfUnchanged(JComboBox comboBox) {
         Object ret = comboBox.getSelectedItem();
-        return UNCHANGED == ret ? null : ret;
+        return UNCHANGED == ret || !comboBox.isEnabled() ? null : ret;
     }
 }

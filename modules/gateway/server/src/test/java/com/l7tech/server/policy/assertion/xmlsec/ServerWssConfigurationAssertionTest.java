@@ -12,6 +12,7 @@ import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.util.SoapConstants;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
@@ -48,21 +49,22 @@ public class ServerWssConfigurationAssertionTest {
         assertEquals(AssertionStatus.NONE, result);
 
         DecorationRequirements dreq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();
-        assertTrue(dreq.isIncludeTimestamp());
-        assertTrue(dreq.isSignTimestamp());
-        assertTrue(dreq.isProtectTokens());
-        assertFalse(dreq.isUseDerivedKeys());
-        assertTrue(dreq.getSenderMessageSigningCertificate() == defaultKey.getSslInfo().getCertificate());
-        assertTrue(dreq.getSenderMessageSigningPrivateKey() == defaultKey.getSslInfo().getPrivateKey());
-        assertNull(dreq.getSignatureMessageDigest());
-        assertEquals(dreq.getEncryptionAlgorithm(), "http://www.w3.org/2001/04/xmlenc#aes128-cbc");
-        assertEquals(dreq.getEncryptionKeyInfoInclusionType(), KeyInfoInclusionType.STR_SKI);
-        assertNull(dreq.getKerberosTicket());
-        assertNull(dreq.getKerberosTicketId());
-        assertNull(dreq.getEncryptedKey());
-        assertNull(dreq.getEncryptedKeyReferenceInfo());
-        assertTrue(dreq.getElementsToEncrypt().isEmpty());
-        assertTrue(dreq.getElementsToSign().isEmpty());
+        assertTrue("Timestamp included", dreq.isIncludeTimestamp());
+        assertTrue("Timestamp signed", dreq.isSignTimestamp());
+        assertTrue("Tokens protected", dreq.isProtectTokens());
+        assertFalse("Using derived keys", dreq.isUseDerivedKeys());
+        assertEquals("WS-SecureConversation Namespace", SoapConstants.WSSC_NAMESPACE, dreq.getNamespaceFactory().getWsscNs());
+        assertTrue("Default key is message signing certificate", dreq.getSenderMessageSigningCertificate() == defaultKey.getSslInfo().getCertificate());
+        assertTrue("Default key is message private key", dreq.getSenderMessageSigningPrivateKey() == defaultKey.getSslInfo().getPrivateKey());
+        assertNull("Null (default) signature message digest", dreq.getSignatureMessageDigest());
+        assertEquals("Null (default) encryption algorithm", dreq.getEncryptionAlgorithm(), "http://www.w3.org/2001/04/xmlenc#aes128-cbc");
+        assertEquals("SKI encryption key inclusion type", dreq.getEncryptionKeyInfoInclusionType(), KeyInfoInclusionType.STR_SKI);
+        assertNull("Kerberos ticket", dreq.getKerberosTicket());
+        assertNull("Kerberos ticket id", dreq.getKerberosTicketId());
+        assertNull("Encrypted key", dreq.getEncryptedKey());
+        assertNull("Encrypted key reference info", dreq.getEncryptedKeyReferenceInfo());
+        assertTrue("Empty encrypted elements", dreq.getElementsToEncrypt().isEmpty());
+        assertTrue("Empty signed elements", dreq.getElementsToSign().isEmpty());
     }
 
     @Test
@@ -72,6 +74,7 @@ public class ServerWssConfigurationAssertionTest {
         ass.setSignTimestamp(false);
         ass.setProtectTokens(false);
         ass.setUseDerivedKeys(true);
+        ass.setSecureConversationNamespace( SoapConstants.WSSC_NAMESPACE3 );
         ass.setDigestAlgorithmName("you dig it");
         ass.setEncryptionAlgorithmUri("you enc it");
         ass.setKeyWrappingAlgorithmUri("you enc keys");
@@ -85,21 +88,22 @@ public class ServerWssConfigurationAssertionTest {
         assertEquals(AssertionStatus.NONE, result);
 
         DecorationRequirements dreq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();
-        assertFalse(dreq.isIncludeTimestamp());
-        assertFalse(dreq.isSignTimestamp());
-        assertFalse(dreq.isProtectTokens());
-        assertTrue(dreq.isUseDerivedKeys());
-        assertTrue(dreq.getSenderMessageSigningCertificate() == defaultKey.getSslInfo().getCertificate());
-        assertTrue(dreq.getSenderMessageSigningPrivateKey() == defaultKey.getSslInfo().getPrivateKey());
-        assertEquals(dreq.getSignatureMessageDigest(), "you dig it");
-        assertEquals(dreq.getEncryptionAlgorithm(), "you enc it");
-        assertEquals(dreq.getEncryptionKeyInfoInclusionType(), KeyInfoInclusionType.STR_SKI);
-        assertNull(dreq.getKerberosTicket());
-        assertNull(dreq.getKerberosTicketId());
-        assertNull(dreq.getEncryptedKey());
-        assertNull(dreq.getEncryptedKeyReferenceInfo());
-        assertTrue(dreq.getElementsToEncrypt().isEmpty());
-        assertTrue(dreq.getElementsToSign().isEmpty());
+        assertFalse("Timestamp included", dreq.isIncludeTimestamp());
+        assertFalse("Timestamp signed", dreq.isSignTimestamp());
+        assertFalse("Tokens protected", dreq.isProtectTokens());
+        assertTrue("Using derived keys", dreq.isUseDerivedKeys());
+        assertEquals("WS-SecureConversation Namespace", SoapConstants.WSSC_NAMESPACE3, dreq.getNamespaceFactory().getWsscNs());
+        assertTrue("Default key is message signing certificate", dreq.getSenderMessageSigningCertificate() == defaultKey.getSslInfo().getCertificate());
+        assertTrue("Default key is message private key", dreq.getSenderMessageSigningPrivateKey() == defaultKey.getSslInfo().getPrivateKey());
+        assertEquals("Message signature message digest", dreq.getSignatureMessageDigest(), "you dig it");
+        assertEquals("Message encryption algorithm", dreq.getEncryptionAlgorithm(), "you enc it");
+        assertEquals("SKI encryption key inclusion type", dreq.getEncryptionKeyInfoInclusionType(), KeyInfoInclusionType.STR_SKI);
+        assertNull("Kerberos ticket", dreq.getKerberosTicket());
+        assertNull("Kerberos ticket id", dreq.getKerberosTicketId());
+        assertNull("Encrypted key", dreq.getEncryptedKey());
+        assertNull("Encrypted key reference info", dreq.getEncryptedKeyReferenceInfo());
+        assertTrue("Empty encrypted elements", dreq.getElementsToEncrypt().isEmpty());
+        assertTrue("Empty signed elements", dreq.getElementsToSign().isEmpty());
     }
 
 
