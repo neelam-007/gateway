@@ -144,6 +144,21 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
         return null;
     }
 
+    @Override
+    public byte[] getSecretKeyByTokenIdentifier( final String type, final String identifier ) {
+        for (SecurityTokenResolver delegate : delegates) {
+            byte[] result = delegate.getSecretKeyByTokenIdentifier(type, identifier);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    @Override
+    public void putSecretKeyByTokenIdentifier( final String type, final String identifier, final byte[] secretKey ) {
+        // Hmm, what do we do here?
+        for (SecurityTokenResolver delegate : delegates)
+            delegate.putSecretKeyByTokenIdentifier(type, identifier, secretKey);
+    }
 
     protected Collection<SecurityTokenResolver> getDelegates() {
         return delegates;

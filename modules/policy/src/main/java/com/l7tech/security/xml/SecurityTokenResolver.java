@@ -92,20 +92,34 @@ public interface SecurityTokenResolver extends EncryptedKeyCache {
     SignerInfo lookupPrivateKeyByIssuerAndSerial( X500Principal issuer, BigInteger serial );
 
     /**
-     * Look up a cached subject confirmation secret key by the SAML AssertionID it arrived in.
-     *
-     * @param samlAssertionId
-     * @return
-     */
-    //byte[] getSecretKeyBySamlAssertionId(String samlAssertionId);
-
-    //void putSecretKeyBySamlAssertionId(String samlAssertionId, byte[] secretKey);
-
-    /**
      * Look up a Kerberos token using a Kerberosv5APREQSHA1 reference.
      *
      * @param kerberosSha1  the base64-encoded Kerberosv5APREQSHA1 identifier to look up
      * @return the matching already-known Kerberos token, or null if no match was found.
      */
     KerberosSigningSecurityToken getKerberosTokenBySha1(String kerberosSha1);
+
+    /**
+     * Lookup a secret key by token type and identifier.
+     *
+     * <p>WARNING: This method is a temporary solution until we implement full
+     * support for SAML tokens with symmetric proof keys.</p>
+     *
+     * @param type The token type
+     * @param identifier The identifier for the token
+     * @return The secret or null
+     */
+    byte[] getSecretKeyByTokenIdentifier( String type, String identifier );
+
+    /**
+     * Store a secret key by token type and identifier.
+     *
+     * <p>WARNING: This method is a temporary solution until we implement full
+     * support for SAML tokens with symmetric proof keys.</p>
+     *
+     * @param type The token type
+     * @param identifier The identifier for the token
+     * @param secretKey The secret
+     */
+    void putSecretKeyByTokenIdentifier( String type, String identifier, byte[] secretKey );
 }

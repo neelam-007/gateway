@@ -771,14 +771,7 @@ public class WssProcessorImpl implements WssProcessor {
     {
         assert derivedKeyEl != null;
         assert kst != null;
-        try {
-            SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
-            final byte[] resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
-                                                                        kst.getServiceTicket().getKey());
-            return new DerivedKeyTokenImpl(derivedKeyEl, resultingKey, kst);
-        } catch (NoSuchAlgorithmException e) {
-            throw new InvalidDocumentFormatException(e);
-        }
+        return deriveKeyFromToken( derivedKeyEl, kst.getServiceTicket().getKey(), kst );
     }
 
     /**
@@ -1143,7 +1136,6 @@ public class WssProcessorImpl implements WssProcessor {
                 if ( tokenRequired ) {
                     String msg = "Rejecting SecurityTokenReference ID='" + logId + "' with ValueType of '" + valueType +
                                  "' because its target is either missing or not a SAML assertion";
-                    logger.warning(msg); // TODO remove redundant logging after debugging complete
                     throw new InvalidDocumentFormatException(msg);
                 } else {
                     return;
@@ -1228,21 +1220,30 @@ public class WssProcessorImpl implements WssProcessor {
                 }
 
                 derivationSource = xst;
-            } else if ( SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11.equals(valueType) ) {
-                if (securityTokenResolver == null) {
-                    throw new ProcessorException("Unable to process DerivedKeyToken - it references a SAMLAssertionID, but no security token resolver is available");
-                }
-
-                String samlAssertionId = keyIdEl.getTextContent();
-
+            } else if ( SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11.equals(valueType) ||
+                        SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML20.equals(valueType) ) {
+                final String samlAssertionId = XmlUtil.getTextValue( keyIdEl );
                 EncryptedKey ek = null;
-                SamlAssertion samlAssertion = findSamlSecurityTokenByAssertionId(samlAssertionId);
+
+                // Check for a token in the message
+                final SamlAssertion samlAssertion = findSamlSecurityTokenByAssertionId(samlAssertionId);
                 if (samlAssertion != null) {
                     ek = samlAssertion.getSubjectConfirmationEncryptedKey(securityTokenResolver, messageX509TokenResolver);
                 }
 
                 if (ek == null) {
-                    // TODO caching to allow reference to a SAML assertion that isn't included with the message but which we are expected to already possess
+                    // Check for a previously seen token
+                    if (securityTokenResolver == null) {
+                        throw new ProcessorException("Unable to process DerivedKeyToken - it references a SAML token by ID, but no security token resolver is available");
+                    }
+                    //TODO track/cache SAML tokens rather than just the encrypted key secret
+                    final byte[] secret = securityTokenResolver.getSecretKeyByTokenIdentifier( valueType, samlAssertionId );
+                    if ( secret != null ) {
+                        ek = WssProcessorUtil.makeEncryptedKey(releventSecurityHeader.getOwnerDocument(), secret, "");
+                    }
+                }
+
+                if (ek == null) {
                     throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to an unknown SAML assertion");
                 }
 
@@ -1298,27 +1299,24 @@ public class WssProcessorImpl implements WssProcessor {
 
     // @return a new DerivedKeyToken.  Never null.
     private static DerivedKeyToken deriveKeyFromEncryptedKey(Element derivedKeyEl, EncryptedKey ek) throws InvalidDocumentFormatException, GeneralSecurityException {
-        try {
-            SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
-            final byte[] resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl, ek.getSecretKey());
-            // remember this symmetric key so it can later be used to process the signature
-            // or the encryption
-            return new DerivedKeyTokenImpl(derivedKeyEl, resultingKey, ek);
-        } catch (NoSuchAlgorithmException e) {
-            throw new InvalidDocumentFormatException(e);
-        }
+        return deriveKeyFromToken( derivedKeyEl, ek.getSecretKey(), ek );
     }
 
     // @return a new DerivedKeyToken.  Never null.
     private static DerivedKeyToken deriveKeyFromSecurityContext(Element derivedKeyEl, SecurityContextToken sct) throws InvalidDocumentFormatException {
+        return deriveKeyFromToken( derivedKeyEl, sct.getSecurityContext().getSharedSecret(), sct );
+    }
+
+    private static DerivedKeyToken deriveKeyFromToken( final Element derivedKeyEl,
+                                                       final byte[] secret,
+                                                       final XmlSecurityToken token ) throws InvalidDocumentFormatException {
         try {
-            SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
-            final byte[] resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
-                                                                        sct.getSecurityContext().getSharedSecret());
+            final SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
+            final byte[] resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl, secret);
             // remember this symmetric key so it can later be used to process the signature
             // or the encryption
-            return new DerivedKeyTokenImpl(derivedKeyEl, resultingKey, sct);
-        } catch (NoSuchAlgorithmException e) {
+            return new DerivedKeyTokenImpl(derivedKeyEl, resultingKey, token);
+        } catch ( NoSuchAlgorithmException e) {
             throw new InvalidDocumentFormatException(e);
         }
     }

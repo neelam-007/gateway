@@ -71,4 +71,13 @@ public class SecurityTokenResolverSupport implements SecurityTokenResolver {
     @Override
     public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey) {
     }
+
+    @Override
+    public byte[] getSecretKeyByTokenIdentifier( final String type, final String identifier ) {
+        return null;
+    }
+
+    @Override
+    public void putSecretKeyByTokenIdentifier( final String type, final String identifier, final byte[] secretKey ) {
+    }
 }

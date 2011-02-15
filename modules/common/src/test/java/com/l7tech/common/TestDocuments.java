@@ -72,6 +72,10 @@ public final class TestDocuments {
     public static final String WAREHOUSE_REQUEST_MULTIPLE_TIMESTAMP_SIGS = DIR + "warehouseRequestMultipleTimestampSignatures.xml";
     public static final String WAREHOUSE_REQUEST_OUT_OF_ORDER_HEADER = DIR + "warehouseRequestOutOfOrderHeader.xml";
     public static final String WAREHOUSE_REQUEST_XPOINTER_REFERENCE = DIR + "warehouseRequestXPointerRef.xml";
+    public static final String WAREHOUSE_REQUEST_SAML11_DERIVED_KEYS = DIR + "warehouseRequestSAML11DerivedKeys.xml";
+    public static final String WAREHOUSE_REQUEST_SAML11_DERIVED_KEYS_NO_TOKEN = DIR + "warehouseRequestSAML11DerivedKeysNoToken.xml";
+    public static final String WAREHOUSE_REQUEST_SAML20_DERIVED_KEYS = DIR + "warehouseRequestSAML20DerivedKeys.xml";
+    public static final String WAREHOUSE_REQUEST_SAML20_DERIVED_KEYS_NO_TOKEN = DIR + "warehouseRequestSAML20DerivedKeysNoToken.xml";
 
     public static final String WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndWrappedL7Actors.xml";
     public static final String MULTIPLE_WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndMultipleL7Actors.xml";

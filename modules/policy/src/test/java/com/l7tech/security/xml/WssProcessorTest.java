@@ -24,6 +24,7 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.MessageNotSoapException;
+import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.jcp.xml.dsig.internal.dom.DOMReference;
@@ -65,6 +66,12 @@ public class WssProcessorTest {
     }
 
     private void doTest(TestDocument testDocument, WssProcessor wssProcessor) throws Exception {
+        doTest( testDocument, wssProcessor, null );
+    }
+
+    private void doTest( final TestDocument testDocument,
+                         final WssProcessor wssProcessor,
+                         final Functions.UnaryVoid<ProcessorResult> verificationCallback ) throws Exception {
         Document request = testDocument.document;
         X509Certificate recipientCertificate = testDocument.recipientCertificate;
         PrivateKey recipientPrivateKey = testDocument.recipientPrivateKey;
@@ -78,6 +85,12 @@ public class WssProcessorTest {
                                                                 new WrapSSTR(recipientCertificate,
                                                                              recipientPrivateKey,
                                                                              securityTokenResolver));
+        if ( verificationCallback != null ) {
+            assertTrue(result != null);
+
+            verificationCallback.call( result );
+        }
+
         checkProcessorResult(request, result);
     }
 
@@ -240,6 +253,63 @@ public class WssProcessorTest {
         sst.setUp();
         doTest(makeEttkTestDocument("Signed SAML sender-vouches request",
                                     sst.getSignedRequestWithSenderVouchesToken()));
+    }
+
+    @Test
+    public void testSaml11DerivedKeys() throws Exception {
+        doDerivedSamlTest( null, makeAliceTestDocument(
+                "Signed SAMLv1.1 with derived keys request",
+                TestDocuments.WAREHOUSE_REQUEST_SAML11_DERIVED_KEYS), true );
+    }
+
+    @Test
+    public void testSaml11DerivedKeysTokenNotPresent() throws Exception {
+        final TestDocument document1 = makeAliceTestDocument( "Signed SAMLv1.1 with derived keys request", TestDocuments.WAREHOUSE_REQUEST_SAML11_DERIVED_KEYS );
+        final TestDocument document2 = makeTestDocument( "Signed SAMLv1.1 (not present) with derived keys request", TestDocuments.WAREHOUSE_REQUEST_SAML11_DERIVED_KEYS_NO_TOKEN, document1.securityTokenResolver );
+        doDerivedSamlTest( document1, document2, false );
+    }
+
+    @Test
+    public void testSaml20DerivedKeys() throws Exception {
+        doDerivedSamlTest( null, makeAliceTestDocument(
+                "Signed SAMLv2.0 with derived keys request",
+                TestDocuments.WAREHOUSE_REQUEST_SAML20_DERIVED_KEYS), true );
+    }
+
+    @Test
+    public void testSaml20DerivedKeysTokenNotPresent() throws Exception {
+        final TestDocument document1 = makeAliceTestDocument( "Signed SAMLv2.0 with derived keys request", TestDocuments.WAREHOUSE_REQUEST_SAML20_DERIVED_KEYS );
+        final TestDocument document2 = makeTestDocument( "Signed SAMLv2.0 (not present) with derived keys request", TestDocuments.WAREHOUSE_REQUEST_SAML20_DERIVED_KEYS_NO_TOKEN, document1.securityTokenResolver );
+        doDerivedSamlTest( document1, document2, false );
+    }
+
+    private void doDerivedSamlTest( final TestDocument document1,
+                                    final TestDocument document2,
+                                    final boolean expectToken ) throws Exception {
+        if ( document1!=null ) doTest( document1 );
+        doTest( document2,
+                new WssProcessorImpl(),
+                new Functions.UnaryVoid<ProcessorResult>(){
+                    @Override
+                    public void call( final ProcessorResult processorResult ) {
+                        boolean foundSamlToken = false;
+                        for ( final XmlSecurityToken token : processorResult.getXmlSecurityTokens() ) {
+                            if ( token instanceof SamlAssertion ) {
+                                foundSamlToken = true;
+                                break;
+                            }
+                        }
+                        assertEquals( "Found SAML token", expectToken, foundSamlToken );
+                        assertNotNull( "Timestamp", processorResult.getTimestamp() );
+                        assertTrue( "Timestamp signed", Functions.map( Arrays.asList(processorResult.getElementsThatWereSigned()), new Functions.Unary<Element,SignedElement>(){
+                            @Override
+                            public Element call( final SignedElement signedElement ) {
+                                return signedElement.asElement();
+                            }
+                        }).contains( processorResult.getTimestamp().asElement() ) );
+                    }
+                }
+        );
     }
 
     @Test
@@ -485,6 +555,23 @@ public class WssProcessorTest {
         Document d = TestDocuments.getTestDocument(TestDocuments.WAREHOUSE_REQUEST_OUT_OF_ORDER_HEADER);
         TestDocument testDoc = new TestDocument(TestDocuments.WAREHOUSE_REQUEST_OUT_OF_ORDER_HEADER, d, null, null, null, null, null );
         doTest(testDoc);
+    }
+
+    private TestDocument makeAliceTestDocument( final String testname, final String docname ) {
+        try {
+            return makeTestDocument( testname, docname, new SimpleSecurityTokenResolver(TestDocuments.getWssInteropAliceCert(), TestDocuments.getWssInteropAliceKey()) );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private TestDocument makeTestDocument( final String testname, final String docname, final SecurityTokenResolver securityTokenResolver ) {
+        try {
+            Document d = TestDocuments.getTestDocument(docname);
+            return new TestDocument(testname, d, null, null, null, null, securityTokenResolver );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private TestDocument makeEttkTestDocument(String testname, String docname) {

@@ -17,12 +17,23 @@ public class EncryptedKeyImpl extends SigningSecurityTokenImpl implements Encryp
     private final String elementWsuId;
     private final byte[] encryptedKeyBytes;
     private final SignerInfo signerInfo;
-    private EncryptedKeyCache tokenResolver;
+    private final String extraTokenType;
+    private final String extraTokenId;
+    private SecurityTokenResolver tokenResolver;
     private String encryptedKeySHA1 = null;
     private byte[] secretKeyBytes = null;
 
     // Constructor that supports lazily-unwrapping the key
     public EncryptedKeyImpl(Element encryptedKeyEl, SecurityTokenResolver tokenResolver, Resolver<String,X509Certificate> x509Resolver)
+            throws InvalidDocumentFormatException, GeneralSecurityException, UnexpectedKeyInfoException {
+        this( encryptedKeyEl, tokenResolver, x509Resolver, null, null );
+    }
+
+    public EncryptedKeyImpl( final Element encryptedKeyEl,
+                             final SecurityTokenResolver tokenResolver,
+                             final Resolver<String,X509Certificate> x509Resolver,
+                             final String extraTokenType,
+                             final String extraTokenId )
             throws InvalidDocumentFormatException, GeneralSecurityException, UnexpectedKeyInfoException {
         super(encryptedKeyEl);
         this.elementWsuId = SoapUtil.getElementWsuId(encryptedKeyEl);
@@ -30,12 +41,16 @@ public class EncryptedKeyImpl extends SigningSecurityTokenImpl implements Encryp
         this.signerInfo = KeyInfoElement.getTargetPrivateKeyForEncryptedType(encryptedKeyEl, tokenResolver, x509Resolver);
         String cipherValueB64 = XencUtil.getEncryptedKeyCipherValue(encryptedKeyEl);
         this.encryptedKeyBytes = HexUtils.decodeBase64(cipherValueB64.trim());
+        this.extraTokenType = extraTokenType;
+        this.extraTokenId = extraTokenId;
     }
 
+    @Override
     public SecurityTokenType getType() {
         return SecurityTokenType.WSS_ENCRYPTEDKEY;
     }
 
+    @Override
     public String getElementId() {
         return elementWsuId;
     }
@@ -62,12 +77,14 @@ public class EncryptedKeyImpl extends SigningSecurityTokenImpl implements Encryp
         maybePublish();
     }
 
+    @Override
     public byte[] getSecretKey() throws InvalidDocumentFormatException, GeneralSecurityException {
         if (secretKeyBytes == null)
             unwrapKey();
         return secretKeyBytes;
     }
 
+    @Override
     public boolean isUnwrapped() {
         return secretKeyBytes != null;
     }
@@ -78,12 +95,21 @@ public class EncryptedKeyImpl extends SigningSecurityTokenImpl implements Encryp
     }
 
     private void maybePublish() {
+        boolean published = false;
         if (tokenResolver != null && encryptedKeySHA1 != null && secretKeyBytes != null) {
             tokenResolver.putSecretKeyByEncryptedKeySha1(encryptedKeySHA1, secretKeyBytes);
+            published = true;
+        }
+        if (tokenResolver != null && extraTokenType != null && extraTokenId != null && secretKeyBytes != null) {
+            tokenResolver.putSecretKeyByTokenIdentifier(extraTokenType, extraTokenId, secretKeyBytes);
+            published = true;
+        }
+        if ( published ) {
             tokenResolver = null;
         }
     }
 
+    @Override
     public String getEncryptedKeySHA1() {
         if (encryptedKeySHA1 != null)
             return encryptedKeySHA1;

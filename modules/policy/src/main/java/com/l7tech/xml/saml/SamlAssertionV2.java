@@ -280,7 +280,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
 
         Element encryptedKeyElement = getSubjectConfirmationEncryptedKeyElement(true);
 
-        return subjectConfirmationEncryptedKey = new EncryptedKeyImpl(encryptedKeyElement, tokenResolver, x509Resolver);
+        return subjectConfirmationEncryptedKey = new EncryptedKeyImpl(encryptedKeyElement, tokenResolver, x509Resolver, SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML20, assertionId);
     }
 
     @Override

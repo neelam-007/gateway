@@ -29,6 +29,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     private final List<Cert> certs = new ArrayList<Cert>();
     private final List<MyKey> keys = new ArrayList<MyKey>();
     private Map<String, byte[]> encryptedKeys = new HashMap<String, byte[]>();
+    private Map<String, byte[]> secretKeys = new HashMap<String, byte[]>();
     private Map<String, KerberosSigningSecurityToken> kerberosTokens = new HashMap<String, KerberosSigningSecurityToken>();
 
     private static class Cert extends TrustedCert {
@@ -267,5 +268,15 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     @Override
     public KerberosSigningSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
         return kerberosTokens.get(kerberosSha1);
+    }
+
+    @Override
+    public byte[] getSecretKeyByTokenIdentifier( final String type, final String identifier ) {
+        return secretKeys.get( type + "::" + identifier );
+    }
+
+    @Override
+    public void putSecretKeyByTokenIdentifier( final String type, final String identifier, final byte[] secretKey ) {
+        secretKeys.put( type + "::" + identifier, secretKey );
     }
 }

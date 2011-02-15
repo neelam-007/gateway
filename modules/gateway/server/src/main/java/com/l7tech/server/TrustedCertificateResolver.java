@@ -19,6 +19,7 @@ import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SoapConstants;
 import com.whirlycott.cache.Cache;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -216,13 +217,26 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
 
     @Override
     public byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
-        if (!encryptedKeyCacheEnabled.get()) return null;
-        return (byte[])encryptedKeyCache.retrieve(encryptedKeySha1);
+        return getSecretKeyByTokenIdentifier( SoapConstants.VALUETYPE_ENCRYPTED_KEY_SHA1, encryptedKeySha1 );
     }
 
     @Override
     public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey) {
-        if (encryptedKeyCacheEnabled.get()) encryptedKeyCache.store(encryptedKeySha1, secretKey);
+        putSecretKeyByTokenIdentifier( SoapConstants.VALUETYPE_ENCRYPTED_KEY_SHA1, encryptedKeySha1, secretKey );
+    }
+
+    @Override
+    public byte[] getSecretKeyByTokenIdentifier( final String type,
+                                                 final String identifier ) {
+        if (!encryptedKeyCacheEnabled.get()) return null;
+        return (byte[])encryptedKeyCache.retrieve( new SecretKeyKey( type, identifier ) );
+    }
+
+    @Override
+    public void putSecretKeyByTokenIdentifier( final String type,
+                                               final String identifier,
+                                               final byte[] secretKey ) {
+        if (encryptedKeyCacheEnabled.get()) encryptedKeyCache.store(new SecretKeyKey( type, identifier ), secretKey);
     }
 
     /**
@@ -243,6 +257,40 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
                 // Invalidate key cache so it gets rebuilt on next use
                 keyCache = null;
             }
+        }
+    }
+
+    private static final class SecretKeyKey {
+        private final String type;
+        private final String identifier;
+
+        private SecretKeyKey( final String type,
+                              final String identifier ) {
+            if ( type==null ) throw new IllegalArgumentException( "type is required" );
+            if ( identifier==null ) throw new IllegalArgumentException( "identifier is required" );
+            this.type = type;
+            this.identifier = identifier;
+        }
+
+        @SuppressWarnings({ "RedundantIfStatement" })
+        @Override
+        public boolean equals( final Object o ) {
+            if ( this == o ) return true;
+            if ( o == null || getClass() != o.getClass() ) return false;
+
+            final SecretKeyKey that = (SecretKeyKey) o;
+
+            if ( !identifier.equals( that.identifier ) ) return false;
+            if ( !type.equals( that.type ) ) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = type.hashCode();
+            result = 31 * result + identifier.hashCode();
+            return result;
         }
     }
 }
