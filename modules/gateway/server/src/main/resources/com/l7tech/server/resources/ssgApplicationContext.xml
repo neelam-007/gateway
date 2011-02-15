@@ -1382,7 +1382,7 @@
         <constructor-arg ref="assertionRegistry"/>
     </bean>
 
-    <bean id="serviceWsdlImportChecker" class="com.l7tech.server.service.ServiceWsdlImportChecker" depends-on="systemAuditListener systemProperties">
+    <bean id="serviceWsdlImportChecker" class="com.l7tech.server.service.ServiceWsdlImportChecker" depends-on="systemAuditListener systemProperties gatewaySanityChecker">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="serviceManager"/>
