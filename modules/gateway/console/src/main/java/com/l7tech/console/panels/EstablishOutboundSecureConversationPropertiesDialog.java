@@ -77,6 +77,7 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
         });
 
         serviceUrlTextField.getDocument().addDocumentListener(validationListener);
+        sctVarNameTextField.getDocument().addDocumentListener(validationListener);
         keySizeTextField.getDocument().addDocumentListener(validationListener);
 
         final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.#########"));
@@ -186,6 +187,8 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
         final String serviceUrl = serviceUrlTextField.getText();
         final boolean serviceUrlOk = inbound || (serviceUrl != null && !serviceUrl.trim().isEmpty());
 
+        final boolean sctTokenVarOk = sctVarNameTextField.getText()!=null && !sctVarNameTextField.getText().trim().isEmpty();
+
         int multiplier = ((TimeUnit) maxLifetimeUnitComboBox.getSelectedItem()).getMultiplier();
         String maxLifeTime = maxLifetimeTextField.getText().trim();
         boolean validLifetime = useSystemDefaultCheckBox.isSelected() || "0".equals(maxLifeTime) ||
@@ -224,7 +227,7 @@ public class EstablishOutboundSecureConversationPropertiesDialog extends Asserti
         }
 
         serviceUrlTextField.setEnabled( !inbound );
-        getOkButton().setEnabled(!isReadOnly() && serviceUrlOk && validCreationTime && validExpirationTime && validLifetime && validKeySize);
+        getOkButton().setEnabled(!isReadOnly() && serviceUrlOk && sctTokenVarOk && validCreationTime && validExpirationTime && validLifetime && validKeySize);
     }
 
     private double formatDouble(double doubleNum) {

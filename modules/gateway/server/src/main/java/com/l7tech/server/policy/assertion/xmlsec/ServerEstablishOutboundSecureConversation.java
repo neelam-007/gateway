@@ -97,7 +97,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         // 4. Get the session identifier and the namespace of WS-Secure Conversation
         String sessionId;
         String wsscNamespace;
-        String tokenVarName = ExpandVariables.process(assertion.getSecurityContextTokenVarName(), variableMap, auditor);
+        String tokenVarName = assertion.getSecurityContextTokenVarName();
         try {
             final Object tokenVariable = context.getVariable(tokenVarName);
             Element sctEl;
