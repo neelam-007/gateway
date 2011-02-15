@@ -484,14 +484,17 @@ public class EmailListenerPropertiesDialog extends JDialog {
         if (allServices != null) {
  	 	    ComboItem[] comboitems = new ComboItem[allServices.length];
  	 	    Object selectMe = null;
- 	 	    for (int i = 0; i < allServices.length; i++) {
- 	 	        EntityHeader aService = allServices[i];
- 	 	        ServiceHeader svcHeader = (ServiceHeader) aService;
- 	 	        comboitems[i] = new ComboItem(svcHeader.getDisplayName(), svcHeader.getOid());
- 	 	        if (isHardWired && aService.getOid() == hardWiredId) {
- 	 	            selectMe = comboitems[i];
- 	 	        }
- 	 	    }
+            for (int i = 0; i < allServices.length; i++) {
+                EntityHeader aService = allServices[i];
+                ServiceHeader svcHeader = (ServiceHeader) aService;
+                comboitems[i] = new ComboItem(
+                    svcHeader.isDisabled()? svcHeader.getDisplayName() + " (This service is currently disabled.)" : svcHeader.getDisplayName(),
+                    svcHeader.getOid()
+                );
+                if (isHardWired && aService.getOid() == hardWiredId) {
+                    selectMe = comboitems[i];
+                }
+            }
             // sort services
             Arrays.sort(comboitems,new Comparator(){
                 @Override

@@ -101,7 +101,10 @@ public class ServiceComboBox extends JComboBox {
             for (int i = 0; i < allServices.length; i++) {
                 EntityHeader aService = allServices[i];
                 ServiceHeader svcHeader = (ServiceHeader) aService;
-                comboItems.add(new ServiceComboItem(svcHeader.getDisplayName(), svcHeader.getOid()));
+                comboItems.add(new ServiceComboItem(
+                    svcHeader.isDisabled()? svcHeader.getDisplayName() + " (This service is currently disabled.)" : svcHeader.getDisplayName(),
+                    svcHeader.getOid()
+                ));
                 if (selectService && aService.getOid() == serviceIdToSelect) {
                     selectMe = comboItems.get(i);
                 }
