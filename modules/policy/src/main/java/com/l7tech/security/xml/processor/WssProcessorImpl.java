@@ -2248,7 +2248,7 @@ public class WssProcessorImpl implements WssProcessor {
         return clientAddress;
     }
 
-    private class WrappedSecurityContextFinder {
+    private static class WrappedSecurityContextFinder {
         private final SecurityContextFinder securityContextFinder;
 
         private WrappedSecurityContextFinder( final SecurityContextFinder securityContextFinder ) {
