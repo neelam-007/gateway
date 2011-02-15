@@ -140,41 +140,14 @@ public class XslTransformationSpecifyPanel extends JPanel {
             }
         });
 
-        // Initialize the XML editor to the XSL from the assertion, if any, else to an identity transform
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                String xsl = null;
-
-                AssertionResourceInfo ri = assertion.getResourceInfo();
-                if (ri instanceof StaticResourceInfo) {
-                    StaticResourceInfo sri = (StaticResourceInfo)ri;
-                    xsl = sri.getDocument();
-                }
-
-                // Default to identity transform
-                if (xsl == null || xsl.trim().length() < 1)
-                    xsl = XSL_IDENTITY_TRANSFORM;
-
-                XMLEditor editor = uiAccessibility.getEditor();
-                try {
-                    editor.setText( XmlUtil.nodeToString(XmlUtil.parse(new StringReader(xsl), false)));
-                } catch (Exception e) {
-                    log.log(Level.WARNING, "Couldn't parse initial XSLT", e);
-                    editor.setText(xsl);
-                }
-                editor.setLineNumber(1);
-            }
-        });
 
         xsltPanel.setLayout(new BorderLayout());
         xsltPanel.add(xmlEditor, BorderLayout.CENTER);
 
-        if (assertion != null && assertion.getTransformName() != null) {
-            nameField.setText(assertion.getTransformName());
-        }
-
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+
+        setModel(assertion);
     }
 
     public UIAccessibility getUiAccessibility() {
@@ -307,6 +280,35 @@ public class XslTransformationSpecifyPanel extends JPanel {
         }
 
         return null;
+    }
+
+    void setModel(XslTransformation assertion){
+        // Initialize the XML editor to the XSL from the assertion, if any, else to an identity transform
+
+        String xsl = null;
+
+        AssertionResourceInfo ri = assertion.getResourceInfo();
+        if (ri instanceof StaticResourceInfo) {
+            StaticResourceInfo sri = (StaticResourceInfo)ri;
+            xsl = sri.getDocument();
+        }
+
+        // Default to identity transform
+        if (xsl == null || xsl.trim().length() < 1)
+            xsl = XSL_IDENTITY_TRANSFORM;
+
+        XMLEditor editor = uiAccessibility.getEditor();
+        try {
+            editor.setText( XmlUtil.nodeToString(XmlUtil.parse(new StringReader(xsl), false)));
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Couldn't parse initial XSLT", e);
+            editor.setText(xsl);
+        }
+        editor.setLineNumber(1);
+  
+        if (assertion != null && assertion.getTransformName() != null) {
+            nameField.setText(assertion.getTransformName());
+        }
     }
 
     void updateModel(XslTransformation assertion) {

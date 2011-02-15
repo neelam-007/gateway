@@ -3,12 +3,12 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.OkCancelDialog;
-import com.l7tech.util.Functions;
 import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.assertion.UsesResourceInfo;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -61,18 +61,8 @@ public class RegexWhiteListPanel extends JPanel {
     public RegexWhiteListPanel(final JDialog parent, UsesResourceInfo assertion, ResourceBundle resourceBundle) {
         this.parentDialog = parent;
         this.resourceBundle = resourceBundle;
-        String[] regexes = null;
-        MessageUrlResourceInfo muri = null;
-        if (assertion.getResourceInfo() instanceof MessageUrlResourceInfo) {
-            muri = (MessageUrlResourceInfo)assertion.getResourceInfo();
-            regexes = muri.getUrlRegexes();
-        }
 
-        if (regexes != null) {
-            for (int i = 0; i < regexes.length; i++) {
-                regexListModel.addElement(regexes[i]);
-            }
-        }
+
         regexList.setModel(regexListModel);
         regexList.addListSelectionListener(new ListSelectionListener() {
             @Override
@@ -89,7 +79,6 @@ public class RegexWhiteListPanel extends JPanel {
             }
         });
 
-        noUrlFoundCheckBox.setSelected(muri != null && muri.isAllowMessagesWithoutUrl());
 
         regexTitle = resourceBundle.getString("regexDialog.title");
         regexPrompt = resourceBundle.getString("regexDialog.prompt");
@@ -128,11 +117,12 @@ public class RegexWhiteListPanel extends JPanel {
         regexInfoLabel.setText(resourceBundle.getString("fetchRegexList.label"));
         regexDescriptionLabel.setText(resourceBundle.getString("fetchRegexList.description"));
 
-        enableButtons();
 
         regexList.setModel(regexListModel);
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+
+        setModel(assertion);
     }
 
     private void pop(String initialValue, final Functions.UnaryVoid<Object> result) {
@@ -188,6 +178,28 @@ public class RegexWhiteListPanel extends JPanel {
         rinfo.setUrlRegexes((String[])regexes.toArray(new String[0]));
         rinfo.setAllowMessagesWithoutUrl(noUrlFoundCheckBox.isSelected());
         assertion.setResourceInfo(rinfo);
+    }
+
+    public void setModel (UsesResourceInfo assertion){
+
+        String[] regexes = null;
+        MessageUrlResourceInfo muri = null;
+
+        if (assertion.getResourceInfo() instanceof MessageUrlResourceInfo) {
+            muri = (MessageUrlResourceInfo)assertion.getResourceInfo();
+            regexes = muri.getUrlRegexes();
+        }
+        
+        if (regexes != null) {
+            regexListModel.clear();
+            for (int i = 0; i < regexes.length; i++) {
+                regexListModel.addElement(regexes[i]);
+            }
+        }
+
+
+        noUrlFoundCheckBox.setSelected(muri != null && muri.isAllowMessagesWithoutUrl());
+        enableButtons();
     }
 
     public JButton getRemoveButton() {

@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.ManageHttpConfigurationAction;
-import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
+import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ValidationUtils;
@@ -38,11 +38,6 @@ public class MonitorUrlPanel extends JPanel {
         this.resourceBundle = resourceBundle;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-        if (assertion.getResourceInfo() instanceof SingleUrlResourceInfo) {
-            SingleUrlResourceInfo suri = (SingleUrlResourceInfo)assertion.getResourceInfo();
-            urlField.setText(suri.getUrl());
-        }
-
         fetchUrlDescription.setText(resourceBundle.getString("fetchUrlTextBox.description"));
         urlToMonitorLabel.setText(resourceBundle.getString("fetchUrlTextBox.label"));
         manageHttpOptionsButton.setAction( new ManageHttpConfigurationAction( this ) );
@@ -50,6 +45,8 @@ public class MonitorUrlPanel extends JPanel {
         manageHttpOptionsButton.setIcon(null);
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+        
+        setModel(assertion);
     }
 
     public String check() {
@@ -62,6 +59,14 @@ public class MonitorUrlPanel extends JPanel {
             return null;
         }
         return resourceBundle.getString("error.nourl");
+    }
+
+    public void setModel(UsesResourceInfo assertion){
+
+        if (assertion.getResourceInfo() instanceof SingleUrlResourceInfo) {
+            SingleUrlResourceInfo suri = (SingleUrlResourceInfo)assertion.getResourceInfo();
+            urlField.setText(suri.getUrl());
+        }
     }
 
     public void updateModel(UsesResourceInfo assertion) {

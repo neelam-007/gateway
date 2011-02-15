@@ -172,10 +172,11 @@ public class XslTransformationPropertiesDialog extends AssertionPropertiesOkCanc
 
     @Override
     public void setData(XslTransformation assertion) {
+        this.assertion = assertion;
         targetMessagePanel.setModel(assertion,getPreviousAssertion(),false);
-        specifyPanel.updateModel(assertion);
-        specifyUrlPanel.updateModel(assertion);
-        fetchPanel.updateModel(assertion);
+        specifyPanel.setModel(assertion);
+        specifyUrlPanel.setModel(assertion);
+        fetchPanel.setModel(assertion);
         
         messageVariablePrefixTextField.setVariable(assertion.getMsgVarPrefix());
         messageVariablePrefixTextField.setAssertion(assertion,null);
