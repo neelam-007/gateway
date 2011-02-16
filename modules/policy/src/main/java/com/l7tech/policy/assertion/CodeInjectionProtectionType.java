@@ -72,8 +72,35 @@ public class CodeInjectionProtectionType implements Serializable {
             Pattern.compile("[`;|&>\\\\]"),
             true,
             false);
+    public static final CodeInjectionProtectionType LDAP_DN_INJECTION = new CodeInjectionProtectionType(
+            "ldapDnInjection",
+            "LDAP DN Injection",
+            "Block messages which contain metacharacters that can be used to inject code into LDAP DN values. These metacharacters are \\,+\"<>;",
+            Pattern.compile("[\\,+\"<>;]"),
+            true,
+            false);
+    public static final CodeInjectionProtectionType LDAP_SEARCH_INJECTION = new CodeInjectionProtectionType(
+            "ldapSearchInjection",
+            "LDAP Search Injection",
+            "Block messages which contain metacharacters that can be used to inject code into LDAP search values. The metacharacters are \\*()\\u0000",
+            Pattern.compile("[\\*()\u0000]"),
+            true,
+            false);
+    public static final CodeInjectionProtectionType XPATH_INJECTION = new CodeInjectionProtectionType(
+            "xpathInjection",
+            "XPath Injection",
+            "Block messages which contain metacharacters that can be used to inject code into XPath queries. The metacharacters are \"*^';&<>()",
+            Pattern.compile("[\"*^'&<>()]"),
+            true,
+            false);
 
-    private static final CodeInjectionProtectionType[] _values = new CodeInjectionProtectionType[]{HTML_JAVASCRIPT, PHP_EVAL_INJECTION, SHELL_INJECTION};
+    private static final CodeInjectionProtectionType[] _values = new CodeInjectionProtectionType[]{
+            HTML_JAVASCRIPT,
+            PHP_EVAL_INJECTION,
+            SHELL_INJECTION,
+            LDAP_DN_INJECTION,
+            LDAP_SEARCH_INJECTION,
+            XPATH_INJECTION};
 
     public static CodeInjectionProtectionType[] values() {
         return (CodeInjectionProtectionType[])_values.clone();
