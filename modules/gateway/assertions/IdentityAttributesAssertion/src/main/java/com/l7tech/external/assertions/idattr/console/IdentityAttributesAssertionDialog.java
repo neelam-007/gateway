@@ -59,7 +59,7 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
 
     private final java.util.List<IdentityMapping> mappings = new ArrayList<IdentityMapping>();
 
-    private final IdentityAttributesAssertion assertion;
+    private IdentityAttributesAssertion assertion;
     private IdentityProviderConfig previousProvider;
     private final Map<Long, IdentityProviderConfig> configs = new HashMap<Long, IdentityProviderConfig>();
     private final Map<Long, EntityHeader> headers = new HashMap<Long, EntityHeader>();
@@ -83,11 +83,7 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
         variablePrefixField = new TargetVariablePanel();
         variablePrefixFieldPanel.setLayout(new BorderLayout());
         variablePrefixFieldPanel.add(variablePrefixField, BorderLayout.CENTER);
-        String prefix = assertion.getVariablePrefix();
-        if (prefix == null) prefix = DEFAULT_VAR_PREFIX;
-        variablePrefixField.setVariable(prefix);
-        variablePrefixField.setAssertion(assertion,getPreviousAssertion());
-        variablePrefixField.setSuffixes(getSuffixes());
+
         variablePrefixField.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
@@ -95,40 +91,7 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
             }
         });
 
-        EntityHeader[] tempHeaders;
-        
-        try {
-            tempHeaders = Registry.getDefault().getIdentityAdmin().findAllIdentityProviderConfig();
-            for (EntityHeader header : tempHeaders) {
-                final IdentityProviderConfig config = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(header.getOid());
-                IdentityProviderType type = config.type();
-                if (type != IdentityProviderType.INTERNAL) {
-                    header.setName(header.getName() + " [" + type.description() + "]");
-                }
-                this.configs.put(header.getOid(), config);
-                this.headers.put(header.getOid(), header);
-            }
-        } catch (FindException e) {
-            throw new RuntimeException("Unable to load identity provider(s)", e);
-        }
 
-        long initialOid = assertion.getIdentityProviderOid();
-        final IdentityProviderConfig initialConfig = configs.get(initialOid);
-        if (initialConfig != null) {
-            this.previousProvider = initialConfig;
-        } else {
-            // Select the first one
-            initialOid = tempHeaders[0].getOid();
-            this.previousProvider = configs.get(initialOid);
-        }
-
-        identityProviderComboBox.setModel(new DefaultComboBoxModel(tempHeaders));
-        final EntityHeader header = headers.get(initialOid);
-        if (header == null) {
-            identityProviderComboBox.setSelectedIndex(0);
-        } else {
-            identityProviderComboBox.setSelectedItem(header);
-        }
 
         identityProviderComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -219,7 +182,6 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
 
         Utilities.setDoubleClickAction(attributeTable, editButton);
 
-        enableButtons();
         
         add(mainPanel);
     }
@@ -343,6 +305,50 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
     }
 
     public void setData(IdentityAttributesAssertion assertion) {
+        this.assertion = assertion;
+        
+        String prefix = assertion.getVariablePrefix();
+        if (prefix == null) prefix = DEFAULT_VAR_PREFIX;
+        variablePrefixField.setVariable(prefix);
+        variablePrefixField.setAssertion(assertion,getPreviousAssertion());
+        variablePrefixField.setSuffixes(getSuffixes());
+
+        EntityHeader[] tempHeaders;
+
+        try {
+            tempHeaders = Registry.getDefault().getIdentityAdmin().findAllIdentityProviderConfig();
+            for (EntityHeader header : tempHeaders) {
+                final IdentityProviderConfig config = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(header.getOid());
+                IdentityProviderType type = config.type();
+                if (type != IdentityProviderType.INTERNAL) {
+                    header.setName(header.getName() + " [" + type.description() + "]");
+                }
+                this.configs.put(header.getOid(), config);
+                this.headers.put(header.getOid(), header);
+            }
+        } catch (FindException e) {
+            throw new RuntimeException("Unable to load identity provider(s)", e);
+        }
+
+        long initialOid = assertion.getIdentityProviderOid();
+        final IdentityProviderConfig initialConfig = configs.get(initialOid);
+        if (initialConfig != null) {
+            this.previousProvider = initialConfig;
+        } else {
+            // Select the first one
+            initialOid = tempHeaders[0].getOid();
+            this.previousProvider = configs.get(initialOid);
+        }
+
+        identityProviderComboBox.setModel(new DefaultComboBoxModel(tempHeaders));
+        final EntityHeader header = headers.get(initialOid);
+        if (header == null) {
+            identityProviderComboBox.setSelectedIndex(0);
+        } else {
+            identityProviderComboBox.setSelectedItem(header);
+        }
+
+        enableButtons();
     }
 
     public IdentityAttributesAssertion getData(IdentityAttributesAssertion assertion) {
