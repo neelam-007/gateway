@@ -181,13 +181,13 @@ public abstract class SecureConversationContextManager<KT> {
         validateSessionKey( sessionKey, sessionOwner );
 
         if (requestSharedSecret != null) {
-            if (requestSharedSecret.length >= MIN_SHARED_SECRET_BYTES && requestSharedSecret.length <= MAX_SHARED_SECRET_BYTES) {
+            if (requestSharedSecret.length >= MIN_KEY_SIZE && requestSharedSecret.length <= MAX_KEY_SIZE) {
                 sharedSecret = requestSharedSecret;
                 clientEntropy = null;
                 serverEntropy = null;
             } else {
                 throw new SessionCreationException("Unable to create a session: the shared secret length is not in the valid range from " +
-                    MIN_SHARED_SECRET_BYTES + " bytes to " + MAX_SHARED_SECRET_BYTES + " bytes.");
+                    MIN_KEY_SIZE + " bytes to " + MAX_KEY_SIZE + " bytes.");
             }
         } else if (requestClientEntropy != null) {
             if (requestClientEntropy.length >= MIN_CLIENT_ENTROPY_BYTES && requestClientEntropy.length <= MAX_CLIENT_ENTROPY_BYTES) {
@@ -212,6 +212,11 @@ public abstract class SecureConversationContextManager<KT> {
                             MIN_SERVER_ENTROPY_BYTES + " bytes to " + MAX_SERVER_ENTROPY_BYTES + " bytes.");
                     }
                 } else {
+                    // using client entropy as the shared key so enforce the key size limits
+                    if ( requestClientEntropy.length < MIN_KEY_SIZE || requestClientEntropy.length > MAX_KEY_SIZE  ) {
+                        throw new SessionCreationException("Unable to create a session: the key size is not in the valid range from " +
+                            MIN_KEY_SIZE + " bytes to " + MAX_KEY_SIZE + " bytes.");
+                    }
                     sharedSecret = requestClientEntropy;
                     clientEntropy = null;
                     serverEntropy = null;
@@ -322,8 +327,6 @@ public abstract class SecureConversationContextManager<KT> {
     protected static final int MAX_CLIENT_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.clientEntropyMaxBytes", 1024 );
     protected static final int MIN_SERVER_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.serverEntropyMinBytes", 8 );
     protected static final int MAX_SERVER_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.serverEntropyMaxBytes", 1024 );
-    protected static final int MIN_SHARED_SECRET_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.sharedSecretMinBytes", 16 );
-    protected static final int MAX_SHARED_SECRET_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.sharedSecretMaxBytes", 1024 );
     protected static final int MIN_KEY_SIZE = SyspropUtil.getInteger("com.l7tech.security.wssc.minLength", 16);
     protected static final int MAX_KEY_SIZE = SyspropUtil.getInteger("com.l7tech.security.wssc.maxLength", 512);
     protected static final String PROP_DEFAULT_KEY_SIZE = "com.l7tech.security.secureconversation.defaultSecretLengthInBytes";
