@@ -217,14 +217,17 @@ public class SecurityProviderImpl extends SecurityProvider
         this.sessionCookie = sessionCookie;
         this.sessionHost = remoteHost;
 
+        final Pair<String, Integer> hostAndPort = getHostAndPort(remoteHost);
         try {
-            TopComponents.getInstance().setSsgURL(new URL("http://" + remoteHost));
+            final String displayHost = remoteHost.endsWith( ":" + hostAndPort.right ) ?
+                    hostAndPort.left + ":" + hostAndPort.right :
+                    hostAndPort.left;
+            TopComponents.getInstance().setSsgURL(new URL("http://" + displayHost));
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Invalid SSG host or URL: " + remoteHost, e);
         }
 
         AdminContextFactory factory = applicationContext.getBean("adminContextFactory", AdminContextFactory.class);
-        Pair<String, Integer> hostAndPort = getHostAndPort(remoteHost);
         AdminContext ac = factory.buildAdminContext( hostAndPort.left, hostAndPort.right, sessionCookie );
 
         synchronized (this) {
