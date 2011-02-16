@@ -195,14 +195,7 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
             }
         });
 
-        Integer mimePartIndex;
-        try {
-            mimePartIndex = regexAssertion.getMimePart();
-        }
-        catch(NumberFormatException nfe) {
-            mimePartIndex = 0;
-        }
-        mimePartSpinner.setModel(new SpinnerNumberModel(mimePartIndex.intValue(), 0, 9999, 1));
+        mimePartSpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(mimePartSpinner, "MIME Part"));
 
         ItemListener encodingRadioListener = new ItemListener() {
@@ -230,7 +223,6 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         Utilities.deuglifySplitPane(splitPaneTest);
         Utilities.deuglifySplitPane(splitPaneRegex);
 
-        modelToView();
         updateEncodingEnabledState();
         updateReplaceState();
         updatePattern();
@@ -281,7 +273,8 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         return in == null || in.trim().length() < 1 ? null : in;
     }
 
-    private void modelToView() {
+    public void setData(Regex regexAssertion) {
+        this.regexAssertion = regexAssertion;
         if (regexAssertion.getRegex() != null) {
             regexTextArea.setText(regexAssertion.getRegex());
         }
@@ -305,8 +298,19 @@ public class RegexDialog extends LegacyAssertionPropertyDialog {
         captureVariablePrefix.setVariable(nullToEmpty(regexAssertion.getCaptureVar()));
         captureVariablePrefix.setAssertion(regexAssertion,getPreviousAssertion());
 
+        Integer mimePartIndex;
+        try {
+            mimePartIndex = regexAssertion.getMimePart();
+        }
+        catch(NumberFormatException nfe) {
+            mimePartIndex = 0;
+        }
+        mimePartSpinner.setValue(mimePartIndex);
+
         if (regexAssertion.isAutoTarget())
             regexAssertion.setTarget(postRouting ? TargetMessageType.RESPONSE : TargetMessageType.REQUEST);
+
+        targetMessagePanel.setModel(regexAssertion,getPreviousAssertion());
     }
 
     @Override

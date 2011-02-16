@@ -24,6 +24,7 @@ public class RegexAdvice extends AddContextSensitiveAssertionAdvice {
         Frame f = TopComponents.getInstance().getTopParent();
         RegexDialog rd = new RegexDialog(f, regexAssertion, postRouting, false);
         rd.setPolicyPosition( new PolicyPositionAware.PolicyPosition( pc.getParent().asAssertion(), pc.getChildLocation()));  
+        rd.setData(regexAssertion);
         rd.setModal(true);
         final Collection result = new ArrayList();
         rd.getBeanEditSupport().addBeanListener(new BeanAdapter() {
