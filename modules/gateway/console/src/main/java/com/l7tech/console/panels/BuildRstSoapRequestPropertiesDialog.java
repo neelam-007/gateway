@@ -47,7 +47,7 @@ public class BuildRstSoapRequestPropertiesDialog extends AssertionPropertiesOkCa
         assertion.setWsTrustNamespace( (String)wsTrustNsComboBox.getSelectedItem() );
         assertion.setIssuerAddress( getNonEmpty( issuerTextField ) );
         assertion.setAppliesToAddress( getNonEmpty( appliesToTextField ) );
-        assertion.setTargetTokenVariable( getNonEmpty( targetTokenVariablePanel.getVariable() ) );
+        assertion.setTargetTokenVariable( targetTokenVariablePanel.isEnabled() ? getNonEmpty( targetTokenVariablePanel.getVariable() ) : null );
         assertion.setKeySize( (Integer)keySizeComboBox.getSelectedItem() > 0 ? (Integer)keySizeComboBox.getSelectedItem() : null );
         if ( tokenLifetimeCheckBox.isSelected() ) {
             if ( useSystemDefaultCheckBox.isSelected() ) {
