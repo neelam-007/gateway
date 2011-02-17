@@ -47,7 +47,6 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
 
     public BuildRstrSoapResponsePropertiesDialog(Window owner, BuildRstrSoapResponse assertion) {
         super(owner, assertion);
-        setData(assertion);
         initialize();
     }
 
@@ -59,6 +58,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
     @Override
     public void setData(BuildRstrSoapResponse assertion) {
         this.assertion = assertion;
+        modelToView();
     }
 
     @Override
@@ -180,7 +180,7 @@ public class BuildRstrSoapResponsePropertiesDialog extends AssertionPropertiesEd
                 oldTimeUnit = newTimeUnit;
             }
         });
-        modelToView();
+       // modelToView();
     }
 
     private void enableOrDisableAllRstrComponents(boolean enabled) {
