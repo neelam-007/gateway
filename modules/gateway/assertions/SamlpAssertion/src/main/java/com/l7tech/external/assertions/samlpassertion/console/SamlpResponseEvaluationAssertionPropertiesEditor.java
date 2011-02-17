@@ -26,13 +26,13 @@ public class SamlpResponseEvaluationAssertionPropertiesEditor
 
         AssertionMode mode = getMode();
 
-        AttributeQueryWizardStepPanel aqsp = new AttributeQueryWizardStepPanel(null, true, mode);
-        AuthorizationRequestWizardStepPanel arsp = new AuthorizationRequestWizardStepPanel(aqsp);
-        ResponseStatusWizardStepPanel rssp = new ResponseStatusWizardStepPanel(arsp, mode);
-        SelectSamlpQueryWizardStepPanel sqsp = new SelectSamlpQueryWizardStepPanel(rssp, mode);
-        SamlVersionWizardStepPanel svsp = new SamlVersionWizardStepPanel(sqsp, mode);
-        TargetMessageWizardStepPanel tmsp = new TargetMessageWizardStepPanel(svsp, mode);
-        IntroductionWizardStepPanel p = new IntroductionWizardStepPanel(tmsp, mode);
+        AttributeQueryWizardStepPanel aqsp = new AttributeQueryWizardStepPanel(null, true, mode, getPreviousAssertion());
+        AuthorizationRequestWizardStepPanel arsp = new AuthorizationRequestWizardStepPanel(aqsp, getPreviousAssertion());
+        ResponseStatusWizardStepPanel rssp = new ResponseStatusWizardStepPanel(arsp, mode, getPreviousAssertion());
+        SelectSamlpQueryWizardStepPanel sqsp = new SelectSamlpQueryWizardStepPanel(rssp, mode, getPreviousAssertion());
+        SamlVersionWizardStepPanel svsp = new SamlVersionWizardStepPanel(sqsp, mode, getPreviousAssertion());
+        TargetMessageWizardStepPanel tmsp = new TargetMessageWizardStepPanel(svsp, mode, getPreviousAssertion());
+        IntroductionWizardStepPanel p = new IntroductionWizardStepPanel(tmsp, mode, getPreviousAssertion());
 
         SamlpAssertionWizard wiz = new SamlpAssertionWizard(assertion, 
                 TopComponents.getInstance().getTopParent(),

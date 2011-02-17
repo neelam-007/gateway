@@ -1,8 +1,9 @@
 package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
+import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,8 +38,8 @@ public class SamlVersionWizardStepPanel extends SamlpWizardStepPanel {
     /**
      * Creates new form Version WizardPanel
      */
-    public SamlVersionWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode) {
-        super(next, mode);
+    public SamlVersionWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode, Assertion prevAssertion) {
+        super(next, mode, prevAssertion);
         this.showTitleLabel = showTitleLabel;
         initialize();
     }
@@ -46,15 +47,15 @@ public class SamlVersionWizardStepPanel extends SamlpWizardStepPanel {
     /**
      * Creates new form Version WizardPanel
      */
-    public SamlVersionWizardStepPanel(WizardStepPanel next, AssertionMode mode) {
-        this(next, true, mode);
+    public SamlVersionWizardStepPanel(WizardStepPanel next, AssertionMode mode, Assertion prevAssertion) {
+        this(next, true, mode, prevAssertion);
     }
 
     /**
      * Creates new form Version WizardPanel
      */
-    public SamlVersionWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode, JDialog owner) {
-        super(next, mode);
+    public SamlVersionWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode, JDialog owner, Assertion prevAssertion) {
+        super(next, mode, prevAssertion);
         this.showTitleLabel = showTitleLabel;
         setOwner(owner);
         initialize();

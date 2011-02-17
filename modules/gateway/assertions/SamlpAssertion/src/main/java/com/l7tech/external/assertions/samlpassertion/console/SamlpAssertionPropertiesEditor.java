@@ -4,6 +4,7 @@
 package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.AssertionPropertiesEditor;
+import com.l7tech.console.policy.PolicyPositionAware;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
@@ -13,11 +14,12 @@ import javax.swing.*;
  *
  * @author vchan
  */
-public abstract class SamlpAssertionPropertiesEditor<ASN extends Assertion> implements AssertionPropertiesEditor<ASN> {
+public abstract class SamlpAssertionPropertiesEditor<ASN extends Assertion> implements AssertionPropertiesEditor<ASN>, PolicyPositionAware {
     private SamlpAssertionWizard wizard;
     protected boolean readOnly;
     protected boolean confirmed;
     private ASN assertion;
+    private PolicyPositionAware.PolicyPosition policyPosition;
 
     public SamlpAssertionPropertiesEditor() {
     }
@@ -54,6 +56,30 @@ public abstract class SamlpAssertionPropertiesEditor<ASN extends Assertion> impl
         if ( PARAM_READONLY.equals( name ) && value instanceof Boolean ) {
             readOnly = (Boolean) value;
         }
+    }
+
+    @Override
+    public PolicyPosition getPolicyPosition() {
+        return this.policyPosition;
+    }
+
+    public Assertion getPreviousAssertion() {
+        return policyPosition==null ? null : policyPosition.getPreviousAssertion();
+    }
+
+
+
+    /**
+     * The policy position is set when the assertion about to be added to a policy.
+     *
+     * <p>The policy position can be used to extract contextual information from a
+     * policy (such as variables that are set before this assertion)</p>
+     *
+     * @param policyPosition The position to be used for this assertion.
+     */
+    @Override
+    public void setPolicyPosition( final PolicyPositionAware.PolicyPosition policyPosition ) {
+        this.policyPosition = policyPosition;
     }
 
     protected abstract AssertionMode getMode();

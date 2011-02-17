@@ -4,10 +4,11 @@
 package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
 import com.l7tech.external.assertions.samlpassertion.SamlpAuthorizationStatement;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,16 +38,16 @@ public class SelectSamlpQueryWizardStepPanel extends SamlpWizardStepPanel {
     /**
      * Creates new form WizardPanel
      */
-    public SelectSamlpQueryWizardStepPanel(WizardStepPanel next, AssertionMode mode) {
-        super(next, mode);
+    public SelectSamlpQueryWizardStepPanel(WizardStepPanel next, AssertionMode mode, Assertion prevAssertion) {
+        super(next, mode, prevAssertion);
         setLayout(new BorderLayout());
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
         initialize();
     }
 
-    public SelectSamlpQueryWizardStepPanel(WizardStepPanel next) {
-        this(next, null);
+    public SelectSamlpQueryWizardStepPanel(WizardStepPanel next, Assertion prevAssertion) {
+        this(next, null, prevAssertion);
     }
 
     private void initialize() {

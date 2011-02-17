@@ -1,13 +1,14 @@
 package com.l7tech.external.assertions.samlpassertion.console;
 
+import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.SubjectStatement;
-import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.util.Functions;
 
@@ -16,10 +17,10 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -74,8 +75,8 @@ public class SubjectConfirmationWizardStepPanel extends SamlpWizardStepPanel {
     /**
      * Creates new form SubjectConfirmationWizardStepPanel
      */
-    public SubjectConfirmationWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode) {
-        super(next, mode);
+    public SubjectConfirmationWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode, Assertion prevAssertion) {
+        super(next, mode, prevAssertion);
         this.showTitleLabel = showTitleLabel;
         initialize();
     }
@@ -83,16 +84,16 @@ public class SubjectConfirmationWizardStepPanel extends SamlpWizardStepPanel {
     /**
      * Creates new form SubjectConfirmationWizardStepPanel
      */
-    public SubjectConfirmationWizardStepPanel(WizardStepPanel next, AssertionMode mode) {
-        this(next, true, mode);
+    public SubjectConfirmationWizardStepPanel(WizardStepPanel next, AssertionMode mode, Assertion prevAssertion) {
+        this(next, true, mode, prevAssertion);
     }
 
 
     /**
      * Creates new form Subject confirmation WizardPanel
      */
-    public SubjectConfirmationWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner, AssertionMode mode) {
-        super(next, mode);
+    public SubjectConfirmationWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner, AssertionMode mode, Assertion prevAssertion) {
+        super(next, mode, prevAssertion);
         this.showTitleLabel = showTitleLabel;
         setOwner(owner);
         initialize();

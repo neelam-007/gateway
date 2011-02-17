@@ -4,6 +4,7 @@ import com.l7tech.console.panels.TargetMessagePanel;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -32,8 +33,8 @@ public class TargetMessageWizardStepPanel extends SamlpWizardStepPanel {
     /**
      * Creates new form Version WizardPanel
      */
-    public TargetMessageWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode) {
-        super(next, mode);
+    public TargetMessageWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode, Assertion prevAssertion) {
+        super(next, mode,prevAssertion);
         this.showTitleLabel = showTitleLabel;
         initialize();
     }
@@ -54,15 +55,15 @@ public class TargetMessageWizardStepPanel extends SamlpWizardStepPanel {
     /**
      * Creates new form Version WizardPanel
      */
-    public TargetMessageWizardStepPanel(WizardStepPanel next, AssertionMode mode) {
-        this(next, true, mode);
+    public TargetMessageWizardStepPanel(WizardStepPanel next, AssertionMode mode, Assertion prevAssertion) {
+        this(next, true, mode, prevAssertion);
     }
 
     /**
      * Creates new form Version WizardPanel
      */
-    public TargetMessageWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode, JDialog owner) {
-        super(next, mode);
+    public TargetMessageWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode, JDialog owner, Assertion prevAssertion) {
+        super(next, mode, prevAssertion);
         this.showTitleLabel = showTitleLabel;
         setOwner(owner);
         initialize();
@@ -98,7 +99,7 @@ public class TargetMessageWizardStepPanel extends SamlpWizardStepPanel {
         }
 
         // init targetMessage panel
-        targetMessagePanel.setModel(assertion,null);
+        targetMessagePanel.setModel(assertion,getPreviousAssertion());
     }
 
     /**

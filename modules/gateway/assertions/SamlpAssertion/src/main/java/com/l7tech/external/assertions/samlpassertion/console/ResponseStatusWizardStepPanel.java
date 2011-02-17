@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlpResponseEvaluationAssertion;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,8 +17,8 @@ public class ResponseStatusWizardStepPanel extends SamlpWizardStepPanel {
 
     private Boolean moreSteps;
 
-    protected ResponseStatusWizardStepPanel(WizardStepPanel next, AssertionMode mode) {
-        super(next, mode);
+    protected ResponseStatusWizardStepPanel(WizardStepPanel next, AssertionMode mode, Assertion prevAssertion) {
+        super(next, mode, prevAssertion);
         initialize();
     }
 

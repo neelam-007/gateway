@@ -5,9 +5,10 @@ package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -46,8 +47,8 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
      * @param showTitleLabel specify whether to show the title label or not
      * @param mode AssertionMode for this instance of the wizard.
      */
-    public AttributeQueryWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode) {
-        super(next, mode);
+    public AttributeQueryWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode, Assertion prevAssertion) {
+        super(next, mode, prevAssertion);
         this.showTitleLabel = showTitleLabel;
         initialize();
     }
@@ -57,8 +58,8 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
      * @param next the panel that follows this one. Null means this is the last step.
      * @param mode AssertionMode for this instance of the wizard.
       */
-     public AttributeQueryWizardStepPanel(WizardStepPanel next, AssertionMode mode) {
-         this(next, true, mode);
+     public AttributeQueryWizardStepPanel(WizardStepPanel next, AssertionMode mode, Assertion prevAssertion) {
+         this(next, true, mode, prevAssertion);
      }
 
     /**
@@ -68,8 +69,8 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
      * @param mode AssertionMode for this instance of the wizard.
      * @param owner the JDialog that is the parent of this panel.
      */
-    public AttributeQueryWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode, JDialog owner) {
-        super(next, mode);
+    public AttributeQueryWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, AssertionMode mode, JDialog owner, Assertion prevAssertion) {
+        super(next, mode, prevAssertion);
         this.showTitleLabel = showTitleLabel;
         setOwner(owner);
         initialize();

@@ -1,8 +1,9 @@
 package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.external.assertions.samlpassertion.SamlpResponseEvaluationAssertion;
 import com.l7tech.external.assertions.samlpassertion.SamlpAuthorizationStatement;
+import com.l7tech.external.assertions.samlpassertion.SamlpResponseEvaluationAssertion;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,8 +26,8 @@ public class AuthorizationRequestWizardStepPanel extends SamlpWizardStepPanel {
     private JCheckBox failIfAuthzDecisionMismatch;
     private JComboBox expectedAuthzDecision;
 
-    public AuthorizationRequestWizardStepPanel(WizardStepPanel next) {
-        super(next, AssertionMode.RESPONSE);
+    public AuthorizationRequestWizardStepPanel(WizardStepPanel next, Assertion prevAssertion) {
+        super(next, AssertionMode.RESPONSE, prevAssertion);
         initialize();
     }
 

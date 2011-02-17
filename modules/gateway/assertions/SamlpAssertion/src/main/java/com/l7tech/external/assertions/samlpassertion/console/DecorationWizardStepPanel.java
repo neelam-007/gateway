@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.samlpassertion.console;
 import com.l7tech.console.panels.TargetMessagePanel;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,8 +22,8 @@ public class DecorationWizardStepPanel extends SamlpWizardStepPanel {
     private JPanel targetMessagePanelHolder;
     private TargetMessagePanel targetMessagePanel = new TargetMessagePanel();
 
-    public DecorationWizardStepPanel(WizardStepPanel next) {
-        super(next, AssertionMode.RESPONSE);
+    public DecorationWizardStepPanel(WizardStepPanel next, Assertion prevAssertion) {
+        super(next, AssertionMode.RESPONSE, prevAssertion);
         initialize();
     }
 
@@ -39,6 +40,6 @@ public class DecorationWizardStepPanel extends SamlpWizardStepPanel {
     public void readSettings(Object settings) throws IllegalArgumentException {
         super.readSettings(settings);
         SamlProtocolAssertion assertion = (SamlProtocolAssertion) settings;
-        targetMessagePanel.setModel(assertion,null);
+        targetMessagePanel.setModel(assertion,getPreviousAssertion());
     }
 }

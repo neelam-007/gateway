@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,21 +19,21 @@ public class SamlSignatureStepPanel extends SamlpWizardStepPanel {
     /**
      * Creates new form Version WizardPanel
      */
-    public SamlSignatureStepPanel(WizardStepPanel next, boolean showTitleLabel) {
-        super(next, null);
+    public SamlSignatureStepPanel(WizardStepPanel next, boolean showTitleLabel, Assertion prevAssertion) {
+        super(next, null, prevAssertion);
         this.showTitleLabel = showTitleLabel;
         initialize();
     }
 
-    public SamlSignatureStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner) {
-        super(next, null);
+    public SamlSignatureStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner, Assertion prevAssertion) {
+        super(next, null, prevAssertion);
         this.showTitleLabel = showTitleLabel;
         setOwner(owner);
         initialize();
     }
 
-    public SamlSignatureStepPanel(WizardStepPanel next) {
-        this(next, true);
+    public SamlSignatureStepPanel(WizardStepPanel next, Assertion prevAssertion) {
+        this(next, true, prevAssertion);
     }
 
     /**
