@@ -265,7 +265,9 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
                 assertion.isLimitAttrNameChars() ||
                 assertion.isLimitNestingDepth() ||
                 assertion.isRequireValidSoapEnvelope() ||
-                assertion.getMaxPayloadElements() > 0) {
+                assertion.getMaxPayloadElements() > 0 ||
+                assertion.isLimitNamespaceCount() ||
+                assertion.isLimitNamespacePrefixCount() ) {
                 warningStr = null;
             } else {
                 warningStr = "No Document Structure Threat Protections have been specified";
