@@ -65,7 +65,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
 
     public JdbcQueryAssertionPropertiesDialog(Window owner, JdbcQueryAssertion assertion) {
         super(owner, assertion);
-        setData(assertion);
+        this.assertion = assertion;
         initialize();
     }
 
@@ -77,6 +77,8 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     @Override
     public void setData(JdbcQueryAssertion assertion) {
         this.assertion = assertion;
+        modelToView();
+        configureView();
     }
 
     @Override
@@ -159,14 +161,12 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
                 doCancel();
             }
         });
-
-        modelToView();
-        configureView();
     }
 
     private void modelToView() {
         populateConnectionCombobox();
         sqlQueryTextArea.setText(assertion.getSqlQuery());
+        namingMap = assertion.getNamingMap();
         variablePrefixTextField.setVariable(assertion.getVariablePrefix());
         variablePrefixTextField.setAssertion(assertion,getPreviousAssertion());
         variablePrefixTextField.setSuffixes(getSuffixes());
@@ -179,6 +179,7 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
         }
         failAssertionCheckBox.setSelected(assertion.isAssertionFailureEnabled());
         queryNameTextField.setText(assertion.getQueryName());
+
         
     }
 
@@ -221,7 +222,6 @@ public class JdbcQueryAssertionPropertiesDialog extends AssertionPropertiesEdito
     }
 
     private void initNamingTable() {
-        namingMap = assertion.getNamingMap();
 
         namingTableModel = new NamingTableModel();
         namingTable.setModel(namingTableModel);
