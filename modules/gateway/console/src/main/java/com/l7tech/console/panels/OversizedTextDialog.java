@@ -103,8 +103,8 @@ public class OversizedTextDialog extends AssertionPropertiesEditorSupport<Oversi
         validator.constrainTextFieldToNumberRange("maximum nesting depth", nestingDepthField,
                                                   OversizedTextAssertion.MIN_NESTING_LIMIT,
                                                   OversizedTextAssertion.MAX_NESTING_LIMIT);
-        validator.constrainTextFieldToNumberRange("distinct namespace declaration", namespaceCountField, 0, Integer.MAX_VALUE);
-        validator.constrainTextFieldToNumberRange("distinct namespace prefix declaration", namespacePrefixCountField, 0, Integer.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("distinct namespace declaration", namespaceCountField, 1, Integer.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("distinct namespace prefix declaration", namespacePrefixCountField, 1, Integer.MAX_VALUE);
 
         modelToView();
         updateEnableState();
