@@ -21,7 +21,7 @@ import java.beans.PropertyChangeListener;
  * @author alex
  */
 public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesEditorSupport<NcesDecoratorAssertion> {
-    private final NcesDecoratorAssertion assertion;
+    private NcesDecoratorAssertion assertion;
     private JPanel mainPanel;
     private JRadioButton samlTemplateRadioButton;
     private JRadioButton samlInternalRadioButton;
@@ -62,44 +62,14 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
     }
 
     private void initialize() {
-        if (assertion.getSamlAssertionVersion() == 2) {
-            saml20RadioButton.setSelected(true);
-        } else {
-            saml11RadioButton.setSelected(true);
-        }
 
-        if (assertion.isSamlIncluded()) {
-            final String template = assertion.getSamlAssertionTemplate();
-            if (template != null && !template.isEmpty()) {
-                samlTemplateRadioButton.setSelected(true);
-                samlTemplateField.setText(template);
-            } else {
-                samlInternalRadioButton.setSelected(true);
-                samlTemplateField.setText("${issuedSamlAssertion}");
-            }
-        } else {
-            samlNoneRadioButton.setSelected(true);
-            samlTemplateField.setText("${issuedSamlAssertion}");
-        }
 
         addEnableListener(samlInternalRadioButton, samlTemplateRadioButton, samlNoneRadioButton,
                           wsa10RadioButton, wsa200403RadioButton, wsa200408RadioButton, wsaOtherRadioButton);
         wsaOtherTextField.getDocument().addDocumentListener(enableDisableListener);
         samlTemplateField.getDocument().addDocumentListener(enableDisableListener);
 
-        uuidUriPrefixTextField.setText(assertion.getMessageIdUriPrefix());
-        final String wsaNs = assertion.getWsaNamespaceUri();
-        if ( SoapConstants.WSA_NAMESPACE.equals(wsaNs)) {
-            wsa200403RadioButton.setSelected(true);
-        } else if ( SoapConstants.WSA_NAMESPACE2.equals(wsaNs)) {
-            wsa200408RadioButton.setSelected(true);
-        } else if (wsaNs == null || SoapConstants.WSA_NAMESPACE_10.equals(wsaNs)) {
-            wsa10RadioButton.setSelected(true);
-        } else {
-            wsaOtherRadioButton.setSelected(true);
-            wsaOtherTextField.setText(wsaNs);
-        }
-        useExistingAddressingCheckBox.setSelected( assertion.isUseExistingWsa() );
+
 
         targetMessagePanel.addPropertyChangeListener("valid", new PropertyChangeListener() {
             @Override
@@ -110,24 +80,10 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
         });
         targetMessagePanelHolder.add( targetMessagePanel );
         targetMessagePanel.setTitle("Apply NCES Decoration To");
-        targetMessagePanel.setModel(assertion,getPreviousAssertion());
+
         responseImmediateCheckBox = new JCheckBox("Apply immediately");
         responseImmediateCheckBox.setToolTipText("Uncheck to accumulate additional response decoration requirements");
         targetMessagePanel.setResponseExtra(responseImmediateCheckBox);
-
-        if (assertion.isNodeBasedUuid()) {
-            macBasedUuidRadioButton.setSelected(true);
-        } else {
-            randomUuidRadioButton.setSelected(true);
-        }
-
-        if (assertion.isSamlUseStrTransform()) {
-            samlStrDereferenceRadioButton.setSelected(true);
-        } else {
-            samlWsuIdRadioButton.setSelected(true);
-        }
-
-        responseImmediateCheckBox.setSelected(!assertion.isDeferDecoration());
 
         okButton.addActionListener(new ActionListener() {
             @Override
@@ -225,6 +181,54 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
 
     @Override
     public void setData(NcesDecoratorAssertion assertion) {
+        this.assertion = assertion;
+
+        if (assertion.getSamlAssertionVersion() == 2) {
+            saml20RadioButton.setSelected(true);
+        } else {
+            saml11RadioButton.setSelected(true);
+        }
+
+        if (assertion.isSamlIncluded()) {
+            final String template = assertion.getSamlAssertionTemplate();
+            if (template != null && !template.isEmpty()) {
+                samlTemplateRadioButton.setSelected(true);
+                samlTemplateField.setText(template);
+            } else {
+                samlInternalRadioButton.setSelected(true);
+                samlTemplateField.setText("${issuedSamlAssertion}");
+            }
+        } else {
+            samlNoneRadioButton.setSelected(true);
+            samlTemplateField.setText("${issuedSamlAssertion}");
+        }
+        uuidUriPrefixTextField.setText(assertion.getMessageIdUriPrefix());
+        final String wsaNs = assertion.getWsaNamespaceUri();
+        if ( SoapConstants.WSA_NAMESPACE.equals(wsaNs)) {
+            wsa200403RadioButton.setSelected(true);
+        } else if ( SoapConstants.WSA_NAMESPACE2.equals(wsaNs)) {
+            wsa200408RadioButton.setSelected(true);
+        } else if (wsaNs == null || SoapConstants.WSA_NAMESPACE_10.equals(wsaNs)) {
+            wsa10RadioButton.setSelected(true);
+        } else {
+            wsaOtherRadioButton.setSelected(true);
+            wsaOtherTextField.setText(wsaNs);
+        }
+        useExistingAddressingCheckBox.setSelected( assertion.isUseExistingWsa() );
+        targetMessagePanel.setModel(assertion,getPreviousAssertion());
+        if (assertion.isNodeBasedUuid()) {
+            macBasedUuidRadioButton.setSelected(true);
+        } else {
+            randomUuidRadioButton.setSelected(true);
+        }
+
+        if (assertion.isSamlUseStrTransform()) {
+            samlStrDereferenceRadioButton.setSelected(true);
+        } else {
+            samlWsuIdRadioButton.setSelected(true);
+        }
+
+        responseImmediateCheckBox.setSelected(!assertion.isDeferDecoration());
     }
 
     @Override
