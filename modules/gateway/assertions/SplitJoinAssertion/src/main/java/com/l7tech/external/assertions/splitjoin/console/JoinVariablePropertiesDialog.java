@@ -25,7 +25,7 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
             targetVariablePanel.addChangeListener(new ChangeListener(){
                 @Override
                 public void stateChanged(ChangeEvent e) {
-                    getOkButton().setEnabled(targetVariablePanel.isEntryValid());
+                    getOkButton().setEnabled(!isReadOnly() && targetVariablePanel.isEntryValid());
                 }
             });
        }

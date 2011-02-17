@@ -31,7 +31,7 @@ public class SplitVariablePropertiesDialog extends AssertionPropertiesOkCancelSu
         targetVariableTextField.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
-                getOkButton().setEnabled(targetVariableTextField .isEntryValid());
+                getOkButton().setEnabled(!isReadOnly() && targetVariableTextField .isEntryValid());
             }
         });
     }

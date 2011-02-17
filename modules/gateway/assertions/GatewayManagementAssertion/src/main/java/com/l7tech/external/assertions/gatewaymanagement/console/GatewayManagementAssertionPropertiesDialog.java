@@ -57,7 +57,7 @@ public class GatewayManagementAssertionPropertiesDialog extends AssertionPropert
         variablePrefixTextField.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
-               getOkButton().setEnabled(variablePrefixTextField.isEntryValid());
+               getOkButton().setEnabled(!isReadOnly() && variablePrefixTextField.isEntryValid());
             }
         });
 

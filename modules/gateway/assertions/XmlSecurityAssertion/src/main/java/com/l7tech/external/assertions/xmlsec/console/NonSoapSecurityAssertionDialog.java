@@ -60,7 +60,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
             variablePrefixTextField.addActionListener(new RunOnChangeListener(){
                 @Override
                 public void run() {
-                    getOkButton().setEnabled(!variablePrefixTextField.isVisible());
+                    getOkButton().setEnabled(!isReadOnly() && !variablePrefixTextField.isVisible());
                 }
             });
         }
@@ -72,7 +72,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
             variablePrefixField.addChangeListener(new ChangeListener(){
                 @Override
                 public void stateChanged(ChangeEvent e) {
-                    getOkButton().setEnabled(!variablePrefixField.isVisible() || variablePrefixField.isEntryValid());
+                    getOkButton().setEnabled(!isReadOnly() && (!variablePrefixField.isVisible() || variablePrefixField.isEntryValid()));
                 }
             });
 

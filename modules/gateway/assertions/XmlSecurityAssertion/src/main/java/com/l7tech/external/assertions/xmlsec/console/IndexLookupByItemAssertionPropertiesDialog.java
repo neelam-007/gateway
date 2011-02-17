@@ -60,7 +60,7 @@ public class IndexLookupByItemAssertionPropertiesDialog extends AssertionPropert
         outputVarNameField.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
-                getOkButton().setEnabled(outputVarNameField .isEntryValid());
+                getOkButton().setEnabled(!isReadOnly() && outputVarNameField .isEntryValid());
             }
         });
 

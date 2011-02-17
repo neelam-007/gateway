@@ -33,7 +33,7 @@ public class CertificateAttributesAssertionPropertiesDialog extends AssertionPro
         varPrefixTextField.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
-                getOkButton().setEnabled(varPrefixTextField.isEntryValid());
+                getOkButton().setEnabled(!isReadOnly() && varPrefixTextField.isEntryValid());
             }
         });
     }

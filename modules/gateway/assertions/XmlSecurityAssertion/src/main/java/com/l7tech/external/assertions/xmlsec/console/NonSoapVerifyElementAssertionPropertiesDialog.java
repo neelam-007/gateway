@@ -285,6 +285,6 @@ public class NonSoapVerifyElementAssertionPropertiesDialog extends NonSoapSecuri
         if (customIds && customIdAttrList.getModel().getSize() < 1)
             canOk = false;
 
-        getOkButton().setEnabled( canOk );
+        getOkButton().setEnabled( !isReadOnly() && canOk );
     }
 }
