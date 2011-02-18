@@ -13,7 +13,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M REQUEST_INVALID_XML_FORMAT  = m(3000, Level.WARNING, "Request XML is not well formed");
     public static final M MESSAGE_NOT_SOAP            = m(3001, Level.FINE, "Message is not soap");
     public static final M MESSAGE_NOT_SOAP_NO_WSS     = m(3002, Level.FINE, "Message is not SOAP and will not produce any WSS results");
-    public static final M ERROR_WSS_PROCESSING        = m(3003, Level.INFO, "Error in WSS processing of request");
+    /** @deprecated */ @Deprecated public static final M __UNUSED__ERROR_WSS_PROCESSING     = m(3003, Level.INFO, "Error in WSS processing of request"); // deprecated in favor of ERROR_WSS_PROCESSING_INFO
     public static final M ERROR_RETRIEVE_XML          = m(3004, Level.INFO, "Error getting XML document from request");
     public static final M SERVICE_NOT_FOUND           = m(3005, Level.INFO, "Service not found");
     public static final M SERVICE_DISABLED            = m(3006, Level.INFO, "Service disabled");

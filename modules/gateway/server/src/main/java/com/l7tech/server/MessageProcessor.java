@@ -775,7 +775,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     securityProcessingAssertionStatus = AssertionStatus.BAD_REQUEST;
                     return false;
                 } catch (ProcessorException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING_INFO, new String[] { ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
                     securityProcessingAssertionStatus = AssertionStatus.SERVER_ERROR;
                     return false;
                 } catch (InvalidDocumentSignatureException e) {
@@ -796,7 +796,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     securityProcessingAssertionStatus = AssertionStatus.BAD_REQUEST;
                     return false;
                 } catch (GeneralSecurityException e) {
-                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING_INFO, new String[] { ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
                     context.setAuditLevel(Level.WARNING);
                     securityProcessingAssertionStatus = AssertionStatus.SERVER_ERROR;
                     return false;

@@ -1463,11 +1463,15 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException(e);
         } catch (StructureException e) {
             logger.log(Level.FINE, "Error decrypting", e);
-            throw new ProcessorException(e);
+            throw new ProcessorException("Error decrypting", e);
         } catch (KeyInfoResolvingException e) {
             logger.log(Level.FINE, "Error decrypting", e);
             throw new ProcessorException(e);
+        } catch (PseudoIOException e) {
+            logger.log(Level.FINE, "Error decrypting", e);
+            throw new ProcessorException("Error decrypting", e); 
         }
+
         // determine algorithm
         String algorithmName = XencAlgorithm.AES_128_CBC.getXEncName();
         if (!algorithm.isEmpty()) {

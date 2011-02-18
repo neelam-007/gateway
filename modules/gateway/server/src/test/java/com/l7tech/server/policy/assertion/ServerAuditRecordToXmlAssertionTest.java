@@ -1,31 +1,25 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.audit.AuditDetail;
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.BootMessages;
-import com.l7tech.gateway.common.audit.MessageProcessingMessages;
-import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
-import com.l7tech.gateway.common.audit.Messages;
+import com.l7tech.gateway.common.audit.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.AuditRecordToXmlAssertion;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
-import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import static org.junit.Assert.*;
-
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.util.Set;
 import java.util.logging.Level;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -80,7 +74,7 @@ public class ServerAuditRecordToXmlAssertionTest {
             auditDetails.add( makeAuditDetail( MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT, ordinal++ ) );
             auditDetails.add( makeAuditDetail( MessageProcessingMessages.MESSAGE_NOT_SOAP, ordinal++ ) );
             auditDetails.add( makeAuditDetail( MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, ordinal++ ) );
-            auditDetails.add( makeAuditDetail( MessageProcessingMessages.ERROR_WSS_PROCESSING, ordinal++ ) );
+            auditDetails.add( makeAuditDetail( MessageProcessingMessages.MESSAGE_NO_SIG_CONFIRMATION, ordinal++ ) );
             auditDetails.add( makeAuditDetail( MessageProcessingMessages.ERROR_RETRIEVE_XML, ordinal ) );
         } else {
             auditRecord.setThrown(new RuntimeException("main record throwable"));
