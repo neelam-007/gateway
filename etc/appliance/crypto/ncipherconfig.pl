@@ -180,6 +180,21 @@ sub hasLocalWorld() {
 }
 
 
+sub loadLocalWorld() {
+    my $world = slurpFile(KMDATA_WORLD);
+    die "No local world file found\n" unless defined($world);
+    die "Local world file is empty\n" if length($world) < 1;
+    return $world;
+}
+
+
+sub doesDatabaseWorldMatchLocalWorld() {
+    my $localWorld = loadLocalWorld();
+    my $databaseWorld = loadDatabaseWorld();
+    return $localWorld eq $databaseWorld;
+}
+
+
 # Silently attempt to slurp contents of the specified file.  Returns file content or undef on error.
 sub slurpFile($) {
     my $path = shift;
@@ -210,10 +225,7 @@ sub putFile($$) {
 
 
 sub copyLocalWorldToDatabase() {
-    my $world = slurpFile(KMDATA_WORLD);
-    die "No local world file found\n" unless defined($world);
-    die "Local world file is empty\n" if length($world) < 1;
-    saveDatabaseWorld($world);
+    saveDatabaseWorld(loadLocalWorld());
 }
 
 
@@ -390,6 +402,49 @@ EOM
 }
 
 
+sub useAlreadyProgrammedWorld() {
+    stopGateway();
+    print <<'EOM';
+
+About to configure the Gateway to use a security world that has already been manually programmed.  Please ensure that:
+
+* The world file has been copied to the kmdata/local directory
+* The module been programmed into the security world
+* Any desired certificate and key objects have been copied to kmdata/local using the application prefix "key_jcecsp_"
+
+EOM
+
+    if (pressEnterOrCancel()) {
+        if (!hasLocalWorld()) {
+            die "There does not appear to be a security world already present on this local node."
+        }
+
+        my $hasDatabaseWorld = hasDatabaseWorld();
+
+        if ($hasDatabaseWorld && !doesDatabaseWorldMatchLocalWorld()) {
+            print "\nWARNING: There is already a security world present in the database that does not match the world on this local node.\n\n",
+                  "Do you want to destroy the security world in the database?\n\n";
+            if (!proceedOrCancel()) {
+                die "Operation canceled by user.\n";
+            }
+
+            deleteDatabaseWorld();
+        }
+
+        if (!hasDatabaseWorld()) {
+            copyLocalWorldToDatabase();
+            print "\nThe world file has been copied to the database.\n\n";
+        } else {
+            print "\nThe database alredy contains a copy of the current world file.\n\n";
+        }
+
+        print "The Gateway will sync any \"key_jcesp_*\" objects between the local node and the database\nnext time it starts up configured to use the nCipher HSM.\n\n";
+        pressEnter();
+        manageHsmMenu();
+    }
+}
+
+
 sub manageHsmMenu() {
 
     my $msg = -f NCIPHERDEFS
@@ -470,6 +525,7 @@ What would you like to do?
  1) Manage Gateway nCipher HSM status
  2) Create new security world
  3) Program into existing security world
+ 4) Use manually-programmed security world
  X) Exit menu
 
 EOM
@@ -493,6 +549,9 @@ MAIN: eval {
             showMenu();
         } elsif ( $input eq '3' ) {
             programExistingWorld();
+            showMenu();
+        } elsif ( $input eq '4' ) {
+            useAlreadyProgrammedWorld();
             showMenu();
         } elsif ( uc($input) eq 'X' ) {
             $quit = 1;
