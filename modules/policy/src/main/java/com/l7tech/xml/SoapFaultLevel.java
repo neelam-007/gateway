@@ -53,6 +53,7 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
             this.signSoapFault = soapFaultLevel.signSoapFault;
             this.variablesUsed = soapFaultLevel.variablesUsed;
             this.privatekeyableSupport = new PrivateKeyableSupport( soapFaultLevel.privatekeyableSupport );
+            this.alwaysReturnSoapFault = soapFaultLevel.isAlwaysReturnSoapFault();
         }
     }
 
