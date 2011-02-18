@@ -179,7 +179,7 @@ public class XslTransformationPropertiesDialog extends AssertionPropertiesOkCanc
         fetchPanel.setModel(assertion);
         
         messageVariablePrefixTextField.setVariable(assertion.getMsgVarPrefix());
-        messageVariablePrefixTextField.setAssertion(assertion,null);
+        messageVariablePrefixTextField.setAssertion(assertion,getPreviousAssertion());
         messageVariablePrefixTextField.setSuffixes(new String[] {XslTransformation.VARIABLE_NAME});
 
         whichMimePartSpinner.setValue(new Integer(assertion.getWhichMimePart()));

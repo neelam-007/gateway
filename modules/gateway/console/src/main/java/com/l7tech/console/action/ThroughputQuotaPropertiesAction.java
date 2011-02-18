@@ -3,12 +3,12 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.ThroughputQuotaForm;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 
 import javax.swing.*;
@@ -27,14 +27,16 @@ public class ThroughputQuotaPropertiesAction extends NodeActionWithMetaSupport {
 
     @Override
     protected void performAction() {
-        final ThroughputQuotaForm dlg = new ThroughputQuotaForm(TopComponents.getInstance().getTopParent(),
-                                                          subject.asAssertion(), null, !subject.canEdit());
+        final ThroughputQuota ass = subject.asAssertion();
+        final ThroughputQuotaForm dlg = new ThroughputQuotaForm(TopComponents.getInstance().getTopParent(),ass);
+        dlg.setData(ass);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             @Override
             public void run() {
                 if (dlg.wasOKed()) {
+                    subject.setUserObject(dlg.getData(ass));
                     JTree tree = TopComponents.getInstance().getPolicyTree();
                     if (tree != null) {
                         PolicyTreeModel model = (PolicyTreeModel)tree.getModel();

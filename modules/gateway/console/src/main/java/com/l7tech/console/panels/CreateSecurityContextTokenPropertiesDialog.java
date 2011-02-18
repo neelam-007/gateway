@@ -38,7 +38,6 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
 
     public CreateSecurityContextTokenPropertiesDialog(Window owner, CreateSecurityContextToken assertion) {
         super(owner, assertion);
-        setData(assertion);
         initialize();
     }
 
@@ -50,6 +49,7 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
     @Override
     public void setData(CreateSecurityContextToken assertion) {
         this.assertion = assertion;
+        modelToView();
     }
 
     @Override
@@ -144,9 +144,6 @@ public class CreateSecurityContextTokenPropertiesDialog extends AssertionPropert
             }
         });
 
-
-
-        modelToView();
     }
 
     private void modelToView() {

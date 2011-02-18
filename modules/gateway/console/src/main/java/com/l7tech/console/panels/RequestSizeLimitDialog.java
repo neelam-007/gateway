@@ -38,7 +38,7 @@ public class RequestSizeLimitDialog extends LegacyAssertionPropertyDialog {
 
         targetMessagePanel.setTitle(null);
         targetMessagePanel.setBorder(null);
-        targetMessagePanel.setModel(assertion,getPreviousAssertion());
+        targetMessagePanel.setModel(assertion,null);
         targetMessagePanel.setAllowNonMessageVariables(false);
 
         Utilities.setMaxLength( sizeLimit.getDocument(), 1024 );
