@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion.credential;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -13,6 +14,7 @@ import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -114,39 +116,17 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
             throw e;
         } catch (PolicyAssertionException e) {
             throw e;
+        } catch (AssertionStatusException e) {
+            return e.getAssertionStatus();
         } catch (Exception e) {
             throw new PolicyAssertionException(assertion, e);
         }
     }
 
     private AssertionStatus doCheckRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        XmlKnob requestXml = null;
-        if (context.getRequest().isXml())
-            requestXml = context.getRequest().getKnob(XmlKnob.class);
+        final Message targetMessage = context.getRequest();
 
-        if (requestXml == null) {
-            auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML);
-            return AssertionStatus.NOT_APPLICABLE;
-        }
-
-        Document requestDoc;
-        try {
-            if (assertion.isRemoveLoginElement() || assertion.isRemovePasswordElement()) {
-                requestDoc = requestXml.getDocumentWritable();
-            } else {
-                requestDoc = requestXml.getDocumentReadOnly();
-            }
-        } catch (SAXException e) {
-            // If neither expression actually cares about the target document, go ahead anyway using
-            // a dummy document.  (Bug #7224)
-            if (!requiresTargetDocument) {
-                // Make a dummy document
-                requestDoc = XmlUtil.createEmptyDocument();
-            } else {
-                auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML, null, ExceptionUtils.getDebugException(e));
-                return AssertionStatus.FAILED;
-            }
-        }
+        Document requestDoc = getTargetDocument(targetMessage);
 
         String login;
         try {
@@ -187,9 +167,43 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
                         pass.toCharArray()),
                 XpathCredentialSource.class);
 
-        context.getAuthenticationContext(context.getRequest()).addCredentials( creds );
+        context.getAuthenticationContext(targetMessage).addCredentials( creds );
 
         return AssertionStatus.NONE;
+    }
+
+    private Document getTargetDocument(Message targetMessage) throws IOException {
+        final boolean modifiesTargetDocument = assertion.isRemoveLoginElement() || assertion.isRemovePasswordElement();
+        Document ret = null;
+        Throwable parseException = null;
+
+        if (targetMessage.isXml()) {
+            XmlKnob xmlKnob = targetMessage.getKnob(XmlKnob.class);
+            if (xmlKnob != null) {
+                try {
+                    if (modifiesTargetDocument) {
+                        ret = xmlKnob.getDocumentWritable();
+                    } else {
+                        ret = xmlKnob.getDocumentReadOnly();
+                    }
+                } catch (SAXException e) {
+                    parseException = e;
+                    // FALLTHROUGH with null doc
+                }
+            }
+        }
+
+        if (ret == null) {
+            if (requiresTargetDocument) {
+                auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML, null, ExceptionUtils.getDebugException(parseException));
+                throw new AssertionStatusException(AssertionStatus.FAILED);
+            }
+
+            // If neither expression actually cares about the target document, go ahead anyway.  (Bug #7224, Bug #9883)
+            ret = XmlUtil.createEmptyDocument();
+        }
+
+        return ret;
     }
 
     private String find(Document requestDoc, DOMXPath xpath,
