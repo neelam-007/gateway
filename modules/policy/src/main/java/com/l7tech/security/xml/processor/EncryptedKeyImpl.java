@@ -117,6 +117,10 @@ public class EncryptedKeyImpl extends SigningSecurityTokenImpl implements Encryp
         if (secretKeyBytes == null && tokenResolver != null) {
             // Save us a step unwrapping
             secretKeyBytes = tokenResolver.getSecretKeyByEncryptedKeySha1(encryptedKeySHA1);
+            if (tokenResolver != null && extraTokenType != null && extraTokenId != null && secretKeyBytes != null) {
+                // necessary in case multiple extra tokens share the same encrypted key
+                tokenResolver.putSecretKeyByTokenIdentifier(extraTokenType, extraTokenId, secretKeyBytes);
+            }
         } else
             maybePublish();
         return encryptedKeySHA1;
