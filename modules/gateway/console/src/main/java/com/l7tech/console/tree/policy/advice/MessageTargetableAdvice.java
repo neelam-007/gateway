@@ -1,15 +1,12 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.console.tree.policy.PolicyChange;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.Regex;
-import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Policy advice for Message Targetable assertions (sets the target message)
@@ -50,7 +47,8 @@ public class MessageTargetableAdvice extends AddContextSensitiveAssertionAdvice 
     private static final List<Class<? extends Assertion>> IGNORE_CLASSES = Arrays.<Class<? extends Assertion>>asList(
             Regex.class,
             SchemaValidation.class,
-            XslTransformation.class
+            XslTransformation.class,
+            RequestSizeLimit.class
     );
 
     private boolean ignore(final Assertion assertion) {
