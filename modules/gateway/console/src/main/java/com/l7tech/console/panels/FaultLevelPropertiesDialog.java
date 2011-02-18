@@ -349,9 +349,9 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
             }
             assertion.getLevelInfo().setFaultTemplate(maybeXML);
         }
-        assertion.getLevelInfo().setIncludePolicyDownloadURL(urlCheckBox.isSelected());
-        assertion.getLevelInfo().setSignSoapFault(signSoapFaultCheckBox.isSelected());
-        assertion.getLevelInfo().setAlwaysReturnSoapFault(alwaysReturnSoapFaultCheckBox.isSelected());
+        assertion.getLevelInfo().setIncludePolicyDownloadURL(urlCheckBox.isEnabled() && urlCheckBox.isSelected());
+        assertion.getLevelInfo().setSignSoapFault(signSoapFaultCheckBox.isEnabled() && signSoapFaultCheckBox.isSelected());
+        assertion.getLevelInfo().setAlwaysReturnSoapFault(alwaysReturnSoapFaultCheckBox.isEnabled() && alwaysReturnSoapFaultCheckBox.isSelected());
         oked = true;
         cancel();
     }
@@ -392,51 +392,45 @@ public class FaultLevelPropertiesDialog extends LegacyAssertionPropertyDialog {
                 lastUserEdits = tmp;
             }
         }
+        boolean enableUrlCheckBox = true;
+        boolean enableSignSoapFaultCheckBox = true;
+        boolean enableAlwaysReturnSoapFaultCheckBox = true;
         switch (currentselection.level) {
             case SoapFaultLevel.DROP_CONNECTION:
                 description = DROP_LEVEL_DESCRIPTION;
                 editor.setText(DROP_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
-                urlCheckBox.setEnabled(false);
-                signSoapFaultCheckBox.setEnabled(false);
-                alwaysReturnSoapFaultCheckBox.setEnabled(false);
+                enableUrlCheckBox = false;
+                enableSignSoapFaultCheckBox = false;
+                enableAlwaysReturnSoapFaultCheckBox = false;
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 description = GEN_LEVEL_DESCRIPTION;
                 editor.setText(assertion.isSoap12() ? GEN_LEVEL_SAMPLE_SOAP_1_2 : GEN_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
-                urlCheckBox.setEnabled(true);
-                signSoapFaultCheckBox.setEnabled(true);
-                alwaysReturnSoapFaultCheckBox.setEnabled(false);
                 break;
             case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
                 description = MEDIUM_LEVEL_DESCRIPTION;
                 editor.setText(assertion.isSoap12() ? MEDIUM_LEVEL_SAMPLE_SOAP_1_2 : MEDIUM_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
-                urlCheckBox.setEnabled(true);
-                signSoapFaultCheckBox.setEnabled(true);
-                alwaysReturnSoapFaultCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.FULL_TRACE_FAULT:
                 description = FULL_LEVEL_DESCRIPTION;
                 editor.setText(assertion.isSoap12() ? FULL_LEVEL_SAMPLE_SOAP_1_2 : FULL_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
-                urlCheckBox.setEnabled(true);
-                signSoapFaultCheckBox.setEnabled(true);
-                alwaysReturnSoapFaultCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
                 description = TEMPLATE_LEVEL_DESCRIPTION;
                 xmlContainer.setEditable(true);
                 showCustomFault();
-                urlCheckBox.setEnabled(true);
-                signSoapFaultCheckBox.setEnabled(true);
-                alwaysReturnSoapFaultCheckBox.setEnabled(true);
                 break;
             default:
                 // can't happen (unless bug)
-                throw new RuntimeException("Unhandeled SoapFaultLevel");
+                throw new RuntimeException("Unhandled SoapFaultLevel");
         }
+        urlCheckBox.setEnabled(enableUrlCheckBox);
+        signSoapFaultCheckBox.setEnabled(enableSignSoapFaultCheckBox);
+        alwaysReturnSoapFaultCheckBox.setEnabled(enableAlwaysReturnSoapFaultCheckBox);
         descriptionPane.setText(description);
     }
 
