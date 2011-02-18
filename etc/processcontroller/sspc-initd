@@ -51,20 +51,16 @@ start() {
                 if [ -z "${PC_PORT}" ] ; then
                     PC_PORT="8765"
                 fi
-                if expr index "${PC_ADDR}" ":" >/dev/null; then
-                    #ipv6
-                    if [ "${PC_ADDR}" != "::" ] && [ "${PC_ADDR}" != "0:0:0:0:0:0:0:0" ]; then
-                        echo "[0:0] -A INPUT -p tcp -m tcp -d ${PC_ADDR} --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL6_RULES}"
-                    else
-                        echo "[0:0] -A INPUT -p tcp -m tcp --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL6_RULES}"
-                    fi
+                if [ "${PC_ADDR}" == "0.0.0.0" ] || [ "${PC_ADDR}" == "::" ] || [ "${PC_ADDR}" == "0:0:0:0:0:0:0:0" ] ; then
+                    #ipv4 and ipv6
+                    echo "[0:0] -A INPUT -p tcp -m tcp --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL6_RULES}"
+                    echo "[0:0] -A INPUT -p tcp -m tcp --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL_RULES}"
+                elif expr index "${PC_ADDR}" ":" >/dev/null; then
+                    #ipv6 only
+                    echo "[0:0] -A INPUT -p tcp -m tcp -d ${PC_ADDR} --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL6_RULES}"
                 else
-                    #ipv4
-                    if [ "${PC_ADDR}" != "0.0.0.0" ]; then
-                        echo "[0:0] -A INPUT -p tcp -m tcp -d ${PC_ADDR} --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL_RULES}"
-                    else
-                        echo "[0:0] -A INPUT -p tcp -m tcp --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL_RULES}"
-                    fi
+                    #ipv4 only
+                    echo "[0:0] -A INPUT -p tcp -m tcp -d ${PC_ADDR} --dport ${PC_PORT} -j ACCEPT" > "${PC_FIREWALL_RULES}"
                 fi
                 [ -f "${PC_FIREWALL_RULES}" ] && chown gateway.gateway "${PC_FIREWALL_RULES}"
                 [ -f "${PC_FIREWALL6_RULES}" ] && chown gateway.gateway "${PC_FIREWALL6_RULES}"
@@ -81,8 +77,8 @@ stop() {
         RETVAL=$?
         echo
         [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/ssg
-        [ $RETVAL -eq 0 ] && [ -x "${PC_FIREWALL_CONTROL}" ] && [ -f "${PC_FIREWALL_RULES}" ] && "${PC_FIREWALL_CONTROL}" "${PC_FIREWALL_RULES}" stop
-        [ $RETVAL -eq 0 ] && [ -x "${PC_FIREWALL_CONTROL}" ] && [ -f "${IP6TABLES_CHECK}" ] && [ -f "${PC_FIREWALL6_RULES}" ] && "${PC_FIREWALL_CONTROL}" "${PC_FIREWALL6_RULES}" stop
+        [ $RETVAL -eq 0 ] && [ -x "${PC_FIREWALL_CONTROL}" ] && [ -f "${PC_FIREWALL_RULES}" ] && "${PC_FIREWALL_CONTROL}" ipv4 "${PC_FIREWALL_RULES}" stop
+        [ $RETVAL -eq 0 ] && [ -x "${PC_FIREWALL_CONTROL}" ] && [ -f "${IP6TABLES_CHECK}" ] && [ -f "${PC_FIREWALL6_RULES}" ] && "${PC_FIREWALL_CONTROL}" ipv6 "${PC_FIREWALL6_RULES}" stop
         return $RETVAL
 }
 

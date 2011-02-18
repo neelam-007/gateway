@@ -95,25 +95,17 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
                 return new X509Certificate[0];
             }
         } }, null);
-        final SslSocketConnector sslConnector = new SslSocketConnector() {
-            @Override
-            protected SSLServerSocketFactory createFactory() throws Exception {
-                return ctx.getServerSocketFactory();
-            }
 
-            @Override
-            public int getPort() {
-                return httpPort;
+        if ( InetAddressUtil.isAnyHostAddress(httpIPAddress) ) {
+            if ( InetAddressUtil.isIpv6Enabled() ) {
+                // This handles IPv4 traffic also
+                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getAnyHostAddress6(), httpPort, ctx) );
+            } else if ( InetAddressUtil.isIpv4Enabled() ) {
+                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getAnyHostAddress4(), httpPort, ctx) );
             }
-
-            @Override
-            public String getHost() {
-                return httpIPAddress;
-            }
-        };
-        sslConnector.setWantClientAuth(true);
-        sslConnector.setNeedClientAuth(false);
-        server.addConnector(sslConnector);
+        } else {
+            server.addConnector( new SimpleSslSocketConnector(httpIPAddress, httpPort, ctx) );
+        }
 
         InetAddress httpAddr = InetAddress.getByName(httpIPAddress);
 
@@ -122,48 +114,17 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
                 ! ( httpAddr instanceof Inet4Address || (httpAddr instanceof Inet6Address && httpAddr.isAnyLocalAddress() )) ||
                 ! ( httpAddr.isLoopbackAddress() || httpAddr.isAnyLocalAddress() )  ) {
 
-                final SslSocketConnector localSslConnector = new SslSocketConnector() {
-                    @Override
-                    protected SSLServerSocketFactory createFactory() throws Exception {
-                        return ctx.getServerSocketFactory();
-                    }
-
-                    @Override
-                    public int getPort() {
-                        return DEFAULT_SSL_REMOTE_MANAGEMENT_PORT;
-                    }
-
-                    @Override
-                    public String getHost() {
-                        return InetAddressUtil.getLocalHostAddress4();
-                    }
-                };
-                server.addConnector( localSslConnector );
+                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getLocalHostAddress4(), DEFAULT_SSL_REMOTE_MANAGEMENT_PORT, ctx) );
                 logger.log(Level.INFO, "Added default IPv4 SSL connector.");
             }
         }
 
         if ( InetAddressUtil.isIpv6Enabled() ) {
-            if ( httpPort != DEFAULT_SSL_REMOTE_MANAGEMENT_PORT || ! (httpAddr instanceof Inet6Address) ||
+            if ( httpPort != DEFAULT_SSL_REMOTE_MANAGEMENT_PORT ||
+                 ! ( httpAddr instanceof Inet6Address || (httpAddr instanceof Inet4Address && httpAddr.isAnyLocalAddress() )) ||
                  ! ( httpAddr.isLoopbackAddress() || httpAddr.isAnyLocalAddress() )  ) {
 
-                final SslSocketConnector localSslConnector = new SslSocketConnector() {
-                    @Override
-                    protected SSLServerSocketFactory createFactory() throws Exception {
-                        return ctx.getServerSocketFactory();
-                    }
-
-                    @Override
-                    public int getPort() {
-                        return DEFAULT_SSL_REMOTE_MANAGEMENT_PORT;
-                    }
-
-                    @Override
-                    public String getHost() {
-                        return InetAddressUtil.getLocalHostAddress6();
-                    }
-                };
-                server.addConnector( localSslConnector );
+                server.addConnector( new SimpleSslSocketConnector(InetAddressUtil.getLocalHostAddress6(), DEFAULT_SSL_REMOTE_MANAGEMENT_PORT, ctx) );
                 logger.log(Level.INFO, "Added default IPv6 SSL connector.");
             }
         }
@@ -304,6 +265,25 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
         @Override
         public void warn(String msg, Throwable th) {
             logger.log( Level.WARNING, msg, th );
+        }
+    }
+
+    private static final class SimpleSslSocketConnector extends SslSocketConnector {
+        private final SSLContext sslContext;
+
+        private SimpleSslSocketConnector( final String host,
+                                          final int port,
+                                          final SSLContext sslContext ) {
+            this.sslContext = sslContext;
+            setHost(host);
+            setPort(port);
+            setWantClientAuth(true);
+            setNeedClientAuth(false);
+        }
+
+        @Override
+        protected SSLServerSocketFactory createFactory() throws Exception {
+            return sslContext.getServerSocketFactory();
         }
     }
 }
