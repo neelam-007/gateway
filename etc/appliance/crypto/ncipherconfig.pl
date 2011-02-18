@@ -438,7 +438,9 @@ EOM
             print "\nThe database alredy contains a copy of the current world file.\n\n";
         }
 
-        print "The Gateway will sync any \"key_jcesp_*\" objects between the local node and the database\nnext time it starts up configured to use the nCipher HSM.\n\n";
+        print "Next time it starts up configured to use the nCipher HSM, the Gateway will sync any keystore objects\n",
+              "that use the application name \"key_jcesp\" between the local node and the database.\n\n";
+
         pressEnter();
         manageHsmMenu();
     }
