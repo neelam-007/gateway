@@ -410,7 +410,8 @@ About to configure the Gateway to use a security world that has already been man
 
 * The world file has been copied to the kmdata/local directory
 * The module been programmed into the security world
-* Any desired certificate and key objects have been copied to kmdata/local using the application prefix "key_jcecsp_"
+* Any desired keystore and key objects have been copied to kmdata/local using the application prefix "key_jcecsp"
+* There is a single keystore file (no suffix) and all key files (-key-NNN suffix) use a matching keystore ID
 
 EOM
 

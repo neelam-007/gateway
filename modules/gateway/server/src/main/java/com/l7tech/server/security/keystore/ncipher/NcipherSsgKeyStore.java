@@ -17,9 +17,12 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -178,6 +181,67 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     }
 
     private synchronized Pair<String, KeyStore> createNewKeyStore() throws KeyStoreException {
+        // Check for files on disk from a preexisting key_jcecsp_* keystore, before creating a new empty one
+        Pair<String, KeyStore> ret = createNewKeyStoreFromExistingLocalFiles();
+        return ret != null ? ret : createNewKeyStoreEmpty();
+    }
+
+    private Pair<String, KeyStore> createNewKeyStoreFromExistingLocalFiles() throws KeyStoreException {
+        Pair<String, KeyStore> ret = null;
+
+        List<String> identifiers = NcipherKeyStoreData.readKeystoreIdentifiersFromLocalDisk(KMDATA_LOCAL_DIR);
+
+        String lastMessage = null;
+        Throwable lastException = null;
+
+        // See if at least one ID represents a lodable keystore with at least one existing key entry
+        for (String keystoreId : identifiers) {
+            try {
+                logger.info("Attempting to load from nCipher security world a preexisting keystore with ID " + keystoreId);
+                ret = loadKeystoreByKeystoreId(keystoreId);
+                if (ret != null)
+                    break; // found one
+            } catch (Exception e) {
+                lastMessage = "Unable to load preexisting nCipher keystore with ID " + keystoreId + ": " + ExceptionUtils.getMessage(e);
+                logger.log(Level.WARNING, lastMessage, e);
+                lastException = e;
+            }
+        }
+
+        if (lastException != null && lastMessage != null)
+            throw new KeyStoreException(lastMessage, lastException);
+
+        return ret;
+    }
+
+    private static Pair<String, KeyStore> loadKeystoreByKeystoreId(String keystoreId) throws KeyStoreException {
+        Pair<String, KeyStore> ret = null;
+        KeyStore keystore = JceProvider.getInstance().getKeyStore(KEYSTORE_TYPE);
+        PoolByteArrayOutputStream os = null;
+        try {
+            // See if this ID represents a loadable keystore with at least one existing key entry
+            keystore.load(new ByteArrayInputStream(keystoreId.getBytes(Charsets.UTF8)), null);
+            Enumeration<String> aliases = keystore.aliases();
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                if (keystore.isKeyEntry(alias)) {
+                    ret = new Pair<String, KeyStore>(keystoreId, keystore);
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            throw new KeyStoreException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new KeyStoreException(e);
+        } catch (CertificateException e) {
+            throw new KeyStoreException(e);
+        } finally {
+            ResourceUtils.closeQuietly(os);
+        }
+        return ret;
+    }
+
+    private static Pair<String, KeyStore> createNewKeyStoreEmpty() throws KeyStoreException {
         logger.info("Creating new keystore within nCipher security world");
         KeyStore keystore = JceProvider.getInstance().getKeyStore(KEYSTORE_TYPE);
         PoolByteArrayOutputStream os = null;

@@ -56,6 +56,39 @@ class NcipherKeyStoreData implements Serializable {
     }
 
     /**
+     * Get a list of all key_jcecsp files that appear to be represented in the kmdata/local directory on the current node.
+     *
+     * @param kmdataLocalDir  the directory to load from, ie "/opt/nfast/kmdata/local".  Required.  Must be readable by the current process.
+     * @return a list of 40-character keystore identifier strings, one for each file in the specified directory matching the pattern
+     *         "^key_jcecsp_[0-9a-f]{40}}$" (where key_jcecsp_ is whatever is in use as the {@link #APP_PREFIX_KEY_JCECSP}).
+     */
+    static List<String> readKeystoreIdentifiersFromLocalDisk(File kmdataLocalDir) {
+        final String prefix = APP_PREFIX_KEY_JCECSP;
+        final int prefixLen = prefix.length();
+        final Pattern idpattern = Pattern.compile("^[0-9a-f]{40}$");
+        File[] files = kmdataLocalDir.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.getName().startsWith(prefix);
+            }
+        });
+
+        List<String> ret = new ArrayList<String>();
+        for (File file : files) {
+            final String name = file.getName();
+            if (!name.startsWith(prefix))
+                continue;
+            if (name.length() < prefixLen + 40)
+                continue;
+            String id = name.substring(prefixLen);
+            if (!idpattern.matcher(id).matches())
+                continue;
+            ret.add(id);
+        }
+        return ret;
+    }
+
+    /**
      * Read an NcipherKeyStoreData instance from the local disk, assuming the specified keystoreIdentifier.
      *
      * @param keystoreIdentifier the keystore identifier.  Required.
