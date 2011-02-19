@@ -111,7 +111,7 @@ class GroupCache {
             throw new ValidationException("Error accessing groups for user '"+u.getId()+"'.");
         }
 
-        if( gHeaders != null && gHeaders.size() > 0 ){
+        if( gHeaders != null ){
             Set<IdentityHeader> groupSet = new HashSet<IdentityHeader>();
             int count = 1;
             for(IdentityHeader iH: gHeaders){
