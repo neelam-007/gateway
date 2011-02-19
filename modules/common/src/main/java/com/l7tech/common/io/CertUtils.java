@@ -70,6 +70,7 @@ public class CertUtils {
     public static final String X509_OID_BASIC_CONSTRAINTS = "2.5.29.19";
 
     public static final int DEFAULT_X509V1_MAX_PATH_LENGTH = SyspropUtil.getInteger("com.l7tech.pkix.defaultX509v1MaxPathLength", 0);
+    public static final boolean DISABLE_SHARED_CERTIFICATE_FACTORY = SyspropUtil.getBoolean("com.l7tech.pkix.disableSharedCertificateFactory", false);
 
     public static final String CERT_PROP_NOTBEFORE_DATE = "Validity start date";
     public static final String CERT_PROP_NOTAFTER_DATE = "Expiry date";
@@ -306,11 +307,17 @@ public class CertUtils {
     }
 
     public synchronized static CertificateFactory getFactory() {
+        return DISABLE_SHARED_CERTIFICATE_FACTORY ? createFactory()
+                : certFactory != null ? certFactory
+                : (certFactory = createFactory());
+    }
+
+    private static CertificateFactory createFactory() {
+        CertificateFactory certFactory;
         try {
-            if (certFactory == null)
-                certFactory = X509_PROVIDER==null ?
-                        CertificateFactory.getInstance(FACTORY_ALGORITHM) :
-                        CertificateFactory.getInstance(FACTORY_ALGORITHM, X509_PROVIDER);
+            certFactory = X509_PROVIDER==null ?
+                    CertificateFactory.getInstance(FACTORY_ALGORITHM) :
+                    CertificateFactory.getInstance(FACTORY_ALGORITHM, X509_PROVIDER);
             return certFactory;
         } catch ( CertificateException e ) {
             throw new RuntimeException(e);
