@@ -9,6 +9,7 @@ import java.util.logging.Level;
  * Message catalog for messages audited by policy assertions.
  * The ID range 4000-99999 inclusive is reserved for these messages.
  */
+@SuppressWarnings({"UnusedDeclaration"})
 public class AssertionMessages extends Messages {
 
     // Generic Assertion Messages (4330- 4399 reserved for use here)

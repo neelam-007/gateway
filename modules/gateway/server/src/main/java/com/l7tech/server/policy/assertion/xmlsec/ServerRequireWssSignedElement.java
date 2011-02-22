@@ -90,7 +90,8 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
                         new ParsedElement[0], // we validate that the right elements are signed elsewhere
                         requireCredentialSigningToken,
                         relatedRequestMessage,
-                        relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage )
+                        relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage ),
+                        auditor
                     ) &&
                     isAcceptedSignatureDigestAlgorithms(elements);
         }

@@ -113,5 +113,9 @@ public class MessageProcessingMessages extends Messages {
     public static final M POLICY_CACHE_INVALID            = m(3254, Level.INFO, "Policy \"{0}\" (#{1}) is invalid: {2}");
     public static final M POLICY_CACHE_UNLICENSED         = m(3255, Level.WARNING,  "Policy \"{0}\" (#{1}) contains an unlicensed assertion: {2}");
 
+    // WSS Processing (and decorating) messaes
+    public static final M WSS_WRONG_SIGNING_TOKEN         = m(3300, Level.INFO, "Element was signed, but tokens were gathered as credentials and the signing token did not match any of them"); // bug 9830
+    public static final M WSS_DIFFERENT_SIGNATURE         = m(3301, Level.INFO, "Element was signed, but by a different signature");
+
      // MAX -                                                  m(3499
 }

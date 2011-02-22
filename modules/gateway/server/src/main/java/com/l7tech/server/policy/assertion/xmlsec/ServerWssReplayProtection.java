@@ -180,7 +180,8 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                     assertion.getIdentityTarget(),
                     false, // Not checking signing token in case this assertion occurs before the credential assertion
                     relatedRequestMessage,
-                    relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage ) );
+                    relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage ),
+                    auditor);
         for (SignedElement signedElement : signedElements) {
             Element el = signedElement.asElement();
             if (DomUtils.elementInNamespace(el, SoapConstants.WSA_NAMESPACE_ARRAY) && SoapConstants.MESSAGEID_EL_NAME.equals(el.getLocalName())) {

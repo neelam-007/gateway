@@ -111,7 +111,8 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
                         elements.toArray(new ParsedElement[elements.size()]),
                         requireCredentialSigningToken,
                         relatedRequestMessage,
-                        relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage )) ) {
+                        relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage ),
+                        auditor)) {
                     auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
                     return getBadMessageStatus();
                 }

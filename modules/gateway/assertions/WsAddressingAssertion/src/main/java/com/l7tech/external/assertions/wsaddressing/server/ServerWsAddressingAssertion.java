@@ -307,7 +307,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 assertion.getIdentityTarget(),
                 requireCredentialSigningToken,
                 relatedRequestMessage,
-                relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage ) );
+                relatedRequestMessage==null ? null : context.getAuthenticationContext( relatedRequestMessage ),
+                auditor );
     }
 
     /**
