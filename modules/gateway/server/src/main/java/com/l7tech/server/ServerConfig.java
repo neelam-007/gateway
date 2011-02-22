@@ -232,7 +232,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS = "wss.processor.allowUnknownBinarySecurityTokens";
     public static final String PARAM_WSS_DECORATOR_MUSTUNDERSTAND = "wss.decorator.mustUnderstand";
     public static final String PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION = "wss.processor.strictSignatureConfirmationValidation";
-    public static final String  PARAM_WSS_PROCESSOR_LAZY_REQUEST = "wss.processor.enableLazyRequestProcessing";
+    public static final String  PARAM_WSS_PROCESSOR_LAZY_REQUEST = "wss.processor.enableDeferredRequestProcessing";
 
     public static final String PARAM_LOGON_WARNING_BANNER = "logon.warningBanner";
 
