@@ -20,15 +20,16 @@ import java.util.ArrayList;
 public class CsrfProtectionAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<CsrfProtectionAssertion> {
     private JPanel mainPanel;
     private JCheckBox enableDoubleSubmitCookieCheckBox;
-    private JPanel doubleSubmitCookiesSettingsPanel;
+    private JLabel cookieNameLabel;
     private JTextField cookieNameField;
+    private JLabel parameterNameLabel;
     private JTextField httpParameterNameField;
     private JComboBox httpParameterTypeComboBox;
     private JCheckBox enableHttpRefererValidationCheckBox;
-    private JPanel httpRefererValidationSettingsPanel;
+    private JLabel refererOptionsLabel;
     private JCheckBox allowEmptyValuesCheckBox;
+    private JLabel validDomainsLabel;
     private JComboBox validDomainsComboBox;
-    private JPanel trustedDomainsPanel;
     private JList validDomainsList;
     private DefaultListModel validDomainsListModel;
     private JButton addDomainButton;
@@ -50,7 +51,7 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
     protected void initComponents() {
         enableDoubleSubmitCookieCheckBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                doubleSubmitCookiesSettingsPanel.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
+                enableDisableDoubleSubmitCookieControls();
             }
         });
 
@@ -58,14 +59,14 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
 
         enableHttpRefererValidationCheckBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                httpRefererValidationSettingsPanel.setEnabled(enableHttpRefererValidationCheckBox.isSelected());
+                enableDisableHttpRefererControls();
             }
         });
 
         validDomainsComboBox.setModel(new DefaultComboBoxModel(new String[] {"Current Domain", "List of Trusted Domains"}));
         validDomainsComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                trustedDomainsPanel.setEnabled(validDomainsComboBox.getSelectedIndex() > 0);
+                enableDisableHttpRefererControls();
             }
         });
 
@@ -107,6 +108,25 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
         });
 
         super.initComponents();
+    }
+
+    private void enableDisableDoubleSubmitCookieControls() {
+        cookieNameLabel.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
+        cookieNameField.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
+        parameterNameLabel.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
+        httpParameterNameField.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
+        httpParameterTypeComboBox.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
+    }
+
+    private void enableDisableHttpRefererControls() {
+        refererOptionsLabel.setEnabled(enableHttpRefererValidationCheckBox.isSelected());
+        allowEmptyValuesCheckBox.setEnabled(enableHttpRefererValidationCheckBox.isSelected());
+        validDomainsLabel.setEnabled(enableHttpRefererValidationCheckBox.isSelected());
+        validDomainsComboBox.setEnabled(enableHttpRefererValidationCheckBox.isSelected());
+        validDomainsList.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && validDomainsComboBox.getSelectedIndex() > 0);
+        addDomainButton.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && validDomainsComboBox.getSelectedIndex() > 0);
+        editDomainButton.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && validDomainsComboBox.getSelectedIndex() > 0);
+        removeDomainButton.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && validDomainsComboBox.getSelectedIndex() > 0);
     }
 
     @Override
