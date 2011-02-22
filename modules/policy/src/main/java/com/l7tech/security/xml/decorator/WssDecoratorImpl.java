@@ -390,8 +390,10 @@ public class WssDecoratorImpl implements WssDecorator {
 
         // note [bugzilla #2551] dont include a x509 BST if this is gonna use a sc context
         // note [bugzilla #3907] dont include a x509 BST if using kerberos
+        // note [bugzilla #9877] dont include a x509 BST if using EncryptedKey
         // don't include BST if adding encrypted username token
         if (c.dreq.getSenderMessageSigningCertificate() != null &&
+            c.dreq.getPreferredSigningTokenType() != DecorationRequirements.PreferredSigningTokenType.ENCRYPTED_KEY && 
             !signList.isEmpty() &&
             (c.dreq.getPreferredSigningTokenType() == DecorationRequirements.PreferredSigningTokenType.X509 ||
              (c.dreq.getSecureConversationSession() == null && c.dreq.getKerberosTicket() == null) ) &&
