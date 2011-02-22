@@ -250,7 +250,7 @@ public class SsgConnectorManagerImpl
 
     protected boolean looksLikeInterfaceTagName(String maybeTagname) {
         // It's an interface tag if's non empty and doesn't start with an ASCII digit
-        if (maybeTagname == null || maybeTagname.length() < 1)
+        if (maybeTagname == null || maybeTagname.length() < 1 || maybeTagname.contains(":"))
             return false;
         char initial = maybeTagname.charAt(0);
         return (!(initial >= '0' && initial <= '9'));
