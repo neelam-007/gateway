@@ -493,6 +493,7 @@ public class PathValidator {
             // it makes no sense to validate that an element is signed if we dont validate
             // that the authorized user is the one who signed it.
             if ( !seenWssSignature(a, targetName) &&
+                 !haveSeen("Request", ASSERTION_SECURECONVERSATION) &&
                  !haveSeen(targetName, ASSERTION_SECURECONVERSATION) &&
                  !seenSamlSecurity(a) &&
                  !haveSeen(targetName, ASSERTION_ENCRYPTEDUSERNAMETOKEN) &&
