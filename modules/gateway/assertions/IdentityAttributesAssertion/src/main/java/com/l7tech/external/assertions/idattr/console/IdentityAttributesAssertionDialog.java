@@ -16,7 +16,6 @@ import com.l7tech.objectmodel.AttributeHeader;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UsersOrGroups;
-import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -288,8 +287,7 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
         editButton.setEnabled(sel);
         removeButton.setEnabled(sel);
 
-        final String vp = variablePrefixField.getVariable();
-        okButton.setEnabled(!isReadOnly() && !mappings.isEmpty() && vp != null && vp.trim().length() > 0 && VariableMetadata.isNameValid(vp));
+        okButton.setEnabled(!isReadOnly() && !mappings.isEmpty() && variablePrefixField.isEntryValid());
     }
 
     private boolean edit(IdentityMapping im) {
