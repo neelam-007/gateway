@@ -84,6 +84,13 @@ public class AttributeVariableMapDialog extends JDialog {
             }
         });
 
+        validator.addRule(new InputValidator.ValidationRule(){
+            @Override
+            public String getValidationError(){
+                return variableName.getErrorMessage();    
+            }
+        });
+
         cancelButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
