@@ -43,7 +43,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
         try {
             requestKnob = context.getRequest().getHttpRequestKnob();
         } catch(IllegalStateException e) {
-            auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: The request was not an HTTP request, failing assertion.");
+            auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_REQUEST_NOT_HTTP);
             return AssertionStatus.FALSIFIED;
         }
 
@@ -55,7 +55,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                 for(HttpCookie cookie : cookies) {
                     if(assertion.getCookieName().equals(cookie.getCookieName())) {
                         if(cookieValue != null && !cookieValue.equals(cookie.getCookieValue())) {
-                            auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: Multiple cookie values were detected, failing assertion.");
+                            auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MULTIPLE_COOKIE_VALUES);
                             return AssertionStatus.FAILED;
                         } else {
                             cookieValue = cookie.getCookieValue();
@@ -64,36 +64,36 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                 }
 
                 if(cookieValue == null) {
-                    auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: No cookie value was detected, failing assertion.");
+                    auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_NO_COOKIE_VALUE);
                     return AssertionStatus.FAILED;
                 }
             } else {
-                auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: No cookie values were detected, failing assertion.");
+                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_NO_COOKIE_VALUE);
                 return AssertionStatus.FAILED;
             }
 
             // Try to get the parameter value
             String paramValue = null;
             if(assertion.getParameterType() == HttpParameterType.GET && requestKnob.getMethod() != HttpMethod.GET) {
-                auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: Looking for a GET parameter, but the request was not a GET request, failing assertion.");
+                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_WRONG_REQUEST_TYPE, "GET");
                 return AssertionStatus.FAILED;
             }
             if(assertion.getParameterType() == HttpParameterType.POST && requestKnob.getMethod() != HttpMethod.POST) {
-                auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: Looking for a POST parameter, but the request was not a POST request, failing assertion.");
+                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_WRONG_REQUEST_TYPE, "POST");
                 return AssertionStatus.FAILED;
             }
             String[] paramValues = requestKnob.getParameterValues(assertion.getParameterName());
             if(paramValues == null || paramValues.length == 0) {
-                auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: The parameter was not found, failing assertion.");
+                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_NO_PARAMETER);
                 return AssertionStatus.FAILED;
             } else if(paramValues.length > 1) {
-                auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: The parameter had more than one value, failing assertion.");
+                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MULTIPLE_PARAMETER_VALUES);
                 return AssertionStatus.FAILED;
             }
             paramValue = paramValues[0];
 
             if(!cookieValue.equals(paramValue)) {
-                auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: The parameter did not match the cookie value, failing assertion.");
+                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_COOKIE_PARAMETER_MISMATCH);
                 return AssertionStatus.FAILED;
             }
         }
@@ -103,11 +103,11 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
 
             String referer = null;
             if(!assertion.isAllowEmptyReferer() && (values == null || values.length == 0)) {
-                auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: The HTTP-Referer header was not provided but it is required, failing assertion.");
+                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MISSING_REFERER);
                 return AssertionStatus.FAILED;
             } else if(values != null && values.length > 0) {
                 if(values.length > 1) {
-                    auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: The HTTP-Referer header was provided multiple times, failing assertion.");
+                    auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MULTIPLE_REFERERS);
                     return AssertionStatus.FAILED;
                 }
 
@@ -121,7 +121,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                     URL url = new URL(requestKnob.getRequestURL(), referer);
                     domain = url.getHost();
                 } catch(MalformedURLException e) {
-                    auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: The HTTP-Referer header was not a valid URL, failing assertion.");
+                    auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER);
                     return AssertionStatus.FAILED;
                 }
 
@@ -129,7 +129,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                     String localDomain = requestKnob.getRequestURL().getHost();
 
                     if(!localDomain.equals(domain)) {
-                        auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: The HTTP-Referer header valid was not valid, failing assertion.");
+                        auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER);
                         return AssertionStatus.FAILED;
                     }
                 } else {
@@ -142,7 +142,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                     }
 
                     if(!valid) {
-                        auditor.logAndAudit(AssertionMessages.USERDETAIL_WARNING, "CSRF Protection: The HTTP-Referer header was not valid, failing assertion.");
+                        auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER);
                         return AssertionStatus.FAILED;
                     }
                 }
