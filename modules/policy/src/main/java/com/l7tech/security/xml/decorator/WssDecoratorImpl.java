@@ -404,7 +404,7 @@ public class WssDecoratorImpl implements WssDecorator {
             !signList.isEmpty() &&
             (c.dreq.getPreferredSigningTokenType() == DecorationRequirements.PreferredSigningTokenType.X509 ||
              (c.dreq.getSecureConversationSession() == null && c.dreq.getKerberosTicket() == null) ) &&
-            !c.dreq.isEncryptUsernameToken() )
+            (!c.dreq.isEncryptUsernameToken() || c.dreq.getPreferredSigningTokenType() == DecorationRequirements.PreferredSigningTokenType.X509 ) )
         {
             final X509Certificate senderMessageSigningCert = c.dreq.getSenderMessageSigningCertificate();
             switch(c.dreq.getKeyInfoInclusionType()) {

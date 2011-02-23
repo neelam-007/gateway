@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.security.xml;
 
 import com.l7tech.common.TestDocuments;
@@ -39,6 +36,7 @@ import org.junit.Test;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -60,7 +58,6 @@ import static org.junit.Assert.*;
  * For tests that actually look at the output to see if it makes sense, see WssRoundTripTest.
  *
  * @author mike
- * @noinspection RedundantCast
  */
 public class WssDecoratorTest {
     private static Logger log = Logger.getLogger(WssDecoratorTest.class.getName());
@@ -224,13 +221,50 @@ public class WssDecoratorTest {
     }
 
     private WssDecorator.DecorationResult runTest(final TestDocument d) throws Exception {
+        return runTest( d, null );
+    }
+
+    private WssDecorator.DecorationResult runTest(final TestDocument d, final Functions.UnaryVoid<Document> verifier) throws Exception {
         WssDecorator decorator = new WssDecoratorImpl();
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
 
         WssDecorator.DecorationResult results = decorator.decorateMessage(new Message(d.c.message,0), d.req);
 
         log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
+
+        if ( verifier != null ) {
+            verifier.call( d.c.message );
+        }
+
         return results;
+    }
+
+    /**
+     * Simple verifier for some basic checks
+     */
+    private Functions.UnaryVoid<Document> verifier( final boolean bst,
+                                                    final int derivedKeys,
+                                                    final boolean signature ) {
+        return new Functions.UnaryVoid<Document>() {
+            @Override
+            public void call( final Document document ) {
+                final Element securityHeader;
+                try {
+                    securityHeader = SoapUtil.getSecurityElementForL7( document );
+                } catch ( InvalidDocumentFormatException e ) {
+                    throw ExceptionUtils.wrap( e );
+                }
+                final int bstCount = XmlUtil.findChildElementsByName( securityHeader, SoapConstants.WS_SECURITY_NAMESPACE_LIST.toArray(new String[SoapConstants.WS_SECURITY_NAMESPACE_LIST.size()]), "BinarySecurityToken" ).size();
+                final int derivedKeyCount = XmlUtil.findChildElementsByName( securityHeader, SoapConstants.WSSC_NAMESPACE_ARRAY, "DerivedKeyToken" ).size();
+                final int signatureCount = XmlUtil.findChildElementsByName( securityHeader, SoapConstants.DIGSIG_URI, "Signature" ).size();
+
+                assertTrue("Message does not contain the expected BinarySecurityToken", !bst || bstCount>0);
+                assertTrue("Message contains an unexpected BinarySecurityToken", bst || bstCount==0);
+                assertEquals("Derived key count", derivedKeys, derivedKeyCount);
+                assertTrue("Message does not contain the expected Signature", !signature || signatureCount>0);
+                assertTrue("Message contains an unexpected Signature", signature || signatureCount==0);
+            }
+        };
     }
 
     @Test
@@ -274,7 +308,7 @@ public class WssDecoratorTest {
         final String privUri = "http://example.com/ws/security/stuff";
         Element privateStuff = c.message.createElementNS(privUri, "privateStuff");
         privateStuff.setPrefix("priv");
-        privateStuff.setAttribute("xmlns:priv", privUri);
+        privateStuff.setAttributeNS( XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:priv", privUri);
         sec.appendChild(privateStuff);
 
         return new TestDocument(c,
@@ -999,7 +1033,7 @@ public class WssDecoratorTest {
 
     @Test
 	public void testEncryptedUsernameToken() throws Exception {
-        runTest(getEncryptedUsernameTokenTestDocument());
+        runTest(getEncryptedUsernameTokenTestDocument(), verifier( false, 0, true ) );
     }
 
     public TestDocument getEncryptedUsernameTokenTestDocument() throws Exception {
@@ -1019,7 +1053,7 @@ public class WssDecoratorTest {
 
     @Test
 	public void testSignedAndEncryptedUsernameToken() throws Exception {
-        runTest(getSignedAndEncryptedUsernameTokenTestDocument());
+        runTest(getSignedAndEncryptedUsernameTokenTestDocument(), verifier( false, 0, true ) );
     }
 
     public TestDocument getSignedAndEncryptedUsernameTokenTestDocument() throws Exception {
@@ -1038,7 +1072,7 @@ public class WssDecoratorTest {
 
     @Test
 	public void testSignedUsernameToken() throws Exception {
-        runTest(getSignedUsernameTokenTestDocument());
+        runTest(getSignedUsernameTokenTestDocument(), verifier( false, 0, true ) );
     }
 
     public TestDocument getSignedUsernameTokenTestDocument() throws Exception {
@@ -1067,7 +1101,7 @@ public class WssDecoratorTest {
 
     @Test
 	public void testEncryptedUsernameTokenWithDerivedKeys() throws Exception {
-        runTest(getEncryptedUsernameTokenWithDerivedKeysTestDocument());
+        runTest(getEncryptedUsernameTokenWithDerivedKeysTestDocument(), verifier( false, 2, true ) );
     }
 
     public TestDocument getEncryptedUsernameTokenWithDerivedKeysTestDocument() throws Exception {
@@ -1088,7 +1122,7 @@ public class WssDecoratorTest {
     @Test
     @BugNumber(9802)
 	public void testSignedAndEncryptedUsernameTokenWithEncryptedSignature() throws Exception {
-        runTest(getSignedAndEncryptedUsernameTokenWithEncryptedSignatureTestDocument());
+        runTest(getSignedAndEncryptedUsernameTokenWithEncryptedSignatureTestDocument(), verifier( false, 0, false ) );
     }
 
     public TestDocument getSignedAndEncryptedUsernameTokenWithEncryptedSignatureTestDocument() throws Exception {
@@ -1105,6 +1139,17 @@ public class WssDecoratorTest {
                 false, true);
         td.req.setEncryptSignature(true);
         return td;
+    }
+
+    @Test
+    @BugNumber(9906)
+    public void testSignedAndEncryptedUsernameTokenX509Signature() throws Exception {
+        final TestDocument testDoc = getSignedAndEncryptedUsernameTokenTestDocument();
+        testDoc.req.setSenderMessageSigningCertificate( TestDocuments.getEttkClientCertificate() );
+        testDoc.req.setSenderMessageSigningPrivateKey( TestDocuments.getEttkClientPrivateKey() );
+        testDoc.req.setPreferredSigningTokenType( DecorationRequirements.PreferredSigningTokenType.X509 );
+        testDoc.req.setKeyInfoInclusionType( KeyInfoInclusionType.CERT );
+        runTest(testDoc, verifier( true, 0, true ) );
     }
 
     @Test
@@ -1126,14 +1171,14 @@ public class WssDecoratorTest {
 
         TestDocument testDocument =
                 new TestDocument(c,
-                                 (Element)null,
-                                 (X509Certificate)null,
-                                 (PrivateKey)null,
-                                 (X509Certificate)null,
-                                 (PrivateKey)null,
+                                 null,
+                                 null,
+                                 null,
+                                 null,
+                                 null,
                                  true,
                                  new Element[]{c.body},
-                                 (String)null,
+                                 null,
                                  new Element[]{c.body},
                                  keyBytes,
                                  false,
@@ -1151,23 +1196,23 @@ public class WssDecoratorTest {
         final Context c = new Context();
         TestDocument td =
             new TestDocument(c,
-                            (Element)null,
-                            (X509Certificate)null,
-                            (PrivateKey)null,
+                            null,
+                            null,
+                            null,
                             TestDocuments.getDotNetServerCertificate(),
                             TestDocuments.getDotNetServerPrivateKey(),
                             true,
-                            (Element[])null,
-                            (String)null,
+                            null,
+                            null,
                             new Element[]{c.body},
-                            (byte[])null,
+                            null,
                             false,
                             KeyInfoInclusionType.CERT,
                             false,
-                            (String)null,
+                            null,
                             new String[]{null},
-                            (String)null,
-                            (UsernameToken)null,
+                            null,
+                            null,
                             false,
                             false);
         td.req.setKeyEncryptionAlgorithm(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO_2);
@@ -1244,13 +1289,13 @@ public class WssDecoratorTest {
         final Context c = new Context();
         TestDocument td =
                 new TestDocument(c,
-                        (Element)null,
-                        (X509Certificate)TestDocuments.getEttkClientCertificate(),
-                        (PrivateKey)TestDocuments.getEttkClientPrivateKey(),
-                        (X509Certificate)TestDocuments.getDotNetServerCertificate(),
-                        (PrivateKey)TestDocuments.getDotNetServerPrivateKey(),
+                        null,
+                        TestDocuments.getEttkClientCertificate(),
+                        TestDocuments.getEttkClientPrivateKey(),
+                        TestDocuments.getDotNetServerCertificate(),
+                        TestDocuments.getDotNetServerPrivateKey(),
                         true, new Element[]{ c.body },
-                        (String)null, new Element[]{ c.body },
+                        null, new Element[]{ c.body },
                         null, false,
                         KeyInfoInclusionType.CERT,
                         false, null, null,
