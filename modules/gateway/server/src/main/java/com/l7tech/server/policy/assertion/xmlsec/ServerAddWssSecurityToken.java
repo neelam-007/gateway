@@ -162,6 +162,10 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
         dreq.setSenderSamlToken(samlAssertion, assertion.isProtectTokens());
         dreq.setSenderMessageSigningPrivateKey(addWssSignatureSupport.getSignerInfo().getPrivate());
 
+        if (samlAssertion.isHolderOfKey()) {
+            dreq.setPreferredSigningTokenType(DecorationRequirements.PreferredSigningTokenType.SAML_HOK);
+        }
+
         if (samlAssertion.hasSubjectConfirmationEncryptedKey()) {
             // To use this assertion for decoration we'll need to either already have its secret key or else be able to unwrap it
             EncryptedKey encryptedKey = null;

@@ -272,6 +272,12 @@ public class WssDecoratorImpl implements WssDecorator {
                         addedEncKeyXmlEncKey = addedEncKeyXmlEncKeyHolder[0];
                         break;
 
+                    case SAML_HOK:
+                        if (saml == null)
+                            throw new DecoratorException("Signing is requested with SAML HoK as preferred signing token type, but no SAML token was provided");
+                        signatureInfo = processSamlSigningToken( dreq, signList, saml, samlElement );
+                        break;
+
                     default:
                         throw new DecoratorException("Signing is requested, but there is no key available.");
                 }
@@ -393,7 +399,8 @@ public class WssDecoratorImpl implements WssDecorator {
         // note [bugzilla #9877] dont include a x509 BST if using EncryptedKey
         // don't include BST if adding encrypted username token
         if (c.dreq.getSenderMessageSigningCertificate() != null &&
-            c.dreq.getPreferredSigningTokenType() != DecorationRequirements.PreferredSigningTokenType.ENCRYPTED_KEY && 
+            c.dreq.getPreferredSigningTokenType() != DecorationRequirements.PreferredSigningTokenType.ENCRYPTED_KEY &&
+            c.dreq.getPreferredSigningTokenType() != DecorationRequirements.PreferredSigningTokenType.SAML_HOK &&
             !signList.isEmpty() &&
             (c.dreq.getPreferredSigningTokenType() == DecorationRequirements.PreferredSigningTokenType.X509 ||
              (c.dreq.getSecureConversationSession() == null && c.dreq.getKerberosTicket() == null) ) &&

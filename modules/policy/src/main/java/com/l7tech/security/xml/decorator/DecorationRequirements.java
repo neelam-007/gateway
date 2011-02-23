@@ -830,7 +830,7 @@ public class DecorationRequirements {
         return securityHeaderMustUnderstand;
     }
 
-    public enum PreferredSigningTokenType { X509, ENCRYPTED_KEY  } // currently only X509 or EncryptedKey can be preferred
+    public enum PreferredSigningTokenType { X509, ENCRYPTED_KEY, SAML_HOK  } // currently only X509, EncryptedKey, or SAML Holder-of-key can be preferred
 
     /**
      * Get the preferred signing token type if any.

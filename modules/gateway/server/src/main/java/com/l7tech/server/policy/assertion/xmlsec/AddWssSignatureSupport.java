@@ -168,7 +168,8 @@ public class AddWssSignatureSupport implements AuditHaver {
         }
 
         if ( isPreferred ) {
-            wssReq.setPreferredSigningTokenType(DecorationRequirements.PreferredSigningTokenType.X509);
+            if (wssReq.getPreferredSigningTokenType() == null)
+                wssReq.setPreferredSigningTokenType(DecorationRequirements.PreferredSigningTokenType.X509);
             wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
             wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
         } else if ((wssReq.getEncryptedKeyReferenceInfo() == null || wssReq.getEncryptedKey() == null)
