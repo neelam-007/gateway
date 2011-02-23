@@ -360,6 +360,11 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     @Override
+    public ResolutionReport generateResolutionReportForNewService( final PublishedService service, final Collection<ServiceDocument> serviceDocuments ) throws FindException {
+        throw new FindException("Not implemented");
+    }
+
+    @Override
     public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         return asyncSupport.getJobStatus(jobId);
     }

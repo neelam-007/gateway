@@ -672,6 +672,12 @@ public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
                 conflictInformation.toArray(new ConflictInfo[conflictInformation.size()]) );
     }
 
+    @Override
+    public ResolutionReport generateResolutionReportForNewService( final PublishedService service, final Collection<ServiceDocument> serviceDocuments ) throws FindException {
+        if ( service.getOid() != PublishedService.DEFAULT_OID ) throw new FindException("Service must not be persistant");
+        return generateResolutionReport( service, serviceDocuments==null ? Collections.<ServiceDocument>emptyList() : serviceDocuments );
+    }
+
     /**
      * Parse the String service ID to long (database format)
      *

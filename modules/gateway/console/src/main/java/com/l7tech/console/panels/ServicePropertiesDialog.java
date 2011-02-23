@@ -625,7 +625,10 @@ public class ServicePropertiesDialog extends JDialog {
     public static boolean hasResolutionConflict( final PublishedService subject,
                                                  final Collection<ServiceDocument> subjectDocuments ) {
         try {
-            return !subject.isDisabled() && !Registry.getDefault().getServiceManager().generateResolutionReport( subject, subjectDocuments ).isSuccess();
+            final ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
+            return !subject.isDisabled() && 
+                    ((subject.getOid()!=PublishedService.DEFAULT_OID && !serviceManager.generateResolutionReport( subject, subjectDocuments ).isSuccess() ) ||
+                     (subject.getOid()==PublishedService.DEFAULT_OID && !serviceManager.generateResolutionReportForNewService( subject, subjectDocuments ).isSuccess()));
         } catch ( FindException e ) {
             logger.log( Level.WARNING, "Error checking for service resolution conflict" );
         }
