@@ -1,6 +1,18 @@
 <wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
     <wsp:All wsp:Usage="Required">
         <L7p:AuditAssertion/>
+        <L7p:SetVariable>
+            <L7p:AssertionComment assertionComment="included">
+                <L7p:Properties mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="RIGHT.COMMENT"/>
+                        <L7p:value stringValue="// Default: Response decoration is disabled."/>
+                    </L7p:entry>
+                </L7p:Properties>
+            </L7p:AssertionComment>
+            <L7p:Base64Expression stringValue="ZmFsc2U="/>
+            <L7p:VariableToSet stringValue="Flag_Enable_Response_Decoration"/>
+        </L7p:SetVariable>
         <wsp:All wsp:Usage="Required">
             <wsp:OneOrMore wsp:Usage="Required">
                 <wsp:All wsp:Usage="Required">
@@ -76,6 +88,10 @@
                             </L7p:XpathExpression>
                         </L7p:RequireWssSignedElement>
                     </wsp:OneOrMore>
+                    <L7p:SetVariable>
+                        <L7p:Base64Expression stringValue="dHJ1ZQ=="/>
+                        <L7p:VariableToSet stringValue="Flag_Enable_Response_Decoration"/>
+                    </L7p:SetVariable>
                     <L7p:assertionComment>
                         <L7p:Properties mapValue="included">
                             <L7p:entry>
@@ -98,6 +114,10 @@
                             <L7p:RequireClientAuthentication booleanValue="true"/>
                         </L7p:SslAssertion>
                     </wsp:OneOrMore>
+                    <L7p:SetVariable>
+                        <L7p:Base64Expression stringValue="ZmFsc2U="/>
+                        <L7p:VariableToSet stringValue="Flag_Enable_Response_Decoration"/>
+                    </L7p:SetVariable>
                     <L7p:assertionComment>
                         <L7p:Properties mapValue="included">
                             <L7p:entry>
@@ -109,7 +129,7 @@
                 </wsp:All>
             </wsp:OneOrMore>
             <L7p:CommentAssertion>
-                <L7p:Comment stringValue="Add any extra authentication assertions into the &quot;At least one ...&quot; Folder below"/>
+                <L7p:Comment stringValue="Add any other authentication assertions as needed into the &quot;At least one ...&quot; assertion below"/>
             </L7p:CommentAssertion>
             <wsp:OneOrMore wsp:Usage="Required">
                 <L7p:Authentication>
@@ -410,67 +430,103 @@
             </L7p:AssertionComment>
             <L7p:Base64ResponseBody stringValue="JHtyZXNwb25zZUJ1aWxkZXIucnN0clJlc3BvbnNlLm1haW5wYXJ0fQ=="/>
         </L7p:HardcodedResponse>
-        <wsp:All wsp:Usage="Required">
-            <L7p:CommentAssertion>
-                <L7p:Comment stringValue="Add, remove, or modify decoration requirements as needed"/>
-            </L7p:CommentAssertion>
-            <L7p:WssSignElement>
-                <L7p:XpathExpression xpathExpressionValue="included">
-                    <L7p:Expression stringValue="/*[local-name()='Envelope']/*[local-name()='Body']"/>
-                    <L7p:Namespaces mapValue="included">
-                        <L7p:entry>
-                            <L7p:key stringValue="wsp"/>
-                            <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
-                        </L7p:entry>
-                        <L7p:entry>
-                            <L7p:key stringValue="soapenv"/>
-                            <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
-                        </L7p:entry>
-                        <L7p:entry>
-                            <L7p:key stringValue="tns"/>
-                            <L7p:value stringValue="http://tempuri.org/"/>
-                        </L7p:entry>
-                        <L7p:entry>
-                            <L7p:key stringValue="s12"/>
-                            <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
-                        </L7p:entry>
-                        <L7p:entry>
-                            <L7p:key stringValue="xsd"/>
-                            <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
-                        </L7p:entry>
-                        <L7p:entry>
-                            <L7p:key stringValue="L7p"/>
-                            <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
-                        </L7p:entry>
-                        <L7p:entry>
-                            <L7p:key stringValue="xsi"/>
-                            <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
-                        </L7p:entry>
-                    </L7p:Namespaces>
-                </L7p:XpathExpression>
-            </L7p:WssSignElement>
-            <L7p:WssEncryptElement>
-                <L7p:XEncAlgorithm stringValue="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/>
-                <L7p:XpathExpression xpathExpressionValue="included">
-                    <L7p:Expression stringValue="/*[local-name()='Envelope']/*[local-name()='Body']"/>
-                    <L7p:Namespaces mapValue="included">
-                        <L7p:entry>
-                            <L7p:key stringValue="s"/>
-                            <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
-                        </L7p:entry>
-                    </L7p:Namespaces>
-                </L7p:XpathExpression>
-            </L7p:WssEncryptElement>
-            <L7p:WssConfiguration>
-                <L7p:EncryptSignature booleanValue="true"/>
-                <L7p:SignWsAddressingHeaders booleanValue="true"/>
-                <L7p:UseDerivedKeys booleanValue="true"/>
-            </L7p:WssConfiguration>
-            <L7p:WsSecurity>
-                <L7p:ClearDecorationRequirements booleanValue="true"/>
-                <L7p:Target target="RESPONSE"/>
-                <L7p:UseSecurityHeaderMustUnderstand booleanValue="false"/>
-            </L7p:WsSecurity>
+        <wsp:OneOrMore wsp:Usage="Required">
+            <wsp:All wsp:Usage="Required">
+                <L7p:ComparisonAssertion>
+                    <L7p:AssertionComment assertionComment="included">
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="Check If RSTR Response Decoration Enabled Or Disabled"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:AssertionComment>
+                    <L7p:CaseSensitive booleanValue="false"/>
+                    <L7p:Expression1 stringValue="${Flag_Enable_Response_Decoration}"/>
+                    <L7p:Operator operatorNull="null"/>
+                    <L7p:Predicates predicates="included">
+                        <L7p:item dataType="included">
+                            <L7p:Type variableDataType="string"/>
+                        </L7p:item>
+                        <L7p:item binary="included">
+                            <L7p:CaseSensitive booleanValue="false"/>
+                            <L7p:RightValue stringValue="true"/>
+                        </L7p:item>
+                    </L7p:Predicates>
+                </L7p:ComparisonAssertion>
+                <wsp:All wsp:Usage="Required">
+                    <L7p:CommentAssertion>
+                        <L7p:Comment stringValue="Add, remove, or modify decoration requirements as needed"/>
+                    </L7p:CommentAssertion>
+                    <L7p:WssSignElement>
+                        <L7p:XpathExpression xpathExpressionValue="included">
+                            <L7p:Expression stringValue="/*[local-name()='Envelope']/*[local-name()='Body']"/>
+                            <L7p:Namespaces mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="wsp"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                                </L7p:entry>
+                                <L7p:entry>
+                                    <L7p:key stringValue="soapenv"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                                </L7p:entry>
+                                <L7p:entry>
+                                    <L7p:key stringValue="tns"/>
+                                    <L7p:value stringValue="http://tempuri.org/"/>
+                                </L7p:entry>
+                                <L7p:entry>
+                                    <L7p:key stringValue="s12"/>
+                                    <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                                </L7p:entry>
+                                <L7p:entry>
+                                    <L7p:key stringValue="xsd"/>
+                                    <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                                </L7p:entry>
+                                <L7p:entry>
+                                    <L7p:key stringValue="L7p"/>
+                                    <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
+                                </L7p:entry>
+                                <L7p:entry>
+                                    <L7p:key stringValue="xsi"/>
+                                    <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                                </L7p:entry>
+                            </L7p:Namespaces>
+                        </L7p:XpathExpression>
+                    </L7p:WssSignElement>
+                    <L7p:WssEncryptElement>
+                        <L7p:XEncAlgorithm stringValue="http://www.w3.org/2001/04/xmlenc#aes256-cbc"/>
+                        <L7p:XpathExpression xpathExpressionValue="included">
+                            <L7p:Expression stringValue="/*[local-name()='Envelope']/*[local-name()='Body']"/>
+                            <L7p:Namespaces mapValue="included">
+                                <L7p:entry>
+                                    <L7p:key stringValue="s"/>
+                                    <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                                </L7p:entry>
+                            </L7p:Namespaces>
+                        </L7p:XpathExpression>
+                    </L7p:WssEncryptElement>
+                    <L7p:WssConfiguration>
+                        <L7p:EncryptSignature booleanValue="true"/>
+                        <L7p:ProtectTokens booleanValue="false"/>
+                        <L7p:SignWsAddressingHeaders booleanValue="true"/>
+                        <L7p:UseDerivedKeys booleanValue="true"/>
+                    </L7p:WssConfiguration>
+                    <L7p:WsSecurity>
+                        <L7p:ClearDecorationRequirements booleanValue="true"/>
+                        <L7p:Target target="RESPONSE"/>
+                        <L7p:UseSecurityHeaderMustUnderstand booleanValue="false"/>
+                    </L7p:WsSecurity>
+                    <L7p:assertionComment>
+                        <L7p:Properties mapValue="included">
+                            <L7p:entry>
+                                <L7p:key stringValue="LEFT.COMMENT"/>
+                                <L7p:value stringValue="Decorate RSTR Response"/>
+                            </L7p:entry>
+                        </L7p:Properties>
+                    </L7p:assertionComment>
+                </wsp:All>
+            </wsp:All>
+            <L7p:TrueAssertion/>
             <L7p:assertionComment>
                 <L7p:Properties mapValue="included">
                     <L7p:entry>
@@ -479,6 +535,6 @@
                     </L7p:entry>
                 </L7p:Properties>
             </L7p:assertionComment>
-        </wsp:All>
+        </wsp:OneOrMore>
     </wsp:All>
 </wsp:Policy>
