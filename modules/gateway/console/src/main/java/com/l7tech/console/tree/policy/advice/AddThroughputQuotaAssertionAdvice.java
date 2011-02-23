@@ -40,9 +40,10 @@ public class AddThroughputQuotaAssertionAdvice implements Advice {
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 // check that user oked this dialog
-                if (dlg.wasOKed())
+                if (dlg.wasOKed()) {
                     dlg.getData(subject);
                     pc.proceed();
+                }
             }
         });
     }
