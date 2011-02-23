@@ -34,7 +34,7 @@ public class SelectElementAssertionPropertiesDialog extends NonSoapSecurityAsser
         variableNameField.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent e) {
-                getOkButton().setEnabled(!isReadOnly() && variableNameField.isEntryValid());
+                getOkButton().setEnabled(!isReadOnly() && variableNameField.isEntryValid() && inputsValid());
             }
         });
     }

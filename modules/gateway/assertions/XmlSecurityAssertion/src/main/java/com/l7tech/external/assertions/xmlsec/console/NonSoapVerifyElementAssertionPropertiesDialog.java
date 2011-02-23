@@ -280,7 +280,7 @@ public class NonSoapVerifyElementAssertionPropertiesDialog extends NonSoapSecuri
         boolean canOk =
                 (certSelectRadioButton.isSelected() && !selectedCertificateNameTextField.getText().isEmpty()) ||
                 (certLookupRadioButton.isSelected() && !lookupCertificateTextField.getText().isEmpty()) ||
-                (certExpectKeyInfoRadioButton.isSelected());
+                (certExpectKeyInfoRadioButton.isSelected())  && inputsValid();
 
         if (customIds && customIdAttrList.getModel().getSize() < 1)
             canOk = false;

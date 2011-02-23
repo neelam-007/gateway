@@ -60,7 +60,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
             variablePrefixTextField.addActionListener(new RunOnChangeListener(){
                 @Override
                 public void run() {
-                    getOkButton().setEnabled(!isReadOnly() && !variablePrefixTextField.isVisible());
+                    getOkButton().setEnabled(!isReadOnly() && inputsValid());
                 }
             });
         }
@@ -72,7 +72,7 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
             variablePrefixField.addChangeListener(new ChangeListener(){
                 @Override
                 public void stateChanged(ChangeEvent e) {
-                    getOkButton().setEnabled(!isReadOnly() && (!variablePrefixField.isVisible() || variablePrefixField.isEntryValid()));
+                    getOkButton().setEnabled(!isReadOnly() && inputsValid());
                 }
             });
 
@@ -177,5 +177,18 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
             hvp.setVariablePrefix(variablePrefix.length() < 1 ? null : variablePrefix);
         }
         return assertion;
+    }
+
+    // for child dialogs to check if OK button should be enabled
+    protected boolean inputsValid()
+    {
+        if(assertion instanceof NonSoapCheckVerifyResultsAssertion)
+        {
+            return !variablePrefixTextField.isVisible();
+        }
+        else
+        {
+            return (!variablePrefixField.isVisible() || variablePrefixField.isEntryValid());
+        }
     }
 }
