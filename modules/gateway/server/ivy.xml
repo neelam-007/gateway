@@ -43,7 +43,7 @@
         <!-- Dependencies -->
         <dependency org="com.l7tech.lib" name="layer7-sun-jaxws" rev="1.0" conf="core"/> <!-- should be before CXF in classpath -->
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" force="true" conf="core"/>
-        <dependency org="com.jscape" name="sftp" rev="8.6.0" force="true" conf="core"/>
+        <dependency org="com.jscape" name="sftp" rev="8.7.0" force="true" conf="core"/>
         <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.2.9" force="true" conf="core"/>
         <dependency org="commons-configuration" name="commons-configuration" rev="1.6" force="true" conf="core">
             <exclude org="commons-digester" module="commons-digester" name="*" type="*" ext="*" conf=""
