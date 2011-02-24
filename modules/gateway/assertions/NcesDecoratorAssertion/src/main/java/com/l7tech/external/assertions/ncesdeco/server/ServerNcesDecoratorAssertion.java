@@ -138,7 +138,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             addMessageId(doc, decoReq);
             addTimestamp(decoReq);
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)}, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.BAD_REQUEST;
         }
 
