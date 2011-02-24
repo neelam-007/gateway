@@ -39,8 +39,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSupport<JSONSchemaAssertion> {
-    private MonitorUrlPanel urlPanel;
-    private RegexWhiteListPanel fetchPanel;
 
     public JSONSchemaPropertiesDialog(final Window parent, final JSONSchemaAssertion assertion) {
         super(JSONSchemaAssertion.class, parent, assertion, true);
@@ -49,6 +47,10 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
     @Override
     public JSONSchemaAssertion getData(JSONSchemaAssertion assertion) throws ValidationException {
+
+        if ( !targetMessagePanel.isValidTarget() ) {
+            throw new ValidationException("Invalid Target Message: " + targetMessagePanel.check());
+        }
 
         final Object selectedItem = cbSchemaLocation.getSelectedItem();
         if(CONFIGURED_IN_ADVANCE.equals(selectedItem)){
@@ -380,6 +382,9 @@ public class JSONSchemaPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JPanel configuredInAdvancePanel;
     private JPanel monitorUrlPanel;
     private JPanel retrieveUrlPanel;
+
+    private MonitorUrlPanel urlPanel;
+    private RegexWhiteListPanel fetchPanel;
     private TargetMessagePanel targetMessagePanel = new TargetMessagePanel();
 
     private static final Logger logger = Logger.getLogger(JSONSchemaPropertiesDialog.class.getName());
