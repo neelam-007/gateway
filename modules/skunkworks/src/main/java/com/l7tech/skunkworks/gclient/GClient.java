@@ -85,7 +85,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        frame = new JFrame("GClient v0.9.4");
+        frame = new JFrame("GClient v0.9.5");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -684,6 +684,9 @@ public class GClient {
                                                      final Node node,
                                                      final String documentUrl,
                                                      final DocumentReferenceProcessor.ReferenceInfo referenceInfo ) {
+                                if ( referenceInfo.getReferenceUrl()==null ) {
+                                    return null; // e.g. namespace only XML Schema reference
+                                }
                                 return filename( referenceInfo.getReferenceUrl(), ".wsdl" );
                             }
                         } );
@@ -708,7 +711,11 @@ public class GClient {
 
         int queryIndex = filename.indexOf( '?' );
         if ( queryIndex > 0 ) {
+            final String query = filename.substring( queryIndex+1 );
             filename = filename.substring( 0, queryIndex );
+            if ( query.matches( ".*=[a-zA-Z0-9_\\-\\.]+" ) ) {
+                filename += query.substring( query.lastIndexOf( '=' )+1 );
+            }
         }
 
         int dirIndex = filename.lastIndexOf( '/' );
