@@ -100,54 +100,51 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
             return AssertionStatus.BAD_REQUEST;
         }
 
-        final ProcessorResult wssResult = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);
-        if (wssResult == null) {
-            // WssProcessorUtil.getWssResults() has already audited the message
-            return AssertionStatus.NOT_APPLICABLE;
-        }
-
         SamlAssertion saml = null;
         X509Certificate cert = null;
-        for (XmlSecurityToken token : wssResult.getXmlSecurityTokens()) {
-            if (token instanceof SamlAssertion) {
-                if (assertion.isSamlRequired()) {
-                    saml = (SamlAssertion)token;
-                }
-            } else  if (token instanceof X509SigningSecurityToken) {
-                X509SigningSecurityToken x509Token = (X509SigningSecurityToken)token;
-                if ( x509Token.isPossessionProved() ) {
-                    cert = x509Token.getMessageSigningCertificate();
-                }
-            }
-        }
-
         SigningSecurityToken samlSigner = null;
         SigningSecurityToken timestampSigner = null;
         SigningSecurityToken messageIdSigner = null;
         SigningSecurityToken bodySigner = null;
 
-        for (SignedElement signedElement : wssResult.getElementsThatWereSigned()) {
-            final SigningSecurityToken sst = signedElement.getSigningSecurityToken();
-            final Element el = signedElement.asElement();
-            if ( saml != null && saml.asElement().isEqualNode(el) ) {
-                if ( samlSigner != null ) {
-                    auditor.logAndAudit(AssertionMessages.NCESVALID_NO_SAML, what);
-                    return AssertionStatus.BAD_REQUEST;
+        final ProcessorResult wssResult = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);
+        if ( wssResult != null ) {
+            for (XmlSecurityToken token : wssResult.getXmlSecurityTokens()) {
+                if (token instanceof SamlAssertion) {
+                    if (assertion.isSamlRequired()) {
+                        saml = (SamlAssertion)token;
+                    }
+                } else  if (token instanceof X509SigningSecurityToken) {
+                    X509SigningSecurityToken x509Token = (X509SigningSecurityToken)token;
+                    if ( x509Token.isPossessionProved() ) {
+                        cert = x509Token.getMessageSigningCertificate();
+                    }
                 }
-                samlSigner = sst;
-            } else if ( isWsAddressingMessageID(el) ) {
-                if ( messageIdSigner != null ) {
-                    auditor.logAndAudit(AssertionMessages.NCESVALID_NO_MESSAGEID, what);
-                    return AssertionStatus.BAD_REQUEST;
-                }
-                messageIdSigner = sst;
-            } else if ( timestampSigner == null && wssResult.getTimestamp() != null && el == wssResult.getTimestamp().asElement() ) {
-                timestampSigner = sst;
-            } else if ( bodySigner==null ) {
-                try {
-                    if ( SoapUtil.isBody(el)) bodySigner = sst;
-                } catch ( InvalidDocumentFormatException e) {
-                    throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Can't find SOAP Body element", e);
+            }
+
+            for (SignedElement signedElement : wssResult.getElementsThatWereSigned()) {
+                final SigningSecurityToken sst = signedElement.getSigningSecurityToken();
+                final Element el = signedElement.asElement();
+                if ( saml != null && saml.asElement().isEqualNode(el) ) {
+                    if ( samlSigner != null ) {
+                        auditor.logAndAudit(AssertionMessages.NCESVALID_NO_SAML, what);
+                        return AssertionStatus.BAD_REQUEST;
+                    }
+                    samlSigner = sst;
+                } else if ( isWsAddressingMessageID(el) ) {
+                    if ( messageIdSigner != null ) {
+                        auditor.logAndAudit(AssertionMessages.NCESVALID_NO_MESSAGEID, what);
+                        return AssertionStatus.BAD_REQUEST;
+                    }
+                    messageIdSigner = sst;
+                } else if ( timestampSigner == null && wssResult.getTimestamp() != null && el == wssResult.getTimestamp().asElement() ) {
+                    timestampSigner = sst;
+                } else if ( bodySigner==null ) {
+                    try {
+                        if ( SoapUtil.isBody(el)) bodySigner = sst;
+                    } catch ( InvalidDocumentFormatException e) {
+                        throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Can't find SOAP Body element", e);
+                    }
                 }
             }
         }
