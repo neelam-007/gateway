@@ -278,6 +278,12 @@ public class WssDecoratorImpl implements WssDecorator {
                         signatureInfo = processSamlSigningToken( dreq, signList, saml, samlElement );
                         break;
 
+                    case SCT:
+                        if (sct == null)
+                            throw new DecoratorException("Signing is requested with WS-SecureConversation as preferred signing token type, but no security context was provided");
+                        signatureInfo = processSecureConversationSigningToken( dreq, c, securityHeader, signList, sct, session );
+                        break;
+
                     default:
                         throw new DecoratorException("Signing is requested, but there is no key available.");
                 }
@@ -398,9 +404,11 @@ public class WssDecoratorImpl implements WssDecorator {
         // note [bugzilla #3907] dont include a x509 BST if using kerberos
         // note [bugzilla #9877] dont include a x509 BST if using EncryptedKey
         // don't include BST if adding encrypted username token
+        // TODO refactor this if statement should the growth rate of its complexity come to exceed that of its comedic value
         if (c.dreq.getSenderMessageSigningCertificate() != null &&
             c.dreq.getPreferredSigningTokenType() != DecorationRequirements.PreferredSigningTokenType.ENCRYPTED_KEY &&
-            c.dreq.getPreferredSigningTokenType() != DecorationRequirements.PreferredSigningTokenType.SAML_HOK &&
+                c.dreq.getPreferredSigningTokenType() != DecorationRequirements.PreferredSigningTokenType.SAML_HOK &&
+                c.dreq.getPreferredSigningTokenType() != DecorationRequirements.PreferredSigningTokenType.SCT &&
             !signList.isEmpty() &&
             (c.dreq.getPreferredSigningTokenType() == DecorationRequirements.PreferredSigningTokenType.X509 ||
              (c.dreq.getSecureConversationSession() == null && c.dreq.getKerberosTicket() == null) ) &&

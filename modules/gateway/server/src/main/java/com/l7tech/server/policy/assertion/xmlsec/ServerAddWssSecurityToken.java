@@ -220,6 +220,7 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
         SecureConversationSession session = (SecureConversationSession) wsscVal;
         dreq.setSecureConversationSession(session);
         dreq.setOmitSecurityContextToken(assertion.isOmitSecurityContextToken());
+        dreq.setPreferredSigningTokenType(DecorationRequirements.PreferredSigningTokenType.SCT);
         return AssertionStatus.NONE;
     }
 
