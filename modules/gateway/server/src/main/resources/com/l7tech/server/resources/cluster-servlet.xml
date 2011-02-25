@@ -20,6 +20,8 @@
                 <value>[Ljava.lang.Class;</value>
                 <value>[Ljava.lang.Object;</value>
                 <value>java.lang.Class</value>
+                <value>java.lang.Integer</value>
+                <value>java.lang.Long</value>
                 <value>java.lang.String</value>
                 <value>java.util.Date</value>
                 <value>org.springframework.remoting.support.RemoteInvocation</value>
