@@ -378,16 +378,17 @@ public class SsgConnectorManagerImpl
     }
 
     private SsgConnector translateSsgConnectorBindAddress(SsgConnector ssgConnector) {
+        SsgConnector ret = ssgConnector.getCopy();
         try {
             String bindAddress = ssgConnector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
             if (looksLikeInterfaceTagName(bindAddress)) {
                 String translated = translateBindAddress(bindAddress, ssgConnector.getPort());
-                ssgConnector.putProperty(SsgConnector.PROP_BIND_ADDRESS, translated);
+                ret.putProperty(SsgConnector.PROP_BIND_ADDRESS, translated);
             }
         } catch (ListenerException e) {
             logger.log(Level.WARNING, "Unable to translate bind address while updating firewall rules: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
-        return ssgConnector;
+        return ret;
     }
 
     private void closeFirewallForConnectors() {

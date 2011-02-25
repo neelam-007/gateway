@@ -644,19 +644,25 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     }
 
     @Transient
-    public SsgConnector getReadOnlyCopy() {
+    public SsgConnector getCopy() {
         try {
             SsgConnector copy = new SsgConnector();
             BeanUtils.copyProperties(this, copy,
                                      BeanUtils.omitProperties(BeanUtils.getProperties(getClass()), "properties"));
             copy.setProperties(new HashMap<String, String>(getProperties()));
-            copy.setReadOnly();
             return copy;
         } catch (InvocationTargetException e) {
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Transient
+    public SsgConnector getReadOnlyCopy() {
+        SsgConnector copy = getCopy();
+        copy.setReadOnly();
+        return copy;
     }
 
     /** @noinspection RedundantIfStatement*/
