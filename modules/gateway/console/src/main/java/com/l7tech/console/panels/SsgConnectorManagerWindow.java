@@ -373,7 +373,7 @@ public class SsgConnectorManagerWindow extends JDialog {
     private static class ConnectorTableRow {
         private final SsgConnector connector;
 
-        public ConnectorTableRow(SsgConnector connector) {
+        private ConnectorTableRow(SsgConnector connector) {
             this.connector = connector;
         }
 
@@ -508,14 +508,14 @@ public class SsgConnectorManagerWindow extends JDialog {
                     }
                 },
 
-                new Col("Protocol", 3, 100, 150) {
+                new Col("Protocol", 3, 100, 999999) {
                     @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getProtocol();
                     }
                 },
 
-                new Col("Interface", 3, 88, 88) {
+                new Col("Interface", 3, 88, 999999) {
                     @Override
                     Object getValueForRow(ConnectorTableRow row) {
                         return row.getInterface();
@@ -531,9 +531,6 @@ public class SsgConnectorManagerWindow extends JDialog {
         };
 
         private final ArrayList<ConnectorTableRow> rows = new ArrayList<ConnectorTableRow>();
-
-        public ConnectorTableModel() {
-        }
 
         public int getColumnMinWidth(int column) {
             return columns[column].minWidth;
