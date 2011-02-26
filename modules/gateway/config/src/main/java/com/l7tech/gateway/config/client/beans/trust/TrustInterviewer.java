@@ -111,10 +111,10 @@ public class TrustInterviewer {
             trustedCertFactory.setConsumedInstances(inCertBeans.size());
 
             List<ConfigurationBean> inBeans = new ArrayList<ConfigurationBean>();
-            inBeans.add(new RemoteNodeManagementEnabled(enabled));
-            inBeans.add(trustedCertFactory);
             inBeans.add(new TypedConfigurableBean<String>( "host.controller.sslIpAddress", "Listener IP Address", "Valid inputs are any IP Address or * for all.", "localhost", listenIpAddr, OptionType.IP_ADDRESS ) );
             inBeans.add(new TypedConfigurableBean<Integer>( "host.controller.sslPort", "Listener Port", "Valid inputs are integers in the range 1024-65535.", 8765, Integer.parseInt(listenPort), OptionType.PORT, 1024, null ) );
+            inBeans.add(new RemoteNodeManagementEnabled(enabled));
+            inBeans.add(trustedCertFactory);
             inBeans.addAll(inCertBeans.keySet());
 
             ResourceBundle bundle = ResourceBundle.getBundle("com/l7tech/gateway/config/client/beans/trust/TrustInterviewerMessages");
