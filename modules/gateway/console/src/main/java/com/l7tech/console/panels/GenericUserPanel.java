@@ -816,6 +816,17 @@ public class GenericUserPanel extends UserPanel {
      * @return boolean indicating if the form fields are valid or not.
      */
     private boolean validateForm() {
+        if ( expireTimeChooser.isEnabled() && expireTimeChooser.getDate() == null ) {
+            DialogDisplayer.showMessageDialog(
+                    this,
+                    "Please enter a valid date for the account expiry.",
+                    "Invalid Account Expiry",
+                    JOptionPane.WARNING_MESSAGE,
+                    null,
+                    null );
+            return false;
+        }
+
         return true;
     }
 
