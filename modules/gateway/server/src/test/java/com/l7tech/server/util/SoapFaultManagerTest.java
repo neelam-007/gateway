@@ -8,6 +8,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
@@ -46,6 +47,8 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -473,6 +476,155 @@ public class SoapFaultManagerTest {
         assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, fault.getContentType() );
     }
 
+    /* Bug 9402 additional error detail for SOAP 1.1
+     * Malformed XML and Bad WS-S Dig Signature exceptions should
+     * return for FULL Detail and Medium Detail
+     */
+    @Test
+    public void testSoap11FullDetailExceptionExtraInfo() throws Exception {
+           AuditContextStub stub = new AuditContextStub();
+           PolicyEnforcementContext context = getSoap11PEC(false);
+           SoapFaultManager sfm = buildSoapFaultManager(stub);
+           addAuditInfoExtraDetail( stub );
+           SoapFaultLevel level = new SoapFaultLevel();
+           level.setLevel(SoapFaultLevel.FULL_TRACE_FAULT);
+           // ** new method for bug 9402
+           level.setAlwaysReturnSoapFault(true);
+           context.setFaultlevel(level);
+
+           final SoapFaultManager.FaultResponse faultInfo = sfm.constructExceptionFault( constructException(), level, context );
+           String fault = faultInfo.getContent();
+           NodeList elements = getL7AddInfoNodeElements(fault);
+
+           assertTrue("contains l7:additionalInfo element", elements.getLength() > 0);
+           for(int i = 0;i < elements.getLength();i++) {
+                Element element = (Element)elements.item(i);
+                NodeList detailElements = element.getElementsByTagName("l7:detailMessage");
+                assertNotNull(detailElements);
+                if (detailElements != null){
+                    for(int j = 0;j < detailElements.getLength();j++) {
+                        Element detailElement = (Element)detailElements.item(j);
+                        assertNotNull(detailElement);
+                        assertTrue(detailElement.getAttribute("id").contains( "3017" ) || detailElement.getAttribute("id").contains( "3022" ) || detailElement.getAttribute("id").contains( "3025" ));
+                    }
+
+                }
+            }
+
+
+           assertEquals( "Http Status", 500, faultInfo.getHttpStatus() );
+           assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, faultInfo.getContentType() );
+    }
+
+    /* Bug 9402 additional error detail for SOAP 1.2
+     * Malformed XML and Bad WS-S Dig Signature exceptions should
+     * return for FULL Detail and Medium Detail
+     */
+    @Test
+    public void testSoap12FullDetailExceptionExtraInfo() throws Exception {
+           AuditContextStub stub = new AuditContextStub();
+           PolicyEnforcementContext context = getSoap12PEC(false);
+           SoapFaultManager sfm = buildSoapFaultManager(stub);
+           addAuditInfoExtraDetail( stub );
+           SoapFaultLevel level = new SoapFaultLevel();
+           level.setLevel(SoapFaultLevel.FULL_TRACE_FAULT);
+           // ** new method for bug 9402
+           level.setAlwaysReturnSoapFault(true);
+           context.setFaultlevel(level);
+
+           final SoapFaultManager.FaultResponse faultInfo = sfm.constructExceptionFault( constructException(), level, context );
+           String fault = faultInfo.getContent();
+           NodeList elements = getL7AddInfoNodeElements(fault);
+           assertTrue("contains l7:additionalInfo element", elements.getLength() > 0);
+           for(int i = 0;i < elements.getLength();i++) {
+                Element element = (Element)elements.item(i);
+                NodeList detailElements = element.getElementsByTagName("l7:detailMessage");
+                assertNotNull(detailElements);
+                if (detailElements != null){
+                    for(int j = 0;j < detailElements.getLength();j++) {
+                        Element detailElement = (Element)detailElements.item(j);
+                        assertNotNull(detailElement);
+                        assertTrue(detailElement.getAttribute("id").contains( "3017" ) || detailElement.getAttribute("id").contains( "3022" ) || detailElement.getAttribute("id").contains( "3025" ));
+                    }
+
+                }
+            }
+           assertEquals( "Http Status", 500, faultInfo.getHttpStatus() );
+           assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, faultInfo.getContentType() );
+    }
+
+    /* Bug 9402 additional error detail for SOAP 1.1
+     * Malformed XML and Bad WS-S Dig Signature exceptions should
+     * NOT return for Generic Fault Detail
+     */
+    @Test
+    public void testSoap11GenericDetailExceptionExtraInfo() throws Exception {
+           AuditContextStub stub = new AuditContextStub();
+           PolicyEnforcementContext context = getSoap11PEC(false);
+           SoapFaultManager sfm = buildSoapFaultManager(stub);
+           addAuditInfoExtraDetail( stub );
+           SoapFaultLevel level = new SoapFaultLevel();
+           level.setLevel(SoapFaultLevel.GENERIC_FAULT);
+           // ** new method for bug 9402
+           level.setAlwaysReturnSoapFault(true);
+           context.setFaultlevel(level);
+
+           final SoapFaultManager.FaultResponse faultInfo = sfm.constructExceptionFault( constructException(), level, context );
+           String fault = faultInfo.getContent();
+           NodeList elements = getL7AddInfoNodeElements(fault);
+           assertFalse("doesn't contain l7:additionalInfo element", elements.getLength() > 0);
+           assertEquals( "Http Status", 500, faultInfo.getHttpStatus() );
+           assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, faultInfo.getContentType() );
+    }
+
+    /* Bug 9402 additional error detail for SOAP 1.2
+     * Malformed XML and Bad WS-S Dig Signature exceptions should
+     * NOT return for Generic Fault Detail
+     */
+    @Test
+    public void testSoap12GenericDetailExceptionExtraInfo() throws Exception {
+           AuditContextStub stub = new AuditContextStub();
+           PolicyEnforcementContext context = getSoap12PEC(false);
+           SoapFaultManager sfm = buildSoapFaultManager(stub);
+           addAuditInfoExtraDetail( stub );
+           SoapFaultLevel level = new SoapFaultLevel();
+           level.setLevel(SoapFaultLevel.GENERIC_FAULT);
+           // ** new method for bug 9402
+           level.setAlwaysReturnSoapFault(true);
+           context.setFaultlevel(level);
+
+           final SoapFaultManager.FaultResponse faultInfo = sfm.constructExceptionFault( constructException(), level, context );
+           String fault = faultInfo.getContent();
+           System.out.println(fault);
+            NodeList elements = getL7AddInfoNodeElements(fault);
+           assertFalse("doesn't contain l7:additionalInfo element", elements.getLength() > 0);
+           assertEquals( "Http Status", 500, faultInfo.getHttpStatus() );
+           assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, faultInfo.getContentType() );
+    }
+
+    /* Bug 9402 additional error detail for SOAP 1.2
+     * Malformed XML and Bad WS-S Dig Signature exceptions should
+     * NOT return for Generic Fault Detail
+     */
+    @Test
+    public void testSoap12MediumDetailNoExtraInfo() throws Exception {
+           AuditContextStub stub = new AuditContextStub();
+           PolicyEnforcementContext context = getSoap12PEC(false);
+           SoapFaultManager sfm = buildSoapFaultManager(stub);
+           addAuditInfoExtraDetail( stub );
+           SoapFaultLevel level = new SoapFaultLevel();
+           level.setLevel(SoapFaultLevel.MEDIUM_DETAIL_FAULT);
+           // ** new method for bug 9402
+           level.setAlwaysReturnSoapFault(false);
+           context.setFaultlevel(level);
+
+           final SoapFaultManager.FaultResponse faultInfo = sfm.constructExceptionFault( constructException(), level, context );
+           String fault = faultInfo.getContent();
+           NodeList elements = getL7AddInfoNodeElements(fault);
+           assertFalse("doesn't contain l7:additionalInfo element", elements.getLength() > 0);
+           assertEquals( "Http Status", 500, faultInfo.getHttpStatus() );
+           assertEquals( "SOAP 1.2 Content Type", ContentTypeHeader.SOAP_1_2_DEFAULT, faultInfo.getContentType() );
+    }
     @Test
     public void testSignedSoapFaultActor() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager();
@@ -533,6 +685,11 @@ public class SoapFaultManagerTest {
         assertNotNull( "Security header", SoapUtil.getSecurityElement(doc) );
         assertTrue("Valid signature", isValidSignature(doc, getBobKey()));
         assertEquals( "SOAP 1.1 Content Type", ContentTypeHeader.XML_DEFAULT, fault.getContentType() );
+    }
+
+    private NodeList getL7AddInfoNodeElements(String fault) throws Exception {
+           Document doc = XmlUtil.parse( fault );
+           return doc.getElementsByTagName("l7:additionalInfo");
     }
 
     private SoapFaultManager buildSoapFaultManager() throws Exception {
@@ -660,6 +817,14 @@ public class SoapFaultManagerTest {
         stub.addDetail( new AuditDetail( AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER ), ass1 );
         stub.addDetail( new AuditDetail( AssertionMessages.HTTPCREDS_FOUND_USER ), ass2 );
         stub.addDetail( new AuditDetail( AssertionMessages.IDENTITY_NO_CREDS ), ass3 );
+    }
+
+    // *** Bug 9402 additional error detail for SOAP
+    private void addAuditInfoExtraDetail( final AuditContextStub stub ) {
+        // second AuditDetail param as null so that the message is not associated with an assertion result but instead an l7 information detail result
+        stub.addDetail( new AuditDetail( MessageProcessingMessages.INVALID_REQUEST_WITH_DETAIL, "XML document structures must start and end within the same entity."), null );
+        stub.addDetail( new AuditDetail( MessageProcessingMessages.ERROR_WSS_SIGNATURE, "Signature not valid."), null );
+        stub.addDetail( new AuditDetail( MessageProcessingMessages.POLICY_EVALUATION_RESULT, "Warehouse [1769472]", "400", "Bad Request" ), null );
     }
 
     private static final class TestServerAssertion implements ServerAssertion {

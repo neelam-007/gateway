@@ -127,6 +127,39 @@ public class OversizedTextAssertionTest extends TestCase {
         assertEquals(AssertionStatus.BAD_REQUEST, checkRequest(ota.getCopy(), TEST_DOC_EXTRA_BODY));
     }
 
+    /*
+     * BUG 9401
+     * - limit number of namespaces
+     * if amount specified in new gui fields by the user
+     */
+    public void testOtaLimitedNamespaces() throws Exception {
+            OversizedTextAssertion ota = new OversizedTextAssertion();
+            ota.setLimitNamespaceCount(true);
+            ota.setMaxNamespaceCount(5);
+            assertEquals(AssertionStatus.NONE, checkRequest(ota.getCopy(), TEST_DOC_NAMESPACES));
+            ota.setMaxNamespaceCount(4);
+            assertEquals(AssertionStatus.BAD_REQUEST, checkRequest(ota.getCopy(), TEST_DOC_NAMESPACES));
+            ota.setLimitNamespaceCount(false);
+            assertEquals(AssertionStatus.NONE, checkRequest(ota.getCopy(), TEST_DOC_NAMESPACES));
+        }
+
+    /*
+     * BUG 9401
+     * - limit number of prefixes and
+     * if amount specified in new gui fields by the user
+     */
+    public void testOtaLimitedPrefixes() throws Exception {
+            OversizedTextAssertion ota = new OversizedTextAssertion();
+            ota.setLimitNamespacePrefixCount(true);
+            ota.setMaxNamespacePrefixCount(3);
+            assertEquals(AssertionStatus.NONE, checkRequest(ota.getCopy(), TEST_DOC_NAMESPACES));
+            ota.setMaxNamespacePrefixCount(2);
+            assertEquals(AssertionStatus.BAD_REQUEST, checkRequest(ota.getCopy(), TEST_DOC_NAMESPACES));
+            ota.setLimitNamespacePrefixCount(false);
+            assertEquals(AssertionStatus.NONE, checkRequest(ota.getCopy(), TEST_DOC_NAMESPACES));
+
+        }
+
     private static final String TEST_DOC =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<soapenv:Envelope\n" +
@@ -186,6 +219,25 @@ public class OversizedTextAssertionTest extends TestCase {
             "            <playerNumber>19</playerNumber>\n" +
             "            <delay>0</delay>\n" +
             "        </getOffensiveStats>\n" +
+            "        <getOffensiveStats xmlns=\"http://playerstatsws.test.l7tech.com\">\n" +
+            "            <playerNumber>19</playerNumber>\n" +
+            "            <delay>0</delay>\n" +
+            "        </getOffensiveStats>\n" +
+            "    </soapenv:Body>\n" +
+            "</soapenv:Envelope>";
+
+    private static final String TEST_DOC_NAMESPACES =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<soapenv:Envelope\n" +
+            "    xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
+            "    xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instancex\">\n" +
+            "    <soapenv:Body>\n" +
+            "        <getOffensiveStats2 xmlns=\"http://playerstatsws2.test.l7tech.com\">\n" +
+            "            <playerNumber>19</playerNumber>\n" +
+            "            <delay>0</delay>\n" +
+            "        </getOffensiveStats2>\n" +
+            "    </soapenv:Body>\n" +
+            "    <soapenv:Body>\n" +
             "        <getOffensiveStats xmlns=\"http://playerstatsws.test.l7tech.com\">\n" +
             "            <playerNumber>19</playerNumber>\n" +
             "            <delay>0</delay>\n" +
