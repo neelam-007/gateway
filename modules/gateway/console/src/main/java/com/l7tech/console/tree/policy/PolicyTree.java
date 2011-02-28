@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.MainWindow;
@@ -419,27 +416,66 @@ public class PolicyTree extends JTree implements DragSourceListener,
             log.warning("Rejecting paste -- paste target is not an AssertionTreeNode");
             return false;
         }
-        AssertionTreeNode targetTreeNode = (AssertionTreeNode)path.getLastPathComponent();
         AssertionTreeNode assertionTreeNodeCopy = AssertionTreeNodeFactory.asTreeNode(ass);
         if ( policyEditorPanel != null ) policyEditorPanel.updateAssertions( assertionTreeNodeCopy );
-        PolicyTreeModel model = (PolicyTreeModel)getModel();
 
-        AssertionTreeNode insertAfter = null;
-        while ( targetTreeNode != null ) {
-            if (targetTreeNode.getAllowsChildren() && targetTreeNode.accept( assertionTreeNodeCopy )) {
-                int targetIndex = 0;
-                if ( insertAfter != null ) {
-                    targetIndex = targetTreeNode.getIndex( insertAfter ) + 1;
-                }
-                model.rawInsertNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
-                return true;
-            } else {
-                insertAfter = targetTreeNode;
-                targetTreeNode = (AssertionTreeNode) targetTreeNode.getParent();
-            }
+        Pair<AssertionTreeNode,Integer> target = getTargetForPath( path, assertionTreeNodeCopy, false );
+        if ( target.left != null ) {
+            PolicyTreeModel model = (PolicyTreeModel)getModel();
+            model.rawInsertNodeInto(assertionTreeNodeCopy, target.left, target.right);
+            return true;
         }
 
         return false;
+    }
+
+    private Pair<AssertionTreeNode,Integer> getTargetForPath( final TreePath path,
+                                                              final AbstractTreeNode toDrop,
+                                                              final boolean dropAsFirstContainerChild ) {
+        return getTargetForPath( path,  new AbstractTreeNode[]{toDrop}, dropAsFirstContainerChild );
+    }
+
+    private Pair<AssertionTreeNode,Integer> getTargetForPath( final TreePath path,
+                                                              final AbstractTreeNode[] toDrop,
+                                                              final boolean dropAsFirstContainerChild ) {
+        AssertionTreeNode targetTreeNode =
+                ((AssertionTreeNode) path.getLastPathComponent());
+
+        TreePath pathToTarget = path;
+        AssertionTreeNode insertAfter = null;
+        int targetIndex = path.getPathCount()==1 ? targetTreeNode.getChildCount() : 0;
+        while ( targetTreeNode != null ) {
+            if (targetTreeNode.getAllowsChildren() && (pathToTarget.getParentPath()==null || isExpanded(pathToTarget)) && acceptsAll(targetTreeNode,toDrop)) {
+                if ( insertAfter != null ) {
+                    targetIndex = targetTreeNode.getIndex( insertAfter ) + 1;
+                }
+                break;
+            } else {
+                insertAfter = targetTreeNode;
+                targetTreeNode = (AssertionTreeNode) targetTreeNode.getParent();
+                pathToTarget = pathToTarget.getParentPath();
+            }
+        }
+
+        if ( dropAsFirstContainerChild ) {
+            targetIndex = 0;
+        }
+
+        return new Pair<AssertionTreeNode,Integer>(targetTreeNode,targetIndex);
+    }
+
+    private boolean acceptsAll( final AssertionTreeNode target,
+                                final AbstractTreeNode[] nodes ) {
+        boolean accepts = true;
+
+        for ( final AbstractTreeNode node : nodes ) {
+            if ( !target.accept( node ) ) {
+                accepts = false;
+                break;
+            }
+        }
+
+        return accepts;
     }
 
     public void setPolicyEditor(PolicyEditorPanel pe) {
@@ -781,18 +817,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             if (nAction == DnDConstants.ACTION_MOVE) {
                 // The dragged item (pathSource) has been inserted at the target selected by the user.
                 // Now it is time to delete it from its original location.
-                StringBuilder logStatement = new StringBuilder();
-                logStatement.append("REMOVING: ");
-                boolean isFirst = true;
-                for(TreePath path : pathSource) {
-                    if(isFirst) {
-                        isFirst = false;
-                    } else {
-                        logStatement.append(", ");
-                    }
-                    logStatement.append(path.getLastPathComponent());
-                }
-                log.fine(logStatement.toString());
+                logPaths("REMOVING", pathSource);
                 DefaultTreeModel model = (DefaultTreeModel)getModel();
 
                 for(TreePath path : pathSource) {
@@ -888,18 +913,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         setSelectionPaths(paths);    // Select this path in the tree
 
-        StringBuilder logStatement = new StringBuilder();
-        logStatement.append("DRAGGING: ");
-        boolean isFirst = true;
-        for(TreePath path : paths) {
-            if(isFirst) {
-                isFirst = false;
-            } else {
-                logStatement.append(", ");
-            }
-            logStatement.append(path.getLastPathComponent());
-        }
-        log.fine(logStatement.toString());
+        logPaths("DRAGGING", paths);
 
         // Wrap the path being transferred into a Transferable object
         Transferable transferable = new TransferableTreePaths(paths);
@@ -909,6 +923,24 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         // We pass our drag image just in case it IS supported by the platform
         dge.startDrag(null, imgGhost, new Point(5, 5), transferable, this);
+    }
+
+    private void logPaths( final String prefix, final TreePath[] pathSource ) {
+        if ( log.isLoggable( Level.FINE ) ) {
+            StringBuilder logStatement = new StringBuilder();
+            logStatement.append(prefix);
+            logStatement.append(": ");
+            boolean isFirst = true;
+            for(TreePath p : pathSource) {
+                if(isFirst) {
+                    isFirst = false;
+                } else {
+                    logStatement.append(", ");
+                }
+                logStatement.append(p.getLastPathComponent());
+            }
+            log.fine(logStatement.toString());
+        }
     }
 
     @SuppressWarnings({"SimplifiableIfStatement"})
@@ -986,9 +1018,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
         private Color colorCueLine;
         private Point ptLast = new Point();
         private Timer timerHover;
-        private int nLeftRight = 0;    // Cumulative left/right mouse movement
-        private BufferedImage imgRight = new ArrowImage(15, 15, ArrowImage.ARROW_RIGHT);
-        private BufferedImage imgLeft = new ArrowImage(15, 15, ArrowImage.ARROW_LEFT);
 
         // Constructor...
           PolicyDropTargetListener() {
@@ -1002,13 +1031,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
             timerHover = new Timer(1000, new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    nLeftRight = 0;    // Reset left/right movement trend
                     if (isRootPath(pathLast))
                         return;    // Do nothing if we are hovering over the root node
-                    if (isExpanded(pathLast))
+                    if ( isExpanded(pathLast) ) {
                         collapsePath(pathLast);
-                    else
-                        expandPath(pathLast);
+                    } else {
+                        expandPath( pathLast );
+                    }
                 }
             });
             timerHover.setRepeats(false);    // Set timer to one-shot mode
@@ -1022,19 +1051,19 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 e.rejectDrag();
                 return;
             }
-            if (!isDragAcceptable(e)) {
+            if (!isDragAcceptable( e )) {
                 log.fine("dragEnter: drag is not acceptable.");
                 e.rejectDrag();
             } else {
                 log.fine("dragEnter: accepting drag.");
-                e.acceptDrag(e.getDropAction());
+                e.acceptDrag( e.getDropAction() );
             }
         }
 
         @Override
         public void dragExit(DropTargetEvent e) {
             if (!DragSource.isDragImageSupported()) {
-                repaint(raGhost.getBounds());
+                repaint( raGhost.getBounds() );
             }
         }
 
@@ -1048,7 +1077,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             DataFlavor[] flavors = e.getCurrentDataFlavors();
             for (DataFlavor flavor : flavors) {
                 if (TransferableTreePath.TREEPATH_FLAVOR.equals(flavor)) {
-                    treePathdragOver(e);
+                    treePathDragOver( e );
                     break;
                 } else if (PolicyTransferable.ASSERTION_DATAFLAVOR.equals(flavor)) {
                     assertionDragOver(e);
@@ -1060,60 +1089,27 @@ public class PolicyTree extends JTree implements DragSourceListener,
          * The policy tree drag over handler
          * This is where the ghost image is drawn
          */
-        private void treePathdragOver(DropTargetDragEvent e) {
+        private void treePathDragOver( final DropTargetDragEvent e ) {
             Point pt = e.getLocation();
             if (pt.equals(ptLast))
                 return;
 
             // Try to determine whether the user is flicking the cursor right or left
-            int nDeltaLeftRight = pt.x - ptLast.x;
-            if ((nLeftRight > 0 && nDeltaLeftRight < 0) || (nLeftRight < 0 && nDeltaLeftRight > 0))
-                nLeftRight = 0;
-            nLeftRight += nDeltaLeftRight;
             ptLast = pt;
-            Graphics2D g2 = (Graphics2D)getGraphics();
-
-            // If a drag image is not supported by the platform, then draw our own drag image
-            if (!DragSource.isDragImageSupported()) {
-                paintImmediately(raGhost.getBounds());    // Rub out the last ghost image and cue line
-                // And remember where we are about to draw the new ghost image
-                raGhost.setRect(pt.x - ptOffset.x, pt.y - ptOffset.y, imgGhost.getWidth(), imgGhost.getHeight());
-                g2.drawImage(imgGhost, AffineTransform.getTranslateInstance(raGhost.getX(), raGhost.getY()), null);
-            } else    // Just rub out the last cue line
-                paintImmediately(raCueLine.getBounds());
-
 
             TreePath path = getClosestPathForLocation(pt.x, pt.y);
-
-            int row = getRowForLocation(pt.x, pt.y);
-            if (row == -1) {
+            if ( path == null ) {
                 path = new TreePath(getModel().getRoot());
             }
+
             if (!(path == pathLast)) {
-                nLeftRight = 0;     // We've moved up or down, so reset left/right movement trend
                 pathLast = path;
                 timerHover.restart();
             }
 
-            // In any case draw (over the ghost image if necessary) a cue line indicating where a drop will occur
-            Rectangle raPath = getPathBounds(path);
-            raCueLine.setRect(0, raPath.y + (int)raPath.getHeight(), getWidth(), 2);
-
-            g2.setColor(colorCueLine);
-            g2.fill(raCueLine);
-
-            // Now superimpose the left/right movement indicator if necessary
-            if (nLeftRight > 20) {
-                g2.drawImage(imgRight, AffineTransform.getTranslateInstance(pt.x - ptOffset.x, pt.y - ptOffset.y), null);
-            } else if (nLeftRight < -20) {
-                g2.drawImage(imgLeft, AffineTransform.getTranslateInstance(pt.x - ptOffset.x, pt.y - ptOffset.y), null);
-            }
-
-            // And include the cue line in the area to be rubbed out next time
-            raGhost = raGhost.createUnion(raCueLine);
-
             // Do this if you want to prohibit dropping onto the drag source
             boolean rejected = false;
+            Pair<AssertionTreeNode,Integer> target = null;
             if(pathSource != null) {
                 for(TreePath p : pathSource) {
                     if (path.equals(p)) {
@@ -1124,11 +1120,36 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         e.rejectDrag();
                         rejected = true;
                         break;
+                    } else if ( target == null ) {
+                        final boolean dropAsFirstContainerChild = dropAsFirstContainerChild( pt );
+                        final AssertionTreeNode an = (AssertionTreeNode) p.getLastPathComponent();
+                        target = getTargetForPath( path, an, dropAsFirstContainerChild );
                     }
                 }
             } else {
                 rejected = true;
             }
+
+            // In any case draw (over the ghost image if necessary) a cue line indicating where a drop will occur
+            int renderOffsetMultiplier;
+            TreePath targetPath;
+            if ( target!=null && target.left != null && target.right > -1 ) {
+                if ( target.right == 0 ) {
+                    renderOffsetMultiplier = 0;
+                    targetPath = asTreePath(target.left.getChildAt( 0 ));
+                    if ( targetPath.getParentPath()!=null && !isExpanded( targetPath.getParentPath() ) ) {
+                        renderOffsetMultiplier = 1;
+                        targetPath = getLastExpandedChildPath( targetPath.getParentPath() );
+                    }
+                } else {
+                    renderOffsetMultiplier = 1;
+                    targetPath = getLastExpandedChildPath( asTreePath( target.left.getChildAt( target.right-1 ) ) );
+                }
+            } else {
+                renderOffsetMultiplier = 1;
+                targetPath = path;
+            }
+            renderCueLine( pt, renderOffsetMultiplier, targetPath );
 
             if(!rejected) {
                 boolean accept = true;
@@ -1164,6 +1185,66 @@ public class PolicyTree extends JTree implements DragSourceListener,
             }
         }
 
+        private TreePath getLastExpandedChildPath( final TreePath treePath ) {
+            TreePath path = treePath;
+
+            // Move towards child
+            while ( path.getLastPathComponent() instanceof TreeNode ) {
+                final TreeNode lastPathNode = (TreeNode)path.getLastPathComponent();
+                if ( lastPathNode.getChildCount() > 0 && isExpanded( path ) ) {
+                    path = path.pathByAddingChild( lastPathNode.getChildAt( lastPathNode.getChildCount()-1 ) );
+                } else {
+                    break;
+                }
+            }
+
+            // Move towards root
+            while ( path.getLastPathComponent() instanceof TreeNode ) {
+                if ( path.getParentPath() != null && !isExpanded( path.getParentPath() ) ) {
+                    path = path.getParentPath();
+                } else {
+                    break;
+                }
+            }
+
+            return path;
+        }
+
+        private void renderCueLine( final Point pt, final int renderOffsetMultiplier, final TreePath targetPath ) {
+            Rectangle raPath = getPathBounds(targetPath);
+            if ( raPath != null ) { // caller is responsible for ensuring path is visible (expanded)
+                Graphics2D g2 = (Graphics2D)getGraphics();
+
+                // If a drag image is not supported by the platform, then draw our own drag image
+                if (!DragSource.isDragImageSupported()) {
+                    paintImmediately(raGhost.getBounds());    // Rub out the last ghost image and cue line
+                    // And remember where we are about to draw the new ghost image
+                    raGhost.setRect(pt.x - ptOffset.x, pt.y - ptOffset.y, imgGhost.getWidth(), imgGhost.getHeight());
+                    g2.drawImage(imgGhost, AffineTransform.getTranslateInstance( raGhost.getX(), raGhost.getY() ), null);
+                } else    // Just rub out the last cue line
+                    paintImmediately(raCueLine.getBounds());
+
+                raCueLine.setRect(0, raPath.y + ((int)raPath.getHeight() * renderOffsetMultiplier), getWidth(), 2);
+
+                g2.setColor(colorCueLine);
+                g2.fill(raCueLine);
+
+                // And include the cue line in the area to be rubbed out next time
+                raGhost = raGhost.createUnion(raCueLine);
+            }
+        }
+
+        private TreePath asTreePath( final TreeNode node ) {
+            final List<TreeNode> nodes = new ArrayList<TreeNode>();
+            TreeNode pathStep = node;
+            while( pathStep != null ) {
+                nodes.add( pathStep );
+                pathStep = pathStep.getParent();
+            }
+            Collections.reverse( nodes );
+            return new TreePath( nodes.toArray() );
+        }
+
         private boolean acceptNode( AssertionTreeNode aTreeNode,
                                     final AbstractTreeNode node ) {
             boolean accept = false;
@@ -1190,6 +1271,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
             TreePath path = getClosestPathForLocation(pt.x, pt.y);
             if (path != null) {
                 setSelectionPath(path);
+
+                if ( path != pathLast ) {
+                    pathLast = path;
+                    timerHover.restart();
+                }
 
                 // prohibit dropping onto assertions that do not allow it
                 Object treeObject = path.getLastPathComponent();
@@ -1250,7 +1336,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
         private void dropAssertion(DropTargetDropEvent e) {
             try {
                 final Object transferData = e.getTransferable().getTransferData(PolicyTransferable.ASSERTION_DATAFLAVOR);
-                boolean dropAsFirstContainerChild = false;
                 log.fine("DROPPING assertion: " + transferData);
                 AbstractTreeNode[] nodes = (AbstractTreeNode[])transferData;
 
@@ -1268,74 +1353,24 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     return;
                 }
 
-
-                TreePath path = getSelectionPath();
-                final Object root = getModel().getRoot();
-                if (path == null) {
-                    path = new TreePath(root);
-                } else {
-                    Point location = e.getLocation();
-                    int row = getRowForLocation(location.x, location.y);
-                    Insets insets = topBorder.getBorderInsets(PolicyTree.this);
-                    if (insets.top >= location.y) {
-                        dropAsFirstContainerChild = true;
-                    }
-                    if (row == -1) {
-                        path = new TreePath(root);
-                    }
+                Point pt = e.getLocation();
+                boolean dropAsFirstContainerChild = dropAsFirstContainerChild( pt );
+                TreePath path = getClosestPathForLocation(pt.x, pt.y);
+                if ( path == null || dropAsFirstContainerChild ) {
+                    path = new TreePath(getModel().getRoot());
                 }
 
-                AssertionTreeNode potentialTarget = (AssertionTreeNode) path.getLastPathComponent();
-                AssertionTreeNode target = null;
-                List<AbstractTreeNode> notAcceptedNodes = new ArrayList<AbstractTreeNode>(Arrays.asList(nodes));
-                int insertPosition = -1;
-                while ( potentialTarget != null ) {
-                    for(Iterator<AbstractTreeNode> it = notAcceptedNodes.iterator();it.hasNext();) {
-                        AbstractTreeNode node = it.next();
-                        if(potentialTarget.accept(node)) {
-                            it.remove();
-                        }
-                    }
-
-                    if (notAcceptedNodes.isEmpty()) {
-                        target = potentialTarget;
-                        break;
-                    }
-
-                    AssertionTreeNode parent = (AssertionTreeNode) potentialTarget.getParent();
-                    insertPosition = parent==null ? -1 : parent.getIndex( potentialTarget ) + 1;
-                    potentialTarget = parent;
-                }
-
-                if ( target != null ) {
+                final Pair<AssertionTreeNode,Integer> target = getTargetForPath( path, nodes, dropAsFirstContainerChild );
+                if ( target.left != null ) {
                     e.acceptDrop(e.getDropAction());
-                    if (dropAsFirstContainerChild) {
-                        if (target instanceof CompositeAssertionTreeNode) {
-                            CompositeAssertionTreeNode compositeAssertionTreeNode = (CompositeAssertionTreeNode)target;
-                            for(AbstractTreeNode node : nodes) {
-                                compositeAssertionTreeNode.receive(node, 0);
-                            }
-                        } else {
-                            for(AbstractTreeNode node : nodes) {
-                                target.receive(node);
-                            }
-                        }
-                        e.dropComplete(true);
-                    } else if ((target instanceof CompositeAssertionTreeNode && target != root)) {
-                        CompositeAssertionTreeNode compositeAssertionTreeNode = (CompositeAssertionTreeNode)target;
-                        for(AbstractTreeNode node : nodes) {
-                            compositeAssertionTreeNode.receive(node, 0);
+                    if ( target.left instanceof CompositeAssertionTreeNode ) {
+                        CompositeAssertionTreeNode compositeAssertionTreeNode = (CompositeAssertionTreeNode)target.left;
+                        for( AbstractTreeNode node : nodes ) {
+                            compositeAssertionTreeNode.receive(node, target.right);
                         }
                     } else {
-                        if (insertPosition > -1 && target instanceof CompositeAssertionTreeNode) {
-                            CompositeAssertionTreeNode compositeAssertionTreeNode = (CompositeAssertionTreeNode)target;
-                            for(AbstractTreeNode node : nodes) {
-                                compositeAssertionTreeNode.receive(node, insertPosition);
-                            }
-                        } else {
-                            for(AbstractTreeNode node : nodes) {
-                                target.receive(node);
-                            }
+                        for(AbstractTreeNode node : nodes) {
+                            target.left.receive(node);
                         }
                     }
                     e.dropComplete(true);
@@ -1371,64 +1406,28 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     try {
                         Point pt = e.getLocation();
 
+                        boolean dropAsFirstContainerChild = dropAsFirstContainerChild( pt );
                         TreePath pathTarget = getClosestPathForLocation(pt.x, pt.y);
-                        int row = getRowForLocation(pt.x, pt.y);
-                        if (row == -1) {
+                        if ( pathTarget == null || dropAsFirstContainerChild ) {
                             pathTarget = new TreePath(getModel().getRoot());
-                        }
-                        boolean dropAsFirstContainerChild = false;
-
-                        Insets insets = topBorder.getBorderInsets(PolicyTree.this);
-                        if (insets.top >= pt.y) {
-                            dropAsFirstContainerChild = true;
                         }
 
                         TreePath[] pathSource = (TreePath[]) transferable.getTransferData(flavor);
-                        StringBuilder logStatement = new StringBuilder();
-                        logStatement.append("DROPPING tree path: ");
-                        boolean isFirst = true;
-                        for(TreePath p : pathSource) {
-                            if(isFirst) {
-                                isFirst = false;
-                            } else {
-                                logStatement.append(", ");
-                            }
-                            logStatement.append(p.getLastPathComponent());
-                        }
-                        log.fine(logStatement.toString());
+                        logPaths( "DROPPING tree path", pathSource );
                         PolicyTreeModel model = (PolicyTreeModel) getModel();
 
-                        for(TreePath p : pathSource) {
+                        for( final TreePath p : pathSource ) {
                             final AssertionTreeNode an = (AssertionTreeNode) p.getLastPathComponent();
                             Assertion a = (Assertion) an.asAssertion().clone();
                             final AssertionTreeNode assertionTreeNodeCopy = AssertionTreeNodeFactory.asTreeNode(a);
 
-                            AssertionTreeNode targetTreeNode =
-                                    ((AssertionTreeNode) pathTarget.getLastPathComponent());
+                            final Pair<AssertionTreeNode,Integer> target = getTargetForPath( pathTarget, assertionTreeNodeCopy, dropAsFirstContainerChild );
 
-                            AssertionTreeNode insertAfter = null;
-                            int targetIndex = row == -1 ? targetTreeNode.getChildCount() : 0;
-                            while ( targetTreeNode != null ) {
-                                if (targetTreeNode.getAllowsChildren() && targetTreeNode.accept( assertionTreeNodeCopy )) {
-                                    if ( insertAfter != null ) {
-                                        targetIndex = targetTreeNode.getIndex( insertAfter ) + 1;
-                                    }
-                                    break;
-                                } else {
-                                    insertAfter = targetTreeNode;
-                                    targetTreeNode = (AssertionTreeNode) targetTreeNode.getParent();
-                                }
-                            }
-
-                            if ( dropAsFirstContainerChild ) {
-                                targetIndex = 0;
-                            }
-
-                            if ( targetTreeNode != null && targetIndex > -1 ) {
+                            if ( target.left != null && target.right > -1 ) {
                                 if (e.getDropAction() == DnDConstants.ACTION_MOVE) {
-                                    model.moveNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
+                                    model.moveNodeInto(assertionTreeNodeCopy, target.left, target.right);
                                 } else {
-                                    model.insertNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
+                                    model.insertNodeInto(assertionTreeNodeCopy, target.left, target.right);
                                 }
                             }
                         }
@@ -1450,6 +1449,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
             e.dropComplete(dropComplete);
         }
 
+        private boolean dropAsFirstContainerChild( final Point pt ) {
+            boolean dropAsFirstContainerChild = false;
+
+            Insets insets = topBorder.getBorderInsets(PolicyTree.this);
+            if (insets.top >= pt.y) {
+                dropAsFirstContainerChild = true;
+            }
+            return dropAsFirstContainerChild;
+        }
 
         // Helpers...
           private boolean isDragAcceptable(DropTargetDragEvent e) {
@@ -1459,16 +1467,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
             if ((e.getDropAction() & DnDConstants.ACTION_COPY_OR_MOVE) == 0)
                 return false;
 
+            Point pt = e.getLocation();
+            TreePath path = getClosestPathForLocation(pt.x, pt.y);
+            if ( path == null ) {
+                path = new TreePath(getModel().getRoot());
+            }
+
             // Only accept this particular flavor
             if (e.isDataFlavorSupported(TransferableTreePath.TREEPATH_FLAVOR)) {
                 // prohibit dropping onto the drag source...
-                Point pt = e.getLocation();
-                TreePath path = getClosestPathForLocation(pt.x, pt.y);
-                int row = getRowForLocation(pt.x, pt.y);
-                if (row == -1) {
-                    path = new TreePath(getModel().getRoot());
-                }
-
                 for(TreePath p : pathSource) {
                     if (path.equals(p)) {
                         log.fine("REJECTING DRAG: " + p.getLastPathComponent());
@@ -1479,12 +1486,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 return true;
             } else if (e.isDataFlavorSupported(PolicyTransferable.ASSERTION_DATAFLAVOR)) {
                 // prohibit dropping onto assertions that do not allow it
-                Point pt = e.getLocation();
-                TreePath path = getClosestPathForLocation(pt.x, pt.y);
-                int row = getRowForLocation(pt.x, pt.y);
-                if (row == -1) {
-                    path = new TreePath(getModel().getRoot());
-                }
                 Object treeObject = path.getLastPathComponent();
                 try {
                     Object transferData = e.getTransferable().getTransferData( PolicyTransferable.ASSERTION_DATAFLAVOR );
@@ -1549,7 +1550,12 @@ public class PolicyTree extends JTree implements DragSourceListener,
     @Override
     public void autoscroll(Point pt) {
         // Figure out which row we're on.
-        int nRow = getRowForLocation(pt.x, pt.y);
+        int nRow = -1;
+        for ( int x=0; x<getWidth(); x+=10 ) {
+            // we don't care about the x position, so search the x-axis for the row
+            nRow = getRowForLocation( x, pt.y );
+            if ( nRow >= 0 ) break;
+        }
 
         // If we are not on a row then ignore this autoscroll request
         if (nRow < 0)
