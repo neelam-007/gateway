@@ -89,6 +89,7 @@ public class ServerWsAddressingAssertionTest {
         Assert.assertEquals("Addressing:To", "http://fish.l7tech.com:8080/warehouse", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"To")));
         Assert.assertEquals("Addressing:ReplyTo", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous2", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"ReplyTo")));
         Assert.assertEquals("Addressing:From", "http://fish.l7tech.com:8080/warehousesender", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"From")));
+        Assert.assertEquals("Addressing elements", 8, elements.size());
     }
 
     /**
@@ -115,7 +116,7 @@ public class ServerWsAddressingAssertionTest {
         Assert.assertEquals("Addressing:To", "http://fish.l7tech.com:8080/warehouse", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"To")));
         Assert.assertEquals("Addressing:ReplyTo", "http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous2", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"ReplyTo")));
         Assert.assertEquals("Addressing:From", "http://fish.l7tech.com:8080/warehousesender", properties.get(new QName(ADDRESSING_NAMESPACE_200408,"From")));
-        Assert.assertEquals("Addressing elements", 6, elements.size());
+        Assert.assertEquals("Addressing elements", 8, elements.size());
     }
 
     /**
@@ -235,6 +236,8 @@ public class ServerWsAddressingAssertionTest {
             "        <wsa:ReplyTo>\n" +
             "            <wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous2</wsa:Address>\n" +
             "        </wsa:ReplyTo>\n" +
+            "        <wsa:RelatesTo RelationshipType=\"wsa:Unknown\">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous5555</wsa:RelatesTo>\n" +
+            "        <wsa:RelatesTo>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous4</wsa:RelatesTo>\n" +
             "        <wsa:FaultTo>\n" +
             "            <wsa:Address>\n" +
             "                        http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous1\n" +

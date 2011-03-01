@@ -518,8 +518,9 @@ public class DomUtils {
      *
      * @param element   the element at which to start searching
      * @param namespace the namespace URI to look for
-     * @return the prefix for this namespace in scope at the specified elment, or null if it is not declared with a prefix.
+     * @return the prefix for this namespace in scope at the specified element, or null if it is not declared with a prefix.
      *         Note that the default namespace is not considered to have been declared with a prefix.
+     * @see Node#lookupPrefix(String) which is probably a better alternative for most uses
      */
     public static String findActivePrefixForNamespace(Node element, String namespace) {
 

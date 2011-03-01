@@ -39,20 +39,6 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion
  */
 public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddressingAssertion> {
-    private final String otherNamespaceUri = assertion.getEnableOtherNamespace();
-    private final String[] acceptableNamespaces;
-    private final SecurityTokenResolver securityTokenResolver;
-    private Boolean elementsVariableUsed;
-
-    {
-        if (otherNamespaceUri != null && otherNamespaceUri.length() > 0) {
-            this.acceptableNamespaces = new String[NS_ADDRESSING.length+1];
-            System.arraycopy(NS_ADDRESSING, 0, this.acceptableNamespaces, 0, NS_ADDRESSING.length);
-            this.acceptableNamespaces[NS_ADDRESSING.length] = otherNamespaceUri;
-        } else {
-            this.acceptableNamespaces = NS_ADDRESSING;
-        }
-    }
 
     //- PUBLIC
 
@@ -61,10 +47,12 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
      */
     public ServerWsAddressingAssertion(final WsAddressingAssertion assertion,
                                        final ApplicationContext context) throws PolicyAssertionException {
-        super(assertion);
+        super( assertion );
         this.auditor = new Auditor(this, context, logger);
         this.config = context.getBean("serverConfig", Config.class);
         this.securityTokenResolver = context.getBean("securityTokenResolver",SecurityTokenResolver.class);
+        this.otherNamespaceUri = assertion.getEnableOtherNamespace();
+        this.acceptableNamespaces = buildAcceptableNamespaces( this.otherNamespaceUri );
     }
 
     /**
@@ -92,28 +80,26 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 populateAddressingFromMessage(getElementCursor(msg), addressingProperties, addressingElements);
             }
 
-            if ( assertion.isEnableWsAddressing10() && addressingPresent(addressingProperties, SoapConstants.WSA_NAMESPACE_10) ) {
-                if ( assertion.getVariablePrefix() != null) {
-                    setVariables(addressingProperties, addressingElements, SoapConstants.WSA_NAMESPACE_10, context);
-                }
+            final List<String> permittedNamespaces = new ArrayList<String>();
+            if ( assertion.isEnableWsAddressing10() ) permittedNamespaces.add( SoapConstants.WSA_NAMESPACE_10 );
+            if ( assertion.isEnableWsAddressing200408() ) permittedNamespaces.add( NS_WS_ADDRESSING_200408 );
+            if ( otherNamespaceUri != null && otherNamespaceUri.length() > 0 ) permittedNamespaces.add( otherNamespaceUri );
 
-                auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
-                status = AssertionStatus.NONE;
-            } else if ( assertion.isEnableWsAddressing200408() && addressingPresent(addressingProperties, NS_WS_ADDRESSING_200408) ) {
-                if ( assertion.getVariablePrefix() != null) {
-                    setVariables(addressingProperties, addressingElements, NS_WS_ADDRESSING_200408, context);
-                }
+            boolean foundAddressing = false;
+            for ( final String namespace : permittedNamespaces ) {
+                if ( addressingPresent(addressingProperties, namespace) ) {
+                    if ( assertion.getVariablePrefix() != null) {
+                        setVariables(addressingProperties, addressingElements, namespace, context);
+                    }
 
-                auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
-                status = AssertionStatus.NONE;
-            } else if (otherNamespaceUri != null && otherNamespaceUri.length() > 0 && addressingPresent(addressingProperties, otherNamespaceUri) ) {
-                if ( assertion.getVariablePrefix() != null) {
-                    setVariables(addressingProperties, addressingElements, otherNamespaceUri, context);
+                    auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
+                    status = AssertionStatus.NONE;
+                    foundAddressing = true;
+                    break;
                 }
+            }
 
-                auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_HEADERS_OK);
-                status = AssertionStatus.NONE;
-            } else {
+            if ( !foundAddressing ) {
                 if (assertion.getTarget() == TargetMessageType.REQUEST) context.setRequestPolicyViolated();
                 if ( assertion.isRequireSignature() ) {
                     auditor.logAndAudit(AssertionMessages.WS_ADDRESSING_NO_SIGNED_HEADERS);                    
@@ -141,6 +127,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         this.auditor = auditor;
         this.config = config;
         this.securityTokenResolver = null;
+        this.otherNamespaceUri = assertion.getEnableOtherNamespace();
+        this.acceptableNamespaces = buildAcceptableNamespaces( this.otherNamespaceUri );
     }
 
     //- PROTECTED
@@ -160,7 +148,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                         if ( ArrayUtils.contains(acceptableNamespaces, ec.getNamespaceUri()) ) {
                             QName name = new QName(ec.getNamespaceUri(), ec.getLocalName());
 
-                            if ( !addressingProperties.containsKey(name) ) {
+                            if ( !addressingProperties.containsKey(name) || WSA_RELATESTO.equals(ec.getLocalName()) ) {
                                 if ( WSA_FAULTTO.equals(ec.getLocalName()) || WSA_REPLYTO.equals(ec.getLocalName()) || WSA_FROM.equals(ec.getLocalName()) ) {
                                     // process the address child element
                                     ec.pushPosition();
@@ -201,7 +189,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             if ( ArrayUtils.contains(acceptableNamespaces, element.getNamespaceURI()) && isSoapHeader(element.getParentNode()) ) {
                 QName name = new QName(element.getNamespaceURI(), element.getLocalName());
 
-                if ( addressingProperties.containsKey(name) ) {
+                if ( addressingProperties.containsKey(name) && !WSA_RELATESTO.equals(element.getLocalName()) ) {
                     continue;
                 }
 
@@ -263,11 +251,31 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     private static final String WSA_FAULTTO = "FaultTo";
     private static final String WSA_FROM = "From";
     private static final String WSA_MESSAGEID = "MessageID";
+    private static final String WSA_RELATESTO = "RelatesTo";
     private static final String WSA_REPLYTO = "ReplyTo";
     private static final String WSA_TO = "To";
 
     private final Auditor auditor;
     private final Config config;
+
+    private final String otherNamespaceUri;
+    private final String[] acceptableNamespaces;
+    private final SecurityTokenResolver securityTokenResolver;
+    private Boolean elementsVariableUsed;
+
+    private String[] buildAcceptableNamespaces( final String otherNamespaceUri ) {
+        final String[] acceptableNamespaces;
+
+        if ( otherNamespaceUri != null && otherNamespaceUri.length() > 0) {
+            acceptableNamespaces = new String[NS_ADDRESSING.length+1];
+            System.arraycopy(NS_ADDRESSING, 0, this.acceptableNamespaces, 0, NS_ADDRESSING.length);
+            acceptableNamespaces[NS_ADDRESSING.length] = otherNamespaceUri;
+        } else {
+            acceptableNamespaces = NS_ADDRESSING;
+        }
+
+        return acceptableNamespaces;
+    }
 
     /**
      * Get signed elements for message of given context.
@@ -470,7 +478,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     private static final class AddressingProcessingException extends Exception {
         private AssertionStatus assertionStatus;
 
-        public AddressingProcessingException(String message, AssertionStatus assertionStatus) {
+        private AddressingProcessingException(String message, AssertionStatus assertionStatus) {
             super(message);
             this.assertionStatus = assertionStatus;
         }
