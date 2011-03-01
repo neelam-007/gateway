@@ -13,6 +13,7 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.IpListPanel;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
@@ -63,6 +64,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     }
 
     private static final Logger log = Logger.getLogger(HttpRoutingAssertionDialog.class.getName());
+    private static final String ANY_TLS_VERSION = "any";
     private HttpRuleTableHandler responseHttpRulesTableHandler;
     private HttpRuleTableHandler requestHttpRulesTableHandler;
     private HttpRuleTableHandler requestParamsRulesTableHandler;
@@ -144,6 +146,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JTextField responseMaxSizeTextField;
     private JPanel maxResponseSizePanel;
     private JCheckBox setResponseLimitCheckBox;
+    private JButton cipherSuitesButton;
+    private JComboBox tlsVersionComboBox;
 
     private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
@@ -156,6 +160,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private final Wsdl wsdl;
     private Assertion assertionToUseInSearchForPredecessorVariables;
     private InputValidator inputValidator;
+    private String tlsCipherSuites;
 
     /**
      * Creates new form ServicePanel
@@ -428,6 +433,29 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         };
         overrideRequestMethodRadioButton.addActionListener(requestMethodListener);
         automaticRequestMethodRadioButton.addActionListener(requestMethodListener);
+
+        tlsVersionComboBox.setModel( new DefaultComboBoxModel( new String[] {ANY_TLS_VERSION, "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2" } ) );
+        tlsVersionComboBox.setRenderer( new TextListCellRenderer<Object>( new Functions.Unary<String,Object>(){
+            @Override
+            public String call( final Object protocol ) {
+                return resources.getString("tls-protocol." + protocol) ;
+            }
+        }, null, true ) );
+        Utilities.enableGrayOnDisabled(tlsVersionComboBox);
+
+        cipherSuitesButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                CipherSuiteDialog.show(HttpRoutingAssertionDialog.this, "Enabled Cipher Suites", null, readOnly, tlsCipherSuites, new Functions.UnaryVoid<String>() {
+                    @Override
+                    public void call(String s) {
+                        tlsCipherSuites = s;
+                    }
+                });
+
+            }
+        });
+        Utilities.enableGrayOnDisabled(cipherSuitesButton);
 
         initializeHttpRulesTabs();
         initializeProxyTab();
@@ -763,6 +791,10 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             assertion.setProxyPassword(null);
         }
 
+        String tlsVersion = (String) tlsVersionComboBox.getSelectedItem();
+        assertion.setTlsVersion(tlsVersion == null || ANY_TLS_VERSION.equals(tlsVersion) ? null : tlsVersion);
+        assertion.setTlsCipherSuites(tlsCipherSuites);
+
         confirmed = true;
         fireEventAssertionChanged(assertion);
 
@@ -895,6 +927,14 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         }
         if (bra)
             rbProxySpecified.setEnabled(false);
+
+        String tlsVersion = assertion.getTlsVersion();
+        tlsVersionComboBox.setSelectedItem(null == tlsVersion ? ANY_TLS_VERSION : tlsVersion);
+        tlsVersionComboBox.setEnabled(!bra);
+
+        tlsCipherSuites = assertion.getTlsCipherSuites();
+        cipherSuitesButton.setEnabled(!bra);
+
         enableOrDisableProxyFields();
     }
 

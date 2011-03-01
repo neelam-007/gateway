@@ -2,6 +2,7 @@ package com.l7tech.common.io;
 
 import com.l7tech.util.Functions;
 
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -65,6 +66,30 @@ public class SSLSocketFactoryWrapper extends SSLSocketFactory {
     @Override
     public Socket createSocket( final String s, final int i, final InetAddress inetAddress, final int i1 ) throws IOException {
         return notifySocket(delegate.call().createSocket( s, i, inetAddress, i1 ));
+    }
+
+    /**
+     * Convenience method for the case of wrapping a socket factory to override the TLS version and/or enabled cipher suites.
+     *
+     * @param socketFactory the SSLSocketFactory to wrap. Required.
+     * @param tlsVersions the enabledProtocols array to enable for created sockets, or null to leave them alone.
+     * @param tlsCipherSuites the enabledCipherSuites array to enable for created sockets, or null to leave them alone.
+     * @return the new wrapper.  Never null.
+     */
+    public static SSLSocketFactoryWrapper wrapAndSetTlsVersionAndCipherSuites(SSLSocketFactory socketFactory, final String[] tlsVersions, final String[] tlsCipherSuites) {
+        return new SSLSocketFactoryWrapper(socketFactory) {
+            @Override
+            protected Socket notifySocket( final Socket socket ) {
+                if ( socket instanceof SSLSocket) {
+                    final SSLSocket sslSocket = (SSLSocket) socket;
+                    if (tlsVersions != null)
+                        sslSocket.setEnabledProtocols(tlsVersions);
+                    if (tlsCipherSuites != null)
+                        sslSocket.setEnabledCipherSuites(tlsCipherSuites);
+                }
+                return socket;
+            }
+        };
     }
 
     //- PROTECTED

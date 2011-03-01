@@ -104,6 +104,9 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     private String proxyUsername = "";
     private String proxyPassword = "";
 
+    protected String tlsVersion;
+    protected String tlsCipherSuites;
+
     // WARNING
     // WARNING : If you add properties, update the copyFrom method
     // WARNING
@@ -161,6 +164,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setProxyPassword(source.getProxyPassword());
         this.setUseKeepAlives(source.isUseKeepAlives());
         this.setPassThroughSoapFaults(source.isPassThroughSoapFaults());
+        this.setTlsCipherSuites(source.getTlsCipherSuites());
+        this.setTlsVersion(source.getTlsVersion());
     }
 
     @Override
@@ -432,6 +437,28 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
      */
     public void setFailoverStrategyName(String failoverStrategyName) {
         this.failoverStrategyName = failoverStrategyName;
+    }
+
+    /**
+     * @return TLS version, ie "TLSv1.2", or null to use the socket factory's default.
+     */
+    public String getTlsVersion() {
+        return tlsVersion;
+    }
+
+    public void setTlsVersion(String tlsVersion) {
+        this.tlsVersion = tlsVersion;
+    }
+
+    /**
+     * @return TLS cipher suites, as comma-delimited string, or null to use the socket factory's defaults.
+     */
+    public String getTlsCipherSuites() {
+        return tlsCipherSuites;
+    }
+
+    public void setTlsCipherSuites(String tlsCipherSuites) {
+        this.tlsCipherSuites = tlsCipherSuites;
     }
 
     @Override

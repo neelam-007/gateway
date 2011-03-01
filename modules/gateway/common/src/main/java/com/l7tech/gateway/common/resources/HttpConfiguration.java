@@ -88,6 +88,7 @@ public class HttpConfiguration extends PersistentEntityImp {
         setTlsKeyUse( httpConfiguration.getTlsKeyUse() );
         setTlsKeystoreOid( httpConfiguration.getTlsKeystoreOid() );
         setTlsKeystoreAlias( httpConfiguration.getTlsKeystoreAlias() );
+        setTlsCipherSuites( httpConfiguration.getTlsCipherSuites() );
         setConnectTimeout( httpConfiguration.getConnectTimeout() );
         setReadTimeout( httpConfiguration.getReadTimeout() );
         setFollowRedirects( httpConfiguration.isFollowRedirects() );
@@ -231,6 +232,18 @@ public class HttpConfiguration extends PersistentEntityImp {
     }
 
     /**
+     * @return TLS cipher suite names to enable, comma delimited, or null to use global defaults.
+     */
+    @Column(name="tls_cipher_suites", length=4096)
+    public String getTlsCipherSuites() {
+        return tlsCipherSuites;
+    }
+
+    public void setTlsCipherSuites( final String tlsCipherSuites ) {
+        this.tlsCipherSuites = tlsCipherSuites;
+    }
+
+    /**
      * The connection timeout in milliseconds.
      */
     @Column(name="timeout_connect")
@@ -301,6 +314,7 @@ public class HttpConfiguration extends PersistentEntityImp {
     private Option tlsKeyUse = Option.DEFAULT;
     private long tlsKeystoreOid;
     private String tlsKeystoreAlias;
+    private String tlsCipherSuites;
     private int connectTimeout = -1;
     private int readTimeout = -1;
     private boolean followRedirects;

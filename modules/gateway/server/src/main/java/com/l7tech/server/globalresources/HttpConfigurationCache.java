@@ -26,38 +26,15 @@ import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import java.net.Authenticator;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.URI;
-import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.UnrecoverableKeyException;
+import java.net.*;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -300,7 +277,8 @@ public class HttpConfigurationCache implements ApplicationListener, Initializing
                 httpConfiguration.getTlsKeyUse(),
                 httpConfiguration.getTlsVersion(),
                 httpConfiguration.getTlsKeystoreOid(),
-                httpConfiguration.getTlsKeystoreAlias() );
+                httpConfiguration.getTlsKeystoreAlias(),
+                httpConfiguration.getTlsCipherSuites() );
         SSLSocketFactory sslSocketFactory = sslSocketFactoryMap.get( key );
 
         if ( sslSocketFactory == null ) {
@@ -310,13 +288,14 @@ public class HttpConfigurationCache implements ApplicationListener, Initializing
                         sslSocketFactory = getDefaultSSLSocketFactory( false );
                         break;
                     case CUSTOM:
-                        // We cache the non versioned SSLSocketFactory since the versioned
+                        // We cache the non-versioned non-cipher-suited SSLSocketFactory since the versioned and/or suited
                         // ones can all wrap the same underlying SSLSocketFactory
                         final SslSocketFactoryKey keyNoVersion = new SslSocketFactoryKey(
                                         httpConfiguration.getTlsKeyUse(),
                                         null,
                                         httpConfiguration.getTlsKeystoreOid(),
-                                        httpConfiguration.getTlsKeystoreAlias() );
+                                        httpConfiguration.getTlsKeystoreAlias(),
+                                        null );
                         final long keystoreId = httpConfiguration.getTlsKeystoreOid();
                         final String keyAlias = httpConfiguration.getTlsKeystoreAlias()==null ? "" : httpConfiguration.getTlsKeystoreAlias();
                         sslSocketFactory = sslSocketFactoryMap.get( keyNoVersion );
@@ -347,19 +326,12 @@ public class HttpConfigurationCache implements ApplicationListener, Initializing
                 sslSocketFactory = getDefaultSSLSocketFactory( true );
             }
 
-            if ( httpConfiguration.getTlsVersion() != null ) {
+            if ( httpConfiguration.getTlsVersion() != null || httpConfiguration.getTlsCipherSuites() != null ) {
                 final String tlsVersion = httpConfiguration.getTlsVersion();
-                sslSocketFactory = new SSLSocketFactoryWrapper( sslSocketFactory ) {
-                    @Override
-                    protected Socket notifySocket( final Socket socket ) {
-                        if ( socket instanceof SSLSocket ) {
-                            final SSLSocket sslSocket = (SSLSocket) socket;
-                            sslSocket.setEnabledProtocols( new String[]{ tlsVersion } );
-                        }
-                        return socket;
-                    }
-                };
-
+                final String tlsCipherSuites = httpConfiguration.getTlsCipherSuites();
+                String[] tlsVersionArray = tlsVersion == null ? null : new String[] { tlsVersion };
+                String[] tlsCipherSuitesArray = tlsCipherSuites == null ? null : tlsCipherSuites.trim().split("\\s*,\\s*");
+                sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersionArray, tlsCipherSuitesArray);
                 sslSocketFactoryMap.put( key, sslSocketFactory );
             } 
         }
@@ -671,16 +643,19 @@ public class HttpConfigurationCache implements ApplicationListener, Initializing
         private final String tlsVersion;
         private final long keyStoreOid;
         private final String keyStoreAlias;
+        private final String tlsCipherSuites;
 
         private SslSocketFactoryKey( final HttpConfiguration.Option tlsUse,
                                      final String tlsVersion,
                                      final long keyStoreOid,
-                                     final String keyStoreAlias ) {
+                                     final String keyStoreAlias,
+                                     final String tlsCipherSuites ) {
             if ( tlsUse==null ) throw new IllegalArgumentException( "use is required" );
             this.tlsUse = tlsUse;
             this.tlsVersion = tlsVersion;
             this.keyStoreOid = keyStoreOid;
             this.keyStoreAlias = keyStoreAlias;
+            this.tlsCipherSuites = tlsCipherSuites;
         }
 
         @SuppressWarnings({ "RedundantIfStatement" })
@@ -696,6 +671,7 @@ public class HttpConfigurationCache implements ApplicationListener, Initializing
                 return false;
             if ( tlsUse != that.tlsUse ) return false;
             if ( tlsVersion != null ? !tlsVersion.equals( that.tlsVersion ) : that.tlsVersion != null ) return false;
+            if ( tlsCipherSuites != null ? !tlsCipherSuites.equals( that.tlsCipherSuites ) : that.tlsCipherSuites != null ) return false;
 
             return true;
         }
@@ -706,6 +682,7 @@ public class HttpConfigurationCache implements ApplicationListener, Initializing
             result = 31 * result + (tlsVersion != null ? tlsVersion.hashCode() : 0);
             result = 31 * result + (int) (keyStoreOid ^ (keyStoreOid >>> 32));
             result = 31 * result + (keyStoreAlias != null ? keyStoreAlias.hashCode() : 0);
+            result = 31 * result + (tlsCipherSuites != null ? tlsCipherSuites.hashCode() : 0);
             return result;
         }
     }

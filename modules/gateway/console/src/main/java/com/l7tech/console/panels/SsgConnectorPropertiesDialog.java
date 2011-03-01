@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.TopComponents;
@@ -13,7 +14,6 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.widgets.JCheckBoxListModel;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.*;
@@ -40,7 +40,6 @@ import static com.l7tech.gateway.common.transport.SsgConnector.*;
 
 public class SsgConnectorPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgConnectorPropertiesDialog.class.getName());
-    private static final boolean INCLUDE_ALL_CIPHERS = SyspropUtil.getBoolean("com.l7tech.console.connector.includeAllCiphers");
     private static final boolean ENABLE_FTPS_TLS12 = SyspropUtil.getBoolean("com.l7tech.console.connector.allowFtpsTls12");
     private static final String DIALOG_TITLE = "Listen Port Properties";
     private static final int TAB_SSL = 1;
@@ -69,8 +68,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
     private static final String INTERFACE_ANY = "(All)";
 
-    private static final String WS_COMMA_WS = "\\s*,\\s*";
-
     private static final String CPROP_WASENABLED = SsgConnectorPropertiesDialog.class.getName() + ".wasEnabled";
 
     private JPanel contentPane;
@@ -86,6 +83,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JList cipherSuiteList;
     private JButton moveUpButton;
     private JButton moveDownButton;
+    private JButton uncheckAllButton;
     private JButton defaultCipherListButton;
     private JTextField portRangeStartField;
     private JTextField portRangeCountField;
@@ -243,7 +241,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         initializeInterfaceComboBox();
 
-        initializeCipherSuiteControls();
+        this.cipherSuiteListModel = CipherSuiteGuiUtil.createCipherSuiteListModel(this.cipherSuiteList, defaultCipherListButton, uncheckAllButton, null, moveUpButton, moveDownButton);
 
         propertyList.setModel(propertyListModel);
         propertyList.setCellRenderer(new DefaultListCellRenderer() {
@@ -510,7 +508,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         String alg = privateKeyComboBox.getSelectedKeyAlgorithm();
         if (!("EC".equals(alg) || "ECDSA".equals(alg)))
             return false;
-        final String cipherList = cipherSuiteListModel.asCipherListString();
+        final String cipherList = cipherSuiteListModel.asCipherListStringOrNullIfDefault();
         return cipherList == null || cipherList.indexOf("RSA_") > 0;
     }
 
@@ -591,172 +589,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         interfaceComboBox.setModel(interfaceComboBoxModel);
     }
 
-    public static class CipherSuiteListModel extends JCheckBoxListModel {
-        private final String[] allCiphers;
-        private final Set<String> defaultCiphers;
-
-        public CipherSuiteListModel(String[] allCiphers, Set<String> defaultCiphers) {
-            super(new ArrayList<JCheckBox>());
-            this.allCiphers = ArrayUtils.copy(allCiphers);
-            this.defaultCiphers = new LinkedHashSet<String>(defaultCiphers);
-        }
-
-        /**
-         * @return cipher list string corresponding to all checked cipher names in order, comma delimited, ie.
-         *         "TLS_RSA_WITH_AES_128_CBC_SHA, SSL_RSA_WITH_3DES_EDE_CBC_SHA", or null if the default
-         *         cipher list is in use.
-         */
-        public String asCipherListString() {
-            String defaultList = buildDefaultCipherListString();
-            String ourList = buildEntryCodeString();
-            return defaultList.equals(ourList) ? null : ourList;
-        }
-
-        private String buildDefaultCipherListString() {
-            StringBuilder ret = new StringBuilder(128);
-            boolean isFirst = true;
-            for (String cipher : allCiphers) {
-                if (defaultCiphers.contains(cipher)) {
-                    if (!isFirst) ret.append(',');
-                    ret.append(cipher);
-                    isFirst = false;
-                }
-            }
-            return ret.toString();
-        }
-
-        /**
-         * Populate the list model from the specified cipher list string.
-         * This will first build a master list of ciphers by appending any missing ciphers from allCiphers
-         * to the end of the provided cipherList, then marking as "checked" only those ciphers that were present
-         * in cipherList.
-         *
-         * @param cipherList a cipher list string, ie "TLS_RSA_WITH_AES_128_CBC_SHA, SSL_RSA_WITH_3DES_EDE_CBC_SHA",
-         *                   or null to just use the default cipher list.
-         */
-        public void setCipherListString(String cipherList) {
-            if (cipherList == null) {
-                setDefaultCipherList();
-                return;
-            }
-
-            Set<String> enabled = new LinkedHashSet<String>(Arrays.asList(cipherList.split(WS_COMMA_WS)));
-            Set<String> all = new LinkedHashSet<String>(Arrays.asList(allCiphers));
-            List<JCheckBox> entries = getEntries();
-            entries.clear();
-            for (String cipher : enabled) {
-                entries.add(new JCheckBox(cipher, true));
-            }
-            for (String cipher : all) {
-                if (!enabled.contains(cipher))
-                    entries.add(new JCheckBox(cipher, false));
-            }
-        }
-
-        /**
-         * Reset the cipher list to the defaults.
-         */
-        public void setDefaultCipherList() {
-            List<JCheckBox> entries = getEntries();
-            int oldsize = entries.size();
-            entries.clear();
-            for (String cipher : allCiphers)
-                entries.add(new JCheckBox(cipher, defaultCiphers.contains(cipher)));
-            fireContentsChanged(this, 0, Math.max(oldsize, entries.size()));
-        }
-    }
-
-    private static String[] getCipherSuiteNames() {
-        String[] unfiltered = Registry.getDefault().getTransportAdmin().getAllCipherSuiteNames();
-        if (INCLUDE_ALL_CIPHERS)
-            return unfiltered;
-
-        List<String> ret = new ArrayList<String>();
-        for (String name : unfiltered) {
-            if (cipherSuiteShouldBeVisible(name))
-                ret.add(name);
-        }
-        return ret.toArray(new String[ret.size()]);
-    }
-
-    /**
-     * Check if the specified cipher suite should be shown or hidden in the UI.
-     * <P/>
-     * Currently a cipher suite is shown if is RSA based, as long as it is neither _WITH_NULL_ (which
-     * does no encryption) or _anon_ (which does no authentication).
-     *
-     * @param cipherSuiteName the name of an SSL cipher suite to check, ie "TLS_RSA_WITH_AES_128_CBC_SHA".  Required.
-     * @return true if this cipher suite should be shown in the UI (regardless of whether it should be checked by default
-     *         in new connectors).  False if this cipher suite should be hidden in the UI.
-     */
-    public static boolean cipherSuiteShouldBeVisible(String cipherSuiteName) {
-        return !contains(cipherSuiteName, "_WITH_NULL_") && !contains(cipherSuiteName, "_anon_") && (
-                contains(cipherSuiteName, "_RSA_") ||
-                contains(cipherSuiteName, "_ECDSA_") 
-        );
-    }
-
-    /**
-     * Check if the specified cipher suite should be checked by default in newly created listen ports.
-     *
-     * @param cipherSuiteName the name of an SSL cipher suite to check, ie "TLS_RSA_WITH_AES_128_CBC_SHA".  Required.
-     * @return true if this cipher suite should be checked by default in the UI.
-     */
-    public static boolean cipherSuiteShouldBeCheckedByDefault(String cipherSuiteName) {
-        return cipherSuiteShouldBeVisible(cipherSuiteName) && !contains(cipherSuiteName, "_EXPORT_");
-    }
-
-    private static boolean contains(String string, String substr) {
-        return string.indexOf(substr) > 0;
-    }
-
-    private void initializeCipherSuiteControls() {
-        String[] allCiphers = getCipherSuiteNames();
-        Set<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
-                Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames()));
-        this.cipherSuiteListModel = new CipherSuiteListModel(allCiphers, defaultCiphers);
-        final JList cipherSuiteList = this.cipherSuiteList;
-        final CipherSuiteListModel cipherSuiteListModel = this.cipherSuiteListModel;
-        cipherSuiteListModel.attachToJList(cipherSuiteList);
-        this.cipherSuiteList.addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                enableOrDisableCipherSuiteButtons();
-            }
-        });
-
-        defaultCipherListButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                cipherSuiteListModel.setDefaultCipherList();
-            }
-        });
-
-        moveUpButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int index = SsgConnectorPropertiesDialog.this.cipherSuiteList.getSelectedIndex();
-                if (index < 1) return;
-                int prevIndex = index - 1;
-                cipherSuiteListModel.swapEntries(prevIndex, index);
-                SsgConnectorPropertiesDialog.this.cipherSuiteList.setSelectedIndex(prevIndex);
-                SsgConnectorPropertiesDialog.this.cipherSuiteList.ensureIndexIsVisible(prevIndex);
-            }
-        });
-
-        moveDownButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int index = SsgConnectorPropertiesDialog.this.cipherSuiteList.getSelectedIndex();
-                if (index < 0 || index >= cipherSuiteListModel.getSize() - 1) return;
-                int nextIndex = index + 1;
-                cipherSuiteListModel.swapEntries(index, nextIndex);
-                SsgConnectorPropertiesDialog.this.cipherSuiteList.setSelectedIndex(nextIndex);
-                SsgConnectorPropertiesDialog.this.cipherSuiteList.ensureIndexIsVisible(nextIndex);
-            }
-        });
-    }
-
     private TransportDescriptor getSelectedProtocol() {
         return (TransportDescriptor)protocolComboBox.getSelectedItem();
     }
@@ -781,7 +613,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         enableOrDisableTabs();
         enableOrDisableEndpoints();
         enableOrDisableTlsVersions();
-        enableOrDisableCipherSuiteButtons();
+        CipherSuiteGuiUtil.enableOrDisableCipherSuiteButtons(cipherSuiteList, cipherSuiteListModel, moveUpButton, moveDownButton);
         enableOrDisablePropertyButtons();
         enableOrDisableServiceResolutionCheckboxes();
         enableOrDisableServiceResolutionDropdowns();
@@ -821,6 +653,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         cipherSuiteList.setEnabled(isSsl);
         moveUpButton.setEnabled(isSsl);
         moveDownButton.setEnabled(isSsl);
+        uncheckAllButton.setEnabled(isSsl);
         defaultCipherListButton.setEnabled(isSsl);
         clientAuthComboBox.setEnabled(isSsl);
         privateKeyComboBox.setEnabled(isSsl);
@@ -929,12 +762,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
     }
 
-    private void enableOrDisableCipherSuiteButtons() {
-        int index = cipherSuiteList.getSelectedIndex();
-        moveUpButton.setEnabled(index > 0);
-        moveDownButton.setEnabled(index >= 0 && index < cipherSuiteListModel.getSize() - 1);
-    }
-
     private ContentTypeHeader getSelectedOverrideContentType() {
         if (!overrideContentTypeCheckBox.isSelected())
             return null;
@@ -990,7 +817,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
      *                  will be enabled.
      */
     private void setEndpointList(String endpoints) {
-        String[] names = endpoints == null ? ArrayUtils.EMPTY_STRING_ARRAY : endpoints.split(WS_COMMA_WS);
+        String[] names = endpoints == null ? ArrayUtils.EMPTY_STRING_ARRAY : CipherSuiteListModel.WS_COMMA_WS.split(endpoints);
 
         boolean messages = false;
         boolean ssmRemote = false;
@@ -1196,7 +1023,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         }
         connector.setClientAuth(((ClientAuthType)clientAuthComboBox.getSelectedItem()).code);
-        connector.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, cipherSuiteListModel.asCipherListString());
+        connector.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, cipherSuiteListModel.asCipherListStringOrNullIfDefault());
 
         Set<String> protos = new LinkedHashSet<String>();
         if (tls10CheckBox.isSelected()) protos.add("TLSv1");

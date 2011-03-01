@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.io.PortRange;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.action.ManageResolutionConfigurationAction;
+import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -165,7 +166,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         StringBuilder cipherlist = new StringBuilder();
         boolean first = true;
         for (String cipher : known) {
-            if (SsgConnectorPropertiesDialog.cipherSuiteShouldBeCheckedByDefault(cipher)) {
+            if (CipherSuiteGuiUtil.cipherSuiteShouldBeCheckedByDefault(cipher)) {
                 if (!first) cipherlist.append(',');
                 cipherlist.append(cipher);
                 first = false;

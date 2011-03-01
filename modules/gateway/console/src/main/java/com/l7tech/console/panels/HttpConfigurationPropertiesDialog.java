@@ -52,6 +52,9 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
     private JRadioButton useCustomPrivateKeyRadioButton;
     private JComboBox privateKeyComboBox;
     private JButton managePrivateKeysButton;
+    private JRadioButton useDefaultCipherSuitesRadioButton;
+    private JRadioButton useCustomCipherSuitesRadioButton;
+    private JButton cipherSuitesButton;
     private JComboBox protocolComboBox;
     private JRadioButton useDefaultHTTPProxyRadioButton;
     private JRadioButton doNotUseAnHTTPProxyRadioButton;
@@ -69,6 +72,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
     private boolean readOnly;
     private boolean wasOk;
     private HttpConfiguration httpConfiguration;
+    private String tlsCipherSuiteList;
 
     public HttpConfigurationPropertiesDialog( final Window owner,
                                               final HttpConfiguration httpConfiguration,
@@ -132,6 +136,8 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         doNotUseAnHTTPProxyRadioButton.addActionListener( enableDisableListener );
         useSpecifiedHTTPProxyRadioButton.addActionListener( enableDisableListener );
         proxyUsernameTextField.getDocument().addDocumentListener( enableDisableListener );
+        useDefaultCipherSuitesRadioButton.addActionListener( enableDisableListener );
+        useCustomCipherSuitesRadioButton.addActionListener( enableDisableListener );
 
         protocolComboBox.setModel( new DefaultComboBoxModel( new Object[]{ ANY, HttpConfiguration.Protocol.HTTP, HttpConfiguration.Protocol.HTTPS } ) );
         protocolComboBox.setRenderer( new TextListCellRenderer<Object>( new Functions.Unary<String,Object>(){
@@ -158,6 +164,13 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
             @Override
             public void focusLost( final FocusEvent e ) {
                 updatePath();
+            }
+        });
+
+        cipherSuitesButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doManageCipherSuites();
             }
         });
 
@@ -206,6 +219,15 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
 
     private void doCancel() {
         dispose();
+    }
+
+    private void doManageCipherSuites() {
+        CipherSuiteDialog.show(this, null, ModalityType.DOCUMENT_MODAL, readOnly, tlsCipherSuiteList, new Functions.UnaryVoid<String>() {
+            @Override
+            public void call(String s) {
+                tlsCipherSuiteList = s;
+            }
+        });
     }
 
     private void doManageKeys() {
@@ -273,6 +295,10 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                 privateKeyDropDown.select( httpConfiguration.getTlsKeystoreOid(), httpConfiguration.getTlsKeystoreAlias() );
                 break;
         }
+
+        tlsCipherSuiteList = httpConfiguration.getTlsCipherSuites();
+        useDefaultCipherSuitesRadioButton.setSelected(tlsCipherSuiteList == null);
+        useCustomCipherSuitesRadioButton.setSelected(tlsCipherSuiteList != null);
 
         if ( httpConfiguration.getConnectTimeout() == -1 ) {
             connectionUseSystemDefaultCheckBox.setSelected( true );
@@ -352,9 +378,11 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                 httpConfiguration.setTlsKeystoreOid( privateKeyDropDown.getSelectedKeystoreId() );
                 httpConfiguration.setTlsKeystoreAlias( privateKeyDropDown.getSelectedKeyAlias() );
             }
+            httpConfiguration.setTlsCipherSuites( useCustomCipherSuitesRadioButton.isSelected() ? tlsCipherSuiteList : null );
         } else {
             httpConfiguration.setTlsVersion( null );
             httpConfiguration.setTlsKeyUse( HttpConfiguration.Option.DEFAULT );
+            httpConfiguration.setTlsCipherSuites( null );
         }
 
         if ( connectionUseSystemDefaultCheckBox.isSelected() ) {
@@ -443,6 +471,11 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
             doNotUseAnyPrivateKeyRadioButton.setEnabled( enableTlsSettings );
             useCustomPrivateKeyRadioButton.setEnabled( enableTlsSettings );
             tlsKeyLabel.setEnabled( enableTlsSettings );
+            useDefaultCipherSuitesRadioButton.setEnabled( enableTlsSettings );
+            useCustomCipherSuitesRadioButton.setEnabled( enableTlsSettings );
+
+            final boolean enableCipheSuiteSelection = useCustomCipherSuitesRadioButton.isSelected() && useCustomCipherSuitesRadioButton.isEnabled();
+            cipherSuitesButton.setEnabled( enableCipheSuiteSelection );
 
             final boolean enableKeySelection = useCustomPrivateKeyRadioButton.isSelected() && useCustomPrivateKeyRadioButton.isEnabled();
             privateKeyComboBox.setEnabled( enableKeySelection );

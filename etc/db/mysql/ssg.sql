@@ -890,6 +890,7 @@ CREATE TABLE http_configuration (
   tls_key_use varchar(8) DEFAULT 'DEFAULT',
   tls_keystore_oid bigint(20) NOT NULL DEFAULT 0,
   tls_key_alias varchar(255) DEFAULT NULL,
+  tls_cipher_suites varchar(4096) DEFAULT NULL,
   timeout_connect int(10) NOT NULL DEFAULT -1,
   timeout_read int(10) NOT NULL DEFAULT -1,
   follow_redirects tinyint(1) NOT NULL DEFAULT 0,

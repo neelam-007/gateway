@@ -8,6 +8,7 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
+import com.l7tech.common.io.SSLSocketFactoryWrapper;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
@@ -137,6 +138,13 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             final int timeout = SyspropUtil.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             sslSocketFactory = sslContext.getSocketFactory();
+
+            if (assertion.getTlsCipherSuites() != null || assertion.getTlsVersion() != null) {
+                String[] tlsVersions = assertion.getTlsVersion() == null ? null : new String[] {assertion.getTlsVersion()};
+                String[] tlsCipherSuites = assertion.getTlsCipherSuites() == null ? null : assertion.getTlsCipherSuites().trim().split("\\s*,\\s*");
+                sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersions, tlsCipherSuites);
+            }
+
         } catch (Exception e) {
             //noinspection ThrowableResultOfMethodCallIgnored
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, ExceptionUtils.getDebugException(e));
