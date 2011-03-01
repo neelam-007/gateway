@@ -15,8 +15,6 @@ SET FOREIGN_KEY_CHECKS=0;
 
 UPDATE ssg_version SET current_version = '5.4.1';
 
-ALTER TABLE jms_endpoint ADD COLUMN request_max_size bigint NOT NULL default -1 AFTER use_message_id_for_correlation;
-
 -- bug 9651
 UPDATE rbac_role SET description = 'Users assigned to the {0} role have the ability to read, create, update and delete UDDI Registry connections.' where objectid = -1000; 
 

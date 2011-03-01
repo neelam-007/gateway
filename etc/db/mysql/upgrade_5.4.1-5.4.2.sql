@@ -15,6 +15,7 @@ SET FOREIGN_KEY_CHECKS=0;
 
 UPDATE ssg_version SET current_version = '5.4.2';
 
+ALTER TABLE jms_endpoint ADD COLUMN request_max_size bigint NOT NULL default -1 AFTER use_message_id_for_correlation;
 
 -- Per-host outbound TLS cipher suite configuration (enhancement #9939)
 ALTER TABLE http_configuration ADD COLUMN tls_cipher_suites varchar(4096) DEFAULT NULL;
