@@ -1,5 +1,7 @@
 package com.l7tech.server.migration;
 
+import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.ExportedItem;
@@ -359,6 +361,7 @@ public class MigrationManagerImpl implements MigrationManager {
             ((PublishedService)entity).getPolicy().setOid(((PublishedService)onTarget).getPolicy().getOid());
             ((PublishedService)entity).getPolicy().setVersion(((PublishedService)onTarget).getPolicy().getVersion());
             ((PublishedService)entity).setDisabled(((PublishedService)onTarget).isDisabled());
+            ((PublishedService)entity).parseWsdlStrategy( buildWsdlStrategy( header, bundle ) );
         }
 
         if (!dryRun) {
@@ -378,8 +381,11 @@ public class MigrationManagerImpl implements MigrationManager {
         if (entity == null)
             throw new MigrationApi.MigrationException("Entity not found in the bundle for header: " + header);
 
-        if (entity instanceof PublishedService)
-            ((PublishedService) entity).setDisabled(!enableServices);
+        if (entity instanceof PublishedService) {
+            final PublishedService service = (PublishedService) entity;
+            service.parseWsdlStrategy( buildWsdlStrategy( header, bundle ) );
+            service.setDisabled( !enableServices );
+        }
 
         if (!dryRun) {
             if (entity instanceof PersistentEntity)
@@ -492,6 +498,26 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         return errors;
+    }
+
+    private PublishedService.WsdlStrategy buildWsdlStrategy( final ExternalEntityHeader serviceHeader,
+                                                             final MigrationBundle bundle ) {
+        return new ServiceDocumentWsdlStrategy( findServiceDocuments( serviceHeader, bundle.getExportedEntities() ) );
+    }
+
+    private Collection<ServiceDocument> findServiceDocuments( final ExternalEntityHeader serviceHeader, final Map<ExternalEntityHeader, Entity> entities  ) {
+        Collection<ServiceDocument> serviceDocuments = new ArrayList<ServiceDocument>();
+
+        for (ExternalEntityHeader header : entities.keySet()) {
+            if (header.getType() == EntityType.SERVICE_DOCUMENT ) {
+                ServiceDocument serviceDocument = (ServiceDocument) entities.get(header);
+                if ( serviceDocument.getServiceId() == serviceHeader.getOid()  ) {
+                    serviceDocuments.add( serviceDocument );
+                }
+            }
+        }
+
+        return serviceDocuments;
     }
 
     private void findDependenciesRecursive(MigrationMetadata result, ExternalEntityHeader header, Set<ExternalEntityHeader> visited) throws MigrationApi.MigrationException, PropertyResolverException {
