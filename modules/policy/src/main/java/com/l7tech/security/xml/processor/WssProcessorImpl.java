@@ -1470,6 +1470,9 @@ public class WssProcessorImpl implements WssProcessor {
         } catch (PseudoIOException e) {
             logger.log(Level.FINE, "Error decrypting", e);
             throw new ProcessorException("Error decrypting", e); 
+        } catch (IllegalStateException e) {
+            logger.log(Level.FINE, "Error decrypting", e);
+            throw new ProcessorException("Error decrypting", e);
         }
 
         // determine algorithm
