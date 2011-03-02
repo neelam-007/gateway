@@ -436,7 +436,7 @@ EOM
             copyLocalWorldToDatabase();
             print "\nThe world file has been copied to the database.\n\n";
         } else {
-            print "\nThe database alredy contains a copy of the current world file.\n\n";
+            print "\nThe database already contains a copy of the current world file.\n\n";
         }
 
         print "Next time it starts up configured to use the nCipher HSM, the Gateway will sync any keystore objects\n",
