@@ -10,7 +10,9 @@ import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
@@ -178,31 +180,30 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
 
     @Override
     public String[] getVariablesUsed() {
-        List<String> vars = new ArrayList<String>();
+        final List<String> variableTemplates = new ArrayList<String>();
+        variableTemplates.add( getStatusMessage() );
+        variableTemplates.add( getStatusDetail() );
 
-        StringBuilder builder = new StringBuilder();
-        builder.append(getStatusMessage());
-        builder.append(getStatusDetail());
-
-        builder.append(getResponseId());
-        builder.append(getIssueInstant());
-        builder.append(getInResponseTo());
-
-        builder.append(getResponseAssertions());
+        variableTemplates.add( getResponseId() );
+        variableTemplates.add( getIssueInstant() );
+        variableTemplates.add( getInResponseTo() );
+        variableTemplates.add( getResponseAssertions() );
 
         switch (getSamlVersion()){
-
             case SAML2:
-                builder.append(getDestination());
-                builder.append(getConsent());
-                builder.append(getResponseExtensions());
-                builder.append(getEncryptedAssertions());
+                variableTemplates.add( getDestination() );
+                variableTemplates.add( getConsent() );
+                variableTemplates.add( getResponseExtensions() );
+                variableTemplates.add( getEncryptedAssertions() );
                 break;
             case SAML1_1:
-                builder.append(getRecipient());
+                variableTemplates.add( getRecipient() );
         }
 
-        final String[] refVars = Syntax.getReferencedNames(builder.toString());
+        final String[] refVars = Syntax.getReferencedNames(variableTemplates.toArray(new String[variableTemplates.size()]));
+
+        final Set<String> vars = new LinkedHashSet<String>();
+        vars.addAll(Arrays.asList(super.getVariablesUsed()));
         vars.addAll(Arrays.asList(refVars));
         
         return vars.toArray(new String[vars.size()]);
