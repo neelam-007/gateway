@@ -1406,7 +1406,7 @@ public class WssDecoratorTest {
     
     @Test
     public void testSignWithSamlHokSecretKey() throws Exception {
-        runTest(getSignWithSamlHokSecretKeyTestDocument());
+        runTest(getSignWithSamlHokSecretKeyTestDocument(), makeSamlHokSecretKeyVerifier());
     }
 
     TestDocument getSignWithSamlHokSecretKeyTestDocument() throws Exception {
@@ -1432,13 +1432,35 @@ public class WssDecoratorTest {
         Context c = new Context();
         DecorationRequirements dreq = new DecorationRequirements();
         dreq.setSenderSamlToken(samlAssertion);
-        dreq.getElementsToSign().add(c.body);
+        dreq.addElementToSign(c.body);
         dreq.addElementToEncrypt(c.body);
         dreq.setEncryptedKey(subjectConfirmationEncryptedKey.getSecretKey());
         dreq.setEncryptedKeyReferenceInfo(KeyInfoDetails.makeKeyId(samlAssertion.getAssertionId(), false, SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11));
         dreq.setUseDerivedKeys(true);
 
         return new TestDocument(c, dreq, null, resolver);
+    }
+
+    @Test
+    @BugNumber(9965)
+    public void testSignWithSamlHokSecretKeyWithSamlPreferred() throws Exception {
+        runTest(getSignWithSamlHokSecretKeyWithSamlPreferredTestDocument(), makeSamlHokSecretKeyVerifier());
+    }
+
+    TestDocument getSignWithSamlHokSecretKeyWithSamlPreferredTestDocument() throws Exception {
+        TestDocument td = getSignWithSamlHokSecretKeyTestDocument();
+        td.req.setPreferredSigningTokenType(DecorationRequirements.PreferredSigningTokenType.SAML_HOK);
+        td.req.setSenderMessageSigningPrivateKey(TestDocuments.getDotNetServerPrivateKey());
+        return td;
+    }
+
+    private Functions.UnaryVoid<Document> makeSamlHokSecretKeyVerifier() {
+        return new Functions.UnaryVoid<Document>() {
+            @Override
+            public void call(Document document) {
+                assertEquals("Decorated message must include two DerivedKeyToken elements", 2, document.getElementsByTagNameNS("http://schemas.xmlsoap.org/ws/2004/04/sc", "DerivedKeyToken").getLength());
+            }
+        };
     }
 
     /**

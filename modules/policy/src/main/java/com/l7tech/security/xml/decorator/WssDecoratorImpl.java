@@ -275,7 +275,13 @@ public class WssDecoratorImpl implements WssDecorator {
                     case SAML_HOK:
                         if (saml == null)
                             throw new DecoratorException("Signing is requested with SAML HoK as preferred signing token type, but no SAML token was provided");
-                        signatureInfo = processSamlSigningToken( dreq, signList, saml, samlElement );
+
+                        if (saml.hasSubjectConfirmationEncryptedKey()) {
+                            // Such an assertion should be treated like an EncryptedKey instead, for signing purposes (Bug #9965)
+                            signatureInfo = processEncryptedKeySigningToken( c, securityHeader, signList );
+                        } else {
+                            signatureInfo = processSamlSigningToken( dreq, signList, saml, samlElement );
+                        }
                         break;
 
                     case SCT:

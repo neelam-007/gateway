@@ -1006,6 +1006,13 @@ public class WssRoundTripTest {
     }
 
     @Test
+    @BugNumber(9965)
+    public void testSamlSecretKeyHokSubjectConfirmationWithSamlPreferred() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SamlSecretKeyHokSubjectConfirmationwWithSamlPreferred",
+                wssDecoratorTest.getSignWithSamlHokSecretKeyWithSamlPreferredTestDocument()), false);
+    }
+
+    @Test
     @BugNumber(9749)
     public void testEncryptedSignature() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedSignature", wssDecoratorTest.getEncryptedSignatureTestDocument()), false);
