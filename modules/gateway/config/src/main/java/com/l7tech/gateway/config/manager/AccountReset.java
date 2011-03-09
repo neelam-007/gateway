@@ -128,7 +128,7 @@ public class AccountReset {
             logger.info("Using database name '" + config.getName() + "'.");
             logger.info("Using database user '" + config.getNodeUsername() + "'.");
 
-            MasterPasswordManager decryptor = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+            MasterPasswordManager decryptor = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile));
             config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
         } else {
             System.out.println("Configuration files not found, cannot reset administration account.");

@@ -1,8 +1,9 @@
 package com.l7tech.internal.omp;
 
 import com.l7tech.server.util.PropertiesDecryptor;
-import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.ObfuscatedFileMasterPasswordFinder;
 
 import java.util.Properties;
 
@@ -30,13 +31,18 @@ public class OmpDecrypt {
             throw new IllegalArgumentException("Usage: java OmpDecrypt <omp>\n\nExample: java OmpDecrypt $L7O$LTQ5NzIyMDIwMjgyMzgzNTI1ODI=$T8gt71DN < node.properties");
 
         String omp = args[0];
-        final String masterPassphrase = DefaultMasterPasswordFinder.unobfuscate(omp);
+        final String masterPassphrase = ObfuscatedFileMasterPasswordFinder.unobfuscate(omp);
         System.out.println("Un-obfuscated master passphrase: " + masterPassphrase);
 
         System.out.println("Reading properties file to decrypt from STDIN");
         Properties properties = new Properties();
         properties.load(System.in);
-        new PropertiesDecryptor(new MasterPasswordManager(masterPassphrase.toCharArray())).decryptEncryptedPasswords(properties);
+        new PropertiesDecryptor(new MasterPasswordManager(new MasterPasswordManager.MasterPasswordFinder() {
+            @Override
+            public byte[] findMasterPasswordBytes() {
+                return masterPassphrase.getBytes(Charsets.UTF8);
+            }
+        })).decryptEncryptedPasswords(properties);
 
         properties.store(System.out, "Decrypted");
     }

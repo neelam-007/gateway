@@ -4,6 +4,9 @@ import com.l7tech.util.*;
 import org.xml.sax.SAXException;
 
 import java.io.*;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -13,15 +16,41 @@ import java.util.regex.Pattern;
  */
 public class MasterPassphraseChanger {
     private static final Logger logger = Logger.getLogger(MasterPassphraseChanger.class.getName());
+
+    public static final int EXIT_STATUS_USAGE = 2;
+
     private static final String DEFAULT_MASTER_PASSPHRASE = "7layer";
     private static final int MIN_LENGTH = 6;
     private static final int MAX_LENGTH = 128;
     private static final String CONFIG_PATH = "../node/default/etc/conf";
 
-    public static void main(String[] args) {
+    private final String command;
+    private final String subcommand;
+
+    public MasterPassphraseChanger(String command, String subcommand) {
+        this.command = command;
+        this.subcommand = subcommand;
+    }
+
+    public static void main(String[] argv) {
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
         try {
-            new MasterPassphraseChanger().run(CONFIG_PATH, new String[]{ "node.cluster.pass", "node.db.config.main.pass" });
+            LinkedList<String> args = new LinkedList<String>(Arrays.asList(argv));
+
+            if (args.isEmpty()) {
+                // No args -- run in interactive mode
+                new MasterPassphraseChanger(null, null).run(CONFIG_PATH, new String[]{ "node.cluster.pass", "node.db.config.main.pass" });
+            } else {
+                String command = args.removeFirst();
+                String subcommand = args.removeFirst();
+                if (!args.isEmpty())
+                    usage("Too many arguments.");
+
+                // Args provided -- execute requested command and return
+                new MasterPassphraseChanger(command, subcommand).run(CONFIG_PATH, new String[]{ "node.cluster.pass", "node.db.config.main.pass" });
+            }
+        } catch (NoSuchElementException e) {
+            usage("Not enough arguments.");
         } catch (Throwable e) {
             String msg = "Unable to change master passphrase: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, e);
@@ -31,9 +60,22 @@ public class MasterPassphraseChanger {
     }
 
     private boolean isMatchingMasterPassphrase(String currentObfuscated, String candidatePlaintext) throws IOException {
-        long currentSalt = DefaultMasterPasswordFinder.getSalt(currentObfuscated);
-        String candidateObfuscated = DefaultMasterPasswordFinder.obfuscate(candidatePlaintext, currentSalt);
+        long currentSalt = ObfuscatedFileMasterPasswordFinder.getSalt(currentObfuscated);
+        String candidateObfuscated = ObfuscatedFileMasterPasswordFinder.obfuscate(candidatePlaintext, currentSalt);
         return currentObfuscated.equals(candidateObfuscated);
+    }
+
+    // Never returns; calls System.exit
+    private static void usage(String prefix) {
+        String p = prefix == null ? "" : prefix + "\n";
+        fatal(p + "Usage: MasterPassphraseChanger [kmp <generateAll|eraseAll>]", null, EXIT_STATUS_USAGE);
+    }
+
+    // Never returns; calls System.exit
+    private static void fatal(String msg, Throwable t, int status) {
+        logger.log(Level.WARNING, msg, t);
+        System.err.println(msg);
+        System.exit(status);
     }
 
     private void exitOnQuit( final String perhapsQuit ) {
@@ -43,6 +85,11 @@ public class MasterPassphraseChanger {
     }
 
     private void run( String configurationDirPath, String[] passwordProperties ) throws IOException, SAXException {
+        if (command != null) {
+            runCommand(command, subcommand);
+            return;
+        }
+
         File configDirectory = new File(configurationDirPath);
         File ompCurFile= new File( configDirectory, "omp.dat" );
         if (ompCurFile.exists()) {
@@ -82,10 +129,10 @@ public class MasterPassphraseChanger {
         FileUtils.touch(ompNewFile);
 
         // Save new password so admin can manually recover if we go haywire during the operation
-        new DefaultMasterPasswordFinder(ompNewFile).saveMasterPassword(newMasterPass.toCharArray());
+        new ObfuscatedFileMasterPasswordFinder(ompNewFile).saveMasterPassword(newMasterPass.toCharArray());
 
-        final MasterPasswordManager decryptor = ompCurFile.exists() ? new MasterPasswordManager(new DefaultMasterPasswordFinder(ompOldFile).findMasterPassword()) : null;
-        final MasterPasswordManager encryptor = new MasterPasswordManager(newMasterPass.toCharArray());
+        final MasterPasswordManager decryptor = ompCurFile.exists() ? new MasterPasswordManager(new DefaultMasterPasswordFinder(ompOldFile)) : null;
+        final MasterPasswordManager encryptor = new MasterPasswordManager(newMasterPass.getBytes(Charsets.UTF8));
 
         PasswordPropertyCrypto passwordCrypto = new PasswordPropertyCrypto(encryptor, decryptor);
         passwordCrypto.setPasswordProperties( passwordProperties );
@@ -93,7 +140,7 @@ public class MasterPassphraseChanger {
         findPropertiesFilesAndReencryptPasswords(configDirectory, passwordCrypto);
 
         // Commit the new master password
-        new DefaultMasterPasswordFinder(ompCurFile).saveMasterPassword(newMasterPass.toCharArray());
+        new ObfuscatedFileMasterPasswordFinder(ompCurFile).saveMasterPassword(newMasterPass.toCharArray());
 
         // Clean up
         deleteLockFiles(ompCurFile, ompOldFile, ompNewFile);
@@ -103,6 +150,34 @@ public class MasterPassphraseChanger {
         ompOldFile.renameTo(new File(ompOldFile.getParent(), ompOldFile.getName() + "-" + System.currentTimeMillis()));
 
         System.out.println("Master passphrase changed successfully.");
+    }
+
+    private void runCommand(String command, String subcommand) {
+        if ("ks".equals(command)) {
+            runKsSubcomand(subcommand);
+        } else {
+            usage("Unknown command: " + command);
+        }
+    }
+
+    private void runKsSubcomand(String subcommand) {
+        if ("generateAll".equals(subcommand)) {
+            runKsGenerateAll();
+        } else if ("eraseAll".equals(subcommand)) {
+            runKsEraseAll();
+        } else {
+            usage("Unknown ks subcommand: " + subcommand);
+        }
+    }
+
+    private void runKsGenerateAll() {
+        // TODO
+        throw new UnsupportedOperationException("Not yet implemented.");
+    }
+
+    private void runKsEraseAll() {
+        // TODO
+        throw new UnsupportedOperationException("Not yet implemented.");
     }
 
     private void deleteLockFiles(File... files) {

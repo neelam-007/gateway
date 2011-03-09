@@ -1,24 +1,26 @@
 package com.l7tech.gateway.config.backuprestore;
 
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.*;
-import java.sql.*;
-import java.net.*;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
-
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException;
-import com.l7tech.gateway.config.manager.db.DBActions;
-import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
 import com.l7tech.gateway.common.transport.ftp.FtpClientConfigImpl;
+import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
+import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
+import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.*;
+
+import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>
@@ -508,7 +510,7 @@ public class ImportExportUtilities {
         if (ompFile == null) throw new NullPointerException("ompFile cannot be null");
         
         final MasterPasswordManager decryptor = ompFile.exists() ?
-                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) :
+                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile)) :
                 null;
 
         final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);

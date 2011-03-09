@@ -17,18 +17,23 @@ public class MasterPasswordManager {
     private static final String ENCRYPTION_PREFIX = "$" + ENCRYPTION_TAG + "$";
 
     private final MasterPasswordFinder finder;
-    private final byte[] keyBytes;
     private static final SecureRandom rand = new SecureRandom();
 
     /**
-      * @return the master password converted to key bytes, or null if the master password is unavailable.
-      */
-     byte[] getMasterPasswordBytes() {
-         if (keyBytes != null)
-             return keyBytes;
-
-         char[] mp = getMasterPassword();
-        return mp == null ? null : new String(mp).getBytes(Charsets.UTF8);
+     * @return the master password converted to key bytes, or null if the master password is unavailable.
+     */
+    byte[] getMasterPasswordBytes() {
+        byte[] ret = null;
+        Throwable t = null;
+        try {
+            ret = getFinder().findMasterPasswordBytes();
+        } catch (Exception e) {
+            /* FALLTHROUGH and log it */
+            t = e;
+        }
+        if (ret == null)
+            logger.log(Level.WARNING, "Unable to find master password -- assuming unencrypted passwords", t);
+        return ret;
     }
 
     /**
@@ -38,20 +43,6 @@ public class MasterPasswordManager {
      */
     public MasterPasswordManager(final MasterPasswordFinder finder) {
         this.finder = finder;
-        this.keyBytes = null;
-    }
-
-    /**
-     * Create a MasterPasswordManager that will always use the specified master password.
-     *
-     * @param fixedMasterPassword the master password to use.  Required.
-     */
-    public MasterPasswordManager(final char[] fixedMasterPassword) {
-        this(new MasterPasswordFinder() {
-            public char[] findMasterPassword() {
-                return fixedMasterPassword;
-            }
-        });
     }
 
     /**
@@ -59,30 +50,16 @@ public class MasterPasswordManager {
      * and decrypting passwords.
      *
      * @param fixedKeyBytes a byte string that will be used to produce a key.  Will not be treated as characters.
+     *                      No defensive copy will be made, so caller may revoke access to the key at a later time by zeroing the array, causing decryption to fail.
+     * @deprecated This constructor causes the key bytes to be kept in memory forever and should only be used by unit tests.
      */
-    public MasterPasswordManager(byte[] fixedKeyBytes) {
-        this.finder = null;
-        this.keyBytes = fixedKeyBytes;
-    }
-
-    /**
-     * Get the master password from the MasterPasswordFinder.
-     * Uncached -- this will always invoke the finder.
-     *
-     * @return the master password, or null if one could not be found.
-     */
-    char[] getMasterPassword() {
-        char[] ret = null;
-        Throwable t = null;
-        try {
-            ret = getFinder().findMasterPassword();
-        } catch (Exception e) {
-            /* FALLTHROUGH and log it */
-            t = e;
-        }
-        if (ret == null)
-            logger.log(Level.WARNING, "Unable to find master password -- assuming unencrypted passwords", t);
-        return ret;
+    public MasterPasswordManager(final byte[] fixedKeyBytes) {
+        this.finder = new MasterPasswordFinder() {
+            @Override
+            public byte[] findMasterPasswordBytes() {
+                return fixedKeyBytes;
+            }
+        };
     }
 
     /**
@@ -224,7 +201,7 @@ public class MasterPasswordManager {
      * @return true if a master key is currently available; false if no crypto will be done.
      */
     public boolean isKeyAvailable() {
-        return keyBytes != null || getMasterPassword() != null;
+        return getMasterPasswordBytes() != null;
     }
 
     /**
@@ -288,10 +265,11 @@ public class MasterPasswordManager {
         /**
          * Get the Master Password from wherever this MasterPasswordFinder gets it.
          *
-         * @return the master password.  Never empty or null.
+         * @return the master password as a newly-allocated.  Never empty or null.  May contain arbitrary binary data (not necessarily a valid UTF-8 string).
+         *         Caller should zero the array when finished with it.
          * @throws IllegalStateException if no master password can be found.
          */
-        char[] findMasterPassword();
+        byte[] findMasterPasswordBytes();
     }
 }
 

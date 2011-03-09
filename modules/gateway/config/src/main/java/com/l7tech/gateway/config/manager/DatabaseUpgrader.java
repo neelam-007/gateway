@@ -102,7 +102,7 @@ public class DatabaseUpgrader {
                 throw new CausedIOException("Database configuration not found.");
             }
 
-            MasterPasswordManager decryptor = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+            MasterPasswordManager decryptor = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile));
             config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
         } else {
             config = new DatabaseConfig();

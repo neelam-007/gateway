@@ -223,7 +223,7 @@ public class ScaHsmKeystoreConfigurator {
         File ompFile = new File(configDirectory, "omp.dat");
 
         final MasterPasswordManager masterPasswordManager =
-                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile));
         String hsmPasswordEncrypted = masterPasswordManager.encryptPassword(("gateway:" + hsmPassword).toCharArray());
 
         final File ssgVarDir = new File(SSG_VAR_DIR);

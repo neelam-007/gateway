@@ -7,7 +7,7 @@ package com.l7tech.security.prov.bc;
 
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.security.cert.ParamsCertificateGenerator;
+import com.l7tech.common.io.ParamsCertificateGenerator;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
 import org.bouncycastle.asn1.DERBitString;

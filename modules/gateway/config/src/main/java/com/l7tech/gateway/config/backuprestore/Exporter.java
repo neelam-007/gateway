@@ -568,7 +568,7 @@ public final class Exporter{
         }
 
         final MasterPasswordManager decryptor =
-                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile));
         config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
 
         //will we use isVerbose output?

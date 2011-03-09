@@ -15,23 +15,23 @@ public class MasterPasswordManagerTest {
     @Test
     public void testObfuscate() throws Exception {
         String cleartext = "secret password";
-        String obfuscated = DefaultMasterPasswordFinder.obfuscate(cleartext);
+        String obfuscated = ObfuscatedFileMasterPasswordFinder.obfuscate(cleartext);
         System.out.println(cleartext + " -> " + obfuscated);
     }
 
     @Test
     public void testUnobfuscate() throws Exception {
         String obfuscated = "$L7O$LTc0MzIyOTY4NjYwODQ1MTk4ODU=$xU3WNeqb/t+tl+BtH4Be";
-        String cleartext = DefaultMasterPasswordFinder.unobfuscate(obfuscated);
+        String cleartext = ObfuscatedFileMasterPasswordFinder.unobfuscate(obfuscated);
         System.out.println(obfuscated + " -> " + cleartext);
     }
 
     @Test
     public void testObfuscationRoundTrip() throws Exception {
         String cleartext = "mumbleahasdfoasdghuigh";
-        String obfuscated = DefaultMasterPasswordFinder.obfuscate(cleartext);
+        String obfuscated = ObfuscatedFileMasterPasswordFinder.obfuscate(cleartext);
         assertFalse(cleartext.equalsIgnoreCase(obfuscated));
-        String unobfuscated = DefaultMasterPasswordFinder.unobfuscate(obfuscated);
+        String unobfuscated = ObfuscatedFileMasterPasswordFinder.unobfuscate(obfuscated);
         assertEquals(cleartext, unobfuscated);
     }
 
@@ -39,14 +39,14 @@ public class MasterPasswordManagerTest {
     public void testBackwardCompatibility() throws Exception {
         // !!! this string must never change, since it's historical data to guarantee backward compatibility with existing client data
         String obfuscated = "$L7O$LTQ5ODIzNTQ4ODUzOTIyNTc1MzM=$AH9iXRGlLs5hbsJ12LPT";
-        String cleartext = DefaultMasterPasswordFinder.unobfuscate(obfuscated);
+        String cleartext = ObfuscatedFileMasterPasswordFinder.unobfuscate(obfuscated);
         assertEquals("secret password", cleartext);
     }
 
     private MasterPasswordManager.MasterPasswordFinder staticFinder(final String masterPassword) {
         return new MasterPasswordManager.MasterPasswordFinder() {
-            public char[] findMasterPassword() {
-                return masterPassword.toCharArray();
+            public byte[] findMasterPasswordBytes() {
+                return masterPassword.getBytes(Charsets.UTF8);
             }
         };
     }
@@ -84,7 +84,7 @@ public class MasterPasswordManagerTest {
     @Test
     public void testMasterKeyMissing() throws Exception {
         MasterPasswordManager mpm = new MasterPasswordManager(new MasterPasswordManager.MasterPasswordFinder() {
-            public char[] findMasterPassword() {
+            public byte[] findMasterPasswordBytes() {
                 throw new IllegalStateException("No master key available");
             }
         });
@@ -94,7 +94,7 @@ public class MasterPasswordManagerTest {
         assertEquals(CIPHERTEXT, new String(mpm.decryptPasswordIfEncrypted(CIPHERTEXT)));
 
         mpm = new MasterPasswordManager(new MasterPasswordManager.MasterPasswordFinder() {
-            public char[] findMasterPassword() {
+            public byte[] findMasterPasswordBytes() {
                 return null;
             }
         });
@@ -116,7 +116,7 @@ public class MasterPasswordManagerTest {
     @Test
     public void testGenerateTestPasswords() throws Exception {
         String master = "7layer";
-        String masterObf = DefaultMasterPasswordFinder.obfuscate(master);
+        String masterObf = ObfuscatedFileMasterPasswordFinder.obfuscate(master);
         show(master, masterObf);
         System.out.println();
 
@@ -134,8 +134,8 @@ public class MasterPasswordManagerTest {
 
     @Test
     public void testFixedPassword() {
-        MasterPasswordManager mpm = new MasterPasswordManager("foo234".toCharArray());
-        assertEquals("foo234", new String(mpm.getMasterPassword()));
+        MasterPasswordManager mpm = new MasterPasswordManager("foo234".getBytes(Charsets.UTF8));
+        assertEquals("foo234", new String(mpm.getMasterPasswordBytes(), Charsets.UTF8));
     }
 
     @Test

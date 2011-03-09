@@ -1,4 +1,4 @@
-package com.l7tech.security.cert;
+package com.l7tech.common.io;
 
 /**
  * Exception thrown when the CertificateGenerator is unable to generate a certificate.

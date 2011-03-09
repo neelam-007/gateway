@@ -1,9 +1,6 @@
 package com.l7tech.security.cert;
 
-import com.l7tech.common.io.CertGenParams;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.KeyGenParams;
-import com.l7tech.common.io.X509GeneralName;
+import com.l7tech.common.io.*;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
@@ -31,6 +28,7 @@ public class TestCertificateGenerator {
 
     private static final SecureRandom defaultRandom = new SecureRandom();
     private SecureRandom random;
+    private String signatureProviderName;
     private KeyPair keyPair;
 
     public TestCertificateGenerator() {
@@ -59,6 +57,7 @@ public class TestCertificateGenerator {
 
     public TestCertificateGenerator reset() {
         random = defaultRandom;
+        signatureProviderName = null;
         keyPair = null;
         issuer = null;
 
@@ -102,7 +101,7 @@ public class TestCertificateGenerator {
         final PrivateKey subjectPrivateKey = subjectKeyPair.getPrivate();
 
         try {
-            ParamsCertificateGenerator certgen = new ParamsCertificateGenerator(c);
+            ParamsCertificateGenerator certgen = new ParamsCertificateGenerator(c, random, signatureProviderName);
             X509Certificate cert =
                     issuer == null
                             ? certgen.generateCertificate(subjectPublicKey, subjectPrivateKey, null)
@@ -153,6 +152,18 @@ public class TestCertificateGenerator {
     public TestCertificateGenerator curveName(String curveName) {
         k.setAlgorithm("EC");
         k.setNamedParam(curveName);
+        return this;
+    }
+
+    /**
+     * Configure the next certificate generation to use the specified provider for the Signature implementation
+     * when signing the certificate.
+     *
+     * @param providerName the provider name to use, or null to use the default.
+     * @return this TestCertificateGenerator instance, for further parameter chaining
+     */
+    public TestCertificateGenerator signatureProvider(String providerName) {
+        this.signatureProviderName = providerName;
         return this;
     }
 

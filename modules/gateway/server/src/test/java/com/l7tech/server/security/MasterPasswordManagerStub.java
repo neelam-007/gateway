@@ -1,5 +1,6 @@
 package com.l7tech.server.security;
 
+import com.l7tech.util.Charsets;
 import com.l7tech.util.MasterPasswordManager;
 
 /**
@@ -8,8 +9,8 @@ import com.l7tech.util.MasterPasswordManager;
 public class MasterPasswordManagerStub extends MasterPasswordManager {
     public MasterPasswordManagerStub(final String masterPassword) {
         super(new MasterPasswordFinder() {
-            public char[] findMasterPassword() {
-                return masterPassword.toCharArray();
+            public byte[] findMasterPasswordBytes() {
+                return masterPassword.getBytes(Charsets.UTF8);
             }
         });
     }

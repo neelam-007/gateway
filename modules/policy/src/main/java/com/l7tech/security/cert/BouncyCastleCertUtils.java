@@ -1,6 +1,8 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.CertificateGeneratorException;
+import com.l7tech.common.io.ParamsCertificateGenerator;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;

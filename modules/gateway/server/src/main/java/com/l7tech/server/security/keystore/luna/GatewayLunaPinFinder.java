@@ -29,10 +29,15 @@ public class GatewayLunaPinFinder implements Callable<char[]> {
         return pin;
     }
 
-    public static void setClusterPassphrase(char[] clusterPassphrase) {
+    public static void setClusterPassphrase(final byte[] clusterPassphrase) {
         if (lunaPinEncryption != null)
             throw new IllegalStateException("Luna PIN encryption already set");
-        lunaPinEncryption = new MasterPasswordManager(clusterPassphrase);
+        lunaPinEncryption = new MasterPasswordManager(new MasterPasswordManager.MasterPasswordFinder() {
+            @Override
+            public byte[] findMasterPasswordBytes() {
+                return clusterPassphrase;
+            }
+        });
     }
 
     public static char[] getLunaPin() {

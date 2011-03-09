@@ -1,9 +1,5 @@
-package com.l7tech.security.cert;
+package com.l7tech.common.io;
 
-import com.l7tech.common.io.CertGenParams;
-import com.l7tech.common.io.X509GeneralName;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.SyspropUtil;
@@ -15,14 +11,14 @@ import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
 
 import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
-import java.security.interfaces.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.*;
 import java.util.*;
-import java.io.IOException;
 
 /**
  * Parameter driven X.509 certificate generator.
@@ -34,7 +30,9 @@ public class ParamsCertificateGenerator {
     private final CertGenParams c;
 
     static final boolean PREFER_SHA1_SIG = SyspropUtil.getBoolean("com.l7tech.security.cert.alwaysSignWithSha1", false);
-    private static final SecureRandom rand = new SecureRandom();
+    private static final SecureRandom DEFAULT_RAND = new SecureRandom();
+    private final SecureRandom rand;
+    private final String signatureProviderName;
 
     /**
      * Create a CertificateGenerator that will use the specified CertGenParams.
@@ -43,9 +41,23 @@ public class ParamsCertificateGenerator {
      * @throws CertificateGeneratorException if the specified params does not contain a subject DN.
      */
     public ParamsCertificateGenerator(CertGenParams certGenparams) throws CertificateGeneratorException {
+        this(certGenparams, DEFAULT_RAND, null);
+    }
+
+    /**
+     * Create a CertificateGenerator that will use the specified CertGenParams, random number generator, and cert gen provider.
+     *
+     * @param certGenparams the params to use.  Must contain a non-null subject DN.  Everything else can be defaulted.
+     * @param rand a SecureRandom instance to use, or null to use a default.
+     * @param signatureProviderName name of Provider for Signature implementation when signing cert, or null to use default.
+     * @throws CertificateGeneratorException if the specified params does not contain a subject DN.
+     */
+    public ParamsCertificateGenerator(CertGenParams certGenparams, SecureRandom rand, String signatureProviderName) throws CertificateGeneratorException {
         this.c = certGenparams;
         if (c.getSubjectDn() == null)
             throw new CertificateGeneratorException("A subject DN is required");
+        this.rand = rand == null ? DEFAULT_RAND : rand;
+        this.signatureProviderName = signatureProviderName;
     }
 
     /**
@@ -114,10 +126,9 @@ public class ParamsCertificateGenerator {
         }
 
         try {
-            Provider prov = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR);
-            return prov == null
+            return signatureProviderName == null
                     ? certgen.generate(issuerPrivateKey)
-                    : certgen.generate(issuerPrivateKey, prov.getName());
+                    : certgen.generate(issuerPrivateKey, signatureProviderName);
         } catch (CertificateEncodingException e) {
             throw new CertificateGeneratorException(e);
         } catch (NoSuchAlgorithmException e) {

@@ -133,7 +133,7 @@ public class KeystoreFilePropertyManager {
 
         // load and decrypt DB connnection info
         final MasterPasswordManager masterPasswordManager =
-                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile));
         config.setNodePassword(new String(masterPasswordManager.decryptPasswordIfEncrypted(config.getNodePassword())));
 
         logger.info("Using database host '" + config.getHost() + "'.");

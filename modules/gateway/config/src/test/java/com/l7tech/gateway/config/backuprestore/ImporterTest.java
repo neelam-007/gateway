@@ -6,22 +6,21 @@
  */
 package com.l7tech.gateway.config.backuprestore;
 
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.After;
-import org.junit.Assert;
-
-import java.io.IOException;
-import java.io.File;
-import java.net.URL;
-
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.test.BugNumber;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
-import com.l7tech.gateway.config.manager.NodeConfigurationManager;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.FileUtils;
+import com.l7tech.util.MasterPasswordManager;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 
 public class ImporterTest {
 
@@ -465,7 +464,7 @@ public class ImporterTest {
         Assert.assertEquals("Incorrect properties value found", "7layer", config.getNodePassword());
 
         //Confirm the cluster passphrase
-        final MasterPasswordManager decryptor = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+        final MasterPasswordManager decryptor = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile));
         final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodeProperties, true);
         Assert.assertEquals("Incorrect properties value found", "111111", new String(decryptor.decryptPassword(nodeConfig.getClusterPassphrase())));
 
@@ -628,7 +627,7 @@ public class ImporterTest {
         Assert.assertEquals("Incorrect properties value found", "nodepwd", config.getNodePassword());
 
         //Confirm the cluster passphrase
-        final MasterPasswordManager decryptor = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+        final MasterPasswordManager decryptor = new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile));
         final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodeProperties, true);
         Assert.assertEquals("Incorrect properties value found", "clusterpp", new String(decryptor.decryptPassword(nodeConfig.getClusterPassphrase())));
 

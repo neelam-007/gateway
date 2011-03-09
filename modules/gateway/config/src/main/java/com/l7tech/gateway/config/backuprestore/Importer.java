@@ -1,22 +1,26 @@
 package com.l7tech.gateway.config.backuprestore;
 
-import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException;
-import static com.l7tech.gateway.config.backuprestore.ImportExportUtilities.UtilityResult.Status.FAILURE;
-import static com.l7tech.gateway.config.backuprestore.ImportExportUtilities.UtilityResult.Status.PARTIAL_SUCCESS;
-import static com.l7tech.gateway.config.backuprestore.ImportExportUtilities.UtilityResult.Status.SUCCESS;
-import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
+import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
-import com.l7tech.util.*;
+import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.config.backuprestore.ImportExportUtilities.UtilityResult.Status.*;
 
 /**
  * <p>
@@ -914,7 +918,7 @@ public final class Importer{
         }
 
         final MasterPasswordManager decryptor =
-                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile));
 
         config.setNodePassword(new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())));
 

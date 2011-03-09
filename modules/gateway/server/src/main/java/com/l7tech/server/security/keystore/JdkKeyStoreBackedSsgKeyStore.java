@@ -4,7 +4,7 @@ import com.l7tech.common.io.*;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.cert.BouncyCastleCertUtils;
-import com.l7tech.security.cert.CertificateGeneratorException;
+import com.l7tech.common.io.CertificateGeneratorException;
 import com.l7tech.security.cert.ParamsKeyGenerator;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.server.event.system.Started;

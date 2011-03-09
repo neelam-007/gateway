@@ -6,30 +6,26 @@
  */
 package com.l7tech.skunkworks.backuprestore;
 
-import org.junit.Test;
-import org.junit.Before;
+import com.l7tech.gateway.config.backuprestore.Backup;
+import com.l7tech.gateway.config.backuprestore.BackupRestoreFactory;
+import com.l7tech.gateway.config.backuprestore.Exporter;
+import com.l7tech.gateway.config.backuprestore.ImportExportUtilities;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.server.management.config.node.DatabaseType;
+import com.l7tech.server.management.config.node.NodeConfig;
+import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.FileUtils;
+import com.l7tech.util.MasterPasswordManager;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.net.URL;
-import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
-
-import com.l7tech.gateway.config.backuprestore.ImportExportUtilities;
-import com.l7tech.gateway.config.backuprestore.Exporter;
-import com.l7tech.gateway.config.backuprestore.Backup;
-import com.l7tech.gateway.config.backuprestore.BackupRestoreFactory;
-import com.l7tech.gateway.config.manager.NodeConfigurationManager;
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.server.management.config.node.NodeConfig;
-import com.l7tech.server.management.config.node.DatabaseType;
-import com.l7tech.server.management.config.node.DatabaseConfig;
+import java.net.URL;
 
 public class ExporterTestsOffline {
 
@@ -100,7 +96,7 @@ public class ExporterTestsOffline {
         final File confDir = new File(tmpSsgHome, ImportExportUtilities.NODE_CONF_DIR);
         final File ompFile = new File(confDir, ImportExportUtilities.OMP_DAT);
         final MasterPasswordManager decryptor =
-                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
+                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile));
         databaseConfig.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(databaseConfig.getNodePassword())) );
 
         backup.backUpComponentMainDb(mappingFile.getAbsolutePath(),databaseConfig);
