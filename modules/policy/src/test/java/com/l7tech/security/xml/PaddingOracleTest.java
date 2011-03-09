@@ -38,7 +38,7 @@ public class PaddingOracleTest {
                     "</soapenv:Envelope>";
 
     @Test
-    @BugNumber(9964)
+    @BugNumber(9946)
     @Ignore("Currently failing")
     public void testPaddingAttack() throws Exception {
         // Decorate a test message
