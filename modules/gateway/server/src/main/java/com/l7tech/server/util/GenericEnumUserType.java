@@ -5,8 +5,8 @@
 package com.l7tech.server.util;
 
 import org.hibernate.HibernateException;
-import org.hibernate.type.NullableType;
-import org.hibernate.type.TypeFactory;
+import org.hibernate.type.SingleColumnType;
+import org.hibernate.type.StandardBasicTypes;
 import org.hibernate.usertype.ParameterizedType;
 import org.hibernate.usertype.UserType;
 
@@ -79,9 +79,10 @@ public class GenericEnumUserType implements UserType, ParameterizedType {
     private Class<? extends Enum> enumClass;
     private Method identifierMethod;
     private Method valueOfMethod;
-    private NullableType type;
+    private SingleColumnType<String> type;
     private int[] sqlTypes;
 
+    @Override
     public void setParameterValues(Properties parameters) {
         String enumClassName = parameters.getProperty("enumClass");
         try {
@@ -100,11 +101,7 @@ public class GenericEnumUserType implements UserType, ParameterizedType {
             throw new HibernateException("Failed to obtain identifier method", e);
         }
 
-        type = (NullableType) TypeFactory.basic(identifierType.getName());
-
-        if (type == null)
-            throw new HibernateException("Unsupported identifier type " + identifierType.getName());
-
+        type = StandardBasicTypes.STRING;
         sqlTypes = new int[] { type.sqlType() };
 
         String valueOfMethodName = parameters.getProperty("valueOfMethod", DEFAULT_VALUE_OF_METHOD_NAME);
@@ -116,10 +113,12 @@ public class GenericEnumUserType implements UserType, ParameterizedType {
         }
     }
 
+    @Override
     public Class returnedClass() {
         return enumClass;
     }
 
+    @Override
     public Object nullSafeGet(ResultSet rs, String[] names, Object owner) throws HibernateException, SQLException {
         Object identifier = type.get(rs, names[0]);
         if (identifier == null) {
@@ -134,12 +133,13 @@ public class GenericEnumUserType implements UserType, ParameterizedType {
         }
     }
 
+    @Override
     public void nullSafeSet(PreparedStatement st, Object value, int index) throws HibernateException, SQLException {
         try {
             if (value == null) {
                 st.setNull(index, type.sqlType());
             } else {
-                Object identifier = identifierMethod.invoke(value);
+                String identifier = (String) identifierMethod.invoke(value);
                 type.set(st, identifier, index);
             }
         } catch (Exception e) {
@@ -148,34 +148,42 @@ public class GenericEnumUserType implements UserType, ParameterizedType {
         }
     }
 
+    @Override
     public int[] sqlTypes() {
         return sqlTypes;
     }
 
+    @Override
     public Object assemble(Serializable cached, Object owner) throws HibernateException {
         return cached;
     }
 
+    @Override
     public Object deepCopy(Object value) throws HibernateException {
         return value;
     }
 
+    @Override
     public Serializable disassemble(Object value) throws HibernateException {
         return (Serializable) value;
     }
 
+    @Override
     public boolean equals(Object x, Object y) throws HibernateException {
         return x == y;
     }
 
+    @Override
     public int hashCode(Object x) throws HibernateException {
         return x.hashCode();
     }
 
+    @Override
     public boolean isMutable() {
         return false;
     }
 
+    @Override
     public Object replace(Object original, Object target, Object owner) throws HibernateException {
         return original;
     }

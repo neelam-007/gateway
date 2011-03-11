@@ -771,7 +771,7 @@
                 <include name="ant.jar"/>
                 <include name="test/japex-1.1.jar"/>
                 <include name="test/jdsl-1.1.jar"/>
-                <include name="tools/junit-4.4.jar"/>
+                <include name="tools/junit-*.jar"/>
             </fileset>
         </path>
 

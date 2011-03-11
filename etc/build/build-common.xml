@@ -67,10 +67,7 @@
         <file file="${src.root}/lib/repository/jasperreports/jasperreports-3.1.2-p1.jar"/>
         <file file="${src.root}/lib/repository/jfree/jcommon-1.0.15.jar"/>
         <file file="${src.root}/lib/repository/jfree/jfreechart-1.0.12.jar"/>
-        
-        <fileset dir="${src.root}/lib/repository/org.apache.tomcat">
-            <include name="*.jar"/>
-        </fileset>
+        <file file="${src.root}/lib/repository/org.eclipse.jdt.core.compiler/ecj-3.5.1.jar"/>
         <file file="${src.root}/lib/repository/commons-digester/commons-digester-1.8.1.jar"/>
         <file file="${src.root}/lib/repository/commons-collections/commons-collections-3.2.1.jar"/>
         <file file="${src.root}/lib/repository/commons-logging/commons-logging-1.1.1.jar"/>

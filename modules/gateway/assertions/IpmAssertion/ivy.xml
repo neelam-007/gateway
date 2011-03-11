@@ -31,6 +31,6 @@
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>
 
-        <override org="xerces" module="xercesImpl" matcher="exact" rev="2.10.0"/>
+        <override org="xerces" module="xercesImpl" matcher="exact" rev="2.11.0"/>
     </dependencies>
 </ivy-module>

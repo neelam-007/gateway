@@ -30,17 +30,17 @@
         <dependency name="layer7-policy" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-proxy" rev="latest.integration" force="true" conf="core; test->default,test"/>
         <dependency org="com.incors.plaf" name="kunststoff" rev="2.0.2" force="true" conf="core"/>
-        <dependency org="org.mortbay.jetty" name="jetty" rev="6.1.24" force="true" conf="core"/>
-        <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.24" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-api" rev="1.5.11" force="true" conf="core"/>
-        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.5.11" force="true" conf="core"/>
+        <dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26" force="true" conf="core"/>
+        <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.26" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.6.1" force="true" conf="core"/>
         <dependency org="snoozesoft" name="systray4j" rev="2.3.2" force="true" conf="core"/>
-        <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
+        <dependency org="junit" name="junit" rev="4.8.2" force="true" conf="test"/>
         <!-- For the XVC and Bridge API, we'll always use the FIPS version of RSA for the time being -->
         <dependency org="com.rsa" name="jsafe-jce-fips" rev="4.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="certj" rev="3.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="sslj" rev="5.1.1" force="true" conf="core"/>
 
-        <conflict org="org.slf4j" module="slf4j-api" rev="1.5.11"/>
+        <conflict org="org.slf4j" module="slf4j-api" rev="1.6.1"/>
     </dependencies>
 </ivy-module>

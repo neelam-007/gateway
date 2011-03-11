@@ -28,8 +28,8 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
-import org.safehaus.uuid.EthernetAddress;
-import org.safehaus.uuid.UUIDGenerator;
+import com.fasterxml.uuid.EthernetAddress;
+import com.fasterxml.uuid.Generators;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -196,7 +196,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
 
         final String uuid;
         if ( assertion.isNodeBasedUuid() ) {
-            uuid = UUIDGenerator.getInstance().generateTimeBasedUUID(macAddress).toString();
+            uuid = Generators.timeBasedGenerator(macAddress).generate().toString();
         } else {
             uuid = java.util.UUID.randomUUID().toString();
         }

@@ -28,9 +28,9 @@
         <dependency name="layer7-gateway-server" rev="latest.integration" force="true"
                     conf="optional; test->default,test"/>
         <dependency name="layer7-gateway-console" rev="latest.integration" force="true" conf="optional"/>
-        <dependency org="com.intellij" name="forms_rt" rev="9.0.1" force="true" conf="optional"/>
-        <dependency org="org.springframework" name="spring-test" rev="3.0.2.RELEASE" force="true" conf="test"/>
-        <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
+        <dependency org="com.intellij" name="forms_rt" rev="10.0.2" force="true" conf="optional"/>
+        <dependency org="org.springframework" name="spring-test" rev="3.0.5.RELEASE" force="true" conf="test"/>
+        <dependency org="junit" name="junit" rev="4.8.2" force="true" conf="test"/>
 
         <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>

@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.script.console;
 
 import org.aspectj.apache.bcel.Constants;
+import org.aspectj.apache.bcel.classfile.ConstantPool;
 import org.aspectj.apache.bcel.generic.*;
 
 import java.io.ByteArrayOutputStream;
@@ -16,7 +17,7 @@ public class CompiledScriptAssertionMaker implements Constants {
                 name + "Assertion.java",
                 ACC_PUBLIC | ACC_SUPER,
                 new String[] {  });
-        ConstantPoolGen _cp = _cg.getConstantPool();
+        ConstantPool _cp = _cg.getConstantPool();
         InstructionFactory _factory = new InstructionFactory(_cg, _cp);
 
         // Constructor
@@ -44,12 +45,12 @@ public class CompiledScriptAssertionMaker implements Constants {
             il.append(_factory.createInvoke("com.l7tech.policy.assertion.Assertion", "defaultMeta", new ObjectType("com.l7tech.policy.assertion.DefaultAssertionMetadata"), Type.NO_ARGS, Constants.INVOKESPECIAL));
             il.append(InstructionFactory.createStore(Type.OBJECT, 1));
             il.append(InstructionFactory.createLoad(Type.OBJECT, 1));
-            il.append(new PUSH(_cp, "paletteFolders"));
-            il.append(new PUSH(_cp, 1));
+            il.append(InstructionFactory.PUSH(_cp, "paletteFolders"));
+            il.append(InstructionFactory.PUSH(_cp, 1));
             il.append(_factory.createNewArray(Type.STRING, (short) 1));
             il.append(InstructionConstants.DUP);
-            il.append(new PUSH(_cp, 0));
-            il.append(new PUSH(_cp, paletteFolder));
+            il.append(InstructionFactory.PUSH(_cp, 0));
+            il.append(InstructionFactory.PUSH(_cp, paletteFolder));
             il.append(InstructionConstants.AASTORE);
             il.append(_factory.createInvoke("com.l7tech.policy.assertion.DefaultAssertionMetadata", "put", Type.VOID, new Type[] { Type.STRING, Type.OBJECT }, Constants.INVOKEVIRTUAL));
             il.append(InstructionFactory.createLoad(Type.OBJECT, 1));
@@ -73,7 +74,7 @@ public class CompiledScriptAssertionMaker implements Constants {
                 "Server" + name + "Assertion.java",
                 ACC_PUBLIC | ACC_SUPER,
                 new String[] { "com.l7tech.server.policy.assertion.ServerAssertion" });
-        ConstantPoolGen _cp = _cg.getConstantPool();
+        ConstantPool _cp = _cg.getConstantPool();
         InstructionFactory _factory = new InstructionFactory(_cg, _cp);
 
         FieldGen field = new FieldGen(ACC_PRIVATE | ACC_FINAL, new ObjectType("com.l7tech.server.policy.assertion.ServerAssertion"), "delegate", _cp);
@@ -89,9 +90,9 @@ public class CompiledScriptAssertionMaker implements Constants {
             il.append(_factory.createInvoke("java.lang.Object", "<init>", Type.VOID, Type.NO_ARGS, Constants.INVOKESPECIAL));
             il.append(InstructionFactory.createLoad(Type.OBJECT, 0));
             il.append(InstructionFactory.createLoad(Type.OBJECT, 1));
-            il.append(new PUSH(_cp, name));
-            il.append(new PUSH(_cp, bsfLanguageName));
-            il.append(new PUSH(_cp, script));
+            il.append(InstructionFactory.PUSH(_cp, name));
+            il.append(InstructionFactory.PUSH(_cp, bsfLanguageName));
+            il.append(InstructionFactory.PUSH(_cp, script));
             il.append(InstructionFactory.createLoad(Type.OBJECT, 2));
             il.append(_factory.createInvoke("com.l7tech.external.assertions.script.server.ServerScriptAssertionSupport", "createServerAssertion",
                     new ObjectType("com.l7tech.server.policy.assertion.ServerAssertion"), new Type[] { new ObjectType("com.l7tech.policy.assertion.Assertion"),

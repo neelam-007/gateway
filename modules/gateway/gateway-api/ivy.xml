@@ -26,6 +26,6 @@
         <dependency name="wiseman-client" org="net.java.wiseman" rev="1.0-l7p1" force="true" conf="core"/>
         <dependency name="wiseman-core" org="net.java.wiseman" rev="1.0" force="true" conf="core"/>        
 
-        <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
+        <dependency org="junit" name="junit" rev="4.8.2" force="true" conf="test"/>
     </dependencies>
 </ivy-module>

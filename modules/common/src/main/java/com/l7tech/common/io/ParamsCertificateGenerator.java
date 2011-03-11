@@ -165,7 +165,7 @@ public class ParamsCertificateGenerator {
     protected SubjectKeyIdentifier createSki(PublicKey subjectPublicKey) throws CertificateGeneratorException {
         try {
             return new SubjectKeyIdentifierStructure(subjectPublicKey);
-        } catch (CertificateParsingException e) {
+        } catch ( InvalidKeyException e ) {
             throw new CertificateGeneratorException("Unable to create SKI from subject public key: " + ExceptionUtils.getMessage(e), e);
         }
     }

@@ -3,6 +3,7 @@ package com.l7tech.server.processcontroller;
 import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.message.Message;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.interceptor.Interceptor;
@@ -53,22 +54,22 @@ public class CxfUtils {
             return this;
         }
 
-        public ApiBuilder inInterceptor(Interceptor interceptor) {
+        public ApiBuilder inInterceptor(Interceptor<? extends Message> interceptor) {
             inInterceptors.add(interceptor);
             return this;
         }
 
-        public ApiBuilder outInterceptor(Interceptor interceptor) {
+        public ApiBuilder outInterceptor(Interceptor<? extends Message> interceptor) {
             outInterceptors.add(interceptor);
             return this;
         }
 
-        public ApiBuilder inFaultInterceptor(Interceptor interceptor) {
+        public ApiBuilder inFaultInterceptor(Interceptor<? extends Message> interceptor) {
             inFaultInterceptors.add(interceptor);
             return this;
         }
 
-        public ApiBuilder outFaultInterceptor(Interceptor interceptor) {
+        public ApiBuilder outFaultInterceptor(Interceptor<? extends Message> interceptor) {
             outFaultInterceptors.add(interceptor);
             return this;
         }
@@ -113,10 +114,10 @@ public class CxfUtils {
 
         private final String endpoint;
         private TLSClientParameters tlsClientParams;
-        private List<Interceptor> inInterceptors = new ArrayList<Interceptor>();
-        private List<Interceptor> outInterceptors = new ArrayList<Interceptor>();
-        private List<Interceptor> inFaultInterceptors = new ArrayList<Interceptor>();
-        private List<Interceptor> outFaultInterceptors = new ArrayList<Interceptor>();
+        private List<Interceptor<? extends Message>> inInterceptors = new ArrayList<Interceptor<? extends Message>>();
+        private List<Interceptor<? extends Message>> outInterceptors = new ArrayList<Interceptor<? extends Message>>();
+        private List<Interceptor<? extends Message>> inFaultInterceptors = new ArrayList<Interceptor<? extends Message>>();
+        private List<Interceptor<? extends Message>> outFaultInterceptors = new ArrayList<Interceptor<? extends Message>>();
 
         HTTPClientPolicy clientPolicy;
         private DataBinding dataBinding;

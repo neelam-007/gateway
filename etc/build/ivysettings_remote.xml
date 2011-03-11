@@ -59,6 +59,12 @@
 
             <!--<ibiblio name="tomcat" root="http://tomcat.apache.org/dev/dist/m2-repository/org/apache/tomcat/" m2compatible="true" checksums="md5,sha1"/>-->
 
+            <!-- Checksums are incorrect in this repository (check the JAR against the one in the zip) -->
+            <!--
+            <url name="snmp4j" m2compatible="true" checksums="">
+                <artifact pattern="https://server.oosnmp.net/dist/release/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
+            </url>
+            -->
 <!--
             <url name="jasper" m2compatible="true" checksums="md5,sha1">
                 <artifact pattern="http://jasperreports.sourceforge.net/maven2/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>
@@ -67,10 +73,10 @@
 
             <!--
               JBoss repository (one works for JBoss Cache/JGroups/Javassist, the other for Hibernate)
-            <url name="jboss" m2compatible="true" checksums="md5,sha1">
-                <artifact pattern="http://repository.jboss.com/maven2-brew/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/> 
             -->
-                <!--<artifact pattern="http://repository.jboss.com/nexus/content/groups/public/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>-->
+            <!--<url name="jboss" m2compatible="true" checksums="md5,sha1">-->
+                <!--<artifact pattern="http://repository.jboss.com/maven2-brew/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>-->
+                <!--<artifact pattern="http://repository.jboss.com/nexus/content/groups/public-jboss/[organisation]/[module]/[revision]/[artifact]-[revision].[ext]"/>-->
             <!--</url>-->
             <ibiblio name="maven2" m2compatible="true" checksums="md5,sha1"/>
         </chain>

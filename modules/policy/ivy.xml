@@ -28,32 +28,31 @@
         <dependency name="layer7-kerberos" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-json" rev="latest.integration" force="true" conf="core"/>
-        <dependency org="org.apache.xml.security" name="xmlsec" rev="1.4.3" force="true" conf="core"/>
+        <dependency org="org.apache.santuario" name="xmlsec" rev="1.4.4" force="true" conf="core"/>
         <!-- Needed when tarari is used -->
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" conf="optional,test"/>
-        <dependency org="bouncycastle" name="bcprov-jdk16" rev="145" force="true" conf="core"/>
+        <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>
         <dependency org="jaxen" name="jaxen" rev="1.1.3" force="true" conf="core"/>
         <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.14" force="true" conf="core"/>
         <dependency org="org.apache.ws.commons.policy" name="policy" rev="1.0" force="true" conf="core"/>
         <dependency org="javax.xml.soap" name="saaj-api" rev="1.3.1" force="true" conf="core"/>
-        <dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3.3" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-beans" rev="3.0.2.RELEASE" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-context" rev="3.0.2.RELEASE" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-core" rev="3.0.2.RELEASE" force="true" conf="core"/>
+        <dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3.8" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-beans" rev="3.0.5.RELEASE" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-context" rev="3.0.5.RELEASE" force="true" conf="core"/>
+        <dependency org="org.springframework" name="spring-core" rev="3.0.5.RELEASE" force="true" conf="core"/>
         <!-- Tarari is optional -->
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional,test"/>
         <dependency org="org.apache.xmlbeans" name="xmlbeans" rev="2.5.0" force="true" conf="core"/>
         <dependency org="javax.persistence" name="persistence-api" rev="2.0.0" force="true" conf="core"/>
         <dependency org="javax.validation" name="validation-api" rev="1.0.0.GA" force="true" conf="core"/>
-        <!-- Hibernate annotations used on beans -->
-        <dependency org="org.hibernate" name="hibernate-annotations" rev="3.5.3-Final" force="true" conf="compile->master"/>
-        <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.2.0.Final" force="true" conf="compile->master"/>
+        <!-- Hibernate annotations used on beans that we use, so we need the hibernate JAR to compile -->
+        <dependency org="org.hibernate" name="hibernate-core" rev="3.6.1.Final" force="true" conf="compile->master"/>
         <dependency org="com.l7tech.lib" name="xbean-saml-1.1" rev="1.0" force="true" conf="core"/>
         <dependency org="com.l7tech.lib" name="xbean-saml-2.0" rev="1.0" force="true" conf="core"/>
         <dependency org="com.l7tech.lib" name="xbean-xenc-xmldsig" rev="1.0" force="true" conf="core"/>
         <dependency org="com.ibm" name="xss4j.00.patch" rev="1.0" force="true" conf="core"/>
         <dependency org="com.ibm" name="xss4j" rev="1.0" force="true" conf="core"/>
-        <dependency org="junit" name="junit" rev="4.7" force="true" conf="test"/>
+        <dependency org="junit" name="junit" rev="4.8.2" force="true" conf="test"/>
         <!-- Optional security provider -->
         <dependency org="com.chrysalisits.cryptox" name="luna-libs" rev="1" force="true" conf="optional"/>
         <!-- Optional security provider -->
