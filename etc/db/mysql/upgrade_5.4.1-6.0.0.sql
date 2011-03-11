@@ -13,7 +13,7 @@ SET FOREIGN_KEY_CHECKS=0;
 -- Update the version
 --
 
-UPDATE ssg_version SET current_version = '5.4.2';
+UPDATE ssg_version SET current_version = '6.0.0';
 
 ALTER TABLE jms_endpoint ADD COLUMN request_max_size bigint NOT NULL default -1 AFTER use_message_id_for_correlation;
 
