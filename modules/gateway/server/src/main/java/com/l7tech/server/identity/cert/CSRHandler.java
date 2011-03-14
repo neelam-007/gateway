@@ -21,8 +21,10 @@ import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.CertificateSigningServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.transport.ListenerException;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.ValidatedConfig;
 
 import javax.security.auth.x500.X500Principal;
 import javax.servlet.ServletConfig;
@@ -35,6 +37,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Servlet which handles the CSR requests coming from the XML VPN Client. Must come
@@ -48,8 +51,9 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     @Override
     public void init( final ServletConfig config ) throws ServletException {
         super.init(config);
-        defaultKey = getApplicationContext().getBean("defaultKey", DefaultKey.class);
-        providerConfigManager = getApplicationContext().getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
+        this.config = validated( serverConfig, logger );
+        this.defaultKey = getApplicationContext().getBean("defaultKey", DefaultKey.class);
+        this.providerConfigManager = getApplicationContext().getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
     }
 
     @Override
@@ -149,7 +153,8 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
         // sign request
         try {
-            CertGenParams cgp = new CertGenParams(certSubject, 365 * 2, false, null).useUserCertDefaults();
+            final int defaultExpiry = config.getIntProperty( PROP_PKIX_CSR_DEFAULT_EXPIRY_AGE, 365 * 2 );
+            final CertGenParams cgp = new CertGenParams(certSubject, defaultExpiry, false, null).useUserCertDefaults();
 
             // for internal users, if an account expiration is specified, make sure the cert created matches it
             if (authenticatedUser instanceof InternalUser) {
@@ -241,11 +246,26 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         return JceProvider.getInstance().createRsaSignerEngine(ca.getPrivate(), ca.getCertificateChain());
     }
 
+    private static Config validated( final Config config,
+                                     final Logger logger ) {
+        final ValidatedConfig vc = new ValidatedConfig( config, logger );
+
+        vc.setMinimumValue( PROP_PKIX_CSR_DEFAULT_EXPIRY_AGE, MIN_CERTIFICATE_EXPIRY );
+        vc.setMaximumValue( PROP_PKIX_CSR_DEFAULT_EXPIRY_AGE, MAX_CERTIFICATE_EXPIRY );
+
+        return vc;
+    }
+
     private static final class NoCaException extends Exception {}
 
+    private Config config;
     private DefaultKey defaultKey;
     private IdentityProviderConfigManager providerConfigManager;
 
     public static final String AUTH_HEADER_NAME = "Authorization";
     public static final String ROUTED_FROM_PEER = "Routed-From-Peer";
+
+    private static final int MIN_CERTIFICATE_EXPIRY = 1;
+    private static final int MAX_CERTIFICATE_EXPIRY = 100000;
+    private static final String PROP_PKIX_CSR_DEFAULT_EXPIRY_AGE = "pkix.csr.defaultExpiryAge";
 }
