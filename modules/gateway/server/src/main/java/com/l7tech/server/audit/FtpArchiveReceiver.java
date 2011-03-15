@@ -307,15 +307,17 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
         try {
             ClusterProperty configProp = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION);
             String serializedConfig = configProp == null ? null : configProp.getValue();
-            if (serializedConfig == null || serializedConfig.length() == 0) {
-                logger.warning("Invalid serialized configuration retrieved from the database: " + serializedConfig);
-            } else {
-                try {
-                    // actual deserialization
-                    ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(HexUtils.decodeBase64(serializedConfig)));
-                    ftpConfig = (FtpClientConfig) in.readObject();
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Invalid serialized form retrieved from the database.", e);
+            if ( serializedConfig != null ) {
+                if ( serializedConfig.trim().length() == 0) {
+                    logger.warning("Invalid (empty) serialized configuration retrieved from the database.");
+                } else {
+                    try {
+                        // actual deserialization
+                        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(HexUtils.decodeBase64(serializedConfig)));
+                        ftpConfig = (FtpClientConfig) in.readObject();
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "Invalid serialized form retrieved from the database.", e);
+                    }
                 }
             }
 
