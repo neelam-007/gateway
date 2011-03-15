@@ -64,9 +64,13 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
             return;
 
         if ( isLicensed() ) {
-            doStart();
             startedRwLock.writeLock().lock();
             try {
+                if (isStarted())
+                    return;
+
+                doStart();
+
                 this.started = true;
             } finally {
                 startedRwLock.writeLock().unlock();
@@ -81,11 +85,15 @@ public abstract class LifecycleBean implements Lifecycle, InitializingBean, Appl
 
         startedRwLock.writeLock().lock();
         try {
+            if (!isStarted())
+                return;
+
+            doStop();
+
             this.started = false;
         } finally {
             startedRwLock.writeLock().unlock();
         }
-        doStop();
     }
 
     @Override
