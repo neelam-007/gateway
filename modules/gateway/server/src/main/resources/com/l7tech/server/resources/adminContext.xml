@@ -184,6 +184,7 @@
     <!-- identity admin servant -->
     <bean id="identityAdmin" class="com.l7tech.server.identity.IdentityAdminImpl">
         <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="passwordPolicyManger"/>
         <constructor-arg ref="passwordEnforcerManager"/>
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="logonService"/>

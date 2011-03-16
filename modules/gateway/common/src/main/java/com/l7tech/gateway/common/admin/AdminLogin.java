@@ -5,13 +5,13 @@
  */
 package com.l7tech.gateway.common.admin;
 
-import com.l7tech.identity.AuthenticationException;
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.InvalidPasswordException;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlException;
-import java.security.cert.X509Certificate;
 
 /**
  * Interface used to establish and manage an admin session.
@@ -110,4 +110,11 @@ public interface AdminLogin {
     @Administrative(licensed=false)
     void changePassword(String currentPassword, String newPassword)
             throws LoginException;
+
+     /**
+     * Get a property, pci-dss enabled.
+     *
+     * @return a boolean, pci-dss enabled.
+     */
+     boolean getPropertyPCIDSSEnabled();
 }

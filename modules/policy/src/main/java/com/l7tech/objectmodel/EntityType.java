@@ -81,6 +81,8 @@ public enum EntityType implements Comparable<EntityType> {
     HTTP_CONFIGURATION("HTTP Options", true),
     RESOURCE_ENTRY("Global Resource", true),
     RESOLUTION_CONFIGURATION("Service Resolution Configuration", true),
+    PASSWORD_POLICY("Password Policy", true),
+
     ;
 
     private final String name;

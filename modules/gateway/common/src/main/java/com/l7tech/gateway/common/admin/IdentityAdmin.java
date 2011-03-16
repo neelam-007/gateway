@@ -1,22 +1,20 @@
 package com.l7tech.gateway.common.admin;
 
-import static com.l7tech.objectmodel.EntityType.*;
-import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
-import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.User;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.objectmodel.*;
-
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.Set;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
+import static com.l7tech.objectmodel.EntityType.*;
 
 /**
  * Provides a remote interface for creating, searching, and retrieving identity providers, identity provider
@@ -204,7 +202,7 @@ public interface IdentityAdmin {
      */
     @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)
     String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders)
-      throws SaveException, UpdateException, ObjectNotFoundException;
+      throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException;
 
     /**
      * Retrieve all available {@link com.l7tech.identity.Group}s for a given {@link IdentityProviderConfig}.
@@ -390,4 +388,42 @@ public interface IdentityAdmin {
     @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)
     void resetLogonFailCount(User user) throws FindException, UpdateException;
 
+    /**
+     * Get the password policy associated with the identity provider
+     *
+     * @param providerId  The identity provider that the password policy is associated with
+     * @return the associated password policy
+     * @throws FindException
+     */
+    @Transactional(readOnly=true)
+    @Secured(types=PASSWORD_POLICY, stereotype=FIND_ENTITY, relevantArg=1)
+    IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException;
+
+    /**
+     * Saves the password policy for the identity provider
+     * Note: only works for the ONE internal identity provider
+     *
+     * @param providerId Identity provider ID
+     * @param policy  password policy to save
+     * @return the ID of the password policy
+     * @throws SaveException
+     * @throws UpdateException
+     * @throws ObjectNotFoundException
+     */
+    @Secured(types=PASSWORD_POLICY, stereotype=SAVE_OR_UPDATE, relevantArg=1)
+    String updatePasswordPolicy(long providerId, IdentityProviderPasswordPolicy policy)
+      throws SaveException, UpdateException, ObjectNotFoundException;
+
+    /**
+     * Sets the change password flag in each admin user in the identity provider
+     * 
+     * Note: only works for the ONE internal identity provider
+     * @param identityProviderConfigId  the ID of the identity provider
+     * @throws FindException
+     * @throws SaveException
+     * @throws UpdateException
+     * @throws InvalidPasswordException
+     */
+    @Administrative(licensed=false)
+    public void forceAdminUsersResetPassword(long identityProviderConfigId) throws FindException, SaveException, UpdateException, InvalidPasswordException;
 }

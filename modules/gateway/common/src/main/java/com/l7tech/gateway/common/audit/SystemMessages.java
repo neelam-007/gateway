@@ -144,5 +144,11 @@ public class SystemMessages extends Messages {
     // Caches
     public static final M URL_OBJECT_CACHE_REUSE = m( 2320, Level.WARNING, "Reusing previously-cached copy of remote {0}: URL {1}: {2}" );
 
+    // Password policy
+    public static final M PASSWORD_BELOW_MINIMUM = m( 2321, Level.WARNING, "Password requirements are below {0} for {1}" );
+    public static final M PASSWORD_CHANGE_FAILED = m( 2322, Level.WARNING, "Password change failed for user ''{0}''" );
+    public static final M FORCE_PASSWORD_RESET = m( 2323, Level.WARNING, "Force administrative user password reset in {0} " );
+
+
     // MAX -                                      m(2999
 }

@@ -385,8 +385,11 @@
     <!-- password enforcer to enforce the password constraints -->
     <bean id="passwordEnforcerManager" class="com.l7tech.server.security.PasswordEnforcerManager">
         <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="passwordPolicyManger"/>
     </bean>
+
+    <bean id="passwordPolicyManger" class="com.l7tech.server.identity.IdentityProviderPasswordPolicyManagerImpl" parent="hibernateBean"/>
+
 
     <!-- Account manager -->
     <bean id="emsAccountManager" class="com.l7tech.server.ems.user.EsmAccountManagerImpl">

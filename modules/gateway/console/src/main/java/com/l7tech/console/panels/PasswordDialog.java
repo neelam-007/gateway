@@ -3,12 +3,15 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SyspropUtil;
 
@@ -60,12 +63,9 @@ public class PasswordDialog extends JDialog {
     /* the user to change the password for */
     private InternalUser user;
 
-    private int MIN_PASSWORD_LENGTH = SyspropUtil.getInteger("com.l7tech.ui.minPasswordLength", 6);
-    private int MAX_PASSWORD_LENGTH = SyspropUtil.getInteger("com.l7tech.ui.maxPasswordLength", 32);
     private EntityListener listener;
     private UserPanel userPanel;
 
-    private JCheckBox forceChangePasswordCheckBox;
     private String title = null;
     /**
      * Create a new PasswordDialog
@@ -184,19 +184,6 @@ public class PasswordDialog extends JDialog {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(12, 7, 0, 11);
         contents.add(confirmPasswordField, constraints);
-
-        forceChangePasswordCheckBox = new JCheckBox();
-        forceChangePasswordCheckBox.setSelected(true);
-        forceChangePasswordCheckBox.setToolTipText(resources.getString("forceChangePassword.tooltip"));
-        forceChangePasswordCheckBox.setText(resources.getString("forceChangePassword.label"));
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 2;
-        constraints.gridwidth = 2;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(11, 10, 0, 0);
-        contents.add(forceChangePasswordCheckBox, constraints);
 
         Utilities.
           equalizeLabelSizes(
@@ -320,18 +307,6 @@ public class PasswordDialog extends JDialog {
             return false;
         }
 
-        if ((newPass.length < MIN_PASSWORD_LENGTH) || (newPass.length > MAX_PASSWORD_LENGTH)) {
-            JOptionPane.
-              showMessageDialog(
-                this,
-                resources.getString("newPasswordField.error.length"),
-                resources.getString("newPasswordField.error.title"),
-                JOptionPane.ERROR_MESSAGE);
-            newPasswordField.setText("");
-            confirmPasswordField.setText("");
-            return false;
-        }
-
         if (user.getHashedPassword().equals(HexUtils.encodePasswd(user.getLogin(), new String(newPass), HttpDigest.REALM))) {
             JOptionPane.showMessageDialog(
                     this,
@@ -365,7 +340,6 @@ public class PasswordDialog extends JDialog {
             }
 
             user.setPasswordChanges(Registry.getDefault().getClusterStatusAdmin().getCurrentClusterSystemTime().getTime(), new String(newPass));
-            user.setChangePassword(forceChangePasswordCheckBox.isSelected());
             Registry.getDefault().getIdentityAdmin().saveUser(
                     IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, user, null); // TODO make sure passing null here won't clear group memberships
             Registry.getDefault().getIdentityAdmin().resetLogonFailCount(user);
@@ -377,7 +351,12 @@ public class PasswordDialog extends JDialog {
                 eh.setType(EntityType.USER);
                 listener.entityUpdated(new EntityEvent(this, eh));
             }
-        } catch (Exception e) {
+        } catch (InvalidPasswordException e) {
+            JOptionPane.showMessageDialog(this,
+                    ExceptionUtils.getMessage(e),
+                    resources.getString("newPasswordField.error.title"),
+                    JOptionPane.ERROR_MESSAGE);
+        }catch (Exception e) {
             log.log(Level.WARNING, "changePassword()", e);
             JOptionPane.showMessageDialog(null,
                     "There was an system error saving the password",

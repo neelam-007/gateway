@@ -1,5 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderPasswordPolicy;
+import com.l7tech.objectmodel.FindException;
+
 import javax.swing.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -34,19 +39,18 @@ public class PasswordHelpDialog extends JDialog {
             }
         });
 
-        String passwordHelpMsg = "<html><body>Password changes must comply all of the following:" +
-                "<ul>" +
-                "<li>Passwords are a minimum of 8 alphanumeric characters in length and do contain a mix of upper case letters, lower case letters, numbers, and special characters.</li>" +
-                "<li>Passwords do not contain consecutively repeating characters.</li>" +
-                "<li>Passwords must differ from the previous password by at least four characters.</li>" +
-                "<li>Passwords are not reused within 10 password changes.</li>" +
-                "</ul>" +
-                "</body></html>";
-
+        Registry reg = Registry.getDefault();
+        String passwordHelpMsg;
+        try
+        {
+           passwordHelpMsg  = reg.getIdentityAdmin().getPasswordPolicyForIdentityProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID).getDescription();
+        } catch (FindException e) {
+            passwordHelpMsg = null;
+        }
         editorPane.setText(passwordHelpMsg);
 
         this.pack();
-        this.setSize(525, 225);
+        this.setSize(400, 275);
         this.setResizable(true);
     }
 

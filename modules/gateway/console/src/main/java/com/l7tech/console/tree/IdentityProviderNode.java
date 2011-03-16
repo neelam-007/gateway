@@ -96,6 +96,13 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
             }
         }
 
+
+        if (config.type() != null && config.type() == IdentityProviderType.INTERNAL) {
+
+            list.add(new ForceAdminPasswordResetAction(this));
+            list.add(new IdentityProviderManagePasswordPolicyAction(this));
+        }
+
         return list.toArray(new Action[list.size()]);
     }
 

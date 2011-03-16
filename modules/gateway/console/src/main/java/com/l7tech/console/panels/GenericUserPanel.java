@@ -1,13 +1,11 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.MaxLengthDocument;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
-import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
+
 import static com.l7tech.objectmodel.EntityType.USER;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.console.action.SecureAction;

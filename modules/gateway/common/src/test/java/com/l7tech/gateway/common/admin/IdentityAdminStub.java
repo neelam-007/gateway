@@ -2,17 +2,12 @@ package com.l7tech.gateway.common.admin;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.StubDataStore;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.GroupMembership;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.InvalidIdProviderCfgException;
-import com.l7tech.identity.PersistentGroup;
-import com.l7tech.identity.PersistentUser;
-import com.l7tech.identity.User;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalGroupMembership;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.l7tech.gateway.common.service.PublishedService;
 
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -111,7 +106,7 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders) throws SaveException, UpdateException, ObjectNotFoundException {
+    public String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders ) throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException {
         if (!(user instanceof PersistentUser)) throw new IllegalArgumentException("IdentityAdminStub only supports Internal and Federated users");
         PersistentUser pu = (PersistentUser) user;
         final StubDataStore store = StubDataStore.defaultStore();
@@ -284,5 +279,20 @@ public class IdentityAdminStub implements IdentityAdmin {
 
     @Override
     public void resetLogonFailCount(User user) throws FindException, UpdateException {
+    }
+
+    @Override
+    public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException {
+        return null; // TODO ?
+    }
+
+    @Override
+    public String updatePasswordPolicy(long providerId, IdentityProviderPasswordPolicy policy) throws SaveException, UpdateException, ObjectNotFoundException {
+        return null; // TODO ?
+    }
+
+    @Override
+    public void forceAdminUsersResetPassword(long identityProviderConfigId) throws FindException, SaveException, UpdateException {
+        // TODO ?
     }
 }

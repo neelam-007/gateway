@@ -4,7 +4,8 @@
 package com.l7tech.server.admin;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.gateway.common.admin.*;
+import com.l7tech.gateway.common.admin.AdminLogin;
+import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
@@ -12,9 +13,12 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.UsernamePasswordSecurityToken;
+import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
@@ -24,21 +28,18 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BuildInfo;
-import com.l7tech.security.token.http.HttpClientCertToken;
-import com.l7tech.security.token.UsernamePasswordSecurityToken;
-import com.l7tech.security.token.SecurityTokenType;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
+import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
-import javax.security.auth.login.AccountLockedException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlException;
-import java.security.NoSuchAlgorithmException;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
@@ -148,6 +149,8 @@ public class AdminLoginImpl
         return login(username, newPassword);
     }
 
+
+
     @Override
     public void changePassword(final String currentPassword, final String newPassword) throws LoginException {
         if (currentPassword == null || newPassword == null) {
@@ -169,6 +172,11 @@ public class AdminLoginImpl
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw buildAccessControlException("Authentication failed", e);
         } 
+    }
+
+    @Override
+    public boolean getPropertyPCIDSSEnabled() {
+        return serverConfig.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED, false);
     }
 
     @Override

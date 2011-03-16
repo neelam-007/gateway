@@ -120,7 +120,7 @@ public class IdentityProvider {
      * @param numberOfUsers the number of users created
      * @return a list of ids for the newly created users
      */
-    public ArrayList<String> createBulkUsers(String namePrefix, String passwdPrefix, int numberOfUsers) throws SaveException, RemoteException, ObjectNotFoundException, UpdateException {
+    public ArrayList<String> createBulkUsers(String namePrefix, String passwdPrefix, int numberOfUsers) throws SaveException, RemoteException, ObjectNotFoundException, UpdateException, InvalidPasswordException {
         ArrayList<String> output = new ArrayList<String>();
         for (int i = 0; i < numberOfUsers; i++) {
             User newUser = constructUser(namePrefix + i, passwdPrefix + i);
@@ -167,7 +167,7 @@ public class IdentityProvider {
      * @param ub the user information
      * @return the object id associated to this new user
      */
-    public String saveUser(final User ub) throws RemoteException, SaveException, ObjectNotFoundException, UpdateException {
+    public String saveUser(final User ub) throws RemoteException, SaveException, ObjectNotFoundException, UpdateException, InvalidPasswordException {
         IdentityAdmin  identityAdmin = session.getIdentityAdmin();
         return identityAdmin.saveUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, ub, null);
     }

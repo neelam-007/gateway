@@ -20,7 +20,6 @@ import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.util.Charsets;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -134,14 +133,14 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             InternalUser newInternalUser = new InternalUser();
             newInternalUser.copyFrom(internalUser);
             newInternalUser.setVersion(internalUser.getVersion());
-            //newInternalUser.setCleartextPassword(newpasswd);
-            passwordEnforcerManager.isSTIGCompilance(newInternalUser, newpasswd, HexUtils.encodePasswd(newInternalUser.getLogin(), newpasswd, HttpDigest.REALM), oldpasswd);
+            passwordEnforcerManager.isPasswordPolicyCompliant(newInternalUser, newpasswd, HexUtils.encodePasswd(newInternalUser.getLogin(), newpasswd, HttpDigest.REALM), oldpasswd);
+            passwordEnforcerManager.setUserPasswordPolicyAttributes(newInternalUser,false);
             newInternalUser.setPasswordChanges(System.currentTimeMillis(), newpasswd);
-            newInternalUser.setPasswordExpiry(passwordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
 
             InternalUserManager userManager = internalProvider.getUserManager();
             userManager.update(newInternalUser);
             logger.fine("Password changed for user " + internalUser.getLogin());
+
             // end transaction
             // return 200
             res.setStatus(HttpServletResponse.SC_OK);
@@ -151,12 +150,15 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         } catch (FindException e) {
             logger.log(Level.WARNING, "could not complete operation, returning 500", e);
             sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+        } catch (InvalidPasswordException e) {
+            logger.log(Level.WARNING, "could not complete operation, returning 500", e);
+            sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unable to change password"); // not passing error back
         } catch (UpdateException e) {
             logger.log(Level.WARNING, "could not complete operation, returning 500", e);
             sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-        } catch (InvalidPasswordException e) {
-            logger.log(Level.SEVERE, "password was not valid", ExceptionUtils.getDebugException(e));
-            sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+//        } catch (InvalidPasswordException e) {
+//            logger.log(Level.SEVERE, "password was not valid", ExceptionUtils.getDebugException(e));
+//            sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
     }
 

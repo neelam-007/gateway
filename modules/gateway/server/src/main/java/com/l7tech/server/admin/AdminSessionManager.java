@@ -1,45 +1,45 @@
 package com.l7tech.server.admin;
 
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
-import org.apache.commons.collections.map.LRUMap;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.Background;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.Permission;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.identity.AuthenticatingIdentityProvider;
-import com.l7tech.server.identity.internal.InternalIdentityProvider;
-import com.l7tech.server.security.PasswordEnforcerManager;
-import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.security.rbac.RoleManagerIdentitySourceSupport;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.logon.LogonService;
-import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.identity.AuthenticatingIdentityProvider;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.internal.InternalIdentityProvider;
+import com.l7tech.server.logon.LogonService;
+import com.l7tech.server.security.PasswordEnforcerManager;
+import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.security.rbac.RoleManagerIdentitySourceSupport;
+import com.l7tech.util.Background;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.TimeUnit;
+import org.apache.commons.collections.map.LRUMap;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
-import javax.security.auth.login.LoginException;
 import javax.security.auth.login.CredentialExpiredException;
+import javax.security.auth.login.LoginException;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**
  * This class handles authentication and tracking for admin sessions.
@@ -292,9 +292,9 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                 if ( authenticatedUser instanceof InternalUser ) {
                     InternalUser internalUser = (InternalUser) authenticatedUser;
                     checkPerms(internalUser);
-                    passwordEnforcerManager.isSTIGCompilance(internalUser, newPassword, HexUtils.encodePasswd(internalUser.getLogin(), newPassword, HttpDigest.REALM), password);
+                    passwordEnforcerManager.isPasswordPolicyCompliant(internalUser, newPassword, HexUtils.encodePasswd(internalUser.getLogin(), newPassword, HttpDigest.REALM), password);
+                    passwordEnforcerManager.setUserPasswordPolicyAttributes(internalUser,false);
                     internalUser.setPasswordChanges(System.currentTimeMillis(), newPassword);
-                    internalUser.setPasswordExpiry(passwordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
                     ((InternalIdentityProvider)identityProvider).getUserManager().update(internalUser);
                     passwordUpdated = true;
                 } else {
@@ -307,7 +307,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
         return passwordUpdated;
     }
-
+    
     /**
      * Record a successful authentication for the specified login and return a cookie that can be used
      * to resume the session from now on.

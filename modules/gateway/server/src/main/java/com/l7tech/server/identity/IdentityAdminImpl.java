@@ -2,7 +2,8 @@ package com.l7tech.server.identity;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
+import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
@@ -11,10 +12,11 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.TrustedEsmUserManager;
+import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
@@ -28,11 +30,14 @@ import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
 
 /**
  * Server side implementation of the IdentityAdmin interface.
@@ -50,6 +55,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private final DefaultKey defaultKey;
     private ApplicationEventPublisher applicationEventPublisher;
     private final PasswordEnforcerManager passwordEnforcerManager;
+    private final IdentityProviderPasswordPolicyManager passwordPolicyManger;
     private final LogonService logonServ;
 
     @Resource
@@ -58,6 +64,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
     public IdentityAdminImpl(final RoleManager roleManager,
+                             final IdentityProviderPasswordPolicyManager passwordPolicyManger,
                              final PasswordEnforcerManager passwordEnforcerManager,
                              final DefaultKey defaultKey,
                              final LogonService logonServ) {
@@ -65,6 +72,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
         this.roleManager = roleManager;
         this.defaultKey = defaultKey;
+        this.passwordPolicyManger = passwordPolicyManger;
         this.passwordEnforcerManager = passwordEnforcerManager;
         this.logonServ = logonServ;
     }
@@ -275,7 +283,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     @Override
     public String saveUser(long identityProviderConfigId, User user, Set groupHeaders)
-      throws SaveException, UpdateException, ObjectNotFoundException {
+      throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException {
         boolean isSave = true;
         try {
             String id = user.getId();
@@ -287,9 +295,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
             if(user instanceof InternalUser) {
                 InternalUser internalUser = (InternalUser)user;
-                // Password expiration is wrong for new users
+                // Reset password expiration and force password change
                 if(isSave) {
-                    internalUser.setPasswordExpiry(passwordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
+                    passwordEnforcerManager.isPasswordPolicyCompliant( HexUtils.encodePasswd(internalUser.getLogin(), internalUser.getHashedPassword(), HttpDigest.REALM), identityProviderConfigId);
+                    passwordEnforcerManager.setUserPasswordPolicyAttributes(internalUser, true);
                 } else {
                     User u = userManager.findByPrimaryKey(internalUser.getId());
                     InternalUser existingDude = null;
@@ -299,7 +308,8 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
                     if(existingDude != null) {
                         if(!internalUser.getHashedPassword().equals(existingDude.getHashedPassword())) {
-                            internalUser.setPasswordExpiry(passwordEnforcerManager.getSTIGExpiryPasswordDate(System.currentTimeMillis()));
+                            passwordEnforcerManager.isPasswordPolicyCompliant(HexUtils.encodePasswd(internalUser.getLogin(), internalUser.getHashedPassword(), HttpDigest.REALM), identityProviderConfigId);
+                            passwordEnforcerManager.setUserPasswordPolicyAttributes(internalUser, true);
                         }
                     }
                 }
@@ -498,6 +508,62 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         logonServ.resetLogonFailCount(user);
     }
 
+    @Override
+    public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException {
+        return passwordPolicyManger.findByInternalIdentityProviderOid(providerId);  
+    }
+
+    @Override
+    public String updatePasswordPolicy(long providerId, IdentityProviderPasswordPolicy policy) throws SaveException, UpdateException, ObjectNotFoundException {
+        policy.setInternalIdentityProviderOid(providerId);
+        passwordPolicyManger.update(policy);
+        passwordEnforcerManager.auditPasswordPolicy(policy);
+        return  policy.getOidAsLong().toString();
+    }
+
+    @Override                                         
+    public void forceAdminUsersResetPassword(long identityProviderConfigId) throws FindException, SaveException, UpdateException, InvalidPasswordException {
+        if (identityProviderConfigId != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) return;
+
+        IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
+        if (provider == null) throw new FindException("IdentityProvider could not be found");
+
+        UserManager userManager = provider.getUserManager();
+        EntityHeaderSet<IdentityHeader> headers = findAllUsers(identityProviderConfigId);
+        for(IdentityHeader header : headers){
+            User user = userManager.findByPrimaryKey(Long.toString(header.getOid()));
+             if(user !=  null && user instanceof InternalUser ) {
+                InternalUser internalUser = (InternalUser)user;
+                if (isAdministrativeUser(internalUser)){
+                    internalUser.setChangePassword(true);
+                    saveUser(identityProviderConfigId, internalUser, null) ;
+                }
+             }
+        }
+        IdentityProviderConfig idConfig = findIdentityProviderConfigByID(identityProviderConfigId);
+        applicationEventPublisher.publishEvent(new AdminEvent(this, MessageFormat.format(SystemMessages.FORCE_PASSWORD_RESET.getMessage(), idConfig.getName())) {
+                    public Level getMinimumLevel() {
+                        return Level.WARNING;
+                    }
+                });
+    }
+            
+    /**
+     * Determines if the user has roles.
+     *
+     * @return  TRUE if has roles, otherwise FALSE
+     */
+    private boolean isAdministrativeUser(InternalUser internalUser) {
+        try {
+            Collection<Role> roles = roleManager.getAssignedRoles(internalUser);
+
+            if (roles == null) return false;
+            return !roles.isEmpty();
+        } catch(FindException e) {
+            return false;
+        }
+    }
+
     private static final SecureRandom secureRandom = new SecureRandom();
 
     private SecureRandom getSecureRandom() {
@@ -597,10 +663,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             throw new FindException("IdentityProvider could not be found");
 
         return provider.getGroupManager();
-    }
-
-    private boolean enforcePasswordRestrictions() {
-        return passwordEnforcerManager.isSTIGEnforced();
     }
 
     private IdentityProviderConfigManager identityProviderConfigManager = null;
