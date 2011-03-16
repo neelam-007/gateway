@@ -445,7 +445,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         AssertionTreeNode insertAfter = null;
         int targetIndex = path.getPathCount()==1 ? targetTreeNode.getChildCount() : 0;
         while ( targetTreeNode != null ) {
-            if (targetTreeNode.getAllowsChildren() && (pathToTarget.getParentPath()==null || isExpanded(pathToTarget)) && acceptsAll(targetTreeNode,toDrop)) {
+            if (targetTreeNode.getAllowsChildren() && (pathToTarget.getParentPath()==null || isExpanded(pathToTarget) || (isExpanded(pathToTarget.getParentPath()) && targetTreeNode.getChildCount()==0)) && acceptsAll(targetTreeNode,toDrop)) {
                 if ( insertAfter != null ) {
                     targetIndex = targetTreeNode.getIndex( insertAfter ) + 1;
                 }
@@ -1136,7 +1136,12 @@ public class PolicyTree extends JTree implements DragSourceListener,
             if ( target!=null && target.left != null && target.right > -1 ) {
                 if ( target.right == 0 ) {
                     renderOffsetMultiplier = 0;
-                    targetPath = asTreePath(target.left.getChildAt( 0 ));
+                    if ( target.left.getChildCount() == 0 ) {
+                        renderOffsetMultiplier = 1;
+                        targetPath = asTreePath(target.left);
+                    } else {
+                        targetPath = asTreePath(target.left.getChildAt( 0 ));
+                    }
                     if ( targetPath.getParentPath()!=null && !isExpanded( targetPath.getParentPath() ) ) {
                         renderOffsetMultiplier = 1;
                         targetPath = getLastExpandedChildPath( targetPath.getParentPath() );
@@ -1315,6 +1320,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         @Override
         public void drop(DropTargetDropEvent e) {
+            pathLast = null;
             try {
                 DataFlavor[] flavors = e.getCurrentDataFlavors();
                 for (DataFlavor flavor : flavors) {
