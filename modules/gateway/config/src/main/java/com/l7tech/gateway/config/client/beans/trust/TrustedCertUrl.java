@@ -36,6 +36,8 @@ public class TrustedCertUrl extends UrlConfigurableBean {
         URLConnection conn;
         try {
             conn = value.openConnection();
+            conn.setUseCaches( false );
+            conn.setAllowUserInteraction( false );
             if (!(conn instanceof HttpsURLConnection)) throw new ConfigurationException("Provided URL did not result in an HTTPS connection");
 
             HttpsURLConnection httpsURLConnection = (HttpsURLConnection)conn;
