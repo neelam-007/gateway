@@ -153,6 +153,9 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                 return protocol == ANY ? resources.getString("tls-protocol.any") : resources.getString("tls-protocol." + protocol) ;
             }
         }, null, true ) );
+        privateKeyComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
+        privateKeyComboBox.setMinimumSize( new Dimension( 100, privateKeyComboBox.getPreferredSize().height  ) );
+        privateKeyComboBox.setPreferredSize( new Dimension( 100, privateKeyComboBox.getPreferredSize().height ) );
 
         pathTextField.addKeyListener(new KeyAdapter() {
             @Override
@@ -201,6 +204,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         } );
 
         pack();
+        setMinimumSize( getMinimumSize() );
         getRootPane().setDefaultButton( cancelButton );
         Utilities.setEscKeyStrokeDisposes( this );
         Utilities.centerOnParentWindow( this );

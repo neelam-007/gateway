@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="8" left="8" bottom="8" right="8"/>
     <constraints>
-      <xy x="20" y="20" width="557" height="712"/>
+      <xy x="20" y="20" width="587" height="759"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -305,7 +305,7 @@
                   </component>
                 </children>
               </grid>
-              <grid id="1954" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="1954" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -333,7 +333,7 @@
                     <children>
                       <component id="2ab43" class="javax.swing.JRadioButton" binding="useDefaultPrivateKeyRadioButton" default-binding="true">
                         <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <selected value="true"/>
@@ -342,7 +342,7 @@
                       </component>
                       <component id="4955" class="javax.swing.JRadioButton" binding="doNotUseAnyPrivateKeyRadioButton" default-binding="true">
                         <constraints>
-                          <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <text resource-bundle="com/l7tech/console/panels/HttpConfigurationPropertiesDialog" key="donotuseanyprivatekey.label"/>
@@ -350,7 +350,7 @@
                       </component>
                       <component id="bbf44" class="javax.swing.JRadioButton" binding="useCustomPrivateKeyRadioButton" default-binding="true">
                         <constraints>
-                          <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <text resource-bundle="com/l7tech/console/panels/HttpConfigurationPropertiesDialog" key="usecustomprivatekey.label"/>
@@ -375,7 +375,7 @@
                           </component>
                           <component id="4c22c" class="javax.swing.JComboBox" binding="privateKeyComboBox" custom-create="true">
                             <constraints>
-                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties>
                               <enabled value="true"/>
@@ -383,7 +383,7 @@
                           </component>
                           <component id="5879d" class="javax.swing.JButton" binding="managePrivateKeysButton" default-binding="true">
                             <constraints>
-                              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties>
                               <enabled value="true"/>
@@ -392,46 +392,51 @@
                           </component>
                         </children>
                       </grid>
-                    </children>
-                  </grid>
-                  <grid id="423b8" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                    <margin top="0" left="0" bottom="0" right="0"/>
-                    <constraints>
-                      <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties/>
-                    <border type="none"/>
-                    <children>
-                      <component id="6557a" class="javax.swing.JRadioButton" binding="useDefaultCipherSuitesRadioButton" default-binding="true">
+                      <grid id="423b8" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                        <margin top="0" left="0" bottom="0" right="0"/>
                         <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="1" row-span="3" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                         </constraints>
-                        <properties>
-                          <selected value="true"/>
-                          <text resource-bundle="com/l7tech/console/panels/HttpConfigurationPropertiesDialog" key="usedefaultciphersuites.label"/>
-                        </properties>
-                      </component>
-                      <component id="2d20d" class="javax.swing.JRadioButton" binding="useCustomCipherSuitesRadioButton" default-binding="true">
-                        <constraints>
-                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <text resource-bundle="com/l7tech/console/panels/HttpConfigurationPropertiesDialog" key="usecustomciphersuites.label"/>
-                        </properties>
-                      </component>
-                      <component id="515c5" class="javax.swing.JButton" binding="cipherSuitesButton" default-binding="true">
-                        <constraints>
-                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="2" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <text resource-bundle="com/l7tech/console/panels/HttpConfigurationPropertiesDialog" key="manageciphersuites.label"/>
-                        </properties>
-                      </component>
-                      <vspacer id="b6646">
-                        <constraints>
-                          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                      </vspacer>
+                        <properties/>
+                        <border type="none"/>
+                        <children>
+                          <component id="6557a" class="javax.swing.JRadioButton" binding="useDefaultCipherSuitesRadioButton" default-binding="true">
+                            <constraints>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <selected value="true"/>
+                              <text resource-bundle="com/l7tech/console/panels/HttpConfigurationPropertiesDialog" key="usedefaultciphersuites.label"/>
+                            </properties>
+                          </component>
+                          <component id="2d20d" class="javax.swing.JRadioButton" binding="useCustomCipherSuitesRadioButton" default-binding="true">
+                            <constraints>
+                              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text resource-bundle="com/l7tech/console/panels/HttpConfigurationPropertiesDialog" key="usecustomciphersuites.label"/>
+                            </properties>
+                          </component>
+                          <component id="515c5" class="javax.swing.JButton" binding="cipherSuitesButton" default-binding="true">
+                            <constraints>
+                              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="2" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <text resource-bundle="com/l7tech/console/panels/HttpConfigurationPropertiesDialog" key="manageciphersuites.label"/>
+                            </properties>
+                          </component>
+                          <vspacer id="b6646">
+                            <constraints>
+                              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                          </vspacer>
+                          <hspacer id="1b91a">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                          </hspacer>
+                        </children>
+                      </grid>
                     </children>
                   </grid>
                   <grid id="eb08f" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
