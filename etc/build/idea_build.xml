@@ -9,12 +9,9 @@
     -->
     <path id="jasperreports.classpath">
         <file file="lib/repository/jasperreports/jasperreports-3.1.2-p1.jar"/>
-        <file file="lib/repository/jfree/jcommon-1.0.15.jar"/>
-        <file file="lib/repository/jfree/jfreechart-1.0.12.jar"/>
-
-        <fileset dir="lib/repository/org.apache.tomcat">
-            <include name="*.jar"/>
-        </fileset>
+        <file file="lib/repository/jfree/jcommon-1.0.16.jar"/>
+        <file file="lib/repository/jfree/jfreechart-1.0.13.jar"/>
+        <file file="lib/repository/eclipse/jdtcore-3.1.0.jar"/>
         <file file="lib/repository/commons-digester/commons-digester-1.8.1.jar"/>
         <file file="lib/repository/commons-collections/commons-collections-3.2.1.jar"/>
         <file file="lib/repository/commons-logging/commons-logging-1.1.1.jar"/>
