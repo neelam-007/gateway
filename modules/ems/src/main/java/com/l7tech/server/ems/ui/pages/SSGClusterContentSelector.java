@@ -6,7 +6,7 @@ import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.*;
 import com.l7tech.server.management.api.node.GatewayApi;
 import org.apache.wicket.RequestCycle;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 public class SSGClusterContentSelector extends EsmBaseWebPage {
     private static final Logger logger = Logger.getLogger(SSGClusterContentSelector.class.getName());
 
-    @SpringBean
+    @Inject
     GatewayClusterClientManager gatewayClusterClientManager;
 
     private EntityType[] entityTypes = new EntityType[] {

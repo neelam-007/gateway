@@ -12,7 +12,7 @@ import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.TimeUnit;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -36,13 +36,13 @@ public class Aggregator implements ServiceStateMonitor {
     private long dailyBinEndTime;
     private long lastMetricsTimestamp = 0L;
 
-    @Resource
+    @Inject
     private ServiceManager serviceManager;
 
-    @Resource
+    @Inject
     private ServiceMetricsManager metricsManager;
 
-    @Resource
+    @Inject
     private ServiceMetricsServices metricsServices;
 
     @PostConstruct

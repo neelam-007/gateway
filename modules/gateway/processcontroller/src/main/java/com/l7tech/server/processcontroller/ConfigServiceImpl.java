@@ -16,7 +16,7 @@ import com.l7tech.server.processcontroller.monitoring.MonitoringKernel;
 import com.l7tech.util.*;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import javax.xml.bind.JAXB;
 import java.io.*;
 import java.net.InetAddress;
@@ -62,7 +62,7 @@ public class ConfigServiceImpl implements ConfigService {
     private volatile boolean responsibleForClusterMonitoring;
     private volatile MonitoringConfiguration currentMonitoringConfiguration;
 
-    @Resource
+    @Inject
     private MonitoringKernel monitoringKernel;
     private final File monitoringConfigFile;
 

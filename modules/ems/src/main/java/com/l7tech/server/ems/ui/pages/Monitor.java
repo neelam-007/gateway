@@ -24,7 +24,8 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
+import javax.inject.Named;
 import org.mortbay.util.ajax.JSON;
 
 import java.util.*;
@@ -40,37 +41,38 @@ public class Monitor extends EsmStandardWebPage {
     private static final Object previousPropValuesListSync = new Object();
     private static List<EntityMonitoringPropertyValues> previousPropValuesList = new ArrayList<EntityMonitoringPropertyValues>();
 
-    @SpringBean(name="serverConfig")
+    @Inject
     private ServerConfig serverConfig;
 
-    @SpringBean(name="systemMonitoringSetupSettingsManager")
+    @Inject
     private SystemMonitoringSetupSettingsManager systemMonitoringSetupSettingsManager;
 
-    @SpringBean(name="systemMonitoringNotificationRulesManager")
+    @Inject
     private SystemMonitoringNotificationRulesManager systemMonitoringNotificationRulesManager;
 
-    @SpringBean(name="entityMonitoringPropertySetupManager")
+    @Inject
     private EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager;
 
-    @SpringBean(name="ssgClusterNotificationSetupManager")
+    @Inject
     private SsgClusterNotificationSetupManager ssgClusterNotificationSetupManager;
 
-    @SpringBean(name="roleManager")
+    @Inject
     private RoleManager roleManager;
 
-    @SpringBean(name="enterpriseFolderManager")
+    @Inject
     private EnterpriseFolderManager enterpriseFolderManager;
 
-    @SpringBean(name="ssgClusterManager")
+    @Inject
     private SsgClusterManager ssgClusterManager;
 
-    @SpringBean(name="ssgNodeManager")
+    @Inject
     private SsgNodeManager ssgNodeManager;
 
-    @SpringBean(name="monitoringService")
+    @Inject
     private MonitoringService monitoringService;
 
-    @SpringBean(name="auditContext")
+    @Inject
+    @Named("auditContext")
     private AuditContext auditContext;
 
     private boolean isReadOnly;

@@ -28,7 +28,7 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
@@ -46,7 +46,7 @@ import java.io.Serializable;
 public class PolicyMapping extends EsmStandardWebPage {
     private static final Logger logger = Logger.getLogger(PolicyMapping.class.getName());
 
-    @SpringBean
+    @Inject
     private MigrationRecordManager migrationManager;
 
     private WebMarkupContainer migrationTableContainer;

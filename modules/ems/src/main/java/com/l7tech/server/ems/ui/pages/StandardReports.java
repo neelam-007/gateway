@@ -25,7 +25,7 @@ import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.mortbay.util.ajax.JSON;
 
 import java.io.Serializable;
@@ -44,23 +44,23 @@ public class StandardReports extends EsmStandardWebPage {
     private static final SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
     private static final MessageFormat warningMsgFormat = new MessageFormat("{0} in the Gateway Cluster with GUID {1} cannot be added because of {2}.");
 
-    @SpringBean
+    @Inject
     private ReportService reportService;
 
-    @SpringBean
+    @Inject
     private SsgClusterManager ssgClusterManager;
 
-    @SpringBean
+    @Inject
     private GatewayContextFactory gatewayContextFactory;
 
-    @SpringBean
+    @Inject
     private GatewayTrustTokenFactory gatewayTrustTokenFactory;
 
-    @SpringBean
+    @Inject
     private StandardReportSettingsManager standardReportSettingsManager;
 
-    @SpringBean
-    GatewayClusterClientManager gatewayClusterClientManager;
+    @Inject
+    private GatewayClusterClientManager gatewayClusterClientManager;
 
     private DropDownChoice<String> timeZoneChoice;
     private YuiDateSelector fromDateField;

@@ -8,7 +8,7 @@ import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.phase.Phase;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -87,7 +87,7 @@ public class SecurityInterceptor extends AbstractPhaseInterceptor<Message> {
 
     private static final String AUTH_FAILURE = "Authentication Required";
 
-    @Resource
+    @Inject
     private ConfigService configService;
 
     private final boolean allowLocalAccess;

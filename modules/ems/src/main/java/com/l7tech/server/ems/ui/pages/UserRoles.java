@@ -22,7 +22,7 @@ import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.model.*;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 
@@ -44,10 +44,10 @@ import java.io.Serializable;
 public class UserRoles extends EsmStandardWebPage {
     private static final Logger logger = Logger.getLogger(UserRoles.class.getName());
 
-    @SpringBean
+    @Inject
     private RoleManager roleManager;
 
-    @SpringBean
+    @Inject
     private EsmAccountManager emsAccountManager;
 
     private RoleModel roleModel;

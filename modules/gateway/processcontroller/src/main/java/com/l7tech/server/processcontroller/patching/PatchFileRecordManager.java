@@ -2,7 +2,7 @@ package com.l7tech.server.processcontroller.patching;
 
 import com.l7tech.server.processcontroller.ConfigService;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.logging.FileHandler;
@@ -41,7 +41,7 @@ public class PatchFileRecordManager implements PatchRecordManager, InitializingB
 
     private static final String PATCH_LOGGER_NAME = "patch.record.logger";
 
-    @Resource
+    @Inject
     private ConfigService configService;
 
     private void init(String patchLog) throws IOException {

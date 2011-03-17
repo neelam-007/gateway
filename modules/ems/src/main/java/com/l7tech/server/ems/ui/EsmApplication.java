@@ -9,6 +9,7 @@ import com.l7tech.server.ems.migration.MigrationArtifactResource;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.UpdatableLicenseManager;
+import com.l7tech.server.ems.util.SpringInjectComponentInjector;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
@@ -31,7 +32,6 @@ import org.apache.wicket.protocol.http.WebRequestCycle;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.request.target.coding.HybridUrlCodingStrategy;
 import org.apache.wicket.settings.*;
-import org.apache.wicket.spring.injection.annot.SpringComponentInjector;
 import org.apache.wicket.util.convert.ConverterLocator;
 import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.util.lang.Bytes;
@@ -148,7 +148,7 @@ public class EsmApplication extends WebApplication {
         super.init();
 
         // Wires up SpringBean annotation references
-        addComponentInstantiationListener(new SpringComponentInjector(this));
+        addComponentInstantiationListener( new SpringInjectComponentInjector( this ) );
 
         IApplicationSettings applicationSettings = getApplicationSettings();
         applicationSettings.setPageExpiredErrorPage(HomeRedirectPage.class);

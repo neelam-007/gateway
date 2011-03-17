@@ -31,6 +31,8 @@
         <dependency org="com.l7tech.lib" name="apache-cxf-lib" rev="2.3.3" force="true" conf="core"/>
         <dependency org="com.sun.xml.fastinfoset" name="FastInfoset" rev="1.2.7" force="true" conf="core"/>
 
+        <dependency org="javax.inject" name="javax.inject" rev="1" force="true" conf="core"/>
+
         <dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.26" force="true" conf="core"/>
 

@@ -9,7 +9,7 @@ import com.l7tech.util.SyspropUtil;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import java.security.AccessControlException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -27,10 +27,10 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
     private static final Logger logger = Logger.getLogger(TrustedEsmUserManagerImpl.class.getName());
     private static final boolean PERMIT_MAPPING_UPDATE = SyspropUtil.getBoolean("com.l7tech.server.remotetrust.permitMappingUpdate", true);
 
-    @Resource
+    @Inject
     private TrustedEsmManager trustedEsmManager;
 
-    @Resource
+    @Inject
     private RoleManager roleManager;
 
 

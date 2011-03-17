@@ -4,7 +4,7 @@ import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.markup.html.form.validation.EqualPasswordInputValidator;
 import org.apache.wicket.markup.html.form.validation.AbstractFormValidator;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
@@ -83,10 +83,10 @@ public class UserSettings extends EsmStandardWebPage {
 
     private static final Logger logger = Logger.getLogger( UserSettings.class.getName() );
 
-    @SpringBean
+    @Inject
     private EsmSecurityManager securityManager;
 
-    @SpringBean
+    @Inject
     private Config config;
 
     /**

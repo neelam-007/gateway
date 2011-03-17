@@ -2,7 +2,7 @@ package com.l7tech.server.ems.ui.pages;
 
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import com.l7tech.server.ems.ui.EsmSession;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.identity.User;
@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletRequest;
  * Base for all EMS web pages, that provides access to the current user, LoginInfo, and EmsSession.
  */
 public class EsmBaseWebPage extends WebPage {
-    @SpringBean
+    @Inject
     protected EsmSecurityManager securityManager;
 
     @Override

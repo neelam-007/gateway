@@ -65,6 +65,7 @@
                      matcher="exact"/>
         </dependency>        
         <dependency org="jasperreports" name="jasperreports" rev="3.1.2-p1" force="true" conf="core"/>
+        <dependency org="javax.inject" name="javax.inject" rev="1" force="true" conf="core"/>
         <dependency org="org.javassist" name="javassist" rev="3.14.0-GA" force="true" conf="core"/>
         <dependency org="jboss" name="jboss-j2ee" rev="4.0.3" force="true" conf="core"/>
         <dependency org="org.jboss.cache" name="jbosscache-core" rev="3.2.5.GA" force="true" conf="core"/>

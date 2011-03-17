@@ -10,7 +10,7 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.util.lang.Bytes;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.validation.validator.StringValidator;
 
 import java.util.logging.Logger;
@@ -39,10 +39,10 @@ public class PolicyMigrationUploadPanel extends Panel {
 
     private String successScript = null;
 
-    @SpringBean
+    @Inject
     private SsgClusterManager clusterManager;
 
-    @SpringBean
+    @Inject
     private MigrationRecordManager migrationRecordManager;
 
     public PolicyMigrationUploadPanel( final String id ) {

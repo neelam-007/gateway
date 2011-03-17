@@ -12,7 +12,7 @@ import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.validation.validator.PatternValidator;
 import org.apache.wicket.validation.validator.EmailAddressValidator;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.Component;
 
@@ -63,10 +63,10 @@ public class EnterpriseUsersNewPanel extends Panel {
 
     private static final Logger logger = Logger.getLogger( EnterpriseUsersNewPanel.class.getName() );
 
-    @SpringBean
+    @Inject
     private EsmAccountManager emsAccountManager;
 
-    @SpringBean
+    @Inject
     private Config config;
 
     /**

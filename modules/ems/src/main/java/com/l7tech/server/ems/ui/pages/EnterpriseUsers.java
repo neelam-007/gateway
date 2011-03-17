@@ -24,7 +24,7 @@ import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -158,7 +158,7 @@ public class EnterpriseUsers extends EsmStandardWebPage {
 
     private static final Logger logger = Logger.getLogger( EnterpriseUsers.class.getName() );
 
-    @SpringBean
+    @Inject
     private EsmAccountManager emsAccountManager;
 
     private class UserDataProvider extends SortableDataProvider<InternalUser> {

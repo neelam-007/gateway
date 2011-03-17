@@ -21,6 +21,8 @@ import com.l7tech.util.SyspropUtil;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
@@ -41,11 +43,6 @@ import java.util.logging.Logger;
 public class NodeApiImpl implements NodeApi {
 
     //- PUBLIC
-
-    @PostConstruct
-    public void start() {
-        if (serverConfig == null || ssgConnectorManager == null || shutdowner == null) throw new NullPointerException("A required component is missing");
-    }
 
     @Override
     public void shutdown() {
@@ -82,16 +79,16 @@ public class NodeApiImpl implements NodeApi {
 
     private static final Logger logger = Logger.getLogger(NodeApiImpl.class.getName());
 
-    @Resource
+    @Inject
     private ServerConfig serverConfig;
 
-    @Resource
+    @Inject
     private SsgConnectorManager ssgConnectorManager;
 
-    @Resource
+    @Inject
     private ShutdownWatcher shutdowner;
 
-    @Resource
+    @Inject
     private AuditRecordManager auditRecordManager;
 
     @Resource

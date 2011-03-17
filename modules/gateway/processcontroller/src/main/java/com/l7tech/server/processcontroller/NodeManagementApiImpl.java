@@ -21,6 +21,8 @@ import org.apache.cxf.interceptor.InInterceptors;
 import org.apache.cxf.interceptor.OutFaultInterceptors;
 
 import javax.annotation.Resource;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.jws.WebService;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
@@ -42,14 +44,14 @@ public class NodeManagementApiImpl implements NodeManagementApi {
 
     private static final String AUTH_FAILURE = "Authentication Required";
 
-    @Resource
+    @Inject
     private ConfigService configService;
 
-    @Resource
+    @Inject
     private ProcessController processController;
 
     @Resource
-    private WebServiceContext webServiceContext;
+    private WebServiceContext webServiceContext; // Injected by CXF to get access to request metadata (e.g. HttpServletRequest)
 
     private void checkLocalRequest() {
         final HttpServletRequest req = (HttpServletRequest)webServiceContext.getMessageContext().get(MessageContext.SERVLET_REQUEST);

@@ -8,7 +8,7 @@ import org.apache.wicket.markup.html.form.validation.EqualPasswordInputValidator
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 
 import java.io.Serializable;
@@ -57,10 +57,10 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
 
     private static final Logger logger = Logger.getLogger( EnterpriseUsersResetPasswordPanel.class.getName() );
 
-    @SpringBean
+    @Inject
     private EsmAccountManager emsAccountManager;
 
-    @SpringBean
+    @Inject
     private Config config;
 
     private UserModel buildUserModel( final String username ) {

@@ -10,7 +10,7 @@ import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.IObjectClassAwareModel;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.validation.validator.PatternValidator;
 import org.apache.wicket.validation.validator.AbstractValidator;
 import org.apache.wicket.validation.validator.RangeValidator;
@@ -30,10 +30,10 @@ public class ListenerEditPanel extends Panel {
 
     private static final Logger logger = Logger.getLogger(ListenerEditPanel.class.getName());
 
-    @SpringBean
+    @Inject
     private SetupManager setupManager;
 
-    @SpringBean(name="serverConfig")
+    @Inject
     private Config config;
 
     public ListenerEditPanel( final String id ) {

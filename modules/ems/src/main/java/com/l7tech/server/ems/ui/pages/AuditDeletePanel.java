@@ -3,7 +3,7 @@ package com.l7tech.server.ems.ui.pages;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.IObjectClassAwareModel;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.validation.validator.RangeValidator;
 
 import java.util.logging.Logger;
@@ -60,8 +60,7 @@ public class AuditDeletePanel extends Panel {
 
     private static final Logger logger = Logger.getLogger(AuditDeletePanel.class.getName());
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    @SpringBean
+    @Inject
     private AuditRecordManager auditRecordManager;
 
 }

@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.server.management.api.monitoring.MonitoredPropertyStatus;
@@ -10,7 +7,7 @@ import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 import com.l7tech.server.processcontroller.monitoring.MonitoringKernel;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import javax.jws.WebService;
 import java.io.IOException;
 import java.util.List;
@@ -22,13 +19,13 @@ import java.util.logging.Level;
 public class MonitoringApiImpl implements MonitoringApi {
     private static final Logger logger = Logger.getLogger(MonitoringApiImpl.class.getName());
 
-    @Resource
+    @Inject
     private ConfigService configService;
 
-    @Resource
+    @Inject
     private ProcessController processController;
 
-    @Resource
+    @Inject
     private MonitoringKernel monitoringKernel;
 
     @Override

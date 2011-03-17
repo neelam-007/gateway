@@ -1,6 +1,6 @@
 package com.l7tech.server.processcontroller.patching;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import javax.activation.DataHandler;
 import java.util.Collection;
 import java.util.List;
@@ -150,13 +150,13 @@ public class PatchServiceApiImpl implements PatchServiceApi {
 
     private static final String NODE_PATTERN = "[a-zA-Z0-9_-]{1,1024}";
 
-    @Resource
+    @Inject
     private PatchPackageManager packageManager;
 
-    @Resource
+    @Inject
     private PatchRecordManager recordManager;
 
-    @Resource
+    @Inject
     private ConfigService config;
 
     private static final Logger logger = Logger.getLogger(PatchServiceApiImpl.class.getName());

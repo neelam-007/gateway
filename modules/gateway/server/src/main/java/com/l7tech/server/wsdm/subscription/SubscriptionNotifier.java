@@ -45,7 +45,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
 import org.w3c.dom.Element;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -96,19 +96,19 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
     private final AtomicBoolean notificationEnabled = new AtomicBoolean(false);
     private volatile long lastNotificationRun;
 
-    @Resource
+    @Inject
     private ServiceCache serviceCache;
-    @Resource
+    @Inject
     private SubscriptionManager subscriptionManager;
-    @Resource
+    @Inject
     private PolicyCache policyCache;
-    @Resource
+    @Inject
     private MessageSummaryAuditFactory auditFactory;
-    @Resource
+    @Inject
     private ServerConfig serverConfig;
-    @Resource
+    @Inject
     private GenericHttpClientFactory httpClientFactory;
-    @Resource
+    @Inject
     private Aggregator aggregator;
 
     private final String clusterNodeId;

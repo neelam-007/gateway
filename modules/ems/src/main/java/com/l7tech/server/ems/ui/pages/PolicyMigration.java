@@ -39,7 +39,7 @@ import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.mortbay.util.ajax.JSON;
 
 import javax.xml.ws.WebServiceException;
@@ -559,19 +559,19 @@ public class PolicyMigration extends EsmStandardWebPage {
     private static final String[] DEPENDENCY_REFRESH_COMPONENTS = { "dependenciesTable", "dependenciesTotalLabel", "dependenciesUnmappedLabel", "dependenciesRequiredUnmappedLabel", "dependencyControlsForm" };
     private static final String[] SEARCH_REFRESH_COMPONENTS = { "dependencySearchTarget", "dependencySearchManner", "dependencySearchText", "dependencySearchButton" };
 
-    @SpringBean
+    @Inject
     private SsgClusterManager ssgClusterManager;
 
-    @SpringBean
+    @Inject
     private MigrationRecordManager migrationRecordManager;
 
-    @SpringBean
+    @Inject
     private MigrationMappingRecordManager migrationMappingRecordManager;
 
-    @SpringBean
+    @Inject
     private GatewayClusterClientManager gatewayClusterClientManager;
 
-    @SpringBean
+    @Inject
     private GatewayTrustTokenFactory gatewayTrustTokenFactory;
 
     private DependencyKey lastSourceKey;

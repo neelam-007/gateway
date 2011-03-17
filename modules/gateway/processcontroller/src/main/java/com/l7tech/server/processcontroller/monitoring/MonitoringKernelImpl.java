@@ -16,7 +16,7 @@ import com.l7tech.util.*;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.MessageFormat;
@@ -109,13 +109,13 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         }
     }
 
-    @Resource
+    @Inject
     private PropertySamplerFactory samplerFactory;
 
-    @Resource
+    @Inject
     private NotifierFactory notifierFactory;
 
-    @Resource
+    @Inject
     private ConfigService configService;
 
     @PostConstruct

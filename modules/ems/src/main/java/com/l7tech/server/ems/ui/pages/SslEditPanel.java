@@ -15,7 +15,7 @@ import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.Component;
 import org.apache.wicket.validation.validator.PatternValidator;
 import org.apache.wicket.util.lang.Bytes;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -44,7 +44,7 @@ public class SslEditPanel extends Panel {
     private static final Logger logger = Logger.getLogger(SslEditPanel.class.getName());
     private static final int MAX_KEYSTORE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.keystoreFile.maxBytes", 1024 * 500);
 
-    @SpringBean
+    @Inject
     private SslSetupManager sslSetupManager;
 
     private String successScript = null;

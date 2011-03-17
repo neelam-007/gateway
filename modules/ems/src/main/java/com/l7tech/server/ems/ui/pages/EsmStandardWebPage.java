@@ -8,7 +8,7 @@ import com.l7tech.objectmodel.ObjectModelException;
 import org.apache.wicket.Component;
 import org.apache.wicket.RequestListenerInterface;
 import org.apache.wicket.markup.html.CSSPackageResource;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.authorization.UnauthorizedActionException;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.FormComponent;
@@ -69,7 +69,7 @@ public abstract class EsmStandardWebPage extends EsmBaseWebPage {
 
     //- PROTECTED
 
-    @SpringBean
+    @Inject
     protected UserPropertyManager userPropertyManager;
 
     @Override

@@ -11,7 +11,6 @@ import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
 import com.l7tech.server.ems.gateway.ProcessControllerContext;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.standardreports.StandardReportManager;
-import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.monitoring.EntityMonitoringPropertySetupManager;
 import com.l7tech.server.management.api.node.NodeManagementApi;
@@ -21,7 +20,8 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.model.Model;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
+import javax.inject.Named;
 import org.hibernate.exception.ConstraintViolationException;
 import org.mortbay.util.ajax.JSON;
 import org.springframework.context.ApplicationEventPublisher;
@@ -39,38 +39,36 @@ public class Configure extends EsmStandardWebPage {
 
     private static final Logger logger = Logger.getLogger(Configure.class.getName());
 
-    @SpringBean
+    @Inject
     private Config config;
 
-    @SpringBean
+    @Inject
     private GatewayTrustTokenFactory gatewayTrustTokenFactory;
 
-    @SpringBean
+    @Inject
     private GatewayContextFactory gatewayContextFactory;
 
-    @SpringBean
+    @Inject
     private EnterpriseFolderManager enterpriseFolderManager;
 
-    @SpringBean
+    @Inject
     private SsgClusterManager ssgClusterManager;
 
-    @SpringBean
+    @Inject
     private SsgNodeManager ssgNodeManager;
 
-    @SpringBean
-    private EsmSecurityManager securityManager;
-
-    @SpringBean
+    @Inject
     private StandardReportManager standardReportManager;
 
-    @SpringBean
+    @Inject
     private MigrationRecordManager migrationRecordManager;
 
-    @SpringBean(name = "eventPublisher")
-    ApplicationEventPublisher publisher;
+    @Inject
+    @Named("eventPublisher")
+    private ApplicationEventPublisher publisher;
 
-    @SpringBean
-    EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager;
+    @Inject
+    private EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager;
 
     public Configure() {
         Map<String,String> up = Collections.emptyMap();

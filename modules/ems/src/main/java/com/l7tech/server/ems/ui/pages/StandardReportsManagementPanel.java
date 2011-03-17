@@ -13,7 +13,7 @@ import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
 import org.apache.wicket.util.value.ValueMap;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
@@ -197,10 +197,10 @@ public class StandardReportsManagementPanel extends Panel {
 
     private static final Logger logger = Logger.getLogger( StandardReportsManagementPanel.class.getName() );
 
-    @SpringBean
+    @Inject
     private StandardReportManager reportManager;
 
-    @SpringBean
+    @Inject
     private EsmSecurityManager securityManager;
 
     private WebMarkupContainer dynamicDialogHolder;

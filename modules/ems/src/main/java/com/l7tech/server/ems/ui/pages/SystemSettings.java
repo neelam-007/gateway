@@ -32,7 +32,7 @@ import org.apache.wicket.model.IDetachable;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.StringResourceModel;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.util.lang.Bytes;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import org.apache.wicket.Application;
@@ -68,16 +68,16 @@ public class SystemSettings extends EsmStandardWebPage {
     private static final int MAX_LICENSE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.licenseFile.maxBytes", 1024 * 500);
     private static final Logger logger = Logger.getLogger(SystemSettings.class.getName());
 
-    @SpringBean(name="licenseManager")
+    @Inject
     private UpdatableLicenseManager licenseManager;
 
-    @SpringBean(name="setupManager")
+    @Inject
     private SetupManager setupManager;
 
-    @SpringBean(name="defaultKey")
+    @Inject
     private DefaultKey defaultKey;
 
-    @SpringBean(name="serverConfig")
+    @Inject
     private Config config;
 
     /**

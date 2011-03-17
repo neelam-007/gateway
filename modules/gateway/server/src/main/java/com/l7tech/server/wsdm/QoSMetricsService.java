@@ -19,7 +19,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import javax.xml.soap.SOAPConstants;
 import java.net.URL;
 import java.util.Date;
@@ -42,13 +42,13 @@ public class QoSMetricsService {
     public static final String ESM_QOS_METRICS_URI_PREFIX = "/wsdm/qosmetrics";
     public static final String ESM_QOS_METRICS_ROOT_WSDL = "qosmw-0.5.wsdl";
 
-    @Resource
+    @Inject
     private ServiceMetricsServices serviceMetricsServices;
 
-    @Resource
+    @Inject
     private ServiceCache serviceCache;
 
-    @Resource
+    @Inject
     private Aggregator aggregator;
 
     public Document handleMultipleResourcePropertiesRequest(GetMultipleResourceProperties method)

@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.server.ems.util.SpringInjectComponentInjector;
 import org.junit.Before;
 import org.junit.Test;
 import org.apache.wicket.util.tester.WicketTester;
@@ -26,7 +27,7 @@ public class PagesTest {
                 AbstractApplicationContext applicationContext = new ClassPathXmlApplicationContext(new String[] {
                         "com/l7tech/server/ems/resources/testEsmApplicationContext.xml",
                 });
-                addComponentInstantiationListener(new SpringComponentInjector(this, applicationContext, true));
+                addComponentInstantiationListener(new SpringInjectComponentInjector(this, applicationContext, true));
             }
 
             @Override

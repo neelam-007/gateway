@@ -30,7 +30,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.protocol.http.WebRequest;
 
@@ -183,10 +183,10 @@ public class Audits extends EsmStandardWebPage {
     private static final String AUDIT_TYPE_SYSTEM = "system";
     private static final String[] values = new String[]{"any", AUDIT_TYPE_ADMIN, AUDIT_TYPE_SYSTEM};
 
-    @SpringBean
+    @Inject
     private AuditRecordManager auditRecordManager;
 
-    @SpringBean
+    @Inject
     private EsmSecurityManager securityManager;
 
     private Date startOfDay( final Date date ) {

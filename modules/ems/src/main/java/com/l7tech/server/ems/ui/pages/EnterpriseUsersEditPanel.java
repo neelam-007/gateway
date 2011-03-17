@@ -8,7 +8,7 @@ import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.apache.wicket.validation.validator.EmailAddressValidator;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.Component;
 
@@ -57,8 +57,7 @@ public class EnterpriseUsersEditPanel extends Panel {
 
     private static final Logger logger = Logger.getLogger( EnterpriseUsersEditPanel.class.getName() );
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    @SpringBean
+    @Inject
     private EsmAccountManager emsAccountManager;
 
     private UserModel buildUserModel( final String username ) {

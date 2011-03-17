@@ -9,7 +9,7 @@ import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.gateway.FailoverException;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import javax.inject.Inject;
 
 import javax.xml.ws.WebServiceException;
 import java.util.ArrayList;
@@ -28,16 +28,16 @@ import java.util.logging.Logger;
 public class SSGClusterSelector extends EsmBaseWebPage {
     private static final Logger logger = Logger.getLogger(SSGClusterSelector.class.getName());
 
-    @SpringBean
+    @Inject
     private EnterpriseFolderManager enterpriseFolderManager;
 
-    @SpringBean
+    @Inject
     private SsgClusterManager ssgClusterManager;
 
-    @SpringBean
+    @Inject
     private EsmSecurityManager securityManager;
 
-    @SpringBean
+    @Inject
     private UserPropertyManager userPropertyManager;
 
     public SSGClusterSelector() {

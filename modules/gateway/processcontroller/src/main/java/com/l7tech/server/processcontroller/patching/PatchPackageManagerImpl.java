@@ -6,7 +6,7 @@ import com.l7tech.util.FileUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 
 import org.springframework.beans.factory.InitializingBean;
 
@@ -162,7 +162,7 @@ public class PatchPackageManagerImpl implements PatchPackageManager, Initializin
 
     private static final Logger logger = Logger.getLogger(PatchPackageManagerImpl.class.getName());
 
-    @Resource
+    @Inject
     private ConfigService configService;
 
     private File repositoryDir;

@@ -24,7 +24,7 @@ import com.l7tech.util.HexUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import javax.security.auth.x500.X500Principal;
 import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
@@ -58,7 +58,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private final IdentityProviderPasswordPolicyManager passwordPolicyManger;
     private final LogonService logonServ;
 
-    @Resource
+    @Inject
     private TrustedEsmUserManager trustedEsmUserManager;
 
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);

@@ -28,7 +28,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.MessageFormat;
@@ -638,15 +639,16 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
 
     }
 
-    @Resource
+    @Inject
     private ServiceMetricsManager serviceMetricsManager;
 
     private final String clusterNodeId;
 
-    @Resource(name="managedBackgroundTimer")
+    @Inject
+    @Named("managedBackgroundTimer")
     private ManagedTimer timer;
 
-    @Resource
+    @Inject
     private ServerConfig serverConfig;
 
     /** Fine resolution bin interval (in milliseconds). */

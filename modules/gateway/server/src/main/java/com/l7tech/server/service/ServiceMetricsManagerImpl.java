@@ -32,7 +32,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -444,19 +444,19 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     private final String _clusterNodeId;
     private int fineBinInterval;
 
-    @Resource
+    @Inject
     private PlatformTransactionManager _transactionManager;
 
-    @Resource
+    @Inject
     private ServiceManager _serviceManager;
 
-    @Resource
+    @Inject
     private RoleManager _roleManager;
 
-    @Resource
+    @Inject
     private MessageContextMappingManager messageContextMappingManager;
 
-    @Resource
+    @Inject
     private IdentityProviderFactory identityProviderFactory;
 
     @Override

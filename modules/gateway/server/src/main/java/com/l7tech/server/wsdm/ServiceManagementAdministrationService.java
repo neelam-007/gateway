@@ -22,7 +22,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -41,11 +41,11 @@ import java.io.IOException;
 public class ServiceManagementAdministrationService implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(ServiceManagementAdministrationService.class.getName());
 
-    @Resource
+    @Inject
     private QoSMetricsService qosService;
-    @Resource
+    @Inject
     private SubscriptionNotifier subscriptionNotifier;
-    @Resource
+    @Inject
     private ServiceCache serviceCache;
 
     private final ArrayList<ServiceStateMonitor> serviceStateMonitors = new ArrayList<ServiceStateMonitor>();

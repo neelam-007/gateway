@@ -18,7 +18,7 @@ import com.l7tech.server.security.rbac.RoleManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import java.security.AccessControlException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -30,10 +30,10 @@ import java.util.List;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class TrustedEsmManagerImpl extends HibernateEntityManager<TrustedEsm, EntityHeader> implements TrustedEsmManager {
-    @Resource
+    @Inject
     private RoleManager roleManager;
 
-    @Resource
+    @Inject
     private TrustedCertManager trustedCertManager;
 
     @Override

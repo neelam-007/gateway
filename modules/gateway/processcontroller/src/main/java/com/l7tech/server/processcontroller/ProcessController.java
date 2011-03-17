@@ -21,7 +21,7 @@ import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 import org.springframework.beans.factory.InitializingBean;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -45,7 +45,7 @@ import static com.l7tech.server.management.NodeStateType.*;
 public class ProcessController implements InitializingBean {
     private static final Logger logger = Logger.getLogger(ProcessController.class.getName());
 
-    @Resource
+    @Inject
     private ConfigService configService;
 
     /** The maximum amount of time the PC should wait for a node to start */
