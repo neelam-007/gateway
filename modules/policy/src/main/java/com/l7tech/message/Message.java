@@ -193,6 +193,7 @@ public final class Message implements Closeable {
      *
      * @param contentType  the MIME content type.  Required.
      * @param bodyBytes the body bytes.  May be empty but must not be null.
+     * @param firstPartMaxBytes max size of first part. 0 for unlimited.
      * @throws IOException if contentType is multipart, but the body does not contain the boundary or contains no parts
      */
     public void initialize(ContentTypeHeader contentType, byte[] bodyBytes,long firstPartMaxBytes) throws IOException {
@@ -208,6 +209,18 @@ public final class Message implements Closeable {
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen, it's a byte array input stream
         }
+    }
+
+    /**
+     * Initialize, or re-initialize, a Message with a memory-based MIME facet containing the specified body
+     * bytes.
+     *
+     * @param contentType  the MIME content type.  Required.
+     * @param bodyBytes the body bytes.  May be empty but must not be null.
+     * @throws IOException if contentType is multipart, but the body does not contain the boundary or contains no parts
+     */
+    public void initialize(ContentTypeHeader contentType, byte[] bodyBytes) throws IOException {
+        initialize(contentType, bodyBytes, 0);
     }
 
     public void setEnableOriginalDocument() {

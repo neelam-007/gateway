@@ -223,15 +223,17 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.status = status;
     }
 
-    /** @deprecated to be called only for serialization and persistence purposes! */
-    @Deprecated
-    protected void setRequestXml( String requestXml ) {
+    /**
+     * Property may be modified by the Audit Message Filter Policy.
+     */
+    public void setRequestXml( String requestXml ) {
         this.requestXml = requestXml;
     }
 
-    /** @deprecated to be called only for serialization and persistence purposes! */
-    @Deprecated
-    protected void setResponseXml( String responseXml ) {
+    /**
+     * Property may be modified by the Audit Message Filter Policy.
+     */
+    public void setResponseXml( String responseXml ) {
         this.responseXml = responseXml;
     }
 

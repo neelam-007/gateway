@@ -26,6 +26,7 @@ import java.security.NoSuchAlgorithmException;
  *
  * Note that audit records should be treated as immutable, although they still need non-final fields and setters
  * for persistence purposes.
+ * Note: instances are mostly treated as immutable apart from Details, which can be added after instance construction.
  *
  * @author alex
  * @version $Revision$

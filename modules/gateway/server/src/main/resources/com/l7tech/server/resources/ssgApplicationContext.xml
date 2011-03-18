@@ -118,6 +118,10 @@
         <constructor-arg index="1" ref="policyCache"/>
     </bean>
 
+    <bean id="auditMessagePolicyEvaluator" class="com.l7tech.server.audit.AuditMessageFilterPolicyEvaluator">
+        <constructor-arg ref="policyCache"/>
+    </bean>
+
     <bean id="ssgShutdown" class="com.l7tech.server.boot.ShutdownWatcher"/>
 
     <bean id="jmsThreadPool" class="com.l7tech.server.util.ThreadPoolBean">
@@ -1085,6 +1089,7 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
         <constructor-arg ref="auditPolicyEvaluator"/>
+        <constructor-arg ref="auditMessagePolicyEvaluator"/>
         <constructor-arg ref="clusterNodeId"/>
         <property name="keystore" ref="defaultKey"/>
         <property name="auditLogListener" ref="auditLogListener"/>

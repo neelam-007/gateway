@@ -4,6 +4,7 @@
 
 package com.l7tech.server.audit;
 
+import com.l7tech.util.Functions;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
@@ -49,7 +50,11 @@ public class AuditContextImpl implements AuditContext {
      * @param auditRecordManager   required
      * @param auditPolicyEvaluator  may be null
      */
-    public AuditContextImpl(ServerConfig serverConfig, AuditRecordManager auditRecordManager, AuditPolicyEvaluator auditPolicyEvaluator, String nodeId) {
+    public AuditContextImpl(ServerConfig serverConfig,
+                            AuditRecordManager auditRecordManager,
+                            AuditPolicyEvaluator auditPolicyEvaluator,
+                            AuditMessageFilterPolicyEvaluator auditMessageFilterPolicyEvaluator,
+                            String nodeId) {
         if (serverConfig == null) {
             throw new IllegalArgumentException("Server Config is required");
         }
@@ -59,6 +64,7 @@ public class AuditContextImpl implements AuditContext {
         this.serverConfig = serverConfig;
         this.auditRecordManager = auditRecordManager;
         this.auditPolicyEvaluator = auditPolicyEvaluator;
+        this.auditMessageFilterPolicyEvaluator = auditMessageFilterPolicyEvaluator;
         this.nodeId = nodeId;
     }
 
@@ -240,9 +246,8 @@ public class AuditContextImpl implements AuditContext {
             }
 
             currentRecord.setDetails(detailsToSave);
-            listener.notifyRecordFlushed(currentRecord, formatter, false);
 
-            outputRecord(currentRecord, this.update, policyEnforcementContext);
+            outputRecord(currentRecord, this.update, policyEnforcementContext, formatter);
         } catch (SaveException e) {
             logger.log(Level.SEVERE, "Couldn't save audit records", e);
         } catch (UpdateException e) {
@@ -269,9 +274,24 @@ public class AuditContextImpl implements AuditContext {
         //system = false;
     }
 
-    private void outputRecord(AuditRecord rec, boolean update, PolicyEnforcementContext policyEnforcementContext) throws UpdateException, SaveException {
+    private void outputRecord(final AuditRecord rec,
+                              final boolean update,
+                              final PolicyEnforcementContext policyEnforcementContext,
+                              final AuditLogFormatter formatter)
+            throws UpdateException, SaveException {
+        // Note: any audit details caused by either the audit sink policy or the audit message filter policy will not
+        // be included in the audit as they do not get added to the AuditRecord. Adding details to the AuditRecord should
+        // be done prior to this method.
+
         boolean sinkPolicyFailed = false;
         AssertionStatus sinkPolicyStatus = null;
+
+        if(auditMessageFilterPolicyEvaluator != null){
+            auditMessageFilterPolicyEvaluator.filterAuditRecord(rec, policyEnforcementContext, listener, formatter);
+        }
+
+        //flush after the AMF policy has had a chance to audit.
+        listener.notifyRecordFlushed(currentRecord, formatter, false);
 
         if (auditPolicyEvaluator != null) {
             // Don't bother running the sink policy for update events
@@ -511,6 +531,7 @@ public class AuditContextImpl implements AuditContext {
     private final AuditRecordManager auditRecordManager;
     private final String nodeId;
     private AuditPolicyEvaluator auditPolicyEvaluator;
+    private final AuditMessageFilterPolicyEvaluator auditMessageFilterPolicyEvaluator;
     private DefaultKey keystore;
     private AuditLogListener listener;
     private Map<String, Object> logFormatContextVariables;

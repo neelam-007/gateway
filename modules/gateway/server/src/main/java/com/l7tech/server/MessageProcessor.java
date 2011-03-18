@@ -943,7 +943,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                                                           final AuditDetailMessage error ) throws IOException, PolicyAssertionException {
             AssertionStatus status = AssertionStatus.NONE;
 
-            final Set<String> guids = policyCache.getGlobalPoliciesByTypeAndTag( PolicyType.GLOBAL_FRAGMENT, policyTag );
+            final Set<String> guids = policyCache.getPoliciesByTypeAndTag( PolicyType.GLOBAL_FRAGMENT, policyTag );
             if ( !guids.isEmpty() ) {
                 auditor.logAndAudit( notify );
 
@@ -979,7 +979,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                                                             final AuditDetailMessage errorMessage,
                                                             final boolean handleException ) throws IOException, PolicyAssertionException {
             AssertionStatus assertionStatus = AssertionStatus.NONE;
-            final Set<String> guids = policyCache.getGlobalPoliciesByTypeAndTag( PolicyType.GLOBAL_FRAGMENT, policyTag );
+            final Set<String> guids = policyCache.getPoliciesByTypeAndTag( PolicyType.GLOBAL_FRAGMENT, policyTag );
             if ( !guids.isEmpty() ) {
                 auditor.logAndAudit( notificationMessage );
 

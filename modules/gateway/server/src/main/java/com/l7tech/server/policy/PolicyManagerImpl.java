@@ -355,6 +355,16 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
             constraints.add( globalTagMap );                
         }
 
+        if ( entity.getType() == PolicyType.INTERNAL ) {
+            String internalTag = entity.getInternalTag();
+            if(PolicyType.getAuditMessageFilterTags().contains(internalTag)){
+                Map<String,Object> auditTagMap = new HashMap<String, Object>();
+                auditTagMap.put("type", PolicyType.INTERNAL);
+                auditTagMap.put("internalTag", internalTag);
+                constraints.add( auditTagMap );
+            }
+        }
+
         return constraints;
     }
 

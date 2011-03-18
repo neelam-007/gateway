@@ -86,7 +86,11 @@ public class CreatePolicyAction extends SecureAction {
                         String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Policy Fragment: " + policy.getName()))));
                         policy.setXml( xml );
                     } else if (policy.getXml() == null) {
-                        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + policy.getName()))));
+                        final String defaultPolicyXml =
+                                Registry.getDefault().getPolicyAdmin().getDefaultPolicyXml(policy.getType(), policy.getInternalTag());
+
+                        String xml = (defaultPolicyXml != null)? defaultPolicyXml: WspWriter.getPolicyXml(
+                                new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + policy.getName()))));
                         policy.setXml( xml );
                     }
                     policy.setFolder(((RootNode)root).getFolder());
@@ -97,7 +101,11 @@ public class CreatePolicyAction extends SecureAction {
                     if ( policy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
                         message += "The policy name is already in use or there is an existing\n" +
                                    "Global Policy Fragment with the '"+policy.getInternalTag()+"' tag.";
-                    } else {
+                    } else if (policy.getType() == PolicyType.INTERNAL && PolicyType.getAuditMessageFilterTags().contains(policy.getInternalTag())){
+                        message += "The policy name is already in use or there is an existing\n" +
+                                   "Internal Policy with the '"+policy.getInternalTag()+"' tag.";
+                    }
+                    else {
                         message += "The policy name is already used, please choose a different\n name and try again.";
 
                     }

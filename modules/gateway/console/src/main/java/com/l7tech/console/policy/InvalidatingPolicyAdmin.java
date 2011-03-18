@@ -113,6 +113,11 @@ public class InvalidatingPolicyAdmin implements PolicyAdmin {
         fireEntityUpdate( policyOid );
     }
 
+    @Override
+    public String getDefaultPolicyXml(PolicyType type, String internalTag) {
+        return delegate.getDefaultPolicyXml(type, internalTag);
+    }
+
     //- PRIVATE
 
     private final PolicyAdmin delegate;

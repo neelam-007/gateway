@@ -254,4 +254,18 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
      */
     @Secured(stereotype=SET_PROPERTY_BY_ID, relevantArg=0)
     void clearActivePolicyVersion(long policyOid) throws FindException, UpdateException;
+
+    /**
+     * Get the default policy XML for a policy. User must be able to create a policy to consume this method.
+     * Default policy XML can be configured elsewhere and the client does not need to use this method when creating
+     * a policy.
+     * This method can be checked to see if there is default XML, if a client is interested in using it.
+     *
+     * @param type the type of policy
+     * @param internalTag the internal tag if the policy type has a relevant one
+     * @return policy XML, null if no relevant policy xml for the type and tag.
+     */
+    @Secured(stereotype=SAVE_OR_UPDATE)
+    @Transactional(readOnly = true)
+    String getDefaultPolicyXml(PolicyType type, String internalTag);
 }

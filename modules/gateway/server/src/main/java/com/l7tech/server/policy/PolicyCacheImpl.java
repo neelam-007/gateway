@@ -220,7 +220,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     }
 
     @Override
-    public Set<String> getGlobalPoliciesByTypeAndTag( final PolicyType type,
+    public Set<String> getPoliciesByTypeAndTag( final PolicyType type,
                                                       final String tag ) {
         ensureCacheValid();
 
@@ -240,8 +240,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                      (tag == null || tag.equals( pce.policy.getInternalTag() ))) {
                     if ( pce.policy.isDisabled() ) {
                         logger.log( Level.INFO,
-                                "Ignoring disabled global policy : #{0} ({1})",
-                                new Object[]{ pce.policy.getOid(), pce.policy.getName() }  );
+                                "Ignoring disabled '{0}' : #{1} ({2})",
+                                new Object[]{ pce.policy.getType(), pce.policy.getOid(), pce.policy.getName() }  );
                     } else {
                         guids.add( pce.policy.getGuid() );
                     }

@@ -84,13 +84,13 @@ public interface PolicyCache {
     boolean remove(long policyOid);
 
     /**
-     * Get GUIDs for global policies by type.
+     * Get GUIDs for policies by type.
      *
      * @param type The type of policy (null for any type)
      * @param tag The desired tag (null for any tag)
      * @return The set of GUIDs for matching policies
      */
-    Set<String> getGlobalPoliciesByTypeAndTag( PolicyType type, String tag );
+    Set<String> getPoliciesByTypeAndTag( PolicyType type, String tag );
 
     /**
      * Register a global policy.

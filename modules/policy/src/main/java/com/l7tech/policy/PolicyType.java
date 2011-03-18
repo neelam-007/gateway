@@ -78,7 +78,7 @@ public enum PolicyType {
     /**
      * A policy that is for internal use (see {@link Policy#getInternalTag} for what kind of internal policy it is)
      */
-    INTERNAL(FRAGMENT, "Internal Use Policy", true),
+    INTERNAL(FRAGMENT, "Internal Use Policy", true, getAuditMessageFilterTags()),
     
     ;
 
@@ -88,6 +88,9 @@ public enum PolicyType {
     public static final String TAG_GLOBAL_POST_SECURITY = "post-security";
     public static final String TAG_GLOBAL_POST_SERVICE = "post-service";
     public static final String TAG_GLOBAL_MESSAGE_COMPLETED = "message-completed";
+
+    public static final String TAG_AUDIT_MESSAGE_FILTER = "audit-message-filter";
+    public static final String TAG_AUDIT_POLICY_VIEWER = "audit-policy-viewer";
 
     @Override
     public String toString() {
@@ -143,6 +146,10 @@ public enum PolicyType {
      */
     public Set<String> getGuiTags() {
         return guiTags;
+    }
+
+    public static Collection<String> getAuditMessageFilterTags(){
+        return Arrays.asList( TAG_AUDIT_MESSAGE_FILTER, TAG_AUDIT_POLICY_VIEWER);
     }
 
     private static Collection<String> getGlobalTags() {

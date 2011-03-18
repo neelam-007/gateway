@@ -140,8 +140,8 @@ public class BuiltinVariables {
         new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_OID, false, false, null, false),
         new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_ROUTINGURL, false, false, null, false),
 
-        new VariableMetadata(BuiltinVariables.PREFIX_REQUEST, true, false, null, false, DataType.MESSAGE),
-        new VariableMetadata(BuiltinVariables.PREFIX_RESPONSE, true, false, null, false, DataType.MESSAGE),
+        new VariableMetadata(BuiltinVariables.PREFIX_REQUEST, true, false, null, true, DataType.MESSAGE),
+        new VariableMetadata(BuiltinVariables.PREFIX_RESPONSE, true, false, null, true, DataType.MESSAGE),
 
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAMS, true, true, null, false),
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_PARAM, true, false, null, false),
