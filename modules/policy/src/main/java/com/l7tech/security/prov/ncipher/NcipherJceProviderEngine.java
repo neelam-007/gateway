@@ -16,12 +16,16 @@ public class NcipherJceProviderEngine extends JceProvider {
         if (null == System.getProperty("protect")) {
             // Prefer module-level key protection by default
             System.setProperty("protect", "module");
-            if (null == System.getProperty("ignorePassphrase")) {
-                System.setProperty("ignorePassphrase", "true");
-            }
         }
-        PROVIDER = new nCipherKM();
-        Security.insertProviderAt(PROVIDER, 0);
+        Provider existing =  Security.getProvider("nCipherKM");
+        if (null == existing) {
+            // Insert nCipher as highest-preference provider
+            PROVIDER = new nCipherKM();
+            Security.insertProviderAt(PROVIDER, 1);
+        } else {
+            // Leave existing provider order unchanged
+            PROVIDER = existing;
+        }
     }
 
     @Override
