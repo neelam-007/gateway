@@ -156,8 +156,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
                 //verify if the client was assigned with a cert already and require to use it.  We only inforce this
                 //for internal identity provider
-                boolean useSTIG = serverConfig.getBooleanProperty("security.stig.enabled", true);
-                if (useSTIG) {
+                boolean useCert = serverConfig.getBooleanProperty("security.policyManager.forbidPasswordWhenCertPresent", true);
+                if (useCert) {
                     if (creds.getFormat() == CredentialFormat.CLEARTEXT && provider.hasClientCert(creds.getLogin())) {
                         needsClientCert = true;
                         throw new BadCredentialsException("User '" + creds.getLogin() + "' did not use certificate as login credentials.");
