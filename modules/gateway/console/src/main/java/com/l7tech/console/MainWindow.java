@@ -133,6 +133,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem manageGlobalResourcesMenuItem = null;
     private JMenuItem manageClusterPropertiesMenuItem = null;
     private JMenuItem manageRolesMenuItem = null;
+    private JMenuItem manageAdminUserAccountMenuItem = null;
     private JMenuItem manageServiceResolutionMenuItem = null;
     private JMenuItem dashboardMenuItem;
     private JMenuItem manageClusterLicensesMenuItem = null;
@@ -163,6 +164,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
     private ManageKerberosAction manageKerberosAction = null;
     private ManageRolesAction manageRolesAction = null;
+    private ManageAdminUserAccountAction manageAdminUserAccountAction = null;
     private ManageResolutionConfigurationAction manageServiceResolutionAction = null;
     private HomeAction homeAction = new HomeAction();
     private NewGroupAction newInernalGroupAction;
@@ -972,6 +974,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
             menu.add(getManageRolesMenuItem());
+            menu.add(getManageAdminUserAccountMenuItem());
             menu.add(getManageAuditAlertOptionsMenuItem());
             menu.add(getManageLogSinksAction());
             menu.add(getManageEmailListenersAction());
@@ -3274,6 +3277,15 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         return manageRolesMenuItem;
     }
+    public JMenuItem getManageAdminUserAccountMenuItem() {
+
+        if (manageAdminUserAccountMenuItem == null)
+            manageAdminUserAccountMenuItem = new JMenuItem(getManageAdminUserAccountAction());
+
+        return manageAdminUserAccountMenuItem;
+    }
+
+
 
     public JMenuItem getManageServiceResolutionMenuItem() {
         if (manageServiceResolutionMenuItem == null) {
@@ -3291,6 +3303,17 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
         return manageRolesAction;
     }
+
+
+    private Action getManageAdminUserAccountAction() {
+        if (manageAdminUserAccountAction == null) {
+            manageAdminUserAccountAction = new ManageAdminUserAccountAction();
+            disableUntilLogin(manageAdminUserAccountAction);
+        }
+        return manageAdminUserAccountAction;
+    }
+
+
 
     private Action getManageServiceResolutionAction() {
         if (manageServiceResolutionAction == null) {

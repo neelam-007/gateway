@@ -152,6 +152,15 @@ public interface ClusterStatusAdmin {
     Collection<ClusterPropertyDescriptor> getAllPropertyDescriptors();
 
     /**
+     * Get value for the cluster wide property.
+     *
+     * @return property descriptor
+     */
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false)
+    String getClusterProperty(String name);
+
+    /**
      * get cluster wide property
      * @return may return null if the property is not set. will return the property value otherwise
      */
