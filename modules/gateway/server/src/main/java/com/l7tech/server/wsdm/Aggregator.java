@@ -182,6 +182,12 @@ public class Aggregator implements ServiceStateMonitor {
     }
 
     private void rebuildMetricsSummaries() {
+        if (metricsManager == null) {
+            // Not yet initialized
+            logger.log(Level.WARNING, "Unable to rebuild metrics -- no metricsManager configured");
+            return;
+        }
+
         // Calculate ESM metrics by summing all available service metrics bins.
         // See http://sarek/mediawiki/index.php?title=ESM#Calculating_ESM_Metrics for explanation.
         try {
