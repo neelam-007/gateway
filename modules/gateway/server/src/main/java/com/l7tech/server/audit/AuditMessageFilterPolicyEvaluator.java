@@ -152,6 +152,10 @@ public class AuditMessageFilterPolicyEvaluator {
             final boolean isRequest,
             final Exception exceptionIfAny){
         final AuditDetail auditDetail = new AuditDetail(SystemMessages.AUDIT_MESSAGE_FILTER_POLICY_FAILED, (isRequest) ? "request" : "response");
+        final AuditDetail[] orderedDetails = messageAudit.getDetailsInOrder();
+        final int maxOrdinal = orderedDetails[orderedDetails.length - 1].getOrdinal();
+        auditDetail.setOrdinal(maxOrdinal + 1);
+
         auditDetail.setAuditRecord(messageAudit);
         messageAudit.getDetails().add(auditDetail);
 
