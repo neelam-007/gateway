@@ -347,6 +347,21 @@ public class FileUtils {
     }
 
     /**
+     * Save the bytes into the given output file, replacing any existing file contents.
+     * <p/>
+     * This save utility can leave a partially-written file if there is a system crash during the save.
+     * See {@link #saveFileSafely(String, com.l7tech.util.FileUtils.Saver)} for a slightly safer way
+     * to save files (at the cost of possibly leaving behind .NEW and .OLD and .LCK files).
+     *
+     * @param bytes the bytes to save.  Required.
+     * @param out the file to overwrite.  Required.  Needn't already exist.  Must be writable by current process.
+     * @throws IOException on io error
+     */
+    public static void save(byte[] bytes, File out) throws IOException {
+        save(new ByteArrayInputStream(bytes), out);
+    }
+
+    /**
      * Saves the inputstream into the given output file.
      *
      * Caller is responsible for closing the input stream.

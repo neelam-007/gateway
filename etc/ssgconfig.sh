@@ -40,6 +40,7 @@ launchRoot(){
 }
 
 if [ "${1}" == "-changeMasterPassphrase" ] ; then
+  shift
   launch "ConfigMasterPassphrase" "$*"
 elif [ "${1}" == "-changeClusterPassphrase" ] ; then
   launch "ConfigClusterPassphrase" "$*"

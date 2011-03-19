@@ -1,24 +1,26 @@
 package com.l7tech.util;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.OAEPParameterSpec;
-import javax.crypto.spec.PSource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Properties;
 
 import static com.l7tech.util.KeyStorePrivateKeyMasterPasswordFinder.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Unit test for KeyStorePrivateKeyMasterPasswordFinder.
@@ -35,26 +37,71 @@ public class KeyStorePrivateKeyMasterPasswordFinderTest {
     PrivateKey privateKey;
     X509Certificate cert;
 
+    @Before
+    public void beforeTest() {
+        clearProv();
+    }
+
+    @After
+    public void afterTest() {
+        clearProv();
+    }
+
+    private void clearProv() {
+        Security.removeProvider("BC");
+        Security.removeProvider("BC");
+        Security.removeProvider("BC");
+    }
+
 
     @Test
-    public void testUnwrapPrivateKey() throws Exception {
-        Cipher rsa = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
-        rsa.init(Cipher.ENCRYPT_MODE, getCert().getPublicKey(), new OAEPParameterSpec("SHA-1", "MGF1", MGF1ParameterSpec.SHA1, PSource.PSpecified.DEFAULT));
-        byte[] ciphertext = rsa.doFinal(masterPassword);
+    public void testPrependProvider() throws Exception {
+        assertNull("BC shall not be installed as a provider at the start of the test", Security.getProvider("BC"));
 
-        Properties props = new Properties();
-        props.setProperty(PROP_KEYSTORE_ALIAS, alias);
-        props.setProperty(PROP_KEYSTORE_PASSWORD, String.valueOf(kspass));
-        props.setProperty(PROP_KEYSTORE_ENTRY_PASSWORD, String.valueOf(entrypass));
-        props.setProperty(PROP_KEYSTORE_CONTENTS_BASE64, HexUtils.encodeBase64(getKeyStoreBytes()));
-        props.setProperty(PROP_MASTER_PASSPHRASE_CIPHERTEXT_BASE64, HexUtils.encodeBase64(ciphertext));
+        byte[] ciphertext = makeCiphertext();
+        Properties props = makeProps(ciphertext);
+        props.setProperty(PROP_PREPEND_PROVIDERS, BouncyCastleProvider.class.getName());
 
         MasterPasswordManager.MasterPasswordFinder finder = new KeyStorePrivateKeyMasterPasswordFinder(new File("."), props);
         byte[] decrypted = finder.findMasterPasswordBytes();
 
         assertEquals("Decrypted master password must match original", HexUtils.hexDump(masterPassword), HexUtils.hexDump(decrypted));
+
+        assertEquals("BC shall have been installed as most-preference provider", "BC", Security.getProviders()[0].getName());
     }
 
+    @Test
+    public void testUnwrapPrivateKey() throws Exception {
+        byte[] ciphertext = makeCiphertext();
+        Properties props = makeProps(ciphertext);
+
+        MasterPasswordManager.MasterPasswordFinder finder = new KeyStorePrivateKeyMasterPasswordFinder(new File("."), props);
+        byte[] decrypted = finder.findMasterPasswordBytes();
+
+        assertEquals("Decrypted master password must match original", HexUtils.hexDump(masterPassword), HexUtils.hexDump(decrypted));
+
+        decrypted = finder.findMasterPasswordBytes();
+
+        assertEquals("Decrypted master password must match original", HexUtils.hexDump(masterPassword), HexUtils.hexDump(decrypted));
+    }
+
+    private byte[] makeCiphertext() throws Exception {
+        Cipher rsa = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        rsa.init(Cipher.ENCRYPT_MODE, getCert().getPublicKey());
+        return rsa.doFinal(masterPassword);
+    }
+
+    private Properties makeProps(byte[] ciphertext) throws Exception {
+        Properties props = new Properties();
+        props.setProperty(PROP_KEYSTORE_PROVIDER_CLASSNAME, getKeyStore().getProvider().getClass().getName());
+        props.setProperty(PROP_KEYSTORE_ALIAS, alias);
+        props.setProperty(PROP_KEYSTORE_PASSWORD, String.valueOf(kspass));
+        props.setProperty(PROP_KEYSTORE_ENTRY_PASSWORD, String.valueOf(entrypass));
+        props.setProperty(PROP_KEYSTORE_CONTENTS_BASE64, HexUtils.encodeBase64(getKeyStoreBytes()));
+        props.setProperty(PROP_MASTER_PASSPHRASE_CIPHERTEXT_BASE64, HexUtils.encodeBase64(ciphertext));
+        props.setProperty(PROP_RSA_CIPHER_NAME, "RSA/ECB/PKCS1Padding");
+        return props;
+    }
 
     private byte[] getKeyStoreBytes() throws Exception {
         KeyStore ks = getKeyStore();

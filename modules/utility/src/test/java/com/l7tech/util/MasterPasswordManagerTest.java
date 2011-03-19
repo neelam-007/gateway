@@ -15,32 +15,40 @@ public class MasterPasswordManagerTest {
     @Test
     public void testObfuscate() throws Exception {
         String cleartext = "secret password";
-        String obfuscated = ObfuscatedFileMasterPasswordFinder.obfuscate(cleartext);
+        String obfuscated = ObfuscatedFileMasterPasswordFinder.obfuscate(cleartext.getBytes(Charsets.UTF8));
         System.out.println(cleartext + " -> " + obfuscated);
     }
 
     @Test
     public void testUnobfuscate() throws Exception {
         String obfuscated = "$L7O$LTc0MzIyOTY4NjYwODQ1MTk4ODU=$xU3WNeqb/t+tl+BtH4Be";
-        String cleartext = ObfuscatedFileMasterPasswordFinder.unobfuscate(obfuscated);
-        System.out.println(obfuscated + " -> " + cleartext);
+        byte[] cleartext = ObfuscatedFileMasterPasswordFinder.unobfuscate(obfuscated);
+        System.out.println(obfuscated + " -> " + new String(cleartext, Charsets.UTF8));
     }
 
     @Test
     public void testObfuscationRoundTrip() throws Exception {
         String cleartext = "mumbleahasdfoasdghuigh";
-        String obfuscated = ObfuscatedFileMasterPasswordFinder.obfuscate(cleartext);
+        String obfuscated = ObfuscatedFileMasterPasswordFinder.obfuscate(cleartext.getBytes(Charsets.UTF8));
         assertFalse(cleartext.equalsIgnoreCase(obfuscated));
-        String unobfuscated = ObfuscatedFileMasterPasswordFinder.unobfuscate(obfuscated);
-        assertEquals(cleartext, unobfuscated);
+        byte[] unobfuscated = ObfuscatedFileMasterPasswordFinder.unobfuscate(obfuscated);
+        assertTrue(Arrays.equals(cleartext.getBytes(Charsets.UTF8), unobfuscated));
+    }
+
+    @Test
+    public void testObfuscationRoundTrip_binaryData() throws Exception {
+        byte[] cleartext = new byte[] { -2, 4, 6, 22, -128, 127, 4, 55 };
+        String obfuscated = ObfuscatedFileMasterPasswordFinder.obfuscate(cleartext);
+        byte[] unobfuscated = ObfuscatedFileMasterPasswordFinder.unobfuscate(obfuscated);
+        assertTrue(Arrays.equals(cleartext, unobfuscated));
     }
 
     @Test
     public void testBackwardCompatibility() throws Exception {
         // !!! this string must never change, since it's historical data to guarantee backward compatibility with existing client data
         String obfuscated = "$L7O$LTQ5ODIzNTQ4ODUzOTIyNTc1MzM=$AH9iXRGlLs5hbsJ12LPT";
-        String cleartext = ObfuscatedFileMasterPasswordFinder.unobfuscate(obfuscated);
-        assertEquals("secret password", cleartext);
+        byte[] cleartext = ObfuscatedFileMasterPasswordFinder.unobfuscate(obfuscated);
+        assertEquals("secret password", new String(cleartext, Charsets.UTF8));
     }
 
     private MasterPasswordManager.MasterPasswordFinder staticFinder(final String masterPassword) {
@@ -116,7 +124,7 @@ public class MasterPasswordManagerTest {
     @Test
     public void testGenerateTestPasswords() throws Exception {
         String master = "7layer";
-        String masterObf = ObfuscatedFileMasterPasswordFinder.obfuscate(master);
+        String masterObf = ObfuscatedFileMasterPasswordFinder.obfuscate(master.getBytes(Charsets.UTF8));
         show(master, masterObf);
         System.out.println();
 

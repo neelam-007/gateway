@@ -48,7 +48,7 @@ public class ObfuscatedFileMasterPasswordFinder implements MasterPasswordManager
      * @param clear the cleartext string that is to be obfuscated.  Required.
      * @return the obfuscated form of the password.
      */
-    public static String obfuscate(String clear) {
+    public static String obfuscate(byte[] clear) {
         long salt = random.nextLong();
         return obfuscate(clear, salt);
     }
@@ -57,14 +57,13 @@ public class ObfuscatedFileMasterPasswordFinder implements MasterPasswordManager
      * Obfuscate a password using the specified salt.
      * This is a utility method provided for use by MasterPasswordFinder implementations.
      *
-     * @param clear the cleartext string that is to be obfuscated.  Required.
+     * @param in the cleartext string that is to be obfuscated.  Required.
      * @param salt a specific salt to use for the obfuscation
      * @return the obfuscated form of the password.
      */
-    public static String obfuscate(String clear, long salt) {
+    public static String obfuscate(byte[] in, long salt) {
         //noinspection UnsecureRandomNumberGeneration
         Random rand = new Random(OBFUSCATION_SEED + salt);
-        byte[] in = clear.getBytes(Charsets.UTF8);
         byte[] out = new byte[in.length];
         for (int i = 0; i < in.length; i++) {
             byte b = in[i];
@@ -85,7 +84,7 @@ public class ObfuscatedFileMasterPasswordFinder implements MasterPasswordManager
      * @return the unobfuscated string
      * @throws java.io.IOException if the obfuscated password is not correctly formatted base-64 or does not result in valid utf-8
      */
-    public static String unobfuscate(String obfuscated) throws IOException {
+    public static byte[] unobfuscate(String obfuscated) throws IOException {
         long salt = getSalt(obfuscated);
         obfuscated = obfuscated.substring(OBFUSCATION_PREFIX.length());
         int dollarPos = obfuscated.indexOf('$');
@@ -101,7 +100,7 @@ public class ObfuscatedFileMasterPasswordFinder implements MasterPasswordManager
             b ^= rand.nextInt();
             out[i] = b;
         }
-        return new String(out, Charsets.UTF8);
+        return out;
     }
 
     /**
@@ -139,7 +138,7 @@ public class ObfuscatedFileMasterPasswordFinder implements MasterPasswordManager
         try {
             byte[] bytes = IOUtils.slurpFile(filePath);
             String obfuscated = new String(bytes);
-            return unobfuscate(obfuscated).getBytes(Charsets.UTF8);
+            return unobfuscate(obfuscated);
         } catch (IOException e) {
             throw new IllegalStateException("Unable to read " + filePath + ": " + ExceptionUtils.getMessage(e), e);
         }
@@ -151,11 +150,11 @@ public class ObfuscatedFileMasterPasswordFinder implements MasterPasswordManager
      * @param newMasterPassword the new master password to save.  Required.
      * @throws IOException if there is a problem saving the new value.
      */
-    public void saveMasterPassword(char[] newMasterPassword) throws IOException {
-        final String obfuscated = obfuscate(new String(newMasterPassword));
+    public void saveMasterPassword(byte[] newMasterPassword) throws IOException {
+        final String obfuscated = obfuscate(newMasterPassword);
         FileUtils.saveFileSafely(getMasterPasswordFile().getPath(), new FileUtils.Saver() {
             public void doSave(FileOutputStream fos) throws IOException {
-                fos.write(obfuscated.getBytes());
+                fos.write(obfuscated.getBytes(Charsets.UTF8));
             }
         });
     }

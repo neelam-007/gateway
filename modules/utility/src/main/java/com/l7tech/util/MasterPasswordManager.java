@@ -48,10 +48,12 @@ public class MasterPasswordManager {
     /**
      * Create a MasterPasswordManager that will use the specified bytes to produce the key for encrypting
      * and decrypting passwords.
+     * <p/>
+     * <strong>Important note:</strong> This constructor causes the key bytes to be kept in memory for the entire
+     * lifetime of the MasterPasswordManager instance and should only be used by unit tests or short-lived processes.
      *
      * @param fixedKeyBytes a byte string that will be used to produce a key.  Will not be treated as characters.
      *                      No defensive copy will be made, so caller may revoke access to the key at a later time by zeroing the array, causing decryption to fail.
-     * @deprecated This constructor causes the key bytes to be kept in memory forever and should only be used by unit tests.
      */
     public MasterPasswordManager(final byte[] fixedKeyBytes) {
         this.finder = new MasterPasswordFinder() {
