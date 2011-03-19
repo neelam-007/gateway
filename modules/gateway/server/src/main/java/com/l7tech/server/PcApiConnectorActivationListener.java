@@ -81,7 +81,7 @@ public final class PcApiConnectorActivationListener implements SsgConnectorActiv
     private boolean sawApiConnector = false;
 
     private File getApiPortFile() {
-        final File varDir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
+        final File varDir = serverConfig().getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
         return new File(varDir, "processControllerPort");
     }
 
@@ -91,5 +91,9 @@ public final class PcApiConnectorActivationListener implements SsgConnectorActiv
             logger.info("Deleting old Process Controller API port file to " + portFile.getAbsolutePath());
         }
         FileUtils.deleteFileSafely(portFile.getAbsolutePath());
+    }
+
+    private ServerConfig serverConfig() {
+        return serverConfig != null ? serverConfig : ServerConfig.getInstance();
     }
 }
