@@ -51,20 +51,20 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
 
     @PostConstruct
     void start() throws Exception {
-        int fineBinInterval = serverConfig.getIntProperty("metricsFineInterval", DEF_FINE_BIN_INTERVAL);
+        int fineBinInterval = serverConfig().getIntProperty("metricsFineInterval", DEF_FINE_BIN_INTERVAL);
         if (fineBinInterval > MAX_FINE_BIN_INTERVAL || fineBinInterval < MIN_FINE_BIN_INTERVAL) {
             logger.warning(String.format("Configured metricsFineInterval %d is out of the valid range (%d-%d); using default %d", fineBinInterval, MIN_FINE_BIN_INTERVAL, MAX_FINE_BIN_INTERVAL, DEF_FINE_BIN_INTERVAL));
             fineBinInterval = DEF_FINE_BIN_INTERVAL;
         }
         this.fineBinInterval = fineBinInterval;
 
-        if (Boolean.valueOf(serverConfig.getProperty(CLUSTER_PROP_ENABLED))) {
+        if (Boolean.valueOf(serverConfig().getProperty(CLUSTER_PROP_ENABLED))) {
             enable();
         } else {
             logger.info("Service metrics collection is currently disabled.");
         }
 
-        if (Boolean.valueOf(serverConfig.getProperty(ServerConfig.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS))) {
+        if (Boolean.valueOf(serverConfig().getProperty(ServerConfig.PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS))) {
             _addMappingsIntoServiceMetrics.set(true);
         } else {
             _addMappingsIntoServiceMetrics.set(false);
@@ -142,6 +142,11 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
     private void enable() {
         synchronized(_enableLock) {
             if (_enabled.get()) return;   // alreay enabled
+
+            if (timer == null) {
+                logger.log(Level.WARNING, "Unable to enable service metrics -- timer not yet set");
+                return;
+            }
 
             logger.info("Enabling service metrics collection.");
 
@@ -555,6 +560,10 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
                 logger.info("Adding message context mappings to Service Metrics is currently disabled.");
             }
         }
+    }
+
+    private ServerConfig serverConfig() {
+        return serverConfig != null ? serverConfig : ServerConfig.getInstance();
     }
 
     /**

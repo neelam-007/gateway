@@ -267,6 +267,10 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     @Override
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     public ServiceState getCreatedOrUpdatedServiceState(long oid) throws FindException {
+        if (!ready()) {
+            logger.warn("Unable to check service state -- not ready");
+            return ServiceState.DISABLED;
+        }
         final PublishedService service = _serviceManager.findByPrimaryKey(oid);
         return service == null ? ServiceState.DELETED :
             (service.isDisabled() ? ServiceState.DISABLED : ServiceState.ENABLED);
@@ -289,6 +293,10 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     @Override
     @Transactional(propagation=Propagation.REQUIRED, readOnly=true)
     public Collection<ServiceHeader> findAllServiceHeaders() throws FindException {
+        if (!ready()) {
+            logger.warn("Unable to find service headers -- not ready");
+            return Collections.emptyList();
+        }
         return _serviceManager.findAllHeaders(false);
     }
 
@@ -349,12 +357,16 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
 
     @Override
     protected void initDao() throws Exception {
-        if (_transactionManager == null) throw new IllegalStateException("TransactionManager must be set");
-        if (_serviceManager == null) throw new IllegalStateException("ServiceManager must be set");
-        if (_clusterNodeId == null) throw new IllegalStateException("clusterNodeId must be set");
+        if (_transactionManager == null) logger.warn("TransactionManager must be set");
+        if (_serviceManager == null) logger.warn("ServiceManager must be set");
+        if (_clusterNodeId == null) logger.warn("clusterNodeId must be set");
     }
 
     //- PRIVATE
+
+    private boolean ready() {
+        return _transactionManager != null && _serviceManager != null && _clusterNodeId != null;
+    }
 
     private static final String HQL_DELETE = "DELETE FROM " + MetricsBin.class.getName() + " WHERE periodStart < ? AND resolution = ?";
     private static final String SQL_DELETE_DETAILS = "DELETE FROM service_metrics_details WHERE service_metrics_oid = ?";
@@ -580,6 +592,11 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
      * @throws FindException
      */
     private Set<Long> filterPermittedPublishedServices(final long[] serviceOids) throws FindException {
+        if (!ready()) {
+            logger.warn("Unable to filter permitted published services -- not ready");
+            return Collections.emptySet();
+        }
+
         Set<Long> filteredOids = null;
         if (serviceOids != null) {
             filteredOids = new HashSet<Long>();
