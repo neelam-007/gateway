@@ -31,8 +31,10 @@ public final class Background {
     }
 
     public static void installTimer(Timer timer) {
-        if (timerLocked)
-            throw new IllegalStateException("Locked timer cannot be replaced.");
+        if (timerLocked) {
+            logger.log(Level.WARNING, "Locked timer cannot be replaced.");
+            return;
+        }
         timerLocked = true;
         Background.timer = timer;
     }
