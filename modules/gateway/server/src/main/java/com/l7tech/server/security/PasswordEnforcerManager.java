@@ -1,5 +1,6 @@
 package com.l7tech.server.security;
 
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderPasswordPolicy;
@@ -10,9 +11,12 @@ import com.l7tech.identity.internal.PasswordChangeRecord;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.admin.AdminEvent;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ApplicationEventPublisherAware;
+import com.l7tech.util.ExceptionUtils;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -31,13 +35,14 @@ import java.util.logging.Logger;
  * User: dlee
  * Date: Jun 18, 2008
  */
-public class PasswordEnforcerManager  implements PropertyChangeListener, ApplicationEventPublisherAware {
+public class PasswordEnforcerManager  implements PropertyChangeListener, ApplicationContextAware {
 
     private static final Logger logger = Logger.getLogger(PasswordEnforcerManager.class.getName());
 
     private IdentityProviderPasswordPolicyManager passwordPolicyManager;
     private ServerConfig serverConfig;
-    private ApplicationEventPublisher applicationEventPublisher;
+    private ApplicationContext applicationContext;
+    private Audit auditor;
    
     public PasswordEnforcerManager(ServerConfig serverConfig,
                                    IdentityProviderPasswordPolicyManager passwordPolicyManager) {
@@ -46,14 +51,13 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
     }
 
     @Override
-    public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
-        if (this.applicationEventPublisher != null)
-            throw new IllegalStateException("applicationEventPublisher is already set");
-
-        this.applicationEventPublisher = applicationEventPublisher;
+    public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
+        if(this.applicationContext!=null) throw new IllegalStateException("applicationContext already initialized!");
+        
+        this.applicationContext = applicationContext;
+        auditor = new Auditor( this, this.applicationContext, logger );
         auditPasswordPolicyMinimums(!serverConfig.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED,false), getPasswordPolicy(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID));
     }
-
 
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
@@ -63,7 +67,6 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
             boolean newVal = Boolean.valueOf(newValue);
             auditPasswordPolicyMinimums(!newVal, getPasswordPolicy(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID));
         }
-
     }
 
     public void auditPasswordPolicy(IdentityProviderPasswordPolicy passwordPolicy){
@@ -111,11 +114,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
 
         if (!aboveMinimum){
             // log audit message
-            applicationEventPublisher.publishEvent(new AdminEvent(this,MessageFormat.format(SystemMessages.PASSWORD_BELOW_MINIMUM.getMessage(), isSTIG? "STIG":"PCI-DSS", "Internal Identity Provider")) {
-                public Level getMinimumLevel() {
-                    return Level.WARNING;
-                }
-            });
+            auditor.logAndAudit(SystemMessages.PASSWORD_BELOW_MINIMUM, new String[] {isSTIG? "STIG":"PCI-DSS", "Internal Identity Provider"});
         }
     }
 
@@ -140,16 +139,16 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
                 return false;
 
             try{
+                // check if paasswords are different
+                if(hashedNewPassword.equals(((InternalUser) user).getHashedPassword()))
+                    throw new InvalidPasswordException("New password must be different from old password");
+                
                 validatePasswordChangesAllowable(user, policy);
                 validatePasswordString(newPassword, policy);
                 validatePasswordIsDifferent(newPassword, currentUnHashedPassword, policy);
                 validateAgainstPrevPasswords(user, hashedNewPassword, policy);
             }catch(InvalidPasswordException e){
-                applicationEventPublisher.publishEvent(new AdminEvent(this,MessageFormat.format(SystemMessages.PASSWORD_CHANGE_FAILED.getMessage(), user.getName())) {
-                    public Level getMinimumLevel() {
-                        return Level.WARNING;
-                    }
-                });
+                auditor.logAndAudit(SystemMessages.PASSWORD_CHANGE_FAILED ,new String[]{user.getName()}, ExceptionUtils.getDebugException(e));
                 throw e;
             }
         }
@@ -164,11 +163,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
         try{
             validatePasswordString(newPassword, policy);
         }catch(InvalidPasswordException e){
-            applicationEventPublisher.publishEvent(new AdminEvent(this,MessageFormat.format(SystemMessages.PASSWORD_CHANGE_FAILED.getMessage(),"")) {
-                public Level getMinimumLevel() {
-                    return Level.WARNING;
-                }
-            });
+            auditor.logAndAudit(SystemMessages.PASSWORD_CHANGE_FAILED ,new String[]{"password reset"}, ExceptionUtils.getDebugException(e));            
             throw e;
         }
         return true;
@@ -205,12 +200,13 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
      */
     private void validatePasswordString(final String newPassword, final IdentityProviderPasswordPolicy policy) throws InvalidPasswordException {
 
+        if ( newPassword.length() < policy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH))
+            throw new InvalidPasswordException(MessageFormat.format("Password must be at least {0} characters in length",
+                    policy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH)));
+
         int maxLength =  policy.getIntegerProperty(IdentityProviderPasswordPolicy.MAX_PASSWORD_LENGTH);
-        if ( newPassword.length() < policy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH) ||
-                ( maxLength<0 && newPassword.length() > maxLength))
-            throw new InvalidPasswordException(MessageFormat.format("Password must be between {0} and {1} characters in length.",
-                    policy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH),
-                    policy.getIntegerProperty(IdentityProviderPasswordPolicy.MAX_PASSWORD_LENGTH)));
+        if( ( maxLength>0 && newPassword.length() > maxLength))
+            throw new InvalidPasswordException(MessageFormat.format("Password must be less then or equal to {1} characters in length", maxLength));
 
         //you could use one regular expression to do the work
         final char[] pass = newPassword.toCharArray();
@@ -233,31 +229,31 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN) > upperCount )
             throw new InvalidPasswordException(
-                    MessageFormat.format("Unable to change your password. The new password must contain more then {0} upper case characters.",
+                    MessageFormat.format("Unable to change your password. The new password must contain at least {0} upper case characters",
                                          policy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN)));
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN) > lowerCount )
             throw new InvalidPasswordException(
-                    MessageFormat.format("Unable to change your password. The new password must contain more then {0} lower case characters.",
+                    MessageFormat.format("Unable to change your password. The new password must contain at least {0} lower case characters",
                                          policy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN)));
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN) > digitCount )
             throw new InvalidPasswordException(
-                    MessageFormat.format("Unable to change your password. The new password must contain more then {0} numbers.",
+                    MessageFormat.format("Unable to change your password. The new password must contain at least {0} numbers",
                                          policy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN)));
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN) > specialCharacterCount )
             throw new InvalidPasswordException(
-                    MessageFormat.format("Unable to change your password. The new password must contain more then {0} special characters.",
+                    MessageFormat.format("Unable to change your password. The new password must contain at least {0} special characters",
                                          policy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN)));
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN) > (upperCount+lowerCount+specialCharacterCount) )
             throw new InvalidPasswordException(
-                    MessageFormat.format("Unable to change your password. The new password must contain more then {0} non-numeric characters.",
+                    MessageFormat.format("Unable to change your password. The new password must contain at least {0} non-numeric characters",
                                          policy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN)));
 
         if ( policy.getBooleanProperty(IdentityProviderPasswordPolicy.NO_REPEAT_CHARS) && hasRepeatChar )
-            throw new InvalidPasswordException("Unable to change your password. The new password contains consecutive repeating characters.");
+            throw new InvalidPasswordException("Unable to change your password. The new password contains consecutive repeating characters");
     }
 
     /**
@@ -300,7 +296,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
         while (iter.hasNext()) {
             change = (PasswordChangeRecord) iter.next();
             if (change != null && hashedNewPassword.equals(change.getPrevHashedPassword()))
-                throw new InvalidPasswordException(MessageFormat.format("New password cannot be reused within {0} password changes.",repeatFrequency));
+                throw new InvalidPasswordException(MessageFormat.format("New password cannot be reused within {0} password changes",repeatFrequency));
         }
     }
 
