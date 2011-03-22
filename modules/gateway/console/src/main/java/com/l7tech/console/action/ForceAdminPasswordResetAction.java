@@ -13,6 +13,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderPasswordPolicy;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
@@ -65,7 +66,7 @@ public class ForceAdminPasswordResetAction extends NodeAction {
     @Override
     public boolean isAuthorized() {
         if (attemptedForcePasswordChange == null) {
-            attemptedForcePasswordChange = new AttemptedUpdate(EntityType.ID_PROVIDER_CONFIG, new IdentityProviderConfig());
+            attemptedForcePasswordChange = new AttemptedUpdate(EntityType.USER, new InternalUser());
         }
         return canAttemptOperation(attemptedForcePasswordChange);
     }

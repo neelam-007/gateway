@@ -141,8 +141,11 @@ public class AdminLoginImpl
         try {
             sessionManager.changePassword(username, oldPassword, newPassword);
         } catch (ObjectModelException ome) {
-            //generally this is caused where new password is not STIG compiliant
-            throw new InvalidPasswordException(ome.getMessage());
+            //generally this is caused where new password is not password policy compliant
+            if(ome instanceof InvalidPasswordException)
+                throw new InvalidPasswordException(ome.getMessage(), ((InvalidPasswordException)ome).getPasswordPolicyDescription());
+            else
+                throw new InvalidPasswordException(ome.getMessage());
         }
 
         //password change was successful, proceed to login

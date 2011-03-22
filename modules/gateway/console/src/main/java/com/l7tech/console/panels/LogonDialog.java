@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -973,8 +974,9 @@ public class LogonDialog extends JDialog {
             showLockAccountMessage();
         }
         else if (cause instanceof InvalidPasswordException) {
-            //problems with the new password (most likely not STIG compiliant), re-ask the user to enter a better password
+            //problems with the new password (most likely not password policy compliant), re-ask the user to enter a better password
             ChangePasswordDialog changePasswordDialog = new ChangePasswordDialog(this, cause.getMessage(), userNameTextField.getText(), false);
+            changePasswordDialog.setPasswordPolicyDescription(((InvalidPasswordException) cause).getPasswordPolicyDescription());
             changePasswordDialog.setVisible(true);
             if (changePasswordDialog.wasOk()) {
                 handled = true;
@@ -993,6 +995,9 @@ public class LogonDialog extends JDialog {
                 //the credential was expired, we'll need to provide them a way to enter their new password
                 ChangePasswordDialog changePasswordDialog =
                         new ChangePasswordDialog(this, "Password expired, please change your password.", userNameTextField.getText(), false);
+                String desc = cause.getMessage();
+                desc = desc.substring(desc.indexOf("<html>"));
+                changePasswordDialog.setPasswordPolicyDescription(desc);
                 changePasswordDialog.setVisible(true);
                 if (changePasswordDialog.wasOk()) {
                     handled = true;

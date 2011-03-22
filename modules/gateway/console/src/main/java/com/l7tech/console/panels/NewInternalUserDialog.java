@@ -242,7 +242,7 @@ public class NewInternalUserDialog extends JDialog {
         if (actionCommand == null) {
             // do nothing
         } else if(actionCommand.equals(CMD_HELP)){
-            final PasswordHelpDialog dialog = new PasswordHelpDialog(NewInternalUserDialog.this);
+            final PasswordHelpDialog dialog = new PasswordHelpDialog(NewInternalUserDialog.this,null);
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog, new Runnable() {
                     public void run() {
@@ -300,6 +300,7 @@ public class NewInternalUserDialog extends JDialog {
             EntityHeader header = new EntityHeader();
             header.setType(EntityType.USER);
             header.setName(name);
+            Registry.getDefault().getIdentityAdmin().isPasswordPolicyCompliant(password,IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
             final String userId =
                 Registry.getDefault().getIdentityAdmin().saveUser(
                     IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID,
@@ -381,18 +382,6 @@ public class NewInternalUserDialog extends JDialog {
                             JOptionPane.ERROR_MESSAGE);
             return false;
         }
-
-//        String err = UserAccountPolicyUtil.ValidateNewPassword(new String(password));
-//        if (err != null) {
-//            JOptionPane.
-//                    showMessageDialog(this,
-//                            err,
-//                            resources.getString("passwordField.error.title"),
-//                            JOptionPane.ERROR_MESSAGE);
-//            return false;
-//        }
-        
-
         return true;
     }
 

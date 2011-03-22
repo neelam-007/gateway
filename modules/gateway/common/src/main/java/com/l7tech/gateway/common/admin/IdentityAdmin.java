@@ -399,6 +399,25 @@ public interface IdentityAdmin {
     @Secured(types=PASSWORD_POLICY, stereotype=FIND_ENTITY, relevantArg=1)
     IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException;
 
+     /**
+     * Get the password policy description associated with the current user's identity provider
+     *
+     * @return the associated password policy
+     * @throws FindException
+     */
+    @Transactional(readOnly=true)
+    String getPasswordPolicyDescriptionForIdentityProvider() throws FindException;
+
+    /**
+     * Checks if the new password is password policy compliant
+     * @param newPassword the new password to verify
+     * @param providerId the identity provider oid
+     * @return true if new password is password policy compliant, throws exception otherwise
+     * @throws InvalidPasswordException
+     */
+    @Transactional(readOnly=true)
+    boolean isPasswordPolicyCompliant(String newPassword, long providerId) throws InvalidPasswordException;
+
     /**
      * Saves the password policy for the identity provider
      * Note: only works for the ONE internal identity provider
@@ -425,5 +444,6 @@ public interface IdentityAdmin {
      * @throws InvalidPasswordException
      */
     @Administrative(licensed=false)
+    @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)    
     public void forceAdminUsersResetPassword(long identityProviderConfigId) throws FindException, SaveException, UpdateException, InvalidPasswordException;
 }

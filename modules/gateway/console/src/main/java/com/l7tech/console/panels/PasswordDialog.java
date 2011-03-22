@@ -340,6 +340,7 @@ public class PasswordDialog extends JDialog {
             }
 
             user.setPasswordChanges(Registry.getDefault().getClusterStatusAdmin().getCurrentClusterSystemTime().getTime(), new String(newPass));
+            Registry.getDefault().getIdentityAdmin().isPasswordPolicyCompliant(new String(newPass), IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
             Registry.getDefault().getIdentityAdmin().saveUser(
                     IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, user, null); // TODO make sure passing null here won't clear group memberships
             Registry.getDefault().getIdentityAdmin().resetLogonFailCount(user);

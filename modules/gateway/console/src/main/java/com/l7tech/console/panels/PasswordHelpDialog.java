@@ -18,15 +18,15 @@ public class PasswordHelpDialog extends JDialog {
 
     public PasswordHelpDialog(Frame owner) {
         super(owner);
-        initialize();
+        initialize(null);
     }
 
-    public PasswordHelpDialog(Dialog owner) {
+    public PasswordHelpDialog(Dialog owner, String passwordPolicyDescription) {
         super(owner);
-        initialize();
+        initialize(passwordPolicyDescription);
     }
 
-    private void initialize() {
+    private void initialize( String passwordPolicyDescription) {
         setContentPane(contentPane);
         setModal(true);
         setTitle("Password Rules");
@@ -40,12 +40,15 @@ public class PasswordHelpDialog extends JDialog {
         });
 
         Registry reg = Registry.getDefault();
-        String passwordHelpMsg;
-        try
+        String passwordHelpMsg = passwordPolicyDescription;
+        if(passwordHelpMsg == null)
         {
-           passwordHelpMsg  = reg.getIdentityAdmin().getPasswordPolicyForIdentityProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID).getDescription();
-        } catch (FindException e) {
-            passwordHelpMsg = null;
+            try
+            {
+               passwordHelpMsg  = reg.getIdentityAdmin().getPasswordPolicyDescriptionForIdentityProvider();
+            } catch (Exception e) {
+                passwordHelpMsg = "Error getting password policy description";
+            }
         }
         editorPane.setText(passwordHelpMsg);
 

@@ -141,7 +141,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
             try{
                 // check if paasswords are different
                 if(hashedNewPassword.equals(((InternalUser) user).getHashedPassword()))
-                    throw new InvalidPasswordException("New password must be different from old password");
+                    throw new InvalidPasswordException("New password must be different from old password",policy.getDescription());
                 
                 validatePasswordChangesAllowable(user, policy);
                 validatePasswordString(newPassword, policy);
@@ -202,11 +202,11 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
 
         if ( newPassword.length() < policy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH))
             throw new InvalidPasswordException(MessageFormat.format("Password must be at least {0} characters in length",
-                    policy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH)));
+                    policy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH)),policy.getDescription());
 
         int maxLength =  policy.getIntegerProperty(IdentityProviderPasswordPolicy.MAX_PASSWORD_LENGTH);
         if( ( maxLength>0 && newPassword.length() > maxLength))
-            throw new InvalidPasswordException(MessageFormat.format("Password must be less then or equal to {1} characters in length", maxLength));
+            throw new InvalidPasswordException(MessageFormat.format("Password must be less then or equal to {1} characters in length", maxLength),policy.getDescription());
 
         //you could use one regular expression to do the work
         final char[] pass = newPassword.toCharArray();
@@ -230,30 +230,30 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN) > upperCount )
             throw new InvalidPasswordException(
                     MessageFormat.format("Unable to change your password. The new password must contain at least {0} upper case characters",
-                                         policy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN)));
+                                         policy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN)),policy.getDescription());
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN) > lowerCount )
             throw new InvalidPasswordException(
                     MessageFormat.format("Unable to change your password. The new password must contain at least {0} lower case characters",
-                                         policy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN)));
+                                         policy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN)),policy.getDescription());
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN) > digitCount )
             throw new InvalidPasswordException(
                     MessageFormat.format("Unable to change your password. The new password must contain at least {0} numbers",
-                                         policy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN)));
+                                         policy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN)),policy.getDescription());
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN) > specialCharacterCount )
             throw new InvalidPasswordException(
                     MessageFormat.format("Unable to change your password. The new password must contain at least {0} special characters",
-                                         policy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN)));
+                                         policy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN)),policy.getDescription());
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN) > (upperCount+lowerCount+specialCharacterCount) )
             throw new InvalidPasswordException(
                     MessageFormat.format("Unable to change your password. The new password must contain at least {0} non-numeric characters",
-                                         policy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN)));
+                                         policy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN)),policy.getDescription());
 
         if ( policy.getBooleanProperty(IdentityProviderPasswordPolicy.NO_REPEAT_CHARS) && hasRepeatChar )
-            throw new InvalidPasswordException("Unable to change your password. The new password contains consecutive repeating characters");
+            throw new InvalidPasswordException("Unable to change your password. The new password contains consecutive repeating characters",policy.getDescription());
     }
 
     /**
@@ -274,7 +274,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
                 return;
 
         throw new InvalidPasswordException(
-                    MessageFormat.format("New password must differ from previous password by at least {0} characters.",minCharDiff));
+                    MessageFormat.format("New password must differ from previous password by at least {0} characters.",minCharDiff),policy.getDescription());
     }
 
     /**
@@ -296,7 +296,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
         while (iter.hasNext()) {
             change = (PasswordChangeRecord) iter.next();
             if (change != null && hashedNewPassword.equals(change.getPrevHashedPassword()))
-                throw new InvalidPasswordException(MessageFormat.format("New password cannot be reused within {0} password changes",repeatFrequency));
+                throw new InvalidPasswordException(MessageFormat.format("New password cannot be reused within {0} password changes",repeatFrequency),policy.getDescription());
         }
     }
 
@@ -332,7 +332,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
                     if (lastChange.after(xDaysAgo)) {
                         long nextChangeMinutes = 24 * 60 - (now - lastChangedMillis) / (1000 * 60);
                         throw new InvalidPasswordException(MessageFormat.format("Password cannot be changed more than once every 24 hours. Please retry in {1} minutes",
-                                (nextChangeMinutes >= 60 ? nextChangeMinutes / 60 + " hours and " : "") + nextChangeMinutes % 60 )) ;
+                                (nextChangeMinutes >= 60 ? nextChangeMinutes / 60 + " hours and " : "") + nextChangeMinutes % 60 ),policy.getDescription()) ;
                     }
                 }
             }

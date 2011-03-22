@@ -162,9 +162,9 @@ public class InternalUser extends PersistentUser {
 
     @Transient
     public void setCleartextPassword(String newPassword) throws InvalidPasswordException {
-        if (newPassword == null) throw new InvalidPasswordException("Empty password is not valid");
-        if (newPassword.length() < 6) throw new InvalidPasswordException("Password must be no shorter than 6 characters");
-        if (newPassword.length() > 32) throw new InvalidPasswordException("Password must be no longer than 32 characters");
+        if (newPassword == null) throw new InvalidPasswordException("Empty password is not valid", null);
+        if (newPassword.length() < 6) throw new InvalidPasswordException("Password must be no shorter than 6 characters", null);
+        if (newPassword.length() > 32) throw new InvalidPasswordException("Password must be no longer than 32 characters", null);
 
         if (login == null) throw new IllegalStateException("login must be set prior to encoding the password");
         this.hashedPassword = HexUtils.encodePasswd(login, newPassword, HttpDigest.REALM);

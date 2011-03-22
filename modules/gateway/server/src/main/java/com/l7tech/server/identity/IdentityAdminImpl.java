@@ -297,7 +297,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                 InternalUser internalUser = (InternalUser)user;
                 // Reset password expiration and force password change
                 if(isSave) {
-                    passwordEnforcerManager.isPasswordPolicyCompliant( HexUtils.encodePasswd(internalUser.getLogin(), internalUser.getHashedPassword(), HttpDigest.REALM), identityProviderConfigId);
                     passwordEnforcerManager.setUserPasswordPolicyAttributes(internalUser, true);
                 } else {
                     User u = userManager.findByPrimaryKey(internalUser.getId());
@@ -308,7 +307,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
                     if(existingDude != null) {
                         if(!internalUser.getHashedPassword().equals(existingDude.getHashedPassword())) {
-                            passwordEnforcerManager.isPasswordPolicyCompliant(HexUtils.encodePasswd(internalUser.getLogin(), internalUser.getHashedPassword(), HttpDigest.REALM), identityProviderConfigId);
                             passwordEnforcerManager.setUserPasswordPolicyAttributes(internalUser, true);
                         }
                     }
@@ -511,6 +509,21 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     @Override
     public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException {
         return passwordPolicyManger.findByInternalIdentityProviderOid(providerId);  
+    }
+
+    @Override
+    public String getPasswordPolicyDescriptionForIdentityProvider() throws FindException{
+        User user = JaasUtils.getCurrentUser();
+        if(user == null)
+            return null;
+        if(user instanceof InternalUser)
+            return passwordPolicyManger.findByInternalIdentityProviderOid(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID).getDescription();
+        return null;
+    }
+
+    @Override
+    public boolean isPasswordPolicyCompliant( String newPassword, long providerId) throws InvalidPasswordException{
+        return passwordEnforcerManager.isPasswordPolicyCompliant(newPassword,providerId);
     }
 
     @Override

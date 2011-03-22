@@ -150,6 +150,17 @@ public class ChangePasswordDialog extends JDialog {
         return pa;
     }
 
+    /**
+     * Set the password policy description for the help dialog.
+     * If left null, the help dialog will try to get the description from the identity admin.
+     * 
+     * @param passwordPolicyDescription
+     */
+    public void setPasswordPolicyDescription(String passwordPolicyDescription) {
+        this.passwordPolicyDescription = passwordPolicyDescription;
+    }
+
+
     //- PRIVATE
 
     private static final String TITLE = "Change Password";
@@ -169,6 +180,7 @@ public class ChangePasswordDialog extends JDialog {
     private boolean ok;
     private boolean cancel;
     private boolean help;
+    private String passwordPolicyDescription = null;
 
     private void initComponents(String message) {
         this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -219,7 +231,7 @@ public class ChangePasswordDialog extends JDialog {
         helpBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 help = true;
-                final PasswordHelpDialog dialog = new PasswordHelpDialog(ChangePasswordDialog.this);
+                final PasswordHelpDialog dialog = new PasswordHelpDialog(ChangePasswordDialog.this, passwordPolicyDescription);
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog, new Runnable() {
                     public void run() {

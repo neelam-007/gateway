@@ -75,6 +75,10 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         this.passwordEnforcerManager = passwordEnforcerManager;
     }
 
+    public void setPasswordPolicyManager(final IdentityProviderPasswordPolicyManager passwordPolicyManager){
+        this.passwordPolicyManager = passwordPolicyManager;
+    }
+
     /**
      * Reloads IdentityProviders on change.
      */
@@ -181,7 +185,9 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
                         //Ensure password not expired, ignore password expire checking if have certificate
                         if (passwordEnforcerManager.isPasswordExpired(authdUser) && !provider.hasClientCert(creds.getLogin())) {
-                            throw new CredentialExpiredException("Password expired.");
+                            IdentityProviderPasswordPolicy policy = passwordPolicyManager.findByInternalIdentityProviderOid(provider.getConfig().getOid());
+
+                            throw new CredentialExpiredException("Password expired." + policy.getDescription());
                         }
 
                         user = authdUser;
@@ -454,6 +460,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private final LogonService logonService;
     private IdentityProviderFactory identityProviderFactory;
     private PasswordEnforcerManager passwordEnforcerManager;
+    private IdentityProviderPasswordPolicyManager passwordPolicyManager;
 
     //
     @SuppressWarnings({"deprecation"})

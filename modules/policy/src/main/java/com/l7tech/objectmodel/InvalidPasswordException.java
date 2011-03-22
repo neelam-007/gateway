@@ -10,10 +10,18 @@ package com.l7tech.objectmodel;
  * Date: Oct 19, 2004<br/>
  */
 public class InvalidPasswordException extends ObjectModelException {
+    private String passwordPolicyDescription = null;
     public InvalidPasswordException() {
         super();
     }
     public InvalidPasswordException(String msg) {
         super(msg);
+    }
+    public InvalidPasswordException(String msg, String passwordPolicyDescription) {
+        super(msg);
+        this.passwordPolicyDescription = passwordPolicyDescription;
+    }
+    public String getPasswordPolicyDescription(){
+        return passwordPolicyDescription;
     }
 }

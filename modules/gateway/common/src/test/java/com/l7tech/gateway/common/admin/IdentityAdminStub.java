@@ -178,10 +178,6 @@ public class IdentityAdminStub implements IdentityAdmin {
     public String getUserCert(User user) throws FindException, CertificateEncodingException {
         return null; // TODO ?
     }
-
-    public boolean validateSTIGCompilance(User user, String newPassword, String oldPassword) throws InvalidPasswordException {
-        return false;
-    }
     
     @Override
     public void revokeCert(User user) throws UpdateException, ObjectNotFoundException {
@@ -284,6 +280,16 @@ public class IdentityAdminStub implements IdentityAdmin {
     @Override
     public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException {
         return null; // TODO ?
+    }
+
+    @Override
+    public String getPasswordPolicyDescriptionForIdentityProvider() throws FindException {
+        return null; // TODO ?        
+    }
+
+    @Override
+    public boolean isPasswordPolicyCompliant(String newPassword, long providerId) throws InvalidPasswordException {
+        return false;  // TODO ?
     }
 
     @Override

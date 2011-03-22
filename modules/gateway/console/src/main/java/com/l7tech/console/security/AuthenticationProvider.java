@@ -32,7 +32,7 @@ public interface AuthenticationProvider {
      * @param host the host to authenticate with
      * @param validateHost true to validate the hosts name against its certificate
      * @param newPassword   If not NULL, then it will perform to change password first then do the logon afterwards.
-     * @throws InvalidPasswordException If the new password is no valid.  Generally not STIG compiliant.
+     * @throws InvalidPasswordException If the new password is no valid.  Generally not password policy compliant.
      *
      * @see com.l7tech.console.security.SecurityProviderImpl
      */
