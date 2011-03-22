@@ -983,6 +983,11 @@
       <constructor-arg ref="defaultKey"/>
     </bean>
 
+    <!-- Checking Audit Sink Options-->
+    <bean id="auditSinkEvaluator" class="com.l7tech.server.audit.AuditSinkEvaluator" init-method="init">
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
     <!-- server side audit record manager -->
     <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl" parent="hibernateBean">
         <property name="serverConfig" ref="serverConfig"/>
@@ -1088,6 +1093,7 @@
     <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="prototype">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
+        <constructor-arg ref="clusterPropertyManager"/>
         <constructor-arg ref="auditPolicyEvaluator"/>
         <constructor-arg ref="auditMessagePolicyEvaluator"/>
         <constructor-arg ref="clusterNodeId"/>

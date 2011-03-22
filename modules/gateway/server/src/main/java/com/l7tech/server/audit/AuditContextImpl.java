@@ -4,7 +4,8 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.util.Functions;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
@@ -52,6 +53,7 @@ public class AuditContextImpl implements AuditContext {
      */
     public AuditContextImpl(ServerConfig serverConfig,
                             AuditRecordManager auditRecordManager,
+                            ClusterPropertyManager clusterPropertyManager,
                             AuditPolicyEvaluator auditPolicyEvaluator,
                             AuditMessageFilterPolicyEvaluator auditMessageFilterPolicyEvaluator,
                             String nodeId) {
@@ -63,6 +65,7 @@ public class AuditContextImpl implements AuditContext {
         }
         this.serverConfig = serverConfig;
         this.auditRecordManager = auditRecordManager;
+        this.clusterPropertyManager = clusterPropertyManager;
         this.auditPolicyEvaluator = auditPolicyEvaluator;
         this.auditMessageFilterPolicyEvaluator = auditMessageFilterPolicyEvaluator;
         this.nodeId = nodeId;
@@ -307,8 +310,28 @@ public class AuditContextImpl implements AuditContext {
                 // No sink policy configured; fallthrough to regular handling
             } else {
                 // Audit sink policy failed; fall back to built-in handling and audit failure
-                if (!isAlwaysSaveToDatabase() && !isFallbackToDatabaseIfSinkPolicyFails())
+                if (!isAlwaysSaveToDatabase() && !isFallbackToDatabaseIfSinkPolicyFails()) {
+
+                    if (isPCIDSSEnabled()) {
+                        // If audit sink policy fails and internal audit fall back is disabled, then log and audit a warning "audit sink policy failed and internal audit fall back is disabled."
+                        logger.warning(SystemMessages.AUDIT_SINK_FALL_BACK_WARNING.getMessage());
+
+                        SystemAuditRecord auditFallbackDisabled = new SystemAuditRecord(
+                            SystemMessages.AUDIT_SINK_FALL_BACK_WARNING.getLevel(),
+                            nodeId,
+                            Component.GW_AUDIT_SYSTEM,
+                            SystemMessages.AUDIT_SINK_FALL_BACK_WARNING.getMessage(),
+                            false,
+                            0,
+                            null,
+                            null,
+                            "Audit Sink Evaluation",
+                            OUR_IP);
+                        auditRecordManager.save(auditFallbackDisabled);
+                    }
+
                     return;
+                }
                 sinkPolicyFailed = true;
             }
         }
@@ -333,12 +356,20 @@ public class AuditContextImpl implements AuditContext {
         }
     }
 
+    private boolean isPCIDSSEnabled() {
+        return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_PCIDSS_ENABLED, false, 30000);
+    }
+
     private boolean isFallbackToDatabaseIfSinkPolicyFails() {
         return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, true, 30000);
     }
 
     private boolean isAlwaysSaveToDatabase() {
-        return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, false, 30000);
+        try {
+            return Boolean.parseBoolean(clusterPropertyManager.getProperty(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK));
+        } catch (FindException e) {
+            return false;
+        }
     }
 
     /**
@@ -529,6 +560,7 @@ public class AuditContextImpl implements AuditContext {
 
     private final ServerConfig serverConfig;
     private final AuditRecordManager auditRecordManager;
+    private final ClusterPropertyManager clusterPropertyManager;
     private final String nodeId;
     private AuditPolicyEvaluator auditPolicyEvaluator;
     private final AuditMessageFilterPolicyEvaluator auditMessageFilterPolicyEvaluator;

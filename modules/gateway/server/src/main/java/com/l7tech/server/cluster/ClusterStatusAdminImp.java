@@ -1,9 +1,6 @@
 package com.l7tech.server.cluster;
 
-import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gateway.common.License;
-import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.*;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.cluster.*;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
@@ -15,6 +12,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.*;
+import com.l7tech.server.audit.AuditSinkEvaluator;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.PersistenceEvent;
@@ -32,8 +30,11 @@ import com.l7tech.xml.TarariLoader;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.*;
 
 import java.io.Serializable;
 import java.util.*;
@@ -64,7 +65,9 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
                                  AssertionRegistry assertionRegistry,
                                  TrustedEsmManager trustedEsmManager,
                                  TrustedEsmUserManager trustedEsmUserManager,
-                                 RbacServices rbacServices)
+                                 RbacServices rbacServices,
+                                 AuditSinkEvaluator auditSinkEvaluator,
+                                 PlatformTransactionManager transactionManager)
     {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
@@ -77,6 +80,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         this.trustedEsmManager = trustedEsmManager;
         this.trustedEsmUserManager = trustedEsmUserManager;
         this.rbacServices = rbacServices;
+        this.auditSinkEvaluator = auditSinkEvaluator;
+        this.transactionManager = transactionManager;
 
         if (clusterInfoManager == null)
             throw new IllegalArgumentException("Cluster Info manager is required");
@@ -263,16 +268,18 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
             checkLicense();
         long oid = clusterProperty.getOid();
         if (oid == ClusterProperty.DEFAULT_OID) {
-            return clusterPropertyManager.save(clusterProperty);
+            oid = clusterPropertyManager.save(clusterProperty);
         } else {
             clusterPropertyManager.update(clusterProperty);
-            return oid;
         }
+        evaluateAuditSinkPropsStatus(clusterProperty, false);
+        return oid;
     }
 
     @Override
     public void deleteProperty(ClusterProperty clusterProperty) throws DeleteException {
         clusterPropertyManager.delete(clusterProperty);
+        evaluateAuditSinkPropsStatus(clusterProperty, true);
     }
 
     @Override
@@ -468,6 +475,49 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         this.context = context;
     }
 
+    private void evaluateAuditSinkPropsStatus(final ClusterProperty clusterProperty, final boolean toBeDeleted) {
+        final boolean[] prevPropStatus = new boolean[2];
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
+            public void beforeCommit(boolean readOnly) {
+                if (ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK.equals(clusterProperty.getName())) {
+                    prevPropStatus[0] = auditSinkEvaluator.isInternalAuditSystemEnabled(true);
+                } else if (ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID.equals(clusterProperty.getName())) {
+                    prevPropStatus[0] = auditSinkEvaluator.isAuditSinkPolicyEnabled();
+
+                    // Also preserve the status of Internal Audit System
+                    if (toBeDeleted) {
+                        prevPropStatus[1] = auditSinkEvaluator.isInternalAuditSystemEnabled(true);
+                    }
+                } else if (ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL.equals(clusterProperty.getName())) {
+                    prevPropStatus[0] = auditSinkEvaluator.isFallbackToDatabaseIfSinkPolicyFails();
+                }
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                    // If it is not one of three audit sink cluster properties, ignore the task below.
+                    if (! ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK.equals(clusterProperty.getName()) &&
+                        ! ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID.equals(clusterProperty.getName()) &&
+                        ! ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL.equals(clusterProperty.getName())) {
+                        return;
+                    }
+
+                    TransactionTemplate template = new TransactionTemplate(transactionManager);
+                    template.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
+                    template.execute(new TransactionCallbackWithoutResult() {
+                        @Override
+                        protected void doInTransactionWithoutResult(TransactionStatus status) {
+                            auditSinkEvaluator.checkAndAuditPropsStatus(clusterProperty, prevPropStatus, toBeDeleted);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
     private ApplicationContext context;
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;
@@ -480,6 +530,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     private final TrustedEsmManager trustedEsmManager;
     private final TrustedEsmUserManager trustedEsmUserManager;
     private final RbacServices rbacServices;
+    private final AuditSinkEvaluator auditSinkEvaluator;
+    private final PlatformTransactionManager transactionManager;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 

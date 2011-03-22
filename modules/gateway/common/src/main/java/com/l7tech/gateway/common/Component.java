@@ -29,6 +29,7 @@ public class Component {
     public static final Component     GW_POLICY_SERVICE   = new Component(  20000, "Policy Service", GW_SERVER, true);
     public static final Component     GW_TOKEN_SERVICE    = new Component(  30000, "Security Token Service", GW_SERVER, true);
     public static final Component     GW_AUDIT_SYSTEM     = new Component(  40000, "Audit System", GW_SERVER);
+    public static final Component GW_AUDIT_SINK_CONFIG    = new Component(  40010, "Audit Sink Configuration", GW_AUDIT_SYSTEM);
     public static final Component     GW_LICENSE_MANAGER  = new Component(  50000, "License Manager", GW_SERVER);
     public static final Component     GW_ADMINWS          = new Component(  60000, "Admin Web Service", GW_SERVER);
     public static final Component     GW_HTTPRECV         = new Component(  65000, "HTTP Listeners", GW_SERVER);

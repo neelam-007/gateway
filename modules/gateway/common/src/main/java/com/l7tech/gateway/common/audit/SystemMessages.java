@@ -144,6 +144,10 @@ public class SystemMessages extends Messages {
     // Caches
     public static final M URL_OBJECT_CACHE_REUSE = m( 2320, Level.WARNING, "Reusing previously-cached copy of remote {0}: URL {1}: {2}" );
 
+    public static final M AUDIT_SINK_START               = m(2330, Level.INFO, "{0} started"); // where {0} will be either  "Internal Audit System" or "Audit Sink Policy".
+    public static final M AUDIT_SINK_DISABLED            = m(2331, Level.INFO, "{0} disabled"); // where {0} will be either "Internal Audit System" or "Audit Sink Policy".
+    public static final M AUDIT_SINK_FALL_BACK_STATUS   = m(2332, Level.INFO, "Fall back on internal audit system {0}"); // where {0} will be either "enabled" or "disabled".
+    public static final M AUDIT_SINK_FALL_BACK_WARNING = m(2333, Level.WARNING, "Audit Sink Policy failed and Internal Audit Fall Back is disabled.");
     // Password policy
     public static final M PASSWORD_BELOW_MINIMUM = m( 2340, Level.WARNING, "Password requirements are below {0} for {1}" );
     public static final M PASSWORD_CHANGE_FAILED = m( 2341, Level.WARNING, "Password change failed for user ''{0}''" );
