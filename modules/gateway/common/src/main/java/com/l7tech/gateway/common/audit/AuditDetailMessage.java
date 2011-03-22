@@ -57,6 +57,11 @@ public class AuditDetailMessage {
             return new Hint(hintId.intern());
         }
 
+        public static Hint getHint(Hint hint) {
+            if(hint ==null) throw new IllegalArgumentException("hint must not be null");
+            return new Hint(hint.hintId.intern());
+        }
+
         public boolean equals(Object obj) {
             boolean equal = false;
 

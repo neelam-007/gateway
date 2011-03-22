@@ -362,6 +362,18 @@
                                 <value>ioHttpProxy</value>
                             </list>
                         </entry>
+                        <entry key="auditLevelDetailFilter">
+                            <list>
+                                <value>audit.setDetailLevel.SEVERE</value>
+                                <value>audit.setDetailLevel.WARNING</value>
+                                <value>audit.setDetailLevel.INFO</value>
+                                <value>audit.setDetailLevel.CONFIG</value>
+                                <value>audit.setDetailLevel.FINE</value>
+                                <value>audit.setDetailLevel.FINER</value>
+                                <value>audit.setDetailLevel.FINEST</value>
+                                <value>audit.auditDetailExcludeList</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -1559,6 +1571,10 @@
                 <property name="targetMethod" value="getPublishingSink"/>
             </bean>
         </constructor-arg>
+    </bean>
+
+    <bean id="auditLevelDetailFilter" class="com.l7tech.server.audit.AuditLevelDetailFilter">
+        <constructor-arg ref="clusterPropertyCache" />
     </bean>
 
     <bean id="auditLogListener" class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">

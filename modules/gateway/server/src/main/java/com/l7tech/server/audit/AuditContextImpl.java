@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.Pair;
 
 import java.security.*;
 import java.util.*;
@@ -222,10 +223,19 @@ public class AuditContextImpl implements AuditContext {
             for (List<AuditDetailWithInfo> list : details.values()) {
                 for (AuditDetailWithInfo detailWithInfo : list) {
                     int mid = detailWithInfo.detail.getMessageId();
-                    AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(mid);
-                    Level severity = message==null ? null : message.getLevel();
-                    if(severity == null)
+
+                    final Pair<Boolean,AuditDetailMessage> pair = MessagesUtil.getAuditDetailMessageByIdWithFilter(mid);
+                    if(!pair.left){
                         throw new RuntimeException("Cannot find the message (id=" + mid + ")" + " in the Message Map.");
+                    }
+
+                    final AuditDetailMessage message = pair.right;
+                    if(message == null){
+                        //audit has been filtered to NEVER.
+                        continue;
+                    }
+
+                    final Level severity = message.getLevel();
                     if(severity.intValue() >= getAssociatedLogsThreshold().intValue()) {
                         // Call even if not saving
                         detailWithInfo.detail.setAuditRecord(currentRecord);
