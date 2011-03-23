@@ -296,10 +296,19 @@ public class MasterPassphraseChanger {
         File ompFile = new File( configDirectory, "omp.dat" );
         File kmpFile = KeyStorePrivateKeyMasterPasswordFinder.findPropertiesFile(ompFile);
 
-        // Don't bother re-encrypting properties files since we will be keeping the same master passphrase bytes
-        final KeyStorePrivateKeyMasterPasswordFinder finder = new KeyStorePrivateKeyMasterPasswordFinder(kmpFile);
-        final byte[] masterPassphraseBytes = finder.findMasterPasswordBytes();
-        new ObfuscatedFileMasterPasswordFinder(ompFile).saveMasterPassword(masterPassphraseBytes);
+        // Build decryptor from existing kmp
+        final KeyStorePrivateKeyMasterPasswordFinder kmpFinder = new KeyStorePrivateKeyMasterPasswordFinder(kmpFile);
+        final MasterPasswordManager decryptor = new MasterPasswordManager(kmpFinder);
+
+        // Restore master passphrase to default value, build encryptor to default omp
+        final ObfuscatedFileMasterPasswordFinder ompFinder = new ObfuscatedFileMasterPasswordFinder(ompFile);
+        ompFinder.saveMasterPassword(DEFAULT_MASTER_PASSPHRASE);
+        final MasterPasswordManager encryptor = new MasterPasswordManager(ompFinder);
+
+        // Re-encrypt password properties
+        PasswordPropertyCrypto passwordCrypto = new PasswordPropertyCrypto(encryptor, decryptor);
+        passwordCrypto.setPasswordProperties( passwordProperties );
+        findPropertiesFilesAndReencryptPasswords(configDirectory, passwordCrypto);
 
         // Clean up
         deleteLockFiles(ompFile, kmpFile);

@@ -752,7 +752,7 @@ sub doDisableNcipher() {
 
     unlink(NCIPHERDEFS) == 1
         or die "Unable to delete " . NCIPHERDEFS . ": $!\n";
-    print "\nThe Gateway is no longer configured to use the nCipher HSM.\n\n";
+    print "\nThe Gateway is no longer configured to use the nCipher HSM.\n\nNote: master passphrase restored to default value -- use main menu to change it.\n\n";
     offerToStartGateway();
 }
 
