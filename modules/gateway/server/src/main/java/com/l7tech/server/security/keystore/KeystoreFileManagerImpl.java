@@ -62,16 +62,14 @@ public class KeystoreFileManagerImpl
     }
 
     @Override
-    public KeystoreFile updateDataBytes(final long id, final Functions.Unary<byte[], byte[]> mutator) throws UpdateException {
+    public KeystoreFile mutateKeystoreFile(final long id, final Functions.UnaryVoid<KeystoreFile> mutator) throws UpdateException {
         try {
             return (KeystoreFile)getHibernateTemplate().execute(new HibernateCallback() {
                 @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     try {
                         KeystoreFile keystoreFile = (KeystoreFile)session.load(KeystoreFile.class, id, LockMode.UPGRADE);
-                        byte[] bytesBefore = keystoreFile.getDatabytes();
-                        byte[] bytesAfter = mutator.call(bytesBefore);
-                        keystoreFile.setDatabytes(bytesAfter);
+                        mutator.call(keystoreFile);
                         update(keystoreFile);
                         return keystoreFile;
                     } catch (UpdateException e) {

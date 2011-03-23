@@ -17,6 +17,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
@@ -35,6 +36,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     private static final String KEYSTORE_TYPE = "nCipher.sworld";
     private static final long refreshTime = 5 * 1000;
     private static final File KMDATA_LOCAL_DIR = new File(SyspropUtil.getString("com.l7tech.server.security.keystore.ncipher.kmdataLocalPath", "/opt/nfast/kmdata/local"));
+    static final String KF_PROP_INITIAL_KEYSTORE_ID = "initialKeystoreId";
 
     private final long id;
     private final String name;
@@ -91,10 +93,11 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
                 } else {
                     // No existing keystore data present -- will need to create a new one.
                     // Begin a write transaction to create some (or to use existing in the unlikely event another node created some in the meantime).
-                    kem.updateDataBytes(keystoreFile.getOid(), new Functions.Unary<byte[], byte[]>() {
+                    kem.mutateKeystoreFile(keystoreFile.getOid(), new Functions.UnaryVoid<KeystoreFile>() {
                         @Override
-                        public byte[] call(byte[] bytes) {
+                        public void call(KeystoreFile keystoreFile) {
                             try {
+                                byte[] bytes = keystoreFile.getDatabytes();
                                 final Pair<String, KeyStore> ks;
                                 if (bytes == null || bytes.length < 1) {
                                     ks = createNewKeyStore();
@@ -103,13 +106,13 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
                                 }
                                 keystoreMetadata = ks.left;
                                 keystore = ks.right;
-                                return keyStoreToBytes(keystoreMetadata, keystore);
+                                keystoreFile.setProperty(KF_PROP_INITIAL_KEYSTORE_ID, keystoreMetadata);
+                                keystoreFile.setDatabytes(keyStoreToBytes(keystoreMetadata, keystore));
                             } catch (KeyStoreException e) {
                                 throw new RuntimeException(e);
                             }
                         }
                     });
-
                 }
             } catch (FindException e) {
                 throw new KeyStoreException("Unable to load hardware keystore data from database for keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
@@ -129,18 +132,18 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
                 final Object[] out = new Object[] { null };
                 try {
                     synchronized (NcipherSsgKeyStore.this) {
-                        KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
+                        KeystoreFile updated = kem.mutateKeystoreFile(getOid(), new Functions.UnaryVoid<KeystoreFile>() {
                             @Override
-                            public byte[] call(byte[] bytes) {
+                            public void call(KeystoreFile keystoreFile) {
                                 if (transactionCallback != null)
                                     transactionCallback.run();
                                 try {
-                                    Pair<String, KeyStore> ks = bytesToKeyStore(bytes);
+                                    Pair<String, KeyStore> ks = bytesToKeyStore(keystoreFile.getDatabytes());
                                     keystoreMetadata = ks.left;
                                     keystore = ks.right;
                                     lastLoaded = System.currentTimeMillis();
                                     out[0] = mutator.call();
-                                    return keyStoreToBytes(keystoreMetadata, keystore);
+                                    keystoreFile.setDatabytes(keyStoreToBytes(keystoreMetadata, keystore));
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
@@ -189,13 +192,26 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     private Pair<String, KeyStore> createNewKeyStoreFromExistingLocalFiles() throws KeyStoreException {
         Pair<String, KeyStore> ret = null;
 
-        List<String> identifiers = NcipherKeyStoreData.readKeystoreIdentifiersFromLocalDisk(KMDATA_LOCAL_DIR);
+        List<String> identifiersToTry = new ArrayList<String>();
+
+        try {
+            // Check if we have a property telling us what ID to use
+            KeystoreFile keystoreFile = kem.findByPrimaryKey(getOid());
+            String keystoreId = keystoreFile.getProperty(KF_PROP_INITIAL_KEYSTORE_ID);
+            if (keystoreId != null && keystoreId.trim().length() > 0)
+                identifiersToTry.add(keystoreId);
+        } catch (FindException e) {
+            throw new KeyStoreException("Unable to look up initial keystore ID: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        if (identifiersToTry.isEmpty())
+            identifiersToTry = NcipherKeyStoreData.readKeystoreIdentifiersFromLocalDisk(KMDATA_LOCAL_DIR);
 
         String lastMessage = null;
         Throwable lastException = null;
 
         // See if at least one ID represents a lodable keystore with at least one existing key entry
-        for (String keystoreId : identifiers) {
+        for (String keystoreId : identifiersToTry) {
             try {
                 logger.info("Attempting to load from nCipher security world a preexisting keystore with ID " + keystoreId);
                 ret = loadKeystoreByKeystoreId(keystoreId);

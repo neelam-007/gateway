@@ -1,13 +1,17 @@
 package com.l7tech.gateway.config.manager;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.*;
 import org.xml.sax.SAXException;
 
 import java.io.*;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.NoSuchElementException;
+import java.security.KeyStore;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -20,6 +24,13 @@ public class MasterPassphraseChanger {
 
     public static final int EXIT_STATUS_USAGE = 2;
 
+    static final String COMMAND_KMP = "kmp";
+    static final String SC_KMP_MIGRATE_FROM_KMP_TO_OMP = "migrateFromKmpToOmp";
+    static final String SC_KMP_GENERATE_ALL = "generateAll";
+    static final String SC_KMP_LIST_KEYSTORE_CONTENTS = "listKeystoreContents";
+    static final String ARG_SC_KMP_GEN_BASE_ON_EXISTING_KMP = "baseOnExistingKmp";
+    static final String ARG_SC_KMP_LIST_NOFILE = "ignoreKmpFile";
+
     private static final byte[] DEFAULT_MASTER_PASSPHRASE = "7layer".getBytes(Charsets.UTF8);
     private static final int MIN_LENGTH = 6;
     private static final int MAX_LENGTH = 128;
@@ -29,13 +40,16 @@ public class MasterPassphraseChanger {
     private final String configurationDirPath;
     private final String command;
     private final String subcommand;
+    private final List<String> arguments;
     private final String[] passwordProperties;
+    PrintStream out = System.out;
 
-    public MasterPassphraseChanger(String configurationDirPath, String[] passwordProperties, String command, String subcommand) {
+    public MasterPassphraseChanger(String configurationDirPath, String[] passwordProperties, String command, String subcommand, List<String> arguments) {
         this.configurationDirPath = configurationDirPath;
         this.passwordProperties = passwordProperties;
         this.command = command;
         this.subcommand = subcommand;
+        this.arguments = arguments == null ? Collections.<String>emptyList() : arguments;
     }
 
     public static void main(String[] argv) {
@@ -45,15 +59,13 @@ public class MasterPassphraseChanger {
 
             if (args.isEmpty()) {
                 // No args -- run in interactive mode
-                new MasterPassphraseChanger(CONFIG_PATH, PASSWORD_PROPERTIES,  null, null).run();
+                new MasterPassphraseChanger(CONFIG_PATH, PASSWORD_PROPERTIES,  null, null, null).run();
             } else {
                 String command = args.removeFirst();
                 String subcommand = args.removeFirst();
-                if (!args.isEmpty())
-                    usage("Too many arguments.");
 
                 // Args provided -- execute requested command and return
-                new MasterPassphraseChanger(CONFIG_PATH, PASSWORD_PROPERTIES, command, subcommand).run();
+                new MasterPassphraseChanger(CONFIG_PATH, PASSWORD_PROPERTIES, command, subcommand, args).run();
             }
         } catch (NoSuchElementException e) {
             usage("Not enough arguments.");
@@ -74,7 +86,7 @@ public class MasterPassphraseChanger {
     // Never returns; calls System.exit
     private static void usage(String prefix) {
         String p = prefix == null ? "" : prefix + "\n";
-        fatal(p + "Usage: MasterPassphraseChanger [kmp <generateAll|migrateFromOmpToKmp|migrateFromKmpToOmp>]", null, EXIT_STATUS_USAGE);
+        fatal(p + "Usage: MasterPassphraseChanger [kmp <generateAll <configProfileName>|migrateFromKmpToOmp|listKeystoreContents]", null, EXIT_STATUS_USAGE);
     }
 
     // Never returns; calls System.exit
@@ -97,6 +109,11 @@ public class MasterPassphraseChanger {
         }
 
         File configDirectory = new File(configurationDirPath);
+        File kmpFile = KeyStorePrivateKeyMasterPasswordUtil.findPropertiesFile(configDirectory);
+        if (kmpFile.exists()) {
+            throw new RuntimeException("The Gateway is currently configured to use a keystore-protected master passphrase.");
+        }
+
         File ompCurFile= new File( configDirectory, "omp.dat" );
         if (ompCurFile.exists()) {
             requirePromptForExistingOmp(ompCurFile);
@@ -163,7 +180,7 @@ public class MasterPassphraseChanger {
     }
 
     private void runCommand(String command, String subcommand) throws Exception {
-        if ("kmp".equals(command)) {
+        if (COMMAND_KMP.equals(command)) {
             runKmpSubcommand(subcommand);
         } else {
             usage("Unknown command: " + command);
@@ -171,26 +188,95 @@ public class MasterPassphraseChanger {
     }
 
     private void runKmpSubcommand(String subcommand) throws Exception {
-        if ("generateAll".equals(subcommand)) {
+        if (SC_KMP_GENERATE_ALL.equals(subcommand)) {
             runKmpGenerateAll();
-        } else if ("migrateFromOmpToKmp".equals(subcommand)) {
-            runKmpMigrateFromOmpToKmp();
-        } else if ("migrateFromKmpToOmp".equals(subcommand)) {
+        } else if (SC_KMP_MIGRATE_FROM_KMP_TO_OMP.equals(subcommand)) {
             runKmpMigrateFromKmpToOmp();
+        } else if (SC_KMP_LIST_KEYSTORE_CONTENTS.equals(subcommand)) {
+            runKmpListKeystoreContents();
         } else {
             usage("Unknown kmp subcommand: " + subcommand);
         }
     }
 
+    private void runKmpListKeystoreContents() throws Exception {
+        final File configDirectory = new File(configurationDirPath);
+        final KeyStore ks;
+
+        LinkedList<String> args = new LinkedList<String>(arguments);
+        if (args.size() > 0) {
+            String s = args.removeFirst();
+            if (!ARG_SC_KMP_LIST_NOFILE.equals(s))
+                usage("Use argument \"" + ARG_SC_KMP_LIST_NOFILE + "\" to specify kmp properties on command line");
+
+            Properties props = new Properties();
+            for (String arg : args) {
+                String[] keyval = arg.split("\\s*=\\s*");
+                if (2 != keyval.length)
+                    usage("invalid kmp property format; should be propname=propvalue: " + arg);
+                String key = keyval[0];
+                String val = keyval[1];
+                props.setProperty(key, val);
+            }
+            ks = new KeyStorePrivateKeyMasterPasswordUtil(configDirectory, props).getExistingKeyStore();
+        } else {
+            ks = new KeyStorePrivateKeyMasterPasswordUtil(configDirectory).getExistingKeyStore();
+        }
+
+        Enumeration<String> aliases = ks.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = aliases.nextElement();
+            String keyLabel = ks.isKeyEntry(alias) ? "Private Key: " : "";
+            String certLabel = ks.isCertificateEntry(alias) ? "Trusted Cert: " : "";
+
+            String keyType = "<Unknown key type>";
+            String dn = "<No Certificate>";
+            Certificate cert = ks.getCertificate(alias);
+            if (cert instanceof X509Certificate) {
+                X509Certificate x509 = (X509Certificate) cert;
+                dn = x509.getSubjectDN().getName();
+
+                PublicKey publicKey = x509.getPublicKey();
+                if (publicKey instanceof RSAPublicKey) {
+                    RSAPublicKey key = (RSAPublicKey) publicKey;
+                    int bits = CertUtils.getRsaKeyBits(key);
+                    keyType = bits + " bit RSA";
+                }
+            }
+
+            out.println(keyLabel + certLabel + alias + ", " + keyType + ", " + dn);
+        }
+    }
+
     private void runKmpGenerateAll() throws IOException, GeneralSecurityException, SAXException {
-        File configDirectory = new File(configurationDirPath);
-        File ompFile = new File(configDirectory, "omp.dat" );
+        final String needProfileMsg = "An additional non-empty argument for config profile name is required with " + COMMAND_KMP + " " + SC_KMP_GENERATE_ALL + " (eg, ncipher.sworld.rsa)";
+        if (arguments.isEmpty())
+            usage(needProfileMsg);
+        String configProfileName = arguments.get(0);
+        if (configProfileName == null || configProfileName.trim().length() < 1)
+            usage(needProfileMsg);
+
+        final File configDirectory = new File(configurationDirPath);
+        final File ompFile = new File(configDirectory, "omp.dat" );
+        final File kmpFile = KeyStorePrivateKeyMasterPasswordUtil.findPropertiesFile(ompFile);
 
         // Decryptor to decrypt passwords encrypted with old obfuscated master passphrase
         final MasterPasswordManager decryptor = ompFile.exists() && ompFile.length() > 0 ? new MasterPasswordManager(new ObfuscatedFileMasterPasswordFinder(ompFile)) : null;
 
-        new KeyStorePrivateKeyMasterPasswordUtil(configDirectory).generateNewMasterPassword();
-        File kmpFile = KeyStorePrivateKeyMasterPasswordUtil.findPropertiesFile(ompFile);
+        boolean baseOnExistingKmp = ARG_SC_KMP_GEN_BASE_ON_EXISTING_KMP.equals(configProfileName);
+        boolean haveKmp = kmpFile.exists();
+        if (baseOnExistingKmp) {
+            if (!haveKmp)
+                throw new FileNotFoundException("No existing config file to use: " + kmpFile);
+            new KeyStorePrivateKeyMasterPasswordUtil(configDirectory).generateNewMasterPassword();
+        } else {
+            if (haveKmp)
+                usage("Config file already exists.  Use " + ARG_SC_KMP_GEN_BASE_ON_EXISTING_KMP + " argument to base the new config on it: " + kmpFile);
+            Properties properties = new Properties();
+            properties.setProperty(KeyStorePrivateKeyMasterPasswordUtil.PROP_PROFILE, configProfileName);
+            new KeyStorePrivateKeyMasterPasswordUtil(configDirectory, properties).generateNewMasterPassword();
+        }
+
 
         // Encryptor to re-encrypt passwords with new keystore-protected master passphrase
         final MasterPasswordManager encryptor = new MasterPasswordManager(new KeyStorePrivateKeyMasterPasswordFinder(kmpFile));
@@ -201,33 +287,6 @@ public class MasterPassphraseChanger {
 
         if (ompFile.exists())
             FileUtils.save(new byte[0], ompFile); // Truncate omp but leave in place for compatibility
-
-        deleteLockFiles(ompFile, kmpFile);
-    }
-
-    private void runKmpMigrateFromOmpToKmp() throws Exception {
-        // TODO remove this if we turn out not to need it
-        File configDirectory = new File(configurationDirPath);
-        File ompFile = new File( configDirectory, "omp.dat" );
-        if (ompFile.exists() && ompFile.length() > 0) {
-            // Require current contents of omp.dat to be enered in order to do migration
-            requirePromptForExistingOmp(ompFile);
-        }
-        File kmpFile = KeyStorePrivateKeyMasterPasswordUtil.findPropertiesFile(ompFile);
-
-        // Decryptor for existing passwords
-        final MasterPasswordManager decryptor = ompFile.exists() && ompFile.length() > 0 ? new MasterPasswordManager(new ObfuscatedFileMasterPasswordFinder(ompFile)) : null;
-
-        // Create/edit kmp.properties
-        final KeyStorePrivateKeyMasterPasswordUtil kmpUtil = new KeyStorePrivateKeyMasterPasswordUtil(new File(configurationDirPath));
-        kmpUtil.generateNewMasterPassword();
-
-        final MasterPasswordManager encryptor = new MasterPasswordManager(new KeyStorePrivateKeyMasterPasswordFinder(ompFile));
-
-        PasswordPropertyCrypto passwordCrypto = new PasswordPropertyCrypto(encryptor, decryptor);
-        passwordCrypto.setPasswordProperties( passwordProperties );
-
-        findPropertiesFilesAndReencryptPasswords(configDirectory, passwordCrypto);
 
         deleteLockFiles(ompFile, kmpFile);
     }
@@ -244,9 +303,7 @@ public class MasterPassphraseChanger {
 
         // Clean up
         deleteLockFiles(ompFile, kmpFile);
-
-        // we'll back up the kmp file, in case the admin needs to recover something by hand someday
-        kmpFile.renameTo(new File(kmpFile.getParent(), kmpFile.getName() + "-" + System.currentTimeMillis()));
+        kmpFile.delete();
     }
 
     private void deleteLockFiles(File... files) {

@@ -66,7 +66,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         this.transactionManager = transactionManager;
     }
 
-    public SsgKeyEntry getSslInfo() throws IOException {
+    private SsgKeyEntry getOrCreateSslInfo() throws IOException {
         try {
             return getCachedEntry(cachedSslInfo, SC_PROP_SSL_KEY, true);
         } catch (ObjectNotFoundException e) {
@@ -106,6 +106,20 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
                     return entry;
                 }
             }
+        }
+    }
+
+    public SsgKeyEntry getSslInfo() throws IOException {
+        // TODO grody work-around to help diagnostics -- we will redundantly log + throw failures for now, until we figure out how to stop Spring from
+        // too-readily overwriting the original failure cause with subsequent incidental stuff (like "rollback-only" errors)
+        try {
+            return getOrCreateSslInfo();
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Unable to prepare default SSL key: " + ExceptionUtils.getMessage(e), e);
+            throw e;
+        } catch (RuntimeException e) {
+            logger.log(Level.SEVERE, "Unable to prepare default SSL key: " + ExceptionUtils.getMessage(e), e);
+            throw e;
         }
     }
 

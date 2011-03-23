@@ -151,16 +151,17 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
                 final Object[] out = new Object[] { null };
                 try {
                     synchronized (DatabasePkcs12SsgKeyStore.this) {
-                        KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
-                            public byte[] call(byte[] bytes) {
+                        KeystoreFile updated = kem.mutateKeystoreFile(getOid(), new Functions.UnaryVoid<KeystoreFile>() {
+                            @Override
+                            public void call(KeystoreFile keystoreFile) {
                                 try {
                                     if (transactionCallback != null)
                                         transactionCallback.run();
 
-                                    cachedKeystore = bytesToKeyStore(bytes);
+                                    cachedKeystore = bytesToKeyStore(keystoreFile.getDatabytes());
                                     lastLoaded = System.currentTimeMillis();
                                     out[0] = mutator.call();
-                                    return keyStoreToBytes(cachedKeystore);
+                                    keystoreFile.setDatabytes(keyStoreToBytes(cachedKeystore));
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }

@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
-import java.util.Properties;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -19,6 +19,8 @@ public class MasterPassphraseChangerTest {
     final File ompFile = new File(configDir, "omp.dat");
     final File kmpFile = new File(configDir, "kmp.properties");
     final File propFile = new File(configDir, "blah.properties");
+
+    static final List<String> MERGE = Arrays.asList(MasterPassphraseChanger.ARG_SC_KMP_GEN_BASE_ON_EXISTING_KMP);
 
     @Before
     public void createTestDirectory() throws Exception {
@@ -61,7 +63,7 @@ public class MasterPassphraseChangerTest {
 
 
         // Run kmp populator
-        new MasterPassphraseChanger(configDir.getAbsolutePath(), MasterPassphraseChanger.PASSWORD_PROPERTIES, "kmp", "generateAll").run();
+        new MasterPassphraseChanger(configDir.getAbsolutePath(), MasterPassphraseChanger.PASSWORD_PROPERTIES, "kmp", "generateAll", MERGE).run();
 
         assertTrue("A kmp file should exist", kmpFile.exists());
         assertEquals("Omp file that already existed shall have been truncated", 0L, ompFile.length());
@@ -91,7 +93,7 @@ public class MasterPassphraseChangerTest {
                 "keystore.entry.password=keypass123\n");
 
         // Run kmp populator
-        new MasterPassphraseChanger(configDir.getAbsolutePath(), MasterPassphraseChanger.PASSWORD_PROPERTIES, "kmp", "generateAll").run();
+        new MasterPassphraseChanger(configDir.getAbsolutePath(), MasterPassphraseChanger.PASSWORD_PROPERTIES, "kmp", "generateAll", MERGE).run();
 
         assertTrue("A kmp file should exist", kmpFile.exists());
         assertTrue("No omp file should exist", !ompFile.exists());
@@ -113,7 +115,7 @@ public class MasterPassphraseChangerTest {
 
     @Test(expected = FileNotFoundException.class)
     public void testGenerateNewKmp_noKmpFile() throws Exception {
-        new MasterPassphraseChanger(configDir.getAbsolutePath(), MasterPassphraseChanger.PASSWORD_PROPERTIES, "kmp", "generateAll").run();
+        new MasterPassphraseChanger(configDir.getAbsolutePath(), MasterPassphraseChanger.PASSWORD_PROPERTIES, "kmp", "generateAll", MERGE).run();
     }
 
     @Test
@@ -122,7 +124,7 @@ public class MasterPassphraseChangerTest {
         testGenerateNewKmp_withPreviousOmp();
 
         // Now test migrating back to OMP
-        new MasterPassphraseChanger(configDir.getAbsolutePath(), MasterPassphraseChanger.PASSWORD_PROPERTIES, "kmp", "migrateFromKmpToOmp").run();
+        new MasterPassphraseChanger(configDir.getAbsolutePath(), MasterPassphraseChanger.PASSWORD_PROPERTIES, "kmp", "migrateFromKmpToOmp", MERGE).run();
 
         assertTrue("No kmp file should exist", !kmpFile.exists());
         assertTrue("An omp file should exist", ompFile.exists());
@@ -136,6 +138,47 @@ public class MasterPassphraseChangerTest {
         // Check that encrypted password can still be decrypted with obfuscated master passphrase
         final MasterPasswordManager mpm = new MasterPasswordManager(new ObfuscatedFileMasterPasswordFinder(ompFile));
         assertEquals("Encrypted password can still be decrypted successfully using obfuscated master passphrase", "SuperSeeekrit", new String(mpm.decryptPassword(passval)));
+    }
+
+    @Test
+    public void testListKeystoreContents() throws Exception {
+        // Generate new KMP
+        testGenerateNewKmp_withPreviousOmp();
+
+        // Now test listing keystore contents
+        ByteArrayOutputStream listout = new ByteArrayOutputStream();
+        MasterPassphraseChanger mpc = new MasterPassphraseChanger(configDir.getAbsolutePath(), MasterPassphraseChanger.PASSWORD_PROPERTIES, "kmp", "listKeystoreContents", null);
+        mpc.out = new PrintStream(listout);
+        mpc.run();
+
+        String got = listout.toString();
+        assertEquals("Private Key: masterkey, 2048 bit RSA, CN=masterkey", got.trim());
+
+    }
+
+    @Test
+    public void testListKeystoreContentes_propsOnCommandLine() throws Exception {
+        testListKeystoreContents();
+
+        // Delete KMP file and ensure it still works when properties are passed on command line
+        Properties props = props(kmpFile);
+        assertTrue(kmpFile.delete());
+        assertTrue(!kmpFile.exists());
+
+        LinkedList<String> args = new LinkedList<String>();
+        args.addLast("ignoreKmpFile");
+        for (Map.Entry<Object, Object> entry : props.entrySet()) {
+            args.addLast(entry.getKey() + "=" + entry.getValue());
+        }
+
+        ByteArrayOutputStream listout = new ByteArrayOutputStream();
+        MasterPassphraseChanger mpc = new MasterPassphraseChanger(configDir.getAbsolutePath(), MasterPassphraseChanger.PASSWORD_PROPERTIES, "kmp", "listKeystoreContents", args);
+        mpc.out = new PrintStream(listout);
+        mpc.run();
+
+        String got = listout.toString();
+        assertEquals("Private Key: masterkey, 2048 bit RSA, CN=masterkey", got.trim());
+
     }
 
     private static void setFileContents(File file, String contents) throws IOException {

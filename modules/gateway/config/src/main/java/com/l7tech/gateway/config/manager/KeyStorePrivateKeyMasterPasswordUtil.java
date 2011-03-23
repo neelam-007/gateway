@@ -53,8 +53,7 @@ public class KeyStorePrivateKeyMasterPasswordUtil extends KeyStorePrivateKeyMast
      * @throws Exception if an error occurs while generating and saving the new master password.
      */
     public void generateNewMasterPassword() throws GeneralSecurityException, IOException {
-        maybeSetSystemProperties();
-        maybeInstallProviders();
+        init();
 
         final PublicKey publicKey = findOrCreatePublicKey();
 
@@ -79,6 +78,11 @@ public class KeyStorePrivateKeyMasterPasswordUtil extends KeyStorePrivateKeyMast
         origProperties.setProperty(PROP_MASTER_PASSPHRASE_CIPHERTEXT_BASE64, masterPasswordCiphertextBase64);
 
         saveProperties();
+    }
+
+    void init() throws GeneralSecurityException {
+        maybeSetSystemProperties();
+        maybeInstallProviders();
     }
 
     /**
@@ -189,6 +193,11 @@ public class KeyStorePrivateKeyMasterPasswordUtil extends KeyStorePrivateKeyMast
 
         keyStore.setKeyEntry(alias, keyPair.getPrivate(), entryPass, new X509Certificate[] { cert });
         return keyPair.getPublic();
+    }
+
+    public KeyStore getExistingKeyStore() throws Exception {
+        init();
+        return tryLoadExistingKeyStore();
     }
 
     private boolean isValidPrivateKeyEntry(KeyStore keyStore, String alias, final char[] entryPassword) {

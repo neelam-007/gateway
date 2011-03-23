@@ -9,18 +9,19 @@ import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.KeystoreFileManager;
-import static com.l7tech.server.security.keystore.SsgKeyFinder.SsgKeyStoreType.PKCS11_HARDWARE;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
+import java.io.ByteArrayInputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.ByteArrayInputStream;
+
+import static com.l7tech.server.security.keystore.SsgKeyFinder.SsgKeyStoreType.PKCS11_HARDWARE;
 
 /**
  * SsgKeyStore view of this node's local SCA 6000 board.
@@ -174,16 +175,16 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
                 final Object[] out = new Object[] { null };
                 try {
                     synchronized (ScaSsgKeyStore.this) {
-                        KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
+                        KeystoreFile updated = kem.mutateKeystoreFile(getOid(), new Functions.UnaryVoid<KeystoreFile>() {
                             @Override
-                            public byte[] call(byte[] bytes) {
+                            public void call(KeystoreFile keystoreFile) {
                                 if (transactionCallback != null)
                                     transactionCallback.run();
                                 try {
-                                    keystore = bytesToKeyStore(bytes);
+                                    keystore = bytesToKeyStore(keystoreFile.getDatabytes());
                                     lastLoaded = System.currentTimeMillis();
                                     out[0] = mutator.call();
-                                    return keyStoreToBytes();
+                                    keystoreFile.setDatabytes(keyStoreToBytes());
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }

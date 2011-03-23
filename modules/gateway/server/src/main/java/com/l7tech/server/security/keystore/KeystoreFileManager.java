@@ -10,12 +10,12 @@ import com.l7tech.util.Functions;
  */
 public interface KeystoreFileManager extends EntityManager<KeystoreFile, EntityHeader> {
     /**
-     * Atomically update the data bytes for the specific keystore file.
-     * The most up-to-date data will be fetched, mutated per the caller's mutator, and then saved back,
+     * Atomically update the specified KeystoreFile entity in the database.
+     * The most up-to-date entity will be fetched, mutated per the caller's mutator, and then saved back,
      * all within a single transaction.
      *
-     * @param id  the ID of the keystore whose data bytes are to be updated.  Required.
-     * @param mutator  code that will be given the latest, up-to-date data bytes for this keystore, and
+     * @param id  the ID of the keystore whose KeystoreFile is to be updated.  Required.
+     * @param mutator  code that will be given the latest, up-to-date KeystoreFile instance,
      *                 is expected to produce a mutated version containing the intended new data.
      *                 <p/>
      *                 Mutator may throw RuntimeException to roll back the transaction; this will be
@@ -24,6 +24,7 @@ public interface KeystoreFileManager extends EntityManager<KeystoreFile, EntityH
      * @throws UpdateException if the update could not be performed due to DB connectivity or the mutator throwing
      *                         a RuntimeException.
      */
-    KeystoreFile updateDataBytes(long id, Functions.Unary<byte[], byte[]> mutator) throws UpdateException;
+    KeystoreFile mutateKeystoreFile(final long id, final Functions.UnaryVoid<KeystoreFile> mutator) throws UpdateException;
+
     void initializeHsmKeystorePasswordFromFile() throws UpdateException;
 }
