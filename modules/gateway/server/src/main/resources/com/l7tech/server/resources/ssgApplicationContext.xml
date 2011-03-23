@@ -996,7 +996,7 @@
     </bean>
 
     <!-- Checking Audit Sink Options-->
-    <bean id="auditSinkEvaluator" class="com.l7tech.server.audit.AuditSinkEvaluator" init-method="init">
+    <bean id="auditSinkPropertiesChecker" class="com.l7tech.server.audit.AuditSinkPropertiesChecker">
         <constructor-arg ref="serverConfig"/>
     </bean>
 

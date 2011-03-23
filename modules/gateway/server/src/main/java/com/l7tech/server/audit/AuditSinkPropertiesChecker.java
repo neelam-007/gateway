@@ -6,10 +6,13 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.admin.AdminEvent;
+import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.SystemEvent;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -17,13 +20,16 @@ import java.util.List;
 import java.util.logging.Level;
 
 /**
+ * Check the status of Audit Sink Properties such as  "audit.sink.alwaysSaveInternal" and "audit.sink.policy.guid", and "audit.sink.fallbackToInternal",
+ * and audit their status, when the gateway starts and the audit sink systems is enabled back from disabled.
+ *
  * @author ghuang
  */
-public class AuditSinkEvaluator implements ApplicationContextAware {
+public class AuditSinkPropertiesChecker implements ApplicationContextAware, ApplicationListener {
     private ApplicationContext applicationContext;
     private ServerConfig serverConfig;
 
-    public AuditSinkEvaluator(ServerConfig serverConfig) {
+    public AuditSinkPropertiesChecker(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
     }
 
@@ -32,10 +38,17 @@ public class AuditSinkEvaluator implements ApplicationContextAware {
         this.applicationContext = applicationContext;
     }
 
-    public void init() {
+    @Override
+    public void onApplicationEvent(ApplicationEvent applicationEvent) {
+        if (applicationEvent instanceof ReadyForMessages) {
+            checkInitialStatus();
+        }
+    }
+
+    private void checkInitialStatus() {
         if (isInternalAuditSystemEnabled(true)) {
             applicationContext.publishEvent(
-                new SystemEvent(AuditSinkEvaluator.this,
+                new SystemEvent(AuditSinkPropertiesChecker.this,
                     Component.GW_AUDIT_SINK_CONFIG,
                     null,
                     SystemMessages.AUDIT_SINK_START.getLevel(),
@@ -43,7 +56,7 @@ public class AuditSinkEvaluator implements ApplicationContextAware {
 
                     @Override
                     public String getAction() {
-                        return "Audit Sink Evaluation";
+                        return "Audit Sink Properties Evaluation";
                     }
                 }
             );
@@ -51,7 +64,7 @@ public class AuditSinkEvaluator implements ApplicationContextAware {
 
         if (isAuditSinkPolicyEnabled()) {
             applicationContext.publishEvent(
-                new SystemEvent(AuditSinkEvaluator.this,
+                new SystemEvent(AuditSinkPropertiesChecker.this,
                     Component.GW_AUDIT_SINK_CONFIG,
                     null,
                     SystemMessages.AUDIT_SINK_START.getLevel(),
@@ -59,7 +72,7 @@ public class AuditSinkEvaluator implements ApplicationContextAware {
 
                     @Override
                     public String getAction() {
-                        return "Audit Sink Evaluation";
+                        return "Audit Sink Properties Evaluation";
                     }
                 }
             );
@@ -92,13 +105,14 @@ public class AuditSinkEvaluator implements ApplicationContextAware {
      * @param clusterProperty: The cluster property to be checked and its status will be audited.
      * @param prevPropStatus: The status of the properties before deleted/updated/created.
      * @param toBeDeleted: A flag to indicate that the cluster property is to be deleted.  If it is false, then it means it is to updated/created.
+     * @return a list of audited messages.  This is only for testing purpose (Please see @link AuditSinkPropertiesCheckerTest})
      */
-    public void checkAndAuditPropsStatus(final ClusterProperty clusterProperty, final boolean[] prevPropStatus, boolean toBeDeleted) {
+    public List<String> checkAndAuditPropsStatus(final ClusterProperty clusterProperty, final boolean[] prevPropStatus, boolean toBeDeleted) {
         final List<String> auditMessages = new ArrayList<String>();
 
         if (ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK.equals(clusterProperty.getName())) {
             // If the internal audit prop is deleted, auditing the status of Internal Audit System will be handled together with the deletion of Audit Sink Policy.
-            if (toBeDeleted) return;
+            if (toBeDeleted) return auditMessages;
 
             // If not deleted, the status of internal audit system should be verified by combining the status of audit sink policy.
             // For example, suppose that the database has not set the both audit sink properties.  If the internal audit prop is set as false
@@ -119,7 +133,7 @@ public class AuditSinkEvaluator implements ApplicationContextAware {
                     auditMessages.add(MessageFormat.format(SystemMessages.AUDIT_SINK_START.getMessage(), "Internal Audit System"));
                 }
 
-                // Since the audit sink policy prop is deleted, the audit sink policy must be disabled, so currInternalAuditStatus is set to false.
+                // Since the audit sink policy prop is deleted, the audit sink policy must be disabled, so currAuditPolicyStatus is set to false.
                 final boolean currAuditPolicyStatus = false;
                 final boolean prevAuditPolicyStatus = prevPropStatus[0];
                 if (currAuditPolicyStatus != prevAuditPolicyStatus) {
@@ -161,5 +175,7 @@ public class AuditSinkEvaluator implements ApplicationContextAware {
                 });
             }
         }
+
+        return auditMessages;
     }
 }

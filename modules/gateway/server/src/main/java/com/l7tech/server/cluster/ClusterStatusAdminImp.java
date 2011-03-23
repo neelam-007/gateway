@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.*;
-import com.l7tech.server.audit.AuditSinkEvaluator;
+import com.l7tech.server.audit.AuditSinkPropertiesChecker;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.PersistenceEvent;
@@ -66,7 +66,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
                                  TrustedEsmManager trustedEsmManager,
                                  TrustedEsmUserManager trustedEsmUserManager,
                                  RbacServices rbacServices,
-                                 AuditSinkEvaluator auditSinkEvaluator,
+                                 AuditSinkPropertiesChecker auditSinkPropertiesChecker,
                                  PlatformTransactionManager transactionManager)
     {
         this.clusterInfoManager = clusterInfoManager;
@@ -80,7 +80,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         this.trustedEsmManager = trustedEsmManager;
         this.trustedEsmUserManager = trustedEsmUserManager;
         this.rbacServices = rbacServices;
-        this.auditSinkEvaluator = auditSinkEvaluator;
+        this.auditSinkPropertiesChecker = auditSinkPropertiesChecker;
         this.transactionManager = transactionManager;
 
         if (clusterInfoManager == null)
@@ -482,16 +482,16 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
             @Override
             public void beforeCommit(boolean readOnly) {
                 if (ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK.equals(clusterProperty.getName())) {
-                    prevPropStatus[0] = auditSinkEvaluator.isInternalAuditSystemEnabled(true);
+                    prevPropStatus[0] = auditSinkPropertiesChecker.isInternalAuditSystemEnabled(true);
                 } else if (ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID.equals(clusterProperty.getName())) {
-                    prevPropStatus[0] = auditSinkEvaluator.isAuditSinkPolicyEnabled();
+                    prevPropStatus[0] = auditSinkPropertiesChecker.isAuditSinkPolicyEnabled();
 
                     // Also preserve the status of Internal Audit System
                     if (toBeDeleted) {
-                        prevPropStatus[1] = auditSinkEvaluator.isInternalAuditSystemEnabled(true);
+                        prevPropStatus[1] = auditSinkPropertiesChecker.isInternalAuditSystemEnabled(true);
                     }
                 } else if (ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL.equals(clusterProperty.getName())) {
-                    prevPropStatus[0] = auditSinkEvaluator.isFallbackToDatabaseIfSinkPolicyFails();
+                    prevPropStatus[0] = auditSinkPropertiesChecker.isFallbackToDatabaseIfSinkPolicyFails();
                 }
             }
 
@@ -510,7 +510,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
                     template.execute(new TransactionCallbackWithoutResult() {
                         @Override
                         protected void doInTransactionWithoutResult(TransactionStatus status) {
-                            auditSinkEvaluator.checkAndAuditPropsStatus(clusterProperty, prevPropStatus, toBeDeleted);
+                            auditSinkPropertiesChecker.checkAndAuditPropsStatus(clusterProperty, prevPropStatus, toBeDeleted);
                         }
                     });
                 }
@@ -530,7 +530,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     private final TrustedEsmManager trustedEsmManager;
     private final TrustedEsmUserManager trustedEsmUserManager;
     private final RbacServices rbacServices;
-    private final AuditSinkEvaluator auditSinkEvaluator;
+    private final AuditSinkPropertiesChecker auditSinkPropertiesChecker;
     private final PlatformTransactionManager transactionManager;
 
     private final Logger logger = Logger.getLogger(getClass().getName());

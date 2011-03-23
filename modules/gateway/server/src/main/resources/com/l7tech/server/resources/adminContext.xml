@@ -342,7 +342,7 @@
         <constructor-arg ref="trustedEsmManager"/>
         <constructor-arg ref="trustedEsmUserManager"/>
         <constructor-arg ref="rbacServices"/>
-        <constructor-arg ref="auditSinkEvaluator"/>
+        <constructor-arg ref="auditSinkPropertiesChecker"/>
         <constructor-arg ref="transactionManager"/>
     </bean>
 
