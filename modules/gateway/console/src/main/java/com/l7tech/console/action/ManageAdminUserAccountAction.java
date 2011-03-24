@@ -2,10 +2,15 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.AdminUserAccountPropertiesDialog;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
+
+import javax.swing.*;
+import java.util.EnumSet;
 
 /**
 * @author: wlui
@@ -42,25 +47,14 @@ public class ManageAdminUserAccountAction extends SecureAction {
     public boolean isAuthorized() {
         if(!super.isAuthorized()) return false;
 
-        // check permission for accessing the cluster properties associated with the configurations
-        // test for permission to get "logon.maxAllowableAttempts"
-        
-        for (Permission perm : getSecurityProvider().getUserPermissions()) {
-            if (perm.getOperation() == OperationType.READ) {
-                EntityType etype = perm.getEntityType();
-                if (etype == EntityType.ANY)
-                    return true;
-                if( etype == EntityType.CLUSTER_PROPERTY){
-                    if(perm.getScope().isEmpty()) return true;
-                    for (ScopePredicate predicate : perm.getScope()) {
-                        if(predicate instanceof AttributePredicate){
-                            if(((AttributePredicate)predicate).getValue().equals("logon.maxAllowableAttempts"))
-                                return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
+        AttemptedOperation op = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.maxAllowableAttempts",""));
+        AttemptedOperation op1 = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.lockoutTime",""));
+        AttemptedOperation op2 = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.sessionExpiry",""));
+        AttemptedOperation op3 = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.inactivityPeriod",""));
+        boolean can = canAttemptOperation(op);
+        can = can && canAttemptOperation(op1);
+        can = can && canAttemptOperation(op2);
+        can = can && canAttemptOperation(op3);
+        return can;
     }
 }
