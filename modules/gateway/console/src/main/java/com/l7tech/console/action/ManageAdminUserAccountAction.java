@@ -2,7 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.AdminUserAccountPropertiesDialog;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.security.rbac.AttemptedAnyOperation;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
@@ -40,6 +40,27 @@ public class ManageAdminUserAccountAction extends SecureAction {
 
     @Override
     public boolean isAuthorized() {
-        return super.isAuthorized();
+        if(!super.isAuthorized()) return false;
+
+        // check permission for accessing the cluster properties associated with the configurations
+        // test for permission to get "logon.maxAllowableAttempts"
+        
+        for (Permission perm : getSecurityProvider().getUserPermissions()) {
+            if (perm.getOperation() == OperationType.READ) {
+                EntityType etype = perm.getEntityType();
+                if (etype == EntityType.ANY)
+                    return true;
+                if( etype == EntityType.CLUSTER_PROPERTY){
+                    if(perm.getScope().isEmpty()) return true;
+                    for (ScopePredicate predicate : perm.getScope()) {
+                        if(predicate instanceof AttributePredicate){
+                            if(((AttributePredicate)predicate).getValue().equals("logon.maxAllowableAttempts"))
+                                return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
