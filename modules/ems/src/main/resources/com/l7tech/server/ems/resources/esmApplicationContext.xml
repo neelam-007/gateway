@@ -387,6 +387,7 @@
     <bean id="passwordEnforcerManager" class="com.l7tech.server.security.PasswordEnforcerManager">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="passwordPolicyManger"/>
+        <constructor-arg ref="roleManager"/>
     </bean>
 
     <bean id="passwordPolicyManger" class="com.l7tech.server.identity.IdentityProviderPasswordPolicyManagerImpl" parent="hibernateBean"/>

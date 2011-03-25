@@ -2,6 +2,7 @@ package com.l7tech.server.security;
 
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderPasswordPolicy;
 import com.l7tech.identity.IdentityProviderPasswordPolicyManager;
@@ -13,6 +14,7 @@ import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.admin.AdminEvent;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -21,10 +23,7 @@ import org.springframework.context.ApplicationContextAware;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.MessageFormat;
-import java.util.Calendar;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,12 +41,16 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
     private IdentityProviderPasswordPolicyManager passwordPolicyManager;
     private ServerConfig serverConfig;
     private ApplicationContext applicationContext;
+    private RoleManager roleManager;
+
     private Audit auditor;
    
     public PasswordEnforcerManager(ServerConfig serverConfig,
-                                   IdentityProviderPasswordPolicyManager passwordPolicyManager) {
+                                   IdentityProviderPasswordPolicyManager passwordPolicyManager,
+                                   RoleManager roleManager) {
         this.passwordPolicyManager = passwordPolicyManager;
         this.serverConfig = serverConfig;
+        this.roleManager = roleManager;
     }
 
     @Override
@@ -321,7 +324,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
         if ( user instanceof InternalUser ){
             InternalUser internalUser = (InternalUser) user;
 
-            if (internalUser.isChangePassword()) return;
+            if (hasAdminRole(internalUser) || internalUser.isChangePassword()) return;
 
             List<PasswordChangeRecord> changeHistory = internalUser.getPasswordChangesHistory();
             if (changeHistory != null) {
@@ -331,7 +334,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
 
                     if (lastChange.after(xDaysAgo)) {
                         long nextChangeMinutes = 24 * 60 - (now - lastChangedMillis) / (1000 * 60);
-                        throw new InvalidPasswordException(MessageFormat.format("Password cannot be changed more than once every 24 hours. Please retry in {1} minutes",
+                        throw new InvalidPasswordException(MessageFormat.format("Password cannot be changed more than once every 24 hours. Please retry in {0} minutes",
                                 (nextChangeMinutes >= 60 ? nextChangeMinutes / 60 + " hours and " : "") + nextChangeMinutes % 60 ),policy.getDescription()) ;
                     }
                 }
@@ -346,6 +349,26 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
             // force password change
             boolean force = policy.getBooleanProperty(IdentityProviderPasswordPolicy.FORCE_PWD_CHANGE);
             user.setChangePassword(force);
+        }
+    }
+          /**
+     * Determines if the user has administrative roles.
+     *
+     * @return  TRUE if has admin role, otherwise FALSE
+     */
+    public boolean hasAdminRole(InternalUser internalUser) {
+        try {
+            Collection<Role> roles = roleManager.getAssignedRoles(internalUser);
+
+            if (roles == null) return false;
+            for (Role role : roles) {
+                if (role.getTag() == Role.Tag.ADMIN) {
+                    return true;
+                }
+            }
+            return false;
+        } catch(FindException e) {
+            return false;
         }
     }
 
