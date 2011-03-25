@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion.credential.wss;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.wsp.WspSensitive;
 
 /**
  * WSS Digest authentication.
@@ -27,6 +28,7 @@ public class WssDigest extends WssCredentialSourceAssertion {
         this.requireTimestamp = requireTimestamp;
     }
 
+    @WspSensitive
     public String getRequiredPassword() {
         return requiredPassword;
     }

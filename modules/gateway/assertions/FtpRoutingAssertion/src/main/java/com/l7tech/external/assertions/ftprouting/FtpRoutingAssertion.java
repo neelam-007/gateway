@@ -15,6 +15,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspEnumTypeMapping;
+import com.l7tech.policy.wsp.WspSensitive;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -166,6 +167,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         _hostName = hostName;
     }
 
+    @WspSensitive
     public String getPassword() {
         return _password;
     }

@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.wsp.WspSensitive;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,6 +75,7 @@ public class AddWssUsernameToken extends MessageTargetableAssertion implements S
         this.username = username;
     }
 
+    @WspSensitive
     public String getPassword() {
         return password;
     }

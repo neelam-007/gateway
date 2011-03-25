@@ -15,6 +15,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.WspSensitive;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -358,6 +359,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.login = login;
     }
 
+    @WspSensitive
     public String getPassword() {
         return password;
     }
@@ -564,6 +566,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.krbDelegatedAuthentication = krbDelegatedAuthentication;
     }
 
+    @WspSensitive
     public String getKrbConfiguredPassword() {
         return krbConfiguredPassword;
     }
@@ -626,6 +629,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.proxyUsername = proxyUsername;
     }
 
+    @WspSensitive
     public String getProxyPassword() {
         return proxyPassword;
     }
