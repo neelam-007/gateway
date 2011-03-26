@@ -119,7 +119,7 @@ public abstract class Syntax {
      * There is no special behaviour for variables referenced which use selectors
      *
      * @param s String to find out what variables are referenced using our syntax of ${}. Must not be null.
-     * @return all the variable names which are contained within our variable reference syntax of ${...} in String s
+     * @return all the variable names which are contained within our variable reference syntax of ${...} in String s.  May be empty but never null.
      * @throws IllegalArgumentException if the given string is null
      * @throws VariableNameSyntaxException If an error occurs
      */

@@ -8,6 +8,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -182,5 +183,23 @@ public class WspWriter {
 
     public void setTargetVersion(String targetVersion) {
         this.targetVersion = targetVersion;
+    }
+
+    /**
+     * Invoked by BeanTypeMapping to freeze each bean property, once the property has been located.
+     * Subclasses can override this to hook in to monitor (or alter) the behavior recursively as each
+     * nested bean field is serialized.
+     * <p/>
+     * This method just calls the {@link TypeMapping#freeze} method on the specifeid type mapping, passing
+     * this WspWriter instance, the specified typed reference, and the specified container element.
+     *
+     * @param tm the already-looked-up TypeMapping.
+     * @param tr the typed reference pointing at the property value.
+     * @param element the container element to which the field XML should be added.
+     * @param getter the get method of the property in question, that was already invoked to look up the typed referene, in case a subclass wishes to examine it for annotations.
+     * @param targetObject the object instance whose field is being serialized.  (The getter has already been invoked on this instance to prepare the typted reference).
+     */
+    protected void freezeBeanProperty(TypeMapping tm, TypedReference tr, Element element, Method getter, Object targetObject) {
+        tm.freeze(this, tr, element);
     }
 }

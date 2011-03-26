@@ -474,6 +474,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         if (!StringUtils.isEmpty(realm)) tmp.append(realm);
         if (!StringUtils.isEmpty(krbConfiguredAccount)) tmp.append(krbConfiguredAccount);
         if (!StringUtils.isEmpty(krbConfiguredPassword)) tmp.append(krbConfiguredPassword);
+        if (!StringUtils.isEmpty(proxyPassword)) tmp.append(proxyPassword);
         if (customURLs != null) tmp.append(Arrays.toString(customURLs));
         if (customIpAddresses != null) tmp.append(Arrays.toString(customIpAddresses));
 

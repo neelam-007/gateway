@@ -189,7 +189,7 @@ public class BeanTypeMapping extends ComplexTypeMapping {
             }
 
             TypedReference tr = new TypedReference(returnType, value, parm);
-            tm.freeze(wspWriter, tr, element);
+            wspWriter.freezeBeanProperty(tm, tr, element, getter, bean);
         }
     }
 

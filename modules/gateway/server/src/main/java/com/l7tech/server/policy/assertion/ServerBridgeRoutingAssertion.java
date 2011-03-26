@@ -20,6 +20,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
@@ -39,6 +40,7 @@ import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.util.*;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
@@ -61,10 +63,7 @@ import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -114,10 +113,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             hardcodedPolicy = getHardCodedPolicy();
 
         } catch(Exception ise) {
+            //noinspection ThrowableResultOfMethodCallIgnored
             logger.log(Level.WARNING, ise.getMessage(), ExceptionUtils.getDebugException(ise));
             ssg = null;
             messageProcessor = null;
             useClientCert = false;
+            passwordUsesVariables = false;
             return;
         }
 
@@ -125,7 +126,9 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         ssg.getRuntime().setCachedServerCert(null);
         ssg.setProperties(assertion.getClientPolicyProperties());
 
-        useClientCert = initCredentials();
+        Pair<Boolean,Boolean> credInfo = initCredentials();
+        this.useClientCert = credInfo.left;
+        this.passwordUsesVariables = credInfo.right;
 
         final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager");
         ssg.getRuntime().setTrustManager(trustManager);
@@ -169,6 +172,24 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         context.routingStarted();
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
+        Map<String, Object> vars = context.getVariableMap(varNames, auditor);
+        if (passwordUsesVariables) {
+            String expandedPass = ExpandVariables.process(assertion.getPassword(), vars, auditor);
+            final char[] password = expandedPass.toCharArray();
+            final char[] oldCachedPass;
+            final SsgRuntime ssgRuntime = ssg.getRuntime();
+            synchronized (ssg) {
+                oldCachedPass = ssgRuntime.getCachedPassword();
+                if (oldCachedPass == null) {
+                    ssgRuntime.setCachedPassword(password);
+                } else if(!Arrays.equals(oldCachedPass, password)) {
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                            "NOTE: Bridge Routing password has been changed");
+                    ssgRuntime.setCachedPassword(password);
+                }
+            }
+        }
+
         Throwable thrown = null;
         URL url = null;
         try {
@@ -198,8 +219,6 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                 try {
                     final HttpRequestKnob httpRequestKnob = requestMsg.getKnob(HttpRequestKnob.class);
-
-                    Map vars = null;
 
                     // TODO support non-SOAP messaging with SSB api
                     String soapAction = "\"\"";
@@ -375,6 +394,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     private final WspReader wspReader;
     private X509Certificate serverCert;
     private final boolean useClientCert;
+    private final boolean passwordUsesVariables;
 
     private URL getUrl() {
         try {
@@ -539,25 +559,27 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         return new SimpleHttpClient(client);
     }
 
-    private boolean initCredentials() {
+    private Pair<Boolean,Boolean> initCredentials() {
         boolean useClientCert;
+        boolean passwordUsesVariables = false;
         String username = assertion.getLogin();
-        char[] password = null;
+        String password = null;
 
         if (username != null) {
-            String pass = assertion.getPassword();
-            password = pass == null ? null : pass.toCharArray();
+            password = assertion.getPassword();
         }
 
         if (username != null && password != null && username.length() > 0) {
             ssg.setUsername(username);
-            ssg.getRuntime().setCachedPassword(password);
+            passwordUsesVariables = Syntax.getReferencedNames(password).length > 0;
+            if (!passwordUsesVariables)
+                ssg.getRuntime().setCachedPassword(password.toCharArray());
             useClientCert = false;
         } else {
             useClientCert = true;
         }
 
-        return useClientCert;
+        return new Pair<Boolean,Boolean>(useClientCert, passwordUsesVariables);
     }
 
     private URL getProtectedServiceUrl(PublishedService service) throws WSDLException, MalformedURLException {

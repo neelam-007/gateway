@@ -23,6 +23,7 @@ import com.l7tech.kerberos.KerberosClient;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.message.*;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.xml.SignerInfo;
@@ -32,6 +33,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.kerberos.KerberosRoutingClient;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
@@ -41,7 +43,9 @@ import org.xml.sax.SAXException;
 
 import javax.net.ssl.*;
 import javax.wsdl.WSDLException;
-import java.io.*;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.*;
 import java.security.PrivateKey;
 import java.security.SignatureException;
@@ -155,7 +159,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         this.senderVouchesSignerInfo = signerInfo;
         this.socketFactory = sslSocketFactory;
 
-        httpClientFactory = makeHttpClientFactory();
+        GenericHttpClientFactory httpClientFactory;
+        try {
+            httpClientFactory = makeHttpClientFactory();
+        } catch (Exception e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Could not create HTTP client factory." }, e);
+            httpClientFactory = new IdentityBindingHttpClientFactory();
+        }
+        this.httpClientFactory = httpClientFactory;
 
         StashManagerFactory smFactory;
         try {
@@ -197,18 +208,13 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         varNames = assertion.getVariablesUsed();
     }
 
-    private GenericHttpClientFactory makeHttpClientFactory() {
+    private GenericHttpClientFactory makeHttpClientFactory() throws FindException {
         final String proxyHost = assertion.getProxyHost();
         if (proxyHost == null) {
-            GenericHttpClientFactory factory;
-            try {
-                factory = applicationContext.getBean("httpRoutingHttpClientFactory", GenericHttpClientFactory.class);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Could not create HTTP client factory.", e);
-                factory = new IdentityBindingHttpClientFactory();
-            }
-            return factory;
+            return applicationContext.getBean("httpRoutingHttpClientFactory", GenericHttpClientFactory.class);
         }
+
+        final String proxyPassword = ServerVariables.expandPasswordOnlyVariable(auditor, assertion.getProxyPassword());
 
         // Use a proxy
         return new GenericHttpClientFactory() {
@@ -219,7 +225,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             @Override
             public GenericHttpClient createHttpClient(int hostConnections, int totalConnections, int connectTimeout, int timeout, Object identity) {
-                return new CommonsHttpClient(proxyHost, assertion.getProxyPort(), assertion.getProxyUsername(), assertion.getProxyPassword(),
+                return new CommonsHttpClient(proxyHost, assertion.getProxyPort(), assertion.getProxyUsername(), proxyPassword,
                         CommonsHttpClient.newConnectionManager(),
                         connectTimeout,
                         timeout);
@@ -394,8 +400,11 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             } else if (assertion.getKrbConfiguredAccount() != null) {
                 // obtain a service ticket using the configured account in the assertion
                 KerberosRoutingClient client = new KerberosRoutingClient();
+                String krbAccount = ExpandVariables.process(assertion.getKrbConfiguredAccount(), vars, auditor);
+                String krbPass = assertion.getKrbConfiguredPassword();
+                krbPass = krbPass == null ? null : ExpandVariables.process(krbPass, vars, auditor);
                 addKerberosServiceTicketToRequestParam(
-                        client.getKerberosServiceTicket(url, assertion.getKrbConfiguredAccount(), assertion.getKrbConfiguredPassword()),
+                        client.getKerberosServiceTicket(url, krbAccount, krbPass),
                         routedRequestParams);
             }
 

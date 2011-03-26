@@ -4,6 +4,8 @@
 package com.l7tech.server.policy.variable;
 
 import com.l7tech.gateway.common.RequestId;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -36,6 +38,8 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ServerVariables {
     private static final Logger logger = Logger.getLogger(ServerVariables.class.getName());
@@ -646,8 +650,7 @@ public class ServerVariables {
     }
 
     public static void setSecurePasswordManager(SecurePasswordManager spm) {
-        if (securePasswordManager == null)
-            securePasswordManager = spm;
+        securePasswordManager = spm;
     }
 
     static {
@@ -927,6 +930,78 @@ public class ServerVariables {
         }
 
         protected abstract Object getBaseObject( PolicyEnforcementContext context );
+    }
+
+
+    private static final Pattern SECPASS_PATTERN = Pattern.compile("^secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext$");
+
+    /**
+     * Utility method to expand a variable that is permitted to contain only ${secpass.*.plaintext} references.
+     * <p/>
+     * This method can work even if a PolicyEnforcementContext is not available.
+     * <p/>
+     * If a VariableNameSyntaxtException occurs, or if a variable reference other than a secure password reference
+     * is detected, this method will audit a warning and return the original string unchanged.
+     *
+     * @param audit auditor to use for logging.  Required.
+     * @param template the template to examine.  If null, this method will always return null.  May contain variable
+     *        references but only those of the form ${secpass.*.plaintext}.
+     * @return the expansion of the template, or the original string unmodified.  May be null only if template was null.
+     * @throws FindException if there is an error looking up a secure password instance.
+     */
+    public static String expandPasswordOnlyVariable(Audit audit, String template) throws FindException {
+        // TODO rewrite assertions that set up passwords at policy-compile-time so that they don't do so, then remove this hacky method and its ridiculous regex
+        // TODO or at least move this to somewhere more appropriate
+        if (template == null)
+            return null;
+
+        try {
+            String[] vars = Syntax.getReferencedNames(template);
+            if (vars.length < 1)
+                return template;
+
+            if (securePasswordManager == null) {
+                // Probably running test code or something
+                audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Password-only context variable expression cannot be expanded because a secure password manager is not available; assuming literal password");
+                return template;
+            }
+
+            // Build variable map, permitting only secpass refs
+            Map<String,Object> map = new HashMap<String,Object>();
+            for (String var : vars) {
+                Matcher matcher = SECPASS_PATTERN.matcher(var);
+                if (!matcher.matches()) {
+                    audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Password-only context variable expression referred to non-secpass variable; assuming literal password"); // avoid logging possible password material
+                    return template;
+                }
+                String alias = matcher.group(1);
+                assert alias != null; // enforced by regex
+                assert alias.length() > 0; // enforced by regex
+                SecurePassword secpass = findSecurePasswordByName(alias);
+                if (secpass == null) {
+                    audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Password-only context variable expression referred to a nonexistent secure password alias; assuming literal password"); // avoid logging possible password material
+                    return template;
+                }
+                char[] plaintext = getPlaintextPassword(secpass);
+                String plain;
+                if (plaintext == null) {
+                    audit.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Password-only context variable expression referred to a secure password with an empty password; using empty string as password");
+                    plain = "";
+                } else {
+                    plain = new String(plaintext);
+                }
+                map.put(var, plain);
+            }
+
+            return ExpandVariables.process(template, map, audit);
+
+        } catch (VariableNameSyntaxException e) {
+            // The previous failures were less likely to occur by accident, but the string "${" on its own is more likely to appear in a legitimate hardcoded password
+            audit.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Password-only context variable expression had invalid syntax; assuming literal password"); // Avoid logging complete exception in case it contains password material
+            return template;
+        } catch (ParseException e) {
+            throw new FindException("Password-only context variable expression referred to secure password that could not be decrypted"); // avoid chaining parse exception in case it contains password material, as callers are quite likely to just dump it into the log if we do
+        }
     }
 
     static SecurePassword findSecurePasswordByName(String secpassName) throws FindException {

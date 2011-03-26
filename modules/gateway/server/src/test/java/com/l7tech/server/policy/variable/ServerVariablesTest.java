@@ -55,6 +55,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  *
@@ -779,6 +780,36 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${secpass.test2.name}", "");
         expandAndCheck(c, "${secpass.test2.description}", "");
         expandAndCheck(c, "${secpass.test2.plaintext}", "");
+    }
+
+    @Test
+    public void testExpandPasswordOnlyVariable() throws Exception {
+        final Audit audit = new LogOnlyAuditor(logger);
+        ServerVariables.setSecurePasswordManager(null);
+        assertEquals("valid secpass reference shall expand to itself if no SecurePasswordManager is available", "${secpass.test1.plaintext}", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.test1.plaintext}"));
+
+
+        SecurePasswordManager spm = new SecurePasswordManagerStub(
+                new SecurePassword("test1"){{ setOid(1); setEncodedPassword("TEST-PASSWORD1"); } },
+                new SecurePassword("test2"){{ setOid(2); setEncodedPassword("TEST-PASSWORD2"); } },
+                new SecurePassword("emptypass"){{ setOid(3); setEncodedPassword(""); } },
+                new SecurePassword("nullpass"){{ setOid(4); setEncodedPassword(null); } }
+        );
+        ServerVariables.setSecurePasswordManager(spm);
+
+        assertNull("null template shall expand to null", ServerVariables.expandPasswordOnlyVariable(audit, null));
+        assertEquals("empty template shall expand to empty", "", ServerVariables.expandPasswordOnlyVariable(audit, ""));
+        assertEquals("template with no variable references shall expand to itself", "asdfQEWER", ServerVariables.expandPasswordOnlyVariable(audit, "asdfQEWER"));
+        assertEquals("template with invalid reference syntax shall expand to itself", "asdf${QEWER", ServerVariables.expandPasswordOnlyVariable(audit, "asdf${QEWER"));
+        assertEquals("template referencing things other than secure passwords shall expand to itself", "${blarf}", ServerVariables.expandPasswordOnlyVariable(audit, "${blarf}"));
+        assertEquals("template referencing things other than secure password plaintext shall expand to itself", "${secpass.test1.alias}", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.test1.alias}"));
+        assertEquals("template referencing nonexistent secure password plaintext shall expand to itself", "${secpass.qwerasdf.plaintext}", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.qwerasdf.plaintext}"));
+        assertEquals("template references valid secure pass plaintext shall expand to the plaintext", "test-password1", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.test1.plaintext}"));
+        assertEquals("template using an array deref 0 shall work normally", "test-password1", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.test1.plaintext[0]}"));
+        assertEquals("template references to empty password expands to empty", "BEFOREAFTER", ServerVariables.expandPasswordOnlyVariable(audit, "BEFORE${secpass.emptypass.plaintext}AFTER"));
+        assertEquals("template references to null password expands to empty", "BEFOREAFTER", ServerVariables.expandPasswordOnlyVariable(audit, "BEFORE${secpass.nullpass.plaintext}AFTER"));
+        assertEquals("template using an array deref 1 shall fail as expected, expanding to empty string (lax mode)", "BEFOREAFTER", ServerVariables.expandPasswordOnlyVariable(audit, "BEFORE${secpass.test1.plaintext[1]}AFTER"));
+        assertEquals("multiple references shall be expanded", "BEFOREtest-password1MIDDLEtest-password2AFTER", ServerVariables.expandPasswordOnlyVariable(audit, "BEFORE${secpass.test1.plaintext}MIDDLE${secpass.test2.plaintext}AFTER"));
     }
     
     @Test

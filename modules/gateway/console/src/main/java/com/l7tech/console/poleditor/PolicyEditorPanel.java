@@ -36,6 +36,9 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.validator.PolicyValidationContext;
+import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.TypedReference;
+import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -45,6 +48,7 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.NamespaceMigratable;
 import com.l7tech.xml.soap.SoapVersion;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -64,6 +68,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.*;
@@ -71,6 +76,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
@@ -343,10 +349,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         } else {
             callable = NO_VAL_CALLBACK;
         }
-        return validateAndDisplay(callable, displayResult);
+        return validateAndDisplay(callable, null, displayResult);
     }
 
-    private PolicyValidatorResult validateAndDisplay(Callable<PolicyValidatorResult> callable, boolean displayResult) {
+    private PolicyValidatorResult validateAndDisplay(Callable<PolicyValidatorResult> callable, Set<PolicyValidatorResult.Warning> extraWarnings, boolean displayResult) {
         final JProgressBar bar = new JProgressBar();
         bar.setIndeterminate(true);
         final CancelableOperationDialog cancelDlg =
@@ -356,7 +362,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         try {
             result = Utilities.doWithDelayedCancelDialog(callable, cancelDlg, TIME_BEFORE_OFFERING_CANCEL_DIALOG);
             if (result != null && displayResult)
-                displayPolicyValidateResult(pruneDuplicates(result));
+                displayPolicyValidateResult(mergeExtrasAndPruneDuplicates(result, extraWarnings));
             return result;
         } catch (InterruptedException e) {
             return null;
@@ -879,12 +885,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
 
+    public static final Pattern SECPASS_PATTERN = Pattern.compile("^\\$\\{secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext$\\}");
+
     /**
      * @return the policy xml that was validated, or null if validation canceled
      */
     private String fullValidate() {
         final Assertion assertion = getCurrentRoot().asAssertion();
-        final String policyXml = WspWriter.getPolicyXml(assertion);
+        final String policyXml;
         final Wsdl wsdl;
         final boolean soap;
         final SoapVersion soapVersion;
@@ -892,7 +900,35 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final String internalTag;
         final PublishedService service;
         final HashMap<String, Policy> includedFragments = new HashMap<String, Policy>();
+        final Set<PolicyValidatorResult.Warning> extraWarnings = new LinkedHashSet<PolicyValidatorResult.Warning>();
         try {
+            WspWriter wspWriter = new WspWriter() {
+                @Override
+                protected void freezeBeanProperty(TypeMapping tm, TypedReference tr, Element element, Method getter, Object targetObject) {
+                    super.freezeBeanProperty(tm, tr, element, getter, targetObject);
+                    WspSensitive sensitive = getter.getAnnotation(WspSensitive.class);
+                    if (sensitive != null) {
+                        Object target = tr.target;
+                        if (target instanceof CharSequence) {
+                            final CharSequence cs = (CharSequence) target;
+                            if (cs.length() > 0 && !SECPASS_PATTERN.matcher(cs).matches()) {
+                                String getterName = getter.getName();
+                                if (getterName.startsWith("get") && getterName.length() > 3)
+                                    getterName = getterName.substring(3);
+                                if (targetObject instanceof Assertion) {
+                                    Assertion assertion = (Assertion) targetObject;
+                                    extraWarnings.add(new PolicyValidatorResult.Warning(assertion, null, "Sensitive field " + getterName + " being saved as plaintext.  Consider writing as ${secpass.*.plaintext} reference instead", null));
+                                } else {
+                                    log.log(Level.WARNING, "Sensitive data appears to be serialized to policy XML without using a ${secpass.*.plaintext} reference for field " + getterName + " of instance of non-Assertion type " + targetObject.getClass().getName());
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            wspWriter.setPolicy(assertion);
+            policyXml = wspWriter.getPolicyXmlAsString();
+
             service = getPublishedService();
             if (service == null) {
                 wsdl = null;
@@ -962,7 +998,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             callable = NO_VAL_CALLBACK;
         }
 
-        PolicyValidatorResult result = validateAndDisplay(callable, true);
+        PolicyValidatorResult result = validateAndDisplay(callable, extraWarnings, true);
         if (result == null)
             return null;
 
@@ -1747,9 +1783,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * prune duplicate messsages
      *
      * @param result the validation result
+     * @param extraWarnings extra warnings to mix in before we prune
      * @return the result containing unique messages
      */
-    private PolicyValidatorResult pruneDuplicates(PolicyValidatorResult result) {
+    private PolicyValidatorResult mergeExtrasAndPruneDuplicates(PolicyValidatorResult result, Set<PolicyValidatorResult.Warning> extraWarnings) {
         PolicyValidatorResult pr = new PolicyValidatorResult();
 
         Set<PolicyValidatorResult.Error> errors = new LinkedHashSet<PolicyValidatorResult.Error>();
@@ -1760,6 +1797,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         Set<PolicyValidatorResult.Warning> warnings = new LinkedHashSet<PolicyValidatorResult.Warning>();
         warnings.addAll(result.getWarnings());
+        if (extraWarnings != null)
+            warnings.addAll(extraWarnings);
         for (PolicyValidatorResult.Warning warning : warnings) {
             pr.addWarning(warning);
         }
