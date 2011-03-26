@@ -548,7 +548,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
         if(type == PolicyType.INTERNAL){
             if( PolicyType.TAG_AUDIT_MESSAGE_FILTER.equals(internalTag)){
                 return getAuditMessageFilterDefaultPolicy();
-            } else if (PolicyType.TAG_AUDIT_POLICY_VIEWER.equals(internalTag)){
+            } else if (PolicyType.TAG_AUDIT_VIEWER.equals(internalTag)){
                 return getAuditViewerDefaultPolicy();
             }
         }

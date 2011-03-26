@@ -1517,6 +1517,13 @@ INSERT INTO `rbac_predicate_attribute` VALUES
     (-1111,'name','keyStore.defaultSsl.alias'),
     (-1113,'name','keyStore.defaultCa.alias');
 
+--
+-- New role to invoke the audit viewer policy. Requires READ on audits to be able to open the audit viewer.
+--
+INSERT INTO rbac_role VALUES (-1200,0,'Invoke Audit Viewer Policy', null,null,null, 'Allow the INTERNAL audit-viewer policy to be invoked for an audited message (request / response or detail)');
+INSERT INTO rbac_permission VALUES (-1201,0,-1200,'OTHER','audit-viewer policy', 'AUDIT_RECORD');
+INSERT INTO rbac_permission VALUES (-1202,0,-1200,'READ',NULL,'AUDIT_RECORD');
+
 -- Assign Administrator role to existing admin user
 INSERT INTO rbac_assignment VALUES (-105, -2, -100, '3', 'User');
 

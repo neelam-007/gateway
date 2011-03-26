@@ -90,7 +90,7 @@ public enum PolicyType {
     public static final String TAG_GLOBAL_MESSAGE_COMPLETED = "message-completed";
 
     public static final String TAG_AUDIT_MESSAGE_FILTER = "audit-message-filter";
-    public static final String TAG_AUDIT_POLICY_VIEWER = "audit-policy-viewer";
+    public static final String TAG_AUDIT_VIEWER = "audit-viewer";
 
     @Override
     public String toString() {
@@ -149,7 +149,7 @@ public enum PolicyType {
     }
 
     public static Collection<String> getAuditMessageFilterTags(){
-        return Arrays.asList( TAG_AUDIT_MESSAGE_FILTER, TAG_AUDIT_POLICY_VIEWER);
+        return Arrays.asList( TAG_AUDIT_MESSAGE_FILTER, TAG_AUDIT_VIEWER);
     }
 
     private static Collection<String> getGlobalTags() {

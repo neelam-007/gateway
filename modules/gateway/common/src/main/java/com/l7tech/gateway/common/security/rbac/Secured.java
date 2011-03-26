@@ -34,4 +34,6 @@ public @interface Secured {
     MethodStereotype stereotype() default MethodStereotype.NONE;
 
     int relevantArg() default -1;
+
+    String otherOperation() default "";
 }

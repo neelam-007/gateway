@@ -4,6 +4,7 @@
  */
 package com.l7tech.server.audit;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.audit.*;
@@ -11,7 +12,6 @@ import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
@@ -25,20 +25,27 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Processes the request and or response messages through the Audit Message Filter policy.
+ * Invoke the audit-message-filter or audit-viewer internal policies.
  */
-public class AuditMessageFilterPolicyEvaluator {
+public class AuditFilterPolicyManager {
 
     // - PUBLIC
 
-    public AuditMessageFilterPolicyEvaluator(PolicyCache policyCache) {
+    public AuditFilterPolicyManager(PolicyCache policyCache) {
         this.policyCache = policyCache;
     }
 
+    public boolean isAuditViewerPolicyAvailable(){
+        final Set<String> policyViewerPolicies =
+                policyCache.getPoliciesByTypeAndTag(PolicyType.INTERNAL, PolicyType.TAG_AUDIT_VIEWER);
+
+        return !policyViewerPolicies.isEmpty();
+    }
+    
     /**
      * Filter the request and response messages if they are included in the AuditRecord by running them through
-     * the Audit Message Filter policy. The actual request and response messages in the context are not modified,
-     * only the requestXml and responseXml properties of the audit record.
+     * the {@link PolicyType#TAG_AUDIT_MESSAGE_FILTER} internal policy. The actual request and response messages in the
+     * context are not modified, only the requestXml and responseXml properties of the audit record.
      *
      * The Audit Message Filter policy is ran for the request and response independently.
      *
@@ -93,6 +100,46 @@ public class AuditMessageFilterPolicyEvaluator {
         }
     }
 
+    /**
+     * Evaluate the audit viewer policy for the input String xml. If messageXml does not contain valid XML, then it will
+     * not be possible to invoke the audit viewer policy.
+     *
+     * @param messageXml audit message (request / response or audit detail text) to run through the audit viewer policy
+     * @param isRequest true if the message is the request, false otherwise, null if neither.
+     * @return String output from the audit viewer policy. Null if the audit viewer policy did not return
+     * {@link com.l7tech.policy.assertion.AssertionStatus#NONE}.
+     * @throws Exception any problem parsing the messageXml or executing the audit viewer policy.
+     */
+    public String evaluateAuditViewerPolicy(final String messageXml,
+                                            final Boolean isRequest) throws Exception{
+        final Set<String> guids = policyCache.getPoliciesByTypeAndTag(PolicyType.INTERNAL, PolicyType.TAG_AUDIT_VIEWER);
+
+        if (guids.isEmpty() || guids.iterator().next() == null) {
+            return null;
+        }
+
+        final Message message;
+        try {
+            message = new Message(XmlUtil.parse(messageXml));
+        } catch (Exception e) {
+            throw new Exception("Cannot create message from saved audit record: " + ExceptionUtils.getMessage(e),
+                    ExceptionUtils.getDebugException(e));
+        }
+
+        final String guid = guids.iterator().next();
+        ServerPolicyHandle handle = null;
+        try {
+            handle = policyCache.getServerPolicy( guid );
+            if ( handle != null ) {
+                return evaluatePolicy(message, handle, isRequest);
+            }
+        } finally {
+            ResourceUtils.closeQuietly( handle );
+        }
+
+        return null;
+    }
+
     // - PRIVATE
 
     /**
@@ -110,33 +157,12 @@ public class AuditMessageFilterPolicyEvaluator {
                                  final AuditLogListener listener,
                                  final AuditLogFormatter formatter,
                                  final boolean isRequest) {
+
         try {
-            PolicyEnforcementContext pec = null;
-            final String[] captureAMFRequestOutput = new String[1];
-            AssertionStatus result;
-            
-            try {
-                pec = PolicyEnforcementContextFactory.createUnregisteredPolicyEnforcementContext(copyMsg, null, false);
-                final PolicyEnforcementContext finalCtx = pec;
-
-                //Our runnable must run before any runnable which may close the incoming message.
-                finalCtx.runOnCloseFirst(new Runnable() {
-                    @Override
-                    public void run() {
-                        captureAMFRequestOutput[0] = getMessageBodyTextOrErrorMsg(finalCtx.getRequest(), isRequest);
-                    }
-                });
-                result = handle.checkRequest(finalCtx);
-            } finally {
-                ResourceUtils.closeQuietly(pec);
+            final String output = evaluatePolicy(copyMsg, handle, isRequest);
+            if(output != null){
+                return output;
             }
-
-            //pec must be closed first
-            if(result == AssertionStatus.NONE){
-                return captureAMFRequestOutput[0];
-            }
-            //fall through for any other status
-            //audit fall through
             addAuditMessageFilterPolicyFailedAudit(messageAudit, listener, formatter, isRequest, null);
         } catch (Exception e) {
             addAuditMessageFilterPolicyFailedAudit(messageAudit, listener, formatter, isRequest, ExceptionUtils.getDebugException(e));
@@ -144,6 +170,45 @@ public class AuditMessageFilterPolicyEvaluator {
 
         return null;
     }
+
+    /**
+     *
+     * @return Contents of Request message after policy completes, providing status was AssertionStatus.NONE. null is
+     * retunred for any other stauts.
+     * @throws Exception Any problems executing policy.
+     */
+    private String evaluatePolicy(final Message copyMsg,
+                                  final ServerPolicyHandle handle,
+                                  final boolean isRequest) throws Exception {
+        PolicyEnforcementContext pec = null;
+        final String[] capturePolicyRequestOutput = new String[1];
+        AssertionStatus result;
+
+        try {
+            pec = PolicyEnforcementContextFactory.createUnregisteredPolicyEnforcementContext(copyMsg, null, false);
+            final PolicyEnforcementContext finalCtx = pec;
+
+            //Our runnable must run before any runnable which may close the incoming message.
+            finalCtx.runOnCloseFirst(new Runnable() {
+                @Override
+                public void run() {
+                    capturePolicyRequestOutput[0] = getMessageBodyTextOrErrorMsg(finalCtx.getRequest(), isRequest);
+                }
+            });
+            result = handle.checkRequest(finalCtx);
+        } finally {
+            ResourceUtils.closeQuietly(pec);
+        }
+
+        //pec must be closed first
+        if(result == AssertionStatus.NONE){
+            return capturePolicyRequestOutput[0];
+        }
+
+        //fall through for any other status
+        return null;
+    }
+
 
     private void addAuditMessageFilterPolicyFailedAudit(
             final MessageSummaryAuditRecord messageAudit,
@@ -212,5 +277,5 @@ public class AuditMessageFilterPolicyEvaluator {
     private final PolicyCache policyCache;
     
     private static final Charset FALLBACK_ENCODING = Charsets.ISO8859;
-    private static final Logger logger = Logger.getLogger(AuditMessageFilterPolicyEvaluator.class.getName());
+    private static final Logger logger = Logger.getLogger(AuditFilterPolicyManager.class.getName());
 }

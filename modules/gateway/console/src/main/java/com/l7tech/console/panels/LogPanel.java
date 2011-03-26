@@ -4,6 +4,9 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.cluster.*;
+import com.l7tech.gateway.common.security.rbac.AttemptedOther;
+import com.l7tech.gateway.common.security.rbac.OtherOperationName;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.BuildInfo;
 import static com.l7tech.gateway.common.Component.fromId;
 import com.l7tech.gateway.common.audit.*;
@@ -140,6 +143,8 @@ public class LogPanel extends JPanel {
 
     private final Map<Integer, String> cachedAuditMessages = new HashMap<Integer, String>();
     private final Map<Long, SoftReference<AuditLogMessage>> cachedLogMessages = Collections.synchronizedMap( new HashMap<Long, SoftReference<AuditLogMessage>>() );
+    private JButton invokeRequestAVPolicyButton;
+    private JButton invokeResponseAVPolicyButton;
 
     //
     // Data model for the audit events control panel.
@@ -251,7 +256,9 @@ public class LogPanel extends JPanel {
     }
 
     /**
-     * Constructor
+     * Constructor.
+     *
+     * Note: This dialog is used off line. An admin connection cannot be required in construction.
      */
     public LogPanel(boolean includeDetailPane, final boolean isAuditType, String nodeId) {
         setLayout(new BorderLayout());
@@ -1401,9 +1408,35 @@ public class LogPanel extends JPanel {
             requestXmlPanel = new JPanel();
             requestXmlPanel.setLayout(new BorderLayout());
             requestXmlPanel.add(getRequestXmlScrollPane(), BorderLayout.CENTER);
-            requestXmlPanel.add(getRequestReformatCheckbox(), BorderLayout.SOUTH);
+            final JPanel holderSouthPanel = new JPanel();
+            holderSouthPanel.setLayout(new BoxLayout(holderSouthPanel, BoxLayout.X_AXIS));
+            holderSouthPanel.add(getRequestReformatCheckbox());
+            holderSouthPanel.add(getInvokeRequestAVPolicyButton());
+            holderSouthPanel.add(Box.createHorizontalGlue());
+            requestXmlPanel.add(holderSouthPanel, BorderLayout.SOUTH);
         }
         return requestXmlPanel;
+    }
+
+    private JButton getInvokeRequestAVPolicyButton(){
+        if(invokeRequestAVPolicyButton == null){
+            invokeRequestAVPolicyButton = new JButton("Invoke Audit Viewer Policy");
+            if(Registry.getDefault().isAdminContextPresent()){
+                invokeRequestAVPolicyButton.setEnabled(enableInvokeButton());
+                invokeRequestAVPolicyButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        String output = getAVPolicyOutput();
+                        if(output != null){
+                            getRequestXmlTextArea().setText(output);
+                            getRequestXmlTextArea().setCaretPosition(0);
+                        }
+                    }
+                });
+            } 
+        }
+
+        return invokeRequestAVPolicyButton;
     }
 
     private JCheckBox getRequestReformatCheckbox() {
@@ -1433,9 +1466,77 @@ public class LogPanel extends JPanel {
             responseXmlPanel = new JPanel();
             responseXmlPanel.setLayout(new BorderLayout());
             responseXmlPanel.add(getResponseXmlScrollPane(), BorderLayout.CENTER);
-            responseXmlPanel.add(getResponseReformatCheckbox(), BorderLayout.SOUTH);
+
+            final JPanel holderSouthPanel = new JPanel();
+            holderSouthPanel.setLayout(new BoxLayout(holderSouthPanel, BoxLayout.X_AXIS));
+            holderSouthPanel.add(getResponseReformatCheckbox());
+            holderSouthPanel.add(getInvokeResponseAVPolicyButton());
+            responseXmlPanel.add(holderSouthPanel, BorderLayout.SOUTH);
         }
         return responseXmlPanel;
+    }
+
+    private JButton getInvokeResponseAVPolicyButton(){
+        if(invokeResponseAVPolicyButton == null){
+            invokeResponseAVPolicyButton = new JButton("Invoke Audit Viewer Policy");
+            if(Registry.getDefault().isAdminContextPresent()){
+                invokeResponseAVPolicyButton.setEnabled(enableInvokeButton());
+                invokeResponseAVPolicyButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        String output = getAVPolicyOutput();
+                        if(output != null){
+                            getResponseXmlTextArea().setText(output);
+                            getResponseXmlTextArea().setCaretPosition(0);
+                        }
+                    }
+                });
+            } 
+        }
+
+        return invokeResponseAVPolicyButton;
+    }
+
+    private boolean enableInvokeButton(){
+        final boolean avPermGranted = Registry.getDefault().getSecurityProvider().hasPermission(
+                new AttemptedOther(EntityType.AUDIT_RECORD, OtherOperationName.AUDIT_VIEWER_POLICY.toString()));
+        
+        final boolean avPolicyIsActive;
+        if(avPermGranted){
+            avPolicyIsActive = Registry.getDefault().getAuditAdmin().isAuditViewerPolicyAvailable();
+        } else {
+            avPolicyIsActive = false;
+        }
+
+        return avPermGranted && avPolicyIsActive;
+    }
+
+    private String getAVPolicyOutput(){
+        final int row = getMsgTable().getSelectedRow();
+
+        if (row == -1) return null;
+
+        final TableModel model = getMsgTable().getModel();
+        if (model instanceof AuditLogTableSorterModel) {
+            final LogMessage logHeader = ((AuditLogTableSorterModel) model).getLogMessageAtRow(row);
+
+            final boolean isRequest = getRequestXmlPanel() == getMsgDetailsPane().getSelectedComponent();
+            final boolean isResponse = getResponseXmlPanel() == getMsgDetailsPane().getSelectedComponent();
+
+            //either the request or response tab is active when button is pressed.
+            if(!isRequest && !isResponse) return null;
+
+            final AuditAdmin auditAdmin = Registry.getDefault().getAuditAdmin();
+            final String output;
+            try {
+                output = auditAdmin.invokeAuditViewerPolicyForMessage(logHeader.getMsgNumber(), isRequest);
+            } catch (FindException e) {
+                return ExceptionUtils.getMessage(e);
+            }
+            return output;
+        }
+
+        return null;
     }
 
     private JCheckBox getResponseReformatCheckbox() {

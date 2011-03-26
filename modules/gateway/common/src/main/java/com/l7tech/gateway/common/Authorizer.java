@@ -99,6 +99,11 @@ public abstract class Authorizer {
                 return true;
             } else if (attempted instanceof AttemptedUpdateAll) {
                 if ( perm.getScope().isEmpty() ) return true;
+            } else if(attempted instanceof AttemptedOther){
+                AttemptedOther attemptedOther = (AttemptedOther) attempted;
+                if (perm.getOtherOperationName().equals(attemptedOther.getOtherOperationName())){
+                    return true;
+                }
             }
         }
         return false;

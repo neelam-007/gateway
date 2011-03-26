@@ -3,11 +3,8 @@
  */
 package com.l7tech.server.security.rbac;
 
-import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.*;
 import static com.l7tech.gateway.common.security.rbac.OperationType.*;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
-import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityFinder;
@@ -140,6 +137,10 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
 
                 if (secured.relevantArg() >= 0 && checkRelevantArg < 0)
                     checkRelevantArg = secured.relevantArg();
+
+                if(checkOtherOperationName == null && !secured.otherOperation().trim().equals("")){  //first in wins
+                    checkOtherOperationName = secured.otherOperation();    
+                }
             }
 
             if (checkOperation == null && checkStereotype == null) throw new IllegalStateException("Security declaration for " + mname + " does not specify either an operation or a stereotype");
@@ -241,6 +242,9 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
                 check.setAfter(CheckAfter.NONE);
                 check.operation = DELETE;
                 break;
+            case ENTITY_OPERATION:
+                checkEntityFromId(check, args, OperationType.OTHER);
+                break;
             default:
                 throw new UnsupportedOperationException("Security declaration for method " + mname + " specifies unsupported stereotype " + check.stereotype.name());
         }
@@ -253,7 +257,7 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
         switch (check.getBefore()) {
             case ENTITY:
                 if (check.entity == null) throw new NullPointerException("check.entity");
-                if (!rbacServices.isPermittedForEntity(user, check.entity, check.operation, null)) {
+                if (!rbacServices.isPermittedForEntity(user, check.entity, check.operation, check.otherOperationName)) {
                     throw new PermissionDeniedException(check.operation, check.entity, check.otherOperationName);
                 }
                 break;

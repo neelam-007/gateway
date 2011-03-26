@@ -118,7 +118,7 @@
         <constructor-arg index="1" ref="policyCache"/>
     </bean>
 
-    <bean id="auditMessagePolicyEvaluator" class="com.l7tech.server.audit.AuditMessageFilterPolicyEvaluator">
+    <bean id="auditFilterPolicyManager" class="com.l7tech.server.audit.AuditFilterPolicyManager">
         <constructor-arg ref="policyCache"/>
     </bean>
 
@@ -1108,7 +1108,7 @@
         <constructor-arg ref="auditRecordManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
         <constructor-arg ref="auditPolicyEvaluator"/>
-        <constructor-arg ref="auditMessagePolicyEvaluator"/>
+        <constructor-arg ref="auditFilterPolicyManager"/>
         <constructor-arg ref="clusterNodeId"/>
         <property name="keystore" ref="defaultKey"/>
         <property name="auditLogListener" ref="auditLogListener"/>

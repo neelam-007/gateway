@@ -208,6 +208,7 @@
         <property name="serverConfig" ref="serverConfig"/>
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
         <property name="auditArchiver" ref="auditArchiver"/>
+        <property name="auditFilterPolicyManager" ref="auditFilterPolicyManager"/>
     </bean>
 
     <!-- service admin servant -->

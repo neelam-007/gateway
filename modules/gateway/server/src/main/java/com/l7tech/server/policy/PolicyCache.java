@@ -88,7 +88,7 @@ public interface PolicyCache {
      *
      * @param type The type of policy (null for any type)
      * @param tag The desired tag (null for any tag)
-     * @return The set of GUIDs for matching policies
+     * @return The set of GUIDs for matching policies. Never null.
      */
     Set<String> getPoliciesByTypeAndTag( PolicyType type, String tag );
 

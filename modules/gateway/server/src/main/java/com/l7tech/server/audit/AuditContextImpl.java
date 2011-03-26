@@ -56,7 +56,7 @@ public class AuditContextImpl implements AuditContext {
                             AuditRecordManager auditRecordManager,
                             ClusterPropertyManager clusterPropertyManager,
                             AuditPolicyEvaluator auditPolicyEvaluator,
-                            AuditMessageFilterPolicyEvaluator auditMessageFilterPolicyEvaluator,
+                            AuditFilterPolicyManager auditFilterPolicyManager,
                             String nodeId) {
         if (serverConfig == null) {
             throw new IllegalArgumentException("Server Config is required");
@@ -68,7 +68,7 @@ public class AuditContextImpl implements AuditContext {
         this.auditRecordManager = auditRecordManager;
         this.clusterPropertyManager = clusterPropertyManager;
         this.auditPolicyEvaluator = auditPolicyEvaluator;
-        this.auditMessageFilterPolicyEvaluator = auditMessageFilterPolicyEvaluator;
+        this.auditFilterPolicyManager = auditFilterPolicyManager;
         this.nodeId = nodeId;
     }
 
@@ -299,8 +299,8 @@ public class AuditContextImpl implements AuditContext {
         boolean sinkPolicyFailed = false;
         AssertionStatus sinkPolicyStatus = null;
 
-        if(auditMessageFilterPolicyEvaluator != null){
-            auditMessageFilterPolicyEvaluator.filterAuditRecord(rec, policyEnforcementContext, listener, formatter);
+        if(auditFilterPolicyManager != null){
+            auditFilterPolicyManager.filterAuditRecord(rec, policyEnforcementContext, listener, formatter);
         }
 
         //flush after the AMF policy has had a chance to audit.
@@ -573,7 +573,7 @@ public class AuditContextImpl implements AuditContext {
     private final ClusterPropertyManager clusterPropertyManager;
     private final String nodeId;
     private AuditPolicyEvaluator auditPolicyEvaluator;
-    private final AuditMessageFilterPolicyEvaluator auditMessageFilterPolicyEvaluator;
+    private final AuditFilterPolicyManager auditFilterPolicyManager;
     private DefaultKey keystore;
     private AuditLogListener listener;
     private Map<String, Object> logFormatContextVariables;

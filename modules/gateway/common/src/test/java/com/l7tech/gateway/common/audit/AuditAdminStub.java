@@ -116,4 +116,19 @@ public class AuditAdminStub implements AuditAdmin {
     public long hasNewAudits(Date date, Level level) {
         return 0;
     }
+
+    @Override
+    public boolean isAuditViewerPolicyAvailable() {
+        return false;
+    }
+
+    @Override
+    public String invokeAuditViewerPolicyForMessage(long auditId, boolean isRequest) {
+        return null;
+    }
+
+    @Override
+    public String invokeAuditViewerPolicyForDetail(long auditId, long detailMessageId) {
+        return null;
+    }
 }

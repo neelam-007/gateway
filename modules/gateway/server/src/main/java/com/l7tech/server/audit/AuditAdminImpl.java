@@ -4,10 +4,7 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.gateway.common.audit.AuditAdmin;
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.AuditRecordHeader;
-import com.l7tech.gateway.common.audit.AuditSearchCriteria;
+import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -16,13 +13,11 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.AdminInfo;
+import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.AuditViewGatewayAuditsData;
 import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.util.Background;
-import com.l7tech.util.OpaqueId;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.util.*;
 import org.apache.commons.collections.map.LRUMap;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -30,14 +25,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TimerTask;
+import java.text.MessageFormat;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,6 +52,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private ClusterPropertyManager clusterPropertyManager;
     private AuditArchiver auditArchiver;
     private ApplicationContext applicationContext;
+    private AuditFilterPolicyManager auditFilterPolicyManager;
 
     public AuditAdminImpl() {
         Background.scheduleRepeated( new TimerTask(){
@@ -233,6 +223,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                 clusterPropertyManager.update(prop);
             }
         }
+    }
+
+    public void setAuditFilterPolicyManager(AuditFilterPolicyManager auditFilterPolicyManager) {
+        this.auditFilterPolicyManager = auditFilterPolicyManager;
     }
 
     @Override
@@ -437,6 +431,107 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     public boolean isSigningEnabled() throws FindException {
         final String prop = clusterPropertyManager.getProperty("audit.signing");
         return Boolean.valueOf(prop);
+    }
+
+    @Override
+    public boolean isAuditViewerPolicyAvailable() {
+        return auditFilterPolicyManager.isAuditViewerPolicyAvailable();
+    }
+
+    @Override
+    public String invokeAuditViewerPolicyForMessage(long auditRecordId, boolean isRequest) throws FindException {
+
+        final Set<Pair<Level, String>> auditMessages = new HashSet<Pair<Level, String>>();
+        try {
+            auditMessages.add(new Pair<Level, String>(
+                    SystemMessages.AUDIT_VIEWER_POLICY_INVOKED.getLevel(),
+                    MessageFormat.format(SystemMessages.AUDIT_VIEWER_POLICY_INVOKED.getMessage(),
+                    String.valueOf(auditRecordId), ((isRequest) ? "request": "response") + " message")));
+            
+            final AuditRecord record = auditRecordManager.findByPrimaryKey(auditRecordId);
+            if(record == null){
+                final String params = "No audit record found for AuditRecord with id " + auditRecordId;
+                auditMessages.add(new Pair<Level, String>(
+                        SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getLevel(),
+                        MessageFormat.format(SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getMessage(), params)));
+                return null;
+            }
+
+            if (!(record instanceof MessageSummaryAuditRecord)) {
+                final String params = "Audit viewer policy is only applicable for message audits. Cannot process AuditRecord with id " + auditRecordId;
+                auditMessages.add(new Pair<Level, String>(
+                        SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getLevel(),
+                        MessageFormat.format(SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getMessage(), params)));
+                return null;
+            }
+
+            final MessageSummaryAuditRecord messageAudit = (MessageSummaryAuditRecord) record;
+            final String messageXml;
+            if(isRequest){
+                messageXml = messageAudit.getRequestXml();
+            } else {
+                messageXml = messageAudit.getResponseXml();
+            }
+
+            try {
+                return auditFilterPolicyManager.evaluateAuditViewerPolicy(messageXml, isRequest);
+            } catch (Exception e) {
+                final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
+                auditMessages.add(new Pair<Level, String>(
+                        SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getLevel(),
+                        MessageFormat.format(SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getMessage(), params)));
+            }
+
+            return null;
+        } finally {
+            if (!auditMessages.isEmpty()) {
+                for (final Pair<Level, String> auditMessage : auditMessages) {
+                    applicationContext.publishEvent(new AdminEvent(this, auditMessage.right) {
+                        @Override
+                        public Level getMinimumLevel() {
+                            return auditMessage.left;
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    @Override
+    public String invokeAuditViewerPolicyForDetail(long auditRecordId, long detailMessageId) throws FindException {
+
+        //todo [Donal] - not finished yet
+        final AuditRecord record = auditRecordManager.findByPrimaryKey(auditRecordId);
+        if(record == null){
+            logger.log(Level.INFO, "No audit record found for AuditRecord with id " + auditRecordId);
+            return null;
+        }
+
+        if (!(record instanceof MessageSummaryAuditRecord)) {
+            logger.log(Level.INFO, "Audit viewer policy is only applicable for message audits. Cannot process AuditRecord with id " + auditRecordId);
+            return null;
+        }
+
+        final MessageSummaryAuditRecord messageAudit = (MessageSummaryAuditRecord) record;
+
+        final Set<AuditDetail> details = messageAudit.getDetails();
+        for (AuditDetail detail : details) {
+            if(detail.getOid() == detailMessageId){
+                final String[] params = detail.getParams();
+                if(params == null || params[0] == null){
+                    logger.log(Level.INFO, "No parameter found for audit detail record with id " + detailMessageId);
+                    return null;
+                }
+                try {
+                    return auditFilterPolicyManager.evaluateAuditViewerPolicy(params[0], null);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e));
+
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

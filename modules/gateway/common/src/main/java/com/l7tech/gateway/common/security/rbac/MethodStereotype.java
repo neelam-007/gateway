@@ -122,6 +122,16 @@ public enum MethodStereotype {
     SET_PROPERTY_BY_UNIQUE_ATTRIBUTE,
 
     /**
+     * Caller wants to invoke an operation on a entity. Permission to invoke the operation on the entity may be granted
+     * at the operation level or could be made specific to an entity via a scope predicate.
+     *
+     * This is used in conjunction with {@link Permission#otherOperationName} which is used to determine what permission
+     * is required. See {@link OtherOperationName} for a list of known other operations.
+     *
+     */
+    ENTITY_OPERATION,
+    
+    /**
      * The method does not conform to any known stereotype.  An exception will be thrown at runtime.
      */
     NONE
