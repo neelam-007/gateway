@@ -22,7 +22,7 @@ public class AddWssTimestampAssertionValidator extends WssDecorationAssertionVal
                           final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( warningMessage != null ) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warningMessage, null));
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, warningMessage, null));
         }
 
         super.validate( path, pvc, result );

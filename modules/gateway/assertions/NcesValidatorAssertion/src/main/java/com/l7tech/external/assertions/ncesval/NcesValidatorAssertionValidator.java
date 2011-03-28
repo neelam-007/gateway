@@ -34,16 +34,16 @@ public class NcesValidatorAssertionValidator implements AssertionValidator {
                 if ( samlRequired ) {
                     if (firstSaml == -1 || firstSaml > i) {
                         result.addWarning(
-                            new PolicyValidatorResult.Warning(assertion, path,
-                              "Detailed SAML Assertion validation must be done by a separate SAML Validation Assertion", null));
+                            new PolicyValidatorResult.Warning(assertion,
+                                    "Detailed SAML Assertion validation must be done by a separate SAML Validation Assertion", null));
                     }
                 }
 
                 if ( (assertion.getTrustedCertificateInfo() == null || assertion.getTrustedCertificateInfo().length == 0) &&
                      (assertion.getTrustedIssuerCertificateInfo() == null || assertion.getTrustedIssuerCertificateInfo().length == 0) ) {
                     result.addWarning(
-                        new PolicyValidatorResult.Warning(assertion, path,
-                          "No trusted certificates or trusted certificate issuers selected, assertion will always fail", null));                    
+                        new PolicyValidatorResult.Warning(assertion,
+                                "No trusted certificates or trusted certificate issuers selected, assertion will always fail", null));
                 }
 
                 return;

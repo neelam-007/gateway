@@ -33,9 +33,9 @@ public class CertificateAttributesAssertionValidator implements AssertionValidat
                 firstIdentity = i;
             } else if (ass == assertion) {
                 if (firstCertCred == -1 || firstCertCred > i)
-                    result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by a certificate credential source", null));
+                    result.addError(new PolicyValidatorResult.Error(assertion, "Must be preceded by a certificate credential source", null));
                 if (firstIdentity == -1 || firstIdentity > i)
-                    result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by an identity assertion (e.g. Authenticate User or Group)", null));
+                    result.addError(new PolicyValidatorResult.Error(assertion, "Must be preceded by an identity assertion (e.g. Authenticate User or Group)", null));
                 return;
             }
         }

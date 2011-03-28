@@ -45,11 +45,11 @@ public class SamlpRequestBuilderAssertionValidator implements AssertionValidator
                     }
                 } else if (ass == assertion) {
                     if (!(holderOfKey || isNameIdSpecified) && (firstCreds == -1 || firstCreds > i)) {
-                        result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by a credential source", null));
+                        result.addError(new PolicyValidatorResult.Error(assertion, "Must be preceded by a credential source", null));
                     }
 
                     if (holderOfKey && firstCertCred == -1 || firstCertCred > i) {
-                        result.addError(new PolicyValidatorResult.Error(assertion, path, "Holder-of-Key selected, must be preceded by a certificate-based credential source", null));
+                        result.addError(new PolicyValidatorResult.Error(assertion, "Holder-of-Key selected, must be preceded by a certificate-based credential source", null));
                     }
 
                     return;

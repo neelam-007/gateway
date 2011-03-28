@@ -92,7 +92,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
         try {
             path = pathBuilderFactory.makePathBuilder().generate(assertion);
         } catch ( PolicyAssertionException e) {
-            result.addError(new PolicyValidatorResult.Error(e.getAssertion(), null, e.getMessage(), e));
+            result.addError(new PolicyValidatorResult.Error(e.getAssertion(), e.getMessage(), e));
         }
 
         if ( path != null ) {
@@ -145,7 +145,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
             }
             if(visitedPolicies.keySet().contains(policyIdentifier)) {
                 PolicyAssertionException pae = new PolicyAssertionException(includeAssertion, "Circular policy include for Policy " + visitedPolicies.get(policyIdentifier));
-                r.addError(new PolicyValidatorResult.Error(includeAssertion, new AssertionPath(includeAssertion.getPath()), pae.getMessage(), pae));
+                r.addError(new PolicyValidatorResult.Error(includeAssertion, pae.getMessage(), pae));
             } else {
                 Policy includedPolicy = includeAssertion.retrieveFragmentPolicy();
 
@@ -191,7 +191,7 @@ public abstract class AbstractPolicyValidator implements PolicyValidator {
         //if there are errors, the we want to store these errors into the PolicyValidatorResult object
         if ( !listOfExceptions.isEmpty() ) {
             for (PolicyAssertionException pae : listOfExceptions ) {
-                policyValidatorResult.addError(new PolicyValidatorResult.Error(pae.getAssertion(), null, pae.getMessage(), pae));
+                policyValidatorResult.addError(new PolicyValidatorResult.Error(pae.getAssertion(), pae.getMessage(), pae));
             }
         }
         return policyValidatorResult;

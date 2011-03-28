@@ -96,8 +96,7 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
                 // add warning
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,
-                                   path,
-                                   "Assertion added to a policy not intended for a WSDM QosMetrics service",
+                        "Assertion added to a policy not intended for a WSDM QosMetrics service",
                                    null));
             }
         }

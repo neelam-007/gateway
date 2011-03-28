@@ -71,6 +71,6 @@ public class XpathBasedAssertionValidator extends NamespaceMigratableAssertionVa
     public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         super.validate(path, pvc, result);
         if (errString != null)
-            result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
+            result.addError(new PolicyValidatorResult.Error(assertion, errString, errThrowable));
     }
 }

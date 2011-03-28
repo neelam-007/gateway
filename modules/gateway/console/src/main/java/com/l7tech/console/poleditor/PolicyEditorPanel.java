@@ -298,7 +298,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         @Override
         public PolicyValidatorResult call() throws Exception {
             PolicyValidatorResult output = new PolicyValidatorResult();
-            output.addWarning(new PolicyValidatorResult.Warning( Collections.<Integer>emptyList(), -1, 0,
+            output.addWarning(new PolicyValidatorResult.Warning( Collections.<Integer>emptyList(), -1,
                     "Policy validation feedback has been disabled in the Preferences", null));
             return output;
         }
@@ -338,7 +338,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 	final Policy policy = getPolicyNode().getPolicy();
 	                if (policy == null) {
     	                PolicyValidatorResult r = new PolicyValidatorResult();
-                    	r.addError(new PolicyValidatorResult.Error(Collections.<Integer>emptyList(), -1, -1, "Policy could not be loaded", null));
+                    	r.addError(new PolicyValidatorResult.Error(Collections.<Integer>emptyList(), -1, "Policy could not be loaded", null));
                     	return r;
                 	}
                     PolicyValidatorResult r = policyValidator.validate(assertion, new PolicyValidationContext(policy.getType(), policy.getInternalTag(), wsdl, soap, soapVersion), licenseManager);
@@ -917,7 +917,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                                     getterName = getterName.substring(3);
                                 if (targetObject instanceof Assertion) {
                                     Assertion assertion = (Assertion) targetObject;
-                                    extraWarnings.add(new PolicyValidatorResult.Warning(assertion, null, "Sensitive field " + getterName + " being saved as plaintext.  Consider writing as ${secpass.*.plaintext} reference instead", null));
+                                    extraWarnings.add(new PolicyValidatorResult.Warning(assertion, "Sensitive field " + getterName + " being saved as plaintext.  Consider writing as ${secpass.*.plaintext} reference instead", null));
                                 } else {
                                     log.log(Level.WARNING, "Sensitive data appears to be serialized to policy XML without using a ${secpass.*.plaintext} reference for field " + getterName + " of instance of non-Assertion type " + targetObject.getClass().getName());
                                 }

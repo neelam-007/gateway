@@ -55,7 +55,7 @@ public class WsspAssertionValidator implements AssertionValidator {
 
         for (Iterator iterator = assertionsToTypes.keySet().iterator(); iterator.hasNext();) {
             Assertion assertion = (Assertion) iterator.next();
-            result.addError(new PolicyValidatorResult.Error(assertion, path,
+            result.addError(new PolicyValidatorResult.Error(assertion,
                     "Assertion cannot be used with the Enforce WS-Security Policy Compliance assertion.", null));
         }
     }

@@ -1171,7 +1171,7 @@ public class ServerGatewayManagementAssertionTest {
         {
             policyValidator.setErrors( Collections.<PolicyValidatorResult.Error>emptyList() );
             policyValidator.setWarnings( Arrays.asList(
-                    new PolicyValidatorResult.Warning( Arrays.asList( 0 ), 1, 1, "Test warning message", null )
+                    new PolicyValidatorResult.Warning( Arrays.asList( 0 ), 1, "Test warning message", null )
             ) );
 
             final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/policies/ValidatePolicy", message );
@@ -1188,11 +1188,11 @@ public class ServerGatewayManagementAssertionTest {
         }
         {
             policyValidator.setErrors( Arrays.asList(
-                    new PolicyValidatorResult.Error( Arrays.asList( 0 ), 1, 1, "Test error message", null )
+                    new PolicyValidatorResult.Error( Arrays.asList( 0 ), 1, "Test error message", null )
             ) );
             policyValidator.setWarnings( Arrays.asList(
-                    new PolicyValidatorResult.Warning( Arrays.asList( 0 ), 1, 1, "Test warning message 1", null ),
-                    new PolicyValidatorResult.Warning( Arrays.asList( 0 ), 1, 1, "Test warning message 2", null )
+                    new PolicyValidatorResult.Warning( Arrays.asList( 0 ), 1, "Test warning message 1", null ),
+                    new PolicyValidatorResult.Warning( Arrays.asList( 0 ), 1, "Test warning message 2", null )
             ) );
 
             final Document result = processRequest( "http://ns.l7tech.com/2010/04/gateway-management/policies/ValidatePolicy", message );

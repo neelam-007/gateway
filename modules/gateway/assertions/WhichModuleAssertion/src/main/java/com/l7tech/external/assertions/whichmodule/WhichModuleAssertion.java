@@ -223,8 +223,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
             if (xmlProblem != null)
                 result.addError(
                         new PolicyValidatorResult.Error(assertion,
-                                                        path,
-                                                        "Invalid policy assertion XML: " + ExceptionUtils.getMessage(xmlProblem),
+                                "Invalid policy assertion XML: " + ExceptionUtils.getMessage(xmlProblem),
                                                         xmlProblem));
         }
     }

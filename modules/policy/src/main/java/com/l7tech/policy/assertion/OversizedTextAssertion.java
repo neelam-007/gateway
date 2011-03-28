@@ -277,7 +277,7 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
         @Override
         public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
             if ( warningStr != null ) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warningStr, null));
+                result.addWarning(new PolicyValidatorResult.Warning(assertion, warningStr, null));
             }
         }
     }

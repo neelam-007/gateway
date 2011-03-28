@@ -36,7 +36,7 @@ public class XacmlRequestBuilderAssertionValidator implements AssertionValidator
                           final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( errString != null ) {
-            result.addError( new PolicyValidatorResult.Error( assertion, path, errString, null ) );
+            result.addError( new PolicyValidatorResult.Error( assertion, errString, null ) );
         }
     }
 

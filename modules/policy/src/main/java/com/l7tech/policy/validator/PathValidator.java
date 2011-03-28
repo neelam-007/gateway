@@ -128,7 +128,7 @@ public class PathValidator {
         if (assertionLicense != null) {
             if (!assertionLicense.isAssertionEnabled(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(
-                        a, assertionPath, bundle.getString("assertion.unknown"), null));
+                        a, bundle.getString("assertion.unknown"), null));
             }
         }
 
@@ -148,15 +148,15 @@ public class PathValidator {
         }
 
         if (normallyBeforeRouting(a) && seenRouting) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  bundle.getString("assertion.routing.normallybefore"), null));
+            result.addWarning(new PolicyValidatorResult.Warning(a,
+                    bundle.getString("assertion.routing.normallybefore"), null));
         }
 
         if (a instanceof AuditAssertion) {
             AuditAssertion auditAssertion = (AuditAssertion) a;
             if (auditAssertion.isSaveRequest() || auditAssertion.isSaveResponse()) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  bundle.getString("auditing.excessivediskspace"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                        bundle.getString("auditing.excessivediskspace"), null));
             }
         }
 
@@ -203,8 +203,8 @@ public class PathValidator {
 
         if (a instanceof TrueAssertion) {
             if (a.getParent() != null && a.getParent() instanceof AllAssertion) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  bundle.getString("allassertion.notusefullchild"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                        bundle.getString("allassertion.notusefullchild"), null));
             }
         }
 
@@ -240,13 +240,13 @@ public class PathValidator {
         }
 
         if (!foundPreRoutingWssAssertion && !foundPostRoutingWssAssertion) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
+            result.addWarning(new PolicyValidatorResult.Warning(assertion,
                     bundle.getString("wssecurity.1_1.insufficientassertions"), null));
         } else if (!foundPreRoutingWssAssertion) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
+            result.addWarning(new PolicyValidatorResult.Warning(assertion,
                     bundle.getString("wssecurity.nosecuritybeforeroute"), null));
         } else if (!foundPostRoutingWssAssertion) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
+            result.addWarning(new PolicyValidatorResult.Warning(assertion,
                     bundle.getString("wssecurity.nosecurityafterroute"), null));
         }
     }
@@ -287,8 +287,8 @@ public class PathValidator {
     private void processXslTransformation(XslTransformation xslt) {
         if (xslt.getResourceInfo().getType() == AssertionResourceType.MESSAGE_URL) {
             if (soap) {
-                result.addWarning(new PolicyValidatorResult.Warning(xslt, assertionPath,
-                  bundle.getString("assertion.stylesheetprocessinginstruction"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(xslt,
+                        bundle.getString("assertion.stylesheetprocessinginstruction"), null));
             }
         }
     }
@@ -298,15 +298,15 @@ public class PathValidator {
         if (a.getEncoding() != null &&
             a.getEncoding().length() > 0 &&
             !Charset.isSupported(a.getEncoding())) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+            result.addWarning(new PolicyValidatorResult.Warning(a,
                     MessageFormat.format(bundle.getString("unsupported.encoding"), a.getEncoding()), null));
         }
     }
 
     private void processHtmlFormDataAssertion(HtmlFormDataAssertion htmlFormDataAssertion) {
         if (htmlFormDataAssertion != null && seenRouting && Assertion.isRequest(htmlFormDataAssertion)) {
-            result.addWarning(new PolicyValidatorResult.Warning(htmlFormDataAssertion, assertionPath,
-                                                                bundle.getString("assertion.routing.shouldbebefore"),
+            result.addWarning(new PolicyValidatorResult.Warning(htmlFormDataAssertion,
+                    bundle.getString("assertion.routing.shouldbebefore"),
                                                                 null));
         }
     }
@@ -339,16 +339,16 @@ public class PathValidator {
         final CustomAssertionHolder csh = (CustomAssertionHolder)a;
         if (Category.ACCESS_CONTROL.equals(csh.getCategory())) {
             if (!seenCredentials(a)) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath, bundle.getString("accesscontrol.noauthscheme"), null));
+                result.addError(new PolicyValidatorResult.Error(a, bundle.getString("accesscontrol.noauthscheme"), null));
             }
             if (seenCustomAuth) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("accesscontrol.alreadyprovided"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(a, bundle.getString("accesscontrol.alreadyprovided"), null));
             } else if (getMessageTargetContext(targetName).seenAccessControl) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath, bundle.getString("accesscontrol.userorgroupnotallowed"), null));
+                result.addError(new PolicyValidatorResult.Error(a, bundle.getString("accesscontrol.userorgroupnotallowed"), null));
             }
 
             if (seenRouting) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.routing.isafter"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(a, bundle.getString("assertion.routing.isafter"), null));
             }
             getMessageTargetContext(targetName).seenAccessControl = true;
             seenCustomAuth = true;
@@ -360,21 +360,21 @@ public class PathValidator {
         final String targetName = AssertionUtils.getTargetName(a);
 
         if (!seenCredentials(a)) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath, bundle.getString("accesscontrol.noauthscheme"), null));
+            result.addError(new PolicyValidatorResult.Error(a, bundle.getString("accesscontrol.noauthscheme"), null));
         }
 
         if ( seenRouting && Assertion.isRequest(a) ) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.routing.isafter"), null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, bundle.getString("assertion.routing.isafter"), null));
         }
 
         if (getMessageTargetContext(targetName).seenSpecificUserAssertion && isSpecificUser(a) && !getMessageTargetContext(targetName).allowsMultipleSignatures) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.uncommon.multipleidentities"), null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, bundle.getString("assertion.uncommon.multipleidentities"), null));
         } else if (getMessageTargetContext(targetName).seenAuthenticationAssertion && isAuthenticationAssertion(a) && !getMessageTargetContext(targetName).allowsMultipleSignatures) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.uncommon.multipleauthassertions"), null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, bundle.getString("assertion.uncommon.multipleauthassertions"), null));
         }
 
         if (seenCustomAuth) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath, bundle.getString("accesscontrol.userorgroupnotallowed"), null));
+            result.addError(new PolicyValidatorResult.Error(a, bundle.getString("accesscontrol.userorgroupnotallowed"), null));
         }
 
         getMessageTargetContext(targetName).seenAccessControl = true;
@@ -389,12 +389,12 @@ public class PathValidator {
         final String targetName = AssertionUtils.getTargetName(a);
 
         if (seenRouting && isDefaultActor(a) && Assertion.isRequest(a)) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.routing.mustbebefore"), null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, bundle.getString("assertion.routing.mustbebefore"), null));
         }
 
         if (getMessageTargetContext(targetName).seenAccessControl && isDefaultActor(a) || seenCredentialsSinceModified(a)) {
             result.addWarning(new PolicyValidatorResult.
-              Warning(a, assertionPath, bundle.getString("accesscontrol.uncommonuse"), null));
+              Warning(a, bundle.getString("accesscontrol.uncommonuse"), null));
         }
 
         setSeenCredentialsSinceModified(a, false);
@@ -404,20 +404,20 @@ public class PathValidator {
         final String targetName = AssertionUtils.getTargetName(a);
 
         if (seenRouting && isDefaultActor(a) && Assertion.isRequest(a)) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("assertion.routing.mustbebefore"), null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, bundle.getString("assertion.routing.mustbebefore"), null));
         }
 
         if (a instanceof RequireWssX509Cert) {
             if ( seenWssSignature(a, targetName) && !getMessageTargetContext(targetName).allowsMultipleSignatures ) {
                 result.addWarning(new PolicyValidatorResult.
-                  Warning(a, assertionPath, MessageFormat.format(bundle.getString("wssecurity.wsssignature.alreadyrequired"), targetName), null));
+                  Warning(a, MessageFormat.format(bundle.getString("wssecurity.wsssignature.alreadyrequired"), targetName), null));
             }
             setSeenWssSignature(a, targetName);
             if (((RequireWssX509Cert)a).isAllowMultipleSignatures()) {
                 getMessageTargetContext(targetName).allowsMultipleSignatures = true;
             } else if ( getMessageTargetContext(targetName).allowsMultipleSignatures ) {
                 result.addWarning(new PolicyValidatorResult.
-                  Warning(a, assertionPath, bundle.getString("wssecurity.multiplesignatures.conflicting"), null));
+                  Warning(a, bundle.getString("wssecurity.multiplesignatures.conflicting"), null));
             }
         }
 
@@ -425,14 +425,14 @@ public class PathValidator {
         if (a instanceof SecureConversation) {
             if (haveSeen(AssertionUtils.getTargetName(a), ASSERTION_SECURECONVERSATION)) {
                 result.addError(new PolicyValidatorResult.
-                  Error(a,assertionPath,bundle.getString("wssecurity.secureconversation.alreadyspecified"), null));
+                  Error(a, bundle.getString("wssecurity.secureconversation.alreadyspecified"), null));
             }
         }
 
         if (a instanceof RequireWssSaml) {
             if (haveSeen(AssertionUtils.getTargetName(a), ASSERTION_SAMLASSERTION)) {
                 result.addError(new PolicyValidatorResult.
-                  Error(a,assertionPath,bundle.getString("saml.alreadyspecified"), null));
+                  Error(a, bundle.getString("saml.alreadyspecified"), null));
             }
         }
 
@@ -458,12 +458,12 @@ public class PathValidator {
                  Assertion.isRequest(a) && isDefaultActor(a)) {
                 // REASON FOR THIS RULE:
                 // it makes no sense to validate something about the request after it's routed
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  bundle.getString("assertion.routing.shouldbebefore"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                        bundle.getString("assertion.routing.shouldbebefore"), null));
             } else if (a instanceof MessageTargetable) { // This warning is only for MessageTargetable assertions
                 if ( Assertion.isRequest(a) && seenResponse && !hasFlag(a, ValidatorFlag.MAY_TARGET_REQUEST_AFTER_RESPONSE) ) {
-                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      bundle.getString("assertion.uncommon.requestusage"), null));
+                    result.addWarning(new PolicyValidatorResult.Warning(a,
+                            bundle.getString("assertion.uncommon.requestusage"), null));
                 }
             }
         }
@@ -471,8 +471,8 @@ public class PathValidator {
         if (!seenResponse && Assertion.isResponse(a) && ! isRoutingMetadata(a)) {
             // If the assertion is ResponseXpathAssertion and uses a context variable as XML message source, ignore the below error.
             if (!(a instanceof ResponseXpathAssertion) || ((ResponseXpathAssertion)a).getXmlMsgSrc() == null) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                    bundle.getString("assertion.response.usebeforeavailable"), null));
+                result.addError(new PolicyValidatorResult.Error(a,
+                        bundle.getString("assertion.response.usebeforeavailable"), null));
             }
         }
 
@@ -481,7 +481,7 @@ public class PathValidator {
                 (hasFlag(a, ValidatorFlag.PERFORMS_VALIDATION) || a.isCredentialSource()) && 
                 !hasFlag(a, ValidatorFlag.PROCESSES_NON_LOCAL_WSS_RECIPIENT)) {
                 final String msg = bundle.getString("wssecurity.wssrecipient.notenforced");
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, msg, null));
+                result.addWarning(new PolicyValidatorResult.Warning(a, msg, null));
             }
         }
 
@@ -507,50 +507,50 @@ public class PathValidator {
                 } else {
                     msg = MessageFormat.format(bundle.getString("wssecurity.missingpriorsecurityassertion.actor"), actor);
                 }
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, msg, null));
+                result.addWarning(new PolicyValidatorResult.Warning(a, msg, null));
             }
         }
 
         if (a instanceof RequestSwAAssertion && seenRouting && Assertion.isRequest(a)) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-              bundle.getString("assertion.routing.mustbebefore"), null));
+            result.addError(new PolicyValidatorResult.Error(a,
+                    bundle.getString("assertion.routing.mustbebefore"), null));
         }
 
         if (a instanceof ResponseXpathAssertion) {
             if (((ResponseXpathAssertion)a).getXmlMsgSrc()==null && !seenResponse && Assertion.isResponse(a)) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  bundle.getString("assertion.response.usebeforeavailable"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                        bundle.getString("assertion.response.usebeforeavailable"), null));
             }
         } else if(a instanceof WsTrustCredentialExchange) {
             if(!seenUsernamePasswordCredentials(targetName)
             && !seenSamlSecurity(a)) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  bundle.getString("wssecurity.missingpriorcredentialassertion"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                        bundle.getString("wssecurity.missingpriorcredentialassertion"), null));
             }
         } else if(a instanceof WsFederationPassiveTokenRequest) {
             if(!seenUsernamePasswordCredentials(targetName)) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  bundle.getString("wssecurity.missingpriorcredentialassertion.short"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                        bundle.getString("wssecurity.missingpriorcredentialassertion.short"), null));
             }
         } else if(a instanceof WsFederationPassiveTokenExchange) {
             if(!seenSamlSecurity(a)) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  bundle.getString("saml.missingbefore"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                        bundle.getString("saml.missingbefore"), null));
             }
         } else if (a instanceof WssBasic) {
             // bugzilla 2518
             if (!(a instanceof EncryptedUsernameTokenAssertion) && Assertion.isRequest( a )) {
                 if (!haveSeen(targetName, SslAssertion.class)) {
-                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      bundle.getString("transport.missingbefore"), null));
+                    result.addWarning(new PolicyValidatorResult.Warning(a,
+                            bundle.getString("transport.missingbefore"), null));
                 }
             }
         } else if (a instanceof AddWssSecurityToken) {
             // bugzilla 2753, 2421
             final AddWssSecurityToken awst = (AddWssSecurityToken) a;
             if (awst.isIncludePassword() && awst.isUseLastGatheredCredentials() && !seenUsernamePasswordCredentials(REQUEST_TARGET_NAME)) { // NOTE: this assertion always gets request creds
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  bundle.getString("assertion.missingpasswordcollection"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                        bundle.getString("assertion.missingpasswordcollection"), null));
             }
         }
     }
@@ -591,7 +591,7 @@ public class PathValidator {
         }
 
         if (PolicyType.INTERNAL.equals(pvc.getPolicyType()) && ("debug-trace".equals(pvc.getPolicyInternalTag()) || "audit-sink".equals(pvc.getPolicyInternalTag()))) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, bundle.getString("routing.metapolicy.loop"), null));
+            result.addWarning(new PolicyValidatorResult.Warning(a, bundle.getString("routing.metapolicy.loop"), null));
         }
     }
 
@@ -603,8 +603,8 @@ public class PathValidator {
         if (cachedResult instanceof Boolean)
             return;
         if (cachedResult instanceof Throwable) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                                                            bundle.getString("assertion.policyxml.invalid"),
+            result.addError(new PolicyValidatorResult.Error(a,
+                    bundle.getString("assertion.policyxml.invalid"),
                                                             (Throwable)cachedResult));
             return;
         }
@@ -613,8 +613,8 @@ public class PathValidator {
             policyParseCache.put(policyXml, Boolean.TRUE);
         } catch (IOException e) {
             policyParseCache.put(policyXml, e);
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                                                            bundle.getString("assertion.policyxml.invalid"),
+            result.addError(new PolicyValidatorResult.Error(a,
+                    bundle.getString("assertion.policyxml.invalid"),
                                                             e));
         }
     }
@@ -622,12 +622,12 @@ public class PathValidator {
     private void processJmsRouting(JmsRoutingAssertion a) {
         Long oid = a.getEndpointOid();
         if (oid == null) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              bundle.getString("jms.noqueuedefined"), null));
+            result.addWarning(new PolicyValidatorResult.Warning(a,
+                    bundle.getString("jms.noqueuedefined"), null));
         }
 
         if (a.isAttachSamlSenderVouches() && !getMessageTargetContext(REQUEST_TARGET_NAME).seenAccessControl) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+            result.addWarning(new PolicyValidatorResult.Warning(a,
                     bundle.getString("saml.sendervouces.notauthenticated"), null));
         }
     }
@@ -637,23 +637,23 @@ public class PathValidator {
         if (a.getCustomURLs() == null) {
             String url = a.getProtectedServiceUrl();
             if (url == null) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                    bundle.getString("routing.emptyurl"), null));
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                        bundle.getString("routing.emptyurl"), null));
             } else {
                 // only do this if the url has no context variables
                 if (url.indexOf("${") < 0) {
                     try {
                         new URL(url);
                     } catch (MalformedURLException e) {
-                        result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                            bundle.getString("routing.malformedurl"), null));
+                        result.addWarning(new PolicyValidatorResult.Warning(a,
+                                bundle.getString("routing.malformedurl"), null));
                     }
                 }
             }
         }
 
         if (a.isAttachSamlSenderVouches() && !getMessageTargetContext(REQUEST_TARGET_NAME).seenAccessControl) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+            result.addWarning(new PolicyValidatorResult.Warning(a,
                     bundle.getString("saml.sendervouces.notauthenticated"), null));
         }
     }
@@ -699,8 +699,7 @@ public class PathValidator {
                     msg.append(", Message Name: ").append(fb.msgname);
                 }
                 result.addError(new PolicyValidatorResult.Error(a,
-                  assertionPath,
-                  msg.toString(),
+                        msg.toString(),
                   null));
             }
         }
@@ -708,8 +707,8 @@ public class PathValidator {
 
     private void processSoapSpecific(Assertion a) {
         if (!soap) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              bundle.getString("assertion.requiressoap"), null));
+            result.addWarning(new PolicyValidatorResult.Warning(a,
+                    bundle.getString("assertion.requiressoap"), null));
         }
     }
 
@@ -722,8 +721,8 @@ public class PathValidator {
                     return;
                 }
             }
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                              bundle.getString("assertion.composite.nochildren"),
+            result.addWarning(new PolicyValidatorResult.Warning(a,
+                    bundle.getString("assertion.composite.nochildren"),
                               null));
         }
     }
@@ -733,8 +732,8 @@ public class PathValidator {
     }
 
     private void processUnknown(UnknownAssertion a) {
-        result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              bundle.getString("assertion.unrecognized"), null));
+        result.addWarning(new PolicyValidatorResult.Warning(a,
+                bundle.getString("assertion.unrecognized"), null));
     }
 
     private boolean isSpecificUser(Assertion a) {

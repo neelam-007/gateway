@@ -46,14 +46,14 @@ public class SamlStatementValidator implements AssertionValidator {
             if (requestWssSaml.isNoSubjectConfirmation()) {
                 if (sslAssertions.length == 0) {
                     String message = "SSL is recommended with Require SAML Token Profile assertions with No Subject Confirmation";
-                    result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, path, message, null)));
+                    result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, message, null)));
                 }
             }
 
             if (hasBearer) {
                 if (sslAssertions.length == 0) {
                     String message = "SSL is recommended with Require SAML Token Profile assertions with Bearer Subject Confirmation";
-                    result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, path, message, null)));
+                    result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, message, null)));
                 }
             }
 
@@ -68,7 +68,7 @@ public class SamlStatementValidator implements AssertionValidator {
                     }
                     if (!hasSslAsCrendentialSource) {
                         String message = "Require SSL or TLS Transport assertion with Client Certificates configured must be used when No Proof Of Possession specified for Holder-Of-Key.";
-                        result.addError((new PolicyValidatorResult.Error(requestWssSaml, path, message, null)));
+                        result.addError((new PolicyValidatorResult.Error(requestWssSaml, message, null)));
                     }
                 }
             }
@@ -83,24 +83,24 @@ public class SamlStatementValidator implements AssertionValidator {
                     }
                     if (!hasSslAsCrendentialSource) {
                         String message = "SSL with Client Certificates must be used when No Proof Of Possession specified for Sender-Vouches.";
-                        result.addError((new PolicyValidatorResult.Error(requestWssSaml, path, message, null)));
+                        result.addError((new PolicyValidatorResult.Error(requestWssSaml, message, null)));
                     }
                 }
             }
         } else {
             if (hasHok && !requestWssSaml.isRequireHolderOfKeyWithMessageSignature()) {
                 String message = "\"Require Message Signature\" should be used for Proof Of Possession with Holder-Of-Key.";
-                result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, path, message, null)));
+                result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, message, null)));
             }
             if (hasSv && !requestWssSaml.isRequireSenderVouchesWithMessageSignature()) {
                 String message = "\"Require Message Signature\" should be used for Proof Of Possession with Sender-Vouches.";
-                result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, path, message, null)));
+                result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, message, null)));
             }
         }
 
         if (!requestWssSaml.isCheckAssertionValidity()) {
             String message = "SAML assertion validity period checking is disabled.";
-            result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, path, message, null)));
+            result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, message, null)));
         }
     }
 

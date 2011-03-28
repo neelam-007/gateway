@@ -20,9 +20,9 @@ public class VariableSetValidator implements AssertionValidator {
     @Override
     public void validate( AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result ) {
         for ( String warnString : warnStrings )
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warnString, null));
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, warnString, null));
         if (errString != null)
-            result.addError(new PolicyValidatorResult.Error(assertion, path, errString, null));
+            result.addError(new PolicyValidatorResult.Error(assertion, errString, null));
     }
 
     //- PACKAGE

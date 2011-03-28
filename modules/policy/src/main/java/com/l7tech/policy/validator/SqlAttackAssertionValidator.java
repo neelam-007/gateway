@@ -28,13 +28,13 @@ public class SqlAttackAssertionValidator implements AssertionValidator {
                           final PolicyValidationContext pvc,
                           final PolicyValidatorResult result) {
             if ( warningStr != null ) {
-                result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, assertionPath, warningStr, null));
+                result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, warningStr, null));
             }
             // Check if any WSS Token Assertions violate the option "Invasive SQL Injection Attack Protection" or not.
             if (sqlAttackAssertion.isSqlMetaEnabled()) {
                 if ( hasWssAssertion( assertionPath.getPath(), sqlAttackAssertion ) ) {
-                    result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, assertionPath,
-                        "WS-Security message decoration violates the selected \"Invasive SQL Injection Attack Protection\".", null));
+                    result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion,
+                            "WS-Security message decoration violates the selected \"Invasive SQL Injection Attack Protection\".", null));
                 }
             }
     }

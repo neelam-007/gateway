@@ -38,7 +38,7 @@ public class RequireWssEncryptedElementValidator extends XpathBasedAssertionVali
                 RequireWssEncryptedElement requireWssEncryptedElement = (RequireWssEncryptedElement)a;
                 if ( !getXEncAlgorithms(requireWssEncryptedElement).equals(getXEncAlgorithms(assertion)) ) {
                     String message = "Multiple encryption assertions are present with different encryption algorithms.";
-                    result.addError(new PolicyValidatorResult.Error(assertion, path, message, null));
+                    result.addError(new PolicyValidatorResult.Error(assertion, message, null));
                 }
             }
         }

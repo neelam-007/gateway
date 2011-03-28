@@ -38,7 +38,7 @@ public class NamespaceMigratableAssertionValidator implements AssertionValidator
         }
 
         if (unwantedSoapVersion != null && !SoapVersion.UNKNOWN.equals(unwantedSoapVersion)) {
-            result.addWarning(new PolicyValidatorResult.Warning((Assertion)migratable, path,
+            result.addWarning(new PolicyValidatorResult.Warning((Assertion)migratable,
                     String.format("This assertion contains an XPath that uses the %s envelope namespace URI, but the service is configured as using only %s.  The XPath will always fail.",
                             unwantedSoapVersion.getLabel(), serviceSoapVersion.getLabel()),
                     null, SOAP_NS_REMEDIAL_ACTION_CLASSNAME));

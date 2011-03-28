@@ -110,8 +110,7 @@ public class GatewayManagementAssertion extends Assertion implements SetsVariabl
             if ( (wsdl == null) || (!"http://ns.l7tech.com/2010/04/gateway-management".equals(wsdl.getTargetNamespace())) ){
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,
-                                   path,
-                                   "Assertion is for use only with a Gateway Management Service",
+                        "Assertion is for use only with a Gateway Management Service",
                                    null));
             }
 
@@ -134,8 +133,7 @@ public class GatewayManagementAssertion extends Assertion implements SetsVariabl
             if ( !seenIdentity ) {
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,
-                                   path,
-                                   "An authentication assertion should precede this assertion, anonymous users have no access permissions.",
+                        "An authentication assertion should precede this assertion, anonymous users have no access permissions.",
                                    null));
             }
         }

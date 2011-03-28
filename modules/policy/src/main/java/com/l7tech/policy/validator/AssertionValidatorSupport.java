@@ -75,10 +75,10 @@ public class AssertionValidatorSupport<AT extends Assertion> implements Assertio
     public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         for (PendingMessage err : errs) {
             //noinspection ThrowableResultOfMethodCallIgnored
-            result.addError(new PolicyValidatorResult.Error(findTarget(err), path, err.getMessage(), err.getThrowable()));
+            result.addError(new PolicyValidatorResult.Error(findTarget(err), err.getMessage(), err.getThrowable()));
         }
         for (PendingMessage warn : warns) {
-            result.addWarning(new PolicyValidatorResult.Warning(findTarget(warn), path, warn.getMessage(), null));
+            result.addWarning(new PolicyValidatorResult.Warning(findTarget(warn), warn.getMessage(), null));
         }
     }
 

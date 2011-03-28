@@ -176,29 +176,27 @@ public class PolicyValidatorResult implements Serializable {
         private final List<Integer> assertionIndexPath;
         private final String message;
         private final Throwable throwable;
-        private final int assertionPathOrder;
         private final String remedialActionClassname;
 
-        Message(Collection<Integer> assertionIndexPath, int ordinal, int apOrder, String message, Throwable throwable, String remedialActionClassname) {
+        Message(Collection<Integer> assertionIndexPath, int ordinal, String message, Throwable throwable, String remedialActionClassname) {
             if (message == null) throw new IllegalArgumentException();
             this.ordinal = ordinal;
             this.assertionIndexPath = new ArrayList<Integer>( assertionIndexPath );
             this.message = message;
             this.throwable = throwable;
-            this.assertionPathOrder = apOrder;
             this.remedialActionClassname = remedialActionClassname;
         }
 
-        Message(Collection<Integer> assertionIndexPath, int ordinal, int apOrder, String message, Throwable throwable) {
-            this( assertionIndexPath, ordinal, apOrder, message, throwable, null );
+        Message(Collection<Integer> assertionIndexPath, int ordinal, String message, Throwable throwable) {
+            this( assertionIndexPath, ordinal, message, throwable, null );
         }
 
-        Message(Assertion assertion, int apOrder, String message, Throwable throwable) {
-            this( buildIndexPath(assertion), assertion.getOrdinal(), apOrder, message, throwable);
+        Message(Assertion assertion, String message, Throwable throwable) {
+            this( buildIndexPath(assertion), assertion.getOrdinal(), message, throwable);
         }
 
-        public Message(Assertion assertion, int apOrder, String message, Throwable throwable, String remedialActionClassname) {
-            this( buildIndexPath(assertion), assertion.getOrdinal(), apOrder, message, throwable, remedialActionClassname);
+        public Message(Assertion assertion, String message, Throwable throwable, String remedialActionClassname) {
+            this( buildIndexPath(assertion), assertion.getOrdinal(), message, throwable, remedialActionClassname);
         }
 
         public List<Integer> getAssertionIndexPath() {
@@ -215,10 +213,6 @@ public class PolicyValidatorResult implements Serializable {
 
         public Throwable getThrowable() {
             return throwable;
-        }
-
-        public int getAssertionPathOrder() {
-            return assertionPathOrder;
         }
 
         public String getRemedialActionClassname() {
@@ -249,38 +243,30 @@ public class PolicyValidatorResult implements Serializable {
     }
 
     public static class Error extends Message implements Serializable {
-        public Error(List<Integer> errorAssertionIndexPath, int ordinal, int apOrder, String message, Throwable throwable) {
-            super(errorAssertionIndexPath, ordinal, apOrder, message, throwable);
+        public Error(List<Integer> errorAssertionIndexPath, int ordinal, String message, Throwable throwable) {
+            super(errorAssertionIndexPath, ordinal, message, throwable);
         }
 
-        public Error(Assertion error,int apOrder, String message, Throwable throwable) {
-            super(error, apOrder, message, throwable);
+        public Error(Assertion error, String message, Throwable throwable) {
+            super(error, message, throwable);
         }
 
-        public Error(Assertion error, AssertionPath ap, String message, Throwable throwable) {
-            super(error, ap == null ? 0 : ap.getPathOrder(), message, throwable);
-        }
-
-        public Error(Assertion error, AssertionPath ap, String message, Throwable throwable, String remedialActionClassname) {
-            super(error, ap == null ? 0 : ap.getPathOrder(), message, throwable, remedialActionClassname);
+        public Error(Assertion error, String message, Throwable throwable, String remedialActionClassname) {
+            super(error, message, throwable, remedialActionClassname);
         }
     }
 
     public static class Warning extends Message implements Serializable {
-        public Warning(List<Integer> warningAssertionIndexPath, int ordinal, int apOrder, String message, Throwable throwable) {
-            super(warningAssertionIndexPath, ordinal, apOrder, message, throwable);
+        public Warning(List<Integer> warningAssertionIndexPath, int ordinal, String message, Throwable throwable) {
+            super(warningAssertionIndexPath, ordinal, message, throwable);
         }
 
-        public Warning(Assertion warning,int apOrder, String message, Throwable throwable) {
-            super(warning, apOrder, message, throwable);
+        public Warning(Assertion warning, String message, Throwable throwable) {
+            super(warning, message, throwable);
         }
 
-        public Warning(Assertion warning, AssertionPath ap, String message, Throwable throwable) {
-            super(warning, ap == null ? 0 : ap.getPathOrder(), message, throwable);
-        }
-
-        public Warning(Assertion warning, AssertionPath ap, String message, Throwable throwable, String remedialActionClassname) {
-            super(warning, ap == null ? 0 : ap.getPathOrder(), message, throwable, remedialActionClassname);
+        public Warning(Assertion warning, String message, Throwable throwable, String remedialActionClassname) {
+            super(warning, message, throwable, remedialActionClassname);
         }
     }
 }

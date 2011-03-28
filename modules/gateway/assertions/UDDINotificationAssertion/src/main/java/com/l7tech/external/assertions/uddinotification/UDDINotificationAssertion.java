@@ -53,8 +53,7 @@ public class UDDINotificationAssertion extends Assertion {
             if ( (wsdl == null) || (!"urn:uddi-org:subr_v3".equals(wsdl.getTargetNamespace())) ){
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,
-                                   path,
-                                   "Assertion is for use only with a UDDI Notification Service",
+                        "Assertion is for use only with a UDDI Notification Service",
                                    null));
             }
         }

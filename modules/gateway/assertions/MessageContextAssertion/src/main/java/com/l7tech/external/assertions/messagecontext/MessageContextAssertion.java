@@ -137,8 +137,8 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
             removeOverriddenMappings(distinctMappings);
 
             if (distinctMappings.size() > 5) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
-                    "Some mappings in this assertion will be dropped due to too many distinct mappings in this policy.", null));
+                result.addWarning(new PolicyValidatorResult.Warning(assertion,
+                        "Some mappings in this assertion will be dropped due to too many distinct mappings in this policy.", null));
             }
         }
 

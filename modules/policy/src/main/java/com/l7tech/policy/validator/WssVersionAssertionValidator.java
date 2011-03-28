@@ -79,7 +79,7 @@ public class WssVersionAssertionValidator implements AssertionValidator {
             final WsSecurityVersion pathWsSecurityVersion = getWsSecurityVersion( pathAssertion );
             if ( pathWsSecurityVersion != null && expectedVersion != pathWsSecurityVersion ) {
                 String message = "Multiple assertions present with different \"WS-Security version\" settings.  If one assertion specifies a version, the other assertions in the same path should either specify the same version or not specify a version.";
-                result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, path, message, null));
+                result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, message, null));
             }
         }
     }

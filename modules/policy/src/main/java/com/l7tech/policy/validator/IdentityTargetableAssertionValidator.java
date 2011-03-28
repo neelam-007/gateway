@@ -28,7 +28,7 @@ public class IdentityTargetableAssertionValidator implements AssertionValidator 
                           final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( warning != null ) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath, warning, null));
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, warning, null));
         }
     }
 

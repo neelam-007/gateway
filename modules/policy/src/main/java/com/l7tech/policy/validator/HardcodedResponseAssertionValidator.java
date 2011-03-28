@@ -54,10 +54,10 @@ public class HardcodedResponseAssertionValidator implements AssertionValidator {
     @Override
     public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         if (ctypeErr != null)
-            result.addError(new PolicyValidatorResult.Error(ass, path, "The content type is invalid: " + ctypeErr, null));
+            result.addError(new PolicyValidatorResult.Error(ass, "The content type is invalid: " + ctypeErr, null));
         if (useContextVariable)
-            result.addWarning(new PolicyValidatorResult.Warning(ass, path, "Response Body using context variable may result in invalid XML.", null));
+            result.addWarning(new PolicyValidatorResult.Warning(ass, "Response Body using context variable may result in invalid XML.", null));
         if (xmlErr != null)
-            result.addWarning(new PolicyValidatorResult.Warning(ass, path, "XML response is not well-formed: " + xmlErr, null));
+            result.addWarning(new PolicyValidatorResult.Warning(ass, "XML response is not well-formed: " + xmlErr, null));
     }
 }

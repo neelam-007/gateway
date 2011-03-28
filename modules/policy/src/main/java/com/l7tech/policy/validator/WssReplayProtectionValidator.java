@@ -22,12 +22,12 @@ public class WssReplayProtectionValidator implements AssertionValidator {
                           final PolicyValidatorResult result ) {
         if ( assertion.isCustomProtection() ) {
             if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
+                result.addWarning(new PolicyValidatorResult.Warning(assertion,
                         "Custom replay protection will be ignored for non-local WSS Recipient.", null));
             }
         } else {
             if ( !pvc.isSoap() ) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion, assertionPath,
+                result.addWarning(new PolicyValidatorResult.Warning(assertion,
                         "Custom replay protection should be used for non SOAP messages.", null));
             }
         }

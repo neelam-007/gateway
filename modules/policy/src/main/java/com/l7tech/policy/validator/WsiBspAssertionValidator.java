@@ -48,14 +48,14 @@ public class WsiBspAssertionValidator implements AssertionValidator {
 
     private void checkAssertion(RequireWssEncryptedElement assertion, AssertionPath path, PolicyValidatorResult result) {
         if(!permittedEncryptionAlgorithm(assertion.getXEncAlgorithm())) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
+            result.addWarning(new PolicyValidatorResult.Warning(assertion,
                     "Encryption is not WS-I Basic Security Profile compliant.", null));
         }
     }
 
     private void checkAssertion(WssEncryptElement assertion, AssertionPath path, PolicyValidatorResult result) {
         if(!permittedEncryptionAlgorithm(assertion.getXEncAlgorithm())) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
+            result.addWarning(new PolicyValidatorResult.Warning(assertion,
                     "Encryption is not WS-I Basic Security Profile compliant.", null));
         }
     }

@@ -36,7 +36,7 @@ public class WssX509CertValidator implements AssertionValidator {
                           final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( assertion.isAllowMultipleSignatures() ) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
+            result.addWarning(new PolicyValidatorResult.Warning(assertion,
                     "Multiple signatures are permitted. This is an advanced setting and should be used with caution.", null));
 
             for ( Assertion pathAssertion : path.getPath() ) {
@@ -44,7 +44,7 @@ public class WssX509CertValidator implements AssertionValidator {
                 if ( pathAssertion instanceof IdentityTargetable &&
                      AssertionUtils.isSameTargetMessage( assertion, pathAssertion ) &&
                      new IdentityTarget().equals( new IdentityTarget(((IdentityTargetable) pathAssertion).getIdentityTarget()) ))  {
-                    result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, path,
+                    result.addWarning(new PolicyValidatorResult.Warning(pathAssertion,
                             "Multiple signatures are permitted, this assertion must specify a target identity.", null));
                 }
             }

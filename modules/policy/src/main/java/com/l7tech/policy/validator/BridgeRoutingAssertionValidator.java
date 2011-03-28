@@ -29,7 +29,7 @@ public class BridgeRoutingAssertionValidator implements AssertionValidator {
             String url = assertion.getProtectedServiceUrl();
 
             if (url != null && url.indexOf("${") > -1) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
+                result.addWarning(new PolicyValidatorResult.Warning(assertion,
                         "Variables are not supported in the URL when using the Route via SecureSpan Bridge assertion.", null));
             }
         }

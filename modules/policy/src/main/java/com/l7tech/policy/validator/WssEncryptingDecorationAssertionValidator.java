@@ -32,7 +32,7 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
         super.validate( path, pvc, result );
 
         if ( (!defaultActor || !Assertion.isResponse(assertion )) && !defaultIdentityTarget ) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
+            result.addWarning(new PolicyValidatorResult.Warning(assertion,
                     "The \"Target Identity\" will be ignored for this assertion. A \"Target Identity\" should be used for response encryption when multiple identities are used in a request.", null));
         }
 
@@ -72,7 +72,7 @@ abstract class WssEncryptingDecorationAssertionValidator extends WssDecorationAs
         }
 
         if ( requiresTargetEncKey ) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
+            result.addWarning(new PolicyValidatorResult.Warning(assertion,
                     "This assertion requires a (Request) Require WS-Security Signature Credentials assertion, a Require WS-SecureConversation assertion, a Require SAML Token Profile Credentials assertion, a Require Encrypted UsernameToken Profile Credentials assertion, or a Require WS-Security Kerberos Token Profile Credentials.", null));
         }
     }

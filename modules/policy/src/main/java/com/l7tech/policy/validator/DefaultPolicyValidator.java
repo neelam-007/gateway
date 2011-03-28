@@ -55,7 +55,7 @@ public class DefaultPolicyValidator extends AbstractPolicyValidator {
                 }
             }
 
-            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, 0, "Assertions that use XPaths may not work as expected with RPC services.", null));
+            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, "Assertions that use XPaths may not work as expected with RPC services.", null));
         }
 
         return r;
@@ -123,25 +123,25 @@ public class DefaultPolicyValidator extends AbstractPolicyValidator {
 
         if (!pv.seenResponse) { // no routing report that
             r.addWarning(new PolicyValidatorResult.
-              Warning(lastAssertion, ap, "No route assertion.", null));
+              Warning(lastAssertion, "No route assertion.", null));
         }
         if (!pv.seenParsing) {
             if (!pvc.isSoap()) {
                 r.addWarning(new PolicyValidatorResult.
-                  Warning(lastAssertion, ap, "This path potentially allows non-xml content through.", null));
+                  Warning(lastAssertion, "This path potentially allows non-xml content through.", null));
             }
         }
         if (!pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE, PathValidator.REQUEST_TARGET_NAME) && pv.seenResponse) {
-            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, ap,
-              "No credential assertion is present in the policy. The" +
+            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion,
+                    "No credential assertion is present in the policy. The" +
               " service may be exposed to public access", null));
         }
         if (pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE, PathValidator.REQUEST_TARGET_NAME) && !pv.seenAccessControl(PathValidator.REQUEST_TARGET_NAME) && pv.seenResponse) {
-            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, ap, "Credentials are collected but not authenticated." +
+            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, "Credentials are collected but not authenticated." +
               " This service may be exposed to public access.", null));
         }
         if (pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE, PathValidator.RESPONSE_TARGET_NAME) && !pv.seenAccessControl(PathValidator.RESPONSE_TARGET_NAME) && pv.seenResponse) {
-            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, ap, "Response credentials are collected but not authenticated.", null));
+            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, "Response credentials are collected but not authenticated.", null));
         }
     }
 

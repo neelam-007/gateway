@@ -139,16 +139,14 @@ public class EsmSubscriptionAssertion extends Assertion implements UsesVariables
             if (polGuid == null || "".equals(polGuid))
                  result.addWarning(new PolicyValidatorResult.Warning(
                                     assertion,
-                                    path,
-                                    "No notification policy has been specified. New or renewed subscriptions will not have an outbound policy",
+                         "No notification policy has been specified. New or renewed subscriptions will not have an outbound policy",
                                     null));
 
             // check to see if it's an XML service, display appropriate warning
             if (( wsdl == null) || (!ESMSM.equals(wsdl.getTargetNamespace())) ) {
                 result.addWarning(new PolicyValidatorResult.Warning(
                                    assertion,
-                                   path,
-                                   "Assertion added to a policy not intended for a WSDM Subscription service",
+                        "Assertion added to a policy not intended for a WSDM Subscription service",
                                    null));
             }
         }

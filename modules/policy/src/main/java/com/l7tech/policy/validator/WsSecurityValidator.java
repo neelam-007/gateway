@@ -30,7 +30,7 @@ public class WsSecurityValidator implements AssertionValidator {
                           final PolicyValidationContext pvc,
                           final PolicyValidatorResult result ) {
         if ( errString != null && hasDefaultActorEncryption(path.getPath()) && !hasEncryptionToken(path.getPath())) {
-            result.addError(new PolicyValidatorResult.Error(wsSecurity, path, errString, null));
+            result.addError(new PolicyValidatorResult.Error(wsSecurity, errString, null));
         }
         versionValidator.validate( path, pvc, result );
     }

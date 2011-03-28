@@ -38,7 +38,7 @@ public class SwaRequestAssertionValidator implements AssertionValidator {
         if (!pvc.isSoap()) return;
 
         if (wsdlError != null) {
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, wsdlError, null));
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, wsdlError, null));
             return;
         }
 
@@ -50,7 +50,7 @@ public class SwaRequestAssertionValidator implements AssertionValidator {
         }
         wsdlError = "This service does not declare any MIME input parameters (\"multipart/related\")\n" +
                                  "This assertion only works with soap services with attachments.";
-        result.addWarning(new PolicyValidatorResult.Warning(assertion, path, wsdlError, null));
+        result.addWarning(new PolicyValidatorResult.Warning(assertion, wsdlError, null));
     }
 
 

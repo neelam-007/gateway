@@ -33,7 +33,7 @@ public class IdentityTagAssertionValidator implements AssertionValidator {
 
                 if ( tag.equalsIgnoreCase( getIdentityTag(pathAssertion) ) &&
                      AssertionUtils.isSameTargetMessage( assertion, pathAssertion )) {
-                    result.addWarning( new PolicyValidatorResult.Warning( assertion, assertionPath, "Assertion uses the same Identity Tag as another assertion in the same path.", null ) );
+                    result.addWarning( new PolicyValidatorResult.Warning( assertion, "Assertion uses the same Identity Tag as another assertion in the same path.", null ) );
                     break;
                 }
             }

@@ -141,7 +141,7 @@ public class SplitAssertion extends Assertion implements UsesVariables, SetsVari
         @Override
         public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
             if (message != null)
-                result.addWarning((new PolicyValidatorResult.Warning(assertion, path, message, null)));
+                result.addWarning((new PolicyValidatorResult.Warning(assertion, message, null)));
         }
     }
 

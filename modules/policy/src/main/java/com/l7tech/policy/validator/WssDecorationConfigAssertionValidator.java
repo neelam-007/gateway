@@ -62,7 +62,7 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
                 PrivateKeyable pk2 = (PrivateKeyable) assertion;
                 if ( pk1.isUsesDefaultKeyStore() != pk2.isUsesDefaultKeyStore() ||
                      (!pk1.isUsesDefaultKeyStore() && !isSamePrivateKey(pk1, pk2) ) ) {
-                        result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, path, "Multiple signing assertions present with different \"Private Key\" selections. The same \"Private Key\" should be used for these assertions.", null));                                        
+                        result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, "Multiple signing assertions present with different \"Private Key\" selections. The same \"Private Key\" should be used for these assertions.", null));
                 }
             }
 
@@ -75,19 +75,19 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
                 if ( (wdc1.getKeyReference() != null && wdc2.getKeyReference() != null) &&
                      (!wdc1.getKeyReference().equals(wdc2.getKeyReference()))) {
                     String message = "Multiple signing assertions present with different \"Key Reference/Certificate Inclusion\" selections. The same \"Key Reference/Certificate Inclusion\" type should be used for these assertions.";
-                    result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, path, message, null));                                        
+                    result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, message, null));
                 }
 
                 // Check for the same token protection settings
                 if ( wdc1.isUsingProtectTokens() && wdc2.isUsingProtectTokens() && wdc1.isProtectTokens() != wdc2.isProtectTokens() ) {
                     String message = "Multiple signing assertions present with different token signature requirements";
-                    result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, path, message, null));
+                    result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, message, null));
                 }
 
                 // Check for the same signature digest
                 if ( wdc1.getDigestAlgorithmName() != null && wdc2.getDigestAlgorithmName() != null && !wdc1.getDigestAlgorithmName().equals(wdc2.getDigestAlgorithmName()) ) {
                     String message = "Multiple signing assertions present with different explicit \"Signature Digest Algorithm\" selections.  If one assertion specifies a digest, the other assertions in the same path should either specify the same digest or else leave it as \"Automatic\".";
-                    result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, path, message, null));
+                    result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, message, null));
                 }
             }
         }

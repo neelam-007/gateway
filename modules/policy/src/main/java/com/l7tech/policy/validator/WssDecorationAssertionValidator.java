@@ -54,11 +54,11 @@ public class WssDecorationAssertionValidator implements AssertionValidator {
 
             if ( requiresDecoration && !seenDecoration ) {
                 final String warningMessage = getRequiresDecorationMessage();
-                result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warningMessage, null));
+                result.addWarning(new PolicyValidatorResult.Warning(assertion, warningMessage, null));
             }
 
             if ( isWss11 && seenWss10 ) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "This assertion uses WS-Security 1.1 features, but the WS-Security version is set to 1.0.", null));
+                result.addWarning(new PolicyValidatorResult.Warning(assertion, "This assertion uses WS-Security 1.1 features, but the WS-Security version is set to 1.0.", null));
             }
         }
     }

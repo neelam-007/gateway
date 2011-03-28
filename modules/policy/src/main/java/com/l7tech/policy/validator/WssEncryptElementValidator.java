@@ -45,7 +45,7 @@ public class WssEncryptElementValidator extends WssEncryptingDecorationAssertion
             WssEncryptElement ra = (WssEncryptElement)a;
             if (!ra.getXEncAlgorithm().equals(assertion.getXEncAlgorithm())) {
                 String message = "Multiple confidentiality assertions present with different Encryption Method Algorithms";
-                result.addError(new PolicyValidatorResult.Error(assertion, path, message, null));
+                result.addError(new PolicyValidatorResult.Error(assertion, message, null));
                 logger.info(message);
             }
         }

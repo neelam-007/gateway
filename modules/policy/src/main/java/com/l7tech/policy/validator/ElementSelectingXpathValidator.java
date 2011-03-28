@@ -67,7 +67,7 @@ public class ElementSelectingXpathValidator implements AssertionValidator {
             }
 
             if (elementMeta != null && !DataType.ELEMENT.equals(elementMeta.getType())) {
-                result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "Use of non-Element variable \"" + expectedElementVariable + "\" as XPath target element may not work as expected", null));
+                result.addWarning(new PolicyValidatorResult.Warning(assertion, "Use of non-Element variable \"" + expectedElementVariable + "\" as XPath target element may not work as expected", null));
             }
         }
     }

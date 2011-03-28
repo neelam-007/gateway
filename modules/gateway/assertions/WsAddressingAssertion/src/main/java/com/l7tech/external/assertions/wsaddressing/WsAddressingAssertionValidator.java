@@ -20,7 +20,7 @@ public class WsAddressingAssertionValidator implements AssertionValidator {
     @Override
     public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
         if (nonLocalSignature)
-            result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
-              "This assertion requires a signature, but has a WSSRecipient other than \"Default\".  This assertion will never succeed.", null));
+            result.addWarning(new PolicyValidatorResult.Warning(assertion,
+                    "This assertion requires a signature, but has a WSSRecipient other than \"Default\".  This assertion will never succeed.", null));
     }
 }

@@ -126,7 +126,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                     if (as.isEnabled()) validateAssertion( as, null, result, null );
                 }
             } catch ( PolicyAssertionException e) {
-                result.addError(new PolicyValidatorResult.Error(e.getAssertion(), null, e.getMessage(), e));
+                result.addError(new PolicyValidatorResult.Error(e.getAssertion(), e.getMessage(), e));
             }
         }
     }
@@ -164,20 +164,18 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
             switch (idStatus) {
                 case PROVIDER_NOT_EXIST:
                     result.addError(new PolicyValidatorResult.Error( assertion,
-                      path,
-                      "The corresponding identity provider does not exist any more. " +
+                            "The corresponding identity provider does not exist any more. " +
                       "Please remove the assertion from the policy.",
                       null));
                     break;
                 case ID_NOT_EXIST:
                     result.addError(new PolicyValidatorResult.Error( assertion,
-                      path,
-                      "The corresponding identity cannot be found. " +
+                            "The corresponding identity cannot be found. " +
                       "Please remove the assertion from the policy.",
                       null));
                     break;
                 case ID_FIP_NOCERT:
-                    result.addWarning(new PolicyValidatorResult.Warning( assertion, path, WARNING_NOCERT, null));
+                    result.addWarning(new PolicyValidatorResult.Warning( assertion, WARNING_NOCERT, null));
                     // fall through to the rest of the samlonly handling
                 case ID_FIP:
                     if ( pathContext != null ) {
@@ -194,8 +192,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                         }
                         if(!foundUsableCredSource) {
                             result.addError(new PolicyValidatorResult.Error( assertion,
-                              path,
-                              "This identity cannot authenticate with the " +
+                                    "This identity cannot authenticate with the " +
                               "type of credential " +
                               "source specified.",
                               null));
@@ -203,7 +200,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                     }
                     break;
                 case ID_SAMLONLY_NOCERT:
-                    result.addWarning(new PolicyValidatorResult.Warning( assertion, path, WARNING_NOCERT, null));
+                    result.addWarning(new PolicyValidatorResult.Warning( assertion, WARNING_NOCERT, null));
                     // fall through to the rest of the samlonly handling
                 case ID_SAMLONLY:
                     if ( pathContext != null ) {
@@ -216,14 +213,13 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                         }
                         if(!foundUsableCredSource) {
                             result.addError(new PolicyValidatorResult.Error( assertion,
-                              path,
-                              "This identity can only authenticate with a SAML token or SSL Client Certificate but another type of credential source is specified.",
+                                    "This identity can only authenticate with a SAML token or SSL Client Certificate but another type of credential source is specified.",
                               null));
                         }
                     }
                     break;
                 case ID_X509ONLY_NOCERT:
-                    result.addWarning(new PolicyValidatorResult.Warning( assertion, path, WARNING_NOCERT, null));
+                    result.addWarning(new PolicyValidatorResult.Warning( assertion, WARNING_NOCERT, null));
                     // fall through to the rest of the x509only handling
                 case ID_X509ONLY:
                     if ( pathContext != null ) {
@@ -236,8 +232,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                         }
                         if(!foundUsableCredSource) {
                             result.addError(new PolicyValidatorResult.Error( assertion,
-                              path,
-                              "This identity can only authenticate using its client cert. The specified type of credential source is not supported by that user.",
+                                    "This identity can only authenticate using its client cert. The specified type of credential source is not supported by that user.",
                               null));
                         }
                     }
@@ -246,16 +241,14 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                     if ( pathContext != null && identityAssertion instanceof SpecificUser) {
                         if (pathContext.contains(targetName, HttpDigest.class)) {
                             result.addWarning(new PolicyValidatorResult.Warning( assertion,
-                              path,
-                              "This identity may not be able to authenticate with the type of credential source specified.",
+                                    "This identity may not be able to authenticate with the type of credential source specified.",
                               null));
                         }
                     }
                     break;
                 case ID_ERROR:
                     result.addWarning(new PolicyValidatorResult.Warning( assertion,
-                      path,
-                      "This identity cannot be validated at this time (identity provider error)",
+                            "This identity cannot be validated at this time (identity provider error)",
                       null));
                     break;
             }
@@ -276,8 +269,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 }
                 if (!jmsEndpointDefinedOk) {
                     result.addError(new PolicyValidatorResult.Error( assertion,
-                      path,
-                      "This routing assertion refers to a JMS " +
+                            "This routing assertion refers to a JMS " +
                       "endpoint that cannot be found on this system.",
                       null));
                 }
@@ -292,7 +284,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 boolean res = checkGlobalSchemaExists((GlobalResourceInfo)ri);
                 if (!res) {
                     result.addError(new PolicyValidatorResult.Error( assertion,
-                                        path, "This assertion refers to a global schema that no longer exists.", null));
+                            "This assertion refers to a global schema that no longer exists.", null));
                 }
             }
         } else if ( assertion instanceof UnknownAssertion) {
@@ -305,7 +297,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 String className = cause.getMessage();
                 detail = " [" + (className.substring(className.lastIndexOf('.')+1)) + "]";
             }
-            result.addError(new PolicyValidatorResult.Error( assertion, path, MessageFormat.format(message, detail), null));
+            result.addError(new PolicyValidatorResult.Error( assertion, MessageFormat.format(message, detail), null));
         } else if ( assertion instanceof HttpFormPost) {
             HttpFormPost httpFormPost = (HttpFormPost) assertion;
 
@@ -330,7 +322,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
 
             if (contentTypeBuffer.length() > 0) {
                 String msg = "Invalid MIME Content-Type(s): " + contentTypeBuffer.toString();
-                result.addError(new PolicyValidatorResult.Error( assertion, path, msg, null));
+                result.addError(new PolicyValidatorResult.Error( assertion, msg, null));
             }
         }
 
@@ -341,14 +333,12 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
             }
             catch(KerberosConfigException kce) {
                 result.addError(new PolicyValidatorResult.Error( assertion,
-                  path,
-                  "Kerberos is not configured on the Gateway.",
+                        "Kerberos is not configured on the Gateway.",
                   null));
             }
             catch(KerberosException ke) {
                 result.addError(new PolicyValidatorResult.Error( assertion,
-                  path,
-                  "Gateway Kerberos configuration is invalid.",
+                        "Gateway Kerberos configuration is invalid.",
                   null));
             }
         }
@@ -375,7 +365,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                     thrown = e;
                 }
                 if (entity == null)
-                    result.addError(new PolicyValidatorResult.Error( assertion, path,
+                    result.addError(new PolicyValidatorResult.Error( assertion,
                             "Assertion refers to a " + header.getType().getName() +
                                     " that cannot be located on this system", thrown));
             }
@@ -467,21 +457,19 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                         if (iterator.hasNext()) msg.append(", ");
                     }
                     msg.append(".");
-                    r.addError(new PolicyValidatorResult.Error(a, ap, msg.toString(), null));
+                    r.addError(new PolicyValidatorResult.Error(a, msg.toString(), null));
                 }
             }
         } catch (SAXException e) {
             logger.log(Level.INFO, "cannot parse xml from schema validation assertion: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             r.addError(new PolicyValidatorResult.Error(a,
-                                                       ap,
-                                                       "This schema validation assertion does not appear " +
+                    "This schema validation assertion does not appear " +
                                                                "to contain a well-formed xml schema.",
                                                        null));
         } catch ( IOException e ) {
             logger.log(Level.INFO, "cannot parse xml from schema validation assertion: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             r.addError(new PolicyValidatorResult.Error(a,
-                                                       ap,
-                                                       "This schema validation assertion does not appear " +
+                    "This schema validation assertion does not appear " +
                                                                "to contain a well-formed xml schema.",
                                                        null));
         }
@@ -500,8 +488,8 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                     if (foundKey.getKeystoreId() != keystoreId) {
                         SsgKeyFinder ks = ssgKeyStoreManager.findByPrimaryKey(foundKeystoreId);
                         String name = ks != null ? ks.getName() : ("id:" + foundKeystoreId);
-                        r.addWarning(new PolicyValidatorResult.Warning((Assertion)a, ap,
-                                                                       "This assertion refers to a Private Key with alias '" + keyAlias + "' in a keystore with ID '" + keystoreId + "'.  " +
+                        r.addWarning(new PolicyValidatorResult.Warning((Assertion)a,
+                                "This assertion refers to a Private Key with alias '" + keyAlias + "' in a keystore with ID '" + keystoreId + "'.  " +
                                                                        "No keystore with that ID is present on this Gateway, but the system has found " +
                                                                        "a Private Key with a matching alias in the keystore '" + name + "' and will use that.",
                                                                        null));
@@ -515,8 +503,8 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 logger.log(Level.WARNING, "error looking for private key: " + ExceptionUtils.getMessage(e), e);
             }
             if (!found) {
-                r.addError(new PolicyValidatorResult.Error((Assertion)a, ap,
-                                                           "This assertion refers to a Private Key which cannot " +
+                r.addError(new PolicyValidatorResult.Error((Assertion)a,
+                        "This assertion refers to a Private Key which cannot " +
                                                            "be found on this Gateway",
                                                            null));
             }
@@ -531,7 +519,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
             try {
                 JdbcConnection connection = jdbcConnectionManager.getJdbcConnection( name );
                 if ( connection == null ) {
-                    r.addError(new PolicyValidatorResult.Error( (Assertion)jdbcConnectionable, ap,
+                    r.addError(new PolicyValidatorResult.Error( (Assertion)jdbcConnectionable,
                             "Assertion refers to the " + EntityType.JDBC_CONNECTION.getName() +" '"+name+"' which cannot be located on this system.", null));
 
                 }
