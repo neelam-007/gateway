@@ -96,8 +96,8 @@ public class MigrationRecord extends NamedEntityImp {
     }
 
     @XmlTransient
-    @ManyToOne(optional=false)
-    @JoinColumn(name="target_cluster_oid", nullable=false)
+    @ManyToOne(optional=true)
+    @JoinColumn(name="target_cluster_oid", nullable=true)
     public SsgCluster getTargetCluster() {
         return targetCluster;
     }

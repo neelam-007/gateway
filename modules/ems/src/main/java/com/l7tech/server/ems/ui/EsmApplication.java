@@ -259,7 +259,6 @@ public class EsmApplication extends WebApplication {
         // mount other pages / templates
         mountTemplate("/Help.html");
         mountPage("/SSGClusterSelector.html", SSGClusterSelector.class);
-        mountPage("/SSGClusterContentSelector.html", SSGClusterContentSelector.class);
         mountPage("/SSGClusterServiceContentSelector.html", SSGClusterServiceContentSelector.class);
         mountTemplate("/UserSelector.html");
         mountTemplate("/SubmissionReceived.html");

@@ -30,6 +30,7 @@ public class MigratedItem implements Serializable {
             }},
         CREATE(true),
         UPDATE(true),
+        OFFLINE(true),
         OVERWRITE(true) {
             @Override
             public String pastParticiple() {

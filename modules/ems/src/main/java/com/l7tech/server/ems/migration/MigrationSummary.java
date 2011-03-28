@@ -44,8 +44,8 @@ public class MigrationSummary implements Serializable {
 
         this.sourceClusterGuid = sourceCluster.getGuid();
         this.sourceClusterName = sourceCluster.getName();
-        this.targetClusterGuid = targetCluster.getGuid();
-        this.targetClusterName = targetCluster.getName();
+        this.targetClusterGuid = targetCluster==null ? null : targetCluster.getGuid();
+        this.targetClusterName = targetCluster==null ? "-" : targetCluster.getName();
         this.migratedItems = migratedItems;
         this.dryRun = dryRun;
 
@@ -162,7 +162,7 @@ public class MigrationSummary implements Serializable {
 
         builder.append( " \nMigration Summary:\n" );
         builder.append( "Destination folder: " );
-        builder.append( targetFolderPath );
+        builder.append( targetFolderPath == null ? "-" : targetFolderPath ); // Offline
         builder.append( "\n" );
         builder.append( "Services migrated: " );
         builder.append( count(com.l7tech.objectmodel.EntityType.SERVICE) );
@@ -198,6 +198,16 @@ public class MigrationSummary implements Serializable {
                     continue;
                 } else if (operation == MigratedItem.ImportOperation.OVERWRITE) {
                     willOverwriteAnything = true;
+                } else if (operation == MigratedItem.ImportOperation.OFFLINE ) {
+                    if ( !(item.getSourceHeader() instanceof ValueReferenceEntityHeader) ) {
+                        builder.append( item.getSourceHeader().getType().getName().toLowerCase() );
+                        builder.append( ", " );
+                        builder.append( item.getSourceHeader().getName()==null ? "" : item.getSourceHeader().getName() );
+                        builder.append( " (#" );
+                        builder.append( item.getSourceHeader().getExternalId() );
+                        builder.append( ")\n" );
+                    }
+                    continue;
                 }
 
                 ExternalEntityHeader sourceHeader = item.getSourceHeader();
@@ -227,7 +237,7 @@ public class MigrationSummary implements Serializable {
         }
 
         if (willOverwriteAnything && dryRun)
-            builder.insert(0, "WARNING: Some enties on the target cluster may contain changes that will be overwritten!\n \n");
+            builder.insert(0, "WARNING: Some entities on the target cluster may contain changes that will be overwritten!\n \n");
 
         return builder.toString();
     }

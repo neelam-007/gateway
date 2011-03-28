@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 import com.l7tech.objectmodel.migration.MigrationDependency;
@@ -10,37 +11,36 @@ import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.util.TypedPropertyColumn;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.MigrationApi;
+import com.l7tech.server.management.migration.bundle.ExportedItem;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.ValidationUtils;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
 import org.apache.wicket.ajax.AjaxEventBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.form.AjaxFormSubmitBehavior;
+import org.apache.wicket.ajax.markup.html.form.AjaxCheckBox;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
-import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.EmptyPanel;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.protocol.http.WebRequest;
+
 import javax.inject.Inject;
-import org.mortbay.util.ajax.JSON;
 
 import javax.xml.ws.WebServiceException;
 import java.io.Serializable;
@@ -57,100 +57,147 @@ public class PolicyMigration extends EsmStandardWebPage {
     //- PUBLIC
 
     public PolicyMigration() {
-        final EntityMappingModel mappingModel = new EntityMappingModel();
+        sourceClusterModel = new Model<String>();
+        targetClusterModel = new Model<String>();
+        mappingModel = new EntityMappingModel();
 
-        final WebMarkupContainer dialogContainer = new WebMarkupContainer("dialogContainer");
+        dialogContainer = new WebMarkupContainer("dialogContainer");
         dialogContainer.add( new EmptyPanel("dialog") );
         add( dialogContainer.setOutputMarkupId(true) );
 
-        final WebMarkupContainer dependenciesContainer = new WebMarkupContainer("dependencies");
-        dependenciesContainer.setOutputMarkupPlaceholderTag(true);
-        final WebMarkupContainer dependencyCandidateContainer = new WebMarkupContainer("dependencyCandidateContainer");
-        final Form dependenciesOptionsContainer = new Form("dependencyOptionsContainer");
-        final WebMarkupContainer[] dependencyRefreshContainers = { dependencyCandidateContainer, dependenciesOptionsContainer };
-
-        YuiDataTable.contributeHeaders(this);
-
-        final WebMarkupContainer srcItemDependencies = new WebMarkupContainer("srcItemDependencies");
+        srcItemDependencies = new WebMarkupContainer("srcItemDependencies");
         add( srcItemDependencies.setOutputMarkupId(true) );
-        final WebMarkupContainer srcItemDetails = new WebMarkupContainer("srcItemDetails");
+        srcItemDetails = new WebMarkupContainer("srcItemDetails");
         add( srcItemDetails.setOutputMarkupId(true) );
 
         showDependencies( srcItemDependencies, Collections.<DependencyItem>emptyList(), srcItemDetails, null );
-        srcItemDependencies.add( buildDependencyDisplayBehaviour(srcItemDependencies, srcItemDetails, "srcItemSelectionCallbackUrl", mappingModel) );
 
-        final WebMarkupContainer destItemDependencies = new WebMarkupContainer("destItemDependencies");
+        destItemDependencies = new WebMarkupContainer("destItemDependencies");
         add( destItemDependencies.setOutputMarkupId(true) );
-        final WebMarkupContainer destItemDetails = new WebMarkupContainer("destItemDetails");
+        destItemDetails = new WebMarkupContainer("destItemDetails");
         add( destItemDetails.setOutputMarkupId(true) );
         showDependencies( destItemDependencies, Collections.<DependencyItem>emptyList(), destItemDetails, null );
-        destItemDependencies.add( buildDependencyDisplayBehaviour(destItemDependencies, destItemDetails, "destItemSelectionCallbackUrl", null ) );
 
-        final DepenencySummaryModel dependencySummaryModel = new DepenencySummaryModel();
-        final CandidateModel candidateModel = new CandidateModel();
-        final SearchModel searchModel = new SearchModel();
+        final Set<EntityType> highlightEntities = EnumSet.of( EntityType.SERVICE, EntityType.SERVICE_ALIAS, EntityType.POLICY, EntityType.POLICY_ALIAS );
+        final Set<EntityType> selectEntities = EnumSet.of( EntityType.FOLDER, EntityType.SERVICE, EntityType.SERVICE_ALIAS, EntityType.POLICY, EntityType.POLICY_ALIAS );
+        sourceContentSelector = new SSGClusterContentSelectorPanel( "srcSSGClusterContentSelector", getUserModel(), null, highlightEntities, selectEntities, true ){
+            @Override
+            protected void onEntityHighlighted( final AjaxRequestTarget ajaxRequestTarget, final EntityType entityType, final String entityTypeStr, final String entityId ) {
+                refreshDependencyDisplayModel( srcItemDetails, srcItemDependencies, sourceClusterModel.getObject(), entityTypeStr,  entityId);
+                ajaxRequestTarget.addComponent( srcItemDetails );
+                ajaxRequestTarget.addComponent( srcItemDependencies );
+                enableDisableMainButtons( ajaxRequestTarget );
+            }
+            @Override
+            protected void onSelectionChanged( final AjaxRequestTarget ajaxRequestTarget ) {
+                enableDisableMainButtons( ajaxRequestTarget );
+            }
+        };
+        add( sourceContentSelector );
 
-        final Label javascript = new Label("javascript", "");
-        final YuiAjaxButton reloadMigrationButton = new YuiAjaxButton("reloadMigrationButton") {
+        final AjaxCallback refreshCallback = new AjaxCallback(){
+            @Override
+            public void call( final AjaxRequestTarget target ) {
+                enableDisableMainButtons( target );
+            }
+        };
+        sourceClusterSelector = new MigrationSSGClusterSelectorPanel( "srcSSGClusterSelector", getUserModel(), sourceClusterModel, sourceContentSelector, dialogContainer, srcItemDetails, srcItemDependencies, refreshCallback );
+        add( sourceClusterSelector );
+
+        targetContentSelector = new SSGClusterContentSelectorPanel( "destSSGClusterContentSelector", getUserModel(), null, highlightEntities, EnumSet.of( EntityType.FOLDER ), false ){
+            @Override
+            protected void onEntityHighlighted( final AjaxRequestTarget ajaxRequestTarget, final EntityType entityType, final String entityTypeStr, final String entityId ) {
+                refreshDependencyDisplayModel( destItemDetails, destItemDependencies, targetClusterModel.getObject(), entityTypeStr, entityId );
+                ajaxRequestTarget.addComponent( destItemDetails );
+                ajaxRequestTarget.addComponent( destItemDependencies );
+            }
+
+            @Override
+            protected void onSelectionChanged( final AjaxRequestTarget ajaxRequestTarget ) {
+                enableDisableMainButtons( ajaxRequestTarget );
+            }
+        };
+        add( targetContentSelector );
+
+        targetClusterSelector = new MigrationSSGClusterSelectorPanel( "destSSGClusterSelector", getUserModel(), targetClusterModel, targetContentSelector, dialogContainer, destItemDetails, destItemDependencies, refreshCallback );
+        add( targetClusterSelector );
+
+        final WebMarkupContainer refreshSourceClusterContainer = new WebMarkupContainer( "refreshSourceCluster" );
+        refreshSourceClusterContainer.add( new SSGClusterRefreshBehaviour( sourceClusterSelector, sourceContentSelector, srcItemDetails, srcItemDependencies ) );
+        add( refreshSourceClusterContainer );
+
+        final WebMarkupContainer refreshDestinationClusterContainer = new WebMarkupContainer( "refreshDestinationCluster" );
+        refreshDestinationClusterContainer.add( new SSGClusterRefreshBehaviour( targetClusterSelector, targetContentSelector, destItemDetails, destItemDependencies ) );
+        add( refreshDestinationClusterContainer );
+
+        final WebMarkupContainer refreshSourceItemContainer = new WebMarkupContainer( "refreshSourceItem" );
+        refreshSourceItemContainer.add( new ContentRefreshBehaviour( sourceContentSelector, srcItemDetails, srcItemDependencies ) );
+        add( refreshSourceItemContainer );
+
+        final WebMarkupContainer refreshDestinationItemContainer = new WebMarkupContainer( "refreshDestinationItem" );
+        refreshDestinationItemContainer.add( new ContentRefreshBehaviour( targetContentSelector, destItemDetails, destItemDependencies ) );
+        add( refreshDestinationItemContainer );
+
+        dependenciesContainer = new WebMarkupContainer("dependencies");
+        dependenciesContainer.setOutputMarkupPlaceholderTag(true);
+        dependencyCandidateContainer = new WebMarkupContainer("dependencyCandidateContainer");
+        dependenciesOptionsContainer = new Form("dependencyOptionsContainer");
+        dependencyRefreshContainers = new WebMarkupContainer[]{ dependencyCandidateContainer, dependenciesOptionsContainer };
+
+        YuiDataTable.contributeHeaders(this);
+
+        migrateFoldersModel = new Model<Boolean>(true);
+        enableNewServiceModel = new Model<Boolean>(false);
+        overwriteDependenciesModel = new Model<Boolean>(false);
+        offlineDestinationModel = new Model<Boolean>(false);
+
+        migrateFoldersCheckBox = new AjaxCheckBox("migrateFoldersCheckBox", migrateFoldersModel){
+            @Override
+            protected void onUpdate( final AjaxRequestTarget ajaxRequestTarget ) {}
+        };
+        add( migrateFoldersCheckBox.setOutputMarkupId( true ).setMarkupId( "migrateFoldersCheckBox" ) );
+
+        enableNewServicesCheckBox = new AjaxCheckBox("enableNewServicesCheckBox", enableNewServiceModel){
+            @Override
+            protected void onUpdate( final AjaxRequestTarget ajaxRequestTarget ) {}
+        };
+        add( enableNewServicesCheckBox.setOutputMarkupId( true ).setMarkupId( "enableNewServicesCheckBox" ) );
+
+        overwriteDependenciesCheckBox = new AjaxCheckBox("overwriteDependenciesCheckBox", overwriteDependenciesModel){
+            @Override
+            protected void onUpdate( final AjaxRequestTarget ajaxRequestTarget ) {}
+        };
+        add( overwriteDependenciesCheckBox.setOutputMarkupId( true ).setMarkupId( "overwriteDependenciesCheckBox" ) );
+
+        offlineDestinationCheckBox = new AjaxCheckBox("offlineDestinationCheckBox", offlineDestinationModel){
+            @Override
+            protected void onUpdate( final AjaxRequestTarget ajaxRequestTarget ) {
+                updateOfflineDestination( ajaxRequestTarget );
+            }
+        };
+        add( offlineDestinationCheckBox.setOutputMarkupId( true ).setMarkupId( "offlineDestinationCheckBox" ) );
+
+        dependencySummaryModel = new DependencySummaryModel();
+        candidateModel = new CandidateModel();
+        searchModel = new SearchModel();
+
+        reloadMigrationButton = new YuiAjaxButton("reloadMigrationButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                final PreviousMigrationModel model = (PreviousMigrationModel) form.get("reloadSelect").getDefaultModelObject();
-                logger.fine( "Reloading migration '" + model + "'.");
-                try {
-                    MigrationRecord record = migrationRecordManager.findByPrimaryKey( model.id );
-                    if ( record != null ) {
-                        MigrationSummary summary = record.getMigrationSummary();
-
-                        // Update model
-                        List<Pair<ExternalEntityHeader,ExternalEntityHeader>> mappings = new ArrayList<Pair<ExternalEntityHeader,ExternalEntityHeader>>();
-                        for ( MigratedItem item : summary.getMigratedItems() ) {
-                            if ( item.getSourceHeader().getType() == EntityType.FOLDER ) {
-                                continue;
-                            }
-
-                            ExternalEntityHeader source = item.getSourceHeader();
-                            ExternalEntityHeader target = item.getTargetHeader();
-                            if (item.getOperation().modifiesTarget()) {
-                                if ( source.getMappedValue() != null ) {
-                                    mappingModel.valueMap.put( new Pair<ValueKey,String>(new ValueKey( record.getSourceClusterGuid(), source ), record.getTargetClusterGuid()), source.getMappedValue() );
-                                }
-                            } else {
-                                mappings.add( new Pair<ExternalEntityHeader,ExternalEntityHeader>( source, target ) );
-                            }
-                        }
-                        validateAndRestoreMappings( mappingModel, record.getSourceClusterGuid(), record.getTargetClusterGuid(), mappings );
-
-                        // Update UI selections
-                        javascript.setDefaultModelObject("selectClusters( '"+record.getSourceClusterGuid()+"', "+jsArray(record.getSourceItems())+", '"+record.getTargetClusterGuid()+"', '"+record.getTargetFolderId()+"', "+summary.isMigrateFolders()+", "+summary.isEnableNewServices()+", "+summary.isOverwrite()+");");
-                        ajaxRequestTarget.addComponent( javascript );
-
-                        // Clear dependencies mapping section
-                        lastSourceKey = null;
-                        lastSourceClusterId = null;
-                        lastTargetClusterId = null;
-                        lastDependencyItems = Collections.emptyList();
-                        updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
-                        addDependencyOptions( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
-                        ajaxRequestTarget.addComponent( dependenciesContainer );
-                    }
-                } catch ( FindException fe ) {
-                    logger.log( Level.WARNING, "Unexpected error when loading previous migration.", fe );
-                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Migration", ExceptionUtils.getMessage(fe));
-                }
+                onReloadMigration( ajaxRequestTarget, form );
             }
         };
 
-        List<PreviousMigrationModel> previous = loadPreviousMigrations();
+        final List<PreviousMigrationModel> previous = loadPreviousMigrations();
         final Form reloadForm = new Form("reloadForm");
         reloadForm.add( reloadMigrationButton.setOutputMarkupId(true).setEnabled(!previous.isEmpty()) );
-        reloadForm.add( new DropDownChoice<PreviousMigrationModel>( "reloadSelect", new Model<PreviousMigrationModel>(previous.isEmpty() ? null : previous.iterator().next()), previous ){
+        reloadForm.add( new DropDownChoice<PreviousMigrationModel>( "reloadSelect", new Model<PreviousMigrationModel>( previous.isEmpty() ? null : previous.iterator().next() ), previous ) {
             @Override
             protected String getDefaultChoice( final Object selected ) {
                 return "-";
             }
         } );
         add( reloadForm );
-        add( javascript.setOutputMarkupId(true).setEscapeModelStrings(false) );
 
         final WebMarkupContainer container = new WebMarkupContainer("refresh");
         container.add( new AjaxEventBehavior("onclick"){
@@ -168,357 +215,58 @@ public class PolicyMigration extends EsmStandardWebPage {
         } );
         add( container );
 
-        final YuiAjaxButton dependencyLoadButton = new YuiAjaxButton("dependencyLoadButton") {
+        dependencyLoadButton = new YuiAjaxButton("dependencyLoadButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                final String sourceClusterId = lastSourceClusterId;
-                final String targetClusterId = lastTargetClusterId;
-                final Collection<DependencyItem> items =  lastDependencyItems;
-
-                try {
-                    final int before = countUnMappedDependencies( mappingModel, sourceClusterId, targetClusterId, items  );
-                    loadMappings( mappingModel, sourceClusterId, targetClusterId, items, false );
-                    final int after = countUnMappedDependencies( mappingModel, sourceClusterId, targetClusterId, items  );
-                    if ( before != after ) {
-                        updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
-                        addDependencyOptions( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
-
-                        popupCloseDialog(dialogContainer, ajaxRequestTarget, "Loaded Previous Mappings", "Loaded " +(before-after)+ " previous mappings.");
-                        ajaxRequestTarget.addComponent( dependenciesContainer );
-                    } else {
-                        popupCloseDialog(dialogContainer, ajaxRequestTarget, "Previous Mappings Not Loaded", "No previous mappings were found.");
-                    }
-                } catch ( FindException fe ) {
-                    logger.log( Level.WARNING, "Unexpected error when loading previous mappings.", fe );
-                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fe));
-                } catch ( GatewayException ge ) {
-                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(ge));
-                } catch (FailoverException fo) {
-                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fo));
-                } catch ( WebServiceException e ) {
-                    String failureMessage;
-                    if ( GatewayContext.isNetworkException( e ) ) {
-                        failureMessage = "Could not connect to cluster.";
-                    } else if ( GatewayContext.isConfigurationException( e ) ) {
-                        failureMessage = "Could not connect to cluster.";
-                    } else {
-                        failureMessage = "Unexpected error from cluster.";
-                        logger.log( Level.WARNING, "Error loading previous mappings '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
-                    }
-                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", failureMessage);
-                }
+                onLoadDependency( ajaxRequestTarget );
             }
         };
 
-        final YuiAjaxButton clearDependencyButton = new YuiAjaxButton("dependencyClearButton") {
+        final YuiAjaxButton clearDependencyButton = new YuiAjaxButton( "dependencyClearButton" ) {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                final Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(lastSourceKey, lastTargetClusterId);
-                final Pair<ValueKey,String> valueKey = lastSourceKey.asEntityHeader().isValueMappable() ?
-                    new Pair<ValueKey,String>(new ValueKey(lastSourceKey), lastTargetClusterId):
-                    null;
-
-                mappingModel.dependencyMap.remove( mappingKey );
-                if( valueKey != null ) mappingModel.valueMap.remove( valueKey );
-                updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
-                setEnabled(false);
-                for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
-                ajaxRequestTarget.addComponent( dependencyCandidateContainer );
-                ajaxRequestTarget.addComponent( dependenciesOptionsContainer );
+                onClearDependency( ajaxRequestTarget );
             }
         };
 
-        final YuiAjaxButton editDependencyButton = new YuiAjaxButton("dependencyEditButton") {
+        final YuiAjaxButton editDependencyButton = new YuiAjaxButton( "dependencyEditButton" ) {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                if ( lastSourceKey != null && lastSourceKey.header.isValueMappable()) {
-                    ExternalEntityHeader.ValueType valueType = lastSourceKey.header.getValueType();
-                    String displayValue = lastSourceKey.header.getDisplayValue();
-                    String mappedValue = lastSourceKey.header.getMappedValue();
-                    if ( displayValue == null ) displayValue = "";
-
-                    String prompt = "Enter new value.";
-                    String regex = "^(?:.{1,1024})$";
-                    switch ( valueType ) {
-                        case HTTP_URL:
-                            prompt = "Enter HTTP(S) URL.";
-                            regex = ValidationUtils.getHttpUrlRegex();
-                            break;
-                        case IP_ADDRESS:
-                            prompt = "Enter IP address.";
-                            regex = "^(?:(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$";
-                            break;
-                    }
-
-                    final PolicyMigrationMappingValueEditPanel mapping = new PolicyMigrationMappingValueEditPanel(YuiDialog.getContentId(), prompt, displayValue, mappedValue, regex);
-                    YuiDialog resultDialog = new YuiDialog("dialog", "Edit Mapping Value", YuiDialog.Style.OK_CANCEL, mapping, new YuiDialog.OkCancelCallback(){
-                        @Override
-                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget ajaxRequestTarget, final YuiDialog.Button button ) {
-                            if ( button == YuiDialog.Button.OK ) {
-                                lastSourceKey.header.setMappedValue(mapping.getValue());
-                                final Collection<DependencyItem> items = lastDependencyItems;
-                                DependencyItem updatedItem = null;
-                                if ( items != null ) {
-                                    for ( DependencyItem item : items ) {
-                                        if ( item.type.equals(lastSourceKey.header.getType().toString()) && item.id.equals(lastSourceKey.header.getExternalId()) ) {
-                                            mappingModel.valueMap.put( new Pair<ValueKey,String>(new ValueKey(lastSourceKey), lastTargetClusterId), mapping.getValue() );
-                                            updatedItem = item;
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                if ( updatedItem != null ) {
-                                    for ( DependencyItem item : items ) {
-                                        if ( item != updatedItem && isValueMappingSameOwnerAndTypeAndValue(item, updatedItem) ||
-                                             (isValueMappingSameTypeAndValue(item, updatedItem) && mapping.isApplyToAll())) {
-                                            mappingModel.valueMap.put( new Pair<ValueKey,String>( new ValueKey(lastSourceKey.clusterId, item.asEntityHeader()), lastTargetClusterId), mapping.getValue() );
-                                        }
-                                    }
-                                }
-
-                                updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
-                                for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
-                            }
-                        }
-                    });
-                    dialogContainer.replace( resultDialog );
-                    ajaxRequestTarget.addComponent( dialogContainer );
-                }
+                onEditDependency( ajaxRequestTarget );
             }
         };
 
-        Form dependencyControlsForm = new Form("dependencyControlsForm");
+        final Form dependencyControlsForm = new Form("dependencyControlsForm");
         dependencyControlsForm.add( dependencyLoadButton.setOutputMarkupId(true).setEnabled(false) );
-        dependencyControlsForm.add( clearDependencyButton.setOutputMarkupId(true).setEnabled(false) );
-        dependencyControlsForm.add( editDependencyButton.setOutputMarkupId(true).setEnabled(false) );
+        dependencyControlsForm.add( clearDependencyButton.setOutputMarkupId( true ).setEnabled(false) );
+        dependencyControlsForm.add( editDependencyButton.setOutputMarkupId( true ).setEnabled( false ) );
 
-        Form selectionJsonForm = new Form("selectionForm");
-        final HiddenField<String> hiddenSelectionForm = new HiddenField<String>("selectionJson", new Model<String>(""));
-        final HiddenField<String> hiddenDestClusterId = new HiddenField<String>("destinationClusterId", new Model<String>(""));
-        final HiddenField<String> hiddenDestFolderId = new HiddenField<String>("destinationFolderId", new Model<String>(""));
-        final HiddenField<String> hiddenMigrateFolders = new HiddenField<String>("migrateFolders", new Model<String>(""));
-        final HiddenField<String> hiddenEnableNewServices = new HiddenField<String>("enableNewServices", new Model<String>(""));
-        final HiddenField<String> hiddenOverwriteDependencies = new HiddenField<String>("overwriteDependencies", new Model<String>(""));
-        selectionJsonForm.add( hiddenSelectionForm );
-        selectionJsonForm.add( hiddenDestClusterId );
-        selectionJsonForm.add( hiddenDestFolderId );
-        selectionJsonForm.add( hiddenMigrateFolders );
-        selectionJsonForm.add( hiddenEnableNewServices );
-        selectionJsonForm.add( hiddenOverwriteDependencies );
-        AjaxFormSubmitBehavior dependenciesBehaviour = new AjaxFormSubmitBehavior(selectionJsonForm, "onclick"){
+        final Form identifyDependenciesForm = new Form("identifyDependenciesForm");
+        add( identifyDependenciesForm );
+        identifyDependenciesButton = new YuiAjaxButton( "identifyDependenciesButton" , "Identify dependencies" ) {
             @Override
-            protected void onSubmit(final AjaxRequestTarget target) {
-                final String value = hiddenSelectionForm.getDefaultModelObjectAsString();
-                lastTargetClusterId = hiddenDestClusterId.getDefaultModelObjectAsString();
-                try {
-                    String jsonData = value.replaceAll("&quot;", "\"");
-
-                    Map jsonMap = (Map) JSON.parse(jsonData);
-                    final DependencyItemsRequest dir = new DependencyItemsRequest();
-                    dir.fromJSON(jsonMap);
-                    lastSourceClusterId = dir.clusterId;
-
-                    final String targetClusterId = lastTargetClusterId;
-                    final Collection<DependencyItem> deps = retrieveDependencies(dir, null, null);
-
-                    lastDependencyItems = deps;
-                    lastSourceKey = null;
-                    candidateModel.reset();
-                    dependencyLoadButton.setEnabled(true);
-
-                    updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
-                    addDependencyOptions( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
-                    target.addComponent( dependenciesContainer );
-
-                    // build info dialog
-                    Label label = new Label(YuiDialog.getContentId(), summarize(dir, targetClusterId, visible(deps,true), mappingModel));
-                    label.setEscapeModelStrings(false);
-                    YuiDialog dialog = new YuiDialog("dialog", "Identified Dependencies", YuiDialog.Style.CLOSE, label, null);
-                    dialogContainer.replace( dialog );
-                    target.addComponent( dialogContainer );
-                } catch ( FindException fe ) {
-                    logger.log( Level.WARNING, "Unexpected error when processing selection.", fe );
-                    popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", ExceptionUtils.getMessage(fe));
-                } catch ( GatewayException ge ) {
-                    popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", ExceptionUtils.getMessage(ge));
-                } catch ( MigrationApi.MigrationException mfe ) {
-                    String failureMessage = mfe.getMessage();
-                    YuiDialog resultDialog;
-                    if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
-                        resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                    } else {
-                        resultDialog = new YuiDialog("dialog", " Error Identifying Dependencies", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(failureMessage)), null, "600px");
-                    }
-                    dialogContainer.replace( resultDialog );
-                    target.addComponent( dialogContainer );
-                } catch (FailoverException fo) {
-                    popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", ExceptionUtils.getMessage(fo));
-                } catch ( WebServiceException e ) {
-                    String failureMessage;
-                    if ( GatewayContext.isNetworkException( e ) ) {
-                        failureMessage = "Could not connect to cluster.";
-                    } else if ( GatewayContext.isConfigurationException( e ) ) {
-                        failureMessage = "Could not connect to cluster.";
-                    } else {
-                        failureMessage = "Unexpected error from cluster.";
-                        logger.log( Level.WARNING, "Error identifiying dependencies '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
-                    }
-                    popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", failureMessage);
-                }
-            }
-            @Override
-            protected void onError(final AjaxRequestTarget target) {
+            protected void onSubmit( final AjaxRequestTarget target, final Form<?> form ) {
+                onIdentifyDependencies( target );
             }
         };
-        WebComponent image = new WebComponent("identifyDependenciesImage");
-        image.setMarkupId("identifyDependenciesImage");
-        image.add(dependenciesBehaviour);
-        add(image);
+        identifyDependenciesForm.add( identifyDependenciesButton.setMarkupId( "identifyDependenciesButton" ).setEnabled( false ) ); // markup id is set to match CSS
 
-        AjaxFormSubmitBehavior migrateBehaviour = new AjaxFormSubmitBehavior(selectionJsonForm, "onclick"){
+        final Form migrateForm = new Form("migrateForm");
+        add( migrateForm );
+        migrateButton = new YuiAjaxButton("migrateButton", "Migrate selected policies with dependency mapping"){
             @Override
-            protected void onSubmit(final AjaxRequestTarget target) {
-                final String value = hiddenSelectionForm.getDefaultModelObjectAsString();
-                final String targetClusterId = hiddenDestClusterId.getDefaultModelObjectAsString();
-                final String targetFolderId = hiddenDestFolderId.getDefaultModelObjectAsString();
-                final String migrateFolders = hiddenMigrateFolders.getDefaultModelObjectAsString();
-                final String enableNewServices = hiddenEnableNewServices.getDefaultModelObjectAsString();
-                final String overwriteDependencies = hiddenOverwriteDependencies.getDefaultModelObjectAsString();
-                try {
-                    String jsonData = value.replaceAll("&quot;", "\"");
-
-                    Map jsonMap = (Map) JSON.parse(jsonData);
-                    final DependencyItemsRequest dir = new DependencyItemsRequest();
-                    dir.fromJSON(jsonMap);
-
-                    try {
-                        String dependencyValidationMessage = validateDependencies( dir.clusterId, targetClusterId, dir, mappingModel );
-                        if ( dependencyValidationMessage != null && !dependencyValidationMessage.isEmpty() ) {
-                            TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model<String>(dependencyValidationMessage));
-                            YuiDialog dialog = new YuiDialog("dialog", "Dependency Mapping Required", YuiDialog.Style.CLOSE, textPanel, null, "600px");
-                            dialogContainer.replace( dialog );
-                            target.addComponent( dialogContainer );
-                        } else {
-                            final boolean folders = Boolean.valueOf(migrateFolders);
-                            final boolean enableServices = Boolean.valueOf(enableNewServices);
-                            final boolean overwrite = Boolean.valueOf(overwriteDependencies);
-
-                            // load mappings for top-level items that have been previously migrated
-                            loadMappings( mappingModel, dir.clusterId, targetClusterId, retrieveDependencies(dir, null, null), true);
-                            final PolicyMigrationConfirmationPanel confirmationPanel = new PolicyMigrationConfirmationPanel(YuiDialog.getContentId(), new Model<String>(performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, "", true )));
-                            YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, confirmationPanel, new YuiDialog.OkCancelCallback(){
-                                @Override
-                                public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
-                                    if ( button == YuiDialog.Button.OK ) {
-                                        logger.fine("Migration confirmed.");
-                                        try {
-                                            String message = performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, confirmationPanel.getLabel(), false );
-                                            YuiDialog resultDialog = new YuiDialog("dialog", "Migration Result", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(message)), null, "600px");
-                                            dialogContainer.replace( resultDialog );
-                                        } catch ( MigrationFailedException mfe ) {
-                                            String failureMessage = mfe.getMessage();
-                                            YuiDialog resultDialog;
-                                            if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
-                                                resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                                            } else {
-                                                resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(failureMessage)), null, "600px");
-                                            }
-                                            dialogContainer.replace( resultDialog );
-                                            target.addComponent( dialogContainer );
-                                        } catch (FailoverException fo) {
-                                            popupCloseDialog(dialogContainer, target, "Could not connect to cluster", ExceptionUtils.getMessage(fo));
-                                        } catch ( WebServiceException e ) {
-                                            String failureMessage;
-                                            if ( GatewayContext.isNetworkException( e ) ) {
-                                                failureMessage = "Could not connect to cluster.";
-                                            } else if ( GatewayContext.isConfigurationException( e ) ) {
-                                                failureMessage = "Could not connect to cluster.";
-                                            } else {
-                                                failureMessage = "Unexpected error from cluster.";
-                                                logger.log( Level.WARNING, "Error processing selection '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
-                                            }
-                                            popupCloseDialog(dialogContainer, target, "Migration Error", failureMessage);
-                                        }
-                                    } else {
-                                        dialogContainer.replace( new EmptyPanel("dialog") );
-                                    }
-                                    target.addComponent(dialogContainer);
-                                }
-                            }, "600px");
-
-                            dialogContainer.replace( dialog );
-                            target.addComponent( dialogContainer );
-                        }
-                    } catch ( FindException fe ) {
-                        popupCloseDialog(dialogContainer, target, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fe));
-                    } catch ( GatewayException ge ) {
-                        popupCloseDialog(dialogContainer, target, "Error Loading Previous Mappings", ExceptionUtils.getMessage(ge));
-                    } catch (MigrationApi.MigrationException mae) {
-                        popupCloseDialog(dialogContainer, target, "Error Retrieving Dependencies", ExceptionUtils.getMessage(mae));
-                    } catch ( MigrationFailedException mfe ) {
-                        String failureMessage = mfe.getMessage();
-                        YuiDialog resultDialog;
-                        if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
-                            resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                        } else {
-                            resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(failureMessage)), null, "600px");
-                        }
-                        dialogContainer.replace( resultDialog );
-                        target.addComponent( dialogContainer );
-                    }
-                } catch (FailoverException fo) {
-                    popupCloseDialog(dialogContainer, target, "Could not connect to cluster.", ExceptionUtils.getMessage(fo));
-                } catch ( WebServiceException e ) {
-                    String failureMessage;
-                    if ( GatewayContext.isNetworkException( e ) ) {
-                        failureMessage = "Could not connect to cluster.";
-                    } else if ( GatewayContext.isConfigurationException( e ) ) {
-                        failureMessage = "Could not connect to cluster.";
-                    } else {
-                        failureMessage = "Unexpected error from cluster.";
-                        logger.log( Level.WARNING, "Error during migration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
-                    }
-                    popupCloseDialog(dialogContainer, target, "Migration Error", failureMessage);
-                }
-            }
-            @Override
-            protected void onError(final AjaxRequestTarget target) {
+            protected void onSubmit( final AjaxRequestTarget target, final Form<?> form ) {
+                onMigrate( target );
             }
         };
-        WebComponent migrateImage = new WebComponent("migrateImage");
-        migrateImage.setMarkupId("migrateImage");
-        migrateImage.add(migrateBehaviour);
-        add(migrateImage);
-
-        final Form getGatewayTrustServletInputsForm = new JsonDataResponseForm("getGatewayTrustServletInputsForm"){
-            @Override
-            protected Object getJsonResponseData() {
-                try {
-                    logger.fine("Responding to request for trust token.");
-                    final String token = gatewayTrustTokenFactory.getTrustToken();
-                    return new JSONSupport() {
-                        @Override
-                        protected void writeJson() {
-                            add("token", token);
-                        }
-                    };
-                } catch (Exception e) {
-                    logger.warning(e.toString());
-                    return new JSONException(e);
-                }
-            }
-        };
-
-        add( selectionJsonForm );
-        add( getGatewayTrustServletInputsForm );
+        migrateForm.add( migrateButton.setMarkupId( "migrateButton" ).setEnabled( false ) ); // markup id is set to match CSS
 
         dependenciesContainer.add( new Label("dependenciesTotalLabel", new PropertyModel(dependencySummaryModel, "totalDependencies")).setOutputMarkupId(true) );
         dependenciesContainer.add( new Label("dependenciesUnmappedLabel", new PropertyModel(dependencySummaryModel, "unmappedDependencies")).setOutputMarkupId(true) );
         dependenciesContainer.add( new Label("dependenciesRequiredUnmappedLabel", new PropertyModel(dependencySummaryModel, "requiredUnmappedDependencies")).setOutputMarkupId(true) );
         dependenciesContainer.add( dependencyControlsForm.setOutputMarkupId(true) );
 
-        updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
+        updateDependencies();
 
         dependenciesContainer.add( dependencyCandidateContainer.setOutputMarkupId(true) );
         dependenciesContainer.add( dependenciesOptionsContainer.setOutputMarkupId(true) );
@@ -535,20 +283,33 @@ public class PolicyMigration extends EsmStandardWebPage {
             }
         });
         dependenciesOptionsContainer.add(new TextField<String>("dependencySearchText", new PropertyModel<String>(searchModel, "searchValue")));
-        dependenciesOptionsContainer.add(new YuiAjaxButton("dependencySearchButton") {
+        dependenciesOptionsContainer.add(new YuiAjaxButton("dependencySearchButton", dependenciesOptionsContainer) {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 logger.fine("Searching for dependencies with filter '"+searchModel.getSearchFilter()+"'.");
-                addDependencyOptions( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel, false );
+                addDependencyOptions( false );
                 ajaxRequestTarget.addComponent( dependenciesOptionsContainer );
             }
         });
         dependencyCandidateContainer.add( new Label("dependencyCandidateName", new PropertyModel(candidateModel, "name")) );
         dependencyCandidateContainer.add( new Label("dependencyCandidateType", new PropertyModel(candidateModel, "type")) );
 
-        addDependencyOptions( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
+        addDependencyOptions( true );
 
         add( dependenciesContainer.setOutputMarkupId(true) );
+    }
+
+    private void updateOfflineDestination( final AjaxRequestTarget ajaxRequestTarget ) {
+        if ( offlineDestinationModel.getObject() ) {
+            targetClusterSelector.setMessage("Offline destination.");
+            targetContentSelector.setMessage("Offline destination.");
+        } else {
+            targetClusterSelector.clearMessage();
+            targetContentSelector.clearMessage();
+        }
+        ajaxRequestTarget.addComponent( targetClusterSelector );
+        ajaxRequestTarget.addComponent( targetContentSelector );
+        enableDisableMainButtons( ajaxRequestTarget );
     }
 
     //- PRIVATE
@@ -574,10 +335,421 @@ public class PolicyMigration extends EsmStandardWebPage {
     @Inject
     private GatewayTrustTokenFactory gatewayTrustTokenFactory;
 
+    private final IModel<String> sourceClusterModel;
+    private final IModel<String> targetClusterModel;
+    private final WebMarkupContainer dialogContainer;
+    private final WebMarkupContainer srcItemDependencies;
+    private final WebMarkupContainer srcItemDetails;
+    private final WebMarkupContainer destItemDependencies;
+    private final WebMarkupContainer destItemDetails;
+    private final SSGClusterContentSelectorPanel sourceContentSelector;
+    private final SSGClusterSelectorPanel sourceClusterSelector;
+    private final SSGClusterContentSelectorPanel targetContentSelector;
+    private final SSGClusterSelectorPanel targetClusterSelector;
+    private final WebMarkupContainer dependenciesContainer;
+    private final WebMarkupContainer dependencyCandidateContainer;
+    private final Form dependenciesOptionsContainer;
+    private final WebMarkupContainer[] dependencyRefreshContainers;
+    private final Model<Boolean> migrateFoldersModel;
+    private final Model<Boolean> enableNewServiceModel;
+    private final Model<Boolean> overwriteDependenciesModel;
+    private final Model<Boolean> offlineDestinationModel;
+    private final AjaxCheckBox migrateFoldersCheckBox;
+    private final AjaxCheckBox enableNewServicesCheckBox;
+    private final AjaxCheckBox overwriteDependenciesCheckBox;
+    private final AjaxCheckBox offlineDestinationCheckBox;
+    private final DependencySummaryModel dependencySummaryModel;
+    private final CandidateModel candidateModel;
+    private final SearchModel searchModel;
+    private final YuiAjaxButton reloadMigrationButton;
+    private final YuiAjaxButton identifyDependenciesButton;
+    private final YuiAjaxButton migrateButton;
+    private final YuiAjaxButton dependencyLoadButton;
+    private final EntityMappingModel mappingModel;
     private DependencyKey lastSourceKey;
     private String lastSourceClusterId;
     private String lastTargetClusterId;
     private Collection<DependencyItem> lastDependencyItems = Collections.emptyList();
+    private final Map<String,MigrationSource> detailProvidersByCluster = new HashMap<String,MigrationSource>();
+
+    private void onReloadMigration( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
+        final PreviousMigrationModel model = (PreviousMigrationModel) form.get("reloadSelect").getDefaultModelObject();
+        logger.fine( "Reloading migration '" + model + "'.");
+        try {
+            final MigrationRecord record = migrationRecordManager.findByPrimaryKey( model.id );
+            if ( record != null ) {
+                final MigrationSummary summary = record.getMigrationSummary();
+
+                // Update model
+                final List<Pair<ExternalEntityHeader,ExternalEntityHeader>> mappings = new ArrayList<Pair<ExternalEntityHeader,ExternalEntityHeader>>();
+                for ( MigratedItem item : summary.getMigratedItems() ) {
+                    if ( item.getSourceHeader().getType() == EntityType.FOLDER ) {
+                        continue;
+                    }
+
+                    ExternalEntityHeader source = item.getSourceHeader();
+                    ExternalEntityHeader target = item.getTargetHeader();
+                    if (item.getOperation().modifiesTarget()) {
+                        if ( source.getMappedValue() != null ) {
+                            mappingModel.valueMap.put( new Pair<ValueKey,String>(new ValueKey( record.getSourceClusterGuid(), source ), record.getTargetClusterGuid()), source.getMappedValue() );
+                        }
+                    } else {
+                        mappings.add( new Pair<ExternalEntityHeader,ExternalEntityHeader>( source, target ) );
+                    }
+                }
+                validateAndRestoreMappings( mappingModel, record.getSourceClusterGuid(), record.getTargetClusterGuid(), mappings );
+                final SsgCluster sourceSsgCluster = this.ssgClusterManager.findByGuid( record.getSourceClusterGuid() );
+                final boolean offlineSource = sourceSsgCluster != null && sourceSsgCluster.isOffline();
+
+                // Update source and destinations
+                sourceClusterModel.setObject( record.getSourceClusterGuid() );
+                targetClusterModel.setObject( record.getTargetClusterGuid() );
+                sourceClusterSelector.refresh();
+                targetClusterSelector.refresh();
+                migrateFoldersModel.setObject( summary.isMigrateFolders() );
+                enableNewServiceModel.setObject( summary.isEnableNewServices() );
+                overwriteDependenciesModel.setObject( summary.isOverwrite() );
+                offlineDestinationModel.setObject( record.getTargetClusterGuid() == null && !offlineSource );
+                if ( offlineSource ) {
+                    sourceClusterSelector.setIncludedOfflineClusters( Collections.singleton( summary.getSourceClusterGuid() ) );
+                    sourceContentSelector.setProviderForCluster( summary.getSourceClusterGuid(), new OfflineMigrationContentProvider( record ) );
+                    detailProvidersByCluster.put( summary.getSourceClusterGuid(), new OfflineMigrationSource( record ) );
+                }
+                sourceContentSelector.setClusterId( summary.getSourceClusterGuid() );
+                targetContentSelector.setClusterId( summary.getTargetClusterGuid() );
+                sourceContentSelector.setSelectedContentIds( new HashSet<String>(record.getSourceItems()) );
+                if ( record.getTargetFolderId() == null ) {
+                    targetContentSelector.setSelectedContentIds( Collections.<String>emptySet() );
+                } else {
+                    targetContentSelector.setSelectedContentIds( Collections.singleton( record.getTargetFolderId() ) );
+                }
+                showDependencies( srcItemDependencies, Collections.<DependencyItem>emptyList(), srcItemDetails, null );
+                showDependencies( destItemDependencies, Collections.<DependencyItem>emptyList(), destItemDetails, null );
+
+                // Clear dependencies mapping section
+                lastSourceKey = null;
+                lastSourceClusterId = null;
+                lastTargetClusterId = null;
+                lastDependencyItems = Collections.emptyList();
+                updateDependencies();
+                addDependencyOptions( true );
+
+                ajaxRequestTarget.addComponent( sourceClusterSelector );
+                ajaxRequestTarget.addComponent( sourceContentSelector );
+                ajaxRequestTarget.addComponent( migrateFoldersCheckBox );
+                ajaxRequestTarget.addComponent( enableNewServicesCheckBox );
+                ajaxRequestTarget.addComponent( overwriteDependenciesCheckBox );
+                ajaxRequestTarget.addComponent( offlineDestinationCheckBox );
+                ajaxRequestTarget.addComponent( srcItemDetails );
+                ajaxRequestTarget.addComponent( srcItemDependencies );
+                ajaxRequestTarget.addComponent( destItemDetails );
+                ajaxRequestTarget.addComponent( destItemDependencies );
+                ajaxRequestTarget.addComponent( dependenciesContainer );
+                updateOfflineDestination( ajaxRequestTarget );
+            }
+        } catch ( FindException fe ) {
+            logger.log( Level.WARNING, "Unexpected error when loading previous migration.", fe );
+            popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Migration", ExceptionUtils.getMessage( fe ));
+        }
+    }
+
+    private void onClearDependency( final AjaxRequestTarget ajaxRequestTarget ) {
+        final Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(lastSourceKey, lastTargetClusterId);
+        final Pair<ValueKey,String> valueKey = lastSourceKey.asEntityHeader().isValueMappable() ?
+            new Pair<ValueKey,String>(new ValueKey(lastSourceKey), lastTargetClusterId):
+            null;
+
+        mappingModel.dependencyMap.remove( mappingKey );
+        if( valueKey != null ) mappingModel.valueMap.remove( valueKey );
+        updateDependencies();
+        setEnabled(false);
+        for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
+        ajaxRequestTarget.addComponent( dependencyCandidateContainer );
+        ajaxRequestTarget.addComponent( dependenciesOptionsContainer );
+    }
+
+    private void onEditDependency( final AjaxRequestTarget ajaxRequestTarget ) {
+        if ( lastSourceKey != null && lastSourceKey.header.isValueMappable()) {
+            ExternalEntityHeader.ValueType valueType = lastSourceKey.header.getValueType();
+            String displayValue = lastSourceKey.header.getDisplayValue();
+            String mappedValue = lastSourceKey.header.getMappedValue();
+            if ( displayValue == null ) displayValue = "";
+
+            String prompt = "Enter new value.";
+            String regex = "^(?:.{1,1024})$";
+            switch ( valueType ) {
+                case HTTP_URL:
+                    prompt = "Enter HTTP(S) URL.";
+                    regex = ValidationUtils.getHttpUrlRegex();
+                    break;
+                case IP_ADDRESS:
+                    prompt = "Enter IP address.";
+                    regex = "^(?:(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$";
+                    break;
+            }
+
+            final PolicyMigrationMappingValueEditPanel mapping = new PolicyMigrationMappingValueEditPanel( YuiDialog.getContentId(), prompt, displayValue, mappedValue, regex);
+            YuiDialog resultDialog = new YuiDialog("dialog", "Edit Mapping Value", YuiDialog.Style.OK_CANCEL, mapping, new YuiDialog.OkCancelCallback(){
+                @Override
+                public void onAction( final YuiDialog dialog, final AjaxRequestTarget ajaxRequestTarget, final YuiDialog.Button button ) {
+                    if ( button == YuiDialog.Button.OK ) {
+                        lastSourceKey.header.setMappedValue(mapping.getValue());
+                        final Collection<DependencyItem> items = lastDependencyItems;
+                        DependencyItem updatedItem = null;
+                        if ( items != null ) {
+                            for ( DependencyItem item : items ) {
+                                if ( item.type.equals(lastSourceKey.header.getType().toString()) && item.id.equals(lastSourceKey.header.getExternalId()) ) {
+                                    mappingModel.valueMap.put( new Pair<ValueKey,String>(new ValueKey(lastSourceKey), lastTargetClusterId), mapping.getValue() );
+                                    updatedItem = item;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if ( updatedItem != null ) {
+                            for ( DependencyItem item : items ) {
+                                if ( item != updatedItem && isValueMappingSameOwnerAndTypeAndValue(item, updatedItem) ||
+                                     (isValueMappingSameTypeAndValue(item, updatedItem) && mapping.isApplyToAll())) {
+                                    mappingModel.valueMap.put( new Pair<ValueKey,String>( new ValueKey(lastSourceKey.clusterId, item.asEntityHeader()), lastTargetClusterId), mapping.getValue() );
+                                }
+                            }
+                        }
+
+                        updateDependencies();
+                        for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
+                    }
+                }
+            });
+            dialogContainer.replace( resultDialog );
+            ajaxRequestTarget.addComponent( dialogContainer );
+        }
+    }
+
+    private void onLoadDependency( final AjaxRequestTarget ajaxRequestTarget ) {
+        final String sourceClusterId = lastSourceClusterId;
+        final String targetClusterId = lastTargetClusterId;
+        final Collection<DependencyItem> items =  lastDependencyItems;
+
+        try {
+            final int before = countUnMappedDependencies( mappingModel, sourceClusterId, targetClusterId, items  );
+            loadMappings( mappingModel, sourceClusterId, targetClusterId, items, false );
+            final int after = countUnMappedDependencies( mappingModel, sourceClusterId, targetClusterId, items  );
+            if ( before != after ) {
+                updateDependencies();
+                addDependencyOptions( true );
+
+                popupCloseDialog(dialogContainer, ajaxRequestTarget, "Loaded Previous Mappings", "Loaded " +(before-after)+ " previous mappings.");
+                ajaxRequestTarget.addComponent( dependenciesContainer );
+            } else {
+                popupCloseDialog(dialogContainer, ajaxRequestTarget, "Previous Mappings Not Loaded", "No previous mappings were found.");
+            }
+        } catch ( FindException fe ) {
+            logger.log( Level.WARNING, "Unexpected error when loading previous mappings.", fe );
+            popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage( fe ));
+        } catch ( GatewayException ge ) {
+            popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(ge));
+        } catch (FailoverException fo) {
+            popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fo));
+        } catch ( WebServiceException e ) {
+            String failureMessage;
+            if ( GatewayContext.isNetworkException( e ) ) {
+                failureMessage = "Could not connect to cluster.";
+            } else if ( GatewayContext.isConfigurationException( e ) ) {
+                failureMessage = "Could not connect to cluster.";
+            } else {
+                failureMessage = "Unexpected error from cluster.";
+                logger.log( Level.WARNING, "Error loading previous mappings '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+            }
+            popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", failureMessage);
+        }
+    }
+
+    private void onMigrate( final AjaxRequestTarget target ) {
+        final boolean folders = migrateFoldersModel.getObject();
+        final boolean enableServices = enableNewServiceModel.getObject();
+        final boolean overwrite = overwriteDependenciesModel.getObject();
+        final boolean offlineDestination = offlineDestinationModel.getObject();
+        final String targetClusterId = targetClusterModel.getObject();
+        final String targetFolderId = offlineDestination ? null : targetContentSelector.getSelectedContent().iterator().next().getExternalId();
+        try {
+            final DependencyItemsRequest dir = new DependencyItemsRequest();
+            dir.fromSelection( sourceContentSelector );
+
+            try {
+                final String dependencyValidationMessage = offlineDestination ? null : validateDependencies( dir.clusterId, targetClusterId, dir, mappingModel );
+                if ( dependencyValidationMessage != null && !dependencyValidationMessage.isEmpty() ) {
+                    TextPanel textPanel = new TextPanel( YuiDialog.getContentId(), new Model<String>(dependencyValidationMessage));
+                    YuiDialog dialog = new YuiDialog("dialog", "Dependency Mapping Required", YuiDialog.Style.CLOSE, textPanel, null, "600px");
+                    dialogContainer.replace( dialog );
+                    target.addComponent( dialogContainer );
+                } else {
+                    // load mappings for top-level items that have been previously migrated
+                    if ( !offlineDestination ) {
+                        final MigrationSource provider = getMigrationSource( sourceContentSelector.getClusterId() );
+                        loadMappings( mappingModel, dir.clusterId, targetClusterId, provider.getDependencies( dir ), true);
+                    }
+                    final PolicyMigrationConfirmationPanel confirmationPanel = new PolicyMigrationConfirmationPanel(YuiDialog.getContentId(), new Model<String>(performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, offlineDestination, dir, "", true )));
+                    YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, confirmationPanel, new YuiDialog.OkCancelCallback(){
+                        @Override
+                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
+                            if ( button == YuiDialog.Button.OK ) {
+                                logger.fine("Migration confirmed.");
+                                try {
+                                    String message = performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite,offlineDestination, dir, confirmationPanel.getLabel(), false );
+                                    YuiDialog resultDialog = new YuiDialog("dialog", "Migration Result", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(message)), null, "600px");
+                                    dialogContainer.replace( resultDialog );
+                                } catch ( MigrationFailedException mfe ) {
+                                    String failureMessage = mfe.getMessage();
+                                    YuiDialog resultDialog;
+                                    if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
+                                        resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                                    } else {
+                                        resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(failureMessage)), null, "600px");
+                                    }
+                                    dialogContainer.replace( resultDialog );
+                                    target.addComponent( dialogContainer );
+                                } catch (FailoverException fo) {
+                                    popupCloseDialog(dialogContainer, target, "Could not connect to cluster", ExceptionUtils.getMessage( fo ));
+                                } catch ( WebServiceException e ) {
+                                    String failureMessage;
+                                    if ( GatewayContext.isNetworkException( e ) ) {
+                                        failureMessage = "Could not connect to cluster.";
+                                    } else if ( GatewayContext.isConfigurationException( e ) ) {
+                                        failureMessage = "Could not connect to cluster.";
+                                    } else {
+                                        failureMessage = "Unexpected error from cluster.";
+                                        logger.log( Level.WARNING, "Error processing selection '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                                    }
+                                    popupCloseDialog(dialogContainer, target, "Migration Error", failureMessage);
+                                }
+                            } else {
+                                dialogContainer.replace( new EmptyPanel("dialog") );
+                            }
+                            target.addComponent(dialogContainer);
+                        }
+                    }, "600px");
+
+                    dialogContainer.replace( dialog );
+                    target.addComponent( dialogContainer );
+                }
+            } catch ( FindException fe ) {
+                popupCloseDialog(dialogContainer, target, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fe));
+            } catch ( GatewayException ge ) {
+                popupCloseDialog(dialogContainer, target, "Error Loading Previous Mappings", ExceptionUtils.getMessage(ge));
+            } catch (MigrationApi.MigrationException mae) {
+                popupCloseDialog(dialogContainer, target, "Error Retrieving Dependencies", ExceptionUtils.getMessage(mae));
+            } catch ( MigrationFailedException mfe ) {
+                String failureMessage = mfe.getMessage();
+                YuiDialog resultDialog;
+                if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
+                    resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                } else {
+                    resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(failureMessage)), null, "600px");
+                }
+                dialogContainer.replace( resultDialog );
+                target.addComponent( dialogContainer );
+            }
+        } catch (FailoverException fo) {
+            popupCloseDialog(dialogContainer, target, "Could not connect to cluster.", ExceptionUtils.getMessage(fo));
+        } catch ( WebServiceException e ) {
+            String failureMessage;
+            if ( GatewayContext.isNetworkException( e ) ) {
+                failureMessage = "Could not connect to cluster.";
+            } else if ( GatewayContext.isConfigurationException( e ) ) {
+                failureMessage = "Could not connect to cluster.";
+            } else {
+                failureMessage = "Unexpected error from cluster.";
+                logger.log( Level.WARNING, "Error during migration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+            }
+            popupCloseDialog(dialogContainer, target, "Migration Error", failureMessage);
+        }
+    }
+
+    private void onIdentifyDependencies( final AjaxRequestTarget target ) {
+        lastTargetClusterId = targetClusterModel.getObject();
+        lastSourceClusterId = sourceClusterModel.getObject();
+        try {
+            final DependencyItemsRequest dir = new DependencyItemsRequest();
+            dir.fromSelection( sourceContentSelector );
+            final String targetClusterId = lastTargetClusterId;
+            final MigrationSource provider = getMigrationSource( sourceContentSelector.getClusterId() );
+            final Collection<DependencyItem> dependencyItems = provider.getDependencies( dir );
+
+            for ( final DependencyItem item : dependencyItems ) {
+                if ( Boolean.FALSE == item.resolved ) {
+                    item.resolved = isResolved( mappingModel, item.asEntityHeader(), dir.clusterId, targetClusterId );
+                }
+            }
+
+            lastDependencyItems = dependencyItems;
+            lastSourceKey = null;
+            candidateModel.reset();
+            dependencyLoadButton.setEnabled(true);
+
+            updateDependencies();
+            addDependencyOptions( true );
+            target.addComponent( dependenciesContainer );
+
+            // build info dialog
+            Label label = new Label( YuiDialog.getContentId(), summarize(dir, targetClusterId, visible(dependencyItems,true), mappingModel));
+            label.setEscapeModelStrings(false);
+            YuiDialog dialog = new YuiDialog("dialog", "Identified Dependencies", YuiDialog.Style.CLOSE, label, null);
+            dialogContainer.replace( dialog );
+            target.addComponent( dialogContainer );
+        } catch ( FindException fe ) {
+            logger.log( Level.WARNING, "Unexpected error when processing selection.", fe );
+            popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", ExceptionUtils.getMessage( fe ));
+        } catch ( GatewayException ge ) {
+            popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", ExceptionUtils.getMessage(ge));
+        } catch ( MigrationApi.MigrationException mfe ) {
+            String failureMessage = mfe.getMessage();
+            YuiDialog resultDialog;
+            if ( failureMessage != null && failureMessage.indexOf('\n') < 0 ) {
+                resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+            } else {
+                resultDialog = new YuiDialog("dialog", " Error Identifying Dependencies", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model<String>(failureMessage)), null, "600px");
+            }
+            dialogContainer.replace( resultDialog );
+            target.addComponent( dialogContainer );
+        } catch (FailoverException fo) {
+            popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", ExceptionUtils.getMessage(fo));
+        } catch ( WebServiceException e ) {
+            String failureMessage;
+            if ( GatewayContext.isNetworkException( e ) ) {
+                failureMessage = "Could not connect to cluster.";
+            } else if ( GatewayContext.isConfigurationException( e ) ) {
+                failureMessage = "Could not connect to cluster.";
+            } else {
+                failureMessage = "Unexpected error from cluster.";
+                logger.log( Level.WARNING, "Error identifying dependencies '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+            }
+            popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", failureMessage);
+        }
+    }
+
+    private void enableDisableMainButtons( final AjaxRequestTarget target ) {
+        final boolean offlineDestination = offlineDestinationModel.getObject();
+        final boolean validSource =
+                sourceContentSelector.getClusterId() != null &&
+                !sourceContentSelector.getSelectedContentIds().isEmpty();
+
+        final boolean enableIdentifyDependencies = validSource &&
+                !offlineDestination &&
+                targetContentSelector.getClusterId() != null &&
+                !targetContentSelector.getClusterId().equals( sourceContentSelector.getClusterId() );
+
+        final boolean enableMigration =
+                ( offlineDestination && validSource ) ||
+                ( enableIdentifyDependencies && !targetContentSelector.getSelectedContentIds().isEmpty() );
+
+        identifyDependenciesButton.setEnabled( enableIdentifyDependencies );
+        migrateButton.setEnabled( enableMigration );
+
+        if ( target != null ) {
+            target.addComponent( identifyDependenciesButton );
+            target.addComponent( migrateButton );
+        }
+    }
 
     private static String truncateDisplayValue( final String text ) {
         return TextUtils.truncStringMiddleExact( text, 128 );
@@ -633,6 +805,33 @@ public class PolicyMigration extends EsmStandardWebPage {
         return same;
     }
 
+    private String buildClusterConfigDialogJavascript( final String clusterId,
+                                                       final String dialogName,
+                                                       final String urlSuffix ) throws GatewayException, FindException {
+        final SsgCluster cluster = ssgClusterManager.findByGuid(clusterId);
+        final StringBuilder accessBuilder = new StringBuilder();
+
+        accessBuilder.append( "launchClusterConfigDialog(" );
+        accessBuilder.append( dialogName );
+        accessBuilder.append( "Dialog, '" );
+        accessBuilder.append( dialogName );
+        accessBuilder.append( "', '" );
+        accessBuilder.append( cluster.getGuid() );
+        accessBuilder.append( "', '" );
+        accessBuilder.append( cluster.getName() );
+        accessBuilder.append( "', '" );
+        accessBuilder.append( gatewayTrustTokenFactory.getTrustToken() );
+        accessBuilder.append( "', 'https://" );
+        accessBuilder.append( cluster.getSslHostName() );
+        accessBuilder.append( ":" );
+        accessBuilder.append( cluster.getAdminPort() );
+        accessBuilder.append( "/ssg/esmtrust");
+        if ( urlSuffix != null ) accessBuilder.append( urlSuffix );
+        accessBuilder.append( "' );" );
+
+        return  accessBuilder.toString();
+    }
+
     private void popupCloseDialog(WebMarkupContainer container, AjaxRequestTarget requestTarget, String title, String label) {
         YuiDialog resultDialog = new YuiDialog("dialog", title, YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), label), null);
         container.replace( resultDialog );
@@ -643,7 +842,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         private final String label;
         private final long id;
 
-        public PreviousMigrationModel( final long id,
+        private PreviousMigrationModel( final long id,
                                        final String label )  {
             this.id = id;
             this.label = label;
@@ -655,30 +854,31 @@ public class PolicyMigration extends EsmStandardWebPage {
             return this.label.toLowerCase().compareTo(other.label.toLowerCase());
         }
 
+        @SuppressWarnings({ "RedundantIfStatement" })
+        @Override
+        public boolean equals( final Object o ) {
+            if ( this == o ) return true;
+            if ( o == null || getClass() != o.getClass() ) return false;
+
+            final PreviousMigrationModel that = (PreviousMigrationModel) o;
+
+            if ( id != that.id ) return false;
+            if ( label != null ? !label.equals( that.label ) : that.label != null ) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = label != null ? label.hashCode() : 0;
+            result = 31 * result + (int) (id ^ (id >>> 32));
+            return result;
+        }
+
         @Override
         public String toString() {
             return label;
         }
-    }
-
-    private String jsArray( final Collection<String> identifiers ) {
-        StringBuilder builder = new StringBuilder();
-
-        builder.append('[');
-        boolean first = true;
-        for ( String identifier : identifiers ) {
-            if ( first ) {
-                first = false;
-            } else {
-                builder.append( "," );
-            }
-            builder.append( "'" );
-            builder.append( identifier );
-            builder.append( "'" );
-        }
-        builder.append(']');
-
-        return builder.toString();
     }
 
     private List<PreviousMigrationModel> loadPreviousMigrations() {
@@ -698,89 +898,53 @@ public class PolicyMigration extends EsmStandardWebPage {
         return previousMigrations;
     }
 
-    private AbstractDefaultAjaxBehavior buildDependencyDisplayBehaviour( final WebMarkupContainer itemDependenciesContainer,
-                                                                         final WebMarkupContainer itemDetailsContainer,
-                                                                         final String jsVar,
-                                                                         final EntityMappingModel mappingModel ) {
-        return new AbstractDefaultAjaxBehavior(){
-            @Override
-            public void renderHead( final IHeaderResponse iHeaderResponse ) {
-                super.renderHead( iHeaderResponse );
-                iHeaderResponse.renderJavascript("var "+jsVar+" = '"+getCallbackUrl(true)+"';", null);
-            }
+    private void refreshDependencyDisplayModel( final WebMarkupContainer itemDetailsContainer,
+                                                final WebMarkupContainer itemDependenciesContainer,
+                                                final String clusterId,
+                                                final String entityType,
+                                                final String entityId ) {
+        logger.fine( "Processing request for cluster " + clusterId + " type " + entityType + " id " + entityId );
+        DependencyItem detailItem = null;
+        List<DependencyItem> options = Collections.emptyList();
 
-            @Override
-            protected void respond( final AjaxRequestTarget ajaxRequestTarget ) {
-                final WebRequest request = (WebRequest) RequestCycle.get().getRequest();
-                final String clusterId = request.getParameter("clusterId");
-                final String targetClusterId = request.getParameter("targetClusterId");
-                final String type = request.getParameter("type");
-                final String id = request.getParameter("id");
+        if ( clusterId != null && !clusterId.isEmpty() ) {
+            final MigrationSource provider = getMigrationSource( clusterId );
 
-                logger.fine( "Processing request for cluster " + clusterId + " type " + type + " id " + id );
-                DependencyItemsRequest dir = new DependencyItemsRequest();
-                dir.clusterId = clusterId;
-                dir.entities = new DependencyItem[]{ new DependencyItem() };
-                dir.entities[0].type = type;
-                dir.entities[0].id = id;
-                DependencyItem detailItem = null;
-                List<DependencyItem> options = Collections.emptyList();
-
-                if ( id != null && !id.isEmpty() &&
-                     type != null && !type.isEmpty() &&
-                     clusterId != null && !clusterId.isEmpty() ) {
-                    try {
-                        options = new ArrayList<DependencyItem>(retrieveDependencies( dir, mappingModel, targetClusterId ));
-                        for ( Iterator<DependencyItem> itemIter = options.iterator(); itemIter.hasNext();  ) {
-                            DependencyItem item = itemIter.next();
-                            if ( item.hidden || com.l7tech.objectmodel.EntityType.FOLDER.toString().equals(item.type) ) {
-                                itemIter.remove();
-                            }
-                        }
-
-                        // discard the dependencies that no longer exist on the target cluster
-                        SsgCluster cluster = ssgClusterManager.findByGuid( dir.clusterId );
-                        GatewayClusterClient targetContext = gatewayClusterClientManager.getGatewayClusterClient(cluster, getUser());
-                        MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
-                        Collection<ExternalEntityHeader> headers = targetMigrationApi.checkHeaders( Collections.singleton( dir.entities[0].asEntityHeader() ) );
-                        if ( headers != null && !headers.isEmpty() ) {
-                            ExternalEntityHeader header = headers.iterator().next();
-                            if ( header.getProperty("Alias Of") != null || header.getProperty("Alias Of Internal") != null ) {
-                                // resolve alias
-                                ExternalEntityHeader aliasTargetHeader =
-                                        new ExternalEntityHeader( header.getProperty("Alias Of"),
-                                                                  EntityType.valueOf(header.getProperty("Alias Type")),
-                                                                  header.getProperty("Alias Of Internal"), null, null, -1 );
-                                headers = targetMigrationApi.checkHeaders( Collections.singleton( aliasTargetHeader ) );
-                                if ( headers != null && !headers.isEmpty() ) {
-                                    detailItem = new DependencyItem( headers.iterator().next(), false );
-                                }
-                            } else {
-                                detailItem = new DependencyItem( header, false );
-                            }
-                        }
-
-                    } catch ( MigrationApi.MigrationException me ) {
-                        logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(me)+"'." );
-                    } catch ( FailoverException fo ) {
-                        logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
-                    } catch ( WebServiceException sfe ) {
-                        if ( !GatewayContext.isNetworkException(sfe) && !GatewayContext.isConfigurationException(sfe) ) {
-                            logger.log( Level.WARNING, "Error processing selection '"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe));
-                        }
-                    } catch ( GatewayException ge ) {
-                        logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
-                    } catch ( FindException fe ) {
-                        logger.log( Level.WARNING, "Error processing selection.", fe );
+            try {
+                options = new ArrayList<DependencyItem>( provider.getDependencies( entityType, entityId ) );
+                for ( Iterator<DependencyItem> itemIter = options.iterator(); itemIter.hasNext();  ) {
+                    DependencyItem item = itemIter.next();
+                    if ( item.hidden || com.l7tech.objectmodel.EntityType.FOLDER.toString().equals(item.type) ) {
+                        itemIter.remove();
                     }
                 }
 
-                Collections.sort(options);
-                showDependencies( itemDependenciesContainer, options, itemDetailsContainer, detailItem );
-                ajaxRequestTarget.addComponent( itemDependenciesContainer );
-                ajaxRequestTarget.addComponent( itemDetailsContainer );
+                detailItem = provider.getItem( entityType, entityId );
+            } catch ( MigrationApi.MigrationException me ) {
+                logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(me)+"'." );
+            } catch ( FailoverException fo ) {
+                logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
+            } catch ( WebServiceException sfe ) {
+                if ( !GatewayContext.isNetworkException(sfe) && !GatewayContext.isConfigurationException(sfe) ) {
+                    logger.log( Level.WARNING, "Error processing selection '"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe));
+                }
+            } catch ( GatewayException ge ) {
+                logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
+            } catch ( FindException fe ) {
+                logger.log( Level.WARNING, "Error processing selection.", fe );
             }
-        };
+        }
+
+        Collections.sort(options);
+        showDependencies( itemDependenciesContainer, options, itemDetailsContainer, detailItem );
+    }
+
+    private MigrationSource getMigrationSource( final String clusterId ) {
+        MigrationSource migrationSource = detailProvidersByCluster.get( clusterId );
+        if ( migrationSource == null ) {
+            migrationSource = new DefaultMigrationSource( clusterId );
+        }
+        return migrationSource;
     }
 
     private List<DependencyItem> visible( final Collection<DependencyItem> items, final boolean showHiddenDeps ) {
@@ -857,12 +1021,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
     }
 
-    private void updateDependencies( final WebMarkupContainer dependenciesContainer,
-                                     final WebMarkupContainer[] optionRefreshComponents,
-                                     final CandidateModel candidateModel,
-                                     final SearchModel searchModel,
-                                     final EntityMappingModel mappingModel,
-                                     final DepenencySummaryModel dependencySummaryModel ) {
+    private void updateDependencies() {
         final String sourceClusterId = this.lastSourceClusterId;
         final String targetClusterId = this.lastTargetClusterId;
         final Collection<DependencyItem> items = visible(this.lastDependencyItems, true);
@@ -955,10 +1114,10 @@ public class PolicyMigration extends EsmStandardWebPage {
                         selectionComponent2.setEnabled(false);
                     }
 
-                    addDependencyOptions( dependenciesContainer, optionRefreshComponents, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
+                    addDependencyOptions( true );
                     ajaxRequestTarget.addComponent( selectionComponent );
                     ajaxRequestTarget.addComponent( selectionComponent2 );
-                    for ( Component component : optionRefreshComponents ) ajaxRequestTarget.addComponent( component );
+                    for ( Component component : dependencyRefreshContainers ) ajaxRequestTarget.addComponent( component );
                 }
             }
         };
@@ -970,34 +1129,28 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
     }
 
-    private void addDependencyOptions( final WebMarkupContainer dependenciesContainer,
-                                       final WebMarkupContainer[] optionRefreshComponents,
-                                       final CandidateModel candidateModel,
-                                       final SearchModel searchModel,
-                                       final EntityMappingModel mappingModel,
-                                       final DepenencySummaryModel dependencySummaryModel,
-                                       final boolean skipSearch ) {
+    private void addDependencyOptions( final boolean skipSearch ) {
         String targetClusterId = lastTargetClusterId;
         DependencyKey sourceKey = lastSourceKey;
         final Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(sourceKey, targetClusterId);
 
         WebMarkupContainer markupContainer = new WebMarkupContainer("dependencyOptions");
-        if ( optionRefreshComponents[1].get( markupContainer.getId() ) == null ) {
-            optionRefreshComponents[1].add( markupContainer.setOutputMarkupId(true) );
+        if ( dependenciesOptionsContainer.get( markupContainer.getId() ) == null ) {
+            dependenciesOptionsContainer.add( markupContainer.setOutputMarkupId(true) );
         } else {
-            optionRefreshComponents[1].replace( markupContainer.setOutputMarkupId(true) );
+            dependenciesOptionsContainer.replace( markupContainer.setOutputMarkupId(true) );
         }
 
         List<DependencyItem> options  = Collections.emptyList();
         @SuppressWarnings({"unchecked"})
-        DropDownChoice<SearchTarget> targetChoice = (DropDownChoice<SearchTarget>) optionRefreshComponents[1].get("dependencySearchTarget");
+        DropDownChoice<SearchTarget> targetChoice = (DropDownChoice<SearchTarget>) dependenciesOptionsContainer.get("dependencySearchTarget");
         if ( skipSearch ) {
             searchModel.setSearchManner("contains");
             searchModel.setSearchValue("");
 
             if ( sourceKey != null && isSearchable( sourceKey.asEntityHeader() ) ) {
                 for ( String id : SEARCH_REFRESH_COMPONENTS ) {
-                    Component component = optionRefreshComponents[1].get(id);
+                    Component component = dependenciesOptionsContainer.get(id);
                     component.setEnabled( true );
                 }
 
@@ -1023,7 +1176,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 }
             } else {
                 for ( String id : SEARCH_REFRESH_COMPONENTS ) {
-                    Component component = optionRefreshComponents[1].get(id);
+                    Component component = dependenciesOptionsContainer.get(id);
                     component.setEnabled( false );
                 }
             }
@@ -1043,10 +1196,10 @@ public class PolicyMigration extends EsmStandardWebPage {
                     protected void onEvent( final AjaxRequestTarget ajaxRequestTarget ) {
                         logger.fine("Selection callback for : " + dependencyItem);
                         mappingModel.dependencyMap.put( mappingKey, dependencyItem );
-                        updateDependencies( dependenciesContainer, optionRefreshComponents, candidateModel, searchModel, mappingModel, dependencySummaryModel );
+                        updateDependencies();
 
                         for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
-                        for ( Component component : optionRefreshComponents ) ajaxRequestTarget.addComponent( component );
+                        for ( Component component : dependencyRefreshContainers ) ajaxRequestTarget.addComponent( component );
                     }
                 } );
 
@@ -1061,9 +1214,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         });
     }
 
-    private Collection<DependencyItem> retrieveDependencies( final DependencyItemsRequest request,
-                                                             final EntityMappingModel mappingModel,
-                                                             final String targetClusterId ) throws FindException, GatewayException, MigrationApi.MigrationException {
+    private Collection<DependencyItem> retrieveDependencies( final DependencyItemsRequest request ) throws FindException, GatewayException, MigrationApi.MigrationException {
         Collection<DependencyItem> deps = new LinkedHashSet<DependencyItem>();
 
         SsgCluster cluster = ssgClusterManager.findByGuid(request.clusterId);
@@ -1073,7 +1224,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 MigrationApi api = context.getUncachedMigrationApi();
                 MigrationMetadata metadata = api.findDependencies( request.asEntityHeaders() );
                 for (MigrationDependency dep : metadata.getMappableDependencies()) {
-                    deps.add( new DependencyItem( dep.getDependency(), metadata.isMappingRequired(dep.getDependency()) ? isResolved( mappingModel, dep.getDependency(), request.clusterId, targetClusterId ) : null ) );
+                    deps.add( new DependencyItem( dep.getDependency(), metadata.isMappingRequired(dep.getDependency()) ? Boolean.FALSE : null ) );
                 }
 
                 for (ExternalEntityHeader header : metadata.getAllHeaders() ) {
@@ -1089,45 +1240,52 @@ public class PolicyMigration extends EsmStandardWebPage {
                     if ( !alreadyPresent ) deps.add( new DependencyItem( header, null, true ) );
                 }
 
-                // expand value-mappables of array types
-                Collection<DependencyItem> exploded = new ArrayList<DependencyItem>();
-                for (DependencyItem item : deps) {
-                    exploded.addAll( explode( item ) );
-                }
-                deps = exploded;
-
-                // populate entity owner info
-                for ( DependencyItem item : deps ) {
-                    if ( item.asEntityHeader() instanceof ValueReferenceEntityHeader ) {
-                        ValueReferenceEntityHeader vreh = (ValueReferenceEntityHeader) item.asEntityHeader();
-                        if ( vreh.getOwnerType() != null && vreh.getOwnerId() != null ) {
-                            for ( DependencyItem itemOwner : deps ) {
-                                if ( vreh.getOwnerType()==itemOwner.asEntityHeader().getType() &&
-                                     vreh.getOwnerId().equals(itemOwner.id) ) {
-                                    item.ownerName = itemOwner.getDisplayNameWithScope();
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // remove duplicate entries (same service / value)
-                Collection<DependencyItem> duplicates = new ArrayList<DependencyItem>();
-                for ( DependencyItem item1 : deps ) {
-                    boolean isAfter = false;
-                    for ( DependencyItem item2 : deps ) {
-                        if ( isAfter && isValueMappingSameOwnerAndTypeAndValue( item1, item2 ) ) {
-                            duplicates.add( item2 );
-                        }
-                        if ( item1==item2 ) {
-                            isAfter = true;
-                        }
-                    }
-                }
-                deps.removeAll( duplicates );
+                deps = processDependencyItems( deps );
             }
         }
+
+        return deps;
+    }
+
+    private static Collection<DependencyItem> processDependencyItems( Collection<DependencyItem> deps ) {
+        // expand value-mappables of array types
+        Collection<DependencyItem> exploded = new ArrayList<DependencyItem>();
+        for (DependencyItem item : deps) {
+            exploded.addAll( explode( item ) );
+        }
+
+        deps = exploded;
+
+        // populate entity owner info
+        for ( DependencyItem item : deps ) {
+            if ( item.asEntityHeader() instanceof ValueReferenceEntityHeader ) {
+                ValueReferenceEntityHeader vreh = (ValueReferenceEntityHeader) item.asEntityHeader();
+                if ( vreh.getOwnerType() != null && vreh.getOwnerId() != null ) {
+                    for ( DependencyItem itemOwner : deps ) {
+                        if ( vreh.getOwnerType()==itemOwner.asEntityHeader().getType() &&
+                             vreh.getOwnerId().equals(itemOwner.id) ) {
+                            item.ownerName = itemOwner.getDisplayNameWithScope();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // remove duplicate entries (same service / value)
+        Collection<DependencyItem> duplicates = new ArrayList<DependencyItem>();
+        for ( DependencyItem item1 : deps ) {
+            boolean isAfter = false;
+            for ( DependencyItem item2 : deps ) {
+                if ( isAfter && isValueMappingSameOwnerAndTypeAndValue( item1, item2 ) ) {
+                    duplicates.add( item2 );
+                }
+                if ( item1==item2 ) {
+                    isAfter = true;
+                }
+            }
+        }
+        deps.removeAll( duplicates );
 
         return deps;
     }
@@ -1337,29 +1495,36 @@ public class PolicyMigration extends EsmStandardWebPage {
                                              final List<Pair<ExternalEntityHeader, ExternalEntityHeader>> mappings ) {
         try {
             // discard the mappings that no longer exist on the source or target cluster
-            SsgCluster sourceCluster = ssgClusterManager.findByGuid(sourceClusterGuid);
-            GatewayClusterClient sourceContext = gatewayClusterClientManager.getGatewayClusterClient(sourceCluster, getUser());
-            MigrationApi sourceMigrationApi = sourceContext.getUncachedMigrationApi();
+            final SsgCluster sourceCluster = ssgClusterManager.findByGuid(sourceClusterGuid);
+            final MigrationApi sourceMigrationApi;
+            if ( !sourceCluster.isOffline() ) {
+                final GatewayClusterClient sourceContext = gatewayClusterClientManager.getGatewayClusterClient(sourceCluster, getUser());
+                sourceMigrationApi = sourceContext.getUncachedMigrationApi();
+            } else {
+                sourceMigrationApi = null;
+            }
 
-            SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterGuid);
-            GatewayClusterClient targetContext = gatewayClusterClientManager.getGatewayClusterClient(targetCluster, getUser());
-            MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
+            final SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterGuid);
+            final GatewayClusterClient targetContext = gatewayClusterClientManager.getGatewayClusterClient(targetCluster, getUser());
+            final MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
 
-            List<ExternalEntityHeader> sourceHeaders = new ArrayList<ExternalEntityHeader>();
-            List<ExternalEntityHeader> targetHeaders = new ArrayList<ExternalEntityHeader>();
-            for ( Pair<ExternalEntityHeader, ExternalEntityHeader> mapping : mappings ) {
+            final List<ExternalEntityHeader> sourceHeaders = new ArrayList<ExternalEntityHeader>();
+            final List<ExternalEntityHeader> targetHeaders = new ArrayList<ExternalEntityHeader>();
+            for ( final Pair<ExternalEntityHeader, ExternalEntityHeader> mapping : mappings ) {
                 sourceHeaders.add( mapping.left );
                 targetHeaders.add( mapping.right );
             }
 
-            Collection<ExternalEntityHeader> validatedSourceHeaders = sourceMigrationApi.checkHeaders( sourceHeaders );
-            Collection<ExternalEntityHeader> validatedTargetHeaders = targetMigrationApi.checkHeaders( targetHeaders );
+            final Collection<ExternalEntityHeader> validatedSourceHeaders = sourceCluster.isOffline() ?
+                    Collections.<ExternalEntityHeader>emptyList() :
+                    sourceMigrationApi.checkHeaders( sourceHeaders );
+            final Collection<ExternalEntityHeader> validatedTargetHeaders = targetMigrationApi.checkHeaders( targetHeaders );
 
             for ( Pair<ExternalEntityHeader, ExternalEntityHeader> mapping : mappings ) {
-                if ( containsHeader( mapping.left, validatedSourceHeaders ) &&
+                if ( ( sourceCluster.isOffline() || containsHeader( mapping.left, validatedSourceHeaders ) ) &&
                      containsHeader( mapping.right, validatedTargetHeaders ) ) {
-                    DependencyKey sourceKey = new DependencyKey( sourceClusterGuid, mapping.left );
-                    Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterGuid );
+                    final DependencyKey sourceKey = new DependencyKey( sourceClusterGuid, mapping.left );
+                    final Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterGuid );
                     mappingModel.dependencyMap.put( mapKey, new DependencyItem(getHeader(validatedTargetHeaders, mapping.right.getType(), mapping.right.getExternalId())) );
                 }
             }
@@ -1434,8 +1599,9 @@ public class PolicyMigration extends EsmStandardWebPage {
             SsgCluster sourceCluster = ssgClusterManager.findByGuid(sourceClusterId);
             SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
             if ( sourceCluster != null && targetCluster != null) {
-                if ( sourceCluster.getTrustStatus() && targetCluster.getTrustStatus() ) {
-                    Collection<DependencyItem> items = retrieveDependencies( requestedItems, null, null );
+                if ( (sourceCluster.isOffline() || sourceCluster.getTrustStatus()) && targetCluster.getTrustStatus() ) {
+                    final MigrationSource provider = getMigrationSource( sourceContentSelector.getClusterId() );
+                    final Collection<DependencyItem> items = provider.getDependencies( requestedItems );
                     StringBuilder builder = new StringBuilder();
                     for ( DependencyItem item : items ) {
                         final DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
@@ -1474,7 +1640,7 @@ public class PolicyMigration extends EsmStandardWebPage {
     }
 
     private static final class MigrationFailedException extends Exception {
-        public MigrationFailedException(String message) {
+        private MigrationFailedException(String message) {
             super(message);
         }
     }
@@ -1485,30 +1651,37 @@ public class PolicyMigration extends EsmStandardWebPage {
                                      final boolean migrateFolders,
                                      final boolean enableNewServices,
                                      final boolean overwriteEntities,
+                                     final boolean offlineDestination,
                                      final DependencyItemsRequest requestedItems,
-                                     final EntityMappingModel mappingModel,
                                      final String label,
                                      final boolean dryRun ) throws MigrationFailedException {
         String summaryString = "";
         try {
-            SsgCluster sourceCluster = ssgClusterManager.findByGuid(sourceClusterId);
-            SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
-            if ( sourceCluster != null && targetCluster != null) {
-                if ( sourceCluster.getTrustStatus() && targetCluster.getTrustStatus() ) {
-                    GatewayClusterClient sourceContext = gatewayClusterClientManager.getGatewayClusterClient(sourceCluster, getUser());
-                    MigrationApi sourceMigrationApi = sourceContext.getUncachedMigrationApi();
-
+            final MigrationSource migrationSource = getMigrationSource( sourceClusterId );
+            final SsgCluster sourceCluster = ssgClusterManager.findByGuid(sourceClusterId);
+            final SsgCluster targetCluster = offlineDestination ? null : ssgClusterManager.findByGuid(targetClusterId);
+            if ( sourceCluster != null && (offlineDestination || (targetCluster != null  && targetCluster.getTrustStatus())) ) {
+                MigrationApi targetMigrationApi = null;
+                GatewayApi targetGatewayApi = null;
+                if ( !offlineDestination ) {
                     GatewayClusterClient targetContext = gatewayClusterClientManager.getGatewayClusterClient(targetCluster, getUser());
-                    MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
-                    GatewayApi targetGatewayApi = targetContext.getUncachedGatewayApi();
+                    targetMigrationApi = targetContext.getUncachedMigrationApi();
+                    targetGatewayApi = targetContext.getUncachedGatewayApi();
+                }
 
-                    MigrationBundle bundle = sourceMigrationApi.exportBundle( requestedItems.asEntityHeaders() );
-                    MigrationMetadata metadata = bundle.getMetadata();
+                String targetFolderDescription = null;
+                final Collection<MigratedItem> migratedItems;
+                final MigrationBundle bundle = migrationSource.exportBundle( requestedItems );
+                final MigrationMetadata metadata = bundle.getMetadata();
+                metadata.setMigrateFolders(migrateFolders);
+                metadata.setOverwrite(overwriteEntities);
+                metadata.setEnableNewServices(enableNewServices);
+                if ( !offlineDestination ) {
                     for ( Map.Entry<Pair<DependencyKey,String>,DependencyItem> mapping : mappingModel.dependencyMap.entrySet() ) {
                         if ( mapping.getValue() != null && mapping.getKey().left.clusterId.equals(sourceClusterId) && mapping.getKey().right.equals(targetClusterId) ) {
                             metadata.addMappingOrCopy(mapping.getKey().left.asEntityHeader(), mapping.getValue().asEntityHeader(), mapping.getValue().same);
                             migrationMappingRecordManager.persistMapping(
-                                    sourceCluster.getGuid(),
+                                    sourceClusterId,
                                     mapping.getKey().left.asEntityHeader(),
                                     targetCluster.getGuid(),
                                     mapping.getValue().asEntityHeader(),
@@ -1518,7 +1691,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     for ( MigrationDependency dep : metadata.getMappableDependencies() ) {
                         Collection<ExternalEntityHeader> persistenceHeaders = mappingModel.updateMappedValues( sourceClusterId, targetClusterId, dep );
                         for ( ExternalEntityHeader pHeader : persistenceHeaders ) {
-                            migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), pHeader, targetCluster.getGuid(), pHeader.getMappedValue() );
+                            migrationMappingRecordManager.persistMapping( sourceClusterId, pHeader, targetCluster.getGuid(), pHeader.getMappedValue() );
                         }
                     }
 
@@ -1531,32 +1704,32 @@ public class PolicyMigration extends EsmStandardWebPage {
                         }
                     }
                     if (targetFolderHeader == null) throw new FindException("Could not find target folder.");
-
                     metadata.setTargetFolder(targetFolderHeader);
-                    metadata.setMigrateFolders(migrateFolders);
-                    metadata.setOverwrite(overwriteEntities);
-                    metadata.setEnableNewServices(enableNewServices);
+                    targetFolderDescription = targetFolderHeader.getDescription();
 
-                    Collection<MigratedItem> migratedItems = targetMigrationApi.importBundle(bundle, dryRun);
-                    MigrationSummary summary = new MigrationSummary(sourceCluster, targetCluster, migratedItems, dryRun,
-                                                            targetFolderHeader.getDescription(), migrateFolders, overwriteEntities, enableNewServices);
+                    migratedItems = targetMigrationApi.importBundle(bundle, dryRun);
+                } else {
+                    migratedItems = summarizeExport(bundle);
+                }
 
-                    if ( !dryRun ) {
-                        if ( migratedItems != null ) {
-                            for ( MigratedItem item : migratedItems ) {
-                                ExternalEntityHeader source = item.getSourceHeader();
-                                ExternalEntityHeader target = item.getTargetHeader();
+                final MigrationSummary summary = new MigrationSummary(sourceCluster, targetCluster, migratedItems, dryRun,
+                                                        targetFolderDescription , migrateFolders, overwriteEntities, enableNewServices);
 
-                                if ( source != null && target != null && item.getOperation().modifiesTarget() && source.getMappedValue() == null) {
-                                    migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), source, targetCluster.getGuid(), target, true );
-                                }
+                if ( !dryRun ) {
+                    if ( migratedItems != null && !offlineDestination ) {
+                        for ( MigratedItem item : migratedItems ) {
+                            ExternalEntityHeader source = item.getSourceHeader();
+                            ExternalEntityHeader target = item.getTargetHeader();
+
+                            if ( source != null && target != null && item.getOperation().modifiesTarget() && source.getMappedValue() == null) {
+                                migrationMappingRecordManager.persistMapping( sourceClusterId, source, targetCluster.getGuid(), target, true );
                             }
                         }
-                        migrationRecordManager.create( label, getUser(), sourceCluster, targetCluster, summary, bundle );
                     }
-
-                    summaryString = summary.toString();
+                    migrationRecordManager.create( label, getUser(), sourceCluster, targetCluster, summary, bundle );
                 }
+
+                summaryString = summary.toString();
             }
         } catch ( GatewayException ge ) {
             logger.log( Level.INFO, "Error while performing migration '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
@@ -1576,6 +1749,20 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         return summaryString;
+    }
+
+    private Collection<MigratedItem> summarizeExport( final MigrationBundle bundle ) {
+        return Functions.map( bundle.getExportedItems().values(), new Functions.Unary<MigratedItem, ExportedItem>(){
+            @Override
+            public MigratedItem call( final ExportedItem exportedItem ) {
+                MigratedItem item = new MigratedItem();
+
+                item.setSourceHeader( exportedItem.getHeader() );
+                item.setOperation( MigratedItem.ImportOperation.OFFLINE );
+
+                return item;
+            }
+        });
     }
 
     private String summarizeMigrationException(MigrationApi.MigrationException me) {
@@ -1666,7 +1853,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         return resolved;
     }
 
-    private static class DependencyItemsRequest implements JSON.Convertible, Serializable {
+    private static class DependencyItemsRequest implements Serializable {
         private String clusterId;
         private DependencyItem[] entities;
 
@@ -1675,24 +1862,15 @@ public class PolicyMigration extends EsmStandardWebPage {
             return "DependencyItemsRequest[clusterId='"+clusterId+"'; entities="+Arrays.asList(entities)+"]";
         }
 
-        @Override
-        public void toJSON(final JSON.Output out) {
-            throw new UnsupportedOperationException();
-        }
+        public void fromSelection( final SSGClusterContentSelectorPanel data ) {
+            clusterId = data.getClusterId();
 
-        @Override
-        public void fromJSON(final Map data) {
-            clusterId = (String)data.get("clusterId");
-            Object[] entitiesMap = (Object[])data.get("entities");
-            if ( entitiesMap==null ) {
-                entities = new DependencyItem[0];
-            } else {
-                entities = new DependencyItem[entitiesMap.length];
-                int i=0;
-                for ( Object entityMap : entitiesMap ) {
-                    entities[i] = new DependencyItem();
-                    entities[i++].fromJSON((Map)entityMap);
-                }
+            final Collection<SsgClusterContent> selectedContent = data.getSelectedContent();
+            entities = new DependencyItem[selectedContent.size()];
+            int i=0;
+            for ( final SsgClusterContent content : selectedContent ) {
+                entities[i] = new DependencyItem();
+                entities[i++].fromContent(content);
             }
         }
 
@@ -1769,7 +1947,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
     }
 
-    private static final class DependencyItem implements Comparable, JSON.Convertible, Serializable {
+    private static final class DependencyItem implements Comparable, Serializable {
         private ExternalEntityHeader entityHeader;
 
         @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
@@ -1787,44 +1965,44 @@ public class PolicyMigration extends EsmStandardWebPage {
         private String destName;
         private boolean same; // flag for this entity is the same identity on source/target
 
-        public DependencyItem() {
+        private DependencyItem() {
         }
 
-        public DependencyItem( final ExternalEntityHeader entityHeader  ) {
+        private DependencyItem( final ExternalEntityHeader entityHeader  ) {
             this( entityHeader,
                   OPTIONAL == entityHeader.getValueMapping() ? null :
                   NONE == entityHeader.getValueMapping() || entityHeader.getMappedValue() != null,
                   false );
         }
 
-        public DependencyItem( final ExternalEntityHeader entityHeader,
-                               final Boolean resolved ) {
+        private DependencyItem( final ExternalEntityHeader entityHeader,
+                                final Boolean resolved ) {
             this( entityHeader, resolved, false );
         }
 
-        public DependencyItem( final ExternalEntityHeader entityHeader,
-                               final Boolean resolved,
-                               final boolean hidden ) {
+        private DependencyItem( final ExternalEntityHeader entityHeader,
+                                final Boolean resolved,
+                                final boolean hidden ) {
             this( entityHeader, resolved, hidden, false );
         }
 
         /**
-         * Contructs a new dependency item copying any metadata from the given item.
+         * Constructs a new dependency item copying any metadata from the given item.
          *
          * <p>This is useful when getting updated entity header information.</p>
          *
          * @param entityHeader The header to use
          * @param dependencyItem The dependency item to use for metadata
          */
-        public DependencyItem( final ExternalEntityHeader entityHeader,
-                               final DependencyItem dependencyItem ) {
+        private DependencyItem( final ExternalEntityHeader entityHeader,
+                                final DependencyItem dependencyItem ) {
             this( entityHeader, dependencyItem.resolved, dependencyItem.hidden, dependencyItem.same );
         }
 
-        public DependencyItem( final ExternalEntityHeader entityHeader,
-                               final Boolean resolved,
-                               final boolean hidden,
-                               final boolean isSame ) {
+        private DependencyItem( final ExternalEntityHeader entityHeader,
+                                final Boolean resolved,
+                                final boolean hidden,
+                                final boolean isSame ) {
             this.entityHeader = entityHeader;
             this.uid = entityHeader.getType().toString() +":" + entityHeader.getMappingKey();
             this.id = entityHeader.getExternalId();
@@ -1858,17 +2036,11 @@ public class PolicyMigration extends EsmStandardWebPage {
             return "DependencyItem[id='"+id+"'; type='"+type+"'; name='"+name+"']";
         }
 
-        @Override
-        public void toJSON(JSON.Output out) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void fromJSON(final Map data) {
-            id = (String)data.get("id");
-            type = (String)data.get("type");
-            name = (String)data.get("name");
-            version = Integer.parseInt((String)data.get("version"));
+        public void fromContent(final SsgClusterContent data) {
+            id = data.getExternalId();
+            type = SsgClusterContent.getJsonType(data.getEntityType());
+            name = data.getName();
+            version = data.getVersion();
         }
 
         @Override
@@ -1938,6 +2110,292 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
     }
 
+    private static interface MigrationSource extends Serializable {
+        Collection<DependencyItem> getDependencies( String entityType, String entityId ) throws FindException, GatewayException, MigrationApi.MigrationException;
+        Collection<DependencyItem> getDependencies( DependencyItemsRequest request ) throws FindException, GatewayException, MigrationApi.MigrationException;
+        DependencyItem getItem( String entityType, String entityId ) throws FindException, GatewayException;
+        MigrationBundle exportBundle( final DependencyItemsRequest requestedItems ) throws FindException, GatewayException, MigrationApi.MigrationException;
+    }
+
+    private class DefaultMigrationSource implements MigrationSource {
+        private final String sourceClusterId;
+
+        private DefaultMigrationSource( final String sourceClusterId ) {
+            this.sourceClusterId = sourceClusterId;
+        }
+
+        @Override
+        public Collection<DependencyItem> getDependencies( final String entityType, final String entityId ) throws FindException, GatewayException, MigrationApi.MigrationException {
+            final DependencyItemsRequest dir = buildDependencyItemsRequest( entityType, entityId );
+            return getDependencies( dir );
+        }
+
+        @Override
+        public Collection<DependencyItem> getDependencies( final DependencyItemsRequest dir ) throws FindException, GatewayException, MigrationApi.MigrationException {
+            return new ArrayList<DependencyItem>(retrieveDependencies( dir ));
+        }
+
+        @Override
+        public DependencyItem getItem( final String entityType, final String entityId ) throws FindException, GatewayException {
+            DependencyItem detailItem = null;
+
+            // discard the dependencies that no longer exist on the target cluster
+            final DependencyItemsRequest dir = buildDependencyItemsRequest( entityType, entityId );
+            SsgCluster cluster = ssgClusterManager.findByGuid( dir.clusterId );
+            GatewayClusterClient targetContext = gatewayClusterClientManager.getGatewayClusterClient(cluster, getUser());
+            MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
+            Collection<ExternalEntityHeader> headers = targetMigrationApi.checkHeaders( Collections.singleton( dir.entities[0].asEntityHeader() ) );
+            if ( headers != null && !headers.isEmpty() ) {
+                ExternalEntityHeader header = headers.iterator().next();
+                if ( header.getProperty("Alias Of") != null || header.getProperty("Alias Of Internal") != null ) {
+                    // resolve alias
+                    ExternalEntityHeader aliasTargetHeader =
+                            new ExternalEntityHeader( header.getProperty("Alias Of"),
+                                                      EntityType.valueOf(header.getProperty("Alias Type")),
+                                                      header.getProperty("Alias Of Internal"), null, null, -1 );
+                    headers = targetMigrationApi.checkHeaders( Collections.singleton( aliasTargetHeader ) );
+                    if ( headers != null && !headers.isEmpty() ) {
+                        detailItem = new DependencyItem( headers.iterator().next(), false );
+                    }
+                } else {
+                    detailItem = new DependencyItem( header, false );
+                }
+            }
+
+            return detailItem;
+        }
+
+        @Override
+        public MigrationBundle exportBundle( final DependencyItemsRequest requestedItems ) throws FindException, GatewayException, MigrationApi.MigrationException {
+            SsgCluster sourceCluster = ssgClusterManager.findByGuid(sourceClusterId);
+            GatewayClusterClient sourceContext = gatewayClusterClientManager.getGatewayClusterClient(sourceCluster, getUser());
+            MigrationApi sourceMigrationApi = sourceContext.getUncachedMigrationApi();
+            return sourceMigrationApi.exportBundle( requestedItems.asEntityHeaders() );
+        }
+
+        private DependencyItemsRequest buildDependencyItemsRequest( final String entityType, final String entityId ) {
+            DependencyItemsRequest dir = new DependencyItemsRequest();
+            dir.clusterId = sourceClusterId;
+            dir.entities = new DependencyItem[]{ new DependencyItem() };
+            dir.entities[0].type = entityType;
+            dir.entities[0].id = entityId;
+            return dir;
+        }
+    }
+
+    private static class OfflineMigrationContentProvider implements SSGClusterContentSelectorPanel.SsgClusterContentProvider {
+        private final MigrationRecord record;
+
+        private OfflineMigrationContentProvider( final MigrationRecord record ) {
+            this.record = record;
+        }
+
+        @Override
+        public Collection<SsgClusterContent> getContent( final EntityType[] entityTypes ) {
+            final List<SsgClusterContent> content = new ArrayList<SsgClusterContent>();
+
+            final MigrationBundle bundle = MigrationBundle.deserializeXml( record.getBundleXml() );
+
+            for ( final MigratedItem item : record.getMigrationSummary().getMigratedItems() ) {
+                final ExternalEntityHeader source = item.getSourceHeader();
+
+                if ( !ArrayUtils.contains( entityTypes, source.getType() ) ) continue;
+
+                String parentId = null;
+
+                for ( final MigrationDependency dependency : bundle.getMetadata().getDependencies( source ) ) {
+                    if ( dependency.getDependency().getType() == EntityType.FOLDER ) {
+                        parentId = dependency.getDependency().getExternalId();
+                    }
+                }
+
+                String displayName = source.getDisplayName();
+                if ( displayName == null ) {
+                    // Aliases will be missing a name
+                    if ( source.getType() == EntityType.SERVICE_ALIAS ||
+                         source.getType() == EntityType.POLICY_ALIAS ) {
+                        final String externalId = source.getType() == EntityType.SERVICE_ALIAS ? source.getProperty( "Alias Of" ) : source.getProperty( "Alias Of Internal" );
+                        final EntityType type = source.getType() == EntityType.SERVICE_ALIAS ? EntityType.SERVICE : EntityType.POLICY;
+                        for ( final ExternalEntityHeader header : bundle.getMetadata().getAllHeaders() ) {
+                            if ( header.getType() == type && header.getExternalId().equals( externalId ) ) {
+                                displayName = header.getDisplayName() + " alias";
+                                break;
+                            }
+                        }
+
+                    }
+
+                    if ( displayName == null ) {
+                        displayName = "";
+                    }
+                }
+
+                content.add( new SsgClusterContent( source.getExternalId(), null, parentId, source.getType(), displayName, source.getVersion() ) );
+
+                if ( source.getType() == EntityType.SERVICE || source.getType() == EntityType.SERVICE_ALIAS ) {
+                    final String operations = source.getProperty( "WSDL Operations" );
+                    if ( operations != null ) {
+                        final StringTokenizer tokenizer = new StringTokenizer( operations, ", " );
+                        while ( tokenizer.hasMoreTokens() ) {
+                            content.add( new SsgClusterContent( UUID.randomUUID().toString(), source.getExternalId(), tokenizer.nextToken() ) );
+                        }
+                    }
+                }
+            }
+
+            return content;
+        }
+    }
+
+    private static class OfflineMigrationSource implements MigrationSource {
+        private final MigrationRecord record;
+
+        private OfflineMigrationSource( final MigrationRecord record ) {
+            this.record = record;
+        }
+
+        @Override
+        public Collection<DependencyItem> getDependencies( final String entityType, final String entityId ) {
+            final Map<ExternalEntityHeader,DependencyItem> dependencies = new HashMap<ExternalEntityHeader,DependencyItem>();
+
+            final ExternalEntityHeader header = getHeader( entityType, entityId, true );
+            if ( header != null ) {
+                final MigrationBundle bundle = MigrationBundle.deserializeXml( record.getBundleXml() );
+                addTransitiveDependencies( bundle.getMetadata(), dependencies, header );
+            }
+
+            return processDependencyItems( dependencies.values() );
+        }
+
+        @Override
+        public Collection<DependencyItem> getDependencies( final DependencyItemsRequest dir ) {
+            final Map<ExternalEntityHeader,DependencyItem> dependencies = new HashMap<ExternalEntityHeader,DependencyItem>();
+
+            final MigrationBundle bundle = MigrationBundle.deserializeXml( record.getBundleXml() );
+            for ( final DependencyItem item : dir.entities ) {
+                final ExternalEntityHeader header = getHeader( item.type, item.id, false );
+                if ( header != null ) {
+                    dependencies.put( header, new DependencyItem( header, null, true ) );
+                    addTransitiveDependencies( bundle.getMetadata(), dependencies, header );
+                }
+            }
+
+            return processDependencyItems( dependencies.values() );
+        }
+
+        @Override
+        public DependencyItem getItem( final String entityType, final String entityId ) {
+            final ExternalEntityHeader header = getHeader( entityType, entityId, true );
+            return header == null ? null : new DependencyItem( header );
+        }
+
+        private ExternalEntityHeader getHeader( final String entityType, final String entityId, final boolean resolveAliases ) {
+            ExternalEntityHeader header = null;
+
+            final EntityType type = JSONConstants.EntityType.ENTITY_TYPE_MAP.get( entityType );
+            if ( type != null ) {
+                final Collection<MigratedItem> items = record.getMigrationSummary().getMigratedItems();
+                header = getHeader( entityId, type, items );
+
+                if ( header != null && resolveAliases ) {
+                    if ( header.getType() == EntityType.SERVICE_ALIAS ||
+                         header.getType() == EntityType.POLICY_ALIAS   ) {
+                        final String aliasedId = header.getType() == EntityType.SERVICE_ALIAS ? header.getProperty( "Alias Of" ) : header.getProperty( "Alias Of Internal" );
+                        final EntityType aliasedType = header.getType() == EntityType.SERVICE_ALIAS ? EntityType.SERVICE : EntityType.POLICY;
+                        final ExternalEntityHeader aliasedHeader = getHeader( aliasedId, aliasedType, items );
+
+                        if ( aliasedHeader != null ) {
+                            header = aliasedHeader;
+                        }
+                    }
+                }
+            }
+
+            return header;
+        }
+
+        private ExternalEntityHeader getHeader( final String entityId,
+                                                final EntityType type,
+                                                final Collection<MigratedItem> items ) {
+            ExternalEntityHeader header = null;
+
+            for ( final MigratedItem item : items ) {
+                if ( item.getSourceHeader().getType() == type &&
+                     item.getSourceHeader().getExternalId().equals( entityId ) ) {
+                    header = item.getSourceHeader();
+                    break;
+                }
+            }
+            return header;
+        }
+
+        @Override
+        public MigrationBundle exportBundle( final DependencyItemsRequest requestedItems ) throws GatewayException {
+            final MigrationBundle bundle = MigrationBundle.deserializeXml( record.getBundleXml() );
+            final MigrationMetadata metadata = bundle.getMetadata();
+
+            // Identify all the dependencies of the requested items.
+            final Map<ExternalEntityHeader,DependencyItem> dependencyMap = new HashMap<ExternalEntityHeader,DependencyItem>();
+            for ( final ExternalEntityHeader header : requestedItems.asEntityHeaders() ) {
+                dependencyMap.put( header, new DependencyItem( header ) );
+                addTransitiveDependencies( metadata,  dependencyMap, header );
+            }
+            final Set<ExternalEntityHeader> requiredItems = new HashSet<ExternalEntityHeader>( dependencyMap.keySet() );
+            for ( final ExternalEntityHeader header : new HashSet<ExternalEntityHeader>(requiredItems) ) {
+                if ( header.getType() == EntityType.SERVICE ) {
+                    // Special case for services that picks up service document dependants
+                    for ( final MigrationDependency dependency : metadata.getDependants( header ) ) {
+                        requiredItems.add( dependency.getDependant() );
+                    }
+                }
+            }
+
+            // Remove any items that are not required
+            final Set<ExternalEntityHeader> headers = new HashSet<ExternalEntityHeader>(metadata.getHeaders());
+            for ( final ExternalEntityHeader header : headers ) {
+                if ( !requiredItems.contains( header ) ) {
+                    metadata.removeHeader( header );
+                }
+            }
+            final Set<MigrationDependency> dependencies = new HashSet<MigrationDependency>(metadata.getDependencies());
+            for ( final MigrationDependency dependency : dependencies ) {
+                if ( !requiredItems.contains( dependency.getDependant() ) ) {
+                    metadata.removeDependency( dependency );
+                }
+            }
+            final Set<ExternalEntityHeader> exportedHeaders = new HashSet<ExternalEntityHeader>(bundle.getExportedItems().keySet());
+            for ( final ExternalEntityHeader header : exportedHeaders ) {
+                if ( !requiredItems.contains( header ) ) {
+                    bundle.removeExportedItem( header );
+                }
+            }
+
+            return bundle;
+        }
+
+        private void addTransitiveDependencies( final MigrationMetadata metadata,
+                                                final Map<ExternalEntityHeader,DependencyItem> dependencies,
+                                                final ExternalEntityHeader header ) {
+            for ( final MigrationDependency dependency : metadata.getDependencies( header ) ) {
+                final ExternalEntityHeader depHeader = dependency.getDependency();
+
+                final DependencyItem item;
+                if ( dependency.getMappingType() != NONE || depHeader.isValueMappable() ) {
+                    item = new DependencyItem( depHeader, metadata.isMappingRequired(depHeader) ? Boolean.FALSE : null );
+                } else {
+                    item = new DependencyItem( depHeader, null, true );
+                }
+
+                if ( !dependencies.containsKey( depHeader ) ) {
+                    dependencies.put( depHeader, item );
+
+                    // add dependencies recursively
+                    addTransitiveDependencies( metadata, dependencies, depHeader );
+                }
+            }
+        }
+    }
+
     /**
      * A model to store the selected entity mappings (anything the user has
      * selected, not just mappings for currently selected source entities)
@@ -1998,11 +2456,11 @@ public class PolicyMigration extends EsmStandardWebPage {
         private final String sourceClusterId;
         private final String mappingKey;
 
-        public ValueKey( final DependencyKey dependencyKey ) {
+        private ValueKey( final DependencyKey dependencyKey ) {
             this( dependencyKey.clusterId, dependencyKey.asEntityHeader() );
         }
 
-        public ValueKey( final String sourceClusterId, final ExternalEntityHeader valueMappableHeader ) {
+        private ValueKey( final String sourceClusterId, final ExternalEntityHeader valueMappableHeader ) {
             if (  valueMappableHeader.getValueType().isArray() )
                 logger.log(Level.WARNING, "Value key must not be array type.");
                 //throw new IllegalArgumentException("Value key must not be array type.");
@@ -2038,11 +2496,11 @@ public class PolicyMigration extends EsmStandardWebPage {
     private final static class SearchTarget implements Serializable, Comparable {
         private final DependencyItem item;
 
-        public SearchTarget() {
+        private SearchTarget() {
             this.item = null;
         }
 
-        public SearchTarget( final DependencyItem item ) {
+        private SearchTarget( final DependencyItem item ) {
             this.item = item;
         }
 
@@ -2163,7 +2621,7 @@ public class PolicyMigration extends EsmStandardWebPage {
     /**
      * A model to store dependency summary
      */
-    public final static class DepenencySummaryModel implements Serializable {
+    public final static class DependencySummaryModel implements Serializable {
         private int totalDependencies;
         private int unmappedDependencies;
         private int requiredUnmappedDependencies;
@@ -2211,6 +2669,131 @@ public class PolicyMigration extends EsmStandardWebPage {
 
         public void setUnmappedDependencies(int unmappedDependencies) {
             this.unmappedDependencies = unmappedDependencies;
+        }
+    }
+
+    private final class SSGClusterRefreshBehaviour extends AjaxEventBehavior {
+        private final SSGClusterSelectorPanel clusterSelector;
+        private final SSGClusterContentSelectorPanel contentSelector;
+        private final WebMarkupContainer itemDetails;
+        private final WebMarkupContainer itemDependencies;
+
+        private SSGClusterRefreshBehaviour( final SSGClusterSelectorPanel clusterSelector,
+                                            final SSGClusterContentSelectorPanel contentSelector,
+                                            final WebMarkupContainer itemDetails,
+                                            final WebMarkupContainer itemDependencies ) {
+            super("onclick");
+            this.clusterSelector = clusterSelector;
+            this.contentSelector = contentSelector;
+            this.itemDetails = itemDetails;
+            this.itemDependencies = itemDependencies;
+        }
+
+        @Override
+        protected void onEvent( final AjaxRequestTarget target ) {
+            clusterSelector.refresh();
+            target.addComponent( clusterSelector );
+
+            if ( clusterSelector.getClusterId()==null ||
+                 !clusterSelector.getClusterId().equals( contentSelector.getClusterId() ) ) {
+                contentSelector.setClusterId( clusterSelector.getClusterId() );
+                target.addComponent( contentSelector );
+                showDependencies( itemDependencies, Collections.<DependencyItem>emptyList(), itemDetails, null );
+                target.addComponent( itemDetails );
+                target.addComponent( itemDependencies );
+            }
+        }
+    }
+
+    private final class ContentRefreshBehaviour extends AjaxEventBehavior {
+        private final SSGClusterContentSelectorPanel contentSelector;
+        private final WebMarkupContainer itemDetails;
+        private final WebMarkupContainer itemDependencies;
+
+        private ContentRefreshBehaviour( final SSGClusterContentSelectorPanel contentSelector,
+                                         final WebMarkupContainer itemDetails,
+                                         final WebMarkupContainer itemDependencies ) {
+            super("onclick");
+            this.contentSelector = contentSelector;
+            this.itemDetails = itemDetails;
+            this.itemDependencies = itemDependencies;
+        }
+
+        @Override
+        protected void onEvent( final AjaxRequestTarget target ) {
+            contentSelector.refresh();
+            target.addComponent( contentSelector );
+            showDependencies( itemDependencies, Collections.<DependencyItem>emptyList(), itemDetails, null );
+            target.addComponent( itemDetails );
+            target.addComponent( itemDependencies );
+        }
+    }
+
+    private interface AjaxCallback extends Functions.UnaryVoid<AjaxRequestTarget>, Serializable{ }
+
+    private final class MigrationSSGClusterSelectorPanel extends SSGClusterSelectorPanel {
+        private final SSGClusterContentSelectorPanel contentSelectorPanel;
+        private final WebMarkupContainer dialogContainer;
+        private final WebMarkupContainer itemDetails;
+        private final WebMarkupContainer itemDependencies;
+        private final AjaxCallback selectionCallback;
+
+        private MigrationSSGClusterSelectorPanel( final String id,
+                                                  final IModel<User> userModel,
+                                                  final IModel<String> clusterModel,
+                                                  final SSGClusterContentSelectorPanel contentSelectorPanel,
+                                                  final WebMarkupContainer dialogContainer,
+                                                  final WebMarkupContainer itemDetails,
+                                                  final WebMarkupContainer itemDependencies,
+                                                  final AjaxCallback selectionCallback ) {
+            super( id, userModel, clusterModel );
+            this.contentSelectorPanel = contentSelectorPanel;
+            this.dialogContainer = dialogContainer;
+            this.itemDetails = itemDetails;
+            this.itemDependencies = itemDependencies;
+            this.selectionCallback = selectionCallback;
+        }
+
+        @Override
+        protected void onClusterSelected( final AjaxRequestTarget ajaxRequestTarget, final String clusterId ) {
+            contentSelectorPanel.setClusterId( clusterId );
+            showDependencies( itemDependencies, Collections.<DependencyItem>emptyList(), itemDetails, null );
+            ajaxRequestTarget.addComponent( contentSelectorPanel );
+            ajaxRequestTarget.addComponent( itemDetails );
+            ajaxRequestTarget.addComponent( itemDependencies );
+            selectionCallback.call( ajaxRequestTarget );
+        }
+
+        @Override
+        protected void onClusterTrust( final String clusterId, final AjaxRequestTarget ajaxRequestTarget ) {
+            try {
+                final String script = buildClusterConfigDialogJavascript( clusterId, "ssgClusterTrust", "?esmtrust=1" );
+                ajaxRequestTarget.appendJavascript( script );
+            } catch ( GatewayException e ) {
+                popupCloseDialog(dialogContainer, ajaxRequestTarget, "Account Mapping Error", ExceptionUtils.getMessage(e));
+            } catch ( FindException e ) {
+                popupCloseDialog( dialogContainer, ajaxRequestTarget, "Account Mapping Error", ExceptionUtils.getMessage( e ) );
+            }
+        }
+
+        @Override
+        protected void onClusterAccess( final String clusterId, final AjaxRequestTarget ajaxRequestTarget ) {
+            try {
+                final Map<String,String> userProperties = userPropertyManager.getUserProperties( getUser() );
+                final boolean mapped = userProperties.containsKey("cluster." +  clusterId + ".trusteduser");
+
+                final String script;
+                if ( mapped ) {
+                    script = buildClusterConfigDialogJavascript( clusterId, "changeAccessAccount", null );
+                } else {
+                    script = buildClusterConfigDialogJavascript( clusterId, "mapAccessAccount", null );
+                }
+                ajaxRequestTarget.appendJavascript( script );
+            } catch ( GatewayException e ) {
+                popupCloseDialog(dialogContainer, ajaxRequestTarget, "Account Mapping Error", ExceptionUtils.getMessage(e));
+            } catch ( FindException e ) {
+                popupCloseDialog( dialogContainer, ajaxRequestTarget, "Account Mapping Error", ExceptionUtils.getMessage( e ) );
+            }
         }
     }
 }

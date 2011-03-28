@@ -85,7 +85,7 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
     }
 
     private void collectAndAuditNotifications() throws FindException {
-        Collection<SsgCluster> clusters = ssgClusterManager.findAll();
+        Collection<SsgCluster> clusters = ssgClusterManager.findOnlineClusters();
         for (SsgCluster cluster : clusters) {
             Set<SsgNode> nodes = cluster.getNodes();
             for (SsgNode node : nodes) {

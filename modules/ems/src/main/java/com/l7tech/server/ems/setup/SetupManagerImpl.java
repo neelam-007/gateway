@@ -268,22 +268,11 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
         }
     }
 
-    //- PRIVATE
+    //- PACKAGE
 
-    private static final Logger logger = Logger.getLogger(SetupManagerImpl.class.getName());
-
-    private final ServerConfig serverConfig;
-    private final PlatformTransactionManager transactionManager;
-    private final IdentityProviderFactory identityProviderFactory;
-    private final IdentityProviderConfigManager identityProviderConfigManager;
-    private final RoleManager roleManager;
-    private final EnterpriseFolderManager enterpriseFolderManager;
-    private final KeystoreFileManager keystoreFileManager;
-    private final ClusterPropertyManager clusterPropertyManager;
-
-    private static void runScripts( final Connection connection,
-                                    final Resource[] scripts,
-                                    final boolean deleteOnComplete ) throws SQLException {
+    static void runScripts( final Connection connection,
+                            final Resource[] scripts,
+                            final boolean deleteOnComplete ) throws SQLException {
         for ( Resource scriptResource : scripts ) {
             if ( !scriptResource.exists() ) continue;
 
@@ -292,6 +281,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                 logger.config("Running DB script '"+scriptResource.getDescription()+"'.");
                 tokenizer = new StreamTokenizer( new InputStreamReader(scriptResource.getInputStream(), Charsets.UTF8) );
                 tokenizer.eolIsSignificant(false);
+                for ( int i='0'; i<='9'; i++) tokenizer.ordinaryChar( i );
                 tokenizer.commentChar('-');
                 tokenizer.quoteChar('\'');
                 tokenizer.wordChars(16, 31);
@@ -314,7 +304,16 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                             Statement statement = null;
                             try {
                                 statement = connection.createStatement();
+                                if ( logger.isLoggable( Level.FINE ) ) {
+                                    logger.log( Level.FINE, "Running statement: " + sql );
+                                }
                                 statement.executeUpdate( sql );
+
+                                SQLWarning warning = statement.getWarnings();
+                                while ( warning != null ) {
+                                    logger.warning( "SQL Warning "+warning.getSQLState()+" ("+warning.getErrorCode()+"): " + warning.getMessage() );
+                                    warning = warning.getNextWarning();
+                                }
                             } finally {
                                 ResourceUtils.closeQuietly( statement );
                             }
@@ -334,6 +333,19 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
             }
         }
     }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(SetupManagerImpl.class.getName());
+
+    private final ServerConfig serverConfig;
+    private final PlatformTransactionManager transactionManager;
+    private final IdentityProviderFactory identityProviderFactory;
+    private final IdentityProviderConfigManager identityProviderConfigManager;
+    private final RoleManager roleManager;
+    private final EnterpriseFolderManager enterpriseFolderManager;
+    private final KeystoreFileManager keystoreFileManager;
+    private final ClusterPropertyManager clusterPropertyManager;
 
     private InternalUserManager getInternalUserManager() throws FindException {
         InternalUserManager internalUserManager = null;

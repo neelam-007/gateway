@@ -151,7 +151,7 @@ function initDateSelector( inputId, calContainerId, calBodyId, longDates, txtDat
         } else {
             if (txtDate != "") {
                 calendar.select(txtDate);
-                var selected = calendar.getSelectedDates()
+                var selected = calendar.getSelectedDates();
                 if ( selected != null && selected.length > 0 ) {
                     calendar.setMonth( selected[0].getMonth() );
                     calendar.setYear( selected[0].getFullYear() );
@@ -232,4 +232,4 @@ function initDateSelector( inputId, calContainerId, calBodyId, longDates, txtDat
         if ( dialog == showing_dialog )
             showing_dialog = null;
     }
-};
+}

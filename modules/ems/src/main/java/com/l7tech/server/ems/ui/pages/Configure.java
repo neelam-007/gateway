@@ -19,6 +19,7 @@ import com.l7tech.util.ExceptionUtils;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
+import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.Model;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -118,13 +119,15 @@ public class Configure extends EsmStandardWebPage {
                     addChildren(nodes, childFolder);
                 }
 
-                for ( final SsgCluster childCluster : ssgClusterManager.findChildSsgClusters(folder) ) {
+                for ( final SsgCluster childCluster : ssgClusterManager.findChildSsgClusters(folder, true) ) {
                     nodes.add( new JSONSupport( childCluster ){
                         @Override
                         protected void writeJson() {
                             super.writeJson();
                             add(JSONConstants.RBAC_CUD, securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_SSG_CLUSTER, childCluster)) );
-                            add(JSONConstants.ACCESS_STATUS, userProperties.containsKey("cluster." +  childCluster.getGuid() + ".trusteduser"));
+                            if ( !childCluster.isOffline() ) {
+                                add(JSONConstants.ACCESS_STATUS, userProperties.containsKey("cluster." +  childCluster.getGuid() + ".trusteduser"));
+                            }
                         }
                     });
 
@@ -287,8 +290,8 @@ public class Configure extends EsmStandardWebPage {
 
         final HiddenField<String> editSSGClusterDialogInputId = new HiddenField<String>("editSSGClusterDialog_id", new Model<String>(""));
         final RequiredTextField<String> editSSGClusterInputName = new RequiredTextField<String>("editSSGClusterDialog_name", new Model<String>(""));
-        final RequiredTextField<String> editSSGClusterInputSslHostname = new RequiredTextField<String>("editSSGClusterDialog_hostName", new Model<String>(""));
-        final RequiredTextField<String> editSSGClusterInputAdminPort = new RequiredTextField<String>("editSSGClusterDialog_adminPort", new Model<String>(""));
+        final TextField<String> editSSGClusterInputSslHostname = new TextField<String>("editSSGClusterDialog_hostName", new Model<String>(""));
+        final TextField<String> editSSGClusterInputAdminPort = new TextField<String>("editSSGClusterDialog_adminPort", new Model<String>(""));
         Form editSSGClusterForm = new JsonDataResponseForm("editSSGClusterForm", new AttemptedUpdateAny( EntityType.ESM_SSG_CLUSTER )){
             @Override
             protected Object getJsonResponseData() {

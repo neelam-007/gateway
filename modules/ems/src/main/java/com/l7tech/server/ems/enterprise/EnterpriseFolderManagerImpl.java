@@ -297,6 +297,6 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
     }
 
     private boolean isEmptyFolder(String guid) throws FindException {
-        return findChildFolders(guid).isEmpty() && ssgClusterManager.findChildSsgClusters(guid).isEmpty();
+        return findChildFolders(guid).isEmpty() && ssgClusterManager.findChildSsgClusters(guid, true).isEmpty();
     }
 }

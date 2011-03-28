@@ -153,22 +153,22 @@ if (!l7.EntityTreeTable) {
          * @param {object} config                   object literal of configuration values
          * @return {l7.EntityTreeTable} an l7.EntityTreeTable instance or null if error
          */
-        l7.EntityTreeTable = function(tbody, entities, imgFolder, config) {
-            if (tbody == undefined || tbody == null || tbody.nodeName == undefined || tbody.nodeName.toLowerCase() != 'tbody') {
-                YAHOO.log('Cannot instantiate EntityTreeTable: tbody must be an HTMLTableSectionElement: tbody = ' + tbody, 'error', 'l7.EntityTreeTable constructor');
-                return;
+        l7.EntityTreeTable = function( tbody, entities, imgFolder, config ) {
+            if ( tbody == undefined || tbody == null || tbody.nodeName == undefined || tbody.nodeName.toLowerCase() != 'tbody' ) {
+                YAHOO.log( 'Cannot instantiate EntityTreeTable: tbody must be an HTMLTableSectionElement: tbody = ' + tbody, 'error', 'l7.EntityTreeTable constructor' );
+                return null;
             }
-            if (!(entities instanceof Array)) {
-                YAHOO.log('Cannot instantiate EntityTreeTable: entities must be an array', 'error', 'l7.EntityTreeTable constructor');
-                return;
+            if ( !(entities instanceof Array) ) {
+                YAHOO.log( 'Cannot instantiate EntityTreeTable: entities must be an array', 'error', 'l7.EntityTreeTable constructor' );
+                return null;
             }
-            if (typeof imgFolder != 'string') {
-                YAHOO.log('Cannot instantiate EntityTreeTable: imgFolder must be a string', 'error', 'l7.EntityTreeTable constructor');
-                return;
+            if ( typeof imgFolder != 'string' ) {
+                YAHOO.log( 'Cannot instantiate EntityTreeTable: imgFolder must be a string', 'error', 'l7.EntityTreeTable constructor' );
+                return null;
             }
-            if (typeof config != 'object') {
-                YAHOO.log('Cannot instantiate EntityTreeTable: config must be an object', 'error', 'l7.EntityTreeTable constructor');
-                return;
+            if ( typeof config != 'object' ) {
+                YAHOO.log( 'Cannot instantiate EntityTreeTable: config must be an object', 'error', 'l7.EntityTreeTable constructor' );
+                return null;
             }
 
             // --------------------------------------------------------------------------------
@@ -239,25 +239,25 @@ if (!l7.EntityTreeTable) {
              * @param entities      array of entity object literal
              * @param entityId      ID of the entity whose children are to be unhidden
              */
-            function unhideChildren(entities, entityId) {
+            function unhideChildren( entities, entityId ) {
                 // We cannot use recursion because browsers cannot cope with that.
                 // Instead, we use a single-pass algorithm that take advantage of the fact that
                 // the entities array is ordered with children following their parent.
 
                 // First, find the array index position of the given entity.
-                for (var i = 0; i < entities.length; ++i) {
-                    if (entities[i].id == entityId) {
+                for ( var i = 0; i < entities.length; ++i ) {
+                    if ( entities[i].id == entityId ) {
                         // Found. Starting from the position after that, iterates through its descendents.
                         var idsToUnhide = [ entityId ]; // IDs of entities whose children need to be unhidden.
-                        for (++i; i < entities.length; ++i) {
+                        for ( ++i; i < entities.length; ++i ) {
                             var entity = entities[i];
-                            if (l7.Util.arrayContains(idsToUnhide, entity.parentId)) {
+                            if ( l7.Util.arrayContains( idsToUnhide, entity.parentId ) ) {
                                 entity._tr.style.display = '';
-                                if (entity._children && entity._children.length > 0) {
+                                if ( entity._children && entity._children.length > 0 ) {
                                     // This entity itself is a parent.
                                     // If its toggler is in expanded state, then its children needs to be unhidden too.
-                                    if (isTogglerExpanded(entity._toggler)) {
-                                        idsToUnhide.push(entity.id);
+                                    if ( isTogglerExpanded( entity._toggler ) ) {
+                                        idsToUnhide.push( entity.id );
                                     }
                                 }
                             }
@@ -274,23 +274,23 @@ if (!l7.EntityTreeTable) {
              * @param entities      array of entity object literal
              * @param entityId      ID of the entity whose children are to be hidden
              */
-            function hideChildren(entities, entityId) {
+            function hideChildren( entities, entityId ) {
                 // We cannot use recursion because browsers cannot cope with that.
                 // Instead, we use a single-pass algorithm that take advantage of the fact that
                 // the entities array is ordered with children following their parent.
 
                 // First, find the array index position of the entity being clicked.
-                for (var i = 0; i < entities.length; ++i) {
-                    if (entities[i].id == entityId) {
+                for ( var i = 0; i < entities.length; ++i ) {
+                    if ( entities[i].id == entityId ) {
                         // Found. Starting from the position after that, iterates through its descendents.
                         var idsToHide = [ entityId ]; // IDs of entities whose children need to be hidden.
-                        for (++i; i < entities.length; ++i) {
+                        for ( ++i; i < entities.length; ++i ) {
                             var entity = entities[i];
-                            if (l7.Util.arrayContains(idsToHide, entity.parentId)) {
+                            if ( l7.Util.arrayContains( idsToHide, entity.parentId ) ) {
                                 entity._tr.style.display = 'none';
-                                if (entity._children && entity._children.length > 0) {
+                                if ( entity._children && entity._children.length > 0 ) {
                                     // This entity itself is a parent. Remember to hide its children.
-                                    idsToHide.push(entity.id);
+                                    idsToHide.push( entity.id );
                                 }
                             }
                         }
@@ -304,20 +304,20 @@ if (!l7.EntityTreeTable) {
              * @param {MouseEvent} event    the click event
              * Expected execution scope is the l7.EntityTreeTable instance.
              */
-            function onClickTBody(event) {
-                var target = YAHOO.util.Event.getTarget(event);
+            function onClickTBody( event ) {
+                var target = YAHOO.util.Event.getTarget( event );
 
                 // Proceed only if click target is not a checkbox, radio button or clickable image.
                 var nodeName = target.nodeName.toLowerCase();
-                if (nodeName == 'input') return;
-                if (nodeName == 'img' && (l7.Util.hasClass(target, 'clickableImg') || l7.Util.hasClass(target, 'clickable'))) return;
+                if ( nodeName == 'input' ) return;
+                if ( nodeName == 'img' && (l7.Util.hasClass( target, 'clickableImg' ) || l7.Util.hasClass( target, 'clickable' )) ) return;
 
-                var tr = YAHOO.util.Dom.getAncestorByTagName(target, 'tr');
+                var tr = YAHOO.util.Dom.getAncestorByTagName( target, 'tr' );
                 var entity = tr._entity;
-                if (l7.Util.arrayContains(this._config.highlightableEntities, entity.type)) {
-                    this.highlightEntity(entity, true);
+                if ( l7.Util.arrayContains( this._config.highlightableEntities, entity.type ) ) {
+                    this.highlightEntity( entity, true );
                 }
-            };
+            }
 
             /**
              * Onclick event handler for a toggler IMG element.
@@ -327,16 +327,16 @@ if (!l7.EntityTreeTable) {
              *                              and params.entityId is the ID of the entity being clicked
              * Expected execution scope is the toggler HTMLImageElement.
              */
-            function onEntityTogglerClicked(event, params) {
+            function onEntityTogglerClicked( event, params ) {
                 var entities = params.entities;
                 var entityId = params.entityId;
 
-                if (isTogglerExpanded(this)) {
-                    hideChildren(entities, entityId);
-                    setTogglerState(this, false);
+                if ( isTogglerExpanded( this ) ) {
+                    hideChildren( entities, entityId );
+                    setTogglerState( this, false );
                 } else {
-                    unhideChildren(entities, entityId);
-                    setTogglerState(this, true);
+                    unhideChildren( entities, entityId );
+                    setTogglerState( this, true );
                 }
             }
 
@@ -349,12 +349,12 @@ if (!l7.EntityTreeTable) {
              *                              and params.callback is the user-supplied call back method
              * Expected execution scope is the checkbox HTMLInputElement.
              */
-            function onEntityCheckboxClicked(event, params) {
+            function onEntityCheckboxClicked( event, params ) {
                 var entities = params.entities;
                 var entityId = params.entityId;
                 var callback = params.callback;
 
-                function getState(entity) {
+                function getState( entity ) {
                     return entity._tristateCheckboxState;
                 }
 
@@ -363,18 +363,18 @@ if (!l7.EntityTreeTable) {
                  * @param {object} entity       the entity object literal
                  * @param {int} state           TRISTATE_CHECKBOX_UNCHECKED, TRISTATE_CHECKBOX_CHECKED or TRISTATE_CHECKBOX_MIXED
                  */
-                function setState(entity, state) {
+                function setState( entity, state ) {
                     var checkbox = entity._tristateCheckbox;
-                    if (checkbox) {
-                        if (state == TRISTATE_CHECKBOX_UNCHECKED) {
+                    if ( checkbox ) {
+                        if ( state == TRISTATE_CHECKBOX_UNCHECKED ) {
                             checkbox.checked = false;
-                            l7.Util.removeClass(checkbox, TRISTATE_CHECKBOX_MIXED_CSS);
-                        } else if (state == TRISTATE_CHECKBOX_CHECKED) {
+                            l7.Util.removeClass( checkbox, TRISTATE_CHECKBOX_MIXED_CSS );
+                        } else if ( state == TRISTATE_CHECKBOX_CHECKED ) {
                             checkbox.checked = true;
-                            l7.Util.removeClass(checkbox, TRISTATE_CHECKBOX_MIXED_CSS);
-                        } else if (state == TRISTATE_CHECKBOX_MIXED) {
+                            l7.Util.removeClass( checkbox, TRISTATE_CHECKBOX_MIXED_CSS );
+                        } else if ( state == TRISTATE_CHECKBOX_MIXED ) {
                             checkbox.checked = true;
-                            l7.Util.addClass(checkbox, TRISTATE_CHECKBOX_MIXED_CSS);
+                            l7.Util.addClass( checkbox, TRISTATE_CHECKBOX_MIXED_CSS );
                         }
                     }
                     entity._tristateCheckboxState = state;
@@ -384,28 +384,28 @@ if (!l7.EntityTreeTable) {
                  * Sets the state of tri-state checkbox of an entity according to the states of its children.
                  * @param {object} entity       the entity object literal
                  */
-                function setStateAccordingToChildren(entity) {
+                function setStateAccordingToChildren( entity ) {
                     // Counts the states of its children.
                     var numUnchecked = 0;
                     var numChecked = 0;
-                    for (var j in entity._children) {
-                        var state = getState(entity._children[j]);
-                        if (state == TRISTATE_CHECKBOX_UNCHECKED) {
+                    for ( var j in entity._children ) {
+                        var state = getState( entity._children[j] );
+                        if ( state == TRISTATE_CHECKBOX_UNCHECKED ) {
                             ++numUnchecked;
-                        } else if (state == TRISTATE_CHECKBOX_CHECKED) {
+                        } else if ( state == TRISTATE_CHECKBOX_CHECKED ) {
                             ++numChecked;
                         }
                     }
 
-                    if (numUnchecked == entity._children.length) {
+                    if ( numUnchecked == entity._children.length ) {
                         // All children unchecked.
-                        setState(entity, TRISTATE_CHECKBOX_UNCHECKED);
-                    } else if (numChecked == entity._children.length) {
+                        setState( entity, TRISTATE_CHECKBOX_UNCHECKED );
+                    } else if ( numChecked == entity._children.length ) {
                         // All children checked.
-                        setState(entity, TRISTATE_CHECKBOX_CHECKED);
+                        setState( entity, TRISTATE_CHECKBOX_CHECKED );
                     } else {
                         // Some children checked, some unchecked, some mixed.
-                        setState(entity, TRISTATE_CHECKBOX_MIXED);
+                        setState( entity, TRISTATE_CHECKBOX_MIXED );
                     }
                 }
 
@@ -413,19 +413,19 @@ if (!l7.EntityTreeTable) {
                  * Cascades down the checkbox state to the descendents of this entity.
                  * @param {boolean} checked   true or false
                  */
-                function checkDescendents(checked) {
+                function checkDescendents( checked ) {
                     // Single-pass algorithm.
                     // Starting from the index position after the entity being clicked, iterates through its descendents.
                     var idsToCheck = [ entityId ]; // IDs of entities whose children need to be hidden.
-                    for (var i = index + 1; i < entities.length; ++i) {
+                    for ( var i = index + 1; i < entities.length; ++i ) {
                         var entity = entities[i];
-                        if (l7.Util.arrayContains(idsToCheck, entity.parentId)) {
-                            if (entity.rbacCUD) {
-                                setState(entity, checked ? TRISTATE_CHECKBOX_CHECKED : TRISTATE_CHECKBOX_UNCHECKED);
+                        if ( l7.Util.arrayContains( idsToCheck, entity.parentId ) ) {
+                            if ( entity.rbacCUD ) {
+                                setState( entity, checked ? TRISTATE_CHECKBOX_CHECKED : TRISTATE_CHECKBOX_UNCHECKED );
                             }
-                            if (entity._children.length > 0) {
+                            if ( entity._children.length > 0 ) {
                                 // This entity itself is a parent. Remember to check its children.
-                                idsToCheck.push(entity.id);
+                                idsToCheck.push( entity.id );
                             }
                         }
                     }
@@ -439,10 +439,10 @@ if (!l7.EntityTreeTable) {
                     // Single-pass algorithm.
                     // Starting from the index position before the entity being clicked, iterates through its ancestors.
                     var parentId = entities[index].parentId;
-                    for (var i = index - 1; i >= 0; --i) {
-                        if (entities[i].id == parentId) {
+                    for ( var i = index - 1; i >= 0; --i ) {
+                        if ( entities[i].id == parentId ) {
                             var entity = entities[i];
-                            setStateAccordingToChildren(entity);
+                            setStateAccordingToChildren( entity );
                             parentId = entity.parentId;
                         }
                     }
@@ -450,23 +450,23 @@ if (!l7.EntityTreeTable) {
 
                 // First, find the array index position of the entity being clicked.
                 var index;
-                for (var i = 0; i < entities.length; ++i) {
-                    if (entities[i].id == entityId) {
+                for ( var i = 0; i < entities.length; ++i ) {
+                    if ( entities[i].id == entityId ) {
                         index = i;
                         break;
                     }
                 }
-                if (index == null) {
-                    YAHOO.log('Entity ID (' + entityId + ') not found in entities array.', 'error', 'l7.EntityTreeTable onEntityCheckboxClicked');
+                if ( index == null ) {
+                    YAHOO.log( 'Entity ID (' + entityId + ') not found in entities array.', 'error', 'l7.EntityTreeTable onEntityCheckboxClicked' );
                     return;
                 }
 
-                setState(entities[index], this.checked ? TRISTATE_CHECKBOX_CHECKED : TRISTATE_CHECKBOX_UNCHECKED);
-                checkDescendents(this.checked);
+                setState( entities[index], this.checked ? TRISTATE_CHECKBOX_CHECKED : TRISTATE_CHECKBOX_UNCHECKED );
+                checkDescendents( this.checked );
                 updateAncestors();
 
-                if (callback != undefined && callback != null) {
-                    callback(event, entities[index]);
+                if ( callback != undefined && callback != null ) {
+                    callback( event, entities[index] );
                 }
             }
 
@@ -480,31 +480,31 @@ if (!l7.EntityTreeTable) {
              * @param {string} column   an l7.EntityTreeTable.COLUMN value
              * @return column index if found; null if not column is not in table
              */
-            this._getColumnIndex = function(column) {
+            this._getColumnIndex = function( column ) {
                 var columns = this._config.columns;
-                for (var i in columns) {
-                    if (column == columns[i]) {
+                for ( var i in columns ) {
+                    if ( column == columns[i] ) {
                         return i;
                     }
                 }
                 return null;
-            }
+            };
 
             /**
              * @private
              * @param {object} strings  map of localized strings
              */
-            this._setLocalizedStrings = function(strings) {
+            this._setLocalizedStrings = function( strings ) {
                 var i;
                 // Initializes with default values.
-                for (i in l7.EntityTreeTable.DEFAULT_LOCALIZED_STRINGS) {
+                for ( i in l7.EntityTreeTable.DEFAULT_LOCALIZED_STRINGS ) {
                     this._localizedStrings[i] = l7.EntityTreeTable.DEFAULT_LOCALIZED_STRINGS[i];
                 }
                 // Then customizes with passed values.
-                for (i in strings) {
-                     this._localizedStrings[i] = strings[i];
+                for ( i in strings ) {
+                    this._localizedStrings[i] = strings[i];
                 }
-            }
+            };
 
             /**
              * Initializes a TD in the name column for an entity.
@@ -513,94 +513,94 @@ if (!l7.EntityTreeTable) {
              * @param {HTMLTableCellElement} td
              * @param {object} entity
              */
-            this._initNameCell = function(td, entity) {
+            this._initNameCell = function( td, entity ) {
                 td.className = 'name';  // CSS style class
 
                 // Starts with indentation proportional to tree level.
-                for (var i = 0; i < entity._treeLevel; ++i) {
-                    var indent = document.createElement('img');
+                for ( var i = 0; i < entity._treeLevel; ++i ) {
+                    var indent = document.createElement( 'img' );
                     indent.src = this._imgFolder + '/spacer16.png';
-                    td.appendChild(indent);
+                    td.appendChild( indent );
                 }
 
                 // Followed by a toggler IMG (+|-|.) to expand/collapse children.
-                var toggler = document.createElement('img');
-                if (entity._children.length == 0) {
+                var toggler = document.createElement( 'img' );
+                if ( entity._children.length == 0 ) {
                     toggler.src = this._imgFolder + '/' + TOGGLER_NONE_IMG_NAME;
                 } else {
                     toggler.src = this._imgFolder + '/' + TOGGLER_EXPANDED_IMG_NAME;
                     toggler.className = 'clickable';
-                    YAHOO.util.Event.addListener(toggler, 'click', onEntityTogglerClicked, {entities : this._entities, entityId : entity.id});
+                    YAHOO.util.Event.addListener( toggler, 'click', onEntityTogglerClicked, {entities : this._entities, entityId : entity.id} );
                 }
-                td.appendChild(toggler);
+                td.appendChild( toggler );
                 entity._toggler = toggler;
 
                 // Followed by a tri-state checkbox, if specified.
-                if (this._config.entitiesWithTristateCheckbox != undefined && this._config.entitiesWithTristateCheckbox != null) {
-                    if (l7.Util.arrayContains(this._config.entitiesWithTristateCheckbox, entity.type)) {
-                        var checkbox = document.createElement('input');
+                if ( this._config.entitiesWithTristateCheckbox != undefined && this._config.entitiesWithTristateCheckbox != null ) {
+                    if ( l7.Util.arrayContains( this._config.entitiesWithTristateCheckbox, entity.type ) ) {
+                        var checkbox = document.createElement( 'input' );
                         checkbox.type = 'checkbox';
                         checkbox.disabled = !entity.rbacCUD;
-                        YAHOO.util.Event.addListener(checkbox, 'click', onEntityCheckboxClicked, {entities : this._entities, entityId : entity.id, callback : this._config.onClickEntityTristateCheckbox});
-                        td.appendChild(checkbox);
+                        YAHOO.util.Event.addListener( checkbox, 'click', onEntityCheckboxClicked, {entities : this._entities, entityId : entity.id, callback : this._config.onClickEntityTristateCheckbox} );
+                        td.appendChild( checkbox );
                         entity._tristateCheckbox = checkbox;
                         entity._tristateCheckboxState = TRISTATE_CHECKBOX_UNCHECKED;
                     }
                 }
 
                 // Or a radio button, if specified.
-                if (this._config.entitiesWithRadioButton != undefined && this._config.entitiesWithRadioButton != null) {
-                    if (l7.Util.arrayContains(this._config.entitiesWithRadioButton, entity.type)) {
-                            var radioButton = l7.Widget.createInputRadio(this._radioButtonsName);
-                            radioButton.disabled = !entity.rbacCUD;
-                            if (this._config.onClickEntityRadioButton != undefined && this._config.onClickEntityRadioButton != null) {
-                                YAHOO.util.Event.addListener(radioButton, 'click', this._config.onClickEntityRadioButton, entity);
-                            }
-                            td.appendChild(radioButton);
-                            entity._radioButton = radioButton;
+                if ( this._config.entitiesWithRadioButton != undefined && this._config.entitiesWithRadioButton != null ) {
+                    if ( l7.Util.arrayContains( this._config.entitiesWithRadioButton, entity.type ) ) {
+                        var radioButton = l7.Widget.createInputRadio( this._radioButtonsName );
+                        radioButton.disabled = !entity.rbacCUD;
+                        if ( this._config.onClickEntityRadioButton != undefined && this._config.onClickEntityRadioButton != null ) {
+                            YAHOO.util.Event.addListener( radioButton, 'click', this._config.onClickEntityRadioButton, entity );
+                        }
+                        td.appendChild( radioButton );
+                        entity._radioButton = radioButton;
                     }
                 }
 
                 // Followed by an entity icon.
-                var icon = document.createElement('img');
-                if (entity.type == l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER) {
+                var icon = document.createElement( 'img' );
+                if ( entity.type == l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER ) {
                     icon.src = this._imgFolder + '/folder.png';
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER ) {
                     icon.src = this._imgFolder + '/SSGCluster.png';
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE ) {
                     icon.src = this._imgFolder + '/SSGNode.png';
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SERVICE_FOLDER) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.SERVICE_FOLDER ) {
                     icon.src = this._imgFolder + '/folder.png';
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE ) {
                     icon.src = this._imgFolder + '/publishedService.png';
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS ) {
                     icon.src = this._imgFolder + '/publishedServiceAlias.png';
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.OPERATION) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.OPERATION ) {
                     icon.src = this._imgFolder + '/operation.png';
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT ) {
                     icon.src = this._imgFolder + '/policyFragment.png';
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS ) {
                     icon.src = this._imgFolder + '/policyFragmentAlias.png';
                 } else {
-                    YAHOO.log('Using blank entity icon because entity type is unrecognized: ' + entity.type, 'warning', 'l7.EntityTreeTable.initNameTD');
+                    YAHOO.log( 'Using blank entity icon because entity type is unrecognized: ' + entity.type, 'warning', 'l7.EntityTreeTable.initNameTD' );
                     icon.src = this._imgFolder + '/spacer16.png';
                 }
-                td.appendChild(icon);
+                td.appendChild( icon );
                 entity._icon = icon;
 
                 // Finally the entity name.
                 // Valuable Lesson: Don't do this by
                 //     td.innerHTML += entity.name
                 // That will nuke event handlers of all preceding elements.
-                var name = document.createElement('span');
-                if (entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS ||
-                    entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS) {
+                var name = document.createElement( 'span' );
+                if ( entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS ||
+                        entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS ) {
                     name.style.fontStyle = 'italic';
                 }
-                name.innerHTML = l7.Util.escapeHtmlText(entity.name);
-                td.appendChild(name);
+                name.innerHTML = l7.Util.escapeHtmlText( entity.name );
+                td.appendChild( name );
                 entity._nameSpan = name;
-            }
+            };
 
             /**
              * Initializes a TD in the online status column for an entity.
@@ -609,12 +609,12 @@ if (!l7.EntityTreeTable) {
              * @param {HTMLTableCellElement} td
              * @param {object} entity
              */
-            this._initOnlineStatusCell = function(td, entity) {
-                var icon = document.createElement('img');
+            this._initOnlineStatusCell = function( td, entity ) {
+                var icon = document.createElement( 'img' );
                 entity._onlineStatusIcon = icon;
-                this.setEntityOnlineStatus(entity.id, entity.onlineStatus);
-                td.appendChild(icon);
-            }
+                this.setEntityOnlineStatus( entity.id, entity.onlineStatus );
+                td.appendChild( icon );
+            };
 
             /**
              * Initializes a TD in the trust status column for an entity.
@@ -623,12 +623,12 @@ if (!l7.EntityTreeTable) {
              * @param {HTMLTableCellElement} td
              * @param {object} entity
              */
-            this._initTrustStatusCell = function(td, entity) {
-                var icon = document.createElement('img');
+            this._initTrustStatusCell = function( td, entity ) {
+                var icon = document.createElement( 'img' );
                 entity._trustStatusIcon = icon;
-                this.setEntityTrustStatus(entity.id, entity.trustStatus);
-                td.appendChild(icon);
-            }
+                this.setEntityTrustStatus( entity.id, entity.trustStatus );
+                td.appendChild( icon );
+            };
 
             /**
              * Initializes a TD in the access status column for an entity.
@@ -637,12 +637,12 @@ if (!l7.EntityTreeTable) {
              * @param {HTMLTableCellElement} td
              * @param {object} entity
              */
-            this._initAccessStatusCell = function(td, entity) {
-                var icon = document.createElement('img');
+            this._initAccessStatusCell = function( td, entity ) {
+                var icon = document.createElement( 'img' );
                 entity._accessStatusIcon = icon;
-                this.setEntityAccessStatus(entity.id, entity.trustStatus, entity.accessStatus);
-                td.appendChild(icon);
-            }
+                this.setEntityAccessStatus( entity.id, entity.trustStatus, entity.accessStatus );
+                td.appendChild( icon );
+            };
 
             /**
              * Initializes a TD in the dashboard column for an SSG Cluster.
@@ -651,21 +651,21 @@ if (!l7.EntityTreeTable) {
              * @param {HTMLTableCellElement} td
              * @param {object} entity
              */
-            this._initDashboardCell = function(td, entity) {
+            this._initDashboardCell = function( td, entity ) {
                 td.className = 'dashboard'; // CSS style class
                 // Only SSG Clusters can have dashboard.
-                if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
-                    var checkbox = document.createElement('input');
+                if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER ) {
+                    var checkbox = document.createElement( 'input' );
                     checkbox.type = 'checkbox';
                     checkbox.title = this._localizedStrings.DASHBOARD_CHECKBOX_TOOLTIP;
-                    if (this._config.onClickDashboardCheckbox != undefined) {
-                        YAHOO.util.Event.addListener(checkbox, 'click', this._config.onClickDashboardCheckbox, entity);
+                    if ( this._config.onClickDashboardCheckbox != undefined ) {
+                        YAHOO.util.Event.addListener( checkbox, 'click', this._config.onClickDashboardCheckbox, entity );
                     }
                     checkbox.disabled = !entity.trustStatus || !entity.accessStatus;
-                    td.appendChild(checkbox);
+                    td.appendChild( checkbox );
                     entity._dashboardCheckbox = checkbox;
                 }
-            }
+            };
 
             /**
              * Initializes a TD in the type column for an entity.
@@ -674,27 +674,27 @@ if (!l7.EntityTreeTable) {
              * @param {HTMLTableCellElement} td
              * @param {object} entity
              */
-            this._initTypeCell = function(td, entity) {
-                if (entity.type == l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER) {
-                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.ENTERPRISE_FOLDER);
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
-                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.SSG_CLUSTER);
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE) {
-                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.SSG_NODE);
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SERVICE_FOLDER) {
-                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.SERVICE_FOLDER);
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE) {
-                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.PUBLISHED_SERVICE);
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS) {
-                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.PUBLISHED_SERVICE_ALIAS);
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.OPERATION) {
-                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.OPERATION);
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT) {
-                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.POLICY_FRAGMENT);
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS) {
-                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.POLICY_FRAGMENT_ALIAS);
+            this._initTypeCell = function( td, entity ) {
+                if ( entity.type == l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER ) {
+                    td.innerHTML = l7.Util.escapeHtmlText( this._localizedStrings.ENTERPRISE_FOLDER );
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER ) {
+                    td.innerHTML = l7.Util.escapeHtmlText( this._localizedStrings.SSG_CLUSTER );
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE ) {
+                    td.innerHTML = l7.Util.escapeHtmlText( this._localizedStrings.SSG_NODE );
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.SERVICE_FOLDER ) {
+                    td.innerHTML = l7.Util.escapeHtmlText( this._localizedStrings.SERVICE_FOLDER );
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE ) {
+                    td.innerHTML = l7.Util.escapeHtmlText( this._localizedStrings.PUBLISHED_SERVICE );
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS ) {
+                    td.innerHTML = l7.Util.escapeHtmlText( this._localizedStrings.PUBLISHED_SERVICE_ALIAS );
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.OPERATION ) {
+                    td.innerHTML = l7.Util.escapeHtmlText( this._localizedStrings.OPERATION );
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT ) {
+                    td.innerHTML = l7.Util.escapeHtmlText( this._localizedStrings.POLICY_FRAGMENT );
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS ) {
+                    td.innerHTML = l7.Util.escapeHtmlText( this._localizedStrings.POLICY_FRAGMENT_ALIAS );
                 }
-            }
+            };
 
             /**
              * Initializes a TD in the version column for an entity.
@@ -702,12 +702,12 @@ if (!l7.EntityTreeTable) {
              * @param {HTMLTableCellElement} td
              * @param {object} entity
              */
-            this._initVersionCell = function(td, entity) {
-                if (entity.version != undefined) {
-                    td.className = l7.Util.isIntString(entity.version) ? 'right' : 'left';
-                    td.innerHTML = l7.Util.escapeHtmlText(entity.version);
+            this._initVersionCell = function( td, entity ) {
+                if ( entity.version != undefined ) {
+                    td.className = l7.Util.isIntString( entity.version ) ? 'right' : 'left';
+                    td.innerHTML = l7.Util.escapeHtmlText( entity.version );
                 }
-            }
+            };
 
             /**
              * Initializes a TD in the details column for an entity.
@@ -715,24 +715,28 @@ if (!l7.EntityTreeTable) {
              * @param {HTMLTableCellElement} td
              * @param {object} entity
              */
-            this._initDetailsCell = function(td, entity) {
+            this._initDetailsCell = function( td, entity ) {
                 td.className = 'details'; // CSS style class.
-                if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
-                    td.innerHTML = '<span class="hasTooltip" title="' + this._localizedStrings.SSL_HOST_NAME + '">' + entity.sslHostName + '</span>'
-                                 + ':<span class="hasTooltip" title="' + this._localizedStrings.ADMINISTRATIVE_PORT_NUMBER + '">' + entity.adminPort + '</span>';
-                    if (entity.ipAddress) {
-                        td.innerHTML += ' (<span class="hasTooltip" title="' + this._localizedStrings.IP_ADDRESS + '">' + entity.ipAddress + '</span>)';
+                if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER ) {
+                    if ( entity.adminPort == 0 ) {
+                        td.innerHTML = 'Offline';
+                    } else {
+                        td.innerHTML = '<span class="hasTooltip" title="' + this._localizedStrings.SSL_HOST_NAME + '">' + entity.sslHostName + '</span>'
+                                + ':<span class="hasTooltip" title="' + this._localizedStrings.ADMINISTRATIVE_PORT_NUMBER + '">' + entity.adminPort + '</span>';
+                        if ( entity.ipAddress ) {
+                            td.innerHTML += ' (<span class="hasTooltip" title="' + this._localizedStrings.IP_ADDRESS + '">' + entity.ipAddress + '</span>)';
+                        }
+                        if ( entity.dbHosts ) {
+                            td.innerHTML += ' [<span class="hasTooltip" title="' + this._localizedStrings.DATABASE_HOSTS + '">' + entity.dbHosts.join( ',' ) + '</span>]';
+                        }
                     }
-                    if (entity.dbHosts) {
-                        td.innerHTML += ' [<span class="hasTooltip" title="' + this._localizedStrings.DATABASE_HOSTS + '">' + entity.dbHosts.join(',') + '</span>]';
-                    }
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE ) {
                     td.innerHTML = '<span class="hasTooltip" title="' + this._localizedStrings.SELF_HOST_NAME + '">' + entity.selfHostName + '</span>'
-                                 + ' (<span class="hasTooltip" title="' + this._localizedStrings.IP_ADDRESS + '">' + entity.ipAddress + '</span>)';
+                            + ' (<span class="hasTooltip" title="' + this._localizedStrings.IP_ADDRESS + '">' + entity.ipAddress + '</span>)';
                 } else {
                     // No details for other entity types.
                 }
-            }
+            };
 
             /**
              * Initializes a TD in the zoom column for an entity.
@@ -740,25 +744,25 @@ if (!l7.EntityTreeTable) {
              * @param {HTMLTableCellElement} td
              * @param {object} entity
              */
-            this._initZoomCell = function(td, entity) {
+            this._initZoomCell = function( td, entity ) {
                 td.className = 'center'; // CSS style class.
-                if (this._config.entitiesWithZoomIcon == undefined ||
-                    l7.Util.arrayContains(this._config.entitiesWithZoomIcon, entity.type)) {
-                    var zoomIcon = document.createElement('img');
+                if ( this._config.entitiesWithZoomIcon == undefined ||
+                        l7.Util.arrayContains( this._config.entitiesWithZoomIcon, entity.type ) ) {
+                    var zoomIcon = document.createElement( 'img' );
                     zoomIcon.src = this._imgFolder + '/zoom.png';
-                    if (entity.rbacCUD) {
+                    if ( entity.rbacCUD ) {
                         zoomIcon.className = 'clickable'; // CSS style class.
                         zoomIcon.title = this._localizedStrings.ZOOM_ICON_TOOLTIP;
-                        if (this._config.onClickZoomIcon != undefined) {
-                            YAHOO.util.Event.addListener(zoomIcon, 'click', this._config.onClickZoomIcon, entity);
+                        if ( this._config.onClickZoomIcon != undefined ) {
+                            YAHOO.util.Event.addListener( zoomIcon, 'click', this._config.onClickZoomIcon, entity );
                         }
                     } else {
                         zoomIcon.className = 'disabled'; // CSS style class.
                     }
-                    td.appendChild(zoomIcon);
+                    td.appendChild( zoomIcon );
                     entity._zoomIcon = zoomIcon;
                 }
-            }
+            };
 
             /**
              * Initializes a TD in a monitored property column for an entity.
@@ -767,7 +771,7 @@ if (!l7.EntityTreeTable) {
              * @param {object} entity
              * @param {string} column
              */
-            this._initMonitoredPropertyCell = function(td, entity, column) {
+            this._initMonitoredPropertyCell = function( td, entity, column ) {
 
                 /**
                  * @param {string} propertyName
@@ -775,69 +779,73 @@ if (!l7.EntityTreeTable) {
                  * @param {boolean} ssgTrustStatus  indicate if a SSG Cluster is trusted or not
                  * @return {boolean}
                  */
-                function isMonitoringPropertyApplicableToEntity(propertyName, entityType, ssgTrustStatus) {
-                    if (entityType == l7.Constants.ENTITY_TYPE.SSG_CLUSTER && ssgTrustStatus) {  // If a SSG Cluster is not in trust, then we won't monitor it.
-                        return l7.Util.hasPropertyValue(l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY, propertyName);
-                    } else if (entityType == l7.Constants.ENTITY_TYPE.SSG_NODE) {
-                        return l7.Util.hasPropertyValue(l7.Constants.SSG_NODE_MONITORING_PROPERTY, propertyName);
+                function isMonitoringPropertyApplicableToEntity( propertyName, entityType, ssgTrustStatus ) {
+                    if ( entityType == l7.Constants.ENTITY_TYPE.SSG_CLUSTER && ssgTrustStatus ) {  // If a SSG Cluster is not in trust, then we won't monitor it.
+                        return l7.Util.hasPropertyValue( l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY, propertyName );
+                    } else if ( entityType == l7.Constants.ENTITY_TYPE.SSG_NODE ) {
+                        return l7.Util.hasPropertyValue( l7.Constants.SSG_NODE_MONITORING_PROPERTY, propertyName );
                     } else {
                         return false;
                     }
                 }
 
-                var propertyType = getMonitoringPropertyTypeInColumn(column);
-                if (isMonitoringPropertyApplicableToEntity(propertyType, entity.type, entity.trustStatus)) {
+                var propertyType = getMonitoringPropertyTypeInColumn( column );
+                if ( isMonitoringPropertyApplicableToEntity( propertyType, entity.type, entity.trustStatus ) ) {
                     // We need a DIV element inside the TD element in order to have the
                     // dialog button float in front of the property value.
-                    var div = document.createElement('div');
+                    var div = document.createElement( 'div' );
                     div.className = 'monProp'; // CSS style class.
                     div.style.position = 'relative';
-                    td.appendChild(div);
+                    td.appendChild( div );
 
                     // The dialog button is a ghost icon - it is initially invisible until mouse over the table cell.
-                    var dialogButton = document.createElement('img');
+                    var dialogButton = document.createElement( 'img' );
                     dialogButton.className = 'ghostDialogIcon clickableImg';
                     dialogButton.style.display = 'none';
                     dialogButton.src = this._imgFolder + '/ghostDialogIcon.png';
                     dialogButton.title = this._localizedStrings.MONITORED_PROPERTY_BUTTON_TOOLTIP;
-                    if (this._config.onClickMonitoringPropertyDialogButton != undefined) {
-                        YAHOO.util.Event.addListener(dialogButton, 'click', this._config.onClickMonitoringPropertyDialogButton, { entity : entity, propertyType : propertyType });
+                    if ( this._config.onClickMonitoringPropertyDialogButton != undefined ) {
+                        YAHOO.util.Event.addListener( dialogButton, 'click', this._config.onClickMonitoringPropertyDialogButton, { entity : entity, propertyType : propertyType } );
                     }
-                    YAHOO.util.Event.addListener(td, 'mouseover', function(event, dialogButton) { dialogButton.style.display = ''; }, dialogButton);
-                    YAHOO.util.Event.addListener(td, 'mouseout', function(event, dialogButton) { dialogButton.style.display = 'none'; }, dialogButton);
-                    div.appendChild(dialogButton);
+                    YAHOO.util.Event.addListener( td, 'mouseover', function( event, dialogButton ) {
+                        dialogButton.style.display = '';
+                    }, dialogButton );
+                    YAHOO.util.Event.addListener( td, 'mouseout', function( event, dialogButton ) {
+                        dialogButton.style.display = 'none';
+                    }, dialogButton );
+                    div.appendChild( dialogButton );
 
-                    var span = document.createElement('span');
-                    div.appendChild(span);
+                    var span = document.createElement( 'span' );
+                    div.appendChild( span );
 
-                    if (entity._monitoredPropertySpans == undefined) {
+                    if ( entity._monitoredPropertySpans == undefined ) {
                         entity._monitoredPropertySpans = {};
                     }
                     entity._monitoredPropertySpans[propertyType] = span;
-                    if (entity._monitoredPropertyTds == undefined) {
+                    if ( entity._monitoredPropertyTds == undefined ) {
                         entity._monitoredPropertyTds = {};
                     }
                     entity._monitoredPropertyTds[propertyType] = td;
 
-                    if (entity.monitoringProperties != undefined && entity.monitoringProperties[propertyType] != undefined) { // Optional data on initial load.
+                    if ( entity.monitoringProperties != undefined && entity.monitoringProperties[propertyType] != undefined ) { // Optional data on initial load.
                         var property = entity.monitoringProperties[propertyType];
-                        this.setMonitoredProperty(entity.id, propertyType, property);
+                        this.setMonitoredProperty( entity.id, propertyType, property );
                     } else {
-                        this.setMonitoredProperty(entity.id, propertyType, null);
+                        this.setMonitoredProperty( entity.id, propertyType, null );
                     }
                 } else {
                     td.className = 'notApplicable'; // CSS style class.
                 }
-            }
+            };
 
             /**
              * @private
              */
             this._init = function() {
-                this._setLocalizedStrings(this._config.localizedStrings);
-                this.setHighlightableEntities(this._config.highlightableEntities);
-                this.load(this._entities);
-            }
+                this._setLocalizedStrings( this._config.localizedStrings );
+                this.setHighlightableEntities( this._config.highlightableEntities );
+                this.load( this._entities );
+            };
 
             // --------------------------------------------------------------------------------
             // Public instance methods
@@ -850,7 +858,7 @@ if (!l7.EntityTreeTable) {
              */
             this.getTBody = function() {
                 return this._tbody;
-            }
+            };
 
             /**
              * Returns the configuration object literal passed into the constructor.
@@ -859,7 +867,7 @@ if (!l7.EntityTreeTable) {
              */
             this.getConfig = function() {
                 return this._config;
-            }
+            };
 
             /**
              * Expands a given entity so that its immediate children are visible.
@@ -867,47 +875,47 @@ if (!l7.EntityTreeTable) {
              * @param {string} entityId     ID of the target entity
              * @return {boolean} false if entity with the given ID is not found
              */
-            this.expandEntity = function(entityId) {
+            this.expandEntity = function( entityId ) {
                 var entity = this._entitiesById[entityId];
-                if (!entity) {
-                    YAHOO.log('No entity with ID = ' + entityId, 'warning', 'l7.EntityTreeTable.expandEntity');
+                if ( !entity ) {
+                    YAHOO.log( 'No entity with ID = ' + entityId, 'warning', 'l7.EntityTreeTable.expandEntity' );
                     return false;
                 }
 
-                unhideChildren(this._entities, entityId);
-                if (entity._toggler) setTogglerState(entity._toggler, true);
+                unhideChildren( this._entities, entityId );
+                if ( entity._toggler ) setTogglerState( entity._toggler, true );
                 return true;
-            }
+            };
 
             /**
              * Expands ancestors of a given entity so that the entity is visible in the tree.
              * @param {string} entityId     ID of the target entity
              * @return {boolean} false if entity with the given ID is not found
              */
-            this.expandAncestorsOf = function(entityId) {
+            this.expandAncestorsOf = function( entityId ) {
                 var entity = this._entitiesById[entityId];
-                if (!entity) {
-                    YAHOO.log('No entity with ID = ' + entityId, 'warning', 'l7.EntityTreeTable.expandAncestorsOf');
+                if ( !entity ) {
+                    YAHOO.log( 'No entity with ID = ' + entityId, 'warning', 'l7.EntityTreeTable.expandAncestorsOf' );
                     return false;
                 }
 
                 // Tallies the ancestors.
                 var ancestorIds = [];
-                for (var e = entity; e && e.parentId && e.parentId != null; e = this._entitiesById[e.parentId]) {
-                    ancestorIds.unshift(e.parentId);
+                for ( var e = entity; e && e.parentId && e.parentId != null; e = this._entitiesById[e.parentId] ) {
+                    ancestorIds.unshift( e.parentId );
                 }
-                
+
                 // Expands each ancestor, beginning with the top most.
-                for (var i in ancestorIds) {
-                    this.expandEntity(ancestorIds[i]);
+                for ( var i in ancestorIds ) {
+                    this.expandEntity( ancestorIds[i] );
                 }
 
                 return true;
-            }
+            };
 
             this.expandAll = function() {
                 // TODO
-            }
+            };
 
             /**
              * Hide all rows except those entities at tree level zero.
@@ -916,13 +924,13 @@ if (!l7.EntityTreeTable) {
             this.collapseAll = function() {
                 var root;
                 var rootCount = 0;
-                for (var i = 0; i < this._entities.length; ++i) {
+                for ( var i = 0; i < this._entities.length; ++i ) {
                     var entity = this._entities[i];
-                    if (entity._children.length > 0) {
+                    if ( entity._children.length > 0 ) {
                         var toggler = entity._toggler;
-                        toggler.src = l7.Util.getParent(toggler.src) + TOGGLER_COLLAPSED_IMG_NAME;
+                        toggler.src = l7.Util.getParent( toggler.src ) + TOGGLER_COLLAPSED_IMG_NAME;
                     }
-                    if (entity._treeLevel > 0) {
+                    if ( entity._treeLevel > 0 ) {
                         entity._tr.style.display = 'none';
                     } else {
                         rootCount = rootCount + 1;
@@ -932,13 +940,13 @@ if (!l7.EntityTreeTable) {
 
                 if ( rootCount == 1 ) {
                     toggler = root._toggler;
-                    toggler.src = l7.Util.getParent(toggler.src) + TOGGLER_EXPANDED_IMG_NAME;
-                    for (i = 0; i < root._children.length; ++i) {
+                    toggler.src = l7.Util.getParent( toggler.src ) + TOGGLER_EXPANDED_IMG_NAME;
+                    for ( i = 0; i < root._children.length; ++i ) {
                         entity = root._children[i];
                         entity._tr.style.display = '';
                     }
                 }
-            }
+            };
 
             /**
              * Changes the name of an entity.
@@ -947,15 +955,15 @@ if (!l7.EntityTreeTable) {
              * @param {string} name
              * @return {boolean} true if successfully applied; false if unchanged because of error
              */
-            this.setEntityName = function(entityId, name) {
+            this.setEntityName = function( entityId, name ) {
                 var entity = this._entitiesById[entityId];
                 var span = entity._nameSpan;
-                if (span != undefined) {
-                    span.innerHTML = l7.Util.escapeHtmlText(name);
+                if ( span != undefined ) {
+                    span.innerHTML = l7.Util.escapeHtmlText( name );
                     return true;
                 }
                 return false;
-            }
+            };
 
             /**
              * @public
@@ -963,34 +971,34 @@ if (!l7.EntityTreeTable) {
              */
             this.getEntities = function() {
                 return this._entities;
-            }
+            };
 
             /**
              * @public
              * @param {string} id   entity ID
              * @return {object} the entity object literal; undefined if not found
              */
-            this.getEntityById = function(entityId) {
+            this.getEntityById = function( entityId ) {
                 return this._entitiesById[entityId];
-            }
+            };
 
             /**
              * @public
              * @param {object} entity   an entity object literal
              * @return {object} the parent entity object literal; null if no parent
              */
-            this.getParentEntity = function(entity) {
-                return l7.Util.findFirstArrayElementByProperty(this._entities, 'id', entity.parentId);
-            }
+            this.getParentEntity = function( entity ) {
+                return l7.Util.findFirstArrayElementByProperty( this._entities, 'id', entity.parentId );
+            };
 
             /**
              * @public
              * @param {object} entity   an entity object literal
              * @return {array} array of child entities; may be empty but never null
              */
-            this.getChildEntities = function(entity) {
+            this.getChildEntities = function( entity ) {
                 return entity._children;
-            }
+            };
 
             /**
              * @public
@@ -998,14 +1006,14 @@ if (!l7.EntityTreeTable) {
              * @param {object} y    an entity object literal
              * @return {boolean} true if x is a descendent of y
              */
-            this.isDescendent = function(x, y) {
-                for (var entity = this.getParentEntity(x); entity != null; entity = this.getParentEntity(entity)) {
-                    if (entity.id == y.id) {
+            this.isDescendent = function( x, y ) {
+                for ( var entity = this.getParentEntity( x ); entity != null; entity = this.getParentEntity( entity ) ) {
+                    if ( entity.id == y.id ) {
                         return true;
                     }
                 }
                 return false;
-            }
+            };
 
             /**
              * Helper function for context menu to find the entity associated with a context menu target.
@@ -1013,24 +1021,24 @@ if (!l7.EntityTreeTable) {
              * @param {HTMLElement} target      object returned by YAHOO.widget.ContextMenu.contextEventTarget
              * @return {object} object literal of the entity found
              */
-            this.findEntityFromContextEventTarget = function(target) {
-                var tr = target.nodeName.toLowerCase() == 'tr' ? target : YAHOO.util.Dom.getAncestorByTagName(target, 'tr');
+            this.findEntityFromContextEventTarget = function( target ) {
+                var tr = target.nodeName.toLowerCase() == 'tr' ? target : YAHOO.util.Dom.getAncestorByTagName( target, 'tr' );
                 return tr._entity;
-            }
+            };
 
             /**
              * Specifies which entity types can be highlighted by clicking.
              * @public
              * @param {array} types
              */
-            this.setHighlightableEntities = function(types) {
-                if (types != undefined && types != null && types.length != undefined && types.length > 0) {
+            this.setHighlightableEntities = function( types ) {
+                if ( types != undefined && types != null && types.length != undefined && types.length > 0 ) {
                     this._config.highlightableEntities = types;
-                    YAHOO.util.Event.addListener(this._tbody, 'click', onClickTBody, null, this);
+                    YAHOO.util.Event.addListener( this._tbody, 'click', onClickTBody, null, this );
                 } else {
-                    YAHOO.util.Event.removeListener('click', onClickTBody);
+                    YAHOO.util.Event.removeListener( 'click', onClickTBody );
                 }
-            }
+            };
 
             /**
              * Selects an entity with highlighting, and invoke any callback method defined in
@@ -1039,9 +1047,9 @@ if (!l7.EntityTreeTable) {
              * @param {string|object} arg   an entity ID or an entity object literal
              * @param {boolean} doCallback  true to invoke the onEntityHighlighted method passed as the config parameter in the constructor
              */
-            this.highlightEntity = function(arg, doCallback) {
+            this.highlightEntity = function( arg, doCallback ) {
                 var entity;
-                if (typeof arg == 'string') {
+                if ( typeof arg == 'string' ) {
                     entity = this._entitiesById[arg];
                 } else {
                     entity = arg;
@@ -1050,14 +1058,14 @@ if (!l7.EntityTreeTable) {
                 var previous = this._highlightedEntity;
 
                 // Clear highlighting of previous selected TR, if any.
-                if (previous != null) l7.Util.removeClass(previous._tr, HIGHLIGHTED_BACKGROUND_CSS);
+                if ( previous != null ) l7.Util.removeClass( previous._tr, HIGHLIGHTED_BACKGROUND_CSS );
 
                 // Highlight the new selected TR.
-                if (entity != null) l7.Util.addClass(entity._tr, HIGHLIGHTED_BACKGROUND_CSS);
+                if ( entity != null ) l7.Util.addClass( entity._tr, HIGHLIGHTED_BACKGROUND_CSS );
 
                 this._highlightedEntity = entity;
-                if (doCallback && this._config.onEntityHighlighted != null) this._config.onEntityHighlighted(previous, entity);
-            }
+                if ( doCallback && this._config.onEntityHighlighted != null ) this._config.onEntityHighlighted( previous, entity );
+            };
 
             /**
              * @public
@@ -1065,27 +1073,27 @@ if (!l7.EntityTreeTable) {
              */
             this.getHighlightedEntity = function() {
                 return this._highlightedEntity;
-            }
+            };
 
             /**
              * Sets/Changes the entity types that should have tri-state multi-selection checkbox.
              * @public
              * @param {array} entityTypes   array of l7.Constants.ENTITY_TYPE values
              */
-            this.setEntitiesWithTristateCheckbox = function(entityTypes) {
+            this.setEntitiesWithTristateCheckbox = function( entityTypes ) {
                 this._config.entitiesWithTristateCheckbox = entityTypes;
-                this.load(this._entities);
-            }
+                this.load( this._entities );
+            };
 
             /**
              * Sets/Changes the entity types that should have radio button.
              * @public
              * @param {array} entityTypes   array of l7.Constants.ENTITY_TYPE values
              */
-            this.setEntitiesWithRadioButton = function(entityTypes) {
+            this.setEntitiesWithRadioButton = function( entityTypes ) {
                 this._config.entitiesWithRadioButton = entityTypes;
-                this.load(this._entities);
-            }
+                this.load( this._entities );
+            };
 
             /**
              * @public
@@ -1093,14 +1101,14 @@ if (!l7.EntityTreeTable) {
              */
             this.getEntitiesWithDashboardSelected = function() {
                 var result = [];
-                for (var i in this._entities) {
+                for ( var i in this._entities ) {
                     var entity = this._entities[i];
-                    if (entity._dashboardCheckbox && entity._dashboardCheckbox.checked) {
-                        result.push(entity.id);
+                    if ( entity._dashboardCheckbox && entity._dashboardCheckbox.checked ) {
+                        result.push( entity.id );
                     }
                 }
                 return result;
-            }
+            };
 
             /**
              * Sets the state of the dashboard checkbox of one SSG Cluster entity.
@@ -1110,42 +1118,42 @@ if (!l7.EntityTreeTable) {
              * @param {string} id           the entity ID
              * @param {boolean} checked     true if checkbox should be checked; false otherwise
              */
-            this.setDashboardCheckBoxState = function(id, checked) {
+            this.setDashboardCheckBoxState = function( id, checked ) {
                 var entity = this._entitiesById[id];
-                if (entity && entity._dashboardCheckbox) {
+                if ( entity && entity._dashboardCheckbox ) {
                     entity._dashboardCheckbox.checked = checked;
                 }
-            }
+            };
 
             /**
              * @public
              * @param {array} types     array of entity types (l7.Constants.ENTITY_TYPE values) to filter; null for no filter
              * @return {array} array of entity object literals whose checkbox is checked; may be empty but never null
              */
-            this.getEntitiesWithTristateCheckboxChecked = function(types) {
+            this.getEntitiesWithTristateCheckboxChecked = function( types ) {
                 var result = [];
-                for (var i in this._entities) {
+                for ( var i in this._entities ) {
                     var entity = this._entities[i];
-                    if (entity._tristateCheckbox && entity._tristateCheckbox.checked) {
-                        if (types == undefined ||
-                            types == null ||
-                            l7.Util.arrayContains(types, entity.type)) {
-                            result.push(entity);
+                    if ( entity._tristateCheckbox && entity._tristateCheckbox.checked ) {
+                        if ( types == undefined ||
+                                types == null ||
+                                l7.Util.arrayContains( types, entity.type ) ) {
+                            result.push( entity );
                         }
                     }
                 }
                 return result;
-            }
+            };
 
             /**
              * @public
              * @param {string} entityId     entity ID
              * @return {boolean} true if checked
              */
-            this.isEntityTristateCheckboxChecked = function(entityId) {
+            this.isEntityTristateCheckboxChecked = function( entityId ) {
                 var entity = this._entitiesById[entityId];
                 return entity && entity._tristateCheckbox && entity._tristateCheckbox.checked;
-            }
+            };
 
             /**
              * This is an no-op if the check box is already in the specified state.
@@ -1155,38 +1163,38 @@ if (!l7.EntityTreeTable) {
              * @param {boolean} checked     true for checked state; false for unchecked state
              * @return {boolean} false if no entity with that ID
              */
-            this.setEntityTristateCheckboxState = function(entityId, checked) {
+            this.setEntityTristateCheckboxState = function( entityId, checked ) {
                 var entity = this._entitiesById[entityId];
-                if (!entity) return false;
-                if (entity._tristateCheckbox && entity._tristateCheckbox.checked != checked) {
+                if ( !entity ) return false;
+                if ( entity._tristateCheckbox && entity._tristateCheckbox.checked != checked ) {
                     entity._tristateCheckbox.click();
                 }
                 return true;
-            }
+            };
 
             /**
              * @public
              * @return {object} entity object literal whose radio button is selected; null if none selected
              */
             this.getEntityWithRadioButtonSelected = function() {
-                for (var i in this._entities) {
+                for ( var i in this._entities ) {
                     var entity = this._entities[i];
-                    if (entity._radioButton && entity._radioButton.checked) {
+                    if ( entity._radioButton && entity._radioButton.checked ) {
                         return entity;
                     }
                 }
                 return null;
-            }
+            };
 
             /**
              * @public
              * @param {string} entityId     entity ID
              * @return {boolean} true if selected; false if not selected or entity does not have radio button or no entity with given ID
              */
-            this.isEntityRadioButtonSelected = function(entityId) {
+            this.isEntityRadioButtonSelected = function( entityId ) {
                 var entity = this._entitiesById[entityId];
                 return entity && entity._radioButton && entity._radioButton.checked;
-            }
+            };
 
             /**
              * This is an no-op if the radio button is already in the specified state.
@@ -1196,14 +1204,14 @@ if (!l7.EntityTreeTable) {
              * @param {boolean} selected    true for selected state; false for unselected state
              * @return {boolean} false if no entity with that ID
              */
-            this.setEntityRadioButtonState = function(entityId, selected) {
+            this.setEntityRadioButtonState = function( entityId, selected ) {
                 var entity = this._entitiesById[entityId];
-                if (!entity) return false;
-                if (entity._radioButton && entity._radioButton.checked != selected) {
+                if ( !entity ) return false;
+                if ( entity._radioButton && entity._radioButton.checked != selected ) {
                     entity._radioButton.click();
                 }
                 return true;
-            }
+            };
 
             /**
              * Changes the online status of an entity.
@@ -1213,41 +1221,41 @@ if (!l7.EntityTreeTable) {
              *                              an SSG_NODE_ONLINE_STATE value for an SSG Node
              * @return {boolean} true if successfully applied; false if unchanged because of error
              */
-            this.setEntityOnlineStatus = function(entityId, state) {
+            this.setEntityOnlineStatus = function( entityId, state ) {
                 var entity = this._entitiesById[entityId];
                 var icon = entity._onlineStatusIcon;
-                if (state == undefined || state == null) {
+                if ( state == undefined || state == null ) {
                     icon.src = this._imgFolder + '/spacer.png';
                     icon.title = null;
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
-                    if (state == l7.Constants.SSG_CLUSTER_ONLINE_STATE.UP) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER ) {
+                    if ( state == l7.Constants.SSG_CLUSTER_ONLINE_STATE.UP ) {
                         icon.src = this._imgFolder + '/SSGClusterStateUp.png';
                         icon.title = this._localizedStrings.SSG_CLUSTER_STATE_UP;
-                    } else if (state == l7.Constants.SSG_CLUSTER_ONLINE_STATE.PARTIAL) {
+                    } else if ( state == l7.Constants.SSG_CLUSTER_ONLINE_STATE.PARTIAL ) {
                         icon.src = this._imgFolder + '/SSGClusterStatePartial.png';
                         icon.title = this._localizedStrings.SSG_CLUSTER_STATE_PARTIAL;
-                    } else if (state == l7.Constants.SSG_CLUSTER_ONLINE_STATE.DOWN) {
+                    } else if ( state == l7.Constants.SSG_CLUSTER_ONLINE_STATE.DOWN ) {
                         icon.src = this._imgFolder + '/SSGClusterStateDown.png';
                         icon.title = this._localizedStrings.SSG_CLUSTER_STATE_DOWN;
                     } else {
-                        YAHOO.log('Unrecognized online status for entity type=\"' + entity.type + '\": ' + state, 'warning', 'l7.EntityTreeTable.setEntityOnlineStatus');
+                        YAHOO.log( 'Unrecognized online status for entity type=\"' + entity.type + '\": ' + state, 'warning', 'l7.EntityTreeTable.setEntityOnlineStatus' );
                         return false;
                     }
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE) {
-                    if (state == l7.Constants.SSG_NODE_ONLINE_STATE.ON) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE ) {
+                    if ( state == l7.Constants.SSG_NODE_ONLINE_STATE.ON ) {
                         icon.src = this._imgFolder + '/SSGNodeStateOn.png';
                         icon.title = this._localizedStrings.SSG_NODE_STATE_ON;
-                    } else if (state == l7.Constants.SSG_NODE_ONLINE_STATE.OFF) {
+                    } else if ( state == l7.Constants.SSG_NODE_ONLINE_STATE.OFF ) {
                         icon.src = this._imgFolder + '/SSGNodeStateOff.png';
                         icon.title = this._localizedStrings.SSG_NODE_STATE_OFF;
-                    } else if (state == l7.Constants.SSG_NODE_ONLINE_STATE.DOWN) {
+                    } else if ( state == l7.Constants.SSG_NODE_ONLINE_STATE.DOWN ) {
                         icon.src = this._imgFolder + '/SSGNodeStateDown.png';
                         icon.title = this._localizedStrings.SSG_NODE_STATE_DOWN;
-                    } else if (state == l7.Constants.SSG_NODE_ONLINE_STATE.OFFLINE) {
+                    } else if ( state == l7.Constants.SSG_NODE_ONLINE_STATE.OFFLINE ) {
                         icon.src = this._imgFolder + '/SSGNodeStateOffline.png';
                         icon.title = this._localizedStrings.SSG_NODE_STATE_OFFLINE;
                     } else {
-                        YAHOO.log('Unrecognized online status for entity type \"' + entity.type + '\": ' + state, 'warning', 'l7.EntityTreeTable.setEntityOnlineStatus');
+                        YAHOO.log( 'Unrecognized online status for entity type \"' + entity.type + '\": ' + state, 'warning', 'l7.EntityTreeTable.setEntityOnlineStatus' );
                         return false;
                     }
                 } else {
@@ -1264,30 +1272,30 @@ if (!l7.EntityTreeTable) {
              * @param {boolean} trusted     true if trust has been established
              * @return {boolean} true if successfully applied; false if error, e.g., entity with given ID not found
              */
-            this.setEntityTrustStatus = function(entityId, trusted) {
+            this.setEntityTrustStatus = function( entityId, trusted ) {
                 var entity = this._entitiesById[entityId];
                 var icon = entity._trustStatusIcon;
-                if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
-                    if (trusted == undefined || trusted == null) {
+                if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER ) {
+                    if ( trusted == undefined || trusted == null ) {
                         icon.src = this._imgFolder + '/spacer.png';
                         icon.title = null;
-                    } else if (trusted) {
+                    } else if ( trusted ) {
                         icon.src = this._imgFolder + '/trust.png';
                         icon.title = this._localizedStrings.TRUST_ESTABLISHED;
                     } else {
                         icon.src = this._imgFolder + '/noTrust.png';
                         icon.title = this._localizedStrings.TRUST_NOT_ESTABLISHED;
                     }
-                    if (!trusted && this._config.onClickTrustDialogButton != undefined) {
+                    if ( !trusted && this._config.onClickTrustDialogButton != undefined ) {
                         icon.className = 'clickableImg';
                         icon.title = this._localizedStrings.TRUST_TO_BE_ESTABLISHED;
-                        YAHOO.util.Event.addListener(icon, 'click', this._config.onClickTrustDialogButton, entity);
+                        YAHOO.util.Event.addListener( icon, 'click', this._config.onClickTrustDialogButton, entity );
                     }
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE) {
-                    if (trusted == undefined || trusted == null) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE ) {
+                    if ( trusted == undefined || trusted == null ) {
                         icon.src = this._imgFolder + '/spacer.png';
                         icon.title = null;
-                    } else if (trusted) {
+                    } else if ( trusted ) {
                         icon.src = this._imgFolder + '/trust.png';
                         icon.title = this._localizedStrings.TRUST_ESTABLISHED;
                     } else {
@@ -1312,37 +1320,37 @@ if (!l7.EntityTreeTable) {
              *                              true if access role has been granted for an SSG Node
              * @return {boolean} true if successfully applied; false if unchanged because of error
              */
-            this.setEntityAccessStatus = function(entityId, trusted, state) {
+            this.setEntityAccessStatus = function( entityId, trusted, state ) {
                 var entity = this._entitiesById[entityId];
                 var icon = entity._accessStatusIcon;
-                if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
-                    if (state == undefined || state == null) {
+                if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER ) {
+                    if ( state == undefined || state == null ) {
                         icon.src = this._imgFolder + '/spacer.png';
                         icon.title = null;
-                    } else if (state) {
+                    } else if ( state ) {
                         icon.src = this._imgFolder + '/accessAccount.png';
-                        if (trusted) {
+                        if ( trusted ) {
                             icon.title = this._localizedStrings.ACCESS_ACCOUNT_IS_SET;
                         } else {
                             icon.title = this._localizedStrings.ACCESS_ACCOUNT_CANNOT_CHANGE;
                         }
                     } else {
                         icon.src = this._imgFolder + '/noAccessAccount.png';
-                        if (trusted) {
+                        if ( trusted ) {
                             icon.title = this._localizedStrings.ACCESS_ACCOUNT_CAN_SET;
                         } else {
                             icon.title = this._localizedStrings.ACCESS_ACCOUNT_CANNOT_SET;
                         }
                     }
-                    if (trusted && this._config.onClickAccessDialogButton != undefined) {
+                    if ( trusted && this._config.onClickAccessDialogButton != undefined ) {
                         icon.className = 'clickableImg';
-                        YAHOO.util.Event.addListener(icon, 'click', this._config.onClickAccessDialogButton, entity);
+                        YAHOO.util.Event.addListener( icon, 'click', this._config.onClickAccessDialogButton, entity );
                     }
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE) {
-                    if (state == undefined || state == null) {
+                } else if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE ) {
+                    if ( state == undefined || state == null ) {
                         icon.src = this._imgFolder + '/spacer.png';
                         icon.title = null;
-                    } else if (state) {
+                    } else if ( state ) {
                         icon.src = this._imgFolder + '/accessGranted.png';
                         icon.title = this._localizedStrings.ACCESS_GRANTED;
                     } else {
@@ -1362,37 +1370,37 @@ if (!l7.EntityTreeTable) {
              * Changes the display of a monitored property value to indicate stale or not stale state.
              * @param {boolean} stale
              */
-            this.setMonitoredPropertyValueStale = function(entity, propertyType, stale) {
-                if (entity._monitoredPropertyTds) {
+            this.setMonitoredPropertyValueStale = function( entity, propertyType, stale ) {
+                if ( entity._monitoredPropertyTds ) {
                     var td = entity._monitoredPropertyTds[propertyType];
-                    if (td) {
-                        if (stale) {
-                            if (!l7.Util.hasClass(td, 'notMonitored')) {
-                                l7.Util.addClass(td, 'stale');
+                    if ( td ) {
+                        if ( stale ) {
+                            if ( !l7.Util.hasClass( td, 'notMonitored' ) ) {
+                                l7.Util.addClass( td, 'stale' );
                             }
                         } else {
-                            l7.Util.removeClass(td, 'stale');
+                            l7.Util.removeClass( td, 'stale' );
                         }
                     }
                 }
-            }
+            };
 
             this.setAllMonitoredPropertyValuesToStale = function() {
                 // Determines the property types displayed.
                 var propertyTypes = [];
-                for (var j = 0; j < this._config.columns.length; ++j) {
+                for ( var j = 0; j < this._config.columns.length; ++j ) {
                     var columnId = this._config.columns[j];
-                    var propertyType = getMonitoringPropertyTypeInColumn(columnId);
-                    if (propertyType != null) {
-                        propertyTypes.push(propertyType);
+                    var propertyType = getMonitoringPropertyTypeInColumn( columnId );
+                    if ( propertyType != null ) {
+                        propertyTypes.push( propertyType );
                     }
                 }
-                if (propertyTypes.length == 0) return;
+                if ( propertyTypes.length == 0 ) return;
 
-                for (var i = 0; i < this._entities.length; ++i) {
+                for ( var i = 0; i < this._entities.length; ++i ) {
                     var entity = this._entities[i];
-                    for (j = 0; j < propertyTypes.length; ++j) {
-                        this.setMonitoredPropertyValueStale(entity, propertyTypes[j], true);
+                    for ( j = 0; j < propertyTypes.length; ++j ) {
+                        this.setMonitoredPropertyValueStale( entity, propertyTypes[j], true );
                     }
                 }
             };
@@ -1408,28 +1416,28 @@ if (!l7.EntityTreeTable) {
              * @param {object} property         the property object literal; null means no data (yet)
              * @return {boolean} true if successfully applied; false if unchanged because of error
              */
-            this.setMonitoredProperty = function(entityId, propertyType, property) {
+            this.setMonitoredProperty = function( entityId, propertyType, property ) {
                 var entity = this._entitiesById[entityId];
-                if (!entity) {
-                    YAHOO.log('No entity with ID = ' + entityId, 'warning', 'l7.EntityTreeTable.setMonitoredProperty')
+                if ( !entity ) {
+                    YAHOO.log( 'No entity with ID = ' + entityId, 'warning', 'l7.EntityTreeTable.setMonitoredProperty' )
                     return false;
                 }
                 var td = entity._monitoredPropertyTds[propertyType];
                 var span = entity._monitoredPropertySpans[propertyType];
-                if (!td || !span) {
-                    YAHOO.log('Unable to set value of monitored property \"' + propertyType + '\" for entity \"' + entity.name + '\": ' + (td ? 'span' : 'td') + ' element not found', 'warning', 'l7.EntityTreeTable.setMonitoredProperty');
+                if ( !td || !span ) {
+                    YAHOO.log( 'Unable to set value of monitored property \"' + propertyType + '\" for entity \"' + entity.name + '\": ' + (td ? 'span' : 'td') + ' element not found', 'warning', 'l7.EntityTreeTable.setMonitoredProperty' );
                     return false;
                 }
-                this.setMonitoredPropertyValueStale(entity, propertyType, false);
-                if (property && property.monitored) {
-                    if (property.value != undefined && property.value != null) {
-                        span.innerHTML = l7.Util.escapeHtmlText(property.value);
-                        if (propertyType != l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY.AUDIT_SIZE) { // Unit label for audit size is too long.
-                            if (property.value != l7.Constants.NA && property.unit != undefined && property.unit != null) {
-                                span.innerHTML += ' ' + l7.Util.escapeHtmlText(property.unit);
+                this.setMonitoredPropertyValueStale( entity, propertyType, false );
+                if ( property && property.monitored ) {
+                    if ( property.value != undefined && property.value != null ) {
+                        span.innerHTML = l7.Util.escapeHtmlText( property.value );
+                        if ( propertyType != l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY.AUDIT_SIZE ) { // Unit label for audit size is too long.
+                            if ( property.value != l7.Constants.NA && property.unit != undefined && property.unit != null ) {
+                                span.innerHTML += ' ' + l7.Util.escapeHtmlText( property.unit );
                             }
                         }
-                        if (property.alert) {
+                        if ( property.alert ) {
                             td.className = 'right alert'; // CSS style class.
                         } else {
                             td.className = 'right'; // CSS style class.
@@ -1443,21 +1451,21 @@ if (!l7.EntityTreeTable) {
                     span.innerHTML = '&nbsp;'; // Needed to keep dialog icon vertically centered.
                 }
                 return true;
-            }
+            };
 
             /**
              * Remove all data and table body rows.
              * @public
              */
             this.clear = function() {
-                while (this._tbody.rows.length > 0) {
-                    this._tbody.deleteRow(-1);
+                while ( this._tbody.rows.length > 0 ) {
+                    this._tbody.deleteRow( -1 );
                 }
 
                 this._entities = [];
                 this._entitiesById = {};
                 this._highlightedEntity = null;
-            }
+            };
 
             /**
              * Re-initializes the table body rows using the given entity data.
@@ -1465,27 +1473,27 @@ if (!l7.EntityTreeTable) {
              * @public
              * @param {array} entities     array of entity object literals
              */
-            this.load = function(entities) {
+            this.load = function( entities ) {
                 // Clears existing data and table body rows.
                 this.clear();
                 this._entities = entities;
 
                 var i, j, entity;
 
-                for (i in entities) {
+                for ( i in entities ) {
                     entity = entities[i];
                     this._entitiesById[entity.id] = entity;
                 }
 
                 // Pre-computes some values for each entity and stashes them back into the entity itself.
-                for (i in entities) {
+                for ( i in entities ) {
                     entity = entities[i];
                     // Children.
-                    entity._children = l7.Util.findArrayElementsByProperty(entities, 'parentId', entity.id);
+                    entity._children = l7.Util.findArrayElementsByProperty( entities, 'parentId', entity.id );
 
                     // Tree level (root is 0).
-                    var parent = l7.Util.findFirstArrayElementByProperty(entities, 'id', entity.parentId);
-                    if (parent == null) {
+                    var parent = l7.Util.findFirstArrayElementByProperty( entities, 'id', entity.parentId );
+                    if ( parent == null ) {
                         entity._treeLevel = 0;
                     } else {
                         entity._treeLevel = parent._treeLevel + 1;
@@ -1494,70 +1502,70 @@ if (!l7.EntityTreeTable) {
 
                 // Creates one table body row per entity.
                 var tr, td;
-                for (i in entities) {
+                for ( i in entities ) {
                     entity = entities[i];
 
-                    tr = this._tbody.insertRow(-1);
+                    tr = this._tbody.insertRow( -1 );
                     tr._entity = entity;
                     entity._tr = tr;
                     entity._tds = {};
 
-                    if (this._config.columns != undefined) {
-                        for (j in this._config.columns) {
+                    if ( this._config.columns != undefined ) {
+                        for ( j in this._config.columns ) {
                             var column = this._config.columns[j];
-                            td = tr.insertCell(-1);
+                            td = tr.insertCell( -1 );
                             entity._tds[column] = td;
 
-                            if (column == l7.EntityTreeTable.COLUMN.NAME) {
-                                this._initNameCell(td, entity);
-                            } else if (column == l7.EntityTreeTable.COLUMN.ONLINE_STATUS) {
-                                this._initOnlineStatusCell(td, entity);
-                            } else if (column == l7.EntityTreeTable.COLUMN.TRUST_STATUS) {
-                                this._initTrustStatusCell(td, entity);
-                            } else if (column == l7.EntityTreeTable.COLUMN.ACCESS_STATUS) {
-                                this._initAccessStatusCell(td, entity);
-                            } else if (column == l7.EntityTreeTable.COLUMN.DASHBOARD) {
-                                this._initDashboardCell(td, entity);
-                            } else if (column == l7.EntityTreeTable.COLUMN.TYPE) {
-                                this._initTypeCell(td, entity);
-                            } else if (column == l7.EntityTreeTable.COLUMN.VERSION) {
-                                this._initVersionCell(td, entity);
-                            } else if (column == l7.EntityTreeTable.COLUMN.DETAILS) {
-                                this._initDetailsCell(td, entity);
-                            } else if (column == l7.EntityTreeTable.COLUMN.ZOOM) {
-                                this._initZoomCell(td, entity);
-                            } else if (isMonitoringColumn(column)) {
-                                this._initMonitoredPropertyCell(td, entity, column);
+                            if ( column == l7.EntityTreeTable.COLUMN.NAME ) {
+                                this._initNameCell( td, entity );
+                            } else if ( column == l7.EntityTreeTable.COLUMN.ONLINE_STATUS ) {
+                                this._initOnlineStatusCell( td, entity );
+                            } else if ( column == l7.EntityTreeTable.COLUMN.TRUST_STATUS ) {
+                                this._initTrustStatusCell( td, entity );
+                            } else if ( column == l7.EntityTreeTable.COLUMN.ACCESS_STATUS ) {
+                                this._initAccessStatusCell( td, entity );
+                            } else if ( column == l7.EntityTreeTable.COLUMN.DASHBOARD ) {
+                                this._initDashboardCell( td, entity );
+                            } else if ( column == l7.EntityTreeTable.COLUMN.TYPE ) {
+                                this._initTypeCell( td, entity );
+                            } else if ( column == l7.EntityTreeTable.COLUMN.VERSION ) {
+                                this._initVersionCell( td, entity );
+                            } else if ( column == l7.EntityTreeTable.COLUMN.DETAILS ) {
+                                this._initDetailsCell( td, entity );
+                            } else if ( column == l7.EntityTreeTable.COLUMN.ZOOM ) {
+                                this._initZoomCell( td, entity );
+                            } else if ( isMonitoringColumn( column ) ) {
+                                this._initMonitoredPropertyCell( td, entity, column );
                             } else {
-                                YAHOO.log('Cannot populate cell because column is unrecognized: ' + column, 'warning', 'l7.EntityTreeTable.load()');
+                                YAHOO.log( 'Cannot populate cell because column is unrecognized: ' + column, 'warning', 'l7.EntityTreeTable.load()' );
                             }
                         }
                     }
                 }
-            }
+            };
 
             /**
              * Displays the data error message (from configuration property localizedStrings.ENTITY_DATA_ERROR).
              * Caller is responsible for calling clear() beforehand.
              * @public
              */
-            this.displayDataError = function(message) {
-                var tr = this._tbody.insertRow(-1);
-                var td = tr.insertCell(-1);
+            this.displayDataError = function( message ) {
+                var tr = this._tbody.insertRow( -1 );
+                var td = tr.insertCell( -1 );
                 td.colSpan = this._config.columns.length;
-                if (message) {
-                    td.innerHTML = l7.Util.escapeHtmlText(message);
+                if ( message ) {
+                    td.innerHTML = l7.Util.escapeHtmlText( message );
                 } else {
-                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.ENTITY_DATA_ERROR);
+                    td.innerHTML = l7.Util.escapeHtmlText( this._localizedStrings.ENTITY_DATA_ERROR );
                 }
-            }
+            };
 
             // --------------------------------------------------------------------------------
             // Constructor statements
             // --------------------------------------------------------------------------------
 
             this._init();
-        }
+        };
 
         // --------------------------------------------------------------------------------
         // Public constants

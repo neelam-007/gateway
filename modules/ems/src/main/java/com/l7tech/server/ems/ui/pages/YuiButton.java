@@ -23,13 +23,17 @@ public class YuiButton extends Button implements SecureComponent {
     //- PUBLIC
 
     public YuiButton( final String id ) {
+        this( id, (String)null );
+    }
+
+    public YuiButton( final String id, final String title ) {
         super(id);
-        init();
+        init( title );
     }
 
     public YuiButton( final String id, final Model<String> model ) {
         super(id, model);
-        init();
+        init( null );
     }
 
     @Override
@@ -49,7 +53,7 @@ public class YuiButton extends Button implements SecureComponent {
     /**
      * Initialize this component.
      */
-    private void init() {
+    private void init( final String title ) {
         // Add CSS / JS header contributions
         add( CSSPackageResource.getHeaderContribution( YuiCommon.RES_CSS_SAM_BUTTON ) );
         add( JavascriptPackageResource.getHeaderContribution( YuiCommon.RES_JS_DOM_EVENT ) );
@@ -58,7 +62,7 @@ public class YuiButton extends Button implements SecureComponent {
 
         // ID is required to locate the button using JS
         setOutputMarkupId(true);
-        add(new YuiButtonScriptComponentBorder());
+        add(new YuiButtonScriptComponentBorder( title ));
     }
 
     /**
@@ -67,6 +71,12 @@ public class YuiButton extends Button implements SecureComponent {
      * YUI buttons onclick function.
      */
     private static final class YuiButtonScriptComponentBorder extends AbstractBehavior {
+        private final String title;
+
+        private YuiButtonScriptComponentBorder( final String title ) {
+            this.title = title;
+        }
+
         @Override
         public void onRendered( final Component component ) {
             final Response response = component.getResponse();
@@ -77,7 +87,13 @@ public class YuiButton extends Button implements SecureComponent {
             builder.append( markupId );
             builder.append( "').onclick; new YAHOO.widget.Button(\"" );
             builder.append( markupId );
-            builder.append( "\", { onclick: { fn: onButtonClick } });</script>" );
+            builder.append( "\", { onclick: { fn: onButtonClick }");
+            if ( title != null ) {
+                builder.append( ", title: '" );
+                builder.append( title );
+                builder.append( "'" );
+            }
+            builder.append( " });</script>" );
 
             response.write( builder.toString() );
         }

@@ -2,7 +2,6 @@ package com.l7tech.server.cluster;
 
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
@@ -17,20 +16,16 @@ import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.rbac.SecurityFilter;
-import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.service.ServiceExternalEntityHeaderEnhancer;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.Config;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.wsdl.Wsdl;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.jws.WebMethod;
 import javax.jws.WebResult;
-import javax.wsdl.BindingOperation;
-import javax.wsdl.WSDLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,14 +46,14 @@ public class GatewayApiImpl implements GatewayApi {
                            final ServiceManager serviceManager,
                            final PolicyManager policyManager,
                            final FolderManager folderManager,
-                           final ServiceCache serviceCache ) {
+                           final ServiceExternalEntityHeaderEnhancer serviceExternalEntityHeaderEnhancer ) {
         this.config = config;
         this.clusterInfoManager = clusterInfoManager;
         this.securityFilter = securityFilter;
         this.serviceManager = serviceManager;
         this.policyManager = policyManager;
         this.folderManager = folderManager;
-        this.serviceCache = serviceCache;
+        this.serviceExternalEntityHeaderEnhancer = serviceExternalEntityHeaderEnhancer;
     }
 
     @Override
@@ -153,15 +148,13 @@ public class GatewayApiImpl implements GatewayApi {
     private final ServiceManager serviceManager;
     private final PolicyManager policyManager;
     private final FolderManager folderManager;
-    private final ServiceCache serviceCache;
+    private final ServiceExternalEntityHeaderEnhancer serviceExternalEntityHeaderEnhancer;
 
     private void findServiceEntities( final Collection<EntityInfo> info, final User user ) throws FindException {
         Collection<ServiceHeader> serviceHeaders = securityFilter.filter( serviceManager.findAllHeaders(true), user, OperationType.READ, null );
 
-        for ( ServiceHeader header : serviceHeaders ) {
-
-            ExternalEntityHeader external = EntityHeaderUtils.toExternal(header);
-            PublishedService service = serviceCache.getCachedService(header.getOid());
+        for ( final ServiceHeader header : serviceHeaders ) {
+            ExternalEntityHeader external = EntityHeaderUtils.toExternal( header );
             EntityType entityType = header.isAlias()? EntityType.SERVICE_ALIAS : header.getType();
             String entityOid = header.isAlias()? header.getAliasOid().toString() : header.getStrId();
             String relatedOid = header.isAlias()? header.getStrId() : null;
@@ -169,26 +162,7 @@ public class GatewayApiImpl implements GatewayApi {
 
             EntityInfo entityInfo = new EntityInfo(entityType, external.getExternalId(), entityOid, relatedOid, entityName, external.getDescription(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), header.getVersion());
 
-            if ( service != null && service.isSoap() ) {
-                try {
-                    // Get operations
-                    Wsdl wsdl = service.parsedWsdl();
-                    if ( wsdl != null ) {
-                        wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
-                        Set<String> operations = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-                        for (BindingOperation operation: wsdl.getBindingOperations()) {
-                            operations.add(operation.getName());
-                        }
-                        // Set operations in the published-service entityInfo
-                        entityInfo.setOperations(operations.toArray(new String[operations.size()]));
-                    }
-                } catch ( WSDLException we ) {
-                    // ignore WSDL error, skip operations
-                    if ( logger.isLoggable( Level.FINE ) ) {
-                        logger.log( Level.FINE, "Error processing WSDL for service '"+service.getId()+"', '"+ ExceptionUtils.getMessage(we)+"'..", ExceptionUtils.getDebugException(we) );
-                    }
-                }
-            }
+            entityInfo.setOperations( serviceExternalEntityHeaderEnhancer.getOperations( external ) );
 
             info.add(entityInfo);
         }

@@ -99,6 +99,10 @@ public class MigrationMetadata implements Serializable {
         getDependants(dependency.getDependency()).add(dependency);
     }
 
+    public void removeDependency(MigrationDependency dependency) {
+        dependencies.remove(dependency);
+    }
+
     @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
     public Map<ExternalEntityHeader, ExternalEntityHeader> getMappings() {
         return mappings;
@@ -231,7 +235,7 @@ public class MigrationMetadata implements Serializable {
         this.enableNewServices = enableNewServices;
     }
 
-    public boolean isMappingRequired(ExternalEntityHeader header) throws MigrationApi.MigrationException {
+    public boolean isMappingRequired(ExternalEntityHeader header) {
         if (MigrationMappingSelection.REQUIRED == header.getValueMapping())
             return true;
         for (MigrationDependency dependency : getDependants(header)) {
@@ -241,7 +245,7 @@ public class MigrationMetadata implements Serializable {
         return false;
     }
 
-    public boolean includeInExport(ExternalEntityHeader header) throws MigrationApi.MigrationException {
+    public boolean includeInExport(ExternalEntityHeader header) {
         if (isMappingRequired(header)) {
             return false;
         } else {

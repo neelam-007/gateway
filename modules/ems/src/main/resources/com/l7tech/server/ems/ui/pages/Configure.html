@@ -350,8 +350,16 @@
                 var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('editSSGClusterDialog_id').value = entity.id;
                 document.getElementById('editSSGClusterDialog_name').value = entity.name;
-                document.getElementById('editSSGClusterDialog_hostName').value = entity.sslHostName;
-                document.getElementById('editSSGClusterDialog_adminPort').value = entity.adminPort;
+
+                if ( entity.adminPort == 0 ) {
+                    document.getElementById('editSSGClusterDialog_hostName_row').style.display = 'none';
+                    document.getElementById('editSSGClusterDialog_adminPort_row').style.display = 'none';
+                } else {
+                    document.getElementById('editSSGClusterDialog_hostName_row').style.display = '';
+                    document.getElementById('editSSGClusterDialog_adminPort_row').style.display = '';
+                    document.getElementById('editSSGClusterDialog_hostName').value = entity.sslHostName;
+                    document.getElementById('editSSGClusterDialog_adminPort').value = entity.adminPort;
+                }
 
                 validateEditSSGClusterDialog();
                 editSSGClusterDialog.center();
@@ -707,26 +715,34 @@
                     document.getElementById('editSSGClusterDialog_name_hint').innerHTML = l7.Util.escapeHtmlText('(' + errMsg + ')');
                 }
 
-                var hostNameTextBox = document.getElementById('editSSGClusterDialog_hostName');
-                var hostName = hostNameTextBox.value;
-                var hostNameIsValid = hostName.length > 0 && l7.Util.isLegalHostName(hostName);
-                if (hostNameIsValid || hostName.length == 0) {
-                    YAHOO.util.Dom.removeClass(hostNameTextBox, 'invalid');
-                    document.getElementById('editSSGClusterDialog_hostName_hint').innerHTML = '';
-                } else {
-                    YAHOO.util.Dom.addClass(hostNameTextBox, 'invalid');
-                    document.getElementById('editSSGClusterDialog_hostName_hint').innerHTML = l7.Util.escapeHtmlText('(' + localizedStrings.HOST_NAME_HINT + ')');
+                var hostNameRow = document.getElementById('editSSGClusterDialog_hostName_row');
+                var hostNameIsValid = true;
+                if ( hostNameRow.style.display != 'none' ) {
+                    var hostNameTextBox = document.getElementById('editSSGClusterDialog_hostName');
+                    var hostName = hostNameTextBox.value;
+                    hostNameIsValid = hostName.length > 0 && l7.Util.isLegalHostName(hostName);
+                    if (hostNameIsValid || hostName.length == 0) {
+                        YAHOO.util.Dom.removeClass(hostNameTextBox, 'invalid');
+                        document.getElementById('editSSGClusterDialog_hostName_hint').innerHTML = '';
+                    } else {
+                        YAHOO.util.Dom.addClass(hostNameTextBox, 'invalid');
+                        document.getElementById('editSSGClusterDialog_hostName_hint').innerHTML = l7.Util.escapeHtmlText('(' + localizedStrings.HOST_NAME_HINT + ')');
+                    }
                 }
 
-                var portTextBox = document.getElementById('editSSGClusterDialog_adminPort');
-                var port = portTextBox.value;
-                var portIsValid = l7.Util.isIntString(port) && port > 0;
-                if (portIsValid || port.length == 0) {
-                    YAHOO.util.Dom.removeClass(portTextBox, 'invalid');
-                    document.getElementById('editSSGClusterDialog_port_hint').innerHTML = '';
-                } else if (port.length != 0) {
-                    YAHOO.util.Dom.addClass(portTextBox, 'invalid');
-                    document.getElementById('editSSGClusterDialog_port_hint').innerHTML = l7.Util.escapeHtmlText('(' + localizedStrings.SSG_CLUSTER_PORT_HINT + ')');
+                var portRow = document.getElementById('editSSGClusterDialog_adminPort_row');
+                var portIsValid = true;
+                if ( portRow.style.display != 'none' ) {
+                    var portTextBox = document.getElementById('editSSGClusterDialog_adminPort');
+                    var port = portTextBox.value;
+                    portIsValid = l7.Util.isIntString(port) && port > 0;
+                    if (portIsValid || port.length == 0) {
+                        YAHOO.util.Dom.removeClass(portTextBox, 'invalid');
+                        document.getElementById('editSSGClusterDialog_port_hint').innerHTML = '';
+                    } else if (port.length != 0) {
+                        YAHOO.util.Dom.addClass(portTextBox, 'invalid');
+                        document.getElementById('editSSGClusterDialog_port_hint').innerHTML = l7.Util.escapeHtmlText('(' + localizedStrings.SSG_CLUSTER_PORT_HINT + ')');
+                    }
                 }
 
                 var okButton = editSSGClusterDialog.getButtons()[0];
@@ -1843,11 +1859,11 @@
                     <th>New Name:</th>
                     <td><input type="text" id="editSSGClusterDialog_name" wicket:id="editSSGClusterDialog_name" name="name" size="40" maxlength="128" onkeyup="validateEditSSGClusterDialog();" /> <span id="editSSGClusterDialog_name_hint" class="red"></span></td>
                 </tr>
-                <tr>
+                <tr id="editSSGClusterDialog_hostName_row">
                     <th>New Host Name:</th>
                     <td><input type="text" id="editSSGClusterDialog_hostName" wicket:id="editSSGClusterDialog_hostName" name="hostName" size="40" maxlength="128" onkeyup="validateEditSSGClusterDialog();" /> <span id="editSSGClusterDialog_hostName_hint" class="red"></span></td>
                 </tr>
-                <tr>
+                <tr id="editSSGClusterDialog_adminPort_row">
                     <th>New Administrative Port Number:</th>
                     <td><input type="text" id="editSSGClusterDialog_adminPort" wicket:id="editSSGClusterDialog_adminPort" name="port" size="10" onkeyup="validateEditSSGClusterDialog();" /> <span id="editSSGClusterDialog_port_hint" class="red"></span></td>
                 </tr>

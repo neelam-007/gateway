@@ -475,7 +475,7 @@ public class Monitor extends EsmStandardWebPage {
             // Use MonitoringService to call MonitoringApi to get current property statuses
             List<EntityMonitoringPropertyValues> entitiesList = new ArrayList<EntityMonitoringPropertyValues>();
             try {
-                for (SsgCluster ssgCluster: ssgClusterManager.findAll()) {
+                for (SsgCluster ssgCluster: ssgClusterManager.findOnlineClusters()) {
                     boolean toFetchClusterStatuses = toFetchStatuses(ssgCluster.getGuid());
                     // First get the current values for each SSG node.
                     for (SsgNode ssgNode: ssgCluster.getNodes()) {

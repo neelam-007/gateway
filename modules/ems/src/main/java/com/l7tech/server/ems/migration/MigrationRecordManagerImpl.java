@@ -8,15 +8,16 @@ import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
+import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 
 import java.util.Date;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import java.sql.SQLException;
 
+import com.l7tech.util.Pair;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.Session;
@@ -68,26 +69,23 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     @Override
     public MigrationRecord create( final String label,
                                    final byte[] data,
-                                   final Map<String,SsgCluster> clusters ) throws SaveException {
+                                   final Functions.TernaryThrows<Pair<SsgCluster,SsgCluster>,String,String,String,SaveException> clusterCallback ) throws SaveException {
 
-        MigrationRecord record;
+        final MigrationRecord record;
         try {
             record = MigrationRecord.deserializeXml(HexUtils.decodeUtf8(data));
         } catch (Exception e) {
             throw new SaveException("Error loading migration bundle data.", e);
         }
 
-        if ( ! clusters.containsKey(record.getSourceClusterGuid()))
-            throw new SaveException( "Invalid archive, source Gateway Cluster not recognised: " + record.getSourceClusterGuid() + " : " + record.getSourceClusterName() );
-
-        if ( ! clusters.containsKey(record.getTargetClusterGuid()))
-            throw new SaveException( "Invalid archive, target Gateway Cluster not recognised: " + record.getTargetClusterGuid() + " : " + record.getTargetClusterName() );
+        final Pair<SsgCluster,SsgCluster> clusterPair =
+                clusterCallback.call(record.getSourceClusterGuid(), record.getSourceClusterName(), record.getTargetClusterGuid());
 
         record.setOid( MigrationRecord.DEFAULT_OID );
         record.setVersion( 0 );
         record.setName( label );
-        record.setSourceCluster( clusters.get(record.getSourceClusterGuid()) );
-        record.setTargetCluster( clusters.get(record.getTargetClusterGuid()) );
+        record.setSourceCluster( clusterPair.left );
+        record.setTargetCluster( clusterPair.right );
         record.calculateSize();
 
         long oid = super.save(record);
@@ -119,10 +117,10 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     @Override
     public void deleteBySsgCluster(final SsgCluster ssgCluster) throws DeleteException {
         try {
-            getHibernateTemplate().execute(new HibernateCallback() {
+            getHibernateTemplate().execute(new HibernateCallback<Void>() {
                 @SuppressWarnings({"unchecked"})
                 @Override
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                public Void doInHibernate(Session session) throws HibernateException, SQLException {
                     final Criteria criteria = session.createCriteria(getImpClass());
                     criteria.add(Restrictions.or(Restrictions.eq("sourceCluster", ssgCluster), Restrictions.eq("targetCluster", ssgCluster)));
 

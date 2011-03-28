@@ -231,16 +231,16 @@ if (!l7.Util) {
          * @param {string} tagName              tag name to search for
          * @return {HTMLElement} the ancestor element found; null if not found
          */
-        l7.Util.getAncestorElementByTagName = function(startElement, tagName) {
+        l7.Util.getAncestorElementByTagName = function( startElement, tagName ) {
             var result = null;
-            for (var el = startElement.parentNode; el != null; el = el.parentNode) {
-                if (el.nodeName.toLowerCase() == tagName.toLowerCase()) {
+            for ( var el = startElement.parentNode; el != null; el = el.parentNode ) {
+                if ( el.nodeName.toLowerCase() == tagName.toLowerCase() ) {
                     result = el;
                     break;
                 }
             }
             return result;
-        }
+        };
 
         /**
          * Returns the parent folder of a given path, include the trailing slash.
@@ -352,18 +352,18 @@ if (!l7.Util) {
          * @param {string} pattern          the regular expression pattern; must include ^ and $ if exact match desired
          * @return {array} class names found; may be empty but never null
          */
-        l7.Util.findClasses = function(element, pattern) {
+        l7.Util.findClasses = function( element, pattern ) {
             var result = new Array();
-            var classes = element.className.split(/\s+/);
-            var regexp = new RegExp(pattern);
-            for (var i = 0; i < classes.length; ++i) {
+            var classes = element.className.split( /\s+/ );
+            var regexp = new RegExp( pattern );
+            for ( var i = 0; i < classes.length; ++i ) {
                 var clazz = classes[i];
-                if (regexp.test(clazz)) {
-                    result.push(clazz);
+                if ( regexp.test( clazz ) ) {
+                    result.push( clazz );
                 }
             }
             return result;
-        }
+        };
 
         /**
          * Finds the first class of an element that matches a given pattern.
@@ -373,19 +373,19 @@ if (!l7.Util) {
          * @param {string} pattern          the regular expression pattern; must include ^ and $ if exact match desired
          * @return class name if found; null otherwise
          */
-        l7.Util.findClass = function(element, pattern) {
+        l7.Util.findClass = function( element, pattern ) {
             var result = null;
-            var classes = element.className.split(/\s+/);
-            var regexp = new RegExp(pattern);
-            for (var i = 0; i < classes.length; ++i) {
+            var classes = element.className.split( /\s+/ );
+            var regexp = new RegExp( pattern );
+            for ( var i = 0; i < classes.length; ++i ) {
                 var clazz = classes[i];
-                if (regexp.test(clazz)) {
+                if ( regexp.test( clazz ) ) {
                     result = clazz;
                     break;
                 }
             }
             return result;
-        }
+        };
 
         /**
          * Enables/Disables all input fields including <input>, <button>, <select> and <textarea> elements
@@ -393,31 +393,31 @@ if (!l7.Util) {
          * @param {HTMLElement} startElement    the element to start searching from
          * @param {boolean} enabled             true to enable; false to disable
          */
-        l7.Util.setInputFieldsEnabled = function(startElement, enabled) {
-            var fields = startElement.getElementsByTagName('input');
-            for (var i = 0; i < fields.length; ++i) {
+        l7.Util.setInputFieldsEnabled = function( startElement, enabled ) {
+            var fields = startElement.getElementsByTagName( 'input' );
+            for ( var i = 0; i < fields.length; ++i ) {
                 fields[i].disabled = !enabled;
             }
-            fields = startElement.getElementsByTagName('button');
-            for (i = 0; i < fields.length; ++i) {
+            fields = startElement.getElementsByTagName( 'button' );
+            for ( i = 0; i < fields.length; ++i ) {
                 // Could be a plain button or used to construct a YUI button.
-                if (fields[i].id &&
-                    fields[i].id.match(/-button$/) &&
-                    YAHOO.widget.Button.getButton(fields[i].id.replace(/-button$/, ''))) {
-                    YAHOO.widget.Button.getButton(fields[i].id.replace(/-button$/, '')).set('disabled', !enabled);
+                if ( fields[i].id &&
+                        fields[i].id.match( /-button$/ ) &&
+                        YAHOO.widget.Button.getButton( fields[i].id.replace( /-button$/, '' ) ) ) {
+                    YAHOO.widget.Button.getButton( fields[i].id.replace( /-button$/, '' ) ).set( 'disabled', !enabled );
                 } else {
                     fields[i].disabled = !enabled;
                 }
             }
-            fields = startElement.getElementsByTagName('select');
-            for (i = 0; i < fields.length; ++i) {
+            fields = startElement.getElementsByTagName( 'select' );
+            for ( i = 0; i < fields.length; ++i ) {
                 fields[i].disabled = !enabled;
             }
-            fields = startElement.getElementsByTagName('textarea');
-            for (i = 0; i < fields.length; ++i) {
+            fields = startElement.getElementsByTagName( 'textarea' );
+            for ( i = 0; i < fields.length; ++i ) {
                 fields[i].disabled = !enabled;
             }
-        }
+        };
 
         /**
          * Returns a string with all special character properly esacped for use as HTML text.
@@ -448,13 +448,13 @@ if (!l7.Util) {
          * @param {array} array     array of strings
          * @return {object} the resulting set
          */
-        l7.Util.arrayToSet = function(array) {
+        l7.Util.arrayToSet = function( array ) {
             var result = {};
-            for (var i in array) {
+            for ( var i in array ) {
                 result[array[i]] = array[i];
             }
             return result;
-        }
+        };
 
         /**
          * Creates a map from an array, using a property of each element as its key.
@@ -464,16 +464,16 @@ if (!l7.Util) {
          * @param {string} key      name of the property in each element to use as the key value
          * @return {object} the resulting map
          */
-        l7.Util.arrayToMap = function(array, keyName) {
+        l7.Util.arrayToMap = function( array, keyName ) {
             var result = {};
             var keyValue;
-            for (var i in array) {
+            for ( var i in array ) {
                 keyValue = array[i][keyName];
-                if (keyValue != undefined) {
+                if ( keyValue != undefined ) {
                     result[keyValue] = array[i];
                 }
             }
-        }
+        };
 
         /**
          * Tests if an array contains an object. For repeated usage on the same array,
@@ -499,48 +499,48 @@ if (!l7.Util) {
          * @param {any} value
          * @return {boolean}
          */
-        l7.Util.hasPropertyValue = function(obj, value) {
-            for (var i in obj) {
-                if (obj[i] == value) {
+        l7.Util.hasPropertyValue = function( obj, value ) {
+            for ( var i in obj ) {
+                if ( obj[i] == value ) {
                     return true;
                 }
             }
             return false;
-        }
+        };
 
         /**
          * Returns the property values of passed objects as an array.
          * @param {objects} varargs    any number of objects
          * @return {array} array of property values; may be empty but never null
          */
-        l7.Util.getPropertyValues = function(varargs) {
+        l7.Util.getPropertyValues = function( varargs ) {
             var result = [];
-            for (var i = 0; i < arguments.length; ++i) {
+            for ( var i = 0; i < arguments.length; ++i ) {
                 var argument = arguments[i];
-                if (argument instanceof Object) {
-                    for (var property in argument) {
-                        result.push(argument[property]);
+                if ( argument instanceof Object ) {
+                    for ( var property in argument ) {
+                        result.push( argument[property] );
                     }
                 }
             }
             return result;
-        }
+        };
 
         /**
          * Returns a new object with properties merged from all the passed objects.
          * @param {objects} varargs    any number of objects
          * @return {object}
          */
-        l7.Util.mergeProperties = function(varargs) {
+        l7.Util.mergeProperties = function( varargs ) {
             var result = {};
-            for (var i = 0; i < arguments.length; ++i) {
+            for ( var i = 0; i < arguments.length; ++i ) {
                 var argument = arguments[i];
-                for (var property in argument) {
+                for ( var property in argument ) {
                     result[property] = argument[property];
                 }
             }
             return result;
-        }
+        };
 
         /**
          * Removes matching element(s) from an array.
@@ -564,15 +564,15 @@ if (!l7.Util) {
          * @param {any} propValue       the property value to match
          * @return {array} array of all element objects found; may be empty but never null
          */
-        l7.Util.findArrayElementsByProperty = function(array, propName, propValue) {
+        l7.Util.findArrayElementsByProperty = function( array, propName, propValue ) {
             var result = [];
-            for (var i in array) {
-                if (array[i][propName] == propValue) {
-                    result.push(array[i]);
+            for ( var i in array ) {
+                if ( array[i][propName] == propValue ) {
+                    result.push( array[i] );
                 }
             }
             return result;
-        }
+        };
 
         /**
          * Finds the first elments in a given array which has a given property value.
@@ -581,14 +581,14 @@ if (!l7.Util) {
          * @param {any} propValue       the property value to match
          * @return {object} the element object found; null if no match
          */
-        l7.Util.findFirstArrayElementByProperty = function(array, propName, propValue) {
-            for (var i in array) {
-                if (array[i][propName] == propValue) {
+        l7.Util.findFirstArrayElementByProperty = function( array, propName, propValue ) {
+            for ( var i in array ) {
+                if ( array[i][propName] == propValue ) {
                     return array[i];
                 }
             }
             return null;
-        }
+        };
 
         /**
          * Tests if a string is empty or contains blank characters only.
@@ -598,9 +598,9 @@ if (!l7.Util) {
          * @param {string} s    the string to test
          * @return {boolean} true if the given string is empty or contains blank characters only
          */
-        l7.Util.isBlankOnly = function(s) {
-            return s.match(/^\s*$/) != null;
-        }
+        l7.Util.isBlankOnly = function( s ) {
+            return s.match( /^\s*$/ ) != null;
+        };
 
         /**
          * Tests loosely if a string is a legal host name.
@@ -610,9 +610,9 @@ if (!l7.Util) {
          * @param {string} s    the string to test
          * @return {boolean} true if the given string is a legal host name
          */
-        l7.Util.isLegalHostName = function(s) {
-            return s.search(/^[-._0-9A-Za-z:]+$/) != -1;
-        }
+        l7.Util.isLegalHostName = function( s ) {
+            return s.search( /^[-._0-9A-Za-z:]+$/ ) != -1;
+        };
 
         /**
          * Returns true if a string (all of it) is the text form of an integer (excluding floating point number).
@@ -621,10 +621,10 @@ if (!l7.Util) {
          * @param {string} s    the string to test
          * @return {boolean}
          */
-        l7.Util.isIntString = function(s) {
-            var n = parseInt(s, 10);
-            return s.indexOf('.') == -1 && n - s == 0;
-        }
+        l7.Util.isIntString = function( s ) {
+            var n = parseInt( s, 10 );
+            return s.indexOf( '.' ) == -1 && n - s == 0;
+        };
 
         /**
          * Returns true if a string (all of it) is the text form of a floating point (including integer).
@@ -633,10 +633,10 @@ if (!l7.Util) {
          * @param {string} s    the string to test
          * @return {boolean}
          */
-        l7.Util.isFloatString = function(s) {
-            var x = parseFloat(s);
+        l7.Util.isFloatString = function( s ) {
+            var x = parseFloat( s );
             return x - s == 0;
-        }
+        };
 
         /**
          * Formats an integer into a string with leading zero padded to at least the specified number of digits.
@@ -645,13 +645,13 @@ if (!l7.Util) {
          * @param {integer} n
          * @param {integer} numDigits
          */
-        l7.Util.formatInteger = function(n, numDigits) {
+        l7.Util.formatInteger = function( n, numDigits ) {
             var result = '' + n;
-            for (var i = numDigits - result.length; i > 0; --i) {
+            for ( var i = numDigits - result.length; i > 0; --i ) {
                 result = '0' + result;
             }
             return result;
-        }
+        };
 
         /**
          * Formats a date object into a string.
@@ -659,25 +659,25 @@ if (!l7.Util) {
          * @param {Date} date       a JavaScript Date object
          * @param {string} format   "yyyy-MM-dd", "MMM d, yyyy", "MM/dd/yyyy", or "yyyy/MM/dd"
          */
-        l7.Util.formatDate = function(date, format) {
+        l7.Util.formatDate = function( date, format ) {
             var result = null;
-            if (format == 'yyyy-MM-dd') {
+            if ( format == 'yyyy-MM-dd' ) {
                 result = date.getFullYear() + '-'
-                       + l7.Util.formatInteger(date.getMonth() + 1, 2) + '-'
-                       + l7.Util.formatInteger(date.getDate(), 2);
-            } else if (format == 'MMM d, yyyy') {
+                        + l7.Util.formatInteger( date.getMonth() + 1, 2 ) + '-'
+                        + l7.Util.formatInteger( date.getDate(), 2 );
+            } else if ( format == 'MMM d, yyyy' ) {
                 result = _monthShortNames[date.getMonth()] + ' ' + date.getDate() + ', ' + date.getFullYear();
-            } else if (format == 'MM/dd/yyyy') {
-                result = l7.Util.formatInteger(date.getMonth() + 1, 2) + '/'
-                       + l7.Util.formatInteger(date.getDate(), 2) + '/'
-                       + date.getFullYear();
-            } else if (format == 'yyyy/MM/dd') {
+            } else if ( format == 'MM/dd/yyyy' ) {
+                result = l7.Util.formatInteger( date.getMonth() + 1, 2 ) + '/'
+                        + l7.Util.formatInteger( date.getDate(), 2 ) + '/'
+                        + date.getFullYear();
+            } else if ( format == 'yyyy/MM/dd' ) {
                 result = date.getFullYear() + '/'
-                       + l7.Util.formatInteger(date.getMonth() + 1, 2) + '/'
-                       + l7.Util.formatInteger(date.getDate(), 2);
+                        + l7.Util.formatInteger( date.getMonth() + 1, 2 ) + '/'
+                        + l7.Util.formatInteger( date.getDate(), 2 );
             }
             return result;
-        }
+        };
 
         /**
          * @private
@@ -692,9 +692,9 @@ if (!l7.Util) {
          * @static
          * @param {array} names     array of strings
          */
-        l7.Util.setMonthShortNames = function(names) {
+        l7.Util.setMonthShortNames = function( names ) {
             _monthShortNames = names;
-        }
+        };
 
         /**
          * Replace indexed placeholders in a pattern by supplied objects.
@@ -705,14 +705,14 @@ if (!l7.Util) {
          * @param {object} varargs      objects for insertion into the pattern
          * @return {object}
          */
-        l7.Util.formatMessage = function(pattern /* , varargs ... */) {
+        l7.Util.formatMessage = function( pattern /* , varargs ... */ ) {
             var result = pattern;
-            for (var i = 1; i < arguments.length; ++i) {
+            for ( var i = 1; i < arguments.length; ++i ) {
                 var placeholder = '{' + (i - 1) + '}';
-                result = result.replace(placeholder, arguments[i]);
+                result = result.replace( placeholder, arguments[i] );
             }
             return result;
-        }
+        };
 
         /**
          * Tests if an object literal is an l7-style exception object.
@@ -722,9 +722,9 @@ if (!l7.Util) {
          * @param {object} o    the object literal
          * @return {boolean} true if it is an Layer 7 exception object
          */
-        l7.Util.isException = function(o) {
+        l7.Util.isException = function( o ) {
             return o != null && o.exception != undefined && o.exception != null;
-        }
+        };
 
         /**
          * Show selected elements by making their "display" style default.
@@ -734,12 +734,12 @@ if (!l7.Util) {
          * @param {HTMLElement} startElement    element to start searching; null for document body
          * @param {string} tagName              name of tags to restrict search; null for all tags
          */
-        l7.Util.showElements = function(idPattern, startElement, tagName) {
-            var elements = l7.Util.getElementsById(idPattern, startElement, tagName);
-            for (var i in elements) {
+        l7.Util.showElements = function( idPattern, startElement, tagName ) {
+            var elements = l7.Util.getElementsById( idPattern, startElement, tagName );
+            for ( var i in elements ) {
                 elements[i].style.display = '';
             }
-        }
+        };
 
         /**
          * Hide selected elements by making their "display" style "none".
@@ -780,7 +780,7 @@ if (!l7.Connection) {
          *                              false will result in 'application/x-www-form-urlencoded'
          * @return {object} the XMLHttpRequest object; null if fail to instantiate XMLHttpRequest object
          */
-        l7.Connection.syncRequest = function(method, uri, postData, isJSON) {
+        l7.Connection.syncRequest = function( method, uri, postData, isJSON ) {
             var MSXML_PROGIDS = [
                 'Microsoft.XMLHTTP',
                 'MSXML2.XMLHTTP.3.0',
@@ -791,34 +791,34 @@ if (!l7.Connection) {
             try {
                 // For non-IE browsers.
                 xhr = new XMLHttpRequest();
-            } catch (e) {
-                for (var i = 0; i < MSXML_PROGIDS.length; ++i) {
+            } catch ( e ) {
+                for ( var i = 0; i < MSXML_PROGIDS.length; ++i ) {
                     try {
                         // For IE.
-                        xhr = new ActiveXObject(MSXML_PROGIDS[i]);
+                        xhr = new ActiveXObject( MSXML_PROGIDS[i] );
                         break;
-                    } catch (e2) {
+                    } catch ( e2 ) {
                     }
                 }
             }
 
-            if (!xhr) {
+            if ( !xhr ) {
                 return null;
             }
 
-            xhr.open(method, uri, false);
+            xhr.open( method, uri, false );
 
-            if (method.toUpperCase() === 'POST') {
-                if (isJSON) {
-                    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+            if ( method.toUpperCase() === 'POST' ) {
+                if ( isJSON ) {
+                    xhr.setRequestHeader( 'Content-Type', 'application/json; charset=UTF-8' );
                 } else {
-                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+                    xhr.setRequestHeader( 'Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8' );
                 }
             }
 
-            xhr.send(postData || '');
+            xhr.send( postData || '' );
             return xhr;
-        }
+        };
 
         /**
          * Parses JSON data from AJAX response and pops up appropriate error dialog when neccessary.
@@ -931,19 +931,19 @@ if (!l7.Widget) {
          * @param name
          * @return {HTMLInputElement} the created radio button
          */
-        l7.Widget.createInputRadio = function(name) {
+        l7.Widget.createInputRadio = function( name ) {
             var result;
-            try{
+            try {
                 // Works in IE7. Throws in FF3, Opera 9, Safari 3.
-                result = document.createElement('<input type="radio" name="' + name + '" />');
-            } catch (err) {
+                result = document.createElement( '<input type="radio" name="' + name + '" />' );
+            } catch ( err ) {
                 // Works in FF3, Opera 9, Safari 3. Doesn't work in IE7.
-                result = document.createElement('input');
+                result = document.createElement( 'input' );
             }
             result.type = 'radio';
             result.name = name;
             return result;
-        }
+        };
 
         /**
          * Make a selection in a drop down list.
@@ -951,44 +951,44 @@ if (!l7.Widget) {
          * @param {string} value                the value to select
          * @return {boolean} true if value exists; false if not
          */
-        l7.Widget.selectDropDownByValue = function(dropDown, value) {
-            for (var i = 0; i < dropDown.options.length; ++i) {
-                if (dropDown.options[i].value == value) {
+        l7.Widget.selectDropDownByValue = function( dropDown, value ) {
+            for ( var i = 0; i < dropDown.options.length; ++i ) {
+                if ( dropDown.options[i].value == value ) {
                     dropDown.selectedIndex = i;
                     return true;
                 }
             }
             return false;
-        }
+        };
 
         /**
          * Initializes a drop down with selection for both 24- and 12-hour clock.
          * The resulting selection values are integer 0 to 23.
          * @param {HTMLSelectElement} dropDown
          */
-        l7.Widget.initHourlyDropDown = function(dropDown) {
-            var optGroup = document.createElement('optgroup');
+        l7.Widget.initHourlyDropDown = function( dropDown ) {
+            var optGroup = document.createElement( 'optgroup' );
             optGroup.label = '00 - 23';
-            for (var hr = 0; hr < 24; ++hr) {
-                var option = document.createElement('option');
+            for ( var hr = 0; hr < 24; ++hr ) {
+                var option = document.createElement( 'option' );
                 option.value = hr;
                 option.innerHTML = (hr < 10 ? '0' : '') + hr + ':00';
-                optGroup.appendChild(option);
+                optGroup.appendChild( option );
             }
-            dropDown.appendChild(optGroup);
+            dropDown.appendChild( optGroup );
 
-            optGroup = document.createElement('optgroup');
+            optGroup = document.createElement( 'optgroup' );
             optGroup.label = 'AM/PM';
-            for (hr = 0; hr < 24; ++hr) {
+            for ( hr = 0; hr < 24; ++hr ) {
                 var h = hr > 12 ? (hr - 12) : (hr == 0 ? 12 : hr);
                 var ampm = hr < 12 ? 'AM' : 'PM';
-                option = document.createElement('option');
+                option = document.createElement( 'option' );
                 option.value = hr;
                 option.innerHTML = h + ':00 ' + ampm;
-                optGroup.appendChild(option);
+                optGroup.appendChild( option );
             }
-            dropDown.appendChild(optGroup);
-        }
+            dropDown.appendChild( optGroup );
+        };
 
         /**
          * Turns a plain text input element into a date picker by popping up a
@@ -1318,25 +1318,25 @@ if (!l7.Dialog) {
          * @static
          * @param {string} header   text for dialog header
          */
-        l7.Dialog.showWaitDialog = function(header) {
-            if (l7.Dialog._waitDialog == undefined) {
+        l7.Dialog.showWaitDialog = function( header ) {
+            if ( l7.Dialog._waitDialog == undefined ) {
                 /**
                  * @private
                  */
-                l7.Dialog._waitDialog = new YAHOO.widget.Panel('l7_Dialog_waitDialog', {
+                l7.Dialog._waitDialog = new YAHOO.widget.Panel( 'l7_Dialog_waitDialog', {
                     close       : false,
                     draggable   : false,
                     fixedcenter : true,
                     modal       : true,
                     visible     : false,
                     zindex      : 999
-                });
-                l7.Dialog._waitDialog.setBody('<div class="center"><img src="../images/busy32.gif" /></div>');
+                } );
+                l7.Dialog._waitDialog.setBody( '<div class="center"><img src="../images/busy32.gif" /></div>' );
             }
-            l7.Dialog._waitDialog.setHeader(header);
-            l7.Dialog._waitDialog.render(document.body);
+            l7.Dialog._waitDialog.setHeader( header );
+            l7.Dialog._waitDialog.render( document.body );
             l7.Dialog._waitDialog.show();
-        }
+        };
 
         /**
          * Hides the wait dialog.
@@ -1346,7 +1346,7 @@ if (!l7.Dialog) {
          */
         l7.Dialog.hideWaitDialog = function() {
             l7.Dialog._waitDialog.hide();
-        }
+        };
 
         /**
          * Displays a simple error dialog.
@@ -1357,19 +1357,19 @@ if (!l7.Dialog) {
          * @requires YAHOO.widget.Dialog
          * @requires YAHOO.widget.Button
          */
-        l7.Dialog.showErrorDialog = function(header, body, okText) {
-            if (l7.Dialog._errorDialog == undefined) {
+        l7.Dialog.showErrorDialog = function( header, body, okText ) {
+            if ( l7.Dialog._errorDialog == undefined ) {
                 /**
                  * @private
                  */
-                l7.Dialog._errorDialog = new YAHOO.widget.Dialog('l7_Dialog_errorDialog', {
+                l7.Dialog._errorDialog = new YAHOO.widget.Dialog( 'l7_Dialog_errorDialog', {
                     buttons     : [
                         {
                             text      : 'OK',
                             handler   : function() {
                                 this.hide();
-                                this.setBody('');       // This is to prevent the hidden dialog from
-                                this.moveTo(0, 0);      //     taking up phantom space.
+                                this.setBody( '' );       // This is to prevent the hidden dialog from
+                                this.moveTo( 0, 0 );      //     taking up phantom space.
                             },
                             isDefault : true
                         }
@@ -1380,15 +1380,15 @@ if (!l7.Dialog) {
                     modal       : true,
                     visible     : false,
                     zindex      : 999
-                });
+                } );
             }
-            l7.Dialog._errorDialog.setHeader(header == null ? 'Error' : header);
-            l7.Dialog._errorDialog.setBody(body);
-            l7.Dialog._errorDialog.render(document.body);
-            l7.Dialog._errorDialog.getButtons()[0].set('label', okText == null ? 'OK' : okText);
+            l7.Dialog._errorDialog.setHeader( header == null ? 'Error' : header );
+            l7.Dialog._errorDialog.setBody( body );
+            l7.Dialog._errorDialog.render( document.body );
+            l7.Dialog._errorDialog.getButtons()[0].set( 'label', okText == null ? 'OK' : okText );
             l7.Dialog._errorDialog.center();
             l7.Dialog._errorDialog.show();
-        }
+        };
 
         /**
          * Displays a simple info dialog.
@@ -1399,18 +1399,18 @@ if (!l7.Dialog) {
          * @requires YAHOO.widget.Dialog
          * @requires YAHOO.widget.Button
          */
-        l7.Dialog.showInfoDialog = function(header, body, okText) {
+        l7.Dialog.showInfoDialog = function( header, body, okText ) {
             /**
-                    * @private
-                    */
-            l7.Dialog._infoDialog = new YAHOO.widget.SimpleDialog('l7_Dialog_infoDialog', {
+             * @private
+             */
+            l7.Dialog._infoDialog = new YAHOO.widget.SimpleDialog( 'l7_Dialog_infoDialog', {
                 buttons     : [
                     {
                         text      : 'OK',
                         handler   : function() {
                             this.hide();
-                            this.setBody('');       // This is to prevent the hidden dialog from
-                            this.moveTo(0, 0);      //     taking up phantom space.
+                            this.setBody( '' );       // This is to prevent the hidden dialog from
+                            this.moveTo( 0, 0 );      //     taking up phantom space.
                         },
                         isDefault : true
                     }
@@ -1421,15 +1421,15 @@ if (!l7.Dialog) {
                 modal       : true,
                 visible     : false,
                 zindex      : 999
-            });
+            } );
 
-            l7.Dialog._infoDialog.setHeader(header == null ? 'Info' : header);
-            l7.Dialog._infoDialog.setBody(body);
-            l7.Dialog._infoDialog.render(document.body);
-            l7.Dialog._infoDialog.getButtons()[0].set('label', okText == null ? 'OK' : okText);
+            l7.Dialog._infoDialog.setHeader( header == null ? 'Info' : header );
+            l7.Dialog._infoDialog.setBody( body );
+            l7.Dialog._infoDialog.render( document.body );
+            l7.Dialog._infoDialog.getButtons()[0].set( 'label', okText == null ? 'OK' : okText );
             l7.Dialog._infoDialog.center();
             l7.Dialog._infoDialog.show();
-        }
+        };
 
         /**
          * Displays the given l7-style exception object literal in a simple error dialog.
@@ -1440,54 +1440,54 @@ if (!l7.Dialog) {
          * @param {html} beginBody  beginning HTML content
          * @param {string} okText   localized text label for the OK button; defaults to 'OK' if null
          */
-        l7.Dialog.showExceptionDialog = function(o, header, beginBody, okText) {
+        l7.Dialog.showExceptionDialog = function( o, header, beginBody, okText ) {
             var divId = 'l7_Dialog_exceptionDiv';
             var tippyId = divId + '_tippy';
             var stackTraceTrIdPrefix = 'l7_Dialog_stackTrace_';
             var body = beginBody
-                     + '<div style="margin-top: 10px;">' + l7.Util.escapeHtmlText(o.localizedMessage == null ? o.message : o.localizedMessage) + '</div>';
-                        // Prefers to show localized message over non-localized message.
+                    + '<div style="margin-top: 10px;">' + l7.Util.escapeHtmlText( o.localizedMessage == null ? o.message : o.localizedMessage ) + '</div>';
+            // Prefers to show localized message over non-localized message.
             // Includes detail section only if there is an exception chain or stack trace to show.
-            if (o.exception != '' || o.stackTrace || o.cause) {
+            if ( o.exception != '' || o.stackTrace || o.cause ) {
                 body += '<div class="tippy" style="margin: 10px 0 4px 0; width: 600px;">'
-                     +     '<img id="' + tippyId + '" class="tippy" src="../images/tippyCollapsed.png" alt="" onclick="l7.Tippy.toggleTippy(this, \'' + divId + '\')" />'
-                     +     '<span class="clickable" onclick="l7.Tippy.toggleTippy(\'' + tippyId + '\', \'' + divId + '\')">Details</span>'
-                     + '</div>'
-                     + '<div id="' + divId + '" style="display: none; margin-left: 17px">'
-                     +     '<table class="spaced" style="border: 1px solid #000000; margin: 3px 0 3px 0; width: 583px;">'
-                     +         '<tr>'
-                     +             '<th colspan="2" style="background-color: #000000; color: #ffffff;">'
-                     +                 '<span class="clickable" onclick="l7.Util.showElements(\'' + stackTraceTrIdPrefix + '.+\');">Show</span>'
-                     +                 ' / '
-                     +                 '<span class="clickable" onclick="l7.Util.hideElements(\'' + stackTraceTrIdPrefix + '.+\');">Hide</span>'
-                     +                 ' Stack Trace'
-                     +             '</th>'
-                     +         '</tr>';
-                for (var e = o, i = 0; e != null || e != undefined; e = e.cause, ++i) {
-                    if (e !== o) body += '<tr><th colspan="2" style="background-color: #d0d0d0;">Caused By:</th></tr>';
-                    body += '<tr><th class="top">Exception:</th><td width="100%">' + l7.Util.escapeHtmlText(e.exception) + '</td></tr>';
-                    if (e.message) {
-                        body += '<tr><th class="top">Message:</th><td class="wrap">' + l7.Util.escapeHtmlText(e.message) + '</td></tr>';
+                        + '<img id="' + tippyId + '" class="tippy" src="../images/tippyCollapsed.png" alt="" onclick="l7.Tippy.toggleTippy(this, \'' + divId + '\')" />'
+                        + '<span class="clickable" onclick="l7.Tippy.toggleTippy(\'' + tippyId + '\', \'' + divId + '\')">Details</span>'
+                        + '</div>'
+                        + '<div id="' + divId + '" style="display: none; margin-left: 17px">'
+                        + '<table class="spaced" style="border: 1px solid #000000; margin: 3px 0 3px 0; width: 583px;">'
+                        + '<tr>'
+                        + '<th colspan="2" style="background-color: #000000; color: #ffffff;">'
+                        + '<span class="clickable" onclick="l7.Util.showElements(\'' + stackTraceTrIdPrefix + '.+\');">Show</span>'
+                        + ' / '
+                        + '<span class="clickable" onclick="l7.Util.hideElements(\'' + stackTraceTrIdPrefix + '.+\');">Hide</span>'
+                        + ' Stack Trace'
+                        + '</th>'
+                        + '</tr>';
+                for ( var e = o, i = 0; e != null || e != undefined; e = e.cause,++i ) {
+                    if ( e !== o ) body += '<tr><th colspan="2" style="background-color: #d0d0d0;">Caused By:</th></tr>';
+                    body += '<tr><th class="top">Exception:</th><td width="100%">' + l7.Util.escapeHtmlText( e.exception ) + '</td></tr>';
+                    if ( e.message ) {
+                        body += '<tr><th class="top">Message:</th><td class="wrap">' + l7.Util.escapeHtmlText( e.message ) + '</td></tr>';
                     }
-                    if (e.localizedMessage && e.localizedMessage != e.message) {
-                        body += '<tr><th class="top">Localized Message:</th><td class="wrap">' + l7.Util.escapeHtmlText(e.localizedMessage) + '</td></tr>';
+                    if ( e.localizedMessage && e.localizedMessage != e.message ) {
+                        body += '<tr><th class="top">Localized Message:</th><td class="wrap">' + l7.Util.escapeHtmlText( e.localizedMessage ) + '</td></tr>';
                     }
                     var stackTraceTrId = stackTraceTrIdPrefix + i;
                     body += '<tr id="' + stackTraceTrId + '" style="display: none;"><th class="top">Stack Trace:</th><td>';
-                    if (e.stackTrace) {
-                        for (var j in e.stackTrace) {
-                            body += '<div>' + l7.Util.escapeHtmlText(e.stackTrace[j]) + '</div>';
+                    if ( e.stackTrace ) {
+                        for ( var j in e.stackTrace ) {
+                            body += '<div>' + l7.Util.escapeHtmlText( e.stackTrace[j] ) + '</div>';
                         }
                     } else {
                         body += '(none)';
                     }
                     body += '</td></tr>';
                 }
-                body +=     '</table>'
-                      + '</div>';
+                body += '</table>'
+                        + '</div>';
             }
-            l7.Dialog.showErrorDialog(header, body, okText);
-        }
+            l7.Dialog.showErrorDialog( header, body, okText );
+        };
 
         /**
          * Displays a simple error dialog if the given object is an l7-style exception object.

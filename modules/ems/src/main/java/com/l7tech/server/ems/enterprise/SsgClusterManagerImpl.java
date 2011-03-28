@@ -8,7 +8,9 @@ import static com.l7tech.objectmodel.EntityType.ESM_SSG_CLUSTER;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.Functions;
 import com.l7tech.util.TextUtils;
+import com.l7tech.util.ValidationUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -66,6 +68,20 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     }
 
     @Override
+    public Collection<SsgCluster> findOnlineClusters() throws FindException {
+        return filterOffline( super.findAll(), false );
+    }
+
+    @Override
+    public SsgCluster create( final String name,
+                              final String guid,
+                              final EnterpriseFolder parentFolder ) throws SaveException {
+        final SsgCluster result = new SsgCluster(name, guid, parentFolder);
+        save(result);
+        return result;
+    }
+
+    @Override
     public SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException, UnknownHostException {
         verifyLegalClusterName(name);
         verifyHostnameUniqueness(sslHostName);
@@ -82,7 +98,10 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     }
 
     @Override
-    public void editByGuid(String guid, String newName, String newSslHostname, String newAdminPort) throws FindException, UpdateException, DuplicateHostnameException, UnknownHostException {
+    public void editByGuid( final String guid,
+                            final String newName,
+                            final String newSslHostname,
+                            final String newAdminPort ) throws FindException, UpdateException, DuplicateHostnameException, UnknownHostException {
         boolean updated = false;
         final SsgCluster cluster = findByGuid(guid);
         if (cluster == null) return;
@@ -95,25 +114,29 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
             updated = true;
         }
 
-        // Verify and update the new ssl hostname
-        String oldSslHostname = cluster.getSslHostName();
-        if (newSslHostname != null && !newSslHostname.equals(oldSslHostname)) {
-            if (! isSameHost(newSslHostname, oldSslHostname)) {
-                verifyHostnameUniqueness(newSslHostname);
-            }
-            cluster.setSslHostName(newSslHostname);
-            updated = true;
-        }
-
-        // Verify and update the new admin port
-        try {
-            int oldport = cluster.getAdminPort();
-            int newport = Integer.parseInt(newAdminPort);
-            if (newport != oldport) {
-                cluster.setAdminPort(newport);
+        if ( !cluster.isOffline() ) {
+            // Verify and update the new ssl hostname
+            String oldSslHostname = cluster.getSslHostName();
+            if (newSslHostname != null && !newSslHostname.equals(oldSslHostname)) {
+                if (! isSameHost(newSslHostname, oldSslHostname)) {
+                    verifyHostnameUniqueness(newSslHostname);
+                }
+                cluster.setSslHostName(newSslHostname);
                 updated = true;
             }
-        } catch (NumberFormatException e) {
+
+            // Verify and update the new admin port
+            if ( ValidationUtils.isValidInteger( newAdminPort, false, 1, 65535 ) ) {
+                try {
+                    int oldport = cluster.getAdminPort();
+                    int newport = Integer.parseInt(newAdminPort);
+                    if (newport != oldport) {
+                        cluster.setAdminPort(newport);
+                        updated = true;
+                    }
+                } catch (NumberFormatException e) {
+                }
+            }
         }
 
         // Update the cluster
@@ -139,7 +162,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
             throw new FindException("Destination folder does not exists. (GUID = " + newParentGuid + ")");
         }
 
-        final List<SsgCluster> newSiblings = findChildSsgClusters(newParent);
+        final List<SsgCluster> newSiblings = findChildSsgClusters(newParent, true);
         for (SsgCluster sibling : newSiblings) {
             if (sibling.getName().equals(cluster.getName())) {
                 throw new UpdateException("A Gateway Cluster with the name \"" + sibling.getName() + "\" already exists in the destination folder \"" + newParent.getName() + "\".");
@@ -171,12 +194,19 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     }
 
     @Override
-    public List<SsgCluster> findChildSsgClusters(String parentFolderGuid) throws FindException {
-        return findChildSsgClusters(enterpriseFolderManager.findByGuid(parentFolderGuid));
+    public List<SsgCluster> findChildSsgClusters( final String parentFolderGuid,
+                                                  final boolean includeOffline ) throws FindException {
+        return findChildSsgClusters(enterpriseFolderManager.findByGuid(parentFolderGuid), includeOffline);
     }
 
     @Override
-    public List<SsgCluster> findChildSsgClusters(final EnterpriseFolder parentFolder) throws FindException {
+    public List<SsgCluster> findChildSsgClusters( final EnterpriseFolder parentFolder ) throws FindException {
+        return findChildSsgClusters( parentFolder, false );
+    }
+
+    @Override
+    public List<SsgCluster> findChildSsgClusters(final EnterpriseFolder parentFolder,
+                                                 final boolean includeOffline ) throws FindException {
         try {
             //noinspection unchecked
             return (List<SsgCluster>)getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
@@ -184,6 +214,9 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     final Criteria crit = session.createCriteria(getImpClass());
                     crit.add(Restrictions.eq("parentFolder", parentFolder));
+                    if ( !includeOffline ) {
+                        crit.add( Restrictions.gt( "adminPort", 0 ) );
+                    }
                     crit.addOrder(Order.asc("name"));
                     return crit.list();
                 }
@@ -376,5 +409,15 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
         newRole.setDescription("Users assigned to the {0} role have the ability to manage Gateway Nodes in the {1} cluster.");
 
         roleManager.save(newRole);
+    }
+
+    private Collection<SsgCluster> filterOffline( final Collection<SsgCluster> clusters,
+                                                  final boolean includeOffline ) {
+        return Functions.grep( clusters, new Functions.Unary<Boolean, SsgCluster>() {
+            @Override
+            public Boolean call( final SsgCluster ssgCluster ) {
+                return includeOffline || !ssgCluster.isOffline();
+            }
+        } );
     }
 }

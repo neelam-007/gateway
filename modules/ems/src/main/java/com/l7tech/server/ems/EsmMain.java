@@ -1,5 +1,6 @@
 package com.l7tech.server.ems;
 
+import static com.l7tech.server.ems.setup.SchemaUpdater.SchemaException;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
@@ -84,12 +85,24 @@ public class EsmMain {
             try {
                 ems.start();
             } catch (Throwable t) {
-                final String msg = "Unable to start EMS: " + ExceptionUtils.getMessage(t);
-                logger.log(Level.SEVERE, msg, t);
+                final SchemaException schemaException = ExceptionUtils.getCauseIfCausedBy( t, SchemaException.class );
+                final Throwable messageThrowable;
+                final Throwable stackThrowable;
+                if ( schemaException != null ) {
+                    messageThrowable = schemaException;
+                    stackThrowable = schemaException.getCause();
+                } else {
+                    messageThrowable = stackThrowable = t;
+                }
+
+                final String msg = "Unable to start EMS: " + ExceptionUtils.getMessage(messageThrowable);
+                logger.log(Level.SEVERE, msg, stackThrowable);
                 System.err.println(msg);
-                t.printStackTrace(System.err);
+                if (stackThrowable!=null) stackThrowable.printStackTrace(System.err);
                 resetLogs();
+                exit.countDown();
                 System.exit(1);
+                return;
             }
 
             try {

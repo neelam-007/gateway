@@ -2,12 +2,13 @@ package com.l7tech.server.ems.enterprise;
 
 import org.mortbay.util.ajax.JSON;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
  * Non thread-safe JSON support class.
  */
-public abstract class JSONSupport implements JSON.Convertible {
+public abstract class JSONSupport implements JSON.Convertible, Serializable {
 
     //- PUBLIC
 

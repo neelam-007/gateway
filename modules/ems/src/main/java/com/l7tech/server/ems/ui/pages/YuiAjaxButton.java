@@ -25,13 +25,17 @@ public abstract class YuiAjaxButton extends AjaxButton implements SecureComponen
     //- PUBLIC
     
     public YuiAjaxButton( final String id ) {
-        super(id);        
-        init();
+        this( id, (String)null );
     }
     
+    public YuiAjaxButton( final String id, final String title ) {
+        super(id);
+        init( title );
+    }
+
     public YuiAjaxButton( final String id, final Form form ) {
         super(id, form);        
-        init();
+        init( null );
     }
     
     @Override
@@ -63,7 +67,7 @@ public abstract class YuiAjaxButton extends AjaxButton implements SecureComponen
     /**
      * Initialize this component.
      */
-    private void init() {
+    private void init( final String title ) {
         // Add CSS / JS header contributions
         add( CSSPackageResource.getHeaderContribution( YuiCommon.RES_CSS_SAM_BUTTON ) );
         add( CSSPackageResource.getHeaderContribution( YuiCommon.RES_CSS_SAM_CONTAINER ) );
@@ -74,7 +78,7 @@ public abstract class YuiAjaxButton extends AjaxButton implements SecureComponen
 
         // ID is required to locate the button using JS
         setOutputMarkupId(true);
-        add(new YuiButtonScriptComponentBorder());
+        add(new YuiButtonScriptComponentBorder( title ));
     }
     
     /**
@@ -83,6 +87,12 @@ public abstract class YuiAjaxButton extends AjaxButton implements SecureComponen
      * YUI buttons onclick function.
      */
     private static final class YuiButtonScriptComponentBorder extends AbstractBehavior {
+        private final String title;
+
+        private YuiButtonScriptComponentBorder( final String title ) {
+            this.title = title;
+        }
+
         @Override
         public void onRendered( final Component component ) {
             final Response response = component.getResponse();
@@ -93,7 +103,13 @@ public abstract class YuiAjaxButton extends AjaxButton implements SecureComponen
             builder.append( markupId );
             builder.append( "').onclick; new YAHOO.widget.Button(\"" );
             builder.append( markupId );
-            builder.append( "\", { onclick: { fn: onButtonClick } });</script>" );
+            builder.append( "\", { onclick: { fn: onButtonClick }" );
+            if ( title != null ) {
+                builder.append( ", title: '" );
+                builder.append( title );
+                builder.append( "'" );
+            }
+            builder.append( " });</script>" );
 
             response.write( builder.toString() );
         }        

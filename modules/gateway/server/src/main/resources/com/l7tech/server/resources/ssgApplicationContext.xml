@@ -1633,7 +1633,7 @@
         <constructor-arg index="3" ref="serviceManager"/>
         <constructor-arg index="4" ref="policyManager"/>
         <constructor-arg index="5" ref="folderManager"/>
-        <constructor-arg index="6" ref="serviceCache"/>
+        <constructor-arg index="6" ref="serviceExternalEntityHeaderEnhancer"/>
     </bean>
 
     <bean id="reportApiImpl" class="com.l7tech.server.cluster.ReportApiImpl">
@@ -1780,8 +1780,10 @@
       <constructor-arg ref="jdbcConnectionManager"/>
     </bean>
 
+    <bean id="serviceExternalEntityHeaderEnhancer" class="com.l7tech.server.service.ServiceExternalEntityHeaderEnhancer"/>
+
     <bean id="migrationManager" class="com.l7tech.server.migration.MigrationManagerImpl">
-      <constructor-arg>
+        <constructor-arg index="0">
           <bean class="com.l7tech.server.SecuredEntityCrud">
               <constructor-arg index="0" ref="rbacServices"/>
               <constructor-arg index="1">
@@ -1792,8 +1794,18 @@
               </constructor-arg>
               <constructor-arg index="2" ref="entityCrud"/>
           </bean>
+        </constructor-arg>
+        <constructor-arg index="1" ref="propertyResolverFactory"/>
+        <constructor-arg index="2">
+            <bean class="com.l7tech.server.cluster.ExternalEntityHeaderEnhancer$CompositeExternalEntityHeaderEnhancer">
+                <constructor-arg>
+                    <list>
+                        <bean class="com.l7tech.server.identity.IdentityExternalEntityHeaderEnhancer"/>
+                        <ref bean="serviceExternalEntityHeaderEnhancer"/>
+                    </list>
+                </constructor-arg>
+          </bean>
       </constructor-arg>
-      <constructor-arg ref="propertyResolverFactory"/>
     </bean>
 
     <bean id="wsdlStrategyServiceDocumentsInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">

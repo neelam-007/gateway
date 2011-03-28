@@ -106,140 +106,14 @@
             var INCR_FRAME_HEIGHT = 50;
             var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
 
-            var migrateButton;
-            var identifyDependenciesButton;
             var ssgClusterTrustDialog;
             var mapAccessAccountDialog;
             var changeAccessAccountDialog;
-            var srcSSGClusterSelectorWindow;
-            var destSSGClusterSelectorWindow;
-            var srcSSGClusterContentSelectorWindow;
-            var destSSGClusterContentSelectorWindow;
-
-            var dependenciesAction;
-            var migrationAction;
-
-            /**
-             * Verifies if all inputs for migration are valid.
-             * @return {boolean} true if valid
-             */
-            function validateMigrationInputs() {
-                var valid = validateIdentifyDependenciesInputs() &&
-                            destSSGClusterContentSelectorWindow.getEntityTreeTable().getEntityWithRadioButtonSelected() != null;
-                return valid;
-            }
-
-            /**
-             * Verifies if all inputs for identifying dependencies are valid.
-             * @return {boolean} true if valid
-             */
-            function validateIdentifyDependenciesInputs() {
-                return srcSSGClusterContentSelectorWindow.getSsgCluster() != null &&
-                       srcSSGClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxChecked().length > 0 &&
-                       destSSGClusterContentSelectorWindow.getSsgCluster() != null &&
-                       srcSSGClusterContentSelectorWindow.getSsgCluster().id != destSSGClusterContentSelectorWindow.getSsgCluster().id;
-            }
-
-            function updateMigrateButton() {
-                migrateButton.set('disabled', !validateMigrationInputs());
-            }
-
-            function updateIdentifyDependenciesButton() {
-                identifyDependenciesButton.set('disabled', !validateIdentifyDependenciesInputs());
-            }
-
-            function onLoadSrcSSGClusterContent(callbackId) {
-                updateIdentifyDependenciesButton();
-                updateMigrateButton();
-                var entity = new Object();
-                entity.id = "";
-                entity.type = "";
-                onItemHighlighted( null, null, entity, 'srcSSGClusterContentSelector' );
-            }
-
-            function onLoadDestSSGClusterContent(callbackId) {
-                document.getElementById('destinationClusterId').value = destSSGClusterContentSelectorWindow.getSsgCluster().id;
-                updateIdentifyDependenciesButton();
-                updateMigrateButton();
-                var entity = new Object();
-                entity.id = "";
-                entity.type = "";
-                onItemHighlighted( null, null, entity, 'destSSGClusterContentSelector' );
-            }
-
-            function onChangeSrcSSGClusterContentSelection(event, entity, callbackId) {
-                updateIdentifyDependenciesButton();
-                updateMigrateButton();
-            }
-
-            function onChangeDestSSGClusterContentSelection(event, entity, callbackId) {
-                document.getElementById('destinationFolderId').value = destSSGClusterContentSelectorWindow.getEntityTreeTable().getEntityWithRadioButtonSelected().id;
-                updateMigrateButton();
-            }
-
-            /**
-             * Callback function upon an SSG Cluster highlighted.
-             * @param {object} previous     the previously highlighted SSG Cluster entity object literal; null if none
-             * @param {object} ssgCluster   the newly highlighted SSG Cluster entity object literal
-             * @param {string} callbackId   ID of IFRAME originating from
-             */
-            function onHighlightSsgCluster(previous, ssgCluster, callbackId) {
-                if (callbackId == 'srcSSGClusterSelector') {
-                    loadSrcSSGClusterContentSelector(ssgCluster);
-                } else if (callbackId == 'destSSGClusterSelector') {
-                    loadDestSSGClusterContentSelector(ssgCluster);
-                }
-            }
-
-            /**
-             * Callback function upon clicking a trust dialog button in the SSG Cluster selector.
-             * @param {MouseEvent} event    the click event
-             * @param {object} entity       object literal of the SSG cluster clicked on
-             * @param {string} callbackId   ID of IFRAME originating from
-             */
-            function onClickTrustDialogButton(event, entity, callbackId) {
-                if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
-                    launchSSGClusterTrustDialog(entity.id, entity.name, entity.sslHostName, entity.adminPort);
-                } else {
-                    YAHOO.log('No trust action for entity type: ' + entity.type, 'error', 'PolicyMigration.html');
-                }
-            }
-
-            /**
-             * Callback function upon clicking an access dialog button in the SSG Cluster selector.
-             * @param {MouseEvent} event    the click event
-             * @param {object} entity       object literal of the SSG cluster clicked on
-             * @param {string} callbackId   ID of IFRAME originating from
-             */
-            function onClickAccessDialogButton(event, entity, callbackId) {
-                if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
-                    if (entity.accessStatus) {
-                        launchChangeAccessAccountDialog(entity);
-                    } else {
-                        launchMapAccessAccountDialog(entity);
-                    }
-                } else {
-                    YAHOO.log('No trust action for entity type: ' + entity.type, 'error', 'PolicyMigration.html');
-                }
-            };
 
             function onClickItemTab(event, args) {
                 var side = args[0];
                 var tabSuffix = args[1];
                 selectItemTab(side, tabSuffix, true);
-            }
-
-            function onItemHighlighted(ssgCluster, previous, entity, callbackId) {
-                if (callbackId == 'srcSSGClusterContentSelector') {
-                    var targetParam = "";
-                    var targetCluster = destSSGClusterContentSelectorWindow.getSsgCluster();
-                    if ( targetCluster ) {
-                        targetParam = '&targetClusterId=' + escape(targetCluster.id);
-                    }
-                    wicketAjaxGet(srcItemSelectionCallbackUrl + '&clusterId=' + escape(srcSSGClusterContentSelectorWindow.getSsgCluster().id) + targetParam + '&type=' + escape(entity.type) + '&id=' + escape(entity.id) , function() { }, function() { });
-                } else if (callbackId == 'destSSGClusterContentSelector') {
-                    wicketAjaxGet(destItemSelectionCallbackUrl + '&clusterId=' + escape(destSSGClusterContentSelectorWindow.getSsgCluster().id) + '&type=' + escape(entity.type) + '&id=' + escape(entity.id) , function() { }, function() { });
-                }
             }
 
             /**
@@ -288,261 +162,29 @@
             }
 
             /**
-             * @return {array}
+             *
+             * @param dialog The dialog ( changeAccessAccountDialog or mapAccessAccountDialog or ssgClusterTrustDialog )
+             * @param domPrefix "changeAccessAccount" or "mapAccessAccount" or "ssgClusterTrust"
+             * @param entity {object} entity   the SSG Cluster entity object literal
              */
-            function getSelectedSrcItems() {
-                var result = [];
-                var entities = srcSSGClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxChecked(
-                    [
-                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE,
-                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS,
-                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT,
-                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS
-                    ]);
-                for (var i = 0; i < entities.length; ++i) {
-                    var entity = entities[i];
-                    var o = {};
-                    o.id = entity.id;
-                    o.type = entity.type;
-                    o.name = entity.name;
-                    o.version = entity.version;
-                    result.push(o);
+            function launchClusterConfigDialog( dialog, domPrefix, clusterGuid, clusterName, token, trustServletUrl ) {
+                var baseURL = document.URL;
+                var queryPos = baseURL.indexOf('?');
+                if (queryPos > -1) {
+                    baseURL = baseURL.substr(0, queryPos);  // Strips off query part.
                 }
-                return result;
+                // The response JSON object is expected to have this property:
+                // token {string} - an opaque token for use as input to the gateway trust servlet
+                document.getElementById(domPrefix + 'Form_esmToken').value = token;
+                document.getElementById(domPrefix + 'Form_returnurl').value = baseURL + '?clusterguid=' + clusterGuid;
+                document.getElementById(domPrefix + 'Form').action = trustServletUrl;
+                document.getElementById(domPrefix + 'Dialog_ssgClusterName').innerHTML = l7.Util.escapeHtmlText(clusterName);
+                dialog.center();
+                dialog.show();
             }
 
-            function onClickIdentifyDependencies() {
-                var postObject = {};
-                postObject.clusterId = srcSSGClusterContentSelectorWindow.getSsgCluster().id;
-                postObject.entities = getSelectedSrcItems();
-                var postData = YAHOO.lang.JSON.stringify(postObject);
-                document.getElementById('selectionJson').value = postData;
-                dependenciesAction();
-            }
-
-            function onClickMigrate() {
-                var postObject = {};
-                postObject.clusterId = srcSSGClusterContentSelectorWindow.getSsgCluster().id;
-                postObject.entities = getSelectedSrcItems();
-                var postData = YAHOO.lang.JSON.stringify(postObject);
-                document.getElementById('selectionJson').value = postData;
-                document.getElementById('migrateFolders').value = document.getElementById('migrateFoldersCheckBox').checked;
-                document.getElementById('enableNewServices').value = document.getElementById('enableNewServicesCheckBox').checked;
-                document.getElementById('overwriteDependencies').value = document.getElementById('overwriteDependenciesCheckBox').checked;
-                migrationAction();
-            }
-
-            /**
-             * @param {string} id           SSG Cluster ID
-             * @param {string} name         SSG Cluster name
-             * @param {string} hostName     SSG Cluster SSL host name
-             * @param {string} port         SSG Cluster administrative port number
-             */
-            function launchSSGClusterTrustDialog(id, name, hostName, port) {
-                var callback = {
-                    success : function(o) {
-                        var result = l7.Connection.parseJsonResponse(o,
-                                                                     true,
-                                                                     localizedStrings.CANNOT_GET_DATA_TO_ESTABLISH_TRUST,
-                                                                     localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                                                                     localizedStrings.SESSION_TIMEOUT,
-                                                                     localizedStrings.ERROR,
-                                                                     localizedStrings.OK);
-                        if (result.success) {
-                            // The response JSON object is expected to have this property:
-                            // token {string} - an opague token for use as input to the gateway trust servlet
-                            var baseURL = document.URL;
-                            var queryPos = baseURL.indexOf('?');
-                            if (queryPos > -1) {
-                                baseURL = baseURL.substr(0, queryPos);  // Strips off query part.
-                            }
-                            document.getElementById('ssgClusterTrustForm_returnurl').value = baseURL + '?clusterguid=' + o.argument.id;
-                            document.getElementById('ssgClusterTrustForm_esmToken').value = result.json.token;
-                            document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/esmtrust?esmtrust=1';
-                            document.getElementById('ssgClusterTrustDialog_name').innerHTML = l7.Util.escapeHtmlText(o.argument.name);
-                            ssgClusterTrustDialog.center();
-                            ssgClusterTrustDialog.show();
-                        }
-                    },
-                    failure : function(o) {
-                        l7.Dialog.showErrorDialog(
-                                localizedStrings.ERROR,
-                                localizedStrings.CANNOT_GET_DATA_TO_ESTABLISH_TRUST + '<br/><br/>' + o.status + ' ' + o.statusText,
-                                localizedStrings.OK);
-                    },
-                    argument : {
-                        id       : id,
-                        name     : name,
-                        hostName : hostName,
-                        port     : port
-                    }
-                };
-                var url = document.forms['getGatewayTrustServletInputsForm'].action;
-                YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
-            }
-
-            /**
-             * @param {object} entity   the SSG Cluster entity object literal
-             */
-            function launchMapAccessAccountDialog(entity) {
-                var callback = {
-                    success : function(o) {
-                        var result = l7.Connection.parseJsonResponse(o,
-                                                                     true,
-                                                                     localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT,
-                                                                     localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                                                                     localizedStrings.SESSION_TIMEOUT,
-                                                                     localizedStrings.ERROR,
-                                                                     localizedStrings.OK);
-                        if (result.success) {
-                            // The response JSON object is expected to have this property:
-                            // token {string} - an opague token for use as input to the gateway trust servlet
-                            var entity = o.argument;
-                            document.getElementById('mapAccessAccountForm_esmToken').value = result.json.token;
-                            document.getElementById('mapAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
-                            document.getElementById('mapAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
-                            document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = l7.Util.escapeHtmlText(entity.name);
-                            mapAccessAccountDialog.center();
-                            mapAccessAccountDialog.show();
-                        }
-                    },
-                    failure : function(o) {
-                        l7.Dialog.showErrorDialog(
-                                localizedStrings.ERROR,
-                                localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT + '<br/><br/>' + o.status + ' ' + o.statusText,
-                                localizedStrings.OK);
-                    },
-                    argument : entity
-                };
-                var url = document.forms['getGatewayTrustServletInputsForm'].action;
-                YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
-            }
-
-            /**
-             * @param {object} entity   the SSG Cluster entity object literal
-             */
-            function launchChangeAccessAccountDialog(entity) {
-                var callback = {
-                    success : function(o) {
-                        var result = l7.Connection.parseJsonResponse(o,
-                                                                     true,
-                                                                     localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT,
-                                                                     localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                                                                     localizedStrings.SESSION_TIMEOUT,
-                                                                     localizedStrings.ERROR,
-                                                                     localizedStrings.OK);
-                        if (result.success) {
-                            // The response JSON object is expected to have this property:
-                            // token {string} - an opague token for use as input to the gateway trust servlet
-                            var entity = o.argument;
-                            document.getElementById('changeAccessAccountForm_esmToken').value = result.json.token;
-                            document.getElementById('changeAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
-                            document.getElementById('changeAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
-                            document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = l7.Util.escapeHtmlText(entity.name);
-                            changeAccessAccountDialog.center();
-                            changeAccessAccountDialog.show();
-                        }
-                    },
-                    failure : function(o) {
-                        l7.Dialog.showErrorDialog(
-                                localizedStrings.ERROR,
-                                localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT + '<br/><br/>' + o.status + ' ' + o.statusText,
-                                localizedStrings.OK);
-                    },
-                    argument : entity
-                };
-                var url = document.forms['getGatewayTrustServletInputsForm'].action;
-                YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
-            }
-
-            function loadSrcSSGClusterContentSelector(ssgCluster) {
-                srcSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback(onLoadSrcSSGClusterContent);
-                srcSSGClusterContentSelectorWindow.setEntityTristateCheckboxClickedCallback(onChangeSrcSSGClusterContentSelection);
-                srcSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
-                    [
-                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE,
-                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS,
-                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT,
-                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS
-                    ], onItemHighlighted);
-                srcSSGClusterContentSelectorWindow.loadSsgClusterContent(
-                    ssgCluster,
-                    [
-                        l7.Constants.ENTITY_TYPE.SERVICE_FOLDER,
-                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE,
-                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS,
-                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT,
-                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS
-                    ],
-                    null);
-            }
-
-            function loadDestSSGClusterContentSelector(ssgCluster) {
-                destSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback(onLoadDestSSGClusterContent);
-                destSSGClusterContentSelectorWindow.setEntityRadioButtonClickedCallback(onChangeDestSSGClusterContentSelection);
-                destSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
-                    [
-                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE,
-                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS,
-                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT,
-                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS
-                    ], onItemHighlighted);
-                destSSGClusterContentSelectorWindow.loadSsgClusterContent(
-                    ssgCluster,
-                    null,
-                    [
-                        l7.Constants.ENTITY_TYPE.SERVICE_FOLDER
-                    ]);
-            }
-
-            function refreshSrcSsgClusterSelector() {
-                srcSSGClusterSelectorWindow.loadEntityTreeTable();
-                loadSrcSSGClusterContentSelector(null);     // Because no cluster is now selected.
-            }
-
-            function refreshDestSsgClusterSelector() {
-                destSSGClusterSelectorWindow.loadEntityTreeTable();
-                loadDestSSGClusterContentSelector(null);    // Because no cluster is now selected.
-            }
-
-            function refreshSrcSsgClusterContentSelector() {
-                var ssgCluster = srcSSGClusterSelectorWindow.getEntityTreeTable().getHighlightedEntity();
-                loadSrcSSGClusterContentSelector(ssgCluster);
-            }
-
-            function refreshDestSsgClusterContentSelector() {
-                var ssgCluster = destSSGClusterSelectorWindow.getEntityTreeTable().getHighlightedEntity();
-                loadDestSSGClusterContentSelector(ssgCluster);
-            }
-
-            function initSSGClusterSelector(iframe) {
-                iframe.contentWindow.setCallbackId(iframe.id);
-                iframe.contentWindow.setEntityHighlightedCallback(onHighlightSsgCluster);
-                iframe.contentWindow.setOnClickTrustDialogButtonCallback(onClickTrustDialogButton);
-                iframe.contentWindow.setOnClickAccessDialogButtonCallback(onClickAccessDialogButton);
-            }
-
-            function initSSGClusterContentSelector(iframe) {
-                iframe.contentWindow.setCallbackId(iframe.id);
-            }
-
-            function initButtons() {
-                migrateButton = new YAHOO.widget.Button('migrateButton', {
-                    disabled : true,        // initially disabled until all dependency mapping are done
-                    onclick  : { fn : onClickMigrate },
-                    title    : 'Migrate selected policies with dependency mapping', // need title on IMG element too
-                    type     : 'push'
-                });
-                identifyDependenciesButton = new YAHOO.widget.Button('identifyDependenciesButton', {
-                    disabled : true,        // initially disabled until SSG contents are checked
-                    onclick : { fn : onClickIdentifyDependencies },
-                    title   : 'Identify dependencies',                              // need title on IMG element too
-                    type    : 'push'
-                });
-            }
-
-            function initSSGClusterTrustDialog() {
-                ssgClusterTrustDialog = new YAHOO.widget.Dialog('ssgClusterTrustDialog', {
+            function buildDialog( id ){
+                var accessAccountDialog = new YAHOO.widget.Dialog( id , {
                     buttons     : [
                         {
                             text      : localizedStrings.OK,
@@ -565,123 +207,23 @@
                     postmethod  : 'form',
                     visible     : false
                 });
-                ssgClusterTrustDialog.render();
-            }
-
-            function initMapAccessAccountDialog() {
-                mapAccessAccountDialog = new YAHOO.widget.Dialog('mapAccessAccountDialog', {
-                    buttons     : [
-                        {
-                            text      : localizedStrings.OK,
-                            handler   : function() {
-                                this.submit();
-                            },
-                            isDefault : true
-                        },
-                        {
-                            text      : localizedStrings.CANCEL,
-                            handler   : function() {
-                                this.hide();
-                            }
-                        }
-                    ],
-                    close       : true,
-                    draggable   : true,
-                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
-                    modal       : true,
-                    postmethod  : 'form',
-                    visible     : false
-                });
-                mapAccessAccountDialog.render();
-            }
-
-            function initChangeAccessAccountDialog() {
-                changeAccessAccountDialog = new YAHOO.widget.Dialog('changeAccessAccountDialog', {
-                    buttons     : [
-                        {
-                            text      : localizedStrings.OK,
-                            handler   : function() {
-                                this.submit();
-                            },
-                            isDefault : true
-                        },
-                        {
-                            text      : localizedStrings.CANCEL,
-                            handler   : function() {
-                                this.hide();
-                            }
-                        }
-                    ],
-                    close       : true,
-                    draggable   : true,
-                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
-                    modal       : true,
-                    postmethod  : 'form',
-                    visible     : false
-                });
-                changeAccessAccountDialog.render();
+                accessAccountDialog.render();
+                return accessAccountDialog;
             }
 
             function initDialogs() {
-                initSSGClusterTrustDialog();
-                initMapAccessAccountDialog();
-                initChangeAccessAccountDialog();
-            }
-
-            function initActions() {
-                var identifyDependenciesImage = document.getElementById('identifyDependenciesImage');
-                dependenciesAction = identifyDependenciesImage.onclick;
-                identifyDependenciesImage.onclick = null;
-
-                var migrateImage = document.getElementById('migrateImage');
-                migrationAction = migrateImage.onclick;
-                migrateImage.onclick = null;
+                ssgClusterTrustDialog = buildDialog('ssgClusterTrustDialog');
+                mapAccessAccountDialog = buildDialog('mapAccessAccountDialog');
+                changeAccessAccountDialog = buildDialog('changeAccessAccountDialog');
             }
 
             function init() {
-                srcSSGClusterSelectorWindow = document.getElementById('srcSSGClusterSelector').contentWindow;
-                destSSGClusterSelectorWindow = document.getElementById('destSSGClusterSelector').contentWindow;
-                srcSSGClusterContentSelectorWindow = document.getElementById('srcSSGClusterContentSelector').contentWindow;
-                destSSGClusterContentSelectorWindow = document.getElementById('destSSGClusterContentSelector').contentWindow;
-
-                initButtons();
                 initDialogs();
-                initActions();
                 selectItemTab(SIDE_SRC,  ITEM_TAB_SUFFIX_DETAILS);
                 selectItemTab(SIDE_DEST, ITEM_TAB_SUFFIX_DETAILS);
             }
 
             YAHOO.util.Event.onDOMReady(init);
-
-            function selectClusters( sourceGuid, sourceItems, targetGuid, targetItem, migrateFolders, enableNewServices, overwriteDependencies ) {
-                document.getElementById('migrateFoldersCheckBox').checked = migrateFolders;
-                document.getElementById('enableNewServicesCheckBox').checked = enableNewServices;
-                document.getElementById('overwriteDependenciesCheckBox').checked = overwriteDependencies;
-                document.getElementById('destinationClusterId').value = targetGuid;
-                document.getElementById('destinationFolderId').value = targetItem;
-
-                var resetAfterLoad = function() {
-                    updateMigrateButton();
-                    updateIdentifyDependenciesButton();
-                }
-
-                srcSSGClusterSelectorWindow.getEntityTreeTable().highlightEntity( sourceGuid, true );
-                srcSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback( function() {
-                    var item;
-                    for ( item in sourceItems ) {
-                        srcSSGClusterContentSelectorWindow.getEntityTreeTable().setEntityTristateCheckboxState( sourceItems[item], true );
-                        srcSSGClusterContentSelectorWindow.getEntityTreeTable().expandAncestorsOf( sourceItems[item] );
-                    }
-                    resetAfterLoad();
-                } );
-
-                destSSGClusterSelectorWindow.getEntityTreeTable().highlightEntity( targetGuid, true );
-                destSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback( function() {
-                    destSSGClusterContentSelectorWindow.getEntityTreeTable().setEntityRadioButtonState( targetItem, true );
-                    destSSGClusterContentSelectorWindow.getEntityTreeTable().expandAncestorsOf( targetItem );
-                    resetAfterLoad();
-                } );
-            }
         </script>
     </wicket:head>
 </head>
@@ -801,7 +343,6 @@
                         </tr>
                         </table>
                     </form>
-                    <script language="javascript" wicket:id="javascript"></script>
                 </div>
             </div>            
 
@@ -839,11 +380,11 @@
                         <tr>
                             <td class="nowrap">Select a source Gateway Cluster:</td>
                             <td class="right" width="100%">
-                                <img class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshSrcSsgClusterSelector();"/>
+                                <img wicket:id="refreshSourceCluster" class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh"/>
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcSSGClusterSelectorHolder', 'destSSGClusterSelectorHolder'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcSSGClusterSelectorHolder', 'destSSGClusterSelectorHolder'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                             </td>
                         </tr>
                     </table>
@@ -852,13 +393,16 @@
                 <td class="srcDestTop">
                     <table width="100%">
                         <tr>
-                            <td class="nowrap">Select a destination Gateway Cluster:</td>
+                            <td class="nowrap">Select a destination Gateway Cluster:
+                                    (<input wicket:id="offlineDestinationCheckBox" type="checkbox"/>
+                                    <label for="offlineMigrationCheckBox"> offline destination</label>)
+                            </td>
                             <td class="right" width="100%">
-                                <img class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshDestSsgClusterSelector();"/>
+                                <img wicket:id="refreshDestinationCluster" class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh"/>
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcSSGClusterSelectorHolder', 'destSSGClusterSelectorHolder'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcSSGClusterSelector', 'destSSGClusterSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcSSGClusterSelectorHolder', 'destSSGClusterSelectorHolder'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                             </td>
                         </tr>
                     </table>
@@ -866,13 +410,15 @@
             </tr>
             <tr>
                 <td class="srcDest">
-                    <iframe id="srcSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes"
-                            height="150" width="100%" onload="initSSGClusterSelector(this);"></iframe>
+                    <div id="srcSSGClusterSelectorHolder" class="dataIFrame" style="min-height: 150px; height: 150px; width: 100%; overflow:scroll; border: 1px solid #606060">
+                        <div wicket:id="srcSSGClusterSelector"></div>
+                    </div>
                 </td>
                 <td class="srcDestCenter"></td>
                 <td class="srcDest">
-                    <iframe id="destSSGClusterSelector" src="SSGClusterSelector.html" frameborder="0" scrolling="yes"
-                            height="150" width="100%" onload="initSSGClusterSelector(this);"></iframe>
+                    <div id="destSSGClusterSelectorHolder" class="dataIFrame" style="min-height: 150px; height: 150px; width: 100%; overflow:scroll; border: 1px solid #606060">
+                        <div wicket:id="destSSGClusterSelector"></div>
+                    </div>
                 </td>
             </tr>
             <tr>
@@ -882,16 +428,16 @@
                             <td width="100%">
                                 <span class="nowrap">Select items to migrate:</span>
                                 <span class="nowrap">
-                                    <input id="migrateFoldersCheckBox" type="checkbox" checked/>
+                                    <input wicket:id="migrateFoldersCheckBox" type="checkbox" checked/>
                                     <label for="migrateFoldersCheckBox"> migrate folders</label>
                                 </span>
                             </td>
                             <td class="nowrap">
-                                <img class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshSrcSsgClusterContentSelector();"/>
+                                <img wicket:id="refreshSourceItem" class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh"/>
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelectorHolder', 'destSSGClusterContentSelectorHolder'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelectorHolder', 'destSSGClusterContentSelectorHolder'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                             </td>
                         </tr>
                     </table>
@@ -903,18 +449,18 @@
                             <td width="100%">
                                 <span class="nowrap">Select a destination folder:</span>
                                 <span class="nowrap">
-                                    (<input id="enableNewServicesCheckBox" type="checkbox" />
+                                    (<input wicket:id="enableNewServicesCheckBox" type="checkbox" />
                                     <label for="enableNewServicesCheckBox"> enable new services</label>,
-                                    <input id="overwriteDependenciesCheckBox" type="checkbox" />
+                                    <input wicket:id="overwriteDependenciesCheckBox" type="checkbox" />
                                     <label for="overwriteDependenciesCheckBox"> overwrite existing items</label>)
                                 </span>
                             </td>
                             <td class="nowrap">
-                                <img class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshDestSsgClusterContentSelector();"/>
+                                <img wicket:id="refreshDestinationItem" class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh"/>
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelectorHolder', 'destSSGClusterContentSelectorHolder'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                                 <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
-                                     onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                     onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelectorHolder', 'destSSGClusterContentSelectorHolder'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
                             </td>
                         </tr>
                     </table>
@@ -922,19 +468,23 @@
             </tr>
             <tr>
                 <td class="srcDest">
-                    <iframe id="srcSSGClusterContentSelector" src="SSGClusterContentSelector.html" frameborder="0"
-                            scrolling="yes" height="150" width="100%"
-                            onload="initSSGClusterContentSelector(this);"></iframe>
+                    <div id="srcSSGClusterContentSelectorHolder" class="dataIFrame" style="min-height: 150px; height: 150px; width: 100%; overflow:scroll; border: 1px solid #606060">
+                        <div wicket:id="srcSSGClusterContentSelector" ></div>
+                    </div>
                 </td>
                 <td class="srcDestCenter">
-                    <button id="migrateButton"><img src="../images/copy.png" title="Migrate selected policies with dependency mapping" alt="" id="migrateImage" wicket:id="migrateImage"></button>
+                    <form wicket:id="migrateForm">
+                        <button wicket:id="migrateButton"><img src="../images/copy.png" title="Migrate selected policies with dependency mapping" alt="" id="migrateImage"></button>
+                    </form>
                     <br/>
-                    <button id="identifyDependenciesButton"><img src="../images/resolveDependencies.png" title="Identify dependencies" alt="" id="identifyDependenciesImage" wicket:id="identifyDependenciesImage"></button>
+                    <form wicket:id="identifyDependenciesForm">
+                        <button wicket:id="identifyDependenciesButton"><img src="../images/resolveDependencies.png" title="Identify dependencies" alt="" id="identifyDependenciesImage"></button>
+                     </form>
                 </td>
                 <td class="srcDest">
-                    <iframe id="destSSGClusterContentSelector" src="SSGClusterContentSelector.html" frameborder="0"
-                            scrolling="yes" height="150" width="100%"
-                            onload="initSSGClusterContentSelector(this);"></iframe>
+                    <div id="destSSGClusterContentSelectorHolder" class="dataIFrame" style="min-height: 150px; height: 150px; width: 100%; overflow:scroll; border: 1px solid #606060">
+                        <div wicket:id="destSSGClusterContentSelector"></div>
+                    </div>
                 </td>
             </tr>
             <tr>
@@ -1055,14 +605,6 @@
             </tr>
             </table>
             </div>
-            <form wicket:id="selectionForm">
-                <input id="selectionJson" type="hidden" wicket:id="selectionJson"/>
-                <input id="destinationClusterId" type="hidden" wicket:id="destinationClusterId"/>
-                <input id="destinationFolderId" type="hidden" wicket:id="destinationFolderId"/>
-                <input id="migrateFolders" type="hidden" wicket:id="migrateFolders"/>
-                <input id="enableNewServices" type="hidden" wicket:id="enableNewServices"/>
-                <input id="overwriteDependencies" type="hidden" wicket:id="overwriteDependencies"/>
-            </form>
             <div wicket:id="dialogContainer">
                 <div wicket:id="dialog"/>
             </div>
@@ -1185,17 +727,12 @@
                         <input id="ssgClusterTrustForm_returnurl" type="hidden" name="returnurl" />
                     </form>
                     To establish trust of this Enterprise Service Manager by the Gateway Cluster
-                    &ldquo;<span id="ssgClusterTrustDialog_name"></span>&rdquo;,
+                    &ldquo;<span id="ssgClusterTrustDialog_ssgClusterName"></span>&rdquo;,
                     you will now be redirected to the cluster server where
                     you can authenticate using a gateway administrator account.
                     That account will also be mapped to your Enterprise Service Manager account.
                     When completed, you will be returned to this page.
                 </div>
-            </div>
-
-            <div style="display: none;">
-                <form name="getGatewayTrustServletInputsForm" wicket:id="getGatewayTrustServletInputsForm" method="POST">
-                </form>
             </div>
 
             <div id="mapAccessAccountDialog">

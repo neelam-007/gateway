@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.server.ems.util.JsonUtil;
 import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
@@ -10,7 +11,6 @@ import org.apache.wicket.markup.html.WicketEventReference;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebResponse;
-import org.mortbay.util.ajax.JSON;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.server.ems.ui.SecureComponent;
 
@@ -102,11 +102,8 @@ public class JsonInteraction extends Panel implements SecureComponent {
 
     protected void writeJsonResponse( final WebResponse response, final Object data ) {
         // Add JSON script to the response
-        JSON json = new JSON();
-
         StringBuffer dataBuffer = new StringBuffer(2048);
-        json.append(dataBuffer, data);
-
+        JsonUtil.writeJson( data, dataBuffer );
         response.write(dataBuffer);        
     }
 

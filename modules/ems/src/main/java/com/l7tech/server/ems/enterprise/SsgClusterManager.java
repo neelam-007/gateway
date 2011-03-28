@@ -2,6 +2,7 @@ package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.*;
 
+import java.util.Collection;
 import java.util.List;
 import java.net.UnknownHostException;
 
@@ -10,6 +11,25 @@ import java.net.UnknownHostException;
  * @author rmak
  */
 public interface SsgClusterManager extends EntityManager<SsgCluster, EntityHeader> {
+
+    /**
+     * Find all online clusters.
+     *
+     * @return The collection of clusters
+     * @throws FindException If an error occurs
+     */
+    Collection<SsgCluster> findOnlineClusters() throws FindException;
+
+    /**
+     * Create a new offline destination
+     *
+     * @param name The suggested name, this may be modified to make it unique in the target folder.
+     * @param guid The GUID for the cluster
+     * @param parentFolder The parent folder to use
+     * @return The newly created cluster
+     * @throws SaveException If an error occurs
+     */
+    SsgCluster create(String name, String guid, EnterpriseFolder parentFolder) throws SaveException;
 
     SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException, UnknownHostException;
     SsgCluster create(String name, String sslHostName, int adminPort, String parentFolderGuid) throws FindException, InvalidNameException, SaveException, UnknownHostException;
@@ -21,7 +41,7 @@ public interface SsgClusterManager extends EntityManager<SsgCluster, EntityHeade
      * @return the cluster with the given guid.
      * @throws FindException
      */
-    SsgCluster findByGuid(final String guid) throws FindException;
+    SsgCluster findByGuid(String guid) throws FindException;
 
     /**
      * Edit the cluster by changing the name, the ssl hostname, or the admin port of the cluster with the guid.
@@ -63,31 +83,44 @@ public interface SsgClusterManager extends EntityManager<SsgCluster, EntityHeade
      * Find all children of a given parent folder guid.
      *
      * @param parentFolderGuid The guid of the parent folder
+     * @param includeOffline True to include offline clusters
      * @return a list of children of the parent folder
      * @throws FindException if failed to query database
      */
-    List<SsgCluster> findChildSsgClusters(String parentFolderGuid) throws FindException;
+    List<SsgCluster> findChildSsgClusters(String parentFolderGuid, boolean includeOffline ) throws FindException;
 
     /**
      * Find all children of a given parent folder.
+     *
+     * <p>Offline clusters will not be included.</p>
      *
      * @param parentFolder: the parent folder
      * @return a list of children of the parent folder
      * @throws FindException if failed to query database
      */
-    List<SsgCluster> findChildSsgClusters(final EnterpriseFolder parentFolder) throws FindException;
+    List<SsgCluster> findChildSsgClusters(EnterpriseFolder parentFolder) throws FindException;
+
+    /**
+     * Find all children of a given parent folder.
+     *
+     * @param parentFolder: the parent folder
+     * @param includeOffline True to include offline clusters
+     * @return a list of children of the parent folder
+     * @throws FindException if failed to query database
+     */
+    List<SsgCluster> findChildSsgClusters(EnterpriseFolder parentFolder, boolean includeOffline) throws FindException;
 
     /**
      * Find all ancestors (i.e., enterprise folders) of the SSG cluster
      * @param guid: the GUID of the SSG Cluster
      * @return a list of enterprise folder objects (Note: the root ancestor will be the first element in the list.)
      */
-    List<EnterpriseFolder> findAllAncestors(final String guid) throws FindException;
+    List<EnterpriseFolder> findAllAncestors(String guid) throws FindException;
 
     /**
      * Find all ancestors (i.e., enterprise folders) of the SSG cluster
      * @param ssgCluster: the SSG Cluster object
      * @return a list of enterprise folder objects (Note: the root ancestor will be the first element in the list.)
      */
-    List<EnterpriseFolder> findAllAncestors(final SsgCluster ssgCluster);
+    List<EnterpriseFolder> findAllAncestors(SsgCluster ssgCluster);
 }

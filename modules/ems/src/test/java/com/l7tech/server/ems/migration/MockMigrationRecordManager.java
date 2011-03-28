@@ -8,6 +8,8 @@ import com.l7tech.server.EntityManagerStub;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 
 import java.util.Date;
 import java.util.Collection;
@@ -22,7 +24,7 @@ import java.util.Collections;
 public class MockMigrationRecordManager extends EntityManagerStub<MigrationRecord, EntityHeader> implements MigrationRecordManager {
 
     @Override
-    public MigrationRecord create(String label, byte[] data, Map<String, SsgCluster> clusters) throws SaveException {
+    public MigrationRecord create( final String label, final byte[] data, final Functions.TernaryThrows<Pair<SsgCluster, SsgCluster>, String, String, String, SaveException> clusterCallback ) throws SaveException {
         return null;
     }
 

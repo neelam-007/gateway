@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:tx="http://www.springframework.org/schema/tx"
-       xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation= "http://www.springframework.org/schema/beans
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-                            http://www.springframework.org/schema/aop
-                            http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
                             http://www.springframework.org/schema/tx
                             http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
                             http://www.springframework.org/schema/context
@@ -28,19 +25,20 @@
         <property name="ignoreResourceNotFound" value="true"/>
         <property name="properties">
             <!-- default properties if not overridden by system properties -->
-            <map>
-                <entry key="em.sharedkey.pass" value="${com.l7tech.em.sharedkeypass}"/>
-            </map>
+            <props>
+                <prop key="em.sharedkey.pass">${com.l7tech.em.sharedkeypass}</prop>
+            </props>
         </property>
     </bean>
 
     <bean id="creationDataSource" class="org.apache.derby.jdbc.EmbeddedDataSource40">
         <property name="databaseName" value="var/db/emsdb"/>
         <property name="createDatabase" value="create"/>
+        <property name="connectionAttributes" value="upgrade=true"/>
     </bean>
 
    <bean id="createDB"
-          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+          class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="staticMethod"
                   value="com.l7tech.server.ems.setup.SetupManagerImpl.testDataSource"/>
         <property name="arguments">
@@ -52,6 +50,7 @@
                 -->
                 <list>
                     <value>classpath:com/l7tech/server/ems/resources/db/audit.sql</value>
+                    <value>classpath:com/l7tech/server/ems/resources/db/version.sql</value>
                 </list>
                 <!--
                   List of SQL script resources to run when database already exists.
@@ -123,9 +122,13 @@
             </list>
         </property>
         <property name="hibernateProperties">
-            <value>
-                hibernate.dialect=org.hibernate.dialect.DerbyDialect
-            </value>
+            <props>
+                <prop key="hibernate.dialect">org.hibernate.dialect.DerbyDialect</prop>
+                <prop key="hibernate.validator.apply_to_ddl">false</prop>
+                <prop key="javax.persistence.validation.group.pre-persist"> </prop>
+                <prop key="javax.persistence.validation.group.pre-update"> </prop>
+                <prop key="javax.persistence.validation.group.pre-remove"> </prop>
+            </props>
         </property>
         <property name="entityInterceptor" ref="persistenceEventInterceptor"/>
         <property name="schemaUpdate" value="true"/>
@@ -139,6 +142,16 @@
             </bean>
         </constructor-arg>
         <constructor-arg index="1" value="var/db/esm.sql"/>
+    </bean>
+
+    <bean id="schemaUpdater" class="com.l7tech.server.ems.setup.SchemaUpdaterImpl" init-method="ensureCurrentSchema" depends-on="sessionFactory">
+        <constructor-arg index="0" ref="transactionManager"/>
+        <constructor-arg index="1">
+            <map>
+                <entry key="1" value="classpath:com/l7tech/server/ems/resources/db/schema_upgrade_1.sql"/>
+            </map>
+        </constructor-arg>
+        <property name="dataSource" ref="dataSource"/>
     </bean>
 
     <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
@@ -290,7 +303,8 @@
         <constructor-arg index="1" ref="auditRecordManager"/>
         <constructor-arg index="2"><null/></constructor-arg>
         <constructor-arg index="3"><null/></constructor-arg>
-        <constructor-arg index="4" ref="esmId"/>
+        <constructor-arg index="4"><null/></constructor-arg>
+        <constructor-arg index="5" ref="esmId"/>
         <property name="keystore" ref="defaultKey"/>
         <property name="auditLogListener" ref="auditLogListener"/>
     </bean>
@@ -312,14 +326,14 @@
     </bean>
 
     <!-- Abstract "parent" of any bean that needs access to sessionFactory and transactionManager -->
-    <bean id="hibernateBean" abstract="true">
+    <bean id="hibernateBean" abstract="true" depends-on="schemaUpdater">
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="transactionManager" ref="transactionManager"/>
     </bean>
 
     <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" parent="hibernateBean"/>
 
-    <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
+    <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache" depends-on="schemaUpdater">
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
         <property name="serverConfig" ref="serverConfig"/>
         <!--
@@ -369,7 +383,7 @@
 
     <bean id="esmEntityFinder" class="com.l7tech.server.ems.EsmEntityFinderImpl"/>
 
-    <bean id="roleManagerHelper" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+    <bean id="roleManagerHelper" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.security.rbac.RoleManagerImpl"/>
         <property name="targetMethod" value="setIdentitySource"/>
         <property name="arguments">

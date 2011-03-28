@@ -3,6 +3,7 @@ package com.l7tech.server.ems.enterprise;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityManagerStub;
 
+import java.util.Collection;
 import java.util.List;
 import java.net.UnknownHostException;
 
@@ -16,6 +17,16 @@ public class MockSsgClusterManager extends EntityManagerStub<SsgCluster, EntityH
 
     public MockSsgClusterManager(SsgCluster... entitiesIn) {
         super(entitiesIn);
+    }
+
+    @Override
+    public Collection<SsgCluster> findOnlineClusters() throws FindException {
+        return super.findAll();
+    }
+
+    @Override
+    public SsgCluster create( final String name, final String guid, final EnterpriseFolder parentFolder ) throws SaveException {
+        return null;
     }
 
     @Override
@@ -46,7 +57,12 @@ public class MockSsgClusterManager extends EntityManagerStub<SsgCluster, EntityH
     }
 
     @Override
-    public List<SsgCluster> findChildSsgClusters(String parentFolderGuid) throws FindException {
+    public List<SsgCluster> findChildSsgClusters( final String parentFolderGuid, final boolean includeOffline ) throws FindException {
+        return null;
+    }
+
+    @Override
+    public List<SsgCluster> findChildSsgClusters( final EnterpriseFolder parentFolder, final boolean includeOffline ) throws FindException {
         return null;
     }
 

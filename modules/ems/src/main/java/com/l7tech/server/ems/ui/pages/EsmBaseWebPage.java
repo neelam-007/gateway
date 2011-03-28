@@ -1,6 +1,8 @@
 package com.l7tech.server.ems.ui.pages;
 
 import org.apache.wicket.markup.html.WebPage;
+import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.LoadableDetachableModel;
 import org.apache.wicket.protocol.http.servlet.ServletWebRequest;
 import javax.inject.Inject;
 import com.l7tech.server.ems.ui.EsmSession;
@@ -40,5 +42,16 @@ public class EsmBaseWebPage extends WebPage {
         }
 
         return user;
+    }
+
+    IModel<User> getUserModel() {
+        return new UserModel();
+    }
+
+    private final class UserModel extends LoadableDetachableModel<User> {
+        @Override
+        protected User load() {
+            return getUser();
+        }
     }
 }

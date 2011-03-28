@@ -138,7 +138,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                 @Override
                 protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
                     try {
-                        Collection<SsgCluster> clusters = ssgClusterManager.findAll();
+                        Collection<SsgCluster> clusters = ssgClusterManager.findOnlineClusters();
                         for ( SsgCluster cluster : clusters ) {
                             if ( cluster.getTrustStatus() && cluster.getOnlineStatus().equals( JSONConstants.SsgClusterOnlineState.UP ) ) {
                                 try {
@@ -190,7 +190,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
             @Override
             protected void doInTransactionWithoutResult( final TransactionStatus transactionStatus ) {
                 try {
-                    Collection<SsgCluster> clusters = ssgClusterManager.findAll();
+                    Collection<SsgCluster> clusters = ssgClusterManager.findOnlineClusters();
                     for ( SsgCluster cluster : clusters ) {
                         String host = cluster.getSslHostName();
                         int port = cluster.getAdminPort();

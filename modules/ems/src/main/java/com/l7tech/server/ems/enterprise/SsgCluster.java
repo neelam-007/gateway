@@ -51,6 +51,13 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
     public SsgCluster() {
     }
 
+    public SsgCluster(String name, String guid, EnterpriseFolder parentFolder) {
+        this._name = name;
+        this.sslHostName = "";
+        this.guid = guid;
+        this.parentFolder = parentFolder;
+    }
+
     public SsgCluster(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) {
         setGuid(UUID.randomUUID().toString());
         this._name = name;
@@ -234,6 +241,11 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         return getTrustStatus() && !"down".equals( getOnlineStatus() );
     }
 
+    @Transient
+    public boolean isOffline() {
+        return adminPort == 0;
+    }
+
     public Set<GatewayApi.GatewayInfo> obtainGatewayInfoSet() {
         Set<GatewayApi.GatewayInfo> infoSet = new HashSet<GatewayApi.GatewayInfo>();
         for (SsgNode node: nodes) {
@@ -313,11 +325,11 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         output.add(JSONConstants.PARENT_ID, parentFolder.getGuid());
         output.add(JSONConstants.TYPE, JSONConstants.EntityType.SSG_CLUSTER);
         output.add(JSONConstants.NAME, _name);
-        output.add(JSONConstants.TRUST_STATUS, trustStatus);
-        output.add(JSONConstants.SSL_HOST_NAME, sslHostName);
+        output.add(JSONConstants.TRUST_STATUS, isOffline() ? null : trustStatus);
+        output.add(JSONConstants.SSL_HOST_NAME, isOffline() ? null : sslHostName);
         output.add(JSONConstants.ADMIN_PORT, Integer.toString(adminPort));
         output.add(JSONConstants.ADMIN_APPLET_PORT, Integer.toString(adminAppletPort));
-        output.add(JSONConstants.ONLINE_STATUS, onlineStatus);
+        output.add(JSONConstants.ONLINE_STATUS, isOffline() ? null : onlineStatus);
         output.add(JSONConstants.CLUSTER_ANCESTORS, findAllAncestors());
         Collection<String> dbHosts = obtainDbHosts();
         if (dbHosts != null && !dbHosts.isEmpty()) {

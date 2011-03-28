@@ -7,7 +7,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.gateway.FailoverException;
-import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import javax.inject.Inject;
 
@@ -33,9 +32,6 @@ public class SSGClusterSelector extends EsmBaseWebPage {
 
     @Inject
     private SsgClusterManager ssgClusterManager;
-
-    @Inject
-    private EsmSecurityManager securityManager;
 
     @Inject
     private UserPropertyManager userPropertyManager;

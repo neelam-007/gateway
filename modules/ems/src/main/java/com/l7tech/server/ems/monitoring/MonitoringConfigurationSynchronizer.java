@@ -270,7 +270,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationContextAw
     private void doPushAllConfig(boolean suspendBackoffTimers) throws FindException {
         Map<String, Object> globalSettings = getGlobalSettings();
 
-        Collection<SsgCluster> clusters = ssgClusterManager.findAll();
+        Collection<SsgCluster> clusters = ssgClusterManager.findOnlineClusters();
         for (SsgCluster cluster : clusters) {
             final String clusterGuid = cluster.getGuid();
             if (clusterNeedsPushdown(clusterGuid, suspendBackoffTimers)) {

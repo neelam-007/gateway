@@ -63,6 +63,21 @@ public class ExternalEntityHeader extends EntityHeader implements ValueMappable 
         this.extraProperties = extraProperties;
     }
 
+    /**
+     * Add extra properties to the existing set.
+     *
+     * <p>Existing properties with the same name will NOT be overwritten</p>
+     *
+     * @param extraProperties The properties to add.
+     */
+    public void addExtraProperties(Map<String, String> extraProperties) {
+        for ( final Map.Entry<String,String> property : extraProperties.entrySet() ) {
+            if ( this.extraProperties.containsKey( property.getKey() ) ) {
+                this.extraProperties.put( property.getKey(), property.getValue() );
+            }
+        }
+    }
+
     public void setProperty(String name, String value) {
         extraProperties.put(name, value);
     }

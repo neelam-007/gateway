@@ -3,7 +3,7 @@
  */
 
 /**
- * Initialize a DataTable.
+ * Show a dialog.
  *
  * The text content for the dialog buttons is taken from the DOM for the
  * buttons with the given ids.
@@ -16,6 +16,7 @@
  *
  * @param dialogId DOM id for div holding dialog.
  * @param optionButtons the object array for button config
+ * @param width the width for the dialog
  */
 function showDialog( dialogId, optionButtons, width ) {
         // Track use of ok/close/cancel so we can ignore close after ok/cancel
@@ -58,7 +59,7 @@ function showDialog( dialogId, optionButtons, width ) {
                 closeHandler = handleButton; //TODO explicit button for close?
                 defaultButtonId = buttonId;
                 buttonArray[i] = { text:text, handler:handleButton, isDefault:isDefault };
-            }
+            };
             scopedConfig();
         }
 

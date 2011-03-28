@@ -2,6 +2,7 @@ package com.l7tech.server.migration;
 
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
+import com.l7tech.server.cluster.ExternalEntityHeaderEnhancer;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.ExportedItem;
@@ -37,10 +38,14 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private EntityCrud entityCrud;
     private PropertyResolverFactory resolverFactory;
+    private ExternalEntityHeaderEnhancer externalEntityHeaderEnhancer;
 
-    public MigrationManagerImpl(EntityCrud entityCrud, PropertyResolverFactory resolverFactory) {
+    public MigrationManagerImpl( final EntityCrud entityCrud,
+                                 final PropertyResolverFactory resolverFactory,
+                                 final ExternalEntityHeaderEnhancer externalEntityHeaderEnhancer ) {
         this.entityCrud = entityCrud;
         this.resolverFactory = resolverFactory;
+        this.externalEntityHeaderEnhancer = externalEntityHeaderEnhancer;
     }
 
     @Override
@@ -566,7 +571,7 @@ public class MigrationManagerImpl implements MigrationManager {
         }
         ExternalEntityHeader externalEntityHeader = ent == null ? header : EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(ent));
         if (externalEntityHeader != header)
-            externalEntityHeader.setExtraProperties(header.getExtraProperties());
+            externalEntityHeader.addExtraProperties( header.getExtraProperties() );
         enhanceHeader( externalEntityHeader );
         return externalEntityHeader;
     }
@@ -582,17 +587,11 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     private void enhanceHeader( final ExternalEntityHeader externalEntityHeader ) throws MigrationApi.MigrationException  {
-        if ( externalEntityHeader != null ) {
-            if ( externalEntityHeader.getType() == EntityType.USER ||
-                 externalEntityHeader.getType() == EntityType.GROUP ) {
-                try {
-                    EntityHeader header = entityCrud.findHeader( EntityType.ID_PROVIDER_CONFIG, ((IdentityHeader)EntityHeaderUtils.fromExternal(externalEntityHeader)).getProviderOid() );
-                    if ( header != null ) {
-                        externalEntityHeader.setProperty("Scope Name", header.getName());
-                    }
-                } catch ( FindException fe ) {
-                    throw new MigrationApi.MigrationException("Error loading the entity for header: " + externalEntityHeader, fe);                    
-                }
+        if ( externalEntityHeader != null && externalEntityHeaderEnhancer != null ) {
+            try {
+                externalEntityHeaderEnhancer.enhance( externalEntityHeader );
+            } catch ( ExternalEntityHeaderEnhancer.EnhancementException e ) {
+                throw new MigrationApi.MigrationException( ExceptionUtils.getMessage( e ), e );
             }
         }
     }

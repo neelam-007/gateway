@@ -4,10 +4,11 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.identity.User;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.Map;
 
 /**
  * This class manages the data access of Migration Entities.
@@ -53,9 +54,9 @@ public interface MigrationRecordManager extends EntityManager<MigrationRecord, E
      *
      * @param label An optional new label name to be given to the new record; if not null or empty, it overwrites the label in the data payload.
      * @param data  The serialized migration record.
-     * @param clusters Clusters that are known to the ESM, used for validation of the data.
+     * @param clusterCallback Callback to create or validate the source/destination cluster
      */
-    MigrationRecord create(String label, byte[] data, Map<String,SsgCluster> clusters) throws SaveException;
+    MigrationRecord create(String label, byte[] data, Functions.TernaryThrows<Pair<SsgCluster,SsgCluster>,String,String,String,SaveException> clusterCallback) throws SaveException;
 
     /**
      * Find how many migration records are dated between "start" and "end".

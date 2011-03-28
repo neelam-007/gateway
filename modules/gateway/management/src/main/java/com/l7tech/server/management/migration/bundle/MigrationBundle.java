@@ -87,6 +87,14 @@ public class MigrationBundle implements Serializable {
         exportedItems.put(item.getHeader(), item);
     }
 
+    public void removeExportedItem(ExportedItem item) {
+        exportedItems.remove(item.getHeader());
+    }
+
+    public void removeExportedItem(ExternalEntityHeader header) {
+        exportedItems.remove(header);
+    }
+
     public Map<ExternalEntityHeader, Entity> getExportedEntities() {
         Map<ExternalEntityHeader, Entity> result = new HashMap<ExternalEntityHeader, Entity>();
         for (Map.Entry<ExternalEntityHeader, ExportedItem> itemEntry : getExportedItems().entrySet()) {
