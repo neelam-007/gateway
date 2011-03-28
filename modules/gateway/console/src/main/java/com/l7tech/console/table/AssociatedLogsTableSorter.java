@@ -124,7 +124,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
     }
 
     /**
-     * Return the value of the table cell specified with its tbale coordinate.
+     * Return the value of the table cell specified with its table coordinate.
      *
      * @param row  The row index.
      * @param col  The column index.

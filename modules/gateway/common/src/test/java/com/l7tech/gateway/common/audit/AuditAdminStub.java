@@ -128,7 +128,7 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public String invokeAuditViewerPolicyForDetail(long auditId, long detailMessageId) {
+    public String invokeAuditViewerPolicyForDetail(long auditId, long ordinal) {
         return null;
     }
 }

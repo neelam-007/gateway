@@ -1,9 +1,17 @@
 package com.l7tech.console.table;
 
 import com.l7tech.console.util.ArrowIcon;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.audit.AssociatedLog;
+import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.security.rbac.AttemptedOther;
+import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gui.util.JTableColumnResizeMouseListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
@@ -18,6 +26,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.*;
 import java.util.EventObject;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -27,12 +36,14 @@ import java.util.EventObject;
 public class AssociatedLogsTable extends JTable {
 
     private static int[] DEFAULT_COLUMN_WIDTHS = {175, 80, 80, 40, 400};
+    private static final Logger logger = Logger.getLogger(AssociatedLogsTable.class.getName());
 
     private AssociatedLogsTableSorter associatedLogsTableModel = null;
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
 
     private DefaultTableColumnModel columnModel;
+    private final boolean enableAuditViewerButton;
 
 //    int width = DEFAULT_COLUMN_WIDTHS[4] - 45;//45 ~ approx size of button
 
@@ -43,6 +54,7 @@ public class AssociatedLogsTable extends JTable {
         setColumnModel(getLogColumnModel());
         setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         addMouseListenerToHeaderInTable();
+        enableAuditViewerButton = enableInvokeButton();
     }
 
     /**
@@ -255,32 +267,114 @@ public class AssociatedLogsTable extends JTable {
         }
     };
 
-    private static class ViewDialog extends JDialog {
-        private ViewDialog(final String title, final String detail) {
-            super((Frame) null, true);
-            setTitle("Associated Log - " + title);
-            JPanel panel = new JPanel(new BorderLayout());
+    private JDialog getViewDialog(final String detail, final String title){
+        final JDialog dialog = new JDialog((Frame)null, true);
+        dialog.setTitle("Associated Log - " + title);
+        JPanel panel = new JPanel(new BorderLayout());
+        dialog.getContentPane().add(panel);
 
-            // configure text display buttonComponent
-            JTextArea textArea = new JTextArea();
-            textArea.setEditable(false);
-            textArea.setWrapStyleWord(true);
-            textArea.setLineWrap(true);
-            textArea.setText(detail);
-            textArea.setCaretPosition(0);
-            JScrollPane sp = new JScrollPane(textArea);
-            panel.add(sp, BorderLayout.CENTER);
+        // configure text display buttonComponent
+        JTextArea textArea = new JTextArea();
+        textArea.setEditable(false);
+        textArea.setWrapStyleWord(true);
+        textArea.setLineWrap(true);
+        textArea.setText(detail);
+        textArea.setCaretPosition(0);
+        JScrollPane sp = new JScrollPane(textArea);
+        panel.add(sp, BorderLayout.CENTER);
 
-            add(panel, BorderLayout.CENTER);
-            Utilities.setEscKeyStrokeDisposes(this);
-            addWindowListener(new WindowAdapter() {
-                public void windowClosing(WindowEvent e) {
-                    dispose();
+        JButton requestAVPolicyButton = getInvokeRequestAVPolicyButton(textArea);
+        if(requestAVPolicyButton != null){
+            final JPanel holderSouthPanel = new JPanel();
+            holderSouthPanel.setLayout(new BoxLayout(holderSouthPanel, BoxLayout.X_AXIS));
+            holderSouthPanel.add(requestAVPolicyButton);
+            panel.add(holderSouthPanel, BorderLayout.SOUTH);
+        }
+
+        Utilities.setEscKeyStrokeDisposes(dialog);
+        dialog.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                dialog.dispose();
+            }
+        });
+        return dialog;
+    }
+
+    private JButton getInvokeRequestAVPolicyButton(final JTextArea detailTextArea){
+        if(Registry.getDefault().isAdminContextPresent()){
+            final JButton invokeAVButton = new JButton("Invoke Audit Viewer Policy");
+
+            boolean canEnable = false;
+            //only create an enabled button for supported audit detail message ids.
+            final int row = getSelectedRow();
+            if(row != -1){
+                final TableModel model = getModel();
+                if(model instanceof AssociatedLogsTableSorter) {
+                    final Object value = ((AssociatedLogsTableSorter) model).getData(row);
+                    if(value instanceof AssociatedLog){
+                        AssociatedLog associatedLog = (AssociatedLog) value;
+                        final int auditDetailId = associatedLog.getMessageId();
+                        if(AuditAdmin.userDetailMessages.contains(auditDetailId)){
+                            canEnable = enableAuditViewerButton;
+                        }
+                    }
+                }
+            }
+            
+            invokeAVButton.setEnabled(canEnable);
+            invokeAVButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    final int row = getSelectedRow();
+                    if(row == -1) return;
+
+                    final TableModel model = getModel();
+                    if(model instanceof AssociatedLogsTableSorter) {
+                        final Object value = ((AssociatedLogsTableSorter) model).getData(row);
+                        if(value instanceof AssociatedLog){
+                            AssociatedLog associatedLog = (AssociatedLog) value;
+                            String output = getAVPolicyOutput(associatedLog.getAuditRecordId(), associatedLog.getOrdinal());
+                            if (output != null) {
+                                detailTextArea.setText(output);
+                                detailTextArea.setCaretPosition(0);
+                            }
+                        }
+                    }
                 }
             });
-            setSize(450, 175);
-            Utilities.centerOnScreen(this);
+            return invokeAVButton;
         }
+
+        return null;
+    }
+
+    private String getAVPolicyOutput(final long auditRecordId, long ordinal){
+        final AuditAdmin auditAdmin = Registry.getDefault().getAuditAdmin();
+        final String output;
+        try {
+            output = auditAdmin.invokeAuditViewerPolicyForDetail(auditRecordId, ordinal);
+        } catch (FindException e) {
+            return ExceptionUtils.getMessage(e);
+        }
+        return output;
+    }
+    
+    private boolean enableInvokeButton(){
+        if(Registry.getDefault().isAdminContextPresent()){
+            final boolean avPermGranted = Registry.getDefault().getSecurityProvider().hasPermission(
+                    new AttemptedOther(EntityType.AUDIT_RECORD, OtherOperationName.AUDIT_VIEWER_POLICY.toString()));
+
+            final boolean avPolicyIsActive;
+            if(avPermGranted){
+                avPolicyIsActive = Registry.getDefault().getAuditAdmin().isAuditViewerPolicyAvailable();
+            } else {
+                avPolicyIsActive = false;
+            }
+
+            return avPermGranted && avPolicyIsActive;
+        }
+
+        return false;
     }
 
     private class CellEditorWithButton extends AbstractCellEditor implements TableCellEditor, ListSelectionListener {
@@ -297,7 +391,10 @@ public class AssociatedLogsTable extends JTable {
             this.button.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     if (value != null) {
-                        DialogDisplayer.display(new ViewDialog(columnTitle, value), new Runnable() {
+                        final JDialog dialog = getViewDialog(value, columnTitle);
+                        dialog.setSize(450, 175);
+                        Utilities.centerOnScreen(dialog);
+                        DialogDisplayer.display(dialog, new Runnable() {
                             public void run() {
                                 // Make the renderer reappear.
                                 fireEditingStopped();

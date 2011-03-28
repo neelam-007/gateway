@@ -498,9 +498,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     }
 
     @Override
-    public String invokeAuditViewerPolicyForDetail(long auditRecordId, long detailMessageId) throws FindException {
+    public String invokeAuditViewerPolicyForDetail(long auditRecordId, long ordinal) throws FindException {
 
-        //todo [Donal] - not finished yet
+        if(ordinal < 0) throw new IllegalArgumentException("ordinal must be >= 0");
+
         final AuditRecord record = auditRecordManager.findByPrimaryKey(auditRecordId);
         if(record == null){
             logger.log(Level.INFO, "No audit record found for AuditRecord with id " + auditRecordId);
@@ -516,10 +517,11 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
         final Set<AuditDetail> details = messageAudit.getDetails();
         for (AuditDetail detail : details) {
-            if(detail.getOid() == detailMessageId){
+            //ordinal is all that is actually needed to find the audit detail, so long as it has been created correctly
+            if (userDetailMessages.contains(detail.getMessageId()) && detail.getOrdinal() == ordinal) {
                 final String[] params = detail.getParams();
-                if(params == null || params[0] == null){
-                    logger.log(Level.INFO, "No parameter found for audit detail record with id " + detailMessageId);
+                if (params == null || params[0] == null) {
+                    logger.log(Level.INFO, "No parameter found for audit detail record with id " + detail.getMessageId() + " with ordinal " + ordinal);
                     return null;
                 }
                 try {

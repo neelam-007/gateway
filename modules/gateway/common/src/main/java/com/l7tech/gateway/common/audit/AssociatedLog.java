@@ -7,6 +7,7 @@ package com.l7tech.gateway.common.audit;
  */
 public class AssociatedLog {
 
+    private final long auditRecordId;
     private final long timeStamp;
     private final String message;
     private final String severity;
@@ -14,13 +15,18 @@ public class AssociatedLog {
     private final int messageId;
     private final int ordinal;
 
-    public AssociatedLog(long timeStamp, String severity, String message, String exception, int messageId, int ordinal) {
+    public AssociatedLog(long auditRecordId, long timeStamp, String severity, String message, String exception, int messageId, int ordinal) {
+        this.auditRecordId = auditRecordId;
         this.timeStamp = timeStamp;
         this.severity = severity;
         this.message = message;
         this.exception = exception;
         this.messageId = messageId;
         this.ordinal = ordinal;
+    }
+
+    public long getAuditRecordId() {
+        return auditRecordId;
     }
 
     public long getTimeStamp() {

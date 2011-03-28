@@ -179,7 +179,7 @@ public class AuditFilterPolicyManager {
      */
     private String evaluatePolicy(final Message copyMsg,
                                   final ServerPolicyHandle handle,
-                                  final boolean isRequest) throws Exception {
+                                  final Boolean isRequest) throws Exception {
         PolicyEnforcementContext pec = null;
         final String[] capturePolicyRequestOutput = new String[1];
         AssertionStatus result;
@@ -251,8 +251,8 @@ public class AuditFilterPolicyManager {
         }
     }
 
-    private String getMessageBodyTextOrErrorMsg(Message msg, boolean isRequest) {
-        String what = isRequest ? "request" : "response";
+    private String getMessageBodyTextOrErrorMsg(final Message msg, final Boolean isRequest) {
+        String what = (isRequest != null)? isRequest ? "request" : "response": "audit detail";
         try {
             final MimeKnob mk = msg.getMimeKnob();
             final PartInfo part = mk.getFirstPart();
