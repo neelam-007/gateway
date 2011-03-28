@@ -46,6 +46,7 @@ import org.springframework.context.Lifecycle;
 import org.w3c.dom.Element;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -107,6 +108,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
     @Inject
     private ServerConfig serverConfig;
     @Inject
+    @Named("httpClientFactory")
     private GenericHttpClientFactory httpClientFactory;
     @Inject
     private Aggregator aggregator;
