@@ -5,9 +5,10 @@
 
 package com.l7tech.policy.wsp;
 
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -15,12 +16,12 @@ import org.w3c.dom.NodeList;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Collection;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -264,6 +265,11 @@ public class TypeMappingUtils {
      */
     static Object invokeMethod(Method method, Object targetObject, final Object[] args)
       throws IllegalAccessException, InvocationTargetException {
+        final boolean doWorkaround = SyspropUtil.getBoolean("com.l7tech.compat.enableInvokeMethodWorkaround", false);
+        if (!doWorkaround) {
+            return method.invoke(targetObject, args);
+        }
+
         boolean accessible = method.isAccessible();
         boolean accessibilityChanged = false;
         try {
