@@ -244,10 +244,10 @@ public interface AuditAdmin extends GenericLogAdmin {
     /**
      * All user audit detail message ids.
      */
-    Set<Integer> userDetailMessages = new HashSet<Integer>(Arrays.asList(
+    Set<Integer> USER_DETAIL_MESSAGES = Collections.unmodifiableSet(new HashSet<Integer>(Arrays.asList(
             AssertionMessages.USERDETAIL_WARNING.getId(),
-//            AssertionMessages.USERDETAIL_INFO.getId(),
+            AssertionMessages.USERDETAIL_INFO.getId(),
             AssertionMessages.USERDETAIL_FINE.getId(),
             AssertionMessages.USERDETAIL_FINER.getId(),
-            AssertionMessages.USERDETAIL_FINEST.getId()));
+            AssertionMessages.USERDETAIL_FINEST.getId())));
 }

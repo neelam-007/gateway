@@ -518,7 +518,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         final Set<AuditDetail> details = messageAudit.getDetails();
         for (AuditDetail detail : details) {
             //ordinal is all that is actually needed to find the audit detail, so long as it has been created correctly
-            if (userDetailMessages.contains(detail.getMessageId()) && detail.getOrdinal() == ordinal) {
+            if (USER_DETAIL_MESSAGES.contains(detail.getMessageId()) && detail.getOrdinal() == ordinal) {
                 final String[] params = detail.getParams();
                 if (params == null || params[0] == null) {
                     logger.log(Level.INFO, "No parameter found for audit detail record with id " + detail.getMessageId() + " with ordinal " + ordinal);

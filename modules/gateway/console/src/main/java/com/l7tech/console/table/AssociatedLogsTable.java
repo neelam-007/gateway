@@ -314,7 +314,7 @@ public class AssociatedLogsTable extends JTable {
                     if(value instanceof AssociatedLog){
                         AssociatedLog associatedLog = (AssociatedLog) value;
                         final int auditDetailId = associatedLog.getMessageId();
-                        if(AuditAdmin.userDetailMessages.contains(auditDetailId)){
+                        if(AuditAdmin.USER_DETAIL_MESSAGES.contains(auditDetailId)){
                             canEnable = enableAuditViewerButton;
                         }
                     }
