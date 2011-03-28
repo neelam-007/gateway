@@ -3,6 +3,7 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 
 import javax.swing.*;
@@ -25,6 +26,7 @@ public class HttpRoutingWindowsIntegratedAuthPanel extends JPanel {
     private JRadioButton useConfiguredCredentialsRadioButton;
     private JRadioButton useDelegatedCredentialsRadioButton;
     private JRadioButton useGatewayKeytabRadioButton;
+    private JCheckBox showPasswordCheckBox;
 
     private final HttpRoutingAssertion assertion;
 
@@ -34,6 +36,7 @@ public class HttpRoutingWindowsIntegratedAuthPanel extends JPanel {
 
         krbAccountNameField.setText(assertion.getKrbConfiguredAccount());
         krbPasswordField.setText(assertion.getKrbConfiguredPassword());
+        Utilities.configureShowPasswordButton(showPasswordCheckBox, krbPasswordField);
 
         usernameLabel.setLabelFor(krbAccountNameField);
         passwordLabel.setLabelFor(krbPasswordField);
@@ -58,7 +61,7 @@ public class HttpRoutingWindowsIntegratedAuthPanel extends JPanel {
         krbDelegationGroup.add(this.useConfiguredCredentialsRadioButton);
         krbDelegationGroup.add(this.useDelegatedCredentialsRadioButton);
         krbDelegationGroup.add(this.useGatewayKeytabRadioButton);
-        
+
         add(mainPanel);
     }
 

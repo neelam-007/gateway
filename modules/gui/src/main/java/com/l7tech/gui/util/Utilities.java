@@ -851,6 +851,25 @@ public class Utilities {
     }
 
     /**
+     * Configure the specified checkbox to control whether the password is visible or masked in the specified password field.
+     *
+     * @param showPasswordCheckBox a checkbox that will be set up to cause the password to be visible when checked (and masked with U+25CF/Black Circle when unchecked).  Required.
+     * @param passwordField the password field whose password is to be either shown or masked, depending on the checkbox selection state.  Required.
+     */
+    public static void configureShowPasswordButton(final JCheckBox showPasswordCheckBox, final JPasswordField passwordField) {
+        showPasswordCheckBox.setSelected(false);
+        showPasswordCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                char echoChar = showPasswordCheckBox.isSelected() ?
+                        0 :
+                        '\u25cf';
+                passwordField.setEchoChar(echoChar);
+            }
+        });
+    }
+
+    /**
      * Creates pop-up menus for text components.
      */
     public static interface ContextMenuFactory {

@@ -142,6 +142,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JTextField proxyPortField;
     private JTextField proxyUsernameField;
     private JPasswordField proxyPasswordField;
+    private JCheckBox showProxyPasswordCheckBox;
     private JCheckBox useKeepalivesCheckBox;
     private JTextField responseMaxSizeTextField;
     private JPanel maxResponseSizePanel;
@@ -479,6 +480,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         Utilities.enableGrayOnDisabled(proxyPortField);
         Utilities.enableGrayOnDisabled(proxyUsernameField);
         Utilities.enableGrayOnDisabled(proxyPasswordField);
+        Utilities.configureShowPasswordButton(showProxyPasswordCheckBox, proxyPasswordField);
 
         ActionListener enabler = new ActionListener() {
             @Override

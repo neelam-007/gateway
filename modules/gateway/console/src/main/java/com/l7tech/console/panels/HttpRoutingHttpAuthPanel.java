@@ -3,6 +3,7 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 
 import javax.swing.*;
@@ -26,6 +27,7 @@ public class HttpRoutingHttpAuthPanel extends JPanel {
     private JLabel passwordLabel;
     private JLabel ntlmDomainLabel;
     private JLabel ntlmHostLabel;
+    private JCheckBox showPasswordCheckBox;
 
     private final HttpRoutingAssertion assertion;
 
@@ -37,6 +39,7 @@ public class HttpRoutingHttpAuthPanel extends JPanel {
         passwordField.setText(assertion.getPassword());
         ntlmDomainField.setText(assertion.getRealm());
         ntlmHostField.setText(assertion.getNtlmHost());
+        Utilities.configureShowPasswordButton(showPasswordCheckBox, passwordField);
 
         usernameLabel.setLabelFor(usernameField);
         passwordLabel.setLabelFor(passwordField);

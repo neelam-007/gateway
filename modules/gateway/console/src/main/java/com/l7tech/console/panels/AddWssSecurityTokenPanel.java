@@ -11,8 +11,6 @@ import com.l7tech.security.xml.KeyReference;
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /**
  * GUI configuration panel for the {@link AddWssSecurityToken} assertion.
@@ -95,9 +93,6 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         wsscSessionVariablePanel.setLayout(new BorderLayout());
         wsscSessionVariablePanel.add(wsscSessionVariableTargetVariablePanel, BorderLayout.CENTER);
 
-
-
-
         includePasswordCheckBox.addActionListener(updater);
 
         ButtonGroup bg = new ButtonGroup();
@@ -111,16 +106,7 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         useSpecifiedCredentialsRadioButton.addActionListener(updater);
         useLastGatheredRequestRadioButton.addActionListener(updater);
 
-        showPasswordCheckBox.setSelected( false );
-        showPasswordCheckBox.addActionListener( new ActionListener(){
-            @Override
-            public void actionPerformed( final ActionEvent e ) {
-                char echoChar = showPasswordCheckBox.isSelected() ?
-                        0 :
-                        '*';
-                passwordField.setEchoChar( echoChar );
-            }
-        } );
+        Utilities.configureShowPasswordButton(showPasswordCheckBox, passwordField);
 
         includePasswordCheckBox.addActionListener( updater );
 
