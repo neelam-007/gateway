@@ -215,6 +215,13 @@ public class AssertionMessages extends Messages {
     public static final M SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_CERT_NOT_FOUND = m(4855, Level.WARNING, "The certificate \"{0}\" was not found.");
     public static final M SAML2_AQ_RESPONSE_ENCRYPT_SAML_ASSERTION_PK_NOT_FOUND = m(4856, Level.WARNING, "The private key \"{0}\" was not found.");
 
+    // / Sophos  modular assertion messages
+    public static final M SOPHOS_RESPONSE_FINEST = m(4870, Level.FINEST, "Sophos AV detected a virus name ( {0} ), type ( {1} ), location ( {2} ), disinfectable ( {3} ). ");
+    public static final M SOPHOS_RESPONSE_FINER  = m(4871, Level.FINER,   "Sophos AV detected a virus ( {0} ), type ( {1} ), location ( {2} ), disinfectable ( {3} ). ");
+    public static final M SOPHOS_RESPONSE_FINE   = m(4872, Level.FINE,    "Sophos AV detected a virus ( {0} ), type ( {1} ), location ( {2} ), disinfectable ( {3} ). ");
+    public static final M SOPHOS_RESPONSE_INFO        = m(4873, Level.INFO,    "Sophos AV detected a virus ( {0} ), type ( {1} ), location ( {2} ), disinfectable ( {3} ). ");
+    public static final M SOPHOS_RESPONSE_WARNING     = m(4874, Level.WARNING, "Sophos AV detected a virus ( {0} ), type ( {1} ), location ( {2} ), disinfectable ( {3} ). ");
+    
     // ServerRequestWssReplayProtection messages
     public static final M REQUEST_WSS_REPLAY_NON_SOAP                       = m(4900, Level.INFO, "{0} not SOAP; cannot check for replayed signed WS-Security message");
     public static final M REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY          = m(4901, Level.INFO, "{0} did not contain any WSS level security");
