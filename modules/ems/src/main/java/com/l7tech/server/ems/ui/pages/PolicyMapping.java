@@ -1,9 +1,11 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.server.ems.migration.MigrationArtifactResource;
 import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.migration.MigrationRecord;
 import com.l7tech.server.ems.migration.MigrationSummary;
+import com.l7tech.server.ems.ui.SecureResource;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ExceptionUtils;
@@ -70,7 +72,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         initMigrationTableContainer();
         add(migrationTableContainer);
 
-        // Create a contaner to store migration summary
+        // Create a container to store migration summary
         initMigrationSummaryContainer();
         add(migrationSummaryContainer);
     }
@@ -206,14 +208,31 @@ public class PolicyMapping extends EsmStandardWebPage {
 
         YuiAjaxButton downloadArchiveButton = new YuiAjaxButton("downloadArchiveButton") {
             @Override
-            protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
+            protected void onSubmit( final AjaxRequestTarget target, final Form form) {
                 final String migrationId = (String) form.get("migrationId").getDefaultModelObject();
                 if ( migrationId != null && migrationId.length() > 0 ) {
-                    ValueMap vm = new ValueMap();
-                    vm.add("migrationId", migrationId);
-                    vm.add("disposition", "attachment");
-                    ResourceReference resourceReference = new ResourceReference("migrationResource");
-                    ajaxRequestTarget.appendJavascript("window.location = '" + RequestCycle.get().urlFor(resourceReference, vm).toString() + "';");
+                    final PolicyMigrationDownloadPanel.DownloadFormModel downloadOptions = new PolicyMigrationDownloadPanel.DownloadFormModel();
+                    final PolicyMigrationDownloadPanel policyMigrationDownloadPanel = new PolicyMigrationDownloadPanel( YuiDialog.getContentId(), downloadOptions );
+                    final YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Download Migration Archive", YuiDialog.Style.OK_CANCEL, policyMigrationDownloadPanel, new YuiDialog.OkCancelCallback(){
+                        @Override
+                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button ) {
+                            if ( button == YuiDialog.Button.OK ) {
+                                final String id = SecureResource.registerResourceParameters(
+                                        new MigrationArtifactResource.MigrationArtifactParameters(
+                                                "attachment",
+                                                migrationId,
+                                                downloadOptions.isEncrypted() ? downloadOptions.getPassword() : null ) );
+                                final ResourceReference resourceReference = new ResourceReference("migrationResource");
+                                final ValueMap vm = new ValueMap();
+                                vm.add("id", id);
+                                target.appendJavascript("window.location = '" + RequestCycle.get().urlFor( resourceReference, vm ).toString() + "';");
+                            }
+                        }
+                    } );
+                    dynamicDialogHolder.replace(dialog);
+                    if ( target != null ) {
+                        target.addComponent(dynamicDialogHolder);
+                    }
                 }
             }
         };
@@ -495,7 +514,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         private final Date end;
         private final User user;
 
-        public MigrationDataProvider(final Date start, final Date end, String sort, boolean asc) {
+        private MigrationDataProvider(final Date start, final Date end, String sort, boolean asc) {
             this.start = start;
             this.end = end;
 

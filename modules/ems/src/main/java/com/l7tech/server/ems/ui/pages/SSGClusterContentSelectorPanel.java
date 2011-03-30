@@ -14,6 +14,7 @@ import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.model.IDetachable;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 
@@ -216,6 +217,12 @@ public class SSGClusterContentSelectorPanel extends Panel {
         super.detachModels();
 
         userModel.detach();
+
+        for ( final SsgClusterContentProvider provider : providersByCluster.values() ) {
+            if ( provider instanceof IDetachable ) {
+                ((IDetachable)provider).detach();
+            }
+        }
     }
 
     /**

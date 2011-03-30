@@ -1,5 +1,9 @@
 package com.l7tech.server.ems.migration;
 
+import com.l7tech.common.io.IOExceptionThrowingInputStream;
+import com.l7tech.server.ems.util.PgpUtil;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.Functions;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
 import org.apache.wicket.util.resource.ResourceStreamNotFoundException;
@@ -44,6 +48,28 @@ public class MigrationArtifactResource extends SecureResource {
      */
     public MigrationArtifactResource() {
         super( null );//new AttemptedReadAny(EntityType.ESM_MIGRATION_RECORD) );
+        setCacheable( false );
+    }
+
+    public static final class MigrationArtifactParameters extends SecureResourceParameters {
+        private final String migrationId;
+        private final String password;
+
+        public MigrationArtifactParameters( final String disposition,
+                                            final String migrationId,
+                                            final String password ) {
+            super( disposition );
+            this.migrationId = migrationId;
+            this.password = password;
+        }
+
+        public String getMigrationId() {
+            return migrationId;
+        }
+
+        public String getPassword() {
+            return password;
+        }
     }
 
     //- PROTECTED
@@ -51,10 +77,10 @@ public class MigrationArtifactResource extends SecureResource {
     @Override
     protected IResourceStream getSecureResourceStream() {
         IResourceStream resource = null;
-        ValueMap parameters = getParameters();
 
-        if ( parameters.containsKey("migrationId") ) {
-            String id = parameters.getString("migrationId");
+        final MigrationArtifactParameters parameters = getResourceParameters();
+        if ( parameters.getMigrationId() != null ) {
+            final String id = parameters.getMigrationId();
 
             if ( !hasPermission( new AttemptedReadSpecific(EntityType.ESM_MIGRATION_RECORD, id) ) &&
                  !isOwner(id) ) {
@@ -65,28 +91,28 @@ public class MigrationArtifactResource extends SecureResource {
                     try {
                         final MigrationRecord record = manager.findByPrimaryKey( Long.parseLong( id ) );
                         if ( record != null ) {
-                            final ByteArrayInputStream in = new ByteArrayInputStream( zip(record.serializeXml()) );
-                            resource = new AbstractResourceStream(){
-                                @Override
-                                public String getContentType() {
-                                    return "application/zip";
-                                }
-
-                                @Override
-                                public InputStream getInputStream() throws ResourceStreamNotFoundException {
-                                    return in;
-                                }
-
-                                @Override
-                                public void close() throws IOException {
-                                    ResourceUtils.closeQuietly( in );
-                                }
-
-                                @Override
-                                public Time lastModifiedTime() {
-                                    return Time.milliseconds( record.getTimeCreated() );
-                                }
-                            };
+                            if ( parameters.getPassword() == null ) {
+                                final String contentType = "application/zip";
+                                final Time lastModified = Time.milliseconds( record.getTimeCreated() );
+                                resource = buildResourceStream( new Functions.NullaryThrows<InputStream,IOException>(){
+                                    @Override
+                                    public InputStream call() throws IOException {
+                                        return new ByteArrayInputStream( zip(record.serializeXml()) );
+                                    }
+                                }, contentType, lastModified );
+                            } else {
+                                String filename = getFilename();
+                                if ( filename.endsWith( ".pgp" ) ) filename = filename.substring( 0, filename.length()-4 );
+                                final String resourceFilename = filename;
+                                final String contentType = "application/octet-stream";
+                                final Time lastModified = Time.milliseconds( System.currentTimeMillis() );
+                                resource = buildResourceStream( new Functions.NullaryThrows<InputStream,IOException>(){
+                                    @Override
+                                    public InputStream call() throws IOException {
+                                        return new ByteArrayInputStream( encrypt( record.serializeXml(), resourceFilename, record.getTimeCreated(), parameters.getPassword() ) );
+                                    }
+                                }, contentType, lastModified );
+                            }
                         } else {
                             logger.warning("Migration artifact not found when accessing migration resource '"+id+"'.");
                             resource = new StringResourceStream( "" );
@@ -94,8 +120,6 @@ public class MigrationArtifactResource extends SecureResource {
                     } catch ( NumberFormatException nfe ) {
                         logger.warning("Invalid migration id when accessing migration resource '"+id+"'.");
                         resource = new StringResourceStream( "" );
-                    } catch ( IOException ioe ) {
-                        logger.log( Level.WARNING, "Error processing migration resource.", ioe );
                     } catch (FindException e) {
                         logger.log( Level.WARNING, "Error finding migration.", e );
                     }
@@ -115,13 +139,13 @@ public class MigrationArtifactResource extends SecureResource {
     protected String getFilename() {
         String name = null;
 
-        ValueMap parameters = getParameters();
-        if ( parameters.containsKey("migrationId") ) {
-            String id = parameters.getString("migrationId");
+        final MigrationArtifactParameters parameters = getResourceParameters();
+        if ( parameters.getMigrationId() != null ) {
+            final String id = parameters.getMigrationId();
 
             String label = null;
             long time = 0;
-            MigrationRecordManager manager = getMigrationRecordManager();
+            final MigrationRecordManager manager = getMigrationRecordManager();
             if ( manager != null ) {
                 try {
                     final MigrationRecord record = manager.findByPrimaryKey( Long.parseLong( id ) );
@@ -139,11 +163,12 @@ public class MigrationArtifactResource extends SecureResource {
                 }
             }
 
+            final String extension = parameters.getPassword() == null ? "zip" : "xml.pgp";
             if ( label == null ) {
-                name = "migration_" + id + ".zip";
+                name = "migration_" + id + "." + extension;
             } else {
                 SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
-                name = format.format( new Date(time) ) + "_" + label + ".zip";
+                name = format.format( new Date(time) ) + "_" + label + "." + extension;
             }
         }
 
@@ -195,6 +220,44 @@ public class MigrationArtifactResource extends SecureResource {
         return data;
     }
 
+    public static byte[] encrypt( final String data,
+                                  final String filename,
+                                  final long modified,
+                                  final String password ) throws IOException {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream( (int)(data.length() * 1.2) );
+        try {
+            PgpUtil.encrypt(
+                    new ByteArrayInputStream(data.getBytes( Charsets.UTF8 )),
+                    out,
+                    filename,
+                    modified,
+                    password.toCharArray(),
+                    false,
+                    true );
+        } catch ( PgpUtil.PgpException e ) {
+            throw new IOException( "Error encrypting archive", e );
+        }
+        return out.toByteArray();
+    }
+
+    public static byte[] decrypt( final InputStream inputStream,
+                                  final String password ) throws IOException {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream( 10000 );
+        try {
+            final PgpUtil.DecryptionMetadata metadata = PgpUtil.decrypt(
+                    inputStream,
+                    out,
+                    password.toCharArray() );
+
+            if ( !metadata.isIntegrityChecked() ) {
+                throw new IOException( "Error decrypting archive" );
+            }
+        } catch ( PgpUtil.PgpException e ) {
+            throw new IOException( "Error decrypting archive", e );
+        }
+        return out.toByteArray();
+    }
+
     //- PACKAGE
 
     static MigrationRecordManager getMigrationRecordManager() {
@@ -235,5 +298,54 @@ public class MigrationArtifactResource extends SecureResource {
         }
 
         return owner;
+    }
+
+    private MigrationArtifactParameters getResourceParameters() {
+        final ValueMap parameters = getParameters();
+
+        MigrationArtifactParameters resourceParameters = getResourceParameters( parameters.getString( "id" ), MigrationArtifactParameters.class );
+        if ( resourceParameters==null ) {
+            resourceParameters = new MigrationArtifactParameters(
+                    parameters.getString("disposition"),
+                    parameters.getString("migrationId"),
+                    null );
+        }
+
+        return resourceParameters;
+    }
+
+    private AbstractResourceStream buildResourceStream( final Functions.NullaryThrows<InputStream,IOException> streamCallback,
+                                                        final String contentType,
+                                                        final Time lastModified ) {
+        return new AbstractResourceStream(){
+            private InputStream in = null;
+
+            @Override
+            public String getContentType() {
+                return contentType;
+            }
+
+            @Override
+            public InputStream getInputStream() throws ResourceStreamNotFoundException {
+                if ( in == null ) {
+                    try {
+                        in = streamCallback.call();
+                    } catch ( IOException e ) {
+                        in = new IOExceptionThrowingInputStream( e );
+                    }
+                }
+                return in;
+            }
+
+            @Override
+            public void close() throws IOException {
+                ResourceUtils.closeQuietly( in );
+            }
+
+            @Override
+            public Time lastModifiedTime() {
+                return lastModified;
+            }
+        };
     }
 }

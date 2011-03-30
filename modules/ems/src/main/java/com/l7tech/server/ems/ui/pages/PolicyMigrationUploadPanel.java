@@ -9,6 +9,7 @@ import com.l7tech.util.Pair;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
@@ -62,8 +63,12 @@ public class PolicyMigrationUploadPanel extends Panel {
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
         final FileUploadField archive = new FileUploadField("archive", new Model<FileUpload>());
 
-        TextField<String> label = new TextField<String>("label");
+        final TextField<String> label = new TextField<String>("label");
         label.add( new StringValidator.LengthBetweenValidator(0, 32) );
+
+        final PasswordTextField password = new PasswordTextField("password");
+        password.setRequired( false );
+        password.add( new StringValidator.LengthBetweenValidator(0, 256) );
 
         final UploadFormModel model = new UploadFormModel();
         final Form<UploadFormModel> archiveForm = new YuiFileUploadForm<UploadFormModel>("archiveForm", new CompoundPropertyModel<UploadFormModel>(model)){
@@ -83,7 +88,9 @@ public class PolicyMigrationUploadPanel extends Panel {
                 try {
                     upload = archive.getFileUpload();
                     if ( upload != null ) {
-                        final byte[] data = MigrationArtifactResource.unzip( upload.getInputStream() );
+                        final byte[] data = model.getPassword()==null ?
+                                MigrationArtifactResource.unzip( upload.getInputStream() ) :
+                                MigrationArtifactResource.decrypt( upload.getInputStream(), model.getPassword() );
 
                         if ( data != null ) {
                             final Collection<SsgCluster> validClusters = clusterManager.findAll();
@@ -130,6 +137,7 @@ public class PolicyMigrationUploadPanel extends Panel {
         archiveForm.add( feedback.setOutputMarkupId(true) );
         archiveForm.add( label );
         archiveForm.add( archive );
+        archiveForm.add( password );
 
         add(archiveForm);
     }
@@ -214,6 +222,7 @@ public class PolicyMigrationUploadPanel extends Panel {
 
     private static final class UploadFormModel implements Serializable {
         private String label = "";
+        private String password;
 
         public String getLabel() {
             return label;
@@ -221,6 +230,14 @@ public class PolicyMigrationUploadPanel extends Panel {
 
         public void setLabel( final String label ) {
             this.label = label==null ? "" : label;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword( final String password ) {
+            this.password = password;
         }
     }
 }

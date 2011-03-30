@@ -1,7 +1,10 @@
 package com.l7tech.server.ems.ui;
 
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.util.Background;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.ValidationUtils;
+import org.apache.commons.collections.map.LRUMap;
 import org.apache.wicket.markup.html.WebResource;
 import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.resource.StringResourceStream;
@@ -9,6 +12,12 @@ import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.value.ValueMap;
 import org.apache.wicket.protocol.http.WebResponse;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimerTask;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -33,7 +42,7 @@ public abstract class SecureResource extends WebResource {
         } else {
             stream = getAccessDeniedStream();
         }
-        
+
         return stream;
     }
 
@@ -44,6 +53,37 @@ public abstract class SecureResource extends WebResource {
      */
     public static void setSecurityManager( final EsmSecurityManager securityManager ) {
         securityManagerRef.compareAndSet( null, securityManager );
+    }
+
+    /**
+     * Register parameters for a resource access.
+     *
+     * @param parameters The parameters to register
+     * @return The identifier for resource access.
+     */
+    public static String registerResourceParameters( final SecureResourceParameters parameters ) {
+        final String id = UUID.randomUUID().toString();
+        synchronized ( resourceLock ) {
+            resourceInfo.put( id, parameters );
+        }
+        return id;
+    }
+
+    public static class SecureResourceParameters {
+        private final long createdTime = System.currentTimeMillis();
+        private final String disposition;
+
+        protected SecureResourceParameters( final String disposition ) {
+            this.disposition = disposition;
+        }
+
+        public String getDisposition() {
+            return disposition;
+        }
+
+        private boolean isExpired() {
+            return createdTime + resourceParameterExpiryAge < System.currentTimeMillis();
+        }
     }
 
     //- PROTECTED
@@ -65,7 +105,11 @@ public abstract class SecureResource extends WebResource {
         String filename = processFilename(getFilename());
         if ( !Strings.isEmpty(filename) ) {
             ValueMap parameters = getParameters();
-            if ( "attachment".equals(parameters.getString("disposition") )) {
+
+            final SecureResourceParameters resourceParameters = getResourceParameters( parameters.getString( "id" ), SecureResourceParameters.class );
+
+            if ( (resourceParameters!=null && resourceParameters.getDisposition().equals( "attachment" )) ||
+                 (resourceParameters==null && "attachment".equals(parameters.getString("disposition")) )) {
                 webResponse.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
             } else {
                 // Bug 6123: remove the filename in the below header setting.
@@ -74,6 +118,21 @@ public abstract class SecureResource extends WebResource {
                 webResponse.setHeader("Content-Disposition", "inline;");
             }
         }
+    }
+
+    protected <T extends SecureResourceParameters> T getResourceParameters( final String id,
+                                                                            final Class<T> type ) {
+        T resourceParameters = null;
+
+        final Object parameters;
+        synchronized ( resourceLock ) {
+           parameters = resourceInfo.get( id );
+        }
+        if ( type.isInstance( parameters ) ) {
+            resourceParameters = (T) parameters;
+        }
+
+        return resourceParameters;
     }
 
     /**
@@ -126,6 +185,32 @@ public abstract class SecureResource extends WebResource {
 
     //- PRIVATE
 
-    private static AtomicReference<EsmSecurityManager> securityManagerRef = new AtomicReference<EsmSecurityManager>();
+    private static final AtomicReference<EsmSecurityManager> securityManagerRef = new AtomicReference<EsmSecurityManager>();
+    private static final Map resourceInfo = new LRUMap();
+    private static final Object resourceLock = new Object();
+    private static final long resourceParameterExpiryAge = SyspropUtil.getLong( "com.l7tech.server.ems.resourceParameterExpiryAge", 60000L );
+
     private final AttemptedOperation attemptedOperation;
+
+    static {
+        Background.scheduleRepeated( new TimerTask(){
+            @Override
+            public void run() {
+                expireResourceParameters();
+            }
+        }, 23417, 23417 );
+    }
+
+    private static void expireResourceParameters() {
+        synchronized ( resourceLock ) {
+            final Collection<String> expiredIds = new ArrayList<String>();
+            for ( final Map.Entry<String,SecureResourceParameters> entry : (Set<Map.Entry<String,SecureResourceParameters>>)resourceInfo.entrySet() ) {
+                final SecureResourceParameters parameters = entry.getValue();
+                if ( parameters.isExpired() ) {
+                    expiredIds.add( entry.getKey() );
+                }
+            }
+            for ( final String id : expiredIds ) resourceInfo.remove( id );
+        }
+    }
 }

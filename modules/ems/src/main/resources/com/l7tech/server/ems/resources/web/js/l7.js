@@ -1349,6 +1349,46 @@ if (!l7.Dialog) {
         };
 
         /**
+         * Shows the busy dialog.
+         *
+         * @public
+         * @static
+         */
+        l7.Dialog.showBusyDialog = function( element ) {
+            if ( l7.Dialog._busyDialog == undefined ) {
+                /**
+                 * @private
+                 */
+                l7.Dialog._busyDialog = new YAHOO.widget.Panel( 'l7_Dialog_busyDialog', {
+                    close       : false,
+                    draggable   : false,
+                    visible     : false,
+                    zindex      : 999
+                } );
+                l7.Dialog._busyDialog.setBody( '<div class="center"><img src="../images/busy16.gif" /></div>' );
+            }
+            l7.Dialog._busyDialog.render( document.body );
+            if ( element != undefined && element != null ) {
+                var x = YAHOO.util.Dom.getX( element ) + 30;
+                var y = YAHOO.util.Dom.getY( element );
+                l7.Dialog._busyDialog.moveTo( x, y );
+            } else {
+                l7.Dialog._busyDialog.moveTo( 10, 10 );
+            }
+            l7.Dialog._busyDialog.show();
+        };
+
+        /**
+         * Hides the busy dialog.
+         *
+         * @public
+         * @static
+         */
+        l7.Dialog.hideBusyDialog = function() {
+            l7.Dialog._busyDialog.hide();
+        };
+
+        /**
          * Displays a simple error dialog.
          *
          * @param {string} header   localized header text; defaults to 'Error' if null
