@@ -232,31 +232,31 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN) > upperCount )
             throw new InvalidPasswordException(
-                    MessageFormat.format("Unable to change your password. The new password must contain at least {0} upper case characters",
+                    MessageFormat.format("Password must contain at least {0} upper case characters",
                                          policy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN)),policy.getDescription());
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN) > lowerCount )
             throw new InvalidPasswordException(
-                    MessageFormat.format("Unable to change your password. The new password must contain at least {0} lower case characters",
+                    MessageFormat.format("Password must contain at least {0} lower case characters",
                                          policy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN)),policy.getDescription());
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN) > digitCount )
             throw new InvalidPasswordException(
-                    MessageFormat.format("Unable to change your password. The new password must contain at least {0} numbers",
+                    MessageFormat.format("Password must contain at least {0} numbers",
                                          policy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN)),policy.getDescription());
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN) > specialCharacterCount )
             throw new InvalidPasswordException(
-                    MessageFormat.format("Unable to change your password. The new password must contain at least {0} special characters",
+                    MessageFormat.format("Password must contain at least {0} special characters",
                                          policy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN)),policy.getDescription());
 
         if (policy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN) > (upperCount+lowerCount+specialCharacterCount) )
             throw new InvalidPasswordException(
-                    MessageFormat.format("Unable to change your password. The new password must contain at least {0} non-numeric characters",
+                    MessageFormat.format("Password must contain at least {0} non-numeric characters",
                                          policy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN)),policy.getDescription());
 
         if ( policy.getBooleanProperty(IdentityProviderPasswordPolicy.NO_REPEAT_CHARS) && hasRepeatChar )
-            throw new InvalidPasswordException("Unable to change your password. The new password contains consecutive repeating characters",policy.getDescription());
+            throw new InvalidPasswordException("Password contains consecutive repeating characters",policy.getDescription());
     }
 
     /**
