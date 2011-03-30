@@ -50,4 +50,13 @@ public interface PolicyManager extends FolderedEntityManager<Policy, PolicyHeade
     Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types) throws FindException;
 
     Collection<PolicyHeader> findHeadersWithTypes(Set<PolicyType> types, boolean includeAliases) throws FindException;
+
+    /**
+     * See {@link com.l7tech.gateway.common.admin.PolicyAdmin#getDefaultPolicyXml(com.l7tech.policy.PolicyType, String)}
+     *
+     * @param type type of policy
+     * @param internalTag tag of policy
+     * @return default policy xml
+     */ 
+    String getDefaultPolicyXml(PolicyType type, String internalTag);
 }

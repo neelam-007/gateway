@@ -190,6 +190,11 @@ public class VersioningPolicyManager implements PolicyManager {
         policyManager.deleteRoles( entityOid );
     }
 
+    @Override
+    public String getDefaultPolicyXml(PolicyType type, String internalTag) {
+        return policyManager.getDefaultPolicyXml(type, internalTag);
+    }
+
     //- PRIVATE
 
     private final PolicyManager policyManager;

@@ -545,90 +545,10 @@ public class PolicyAdminImpl implements PolicyAdmin {
     @Override
     public String getDefaultPolicyXml(PolicyType type, String internalTag) {
 
-        if(type == PolicyType.INTERNAL){
-            if( PolicyType.TAG_AUDIT_MESSAGE_FILTER.equals(internalTag)){
-                return getAuditMessageFilterDefaultPolicy();
-            } else if (PolicyType.TAG_AUDIT_VIEWER.equals(internalTag)){
-                return getAuditViewerDefaultPolicy();
-            }
+        if(type == null || internalTag == null || internalTag.trim().isEmpty()){
+            throw new IllegalArgumentException("type cannot be null. internalTag cannot be null or empty.");
         }
-
-        return null;
-    }
-
-    private String getAuditMessageFilterDefaultPolicy(){
-        //By using XML, which should always be backwards compatible, we don't need to add dependencies for
-        //modular assertions
-        //TODO Look up the Audit Viewer Private Key's cert and configure the encrypt XML element to use it.
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "    <wsp:All wsp:Usage=\"Required\">\n" +
-                "        <L7p:EncodeDecode>\n" +
-                "            <L7p:SourceVariableName stringValue=\"request.mainpart\"/>\n" +
-                "            <L7p:TargetContentType stringValue=\"text/xml; charset=utf-8\"/>\n" +
-                "            <L7p:TargetDataType variableDataType=\"message\"/>\n" +
-                "            <L7p:TargetVariableName stringValue=\"request\"/>\n" +
-                "            <L7p:TransformType transformType=\"BASE64_ENCODE\"/>\n" +
-                "        </L7p:EncodeDecode>\n" +
-                "        <L7p:SetVariable>\n" +
-                "            <L7p:Base64Expression stringValue=\"PHNhdmVkbWVzc2FnZSB4bWxucz0iaHR0cDovL2xheWVyN3RlY2guY29tL25zL2F1ZGl0Ij4NCiR7cmVxdWVzdC5tYWlucGFydH0NCjwvc2F2ZWRtZXNzYWdlPg==\"/>\n" +
-                "            <L7p:ContentType stringValue=\"text/xml; charset=utf-8\"/>\n" +
-                "            <L7p:DataType variableDataType=\"message\"/>\n" +
-                "            <L7p:VariableToSet stringValue=\"request\"/>\n" +
-                "        </L7p:SetVariable>\n" +
-                "        <L7p:CommentAssertion>\n" +
-                "            <L7p:Comment stringValue=\"Configure cert to use here. Should match the Audit Viewer Private Key if defined.\"/>\n" +
-                "        </L7p:CommentAssertion>\n" +
-                "        <L7p:NonSoapEncryptElement>\n" +
-                "            <L7p:Target target=\"REQUEST\"/>\n" +
-                "            <L7p:XpathExpression xpathExpressionValue=\"included\">\n" +
-                "                <L7p:Expression stringValue=\"//*\"/>\n" +
-                "                <L7p:Namespaces mapValue=\"included\">\n" +
-                "                    <L7p:entry>\n" +
-                "                        <L7p:key stringValue=\"xenc\"/>\n" +
-                "                        <L7p:value stringValue=\"http://www.w3.org/2001/04/xmlenc#\"/>\n" +
-                "                    </L7p:entry>\n" +
-                "                    <L7p:entry>\n" +
-                "                        <L7p:key stringValue=\"ds\"/>\n" +
-                "                        <L7p:value stringValue=\"http://www.w3.org/2000/09/xmldsig#\"/>\n" +
-                "                    </L7p:entry>\n" +
-                "                </L7p:Namespaces>\n" +
-                "            </L7p:XpathExpression>\n" +
-                "        </L7p:NonSoapEncryptElement>\n" +
-                "    </wsp:All>\n" +
-                "</wsp:Policy>";
-    }
-
-    private String getAuditViewerDefaultPolicy(){
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "    <wsp:All wsp:Usage=\"Required\">\n" +
-                "        <L7p:NonSoapDecryptElement/>\n" +
-                "        <L7p:RequestXpathAssertion>\n" +
-                "            <L7p:VariablePrefix stringValue=\"output\"/>\n" +
-                "            <L7p:XpathExpression xpathExpressionValue=\"included\">\n" +
-                "                <L7p:Expression stringValue=\"/ns:savedmessage\"/>\n" +
-                "                <L7p:Namespaces mapValue=\"included\">\n" +
-                "                    <L7p:entry>\n" +
-                "                        <L7p:key stringValue=\"ns\"/>\n" +
-                "                        <L7p:value stringValue=\"http://layer7tech.com/ns/audit\"/>\n" +
-                "                    </L7p:entry>\n" +
-                "                    <L7p:entry>\n" +
-                "                        <L7p:key stringValue=\"s\"/>\n" +
-                "                        <L7p:value stringValue=\"http://schemas.xmlsoap.org/soap/envelope/\"/>\n" +
-                "                    </L7p:entry>\n" +
-                "                </L7p:Namespaces>\n" +
-                "            </L7p:XpathExpression>\n" +
-                "        </L7p:RequestXpathAssertion>\n" +
-                "        <L7p:EncodeDecode>\n" +
-                "            <L7p:CharacterEncoding stringValueNull=\"null\"/>\n" +
-                "            <L7p:SourceVariableName stringValue=\"output.result\"/>\n" +
-                "            <L7p:TargetContentType stringValue=\"text/xml; charset=utf-8\"/>\n" +
-                "            <L7p:TargetDataType variableDataType=\"message\"/>\n" +
-                "            <L7p:TargetVariableName stringValue=\"request\"/>\n" +
-                "            <L7p:TransformType transformType=\"BASE64_DECODE\"/>\n" +
-                "        </L7p:EncodeDecode>\n" +
-                "    </wsp:All>\n" +
-                "</wsp:Policy>";
+        
+        return policyManager.getDefaultPolicyXml(type, internalTag);
     }
 }
