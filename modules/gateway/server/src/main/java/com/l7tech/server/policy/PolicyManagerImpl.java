@@ -394,49 +394,51 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
         return UniqueType.OTHER;
     }
 
+    /**
+     * Choose between the default xml and the fallback xml.
+     * <p/>
+     * Protected visibility for test cases.
+     *
+     * @param defaultXml        desired default xml. Validated to be valid.
+     * @param fallbackXml       fallback xml, not validated.
+     * @param policyInternalTag internal tag string used for logging warning.
+     * @return defaultXml if it contains no unlicensed assertions and is valid policy XML, otherwise the fallbackXml.
+     */
+    protected String getDefaultXmlBasedOnLicense(final String defaultXml,
+                                                 final String fallbackXml,
+                                                 final String policyInternalTag) {
+        try {
+            final Assertion assertion = WspReader.getDefault().parsePermissively(
+                    defaultXml, WspReader.INCLUDE_DISABLED);
+
+            if (assertion instanceof CompositeAssertion) {
+                CompositeAssertion root = (CompositeAssertion) assertion;
+                final boolean defaultContainsUnlicensedAssertion = xmlContainsUnlicensedAssertion(root);
+                if (defaultContainsUnlicensedAssertion) {
+                    return fallbackXml;
+                }
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Could not parse default " + policyInternalTag + " policy xml.");
+            //should not happen
+            //fall through
+        }
+
+        return defaultXml;
+    }
+
     private String getAuditMessageFilterDefaultPolicy(){
         //By using XML, which should always be backwards compatible, we don't need to add dependencies for
         //modular assertions
         //TODO Look up the Audit Viewer Private Key's cert and configure the encrypt XML element to use it.
 
-        try {
-            final Assertion assertion = WspReader.getDefault().parsePermissively(
-                    DEFAULT_AUDIT_MESSAGE_FILTER_POLICY_XML, WspReader.INCLUDE_DISABLED);
-
-            if(assertion instanceof CompositeAssertion){
-                CompositeAssertion root = (CompositeAssertion) assertion;
-                final boolean allAssertionsLicensed = xmlContainsUnlicensedAssertion(root);
-                if(allAssertionsLicensed){
-                    return DEFAULT_AUDIT_MESSAGE_FILTER_POLICY_XML;
-                }
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Could not parse default " + PolicyType.TAG_AUDIT_MESSAGE_FILTER+" policy xml.");
-            //should not happen
-            //fall through
-        }
-
-        return BACKUP_AUDIT_MESSAGE_FILTER_POLICY_XML;
+        return getDefaultXmlBasedOnLicense(DEFAULT_AUDIT_MESSAGE_FILTER_POLICY_XML,
+                FALLBACK_AUDIT_MESSAGE_FILTER_POLICY_XML, PolicyType.TAG_AUDIT_MESSAGE_FILTER);
     }
 
     private String getAuditViewerDefaultPolicy(){
-        try {
-            final Assertion assertion = WspReader.getDefault().parsePermissively(
-                    DEFAULT_AUDIT_VIEWER_POLICY_XML, WspReader.INCLUDE_DISABLED);
-
-            if(assertion instanceof CompositeAssertion){
-                CompositeAssertion root = (CompositeAssertion) assertion;
-                final boolean allAssertionsLicensed = xmlContainsUnlicensedAssertion(root);
-                if(allAssertionsLicensed){
-                    return DEFAULT_AUDIT_VIEWER_POLICY_XML;
-                }
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Could not parse default " + PolicyType.TAG_AUDIT_VIEWER + " policy xml.");
-            //should not happen
-            //fall through
-        }
-        return BACKUP_AUDIT_VIEWER_POLICY_XML;
+        return getDefaultXmlBasedOnLicense(DEFAULT_AUDIT_VIEWER_POLICY_XML,
+                FALLBACK_AUDIT_VIEWER_POLICY_XML, PolicyType.TAG_AUDIT_VIEWER);
 
     }
 
@@ -446,20 +448,31 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
 
         for (Assertion kid : kids) {
             if(kid instanceof CompositeAssertion){
-                return xmlContainsUnlicensedAssertion((CompositeAssertion) kid);
+                if(xmlContainsUnlicensedAssertion((CompositeAssertion) kid)){
+                    return true;
+                }
             }
             final String featureSetName = kid.getFeatureSetName();
             if(!licenseManager.isFeatureEnabled(featureSetName)){
-                return false;
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
+    private static final String AMF_COMMENT_FRAGMENT = 
+            "        <L7p:CommentAssertion>\n" +
+            "            <L7p:Comment stringValue=\"// Add policy logic to scrub / protect the request or response messages before they are audited.\"/>\n" +
+            "        </L7p:CommentAssertion>\n" +
+            "        <L7p:CommentAssertion>\n" +
+            "            <L7p:Comment stringValue=\"// Policy is invoked by the audit sub system post service and global policy processing.\"/>\n" +
+            "        </L7p:CommentAssertion>\n";
+    
     public static final String DEFAULT_AUDIT_MESSAGE_FILTER_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
+            AMF_COMMENT_FRAGMENT +            
             "        <L7p:EncodeDecode>\n" +
             "            <L7p:SourceVariableName stringValue=\"request.mainpart\"/>\n" +
             "            <L7p:TargetContentType stringValue=\"text/xml; charset=utf-8\"/>\n" +
@@ -495,18 +508,25 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
             "    </wsp:All>\n" +
             "</wsp:Policy>";
 
-    public static final String BACKUP_AUDIT_MESSAGE_FILTER_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+    public static final String FALLBACK_AUDIT_MESSAGE_FILTER_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
-            "        <L7p:CommentAssertion>\n" +
-            "            <L7p:Comment stringValue=\"//audit-message-filter policy\"/>\n" +
-            "        </L7p:CommentAssertion>\n" +
+            AMF_COMMENT_FRAGMENT +
             "    </wsp:All>\n" +
             "</wsp:Policy>";
+
+    private static final String AV_COMMENT_FRAGMENT =
+            "        <L7p:CommentAssertion>\n" +
+            "            <L7p:Comment stringValue=\"// Add logic to transform audited messages and details.\"/>\n" +
+            "        </L7p:CommentAssertion>\n" +
+            "        <L7p:CommentAssertion>\n" +
+            "            <L7p:Comment stringValue=\"// Policy is invoked from the audit viewer.\"/>\n" +
+            "        </L7p:CommentAssertion>\n";
 
     public static final String DEFAULT_AUDIT_VIEWER_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
+            AV_COMMENT_FRAGMENT +
             "        <L7p:NonSoapDecryptElement/>\n" +
             "        <L7p:RequestXpathAssertion>\n" +
             "            <L7p:VariablePrefix stringValue=\"output\"/>\n" +
@@ -535,12 +555,10 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
             "    </wsp:All>\n" +
             "</wsp:Policy>";
 
-    public static final String BACKUP_AUDIT_VIEWER_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+    public static final String FALLBACK_AUDIT_VIEWER_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
-            "        <L7p:CommentAssertion>\n" +
-            "            <L7p:Comment stringValue=\"//audit-viewer policy\"/>\n" +
-            "        </L7p:CommentAssertion>\n" +
+            AV_COMMENT_FRAGMENT +
             "    </wsp:All>\n" +
             "</wsp:Policy>";
 
