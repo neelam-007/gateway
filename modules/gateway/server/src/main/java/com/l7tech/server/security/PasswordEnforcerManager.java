@@ -209,7 +209,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
 
         int maxLength =  policy.getIntegerProperty(IdentityProviderPasswordPolicy.MAX_PASSWORD_LENGTH);
         if( ( maxLength>0 && newPassword.length() > maxLength))
-            throw new InvalidPasswordException(MessageFormat.format("Password must be less then or equal to {1} characters in length", maxLength),policy.getDescription());
+            throw new InvalidPasswordException(MessageFormat.format("Password must be less then or equal to {0} characters in length", maxLength),policy.getDescription());
 
         //you could use one regular expression to do the work
         final char[] pass = newPassword.toCharArray();
