@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
@@ -116,6 +117,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JCheckBox setRequestLimitCheckBox;
     private JTextField requestLimitTextField;
     private JLabel requestLimitLabel;
+    private JCheckBox showJndiPasswordCheckBox;
+    private JCheckBox showQueuePasswordCheckBox;
+    private JLabel jndiPasswordWarningLabel;
+    private JLabel queuePasswordWarningLabel;
 
 
     private JmsConnection connection = null;
@@ -315,11 +320,13 @@ public class JmsQueuePropertiesDialog extends JDialog {
         jndiUrlTextField.setDocument(new MaxLengthDocument(255));
         jndiUsernameTextField.setDocument(new MaxLengthDocument(1024));
         jndiPasswordField.setDocument(new MaxLengthDocument(255));
+        PasswordGuiUtils.configureOptionalSecurePasswordField(jndiPasswordField, showJndiPasswordCheckBox, jndiPasswordWarningLabel);
         // Case 2: in the Destination Tab
         qcfTextField.setDocument(new MaxLengthDocument(255));
         queueNameTextField.setDocument(new MaxLengthDocument(128));
         queueUsernameTextField.setDocument(new MaxLengthDocument(255));
         queuePasswordField.setDocument(new MaxLengthDocument(255));
+        PasswordGuiUtils.configureOptionalSecurePasswordField(queuePasswordField, showQueuePasswordCheckBox, queuePasswordWarningLabel);
         // Case 3: in the Inbound or Outbound Options Tab
         inboundReplySpecifiedQueueField.setDocument(new MaxLengthDocument(128));
         failureQueueNameTextField.setDocument(new MaxLengthDocument(128));

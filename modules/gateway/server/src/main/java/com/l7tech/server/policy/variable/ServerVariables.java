@@ -1000,7 +1000,65 @@ public class ServerVariables {
             audit.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Password-only context variable expression had invalid syntax; assuming literal password"); // Avoid logging complete exception in case it contains password material
             return template;
         } catch (ParseException e) {
-            throw new FindException("Password-only context variable expression referred to secure password that could not be decrypted"); // avoid chaining parse exception in case it contains password material, as callers are quite likely to just dump it into the log if we do
+            // avoid chaining parse exception in case it contains password material, as callers are quite likely to just dump it into the log if we do
+            // to allow debugging we will log it if debug exceptions are enabled and the log level for this class is elevated
+            final String msg = "Password-only context variable expression referred to secure password that could not be decrypted";
+            //noinspection ThrowableResultOfMethodCallIgnored
+            logger.log(Level.FINER, msg, ExceptionUtils.getDebugException(e));
+            throw new FindException(msg);
+        }
+    }
+
+    private static final Pattern SINGLE_SECPASS_PATTERN = Pattern.compile("^\\$\\{secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext\\}$");
+
+    /**
+     * Utility method to recognize a password that is actually a single ${secpass.*.plaintext} reference.
+     *
+     * @param audit auditor to use for logging.  Required.
+     * @param passwordOrSecPass a string to examine.  If null or empty or does not strictly match the format of a single ${secpass.*.plaintext} reference then this method will return the original argument unchanged.
+     * @return the corresponding secure password plaintext, if the input was a secpass reference; otherwise, the input unchanged.  May be null only if the input is null.
+     * @throws FindException if there is an error looking up a secure password instance.
+     */
+    public static String expandSinglePasswordOnlyVariable(Audit audit, String passwordOrSecPass) throws FindException {
+        // TODO rewrite all entities that refer to passwords so that they use SecurePassword foreign key references, then remove this hacky method and its ridiculous regex
+        // TODO or at least move this to somewhere more appropriate
+        if (passwordOrSecPass == null)
+            return null;
+        Matcher matcher = SINGLE_SECPASS_PATTERN.matcher(passwordOrSecPass);
+        if (!matcher.matches()) {
+            // Assume it is a literal password
+            return passwordOrSecPass;
+        }
+
+        if (securePasswordManager == null) {
+            // Probably running test code or something
+            audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Password-only context variable expression cannot be expanded because a secure password manager is not available; assuming literal password");
+            return passwordOrSecPass;
+        }
+
+        String alias = matcher.group(1);
+        assert alias != null; // enforced by regex
+        assert alias.length() > 0; // enforced by regex
+        SecurePassword secpass = findSecurePasswordByName(alias);
+        if (secpass == null) {
+            audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Password-only context variable expression referred to a nonexistent secure password alias; assuming literal password"); // avoid logging possible password material
+            return passwordOrSecPass;
+        }
+        try {
+            char[] plaintext = getPlaintextPassword(secpass);
+            if (plaintext == null) {
+                audit.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Password-only context variable expression referred to a secure password with an empty password; using empty string as password");
+                return "";
+            } else {
+                return new String(plaintext);
+            }
+        } catch (ParseException e) {
+            // avoid chaining parse exception in case it contains password material, as callers are quite likely to just dump it into the log if we do
+            // to allow debugging we will log it if debug exceptions are enabled and the log level for this class is elevated
+            final String msg = "Password-only context variable expression referred to secure password that could not be decrypted";
+            //noinspection ThrowableResultOfMethodCallIgnored
+            logger.log(Level.FINER, msg, ExceptionUtils.getDebugException(e));
+            throw new FindException(msg);
         }
     }
 

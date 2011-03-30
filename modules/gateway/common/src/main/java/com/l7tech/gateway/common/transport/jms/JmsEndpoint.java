@@ -6,22 +6,18 @@
 
 package com.l7tech.gateway.common.transport.jms;
 
+import com.l7tech.gateway.common.security.password.SecurePasswordReferenceExpander;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import org.hibernate.annotations.Proxy;
 
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-import javax.persistence.Column;
-import javax.persistence.Enumerated;
-import javax.persistence.EnumType;
 import java.io.Serializable;
 import java.net.PasswordAuthentication;
-
-import org.hibernate.annotations.Proxy;
 
 /**
  * A reference to a preconfigured JMS Destination (i.e. a Queue or Topic).
@@ -82,11 +78,15 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
 
     /**
      * May be null.
+     *
+     * @param securePasswordReferenceExpander reference expander for looking up secure password references.  Required.
+     * @return a PasswordAuthentication for the JMS endpoint, or null.
+     * @throws FindException if there is an error looking up a secure password instance.
      */
     @Transient
-    public PasswordAuthentication getPasswordAuthentication() {
+    public PasswordAuthentication getPasswordAuthentication(SecurePasswordReferenceExpander securePasswordReferenceExpander) throws FindException {
         return _username != null && _password != null
-               ? new PasswordAuthentication( _username, _password.toCharArray() )
+               ? new PasswordAuthentication( _username, securePasswordReferenceExpander.expandPasswordReference(_password) )
                : null;
     }
 

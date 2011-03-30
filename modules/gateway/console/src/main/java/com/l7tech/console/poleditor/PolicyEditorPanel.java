@@ -16,10 +16,7 @@ import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
 import com.l7tech.console.tree.policy.*;
-import com.l7tech.console.util.ConsoleLicenseManager;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.SsmPreferences;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -76,7 +73,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 public class PolicyEditorPanel extends JPanel implements VetoableContainerListener {
     static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
@@ -885,8 +881,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
 
-    public static final Pattern SECPASS_PATTERN = Pattern.compile("^\\$\\{secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext$\\}");
-
     /**
      * @return the policy xml that was validated, or null if validation canceled
      */
@@ -911,7 +905,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                         Object target = tr.target;
                         if (target instanceof CharSequence) {
                             final CharSequence cs = (CharSequence) target;
-                            if (cs.length() > 0 && !SECPASS_PATTERN.matcher(cs).matches()) {
+                            if (cs.length() > 0 && !PasswordGuiUtils.SECPASS_VAR_PATTERN.matcher(cs).matches()) {
                                 String getterName = getter.getName();
                                 if (getterName.startsWith("get") && getterName.length() > 3)
                                     getterName = getterName.substring(3);

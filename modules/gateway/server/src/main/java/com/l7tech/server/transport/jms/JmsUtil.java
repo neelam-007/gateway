@@ -1,23 +1,16 @@
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
+import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 
 import javax.jms.*;
-import javax.naming.CommunicationException;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.InsufficientResourcesException;
-import javax.naming.InvalidNameException;
-import javax.naming.LimitExceededException;
-import javax.naming.NameNotFoundException;
-import javax.naming.NamingException;
-import javax.naming.NamingSecurityException;
-import javax.naming.NoInitialContextException;
-import javax.naming.Reference;
-import javax.naming.ServiceUnavailableException;
+import javax.naming.*;
 import javax.rmi.PortableRemoteObject;
 import java.net.PasswordAuthentication;
 import java.net.SocketException;
@@ -97,7 +90,11 @@ public class JmsUtil {
 
         if ( username == null || password == null ) {
             username = connection.getUsername();
-            password = connection.getPassword();
+            try {
+                password = ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(logger), connection.getPassword());
+            } catch (FindException e) {
+                throw new JmsConfigException("Unable to retrieve JMS connection password: " + ExceptionUtils.getMessage(e), e);
+            }
         }
 
         username = "\"\"".equals(username) ? "" : username;
@@ -238,14 +235,18 @@ public class JmsUtil {
     public static JmsBag connect( final JmsEndpointConfig endpointCfg )
         throws JmsConfigException, JMSException, NamingException
     {
-        return connect(
-                endpointCfg.getConnection(),
-                endpointCfg.getEndpoint().getPasswordAuthentication(),
-                endpointCfg.getPropertyMapper(),
-                false,
-                endpointCfg.isQueue(),
-                false,
-                Session.CLIENT_ACKNOWLEDGE);
+        try {
+            return connect(
+                    endpointCfg.getConnection(),
+                    endpointCfg.getEndpoint().getPasswordAuthentication(new GatewaySecurePasswordReferenceExpander(new LogOnlyAuditor(logger))),
+                    endpointCfg.getPropertyMapper(),
+                    false,
+                    endpointCfg.isQueue(),
+                    false,
+                    Session.CLIENT_ACKNOWLEDGE);
+        } catch (FindException e) {
+            throw new JmsConfigException("Unable to retrieve JMS endpoint password: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     public static JmsBag connect( final JmsEndpointConfig endpointCfg,
@@ -253,14 +254,18 @@ public class JmsUtil {
                                   final int acknowledgementMode )
         throws JmsConfigException, JMSException, NamingException
     {
-        return connect(
-                endpointCfg.getConnection(),
-                endpointCfg.getEndpoint().getPasswordAuthentication(),
-                endpointCfg.getPropertyMapper(),
-                true,
-                endpointCfg.isQueue(),
-                transactional,
-                acknowledgementMode);
+        try {
+            return connect(
+                    endpointCfg.getConnection(),
+                    endpointCfg.getEndpoint().getPasswordAuthentication(new GatewaySecurePasswordReferenceExpander(new LogOnlyAuditor(logger))),
+                    endpointCfg.getPropertyMapper(),
+                    true,
+                    endpointCfg.isQueue(),
+                    transactional,
+                    acknowledgementMode);
+        } catch (FindException e) {
+            throw new JmsConfigException("Unable to retrieve JMS endpoint password: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     private static void logit( Throwable t ) {
