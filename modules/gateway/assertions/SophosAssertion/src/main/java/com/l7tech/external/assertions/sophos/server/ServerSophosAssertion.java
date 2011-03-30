@@ -95,8 +95,8 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
                                           final AuthenticationContext authContext)
     throws IOException, PolicyAssertionException
     {
+        SsspClient client = null;
         try {
-                SsspClient client = null;
                 for(int i = 0;i < ServerConfig.getInstance().getIntProperty(SophosAssertion.PARAM_SOPHOS_FAILOVER_RETRIES, 5);i++) {
                     String hostPort = failoverStrategy.selectService();
                     String host = hostPort.substring(0, hostPort.lastIndexOf(':'));
@@ -164,6 +164,10 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
                 }
         } catch(NoSuchPartException nspe) {
                 // Skip to the next part
+        } finally {
+            if (client != null){
+                client.close();
+            }
         }
         
         return AssertionStatus.NONE;

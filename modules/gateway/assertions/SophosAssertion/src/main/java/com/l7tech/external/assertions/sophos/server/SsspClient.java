@@ -76,7 +76,7 @@ public class SsspClient {
 
         try {
             String r = reader.readLine(); //Access Message "OK SSSP/1.0" read
-            if(!r.equals("OK SSSP/1.0")) {
+            if(!("OK SSSP/1.0").equals(r)) {
                 throw new IOException("Unexpected SAVI server greeting.");
             }
 
