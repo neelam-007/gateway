@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.cluster.*;
 import com.l7tech.gateway.common.security.rbac.AttemptedOther;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.util.BuildInfo;
 import static com.l7tech.gateway.common.Component.fromId;
 import com.l7tech.gateway.common.audit.*;
@@ -1429,8 +1430,10 @@ public class LogPanel extends JPanel {
                         String output = getAVPolicyOutput();
                         if(output != null){
                             getRequestXmlTextArea().setText(output);
-                            getRequestXmlTextArea().setCaretPosition(0);
+                        } else {
+                            getRequestXmlTextArea().setText("Error processing " + PolicyType.TAG_AUDIT_VIEWER + " policy.");
                         }
+                        getRequestXmlTextArea().setCaretPosition(0);
                     }
                 });
             } 
@@ -1487,8 +1490,10 @@ public class LogPanel extends JPanel {
                         String output = getAVPolicyOutput();
                         if(output != null){
                             getResponseXmlTextArea().setText(output);
-                            getResponseXmlTextArea().setCaretPosition(0);
+                        } else {
+                            getResponseXmlTextArea().setText("Error processing " + PolicyType.TAG_AUDIT_VIEWER + " policy.");
                         }
+                        getRequestXmlTextArea().setCaretPosition(0);
                     }
                 });
             } 

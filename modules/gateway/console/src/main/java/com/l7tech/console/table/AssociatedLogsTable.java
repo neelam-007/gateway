@@ -11,6 +11,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 
@@ -336,8 +337,10 @@ public class AssociatedLogsTable extends JTable {
                             String output = getAVPolicyOutput(associatedLog.getAuditRecordId(), associatedLog.getOrdinal());
                             if (output != null) {
                                 detailTextArea.setText(output);
-                                detailTextArea.setCaretPosition(0);
+                            } else {
+                                detailTextArea.setText("Error processing " + PolicyType.TAG_AUDIT_VIEWER+" policy.");
                             }
+                            detailTextArea.setCaretPosition(0);
                         }
                     }
                 }

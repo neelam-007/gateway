@@ -475,7 +475,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
             try {
                 return auditFilterPolicyManager.evaluateAuditViewerPolicy(messageXml, isRequest);
-            } catch (Exception e) {
+            } catch (AuditFilterPolicyManager.AuditViewerPolicyException e) {
                 final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
                 auditMessages.add(new Pair<Level, String>(
                         SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getLevel(),
@@ -528,7 +528,6 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                     return auditFilterPolicyManager.evaluateAuditViewerPolicy(params[0], null);
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e));
-
                 }
             }
         }
