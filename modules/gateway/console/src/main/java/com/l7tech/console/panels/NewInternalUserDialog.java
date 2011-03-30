@@ -64,7 +64,8 @@ public class NewInternalUserDialog extends JDialog {
     private JButton cancelButton;
     private JPanel contentPanel;
 
-    //private JCheckBox forceChangePassword;
+    /* the user instance */
+    private final UserBean user;
 
     /**
      * Create a new NewInternalUserDialog fdialog for a given Company
@@ -73,6 +74,7 @@ public class NewInternalUserDialog extends JDialog {
      */
     public NewInternalUserDialog(Frame parent) {
         super(parent, true);
+        this.user = new UserBean();
         initResources();
         initComponents();
         pack();
@@ -290,7 +292,6 @@ public class NewInternalUserDialog extends JDialog {
         final String name = idTextField.getText().trim();
         final String password = new String(passwordField.getPassword());
 
-        UserBean user = new UserBean();
         user.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         user.setName( name );
         user.setLogin( name );
@@ -343,8 +344,8 @@ public class NewInternalUserDialog extends JDialog {
                             public void run() {
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.USER);
-                                header.setName(name);
-                                header.setStrId(name);
+                                header.setName(user.getName());
+                                header.setStrId(user.getId());
                                 GenericUserPropertiesAction ua =
                                   new GenericUserPropertiesAction((UserNode)TreeNodeFactory.asTreeNode(header, null));
                                 // only internal provider currently
