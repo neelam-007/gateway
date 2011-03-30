@@ -36,7 +36,7 @@ public class GetIpPortDialog extends JDialog {
 
         hostField.setText((host == null) ? "" : host);
 
-        portSpinner.setModel(new SpinnerNumberModel(port, 0, 32767, 1));
+        portSpinner.setModel(new SpinnerNumberModel(port, 0, 65535, 1));
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
