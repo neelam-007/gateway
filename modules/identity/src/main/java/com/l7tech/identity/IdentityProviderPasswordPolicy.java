@@ -146,7 +146,7 @@ public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
         StringBuilder desc = new StringBuilder();
         desc.append("<html><body>Password changes must comply all of the following:<ul>");
         if (getIntegerProperty(MIN_PASSWORD_LENGTH)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} characters",(Integer)properties.get(MIN_PASSWORD_LENGTH))); desc.append("</li>");}
-        if (getIntegerProperty(MAX_PASSWORD_LENGTH)>0){desc.append("<li>"); desc.append(MessageFormat.format("less then {0} characters",(Integer)properties.get(MAX_PASSWORD_LENGTH))); desc.append("</li>");}
+        if (getIntegerProperty(MAX_PASSWORD_LENGTH)>0){desc.append("<li>"); desc.append(MessageFormat.format("less than {0} characters",(Integer)properties.get(MAX_PASSWORD_LENGTH))); desc.append("</li>");}
         if (getIntegerProperty(UPPER_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} upper case characters",(Integer)properties.get(UPPER_MIN))); desc.append("</li>");}
         if (getIntegerProperty(LOWER_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} lower case characters",(Integer)properties.get(LOWER_MIN))); desc.append("</li>");}
         if (getIntegerProperty(NUMBER_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} numbers",(Integer)properties.get(NUMBER_MIN))); desc.append("</li>");}
@@ -154,6 +154,9 @@ public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
         if (getIntegerProperty(NON_NUMERIC_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} non-numeric characters",(Integer)properties.get(NON_NUMERIC_MIN))); desc.append("</li>");}
         if (getIntegerProperty(CHARACTER_DIFF_MIN)>0){desc.append("<li>"); desc.append(MessageFormat.format("at least {0} unique characters",(Integer)properties.get(CHARACTER_DIFF_MIN))); desc.append("</li>");}
         if (getBooleanProperty(NO_REPEAT_CHARS)){desc.append("<li>"); desc.append("no consecutive repeating characters"); desc.append("</li>");}
+        if (getIntegerProperty(REPEAT_FREQUENCY)>0){desc.append("<li>"); desc.append("passwords are not reused within {0} password changes"); desc.append("</li>");}
+        if (getBooleanProperty(ALLOWABLE_CHANGES)){desc.append("<li>"); desc.append("allow One Password Change Per 24 hours"); desc.append("</li>");}
+
         desc.append("</ul> </body></html>");
         return desc.toString();
     }
