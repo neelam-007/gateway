@@ -1495,11 +1495,12 @@ INSERT INTO `rbac_permission` VALUES
     (-1113,0,-1100,'DELETE',NULL,'CLUSTER_PROPERTY'),
     (-1114,0,-1100,'READ',NULL,'SSG_KEYSTORE');
 
-INSERT INTO rbac_role VALUES (-1150,0,'Manage Password Policies', null,null,null, 'Users assigned to the {0} role have the ability to read and update any stored password policy.');
+INSERT INTO rbac_role VALUES (-1150,0,'Manage Password Policies', null,null,null, 'Users assigned to the {0} role have the ability to read and update any stored password policy and view the identity providers.');
 INSERT INTO rbac_permission VALUES (-1151,0,-1150,'READ',NULL,'PASSWORD_POLICY');
 -- INSERT INTO rbac_permission VALUES (-1052,0,-1050,'CREATE',NULL,'PASSWORD_POLICY');
 INSERT INTO rbac_permission VALUES (-1153,0,-1150,'UPDATE',NULL,'PASSWORD_POLICY');
 -- INSERT INTO rbac_permission VALUES (-1054,0,-1050,'DELETE',NULL,'PASSWORD_POLICY');
+INSERT INTO rbac_permission VALUES (-1155,0,-1150,'READ',NULL,'ID_PROVIDER_CONFIG');
 
 INSERT INTO rbac_role VALUES (-1200,0,'Manage Administrative Accounts Configuration', null,null,null, 'Users assigned to the {0} role have the ability edit administrative accounts configurations.');
 INSERT INTO rbac_permission VALUES (-1201,0,-1200,'READ',NULL,'CLUSTER_PROPERTY');
