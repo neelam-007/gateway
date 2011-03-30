@@ -384,7 +384,8 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
             int expiry  = (Integer)policy.getPropertyValue(IdentityProviderPasswordPolicy.PASSWORD_EXPIRY);
             return expiry < 0 ? -1 : calcExpiryDate(time, expiry);
         } catch (NullPointerException e){
-            return calcExpiryDate(time,0);
+            // no property
+            return -1;
         }
     }
 
@@ -401,6 +402,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
 
             //if change password is set, then it means we are forced to change the password (ie password was expired)
             if (internalUser.isChangePassword()) return true;
+            if (internalUser.getPasswordExpiry() < 0 ) return false;
 
             Calendar expireDate = Calendar.getInstance();
             expireDate.setTimeInMillis(internalUser.getPasswordExpiry());
