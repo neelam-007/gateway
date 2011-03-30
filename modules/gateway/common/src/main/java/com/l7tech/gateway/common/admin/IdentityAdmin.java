@@ -1,9 +1,9 @@
 package com.l7tech.gateway.common.admin;
 
+import com.l7tech.identity.LogonInfo;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.identity.*;
-import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Propagation;
@@ -446,4 +446,17 @@ public interface IdentityAdmin {
     @Administrative(licensed=false)
     @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)    
     public void forceAdminUsersResetPassword(long identityProviderConfigId) throws FindException, SaveException, UpdateException, InvalidPasswordException;
+
+    /**
+     * Activates the user by resetting the values in the corresponding logon info
+     * @param user  the user to reset the logon info
+     * @throws FindException
+     * @throws UpdateException
+     */
+    @Secured(types=USER, stereotype=GET_PROPERTY_OF_ENTITY)
+    void activateUser(User user) throws FindException, UpdateException;
+
+    @Transactional(readOnly=true)
+    @Secured(types=USER, stereotype=GET_PROPERTY_OF_ENTITY)
+    LogonInfo getLogonInfo(User user) throws FindException;
 }

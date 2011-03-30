@@ -818,11 +818,11 @@ public class LogonDialog extends JDialog {
                             JOptionPane.WARNING_MESSAGE);
     }
 
-    private void showLockAccountMessage() {
+    private void showLockAccountMessage(AccountLockedException ex) {
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         JOptionPane.
           showMessageDialog(parentFrame,
-                            resources.getString("logon.lock.account"),
+                            ex.getMessage(),
                             "Warning",
                             JOptionPane.WARNING_MESSAGE);
     }
@@ -970,8 +970,8 @@ public class LogonDialog extends JDialog {
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
         else if (cause instanceof AccountLockedException) {
-            log.log(Level.WARNING, "Lock account, exceed failed login attempts.");
-            showLockAccountMessage();
+            log.log(Level.WARNING, "Lock account,"+cause.getMessage());
+            showLockAccountMessage((AccountLockedException)cause);
         }
         else if (cause instanceof InvalidPasswordException) {
             //problems with the new password (most likely not password policy compliant), re-ask the user to enter a better password

@@ -143,7 +143,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @return The user or null if not authenticated.
      * @throws ObjectModelException If an error occurs during authentication.
      */
-    public User authenticate( final LoginCredentials creds ) throws ObjectModelException, LoginException, FailAttemptsExceededException {
+    public User authenticate( final LoginCredentials creds ) throws ObjectModelException, LoginException, FailAttemptsExceededException, FailInactivityPeriodExceededException {
         // Try internal first (internal accounts with the same credentials should hide externals)
         Set<IdentityProvider> providers = getAdminIdentityProviders();
         AuthenticationResult authResult = null;
@@ -204,6 +204,9 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                 logger.info("Authentication failed on " + provider.getConfig().getName() + ": " + ExceptionUtils.getMessage(e));
                 if (ExceptionUtils.causedBy(e, FailAttemptsExceededException.class)) {
                     throw new FailAttemptsExceededException(e.getMessage());
+                }
+                if (ExceptionUtils.causedBy(e, FailInactivityPeriodExceededException.class)) {
+                    throw new FailInactivityPeriodExceededException(e.getMessage());
                 }
             }
         }

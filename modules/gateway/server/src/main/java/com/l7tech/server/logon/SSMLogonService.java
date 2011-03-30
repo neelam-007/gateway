@@ -1,7 +1,8 @@
 package com.l7tech.server.logon;
 
-import com.l7tech.identity.User;
-import com.l7tech.identity.FailAttemptsExceededException;
+import com.l7tech.identity.LogonInfo;
+import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
@@ -59,6 +60,10 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         if (this.maxLockoutTime <= 0) {
             this.maxLockoutTime = DEFAULT_MAX_LOCKOUT_TIME_IN_SECS;
         }
+        this.maxInactivityPeriod = serverConfig.getIntProperty(ServerConfig.PARAM_INACTIVITY_PERIOD, DEFAULT_MAX_INACTIVITY_PERIOD);
+        if (this.maxInactivityPeriod <= 0) {
+            this.maxInactivityPeriod = DEFAULT_MAX_INACTIVITY_PERIOD;
+        }
     }
 
     public PlatformTransactionManager getTransactionManager() {
@@ -111,6 +116,19 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                 logger.warning("Parameter " + propertyName + " value '" + newValue + "' not a positive integer value. Reuse default value '" + maxLockoutTime + "'");
             }
         }
+
+
+        if (propertyName != null && propertyName.equals(ServerConfig.PARAM_INACTIVITY_PERIOD)) {
+            try {
+                int newVal = Integer.valueOf(newValue);
+                if (newVal <= 0) throw new NumberFormatException();
+                maxInactivityPeriod = newVal;
+            } catch (NumberFormatException nfe) {
+                maxInactivityPeriod = DEFAULT_MAX_INACTIVITY_PERIOD;
+                logger.warning("Parameter " + propertyName + " value '" + newValue + "' not a positive integer value. Reuse default value '" + maxInactivityPeriod + "'");
+            }
+        }
+
     }
 
     @Override
@@ -119,8 +137,19 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
     }
 
     @Override
-    public void hookPreLoginCheck(final User user) throws FailAttemptsExceededException {
+    public void hookPreLoginCheck(final User user) throws AuthenticationException {
         try {
+
+            if(user instanceof InternalUser){
+                if(!((InternalUser)user).isEnabled()){
+                    auditor.logAndAudit(SystemMessages.AUTH_USER_DISABLED, user.getLogin());
+                    String msg = "Credentials login matches an internal user " + user.getLogin() + ", but access is denied because user is disabled.";
+                    logger.info(msg);
+                    doUpdateLogonState(user,LogonInfo.State.INACTIVE);
+                    throw new UserDisabledException(msg);
+                }
+            }
+
             final long now = System.currentTimeMillis();
 
             // We should get a lock, but this is not any more wrong than it
@@ -133,8 +162,19 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
 
             if (logonInfo == null) throw new FindException("No entry for '" + user.getLogin() + "'");
 
+            switch(logonInfo.getState()){
+                case ACTIVE:
+                    break; //
+                case INACTIVE: {
+                    String msg = "Access is denied because of inactivity";
+                    // todo audit ? auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_ATTEMPT, user.getLogin(), Integer.toString(logonInfo.getFailCount()), Integer.toString(this.maxLoginAttempts));
+                    logger.info(msg);
+                    throw new FailInactivityPeriodExceededException(msg);  }
+            }
+            //doUpdateLogonState(user,InternalUser.State.EXCEED_ATTEMPT);return;
+
             //verify if has reached login attempts
-            if (logonInfo.getFailCount() >= this.maxLoginAttempts) {
+            if (logonInfo.getState()== LogonInfo.State.EXCEED_ATTEMPT || logonInfo.getFailCount() >= this.maxLoginAttempts) {
                 //if the retry was not after the locked time, then we still lock the account.  Otherwise,
                 //the user is good to go for retry and we'll reset the fail count
                 Calendar cal = Calendar.getInstance();
@@ -146,16 +186,34 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                     String msg = "Credentials login matches an internal user " + user.getLogin() + ", but access is denied because of number of failed attempts.";
                     logger.info(msg);
                     doUpdateLogonAttempt(user, null);
+                    doUpdateLogonState(user,LogonInfo.State.EXCEED_ATTEMPT);
                     throw new FailAttemptsExceededException(msg);
-                } else {
-                    doResetLogonAttempt(user);
-                    logger.info("Reset the fail logon count for '" + user.getLogin() + "'");
+                }
+                else{
+                    doUpdateLogonState(user,LogonInfo.State.ACTIVE);
                 }
             }
+
+            // verify if user has exceeded the inactivity period
+            Calendar inactivityCal = Calendar.getInstance();
+            inactivityCal.setTimeInMillis(logonInfo.getLastActivity());
+            inactivityCal.add(Calendar.HOUR, this.maxInactivityPeriod * 24);
+            if (this.maxInactivityPeriod !=0 && logonInfo.getLastActivity()>0 && inactivityCal.getTimeInMillis() <= now) {
+                long daysAgo = inactivityCal.getTimeInMillis() / 1000 / 60 / 24;
+                auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_INACTIVITY, user.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
+                String msg = "Credentials login matches an internal user " + user.getLogin() + ", but access is denied because of account inactivity.";
+                logger.info(msg);
+                doUpdateLogonState(user,LogonInfo.State.INACTIVE);
+                throw new FailInactivityPeriodExceededException(msg);
+            }
+            doUpdateLastActivity(user);
+
+
         } catch (FindException fe) {
             //if we can't find this user then we'll just ignore it and we'll carry on and it'll get updated later
             //this find exception could occur because of backwards compatibility
         }
+
     }
 
     @Override
@@ -188,9 +246,32 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
 
     private int maxLoginAttempts;
     private int maxLockoutTime;
+    private int maxInactivityPeriod;
 
     private static final int DEFAULT_MAX_LOCKOUT_TIME_IN_SECS = 1200;
     private static final int DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW = 5;
+    private static final int DEFAULT_MAX_INACTIVITY_PERIOD = 35;
+
+    private void doUpdateLogonState(final User user,final LogonInfo.State logonState){
+        doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
+            @Override
+            public void call(final LogonInfo logonInfo) {
+                logonInfo.setState(logonState);
+            }
+        });
+    }
+
+    private void doUpdateLastActivity(final User user){
+        doLogonInfoUpdate( user, new Functions.UnaryVoid<LogonInfo>(){
+            @Override
+            public void call( final LogonInfo logonInfo ) {
+                final long now = System.currentTimeMillis();
+                logonInfo.setLastActivity(now);
+                logonInfo.setState(LogonInfo.State.ACTIVE);
+            }
+        } );
+    }
+
 
 
     private void doResetLogonAttempt(final User user) {
@@ -275,5 +356,6 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                 return null;
             }
         });
-    }    
+    }
+
 }

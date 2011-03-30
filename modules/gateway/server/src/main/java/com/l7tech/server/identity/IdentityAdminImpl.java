@@ -1,6 +1,7 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.identity.LogonInfo;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.security.rbac.Role;
@@ -16,6 +17,7 @@ import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import com.l7tech.server.logon.LogonInfoManager;
 import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -57,6 +59,8 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private final PasswordEnforcerManager passwordEnforcerManager;
     private final IdentityProviderPasswordPolicyManager passwordPolicyManger;
     private final LogonService logonServ;
+    private LogonInfoManager logonManager;
+
 
     @Inject
     private TrustedEsmUserManager trustedEsmUserManager;
@@ -314,6 +318,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             }
 
             if (isSave) {
+                // create logon info
+                LogonInfo info = new LogonInfo(identityProviderConfigId, user.getLogin());
+                logonManager.save(info);
+                logger.info("Logon info created for User: " + user.getLogin() + " [" + id + "]");
                 id = userManager.save(user, groupHeaders);
                 logger.info("Saved User: " + user.getLogin() + " [" + id + "]");
             } else {
@@ -560,6 +568,32 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                     }
                 });
     }
+
+    @Override
+    public void activateUser(User user) throws FindException, UpdateException {
+        try {
+            LogonInfo info = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), false);
+            info.setLastActivity(System.currentTimeMillis());
+            info.resetFailCount(System.currentTimeMillis());
+            info.setState(LogonInfo.State.ACTIVE);
+            logonManager.update(info);
+
+        } catch (FindException e) {
+            throw new FindException( "No logon info for '" + user.getLogin() + "'", e);
+        } catch (UpdateException e) {
+            throw new UpdateException( "No logon info for '" + user.getLogin() + "'", e);
+        }
+    }
+
+    @Override
+    public LogonInfo getLogonInfo(User user) throws FindException{
+    try {
+            return logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), false);
+        } catch (FindException e) {
+            throw new FindException( "No logon info for '" + user.getLogin() + "'", e);
+        }
+    }
+
             
     /**
      * Determines if the user has roles.
@@ -629,6 +663,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
         this.identityProviderFactory = identityProviderFactory;
+    }
+
+    public void setLogonInfoManager (LogonInfoManager logonManager){
+       this.logonManager = logonManager;
     }
 
     public void initDao() throws Exception {

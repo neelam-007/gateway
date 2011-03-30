@@ -1,5 +1,6 @@
 package com.l7tech.server.logon;
 
+import com.l7tech.identity.LogonInfo;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;

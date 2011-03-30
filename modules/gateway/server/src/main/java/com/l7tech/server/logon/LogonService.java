@@ -1,5 +1,6 @@
 package com.l7tech.server.logon;
 
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.identity.FailAttemptsExceededException;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -23,13 +24,14 @@ public interface LogonService {
     public void updateLogonAttempt(final User user, final AuthenticationResult ar);
 
     /**
-     * A pre-login check to see if the user attempting to login has exceeded the number of failure attempts already.
+     * A pre-login check to see if the user attempting to login has exceeded the number of failure attempts already and
+     * if the user exceeded the maximum inactivity period.
      * It basically tries to stop the processes from going further.
      *
      * @param user  The user that is attempting to log onto the system.
-     * @throws FailAttemptsExceededException
+     * @throws AuthenticationException
      */
-    public void hookPreLoginCheck(final User user) throws FailAttemptsExceededException;
+    public void hookPreLoginCheck(final User user) throws AuthenticationException;
 
     /**
      * Resets the fail count for this particular user to be zero.  It does not change the last login time where as the

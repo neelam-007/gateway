@@ -74,6 +74,7 @@ CREATE TABLE internal_user (
   expiration bigint(20) NOT NULL,
   password_expiry bigint(20) DEFAULT 0,
   change_password boolean DEFAULT TRUE,
+  enabled boolean DEFAULT TRUE,
   PRIMARY KEY  (objectid),
   UNIQUE KEY l_idx (login)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -134,6 +135,8 @@ CREATE TABLE logon_info (
   login varchar(255) NOT NULL,
   fail_count int(11) NOT NULL DEFAULT 0,
   last_attempted bigint(20) NOT NULL,
+  last_activity bigint(20) NOT NULL,
+  state int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (objectid),
   UNIQUE KEY unique_provider_login (provider_oid, login),
   CONSTRAINT logon_info_provider FOREIGN KEY (provider_oid) REFERENCES identity_provider(objectid) ON DELETE CASCADE
@@ -1497,6 +1500,44 @@ INSERT INTO rbac_permission VALUES (-1151,0,-1150,'READ',NULL,'PASSWORD_POLICY')
 -- INSERT INTO rbac_permission VALUES (-1052,0,-1050,'CREATE',NULL,'PASSWORD_POLICY');
 INSERT INTO rbac_permission VALUES (-1153,0,-1150,'UPDATE',NULL,'PASSWORD_POLICY');
 -- INSERT INTO rbac_permission VALUES (-1054,0,-1050,'DELETE',NULL,'PASSWORD_POLICY');
+
+INSERT INTO rbac_role VALUES (-1200,0,'Manage Administrative Accounts Configuration', null,null,null, 'Users assigned to the {0} role have the ability edit administrative accounts configurations.');
+INSERT INTO rbac_permission VALUES (-1201,0,-1200,'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1202,0,-1201);
+INSERT INTO rbac_predicate_attribute VALUES (-1202,'name','logon.maxAllowableAttempts');
+INSERT INTO rbac_permission VALUES (-1203,0,-1200,'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1204,0,-1203);
+INSERT INTO rbac_predicate_attribute VALUES (-1204,'name','logon.lockoutTime');
+INSERT INTO rbac_permission VALUES (-1205,0,-1200,'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1206,0,-1205);
+INSERT INTO rbac_predicate_attribute VALUES (-1206,'name','logon.sessionExpiry');
+INSERT INTO rbac_permission VALUES (-1207,0,-1200,'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1208,0,-1207);
+INSERT INTO rbac_predicate_attribute VALUES (-1208,'name','logon.inactivityPeriod');
+INSERT INTO rbac_permission VALUES (-1209,0,-1200,'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1210,0,-1209);
+INSERT INTO rbac_predicate_attribute VALUES (-1210,'name','logon.maxAllowableAttempts');
+INSERT INTO rbac_permission VALUES (-1211,0,-1200,'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1212,0,-1211);
+INSERT INTO rbac_predicate_attribute VALUES (-1212,'name','logon.lockoutTime');
+INSERT INTO rbac_permission VALUES (-1213,0,-1200,'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1214,0,-1213);
+INSERT INTO rbac_predicate_attribute VALUES (-1214,'name','logon.sessionExpiry');
+INSERT INTO rbac_permission VALUES (-1215,0,-1200,'UPDATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1216,0,-1215);
+INSERT INTO rbac_predicate_attribute VALUES (-1216,'name','logon.inactivityPeriod');
+INSERT INTO rbac_permission VALUES (-1217,0,-1200,'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1218,0,-1217);
+INSERT INTO rbac_predicate_attribute VALUES (-1218,'name','logon.maxAllowableAttempts');
+INSERT INTO rbac_permission VALUES (-1219,0,-1200,'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1220,0,-1219);
+INSERT INTO rbac_predicate_attribute VALUES (-1220,'name','logon.lockoutTime');
+INSERT INTO rbac_permission VALUES (-1221,0,-1200,'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1222,0,-1221);
+INSERT INTO rbac_predicate_attribute VALUES (-1222,'name','logon.sessionExpiry');
+INSERT INTO rbac_permission VALUES (-1223,0,-1200,'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO rbac_predicate VALUES (-1224,0,-1223);
+INSERT INTO rbac_predicate_attribute VALUES (-1224,'name','logon.inactivityPeriod');
 
 INSERT INTO `rbac_predicate` VALUES
     (-1101,0,-1101),

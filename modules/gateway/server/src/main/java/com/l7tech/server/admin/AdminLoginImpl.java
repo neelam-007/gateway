@@ -12,9 +12,7 @@ import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
@@ -106,6 +104,10 @@ public class AdminLoginImpl
                 //reached to the max number of failed attempts, we'll need to lock the account.
                 getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + login + "'"));
                 throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded max. failed logon attempts.");
+            }  catch (FailInactivityPeriodExceededException faee) {
+                //reached to the max inactivity period, we'll need to lock the account.
+                getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + login + "'"));
+                throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded inactivity period.");
             }
 
             if (user == null) {

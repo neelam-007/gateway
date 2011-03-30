@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.identity.FailAttemptsExceededException;
+import com.l7tech.identity.FailInactivityPeriodExceededException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -84,6 +85,9 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
             //shouldn't happen for certificates
             getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + creds.getLogin() + "'"));
             throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded max. failed logon attempts.");
+        } catch ( FailInactivityPeriodExceededException fipee) {
+            getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + creds.getLogin() + "'"));
+            throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded inactivity period.");
         }
     }
 

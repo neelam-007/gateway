@@ -163,7 +163,7 @@
                 <value>com.l7tech.gateway.common.security.RevocationCheckPolicy</value>
                 <value>com.l7tech.security.cert.TrustedCert</value>
                 <value>com.l7tech.identity.cert.CertEntryRow</value>
-                <value>com.l7tech.server.logon.LogonInfo</value>
+                <value>com.l7tech.identity.LogonInfo</value>
                 <value>com.l7tech.server.security.keystore.KeystoreFile</value>
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
                 <value>com.l7tech.gateway.common.security.password.SecurePassword</value>

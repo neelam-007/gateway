@@ -19,19 +19,13 @@ import com.l7tech.console.util.jcalendar.JDateTimeChooser;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
+import java.awt.event.*;
 import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.logging.Level;
@@ -49,6 +43,7 @@ public class GenericUserPanel extends UserPanel {
     static Logger log = Logger.getLogger(GenericUserPanel.class.getName());
 
     private JTextArea nameLabel;
+    private JCheckBox enabledCheckBox;
     private JScrollPane nameScrollPane;
 
     private JLabel firstNameLabel;
@@ -73,7 +68,7 @@ public class GenericUserPanel extends UserPanel {
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
     private static final String MEMBERSHIP_LABEL = "Groups";
-    private static final String ROLES_LABEL = "Assigned Roles";
+    private static final String ROLES_LABEL = "Administrations";
     private static final String CERTIFICATE_LABEL = "Certificate";
 
     private static final String CANCEL_BUTTON = "Cancel";
@@ -85,8 +80,10 @@ public class GenericUserPanel extends UserPanel {
 
     private JCheckBox accountNeverExpiresCheckbox;
     private JDateTimeChooser expireTimeChooser;
+    private JLabel expireStateLabel;
     private JPanel expirationPanel;
     private boolean canUpdate;
+    private JLabel expiresLabel;
 
     public GenericUserPanel() {
         super();
@@ -96,7 +93,7 @@ public class GenericUserPanel extends UserPanel {
     private void initialize() {
         try {
             // Initialize form components
-            rolesPanel = new UserRoleAssignmentsPanel(user);
+            rolesPanel = new UserRoleAssignmentsPanel(user, canUpdate);
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             layoutComponents();
@@ -110,6 +107,7 @@ public class GenericUserPanel extends UserPanel {
 
     protected void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
+        enabledCheckBox.setEnabled( enabledCheckBox.isEnabled() && config.isWritable() && canUpdate);
         firstNameTextField.setEditable(config.isWritable() && canUpdate);
         lastNameTextField.setEditable(config.isWritable() && canUpdate);
         emailTextField.setEditable(config.isWritable() && canUpdate);
@@ -265,6 +263,7 @@ public class GenericUserPanel extends UserPanel {
         headerPanel.add(imageLabel);
         
         headerPanel.add(getNameScrollPane());
+        headerPanel.add(getEnabledCheckBox());
         headerPanel.add(Box.createHorizontalStrut(10));
 
         detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
@@ -378,6 +377,30 @@ public class GenericUserPanel extends UserPanel {
         nameScrollPane.setBorder(BorderFactory.createEmptyBorder(16,0,0,0));
 
         return nameScrollPane;
+    }
+
+    private JCheckBox getEnabledCheckBox(){
+        // If scroll pane not already created
+        if (user instanceof  InternalUser )
+        {
+            InternalUser iu = (InternalUser)user;
+            if(enabledCheckBox != null) return enabledCheckBox;
+
+            // create
+            enabledCheckBox = new JCheckBox("Enabled");
+            enabledCheckBox.setBorder(BorderFactory.createEmptyBorder(16,0,0,0));
+            enabledCheckBox.addItemListener(new ItemListener() {
+                @Override
+                public void itemStateChanged(ItemEvent e) {
+                    setModified(true);
+                }
+            });
+            enabledCheckBox.setEnabled(System.currentTimeMillis()< iu.getExpiration() || iu.getExpiration() == -1 );
+            enabledCheckBox.setSelected(iu.isEnabled());
+
+            return enabledCheckBox;
+        }
+        return null;
     }
 
     /**
@@ -563,13 +586,11 @@ public class GenericUserPanel extends UserPanel {
             expirationPanel.add(topPanel);
             expirationPanel.add(botPanel);
 
-            final JLabel expiresLabel = new JLabel("Expires on:");
+            expiresLabel = new JLabel("Expires on:");
             accountNeverExpiresCheckbox = new JCheckBox("Account Never Expires");
-            accountNeverExpiresCheckbox.addChangeListener(new ChangeListener() {
-                public void stateChanged(ChangeEvent e) {
-                    final boolean enable = !accountNeverExpiresCheckbox.isSelected();
-                    expireTimeChooser.setEnabled(enable);
-                    expiresLabel.setEnabled(enable);
+            accountNeverExpiresCheckbox.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    enableDisableExpiry();
                 }
             });
 
@@ -583,17 +604,28 @@ public class GenericUserPanel extends UserPanel {
             expireTimeChooser.addPropertyChangeListener(new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
                     setModified(true);
+                    enableDisableExpiry();
                 }
             });
+
+            expireStateLabel = new JLabel("Expired");
 
             JPanel datePanel = new JPanel();
             datePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
             datePanel.add(expireTimeChooser);
+            datePanel.add(expireStateLabel);
             botPanel.add(datePanel);
+            boolean expired = false;
             final boolean neverExpires = iu.getExpiration() == -1;
             if (!neverExpires) {
                 expireTimeChooser.setDate(new Date(iu.getExpiration()));
+                long now = System.currentTimeMillis();
+                if(now > iu.getExpiration()){
+                    expired = true;
+                    expireTimeChooser.getDateEditor().getUiComponent().setBackground(Color.RED);
+                }
             }
+            expireStateLabel.setVisible(expired);
             accountNeverExpiresCheckbox.setSelected(neverExpires);
 
             accountNeverExpiresCheckbox.addActionListener(new ActionListener() {
@@ -605,8 +637,20 @@ public class GenericUserPanel extends UserPanel {
             topPanel.add(Box.createHorizontalGlue());
             botPanel.add(Box.createHorizontalGlue());
             upperTopPanel.add(Box.createHorizontalGlue());
+            enableDisableExpiry();
         }
         return expirationPanel;
+    }
+
+    private void enableDisableExpiry() {
+        final boolean neverExpire = accountNeverExpiresCheckbox.isSelected();
+        long now = System.currentTimeMillis();
+        boolean notExpired = expireTimeChooser.getDate().after(new Date(now));
+        expireTimeChooser.setEnabled(!neverExpire);
+        expireTimeChooser.getDateEditor().getUiComponent().setBackground(notExpired|| neverExpire ? Color.WHITE : Color.RED);
+        expiresLabel.setEnabled(neverExpire);
+        expireStateLabel.setVisible(!notExpired);
+        enabledCheckBox.setEnabled(neverExpire || notExpired);
     }
 
     /**
@@ -668,7 +712,13 @@ public class GenericUserPanel extends UserPanel {
      * @param user
      */
     private void setData(User user) {
-        // Set tabbed panels (add/remove extranet tab)
+        // Set tabbed panels (add/remove extranet tab)   \
+        if(user instanceof InternalUser){
+            enabledCheckBox.setSelected(((InternalUser)user).isEnabled());
+        }
+        else {
+            enabledCheckBox.setVisible(false);
+        }
         getNameLabel().setText(user.getName());
         getNameLabel().setCaretPosition(0);
         getFirstNameTextField().setText(user.getFirstName());
@@ -689,6 +739,7 @@ public class GenericUserPanel extends UserPanel {
             iu.setLastName(this.getLastNameTextField().getText());
             iu.setFirstName(this.getFirstNameTextField().getText());
             iu.setEmail(getEmailTextField().getText());
+            iu.setEnabled(this.getEnabledCheckBox().isSelected());
             if (!expireTimeChooser.isEnabled()) {
                 iu.setExpiration(-1);
             } else {

@@ -116,7 +116,7 @@
                 <value>com.l7tech.identity.internal.PasswordChangeRecord</value>
                 <value>com.l7tech.identity.IdentityProviderConfig</value>
                 <value>com.l7tech.server.ems.user.UserProperty</value>
-                <value>com.l7tech.server.logon.LogonInfo</value>
+                <value>com.l7tech.identity.LogonInfo</value>
                 <value>com.l7tech.server.security.keystore.KeystoreFile</value>
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
             </list>

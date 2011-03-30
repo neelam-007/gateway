@@ -1,5 +1,6 @@
 package com.l7tech.server.logon;
 
+import com.l7tech.identity.LogonInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;

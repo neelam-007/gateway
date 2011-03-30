@@ -36,6 +36,7 @@ public class InternalUser extends PersistentUser {
     private List<PasswordChangeRecord> passwordChangesHistory;
     private long passwordExpiry;
     private boolean changePassword;
+    private boolean enabled = true;
 
     public InternalUser() {
         this(null);
@@ -65,6 +66,7 @@ public class InternalUser extends PersistentUser {
         setPasswordChangesHistory(imp.getPasswordChangesHistory());
         setPasswordExpiry(imp.getPasswordExpiry());
         setChangePassword(imp.isChangePassword());
+        setEnabled(imp.isEnabled());
     }
 
     public void setHashedPassword(String password) {
@@ -115,6 +117,15 @@ public class InternalUser extends PersistentUser {
         this.passwordExpiry = passwordExpiry;
     }
 
+    @Column(name="enabled")
+    public boolean isEnabled(){
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled){
+        this.enabled = enabled;
+    }
+
     @Column(name="change_password")
     public boolean isChangePassword() {
         return changePassword;
@@ -147,7 +158,8 @@ public class InternalUser extends PersistentUser {
         return expiration == that.expiration &&
                passwordExpiry == that.passwordExpiry &&
                changePassword == that.changePassword &&
-               hashedPassword != null ? hashedPassword.equals(that.hashedPassword) : that.hashedPassword == null;
+               hashedPassword != null ? hashedPassword.equals(that.hashedPassword) : that.hashedPassword == null &&
+               enabled == that.enabled;
     }
 
     public int hashCode() {
@@ -157,6 +169,7 @@ public class InternalUser extends PersistentUser {
         result = 31 * result + (int) (passwordExpiry ^ (passwordExpiry >>> 32));
         result = 31 * result + (passwordChangesHistory != null ? passwordChangesHistory.hashCode() : 0);
         result = 31 * result + Boolean.valueOf(changePassword).hashCode();
+        result = 31 * result + Boolean.valueOf(enabled).hashCode();
         return result;
     }
 
@@ -169,6 +182,7 @@ public class InternalUser extends PersistentUser {
         if (login == null) throw new IllegalStateException("login must be set prior to encoding the password");
         this.hashedPassword = HexUtils.encodePasswd(login, newPassword, HttpDigest.REALM);
     }
+
 
     public void setPasswordChanges(long passwordChangeTime, String newPassword) {
         PasswordChangeRecord passChangeRecord = new PasswordChangeRecord();

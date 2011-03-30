@@ -192,6 +192,7 @@
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
+        <property name="logonInfoManager" ref="logonManager"/>
     </bean>
 
     <!-- audit admin servant -->
@@ -202,7 +203,7 @@
             <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
                 <property name="targetObject" ref="rbacAdvice"/>
                 <property name="targetMethod" value="getSecurityFilter"/>
-            </bean>            
+            </bean>
         </property>
         <property name="logRecordManager" ref="logRecordManager"/>
         <property name="serverConfig" ref="serverConfig"/>

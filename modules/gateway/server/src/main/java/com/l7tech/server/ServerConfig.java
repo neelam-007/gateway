@@ -207,6 +207,9 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
     public static final String PARAM_MAX_LOGIN_ATTEMPTS_ALLOW = "logon.maxAllowableAttempts";
     public static final String PARAM_MAX_LOCKOUT_TIME = "logon.lockoutTime";
+    public static final String PARAM_SESSION_EXPIRY = "logon.sessionExpiry";
+    public static final String PARAM_INACTIVITY_PERIOD = "logon.inactivityPeriod";
+
     public static final String PARAM_PASSWORD_EXPIRY = "password.expiry";
 
     public static final String PARAM_KERBEROS_CONFIG_REALM = "krb5Realm";

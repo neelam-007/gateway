@@ -1,11 +1,11 @@
 package com.l7tech.gateway.common.admin;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.identity.LogonInfo;
 import com.l7tech.gateway.common.StubDataStore;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalGroupMembership;
-import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 
@@ -300,5 +300,15 @@ public class IdentityAdminStub implements IdentityAdmin {
     @Override
     public void forceAdminUsersResetPassword(long identityProviderConfigId) throws FindException, SaveException, UpdateException {
         // TODO ?
+    }
+
+    @Override
+    public void activateUser(User user) throws FindException, UpdateException {
+        // TODO?
+    }
+
+    @Override
+    public LogonInfo getLogonInfo(User user) throws FindException {
+        return null; // TODO?
     }
 }

@@ -22,7 +22,7 @@ import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.*;
 import com.l7tech.server.event.admin.*;
-import com.l7tech.server.logon.LogonInfo;
+import com.l7tech.identity.LogonInfo;
 import com.l7tech.server.wsdm.subscription.Subscription;
 import com.l7tech.server.uddi.UDDIRegistrySubscription;
 import com.l7tech.server.uddi.UDDIBusinessServiceStatus;

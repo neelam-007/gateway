@@ -85,6 +85,8 @@ public class SystemMessages extends Messages {
     public static final M AUTH_USER_LOCKED   = m(2101, Level.INFO, "User {0} is locked");
     public static final M AUTH_USER_EXPIRED  = m(2102, Level.INFO, "User {0} has expired");
     public static final M AUTH_USER_EXCEED_ATTEMPT = m(2103, Level.INFO, "User ''{0}'' has exceeded max. number of failed logon attempts.  User has attempted {1} out of {2} allowable failure attempts.");
+    public static final M AUTH_USER_EXCEED_INACTIVITY = m(2104, Level.INFO, "User ''{0}'' has exceeded max. inactivity period.  User''s last activity {1} days ago exceeded {2} days.");
+
 
     public static final M CERT_EXPIRY_CANT_FIND  = m(2150, Level.WARNING, "Unable to find trusted certificates to check for upcoming expirations; skipping this check");
     public static final M CERT_EXPIRY_BAD_CERT   = m(2151, Level.WARNING, "Unable to parse trusted certificate #{0} ({1}) in order to check for expiration; skipping");

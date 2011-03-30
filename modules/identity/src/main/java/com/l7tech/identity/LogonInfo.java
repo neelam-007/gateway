@@ -1,4 +1,4 @@
-package com.l7tech.server.logon;
+package com.l7tech.identity;
 
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
@@ -20,10 +20,15 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Table(name="logon_info")
 public class LogonInfo extends PersistentEntityImp {
+
+
     private String login;
     private long providerId;
     private long lastAttempted;   //last login attempt
     private int failCount;  //number of login failure attempts
+    private long lastActivity;
+    private State state = State.ACTIVE;
+
 
     public LogonInfo() {
         this.failCount = 0;
@@ -32,9 +37,15 @@ public class LogonInfo extends PersistentEntityImp {
     public LogonInfo(long providerId, String login) {
         this.providerId = providerId;
         this.login = login;
-        this.lastAttempted = System.currentTimeMillis();
+        this.lastAttempted = -1;
         this.failCount = 0;
+        this.lastActivity = -1;
     }
+
+    static public  enum State {
+        ACTIVE, EXCEED_ATTEMPT, INACTIVE
+    }
+
 
     @Column(name="provider_oid")
     public long getProviderId() {
@@ -72,6 +83,24 @@ public class LogonInfo extends PersistentEntityImp {
         this.failCount = failCount;
     }
 
+    @Column(name="last_activity")                 
+    public long getLastActivity() {
+        return lastActivity;
+    }
+
+    public void setLastActivity(long lastActivity) {
+        this.lastActivity = lastActivity;
+    }
+
+    @Column(name="state")
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
     @Override
     @Version
     @Column(name="version")
@@ -91,6 +120,7 @@ public class LogonInfo extends PersistentEntityImp {
         if (lastAttempted != logonInfo.lastAttempted) return false;
         if (providerId != logonInfo.providerId) return false;
         if (login != null ? !login.equals(logonInfo.login) : logonInfo.login != null) return false;
+        if (state != logonInfo.state) return false;
 
         return true;
     }
@@ -101,6 +131,8 @@ public class LogonInfo extends PersistentEntityImp {
         result = 31 * result + (int) (providerId ^ (providerId >>> 32));
         result = 31 * result + (int) (lastAttempted ^ (lastAttempted >>> 32));
         result = 31 * result + failCount;
+        result = 31 * result + (state != null ? state.hashCode() : 0);
+
         return result;
     }
 
@@ -134,4 +166,6 @@ public class LogonInfo extends PersistentEntityImp {
         this.lastAttempted = time;
         this.failCount = 0;
     }
+
+
 }
