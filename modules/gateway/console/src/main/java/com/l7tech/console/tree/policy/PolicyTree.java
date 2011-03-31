@@ -423,6 +423,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
         if ( target.left != null ) {
             PolicyTreeModel model = (PolicyTreeModel)getModel();
             model.rawInsertNodeInto(assertionTreeNodeCopy, target.left, target.right);
+            if ( target.right==0 && !target.left.isExpanded() ) {
+                target.left.setExpanded( true ); // Expand so other pasted nodes end up in the folder
+            }
             return true;
         }
 
@@ -445,7 +448,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         AssertionTreeNode insertAfter = null;
         int targetIndex = path.getPathCount()==1 ? targetTreeNode.getChildCount() : 0;
         while ( targetTreeNode != null ) {
-            if (targetTreeNode.getAllowsChildren() && (pathToTarget.getParentPath()==null || isExpanded(pathToTarget) || (isExpanded(pathToTarget.getParentPath()) && targetTreeNode.getChildCount()==0)) && acceptsAll(targetTreeNode,toDrop)) {
+            if (targetTreeNode.getAllowsChildren() && (pathToTarget.getParentPath()==null || isModelExpanded(pathToTarget) || (isModelExpanded(pathToTarget.getParentPath()) && targetTreeNode.getChildCount()==0)) && acceptsAll(targetTreeNode,toDrop)) {
                 if ( insertAfter != null ) {
                     targetIndex = targetTreeNode.getIndex( insertAfter ) + 1;
                 }
@@ -462,6 +465,24 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         return new Pair<AssertionTreeNode,Integer>(targetTreeNode,targetIndex);
+    }
+
+    /**
+     * As JTree.isExpanded but reflects the model, not the UI.
+     */
+    private boolean isModelExpanded( final TreePath path ) {
+        boolean expanded = true;
+
+        AssertionTreeNode node = (AssertionTreeNode) path.getLastPathComponent();
+        while ( node != null ) {
+            if ( !node.isExpanded() ) {
+                expanded = false;
+                break;
+            }
+            node = (AssertionTreeNode) node.getParent();
+        }
+
+        return expanded;
     }
 
     private boolean acceptsAll( final AssertionTreeNode target,
@@ -1723,8 +1744,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 // Try to get some tree nodes
                 try {
                     AbstractTreeNode[] nodes = (AbstractTreeNode[])t.getTransferData(PolicyTransferable.ASSERTION_DATAFLAVOR);
-                    for(int i = nodes.length - 1;i >= 0;i--) {
-                        Assertion clone = (Assertion)nodes[i].asAssertion().clone();
+                    final List<AbstractTreeNode> nodeList = Arrays.asList( nodes );
+                    final TreePath path = getSelectionPath();
+                    if ( path != null && path.getPathCount()!=1 ) {
+                        Collections.reverse( nodeList ); // reverse unless inserting at the root
+                    }
+                    for( final AbstractTreeNode node : nodeList ) {
+                        Assertion clone = (Assertion)node.asAssertion().clone();
                         if(!policyTree.importAssertion(clone)) {
                             return false;
                         }
@@ -1772,7 +1798,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 if(ignoreRoot) {
                     //noinspection unchecked
                     List<Assertion> list = new ArrayList(((CompositeAssertion)ass).getChildren());
-                    Collections.reverse(list);
+                    final TreePath path = getSelectionPath();
+                    if ( path != null && path.getPathCount()!=1 ) {
+                        Collections.reverse(list);  // reverse unless inserting at the root
+                    }
                     for( Assertion assertion : list) {
                         // Clone assertions
                         Assertion child = (Assertion) assertion.clone();
