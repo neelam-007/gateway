@@ -397,16 +397,6 @@
     <!-- logon manager handles the persistence of login attempts information to the database layer -->
     <bean id="logonManager" class="com.l7tech.server.logon.LogonInfoManagerImpl" parent="hibernateBean"/>
 
-    <!-- password enforcer to enforce the password constraints -->
-    <bean id="passwordEnforcerManager" class="com.l7tech.server.security.PasswordEnforcerManager">
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="passwordPolicyManger"/>
-        <constructor-arg ref="roleManager"/>
-    </bean>
-
-    <bean id="passwordPolicyManger" class="com.l7tech.server.identity.IdentityProviderPasswordPolicyManagerImpl" parent="hibernateBean"/>
-
-
     <!-- Account manager -->
     <bean id="emsAccountManager" class="com.l7tech.server.ems.user.EsmAccountManagerImpl">
         <constructor-arg ref="identityProviderFactory"/>
