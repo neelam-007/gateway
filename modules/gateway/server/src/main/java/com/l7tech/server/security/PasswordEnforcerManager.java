@@ -1,6 +1,5 @@
 package com.l7tech.server.security;
 
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -12,7 +11,6 @@ import com.l7tech.identity.internal.PasswordChangeRecord;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.ExceptionUtils;
@@ -43,8 +41,6 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
     private ApplicationContext applicationContext;
     private RoleManager roleManager;
 
-    private Audit auditor;
-   
     public PasswordEnforcerManager(ServerConfig serverConfig,
                                    IdentityProviderPasswordPolicyManager passwordPolicyManager,
                                    RoleManager roleManager) {
@@ -58,7 +54,6 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
         if(this.applicationContext!=null) throw new IllegalStateException("applicationContext already initialized!");
         
         this.applicationContext = applicationContext;
-        auditor = new Auditor( this, this.applicationContext, logger );
         auditPasswordPolicyMinimums(!serverConfig.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED,false), getPasswordPolicy(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID));
     }
 
@@ -117,7 +112,12 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
 
         if (!aboveMinimum){
             // log audit message
-            auditor.logAndAudit(SystemMessages.PASSWORD_BELOW_MINIMUM, new String[] {isSTIG? "STIG":"PCI-DSS", "Internal Identity Provider"});
+            applicationContext.publishEvent(new AdminEvent(this, MessageFormat.format(SystemMessages.PASSWORD_BELOW_MINIMUM.getMessage(), isSTIG? "STIG":"PCI-DSS", "Internal Identity Provider")) {
+                        @Override
+                        public Level getMinimumLevel() {
+                            return SystemMessages.PASSWORD_BELOW_MINIMUM.getLevel();
+                        }
+                    });
         }
     }
 
@@ -151,7 +151,12 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
                 validatePasswordIsDifferent(newPassword, currentUnHashedPassword, policy);
                 validateAgainstPrevPasswords(user, hashedNewPassword, policy);
             }catch(InvalidPasswordException e){
-                auditor.logAndAudit(SystemMessages.PASSWORD_CHANGE_FAILED ,new String[]{user.getName()}, ExceptionUtils.getDebugException(e));
+                applicationContext.publishEvent(new AdminEvent(this, MessageFormat.format(SystemMessages.PASSWORD_CHANGE_FAILED.getMessage(),user.getName())) {
+                        @Override
+                        public Level getMinimumLevel() {
+                            return SystemMessages.PASSWORD_CHANGE_FAILED.getLevel();
+                        }
+                    });
                 throw e;
             }
         }
@@ -166,7 +171,12 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
         try{
             validatePasswordString(newPassword, policy);
         }catch(InvalidPasswordException e){
-            auditor.logAndAudit(SystemMessages.PASSWORD_CHANGE_FAILED ,new String[]{"password reset"}, ExceptionUtils.getDebugException(e));            
+            applicationContext.publishEvent(new AdminEvent(this, MessageFormat.format(SystemMessages.PASSWORD_CHANGE_FAILED.getMessage(),"password reset")) {
+                    @Override
+                    public Level getMinimumLevel() {
+                        return SystemMessages.PASSWORD_CHANGE_FAILED.getLevel();
+                    }
+                });
             throw e;
         }
         return true;
