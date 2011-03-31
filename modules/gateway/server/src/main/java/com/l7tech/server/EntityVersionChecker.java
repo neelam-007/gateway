@@ -376,7 +376,7 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
                             }
                         }
                     }
-                }, 10L );
+                }, 0L );
             }
         }
     }

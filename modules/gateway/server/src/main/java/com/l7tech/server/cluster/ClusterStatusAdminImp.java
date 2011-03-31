@@ -12,7 +12,9 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.*;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.audit.AuditSinkPropertiesChecker;
+import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.PersistenceEvent;
@@ -67,7 +69,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
                                  TrustedEsmUserManager trustedEsmUserManager,
                                  RbacServices rbacServices,
                                  AuditSinkPropertiesChecker auditSinkPropertiesChecker,
-                                 PlatformTransactionManager transactionManager)
+                                 PlatformTransactionManager transactionManager,
+                                 Timer timer)
     {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
@@ -82,6 +85,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         this.rbacServices = rbacServices;
         this.auditSinkPropertiesChecker = auditSinkPropertiesChecker;
         this.transactionManager = transactionManager;
+        this.timer = timer;
 
         if (clusterInfoManager == null)
             throw new IllegalArgumentException("Cluster Info manager is required");
@@ -498,21 +502,29 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
             @Override
             public void afterCompletion(int status) {
                 if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    // If it is not one of three audit sink cluster properties, ignore the task below.
-                    if (! ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK.equals(clusterProperty.getName()) &&
-                        ! ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID.equals(clusterProperty.getName()) &&
-                        ! ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL.equals(clusterProperty.getName())) {
-                        return;
-                    }
+                    final AdminInfo info = AdminInfo.find(!AuditContextUtils.isSystem());
+                    if (info == null) return;
 
-                    TransactionTemplate template = new TransactionTemplate(transactionManager);
-                    template.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
-                    template.execute(new TransactionCallbackWithoutResult() {
+                    timer.schedule(new TimerTask() {
                         @Override
-                        protected void doInTransactionWithoutResult(TransactionStatus status) {
-                            auditSinkPropertiesChecker.checkAndAuditPropsStatus(clusterProperty, prevPropStatus, toBeDeleted);
+                        public void run() {
+                            // If it is not one of three audit sink cluster properties, ignore the task below.
+                            if (! ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK.equals(clusterProperty.getName()) &&
+                                ! ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID.equals(clusterProperty.getName()) &&
+                                ! ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL.equals(clusterProperty.getName())) {
+                                return;
+                            }
+
+                            TransactionTemplate template = new TransactionTemplate(transactionManager);
+                            template.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
+                            template.execute(new TransactionCallbackWithoutResult() {
+                                @Override
+                                protected void doInTransactionWithoutResult(TransactionStatus status) {
+                                    auditSinkPropertiesChecker.checkAndAuditPropsStatus(clusterProperty, prevPropStatus, toBeDeleted, info);
+                                }
+                            });
                         }
-                    });
+                    }, 10L);
                 }
             }
         });
@@ -532,7 +544,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     private final RbacServices rbacServices;
     private final AuditSinkPropertiesChecker auditSinkPropertiesChecker;
     private final PlatformTransactionManager transactionManager;
+    private final Timer timer;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-
 }

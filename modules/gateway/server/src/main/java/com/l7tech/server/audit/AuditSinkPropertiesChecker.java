@@ -1,10 +1,9 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.Component;
-import com.l7tech.gateway.common.audit.Messages;
-import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.SystemEvent;
@@ -14,7 +13,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -26,6 +24,14 @@ import java.util.logging.Level;
  * @author ghuang
  */
 public class AuditSinkPropertiesChecker implements ApplicationContextAware, ApplicationListener {
+    public static final String INTERNAL_AUDIT_SYSTEM_STARTED = "Internal Audit System started";
+    public static final String INTERNAL_AUDIT_SYSTEM_DISABLED = "Internal Audit System disabled";
+    public static final String AUDIT_SINK_POLICY_STARTED = "Audit Sink Policy started";
+    public static final String AUDIT_SINK_POLICY_DISABLED = "Audit Sink Policy disabled";
+    public static final String AUDIT_SINK_FALL_BACK_ENABLED = "Fall back on internal audit system enabled";
+    public static final String AUDIT_SINK_FALL_BACK_DISABLED = "Fall back on internal audit system disabled";
+    public static final String AUDIT_SINK_FALL_BACK_WARNING = "Audit Sink Policy failed and Internal Audit Fall Back is disabled.";
+
     private ApplicationContext applicationContext;
     private ServerConfig serverConfig;
 
@@ -51,8 +57,8 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
                 new SystemEvent(AuditSinkPropertiesChecker.this,
                     Component.GW_AUDIT_SINK_CONFIG,
                     null,
-                    SystemMessages.AUDIT_SINK_START.getLevel(),
-                    MessageFormat.format(SystemMessages.AUDIT_SINK_START.getMessage(), "Internal Audit System")) {
+                    Level.INFO,
+                    INTERNAL_AUDIT_SYSTEM_STARTED) {
 
                     @Override
                     public String getAction() {
@@ -67,8 +73,8 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
                 new SystemEvent(AuditSinkPropertiesChecker.this,
                     Component.GW_AUDIT_SINK_CONFIG,
                     null,
-                    SystemMessages.AUDIT_SINK_START.getLevel(),
-                    MessageFormat.format(SystemMessages.AUDIT_SINK_START.getMessage(), "Audit Sink Policy")) {
+                    Level.INFO,
+                    AUDIT_SINK_POLICY_STARTED) {
 
                     @Override
                     public String getAction() {
@@ -105,9 +111,10 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
      * @param clusterProperty: The cluster property to be checked and its status will be audited.
      * @param prevPropStatus: The status of the properties before deleted/updated/created.
      * @param toBeDeleted: A flag to indicate that the cluster property is to be deleted.  If it is false, then it means it is to updated/created.
+     * @param info: The Admin info to preserve the administrative details from the Admin API.
      * @return a list of audited messages.  This is only for testing purpose (Please see @link AuditSinkPropertiesCheckerTest})
      */
-    public List<String> checkAndAuditPropsStatus(final ClusterProperty clusterProperty, final boolean[] prevPropStatus, boolean toBeDeleted) {
+    public List<String> checkAndAuditPropsStatus(final ClusterProperty clusterProperty, final boolean[] prevPropStatus, final boolean toBeDeleted, final AdminInfo info) {
         final List<String> auditMessages = new ArrayList<String>();
 
         if (ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK.equals(clusterProperty.getName())) {
@@ -121,23 +128,25 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
             final boolean currInternalAuditStatus = Boolean.parseBoolean(clusterProperty.getValue()) || (! isAuditSinkPolicyEnabled());
             final boolean prevInternalAuditStatus = prevPropStatus[0];
             if (currInternalAuditStatus != prevInternalAuditStatus) {
-                final Messages.M message = currInternalAuditStatus? SystemMessages.AUDIT_SINK_START : SystemMessages.AUDIT_SINK_DISABLED;
-                auditMessages.add(MessageFormat.format(message.getMessage(), "Internal Audit System"));
+                auditMessages.add(currInternalAuditStatus? INTERNAL_AUDIT_SYSTEM_STARTED : INTERNAL_AUDIT_SYSTEM_DISABLED);
             }
         } else if (ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID.equals(clusterProperty.getName())) {
             if (toBeDeleted) {
                 // If the audit sink policy prop is deleted, then the internal audit system is automatically turned on, so currInternalAuditStatus is set to true.
                 final boolean currInternalAuditStatus = true;
                 final boolean prevInternalAuditStatus = prevPropStatus[1];
+                //noinspection PointlessBooleanExpression
                 if (currInternalAuditStatus != prevInternalAuditStatus) {
-                    auditMessages.add(MessageFormat.format(SystemMessages.AUDIT_SINK_START.getMessage(), "Internal Audit System"));
+                    auditMessages.add(INTERNAL_AUDIT_SYSTEM_STARTED);
                 }
 
                 // Since the audit sink policy prop is deleted, the audit sink policy must be disabled, so currAuditPolicyStatus is set to false.
                 final boolean currAuditPolicyStatus = false;
                 final boolean prevAuditPolicyStatus = prevPropStatus[0];
+
+                //noinspection PointlessBooleanExpression
                 if (currAuditPolicyStatus != prevAuditPolicyStatus) {
-                    auditMessages.add(MessageFormat.format(SystemMessages.AUDIT_SINK_DISABLED.getMessage(), "Audit Sink Policy"));
+                    auditMessages.add(AUDIT_SINK_POLICY_DISABLED);
                 }
             } else {
                 final String guid = clusterProperty.getValue();
@@ -145,14 +154,13 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
                 final boolean prevAuditPolicyStatus = prevPropStatus[0];
 
                 if (currAuditPolicyStatus != prevAuditPolicyStatus) {
-                    final Messages.M message = currAuditPolicyStatus? SystemMessages.AUDIT_SINK_START : SystemMessages.AUDIT_SINK_DISABLED;
-                    auditMessages.add(MessageFormat.format(message.getMessage(), "Audit Sink Policy"));
+                    auditMessages.add(currAuditPolicyStatus? AUDIT_SINK_POLICY_STARTED : AUDIT_SINK_POLICY_DISABLED);
 
                     // The below part is to handle a corner case:
                     // Both audit sink properties did not exist originally, then set the audit sink policy in Manager Cluster-wide Property dialog.
                     // In this case, the audit sink policy will be evaluated as enabled and the internal audit system will be evaluated as disabled.
                     if (currAuditPolicyStatus && (! isInternalAuditSystemEnabled(false))) {
-                        auditMessages.add(MessageFormat.format(SystemMessages.AUDIT_SINK_DISABLED.getMessage(), "Internal Audit System"));
+                        auditMessages.add(INTERNAL_AUDIT_SYSTEM_DISABLED);
                     }
                 }
             }
@@ -161,13 +169,13 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
             final boolean prevFallbackStatus = prevPropStatus[0];
 
             if (currFallbackStatus != prevFallbackStatus) {
-                auditMessages.add(MessageFormat.format(SystemMessages.AUDIT_SINK_FALL_BACK_STATUS.getMessage(), (currFallbackStatus ? "enabled" : "disabled")));
+                auditMessages.add(currFallbackStatus ? AUDIT_SINK_FALL_BACK_ENABLED : AUDIT_SINK_FALL_BACK_DISABLED);
             }
         }
 
         if (!auditMessages.isEmpty()) {
             for (String auditMessage: auditMessages) {
-                applicationContext.publishEvent(new AdminEvent(this, auditMessage) {
+                applicationContext.publishEvent(new AdminEvent(this, auditMessage, info) {
                     @Override
                     public Level getMinimumLevel() {
                         return Level.INFO;

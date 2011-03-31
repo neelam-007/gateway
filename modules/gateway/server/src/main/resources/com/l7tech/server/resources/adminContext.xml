@@ -346,6 +346,7 @@
         <constructor-arg ref="rbacServices"/>
         <constructor-arg ref="auditSinkPropertiesChecker"/>
         <constructor-arg ref="transactionManager"/>
+        <constructor-arg ref="entityVersionCheckerTimer"/>
     </bean>
 
     <!-- RBAC admin impl -->

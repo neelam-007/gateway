@@ -4,8 +4,6 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
@@ -54,7 +52,6 @@ public class AuditContextImpl implements AuditContext {
      */
     public AuditContextImpl(ServerConfig serverConfig,
                             AuditRecordManager auditRecordManager,
-                            ClusterPropertyManager clusterPropertyManager,
                             AuditPolicyEvaluator auditPolicyEvaluator,
                             AuditFilterPolicyManager auditFilterPolicyManager,
                             String nodeId) {
@@ -66,7 +63,6 @@ public class AuditContextImpl implements AuditContext {
         }
         this.serverConfig = serverConfig;
         this.auditRecordManager = auditRecordManager;
-        this.clusterPropertyManager = clusterPropertyManager;
         this.auditPolicyEvaluator = auditPolicyEvaluator;
         this.auditFilterPolicyManager = auditFilterPolicyManager;
         this.nodeId = nodeId;
@@ -324,13 +320,13 @@ public class AuditContextImpl implements AuditContext {
 
                     if (isPCIDSSEnabled()) {
                         // If audit sink policy fails and internal audit fall back is disabled, then log and audit a warning "audit sink policy failed and internal audit fall back is disabled."
-                        logger.warning(SystemMessages.AUDIT_SINK_FALL_BACK_WARNING.getMessage());
+                        logger.warning(AuditSinkPropertiesChecker.AUDIT_SINK_FALL_BACK_WARNING);
 
                         SystemAuditRecord auditFallbackDisabled = new SystemAuditRecord(
-                            SystemMessages.AUDIT_SINK_FALL_BACK_WARNING.getLevel(),
+                            Level.WARNING,
                             nodeId,
                             Component.GW_AUDIT_SYSTEM,
-                            SystemMessages.AUDIT_SINK_FALL_BACK_WARNING.getMessage(),
+                            AuditSinkPropertiesChecker.AUDIT_SINK_FALL_BACK_WARNING,
                             false,
                             0,
                             null,
@@ -375,11 +371,7 @@ public class AuditContextImpl implements AuditContext {
     }
 
     private boolean isAlwaysSaveToDatabase() {
-        try {
-            return Boolean.parseBoolean(clusterPropertyManager.getProperty(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK));
-        } catch (FindException e) {
-            return false;
-        }
+        return serverConfig.getBooleanPropertyCached(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, false, 30000);
     }
 
     /**
@@ -570,7 +562,6 @@ public class AuditContextImpl implements AuditContext {
 
     private final ServerConfig serverConfig;
     private final AuditRecordManager auditRecordManager;
-    private final ClusterPropertyManager clusterPropertyManager;
     private final String nodeId;
     private AuditPolicyEvaluator auditPolicyEvaluator;
     private final AuditFilterPolicyManager auditFilterPolicyManager;

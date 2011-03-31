@@ -1106,7 +1106,6 @@
     <bean id="auditContextImpl" class="com.l7tech.server.audit.AuditContextImpl" scope="prototype">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="auditRecordManager"/>
-        <constructor-arg ref="clusterPropertyManager"/>
         <constructor-arg ref="auditPolicyEvaluator"/>
         <constructor-arg ref="auditFilterPolicyManager"/>
         <constructor-arg ref="clusterNodeId"/>
@@ -1291,6 +1290,10 @@
         <constructor-arg ref="clusterNodeId"/>
     </bean>
 
+    <bean id="entityVersionCheckerTimer" class="com.l7tech.server.util.ManagedTimer">
+        <constructor-arg value="EntityVersionChecker"/>
+    </bean>
+    
     <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
@@ -1319,11 +1322,7 @@
                 <ref bean="resolutionConfigurationManager" />
             </list>
         </property>
-        <property name="timer">
-            <bean class="com.l7tech.server.util.ManagedTimer">
-                <constructor-arg value="EntityVersionChecker"/>
-            </bean>
-        </property>
+        <property name="timer" ref="entityVersionCheckerTimer"/>
     </bean>
 
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager" depends-on="clusterPropertyManager">
