@@ -233,6 +233,12 @@ public class XslTransformationPropertiesDialog extends AssertionPropertiesOkCanc
     }
 
     @Override
+    public void dispose() {
+        super.dispose();
+        specifyPanel.dispose();
+    }
+
+    @Override
     protected JPanel createPropertyPanel() {
         return mainPanel;
     }

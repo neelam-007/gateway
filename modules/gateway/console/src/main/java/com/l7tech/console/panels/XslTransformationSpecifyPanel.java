@@ -45,6 +45,9 @@ import java.util.logging.Logger;
 
 /**
  * Part of {@link XslTransformationPropertiesDialog}.
+ *
+ * <p>This panel must be disposed after use to ensure UI resources are freed.</p>
+ *
  * @author alex
  */
 public class XslTransformationSpecifyPanel extends JPanel {
@@ -60,8 +63,10 @@ public class XslTransformationSpecifyPanel extends JPanel {
     private JTextField nameField;
     private JLabel xsltLabel;
 
+    private final XMLContainer xmlContainer;
     private final XslTransformationPropertiesDialog xslDialog;
     private final UIAccessibility uiAccessibility;
+    private String xmlText;
 
     public static final String XSL_IDENTITY_TRANSFORM = "<?xml version=\"1.0\"?>\n" +
            "<xsl:stylesheet version=\"1.0\" xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>\n" +
@@ -76,7 +81,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
     public XslTransformationSpecifyPanel(final XslTransformationPropertiesDialog parent, final XslTransformation assertion) {
         this.xslDialog = parent;
 
-        XMLContainer xmlContainer = new XMLContainer(true);
+        xmlContainer = new XMLContainer();
         final JComponent xmlEditor = xmlContainer.getView();
         xsltLabel.setLabelFor(xmlEditor);
         uiAccessibility = xmlContainer.getUIAccessibility();
@@ -149,15 +154,6 @@ public class XslTransformationSpecifyPanel extends JPanel {
 
         setModel(assertion);
     }
-
-    public UIAccessibility getUiAccessibility() {
-        return uiAccessibility;
-    }
-
-    public JTextField getNameField() {
-        return nameField;
-    }
-
 
     public JButton getFileButton() {
         return fileButton;
@@ -272,7 +268,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
     }
 
     String check() {
-        String contents = uiAccessibility.getEditor().getText();
+        String contents = getEditorText();
         try {
             docIsXsl(contents);
         } catch (SAXException e) {
@@ -312,8 +308,24 @@ public class XslTransformationSpecifyPanel extends JPanel {
     }
 
     void updateModel(XslTransformation assertion) {
-        assertion.setResourceInfo(new StaticResourceInfo(uiAccessibility.getEditor().getText()));
+        assertion.setResourceInfo(new StaticResourceInfo(getEditorText()));
         assertion.setTransformName(nameField.getText());
+    }
+
+    /**
+     * Dispose of any UI resources.
+     */
+    public void dispose() {
+        // The editor cannot be used after it is disposed so record the final text.
+        xmlText = uiAccessibility.getEditor().getText();
+        xmlContainer.dispose();
+    }
+
+    /**
+     * Get the editor text, this method is safe to use after disposal of UI resources.
+     */
+    private String getEditorText() {
+        return xmlText != null ? xmlText : uiAccessibility.getEditor().getText();
     }
 
     private static void docIsXsl(String str) throws SAXException {
