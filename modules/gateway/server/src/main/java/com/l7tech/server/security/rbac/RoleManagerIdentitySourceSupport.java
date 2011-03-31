@@ -60,7 +60,7 @@ public abstract class RoleManagerIdentitySourceSupport implements RoleManagerIde
                         if ( assignment.getProviderId()==internalProvider.getConfig().getOid() ) {
                             if ( EntityType.USER.getName().equals(assignment.getEntityType()) ) {
                                 InternalUser user = userManager.findByPrimaryKey( assignment.getIdentityId() );
-                                if ( user != null && (user.getExpiration()<0 || user.getExpiration() < expiryMinTime)) {
+                                if ( user != null && user.isEnabled() && (user.getExpiration()<0 || user.getExpiration() < expiryMinTime )) {
                                     found = true;
                                     break;
                                 } else {
@@ -80,7 +80,7 @@ public abstract class RoleManagerIdentitySourceSupport implements RoleManagerIde
                                         if ( checkedUserOids.contains( userHeader.getStrId() ) ) continue;
 
                                         InternalUser user = userManager.findByPrimaryKey( userHeader.getStrId() );
-                                        if ( user != null && (user.getExpiration()<0 || user.getExpiration() < expiryMinTime)) {
+                                        if ( user != null && user.isEnabled() &&(user.getExpiration()<0 || user.getExpiration() < expiryMinTime)) {
                                             found = true;
                                             break;
                                         } else {

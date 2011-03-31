@@ -84,6 +84,14 @@ public class InternalIdentityProviderImpl
                 return null;
             }
 
+            if ( !dbUser.isEnabled() ) {
+                String err = "Credentials' login matches an internal user " + login + " but that " +
+                        "account is disabled.";
+                logger.info(err);
+                auditor.logAndAudit(SystemMessages.AUTH_USER_DISABLED, login);
+                throw new AuthenticationException(err);
+            }
+
             if ( isExpired(dbUser) ) {
                 String err = "Credentials' login matches an internal user " + login + " but that " +
                         "account is now expired.";
@@ -212,6 +220,8 @@ public class InternalIdentityProviderImpl
 
         if(validatedUser == null){
             throw new ValidationException("IdentityProvider User " + u.getLogin()+" not found.");
+        } else if ( !validatedUser.isEnabled()) {
+            throw new ValidationException("User '"+u.getLogin()+"' did not validate (disabled account)");
         } else if ( isExpired( validatedUser ) ) {
             throw new ValidationException("User '"+u.getLogin()+"' did not validate (expired account)");
         }
