@@ -216,6 +216,7 @@ public class AuditContextImpl implements AuditContext {
             listener.notifyRecordFlushed(currentRecord, formatter, true);
 
             Set<AuditDetail> detailsToSave = new HashSet<AuditDetail>();
+            int newOrdinal = 0;
             for (List<AuditDetailWithInfo> list : details.values()) {
                 for (AuditDetailWithInfo detailWithInfo : list) {
                     int mid = detailWithInfo.detail.getMessageId();
@@ -242,6 +243,7 @@ public class AuditContextImpl implements AuditContext {
                         }
 
                         detailsToSave.add(detailWithInfo.detail);
+                        detailWithInfo.detail.setOrdinal(newOrdinal++);
 
                         listener.notifyDetailFlushed(
                                 getSource(detailWithInfo.source, "com.l7tech.server.audit"),

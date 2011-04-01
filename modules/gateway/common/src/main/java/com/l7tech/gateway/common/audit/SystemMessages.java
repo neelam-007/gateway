@@ -152,8 +152,6 @@ public class SystemMessages extends Messages {
 
     //audit-message-filter and audit-viewer policies
     public static final M AUDIT_MESSAGE_FILTER_POLICY_FAILED = m( 2360, Level.WARNING, "Audit message filter policy failed for the {0}. No message was audited." );
-    public static final M AUDIT_VIEWER_POLICY_INVOKED        = m( 2361, Level.INFO, "Audit viewer policy invoked for AuditRecord ''{0}''. Invoked for {1}." );
-    public static final M AUDIT_VIEWER_POLICY_FAILED         = m( 2362, Level.INFO, "Audit viewer policy failed. {0}" );
 
     // MAX -                                      m(2999
 }

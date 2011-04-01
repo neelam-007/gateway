@@ -441,27 +441,23 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     @Override
     public String invokeAuditViewerPolicyForMessage(long auditRecordId, boolean isRequest) throws FindException {
 
-        final Set<Pair<Level, String>> auditMessages = new HashSet<Pair<Level, String>>();
+        final List<Pair<Level, String>> auditMessages = new ArrayList<Pair<Level, String>>();
         try {
             auditMessages.add(new Pair<Level, String>(
-                    SystemMessages.AUDIT_VIEWER_POLICY_INVOKED.getLevel(),
-                    MessageFormat.format(SystemMessages.AUDIT_VIEWER_POLICY_INVOKED.getMessage(),
+                    Level.INFO,
+                    MessageFormat.format("Audit viewer policy invoked for AuditRecord ''{0}''. Invoked for {1}.",
                     String.valueOf(auditRecordId), ((isRequest) ? "request": "response") + " message")));
             
             final AuditRecord record = auditRecordManager.findByPrimaryKey(auditRecordId);
             if(record == null){
                 final String params = "No audit record found for AuditRecord with id " + auditRecordId;
-                auditMessages.add(new Pair<Level, String>(
-                        SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getLevel(),
-                        MessageFormat.format(SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getMessage(), params)));
+                addInvokeAuditViewerAuditMsg(auditMessages, params);
                 return null;
             }
 
             if (!(record instanceof MessageSummaryAuditRecord)) {
                 final String params = "Audit viewer policy is only applicable for message audits. Cannot process AuditRecord with id " + auditRecordId;
-                auditMessages.add(new Pair<Level, String>(
-                        SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getLevel(),
-                        MessageFormat.format(SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getMessage(), params)));
+                addInvokeAuditViewerAuditMsg(auditMessages, params);
                 return null;
             }
 
@@ -477,23 +473,12 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                 return auditFilterPolicyManager.evaluateAuditViewerPolicy(messageXml, isRequest);
             } catch (AuditFilterPolicyManager.AuditViewerPolicyException e) {
                 final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
-                auditMessages.add(new Pair<Level, String>(
-                        SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getLevel(),
-                        MessageFormat.format(SystemMessages.AUDIT_VIEWER_POLICY_FAILED.getMessage(), params)));
+                addInvokeAuditViewerAuditMsg(auditMessages, params);
             }
 
             return null;
         } finally {
-            if (!auditMessages.isEmpty()) {
-                for (final Pair<Level, String> auditMessage : auditMessages) {
-                    applicationContext.publishEvent(new AdminEvent(this, auditMessage.right) {
-                        @Override
-                        public Level getMinimumLevel() {
-                            return auditMessage.left;
-                        }
-                    });
-                }
-            }
+            publishInvokeAuditViewerAudits(auditMessages);
         }
     }
 
@@ -502,39 +487,81 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
         if(ordinal < 0) throw new IllegalArgumentException("ordinal must be >= 0");
 
-        final AuditRecord record = auditRecordManager.findByPrimaryKey(auditRecordId);
-        if(record == null){
-            logger.log(Level.INFO, "No audit record found for AuditRecord with id " + auditRecordId);
-            return null;
-        }
+        final List<Pair<Level, String>> auditMessages = new ArrayList<Pair<Level, String>>();
 
-        if (!(record instanceof MessageSummaryAuditRecord)) {
-            logger.log(Level.INFO, "Audit viewer policy is only applicable for message audits. Cannot process AuditRecord with id " + auditRecordId);
-            return null;
-        }
+        try {
+            auditMessages.add(new Pair<Level, String>(
+                    Level.INFO,
+                    MessageFormat.format("Audit viewer policy invoked for AuditRecord ''{0}''. Invoked for audit detail message in position {1}.",
+                    String.valueOf(auditRecordId), ordinal + 1)));//users count from 1
+            
+            final AuditRecord record = auditRecordManager.findByPrimaryKey(auditRecordId);
+            if(record == null){
+                final String params = "No audit record found for AuditRecord with id " + auditRecordId;
+                addInvokeAuditViewerAuditMsg(auditMessages, params);
+                return null;
+            }
 
-        final MessageSummaryAuditRecord messageAudit = (MessageSummaryAuditRecord) record;
+            if (!(record instanceof MessageSummaryAuditRecord)) {
+                final String params = "Audit viewer policy is only applicable for message audits. Cannot process AuditRecord with id " + auditRecordId;
+                addInvokeAuditViewerAuditMsg(auditMessages, params, Level.FINE);
+                return null;
+            }
 
-        final Set<AuditDetail> details = messageAudit.getDetails();
-        for (AuditDetail detail : details) {
-            //ordinal is all that is actually needed to find the audit detail, so long as it has been created correctly
-            if (USER_DETAIL_MESSAGES.contains(detail.getMessageId()) && detail.getOrdinal() == ordinal) {
-                final String[] params = detail.getParams();
-                if (params == null || params[0] == null) {
-                    logger.log(Level.INFO, "No parameter found for audit detail record with id " + detail.getMessageId() + " with ordinal " + ordinal);
-                    return null;
-                }
-                try {
-                    return auditFilterPolicyManager.evaluateAuditViewerPolicy(params[0], null);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e));
+            final MessageSummaryAuditRecord messageAudit = (MessageSummaryAuditRecord) record;
+
+            final Set<AuditDetail> details = messageAudit.getDetails();
+            for (AuditDetail detail : details) {
+                //ordinal is all that is actually needed to find the audit detail, so long as it has been created correctly
+                if (USER_DETAIL_MESSAGES.contains(detail.getMessageId()) && detail.getOrdinal() == ordinal) {
+                    final String[] detailParams = detail.getParams();
+                    if (detailParams == null || detailParams[0] == null) {
+                        final String auditMsg = "No parameter found for audit detail record with id " + detail.getMessageId() + " with ordinal " + ordinal;
+                        addInvokeAuditViewerAuditMsg(auditMessages, auditMsg);
+                        return null;
+                    }
+                    try {
+                        return auditFilterPolicyManager.evaluateAuditViewerPolicy(detailParams[0], null);
+                    } catch (Exception e) {
+                        final String msg = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
+                        addInvokeAuditViewerAuditMsg(auditMessages, msg, Level.WARNING);
+                    }
                 }
             }
-        }
 
-        return null;
+            return null;
+        } finally {
+            publishInvokeAuditViewerAudits(auditMessages);
+        }
     }
 
+    private void publishInvokeAuditViewerAudits(List<Pair<Level, String>> auditMessages) {
+        if (!auditMessages.isEmpty()) {
+            for (final Pair<Level, String> auditMessage : auditMessages) {
+                applicationContext.publishEvent(new AdminEvent(this, auditMessage.right) {
+                    @Override
+                    public Level getMinimumLevel() {
+                        return auditMessage.left;
+                    }
+                });
+            }
+        }
+    }
+
+    private void addInvokeAuditViewerAuditMsg(final List<Pair<Level, String>> auditMessages,
+                                              final String params){
+        addInvokeAuditViewerAuditMsg(auditMessages, params, Level.INFO);
+    }
+
+    private void addInvokeAuditViewerAuditMsg(final List<Pair<Level, String>> auditMessages,
+                                              final String params,
+                                              final Level level){
+        final String avPolicyFailedAudit = "Audit viewer policy failed. {0}";
+        auditMessages.add(new Pair<Level, String>(
+                level,
+                MessageFormat.format(avPolicyFailedAudit, params)));
+    }
+    
     /**
      * Temporary object which will hold the audit view event and administrative information which fired the audit
      * view event.
