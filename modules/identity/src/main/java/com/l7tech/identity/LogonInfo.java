@@ -93,6 +93,7 @@ public class LogonInfo extends PersistentEntityImp {
     }
 
     @Column(name="state")
+    @Enumerated(EnumType.STRING)
     public State getState() {
         return state;
     }

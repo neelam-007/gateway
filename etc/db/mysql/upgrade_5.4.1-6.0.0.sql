@@ -60,7 +60,7 @@ INSERT INTO rbac_permission VALUES (-1202,0,-1200,'READ',NULL,'AUDIT_RECORD');
 -- logon info changes
 --
 ALTER TABLE logon_info ADD COLUMN last_activity bigint(20) NOT NULL;
-ALTER TABLE logon_info ADD COLUMN state int(11) NOT NULL DEFAULT 0;
+ALTER TABLE logon_info ADD COLUMN state varchar(32) DEFAULT 'ACTIVE';
 
 
 --

@@ -136,7 +136,7 @@ CREATE TABLE logon_info (
   fail_count int(11) NOT NULL DEFAULT 0,
   last_attempted bigint(20) NOT NULL,
   last_activity bigint(20) NOT NULL,
-  state int(11) NOT NULL DEFAULT 0,
+  state varchar(32) NOT NULL DEFAULT 'ACTIVE',
   PRIMARY KEY (objectid),
   UNIQUE KEY unique_provider_login (provider_oid, login),
   CONSTRAINT logon_info_provider FOREIGN KEY (provider_oid) REFERENCES identity_provider(objectid) ON DELETE CASCADE
