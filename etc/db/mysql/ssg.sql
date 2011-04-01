@@ -84,7 +84,7 @@ CREATE TABLE internal_user (
 --
 
 
-INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd2e738e2','','','','',-1,1577865600000,FALSE);
+INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd2e738e2','','','','',-1,1577865600000,FALSE, TRUE);
 
 --
 -- Table structure for table 'internal_user_group'
