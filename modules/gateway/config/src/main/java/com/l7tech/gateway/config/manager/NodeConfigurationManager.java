@@ -174,12 +174,14 @@ public class NodeConfigurationManager {
         setPropertyIfNotNull( props, NODEPROPERTIES_ID, nodeid );
         setPropertyIfNotNull( props, NODEPROPERTIES_ENABLED, setEnabled );
         setPropertyIfNotNull( props, NODEPROPERTIES_CLUSTPROP, encClusterPassword );
-        if ( databaseConfig != null && databaseConfig.getNodePassword() != null ) {
-            setPropertyIfNotNull( props, "node.db.config.main.host", databaseConfig.getHost() );
-            setPropertyIfNotNull( props, "node.db.config.main.port", Integer.toString(databaseConfig.getPort()) );
-            setPropertyIfNotNull( props, "node.db.config.main.name", databaseConfig.getName() );
-            setPropertyIfNotNull( props, "node.db.config.main.user", databaseConfig.getNodeUsername() );
-            setPropertyIfNotNull( props, "node.db.config.main.pass", encDatabasePassword );
+        if ( databaseConfig != null ) {
+            if ( databaseConfig.getNodePassword() != null ) {
+                setPropertyIfNotNull( props, "node.db.config.main.host", databaseConfig.getHost() );
+                setPropertyIfNotNull( props, "node.db.config.main.port", Integer.toString(databaseConfig.getPort()) );
+                setPropertyIfNotNull( props, "node.db.config.main.name", databaseConfig.getName() );
+                setPropertyIfNotNull( props, "node.db.config.main.user", databaseConfig.getNodeUsername() );
+                setPropertyIfNotNull( props, "node.db.config.main.pass", encDatabasePassword );
+            }
 
             if ( database2ndConfig != null ) {
                 props.setProperty(NODEPROPERTIES_DB_CLUSTYPE, "replicated" );
