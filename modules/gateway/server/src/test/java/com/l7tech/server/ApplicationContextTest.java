@@ -4,9 +4,11 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.util.Functions;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.junit.Test;
 import org.junit.Assert;
 
+import java.lang.reflect.Constructor;
 import java.util.*;
 import java.lang.reflect.Method;
 import java.lang.annotation.Annotation;
@@ -99,6 +102,8 @@ public class ApplicationContextTest  {
                                    dlbf.containsBean(name));
                     }
                 }
+
+                checkBeanConstructor( beanId, bd, cav, constructorArgs );
             }
 
             MutablePropertyValues mpv = bd.getPropertyValues();
@@ -113,6 +118,43 @@ public class ApplicationContextTest  {
                     }
                 }
             }
+        }
+    }
+
+    public static void checkBeanConstructor( final String beanId,
+                                             final BeanDefinition bd,
+                                             final ConstructorArgumentValues cav,
+                                             final List<ConstructorArgumentValues.ValueHolder> constructorArgs ) {
+        // Verify that the constructor arguments match the class (at least to some extent)
+        Class beanClass = null;
+        try {
+            if ( bd.getBeanClassName() != null ) {
+                beanClass = Class.forName( bd.getBeanClassName() );
+            }
+        } catch ( ClassNotFoundException e ) {
+            Assert.fail( "Class not found '" + bd.getBeanClassName() + "' for bean '" + beanId + "'" );
+        }
+        if ( beanClass != null && !FactoryBean.class.isInstance( beanClass ) ) {
+            int constructorArgumentCount = constructorArgs.size();
+            if ( !cav.getIndexedArgumentValues().isEmpty() ) {
+                int maxIndex = Functions.reduce( cav.getIndexedArgumentValues().keySet(), 0, new Functions.Binary<Integer, Integer, Integer>() {
+                    @Override
+                    public Integer call( final Integer integer, final Integer integer1 ) {
+                        return Math.max( integer, integer1 );
+                    }
+                } );
+                if ( maxIndex >= constructorArgumentCount ) {
+                    constructorArgumentCount = maxIndex + 1;
+                }
+            }
+            boolean foundConstructor = false;
+            for ( final Constructor constructor : beanClass.getDeclaredConstructors() ) {
+                if ( constructor.getParameterTypes().length >= constructorArgumentCount ) {
+                    foundConstructor = true;
+                    break;
+                }
+            }
+            Assert.assertTrue( "Application context bean '"+beanId+"' has no constructor with "+constructorArgumentCount+" parameters", constructorArgumentCount==0 || foundConstructor );
         }
     }
 

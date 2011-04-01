@@ -1,6 +1,7 @@
 package com.l7tech.server.ems;
 
 import com.l7tech.gateway.common.security.rbac.Secured;
+import com.l7tech.server.ApplicationContextTest;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -73,6 +74,8 @@ public class EsmApplicationContextTest {
                                    dlbf.containsBean(name));
                     }
                 }
+
+                ApplicationContextTest.checkBeanConstructor( beanId, bd, cav, constructorArgs );
             }
 
             MutablePropertyValues mpv = bd.getPropertyValues();
