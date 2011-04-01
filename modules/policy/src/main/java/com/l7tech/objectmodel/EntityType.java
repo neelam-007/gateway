@@ -1,7 +1,10 @@
 package com.l7tech.objectmodel;
 
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 /**
  * Enum of all entity types known to the RBAC system.
@@ -121,6 +124,24 @@ public enum EntityType implements Comparable<EntityType> {
 
     public static final NameComparator NAME_COMPARATOR = new NameComparator();
 
+    /**
+     * Get all entity type names
+     *
+     * @param sorted: if it is true, then sort the list of returned names.
+     * @return a list of entity types
+     */
+    public static List<String> getAllNames(boolean sorted) {
+        List<String> names = new ArrayList<String>(values().length);
+        for (EntityType type: values()) {
+            names.add(type.getName());
+        }
+
+        if (sorted) {
+            Collections.sort(names);
+        }
+        return names;
+    }
+
     private static class NameComparator implements Comparator<EntityType> {
         @Override
         public int compare(EntityType o1, EntityType o2) {
@@ -150,5 +171,22 @@ public enum EntityType implements Comparable<EntityType> {
             }
         }
         return type;
+    }
+
+    /**
+     *  Find the entity type associated with the given type name.
+     *
+     * @param typeName: the name of the entity type to be found
+     * @return the entity type with the name same as typeName.
+     */
+    public static EntityType findTypeByName(String typeName) {
+        if (typeName == null || typeName.trim().isEmpty()) return null;
+
+        for (EntityType type: values()) {
+            if (typeName.equals(type.getName())) {
+                return type;
+            }
+        }
+        return null;
     }
 }

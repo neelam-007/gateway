@@ -49,7 +49,13 @@ public final class AuditSearchCriteria implements Serializable {
         serviceName = builder.serviceName;
         message = builder.message;
         requestId = builder.requestId;
-        user = builder.user;
+        user = builder.user; // For ESM Audits Page
+        userName = builder.userName;
+        userIdOrDn = builder.userIdOrDn;
+        messageId = builder.messageId;
+        paramValue = builder.paramValue;
+        entityClassName = builder.entityClassName;
+        entityId = builder.entityId;
     }
 
     /**
@@ -115,6 +121,13 @@ public final class AuditSearchCriteria implements Serializable {
      */
     public final User user;
 
+    public final String userName;
+    public final String userIdOrDn;
+    public final Long messageId;
+    public final String paramValue;
+    public final String entityClassName; // Initial value: null, which means Entity Type Search Criterion is not set.
+    public final long entityId;
+
     /**
      * Grabs information about the search critiera.  Similiar to toString() method.
      *
@@ -173,6 +186,24 @@ public final class AuditSearchCriteria implements Serializable {
         //construct node ID
         if (this.nodeId != null && moreDetails) searchCriteria.append("Node ID: " + this.nodeId + " ");
 
+        // construct User Name
+        if (userName != null) searchCriteria.append("User Name: " + userName + " ");
+
+        // construct User ID or DN
+        if (userIdOrDn != null) searchCriteria.append("User ID or DN: " + userIdOrDn + " ");
+
+        // construct Audit Code
+        if (messageId != null) searchCriteria.append("Audit Code: " + messageId + " ");
+
+        // construct Aduit Detail Parameter Value
+        if (paramValue != null) searchCriteria.append("Audit Detail Parameter Value: " + paramValue + " ");
+
+        // construct Entity Type
+        if (entityClassName != null) searchCriteria.append("Entity Class: " + entityClassName + " ");
+
+        // construct Entity ID
+        if (entityId >= 0) searchCriteria.append("Entity ID: " + entityId + " ");
+
         return searchCriteria.toString();
     }
 
@@ -228,6 +259,13 @@ public final class AuditSearchCriteria implements Serializable {
         private String requestId = null; //null == any
         private User user = null; //null == any
 
+        private String userName; // null == any
+        private String userIdOrDn; // null == any
+        private Long messageId; // null == any
+        private String paramValue; // null == any
+        private String entityClassName; // null == any
+        private long entityId = -1; // -1 == any
+
         public Builder() {
         }
 
@@ -241,6 +279,11 @@ public final class AuditSearchCriteria implements Serializable {
             message(logRequest.getMessage());
             requestId(logRequest.getRequestId());
             auditType(logRequest.getAuditType());
+            userName(logRequest.getUserName());
+            userIdOrDn(logRequest.getUserIdOrDn());
+            messageId(logRequest.getMessageId());
+            paramValue(logRequest.getParamValue());
+            entityId(logRequest.getEntityId());
         }
 
         public Builder fromTime(Date value) {
@@ -324,6 +367,48 @@ public final class AuditSearchCriteria implements Serializable {
                     return recordClass(SystemAuditRecord.class);
             }
             return this;//if value is ALL
+        }
+
+        public Builder userName(String value) {
+            if (value != null && !value.trim().isEmpty()) {
+                userName = value.replace("*", "%"); //translate any wildcard chars from GUI to mysql format
+            }
+            return this;
+        }
+
+        public Builder userIdOrDn(String value) {
+            if (value != null && !value.trim().isEmpty()) {
+                userIdOrDn = value;
+            }
+            return this;
+        }
+
+        public Builder messageId(Long value) {
+            if (value != null) {
+                messageId = new Long(value);
+            }
+            return this;
+        }
+
+        public Builder paramValue(String value) {
+            if (value != null && !value.trim().isEmpty()) {
+                paramValue = value;  // Pattern match is done in AuditRecordManagerImpl.
+            }
+            return this;
+        }
+
+        public Builder entityClass(String value) {
+            if (value != null) {
+                entityClassName = value;
+            }
+            return this;
+        }
+
+        public Builder entityId(long value) {
+            if (value >= 0) {
+                entityId = value;
+            }
+            return this;
         }
 
         public AuditSearchCriteria build() {

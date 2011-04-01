@@ -16,6 +16,7 @@ import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
+import com.l7tech.util.TextUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -116,7 +117,9 @@ public class AuditRecordManagerImpl
             ScrollableResults results = query.scroll();
             while( results.next() ) {
                 AuditRecord record = (AuditRecord) results.get(0);
-                result.add( transform.call(record) );
+                if (isAuditDetailSearchingPassed(criteria, record)) {
+                    result.add( transform.call(record) );
+                }
                 session.evict(record);
             }
             return result;
@@ -125,6 +128,46 @@ public class AuditRecordManagerImpl
         } finally {
             releaseSession(session);
         }
+    }
+
+    private boolean isAuditDetailSearchingPassed(final AuditSearchCriteria criteria, final AuditRecord record) {
+        final boolean searchingMsgIdEnabled = criteria.messageId != null;
+        final boolean searchingParamValueEnabled = criteria.paramValue != null && !criteria.paramValue.trim().isEmpty();
+
+        // If both searching criteria are not enabled, then ignore the checking procedure and return true.
+        if (!searchingMsgIdEnabled && !searchingParamValueEnabled) return true;
+
+        int msgId;
+        String[] params;
+        boolean msgIdMatched;
+        boolean paramValueMatched;
+
+        for (AuditDetail auditDetail: record.getDetails()) {
+            msgId = auditDetail.getMessageId();
+            params = auditDetail.getParams();
+
+            // If the "message id" searching criterion is not enabled, then ignore the message id checking and set msgIdMatched to true.
+            msgIdMatched = (! searchingMsgIdEnabled) || (msgId == criteria.messageId);
+            // If the "param value" searching criterion is not enabled, then ignore the param value checking  and set paramValueMatched to true.
+            paramValueMatched = (! searchingParamValueEnabled) || ((params != null) && (params.length > 0) && matchFound(params, criteria.paramValue));
+
+            if (msgIdMatched && paramValueMatched)
+                return true;
+        }
+
+        return false;
+    }
+
+    private boolean matchFound(String[] values, String pattern) {
+        if (pattern == null || pattern.trim().isEmpty()) throw new IllegalArgumentException("Match pattern must be specified.");
+        if (values == null || values.length == 0) return false;
+
+        for (String value: values) {
+            if (TextUtils.matches(pattern, value, true, true)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -344,6 +387,9 @@ public class AuditRecordManagerImpl
     public static final String PROP_MSG = "message";
     private static final String PROP_PROV_ID = "identityProviderOid";
     private static final String PROP_USER_ID = "userId";
+    private static final String PROP_USER_NAME = "userName";
+    private static final String PROP_ENTITY_CLASS = "entityClassname";
+    private static final String PROP_ENTITY_ID = "entityOid";
 
     private static final String DELETE_RANGE_START = "delete_range_start";
     private static final String DELETE_RANGE_END = "delete_range_end";
@@ -401,6 +447,21 @@ public class AuditRecordManagerImpl
         if (criteria.user != null) {
             criterion.add(Restrictions.eq(PROP_PROV_ID, criteria.user.getProviderId()));
             criterion.add(Restrictions.eq(PROP_USER_ID, criteria.user.getId()));
+        } else {
+            if (criteria.userName != null) {
+                criterion.add(Restrictions.ilike(PROP_USER_NAME, criteria.userName));
+            }
+            if (criteria.userIdOrDn != null) {
+                criterion.add(Restrictions.eq(PROP_USER_ID, criteria.userIdOrDn));
+            }
+        }
+
+        if (criteria.entityClassName != null && !criteria.entityClassName.trim().isEmpty()) {
+            criterion.add(Restrictions.eq(PROP_ENTITY_CLASS, criteria.entityClassName));
+        }
+
+        if (criteria.entityId >= 0) {
+            criterion.add(Restrictions.eq(PROP_ENTITY_ID, criteria.entityId));
         }
 
         return criterion.toArray( new Criterion[criterion.size()] );
@@ -513,7 +574,5 @@ public class AuditRecordManagerImpl
 
             return numDeleted;
         }
-
     }
-
 }

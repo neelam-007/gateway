@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.cluster;
 
 import com.l7tech.gateway.common.audit.AuditType;
+import com.l7tech.objectmodel.EntityType;
 
 import java.util.Date;
 import java.util.logging.Level;
@@ -25,6 +26,12 @@ public final class LogRequest {
     private final String message;
     private final String requestId;
     private final AuditType auditType;
+    private final String userName;
+    private final String userIdOrDn;
+    private final Long messageId;
+    private final String paramValue;
+    private final String entityTypeName;
+    private final long entityId;
 
     private int retrievedLogCount;
 
@@ -39,6 +46,12 @@ public final class LogRequest {
         this.message = lr.getMessage();
         this.requestId = lr.getRequestId();
         this.auditType = lr.getAuditType();
+        this.userName = lr.getUserName();
+        this.userIdOrDn = lr.getUserIdOrDn();
+        this.messageId = lr.getMessageId();
+        this.paramValue = lr.getParamValue();
+        this.entityTypeName = lr.getEntityTypeName();
+        this.entityId = lr.getEntityId();
     }
 
     private LogRequest(Builder builder) {
@@ -52,6 +65,12 @@ public final class LogRequest {
         message = builder.message;
         requestId = builder.requestId;
         auditType = builder.auditType;
+        userName = builder.userName;
+        userIdOrDn = builder.userIdOrDn;
+        messageId = builder.messageId;
+        paramValue = builder.paramValue;
+        entityTypeName = builder.entityTypeName;
+        entityId = builder.entityId;
         retrievedLogCount = 0;
     }
 
@@ -66,6 +85,12 @@ public final class LogRequest {
         private String message = null;
         private String requestId = null;
         private AuditType auditType = AuditType.ALL;
+        private String userName;
+        private String userIdOrDn;
+        private Long messageId = null;
+        private String paramValue;
+        private String entityTypeName = EntityType.ANY.getName();
+        private long entityId = -1;
 
         public Builder(){
         }
@@ -117,6 +142,35 @@ public final class LogRequest {
 
         public Builder auditType(AuditType value){
             auditType = value;
+            return this;
+        }
+
+        public Builder userName(String value) {
+            userName = value;
+            return this;
+        }
+        public Builder userIdOrDn(String value) {
+            userIdOrDn = value;
+            return this;
+        }
+
+        public Builder messageId(Long value) {
+            messageId = value;
+            return this;
+        }
+
+        public Builder paramValue(String value) {
+            paramValue = value;
+            return this;
+        }
+
+        public Builder entityTypeName(String value) {
+            entityTypeName = value;
+            return this;
+        }
+
+        public Builder entityId(long value) {
+            entityId = value;
             return this;
         }
 
@@ -237,5 +291,29 @@ public final class LogRequest {
 
     public AuditType getAuditType() {
         return auditType;
+    }
+
+    public long getEntityId() {
+        return entityId;
+    }
+
+    public String getEntityTypeName() {
+        return entityTypeName;
+    }
+
+    public Long getMessageId() {
+        return messageId;
+    }
+
+    public String getParamValue() {
+        return paramValue;
+    }
+
+    public String getUserIdOrDn() {
+        return userIdOrDn;
+    }
+
+    public String getUserName() {
+        return userName;
     }
 }

@@ -8,16 +8,14 @@ import com.l7tech.gateway.common.security.rbac.AttemptedOther;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.util.BuildInfo;
+import com.l7tech.util.*;
+
 import static com.l7tech.gateway.common.Component.fromId;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.ContextMenuTextArea;
 import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.AuditLogTableSorterModel;
@@ -226,6 +224,13 @@ public class LogPanel extends JPanel {
      */
     private String requestId;
 
+    private String userName;
+    private String userIdOrDn;
+    private Long messageId = null;
+    private String paramValue;
+    private String entityTypeName = EntityType.ANY.getName();
+    private long entityId = -1;
+
     public enum LogLevelOption {
         ALL("All", Level.ALL), INFO("Info", Level.INFO), WARNING("Warning", Level.WARNING), SEVERE("Severe", Level.SEVERE);
 
@@ -387,6 +392,22 @@ public class LogPanel extends JPanel {
         controlPanel.levelComboBox.setSelectedItem(LogLevelOption.WARNING.toString());
         controlPanel.auditTypeComboBox.setModel(new DefaultComboBoxModel(AuditType.values()));
         controlPanel.auditTypeComboBox.setSelectedItem(AuditType.ALL.toString());
+        controlPanel.entityTypeComboBox.setModel(new DefaultComboBoxModel(EntityType.getAllNames(true).toArray()));
+        controlPanel.entityTypeComboBox.insertItemAt("<none>", 1);
+        controlPanel.entityTypeComboBox.setSelectedItem(EntityType.ANY.getName());
+
+        controlPanel.auditTypeComboBox.addItemListener(new RunOnChangeListener(new Runnable() {
+            @Override
+            public void run() {
+                AuditType selected = (AuditType) controlPanel.auditTypeComboBox.getSelectedItem();
+                boolean enabled = AuditType.ALL.equals(selected) || AuditType.ADMIN.equals(selected);
+                controlPanel.entitySearchingPane.setEnabled(enabled);
+                controlPanel.entityTypeLabel.setEnabled(enabled);
+                controlPanel.entityTypeComboBox.setEnabled(enabled);
+                controlPanel.entityIdLabel.setEnabled(enabled);
+                controlPanel.entityIdTextField.setEnabled(enabled);
+            }
+        }));
 
         //enable/disable control panel widgets depending on whether or not we are viewing logs or audits
         //always show logLevelOption combobox, node & message text fields
@@ -395,6 +416,10 @@ public class LogPanel extends JPanel {
         controlPanel.auditTypePane.setVisible(isAuditType);
         controlPanel.nodePane.setVisible(isAuditType);
         controlPanel.requestIdPane.setVisible(isAuditType);
+        controlPanel.userNamePane.setVisible(isAuditType);
+        controlPanel.userIdPane.setVisible(isAuditType);
+        controlPanel.associatedLogsSearchingPane.setVisible(isAuditType);
+        controlPanel.entitySearchingPane.setVisible(isAuditType);
 
         //if its a logViewer add listeners to the filter fields
 
@@ -518,6 +543,20 @@ public class LogPanel extends JPanel {
         auditType = (AuditType) controlPanel.auditTypeComboBox.getSelectedItem();
         node = controlPanel.nodeTextField.getText();
         requestId = controlPanel.requestIdTextField.getText();
+        userName = controlPanel.userNameTextField.getText();
+        userIdOrDn = controlPanel.userIdOrDnTextField.getText();
+        try {
+            messageId = new Long(controlPanel.auditCodeTextField.getText());
+        } catch (NumberFormatException e) {
+            messageId = null;
+        }
+        paramValue = controlPanel.paramValueTextField.getText();
+        entityTypeName = (String) controlPanel.entityTypeComboBox.getSelectedItem();
+        try {
+            entityId = Long.parseLong(controlPanel.entityIdTextField.getText());
+        } catch (NumberFormatException e) {
+            entityId = -1;
+        }
     }
 
     /**
@@ -544,6 +583,12 @@ public class LogPanel extends JPanel {
         if (auditType != null) controlPanel.auditTypeComboBox.setSelectedItem(auditType);
         controlPanel.nodeTextField.setText(node);
         controlPanel.requestIdTextField.setText(requestId);
+        controlPanel.userNameTextField.setText(userName);
+        controlPanel.userIdOrDnTextField.setText(userIdOrDn);
+        if (messageId != null) controlPanel.auditCodeTextField.setText(messageId.toString());
+        controlPanel.paramValueTextField.setText(paramValue);
+        controlPanel.entityTypeComboBox.setSelectedItem(entityTypeName);
+        if (entityId >= 0) controlPanel.entityIdTextField.setText(Long.toString(entityId));
         enableOrDisableComponents();
     }
 
@@ -633,6 +678,48 @@ public class LogPanel extends JPanel {
             if (requestIdProperty != null) {
                 requestId = requestIdProperty;
             }
+
+            final String userNameProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_USER_NAME);
+            if (userNameProperty != null) {
+                userName = userNameProperty;
+            }
+
+            final String userIdOrDnProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_USER_ID_OR_DN);
+            if (userIdOrDnProperty != null) {
+                userIdOrDn = userIdOrDnProperty;
+            }
+
+            final String messageIdProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID);
+            if (messageIdProperty != null) {
+                try {
+                    messageId = new Long(messageIdProperty);
+                } catch (NumberFormatException e) {
+                    messageId = null;
+                }
+            }
+
+            final String paramValueProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_PARAM_VALUE);
+            if (paramValueProperty != null) {
+                paramValue = paramValueProperty;
+            }
+
+            final String entityTypeProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_TYPE);
+            if (entityTypeProperty != null) {
+                entityTypeName = entityTypeProperty;
+            } else {
+                entityTypeName = EntityType.ANY.getName();
+            }
+
+            final String entityIdProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_ID);
+            if (entityIdProperty != null) {
+                try {
+                    entityId = Long.parseLong(entityIdProperty);
+                } catch (NumberFormatException e) {
+                    entityId = -1; // Does not exist.
+                }
+            } else {
+                entityId = -1; // Does not exist.
+            }
         } else { // We are displaying logs.
             retrievalMode = RetrievalMode.DURATION;
             durationAutoRefresh = true;
@@ -668,6 +755,37 @@ public class LogPanel extends JPanel {
             preferences.putProperty(SsmPreferences.AUDIT_WINDOW_AUDIT_TYPE, auditType.toString().toUpperCase());
             preferences.putProperty(SsmPreferences.AUDIT_WINDOW_NODE, node);
             preferences.putProperty(SsmPreferences.AUDIT_WINDOW_REQUEST_ID, requestId);
+
+            if (userName != null) {
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_USER_NAME, userName);
+            } else {
+                preferences.remove(SsmPreferences.AUDIT_WINDOW_USER_NAME);
+            }
+            if (userIdOrDn != null) {
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_USER_ID_OR_DN, userIdOrDn);
+            } else {
+                preferences.remove(SsmPreferences.AUDIT_WINDOW_USER_ID_OR_DN);
+            }
+            if (messageId != null) {
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID, messageId.toString());
+            } else {
+                preferences.remove(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID);
+            }
+            if (paramValue != null) {
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_PARAM_VALUE, paramValue);
+            } else {
+                preferences.remove(SsmPreferences.AUDIT_WINDOW_PARAM_VALUE);
+            }
+            if (entityTypeName != null) {
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_ENTITY_TYPE, entityTypeName);
+            } else {
+                preferences.remove(SsmPreferences.AUDIT_WINDOW_ENTITY_TYPE);
+            }
+            if (entityId >= 0) {
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_ENTITY_ID, Long.toString(entityId));
+            } else {
+                preferences.remove(SsmPreferences.AUDIT_WINDOW_ENTITY_ID);
+            }
         }
     }
 
@@ -827,13 +945,14 @@ public class LogPanel extends JPanel {
                 new SimpleDateFormat( DATE_FORMAT_ZONE_PATTERN );
         if ( timeZone != null ) sdf.setTimeZone( timeZone );
 
-        msg += nonull("Node       : ", lm.getNodeName());
-        msg += nonull("Time       : ", sdf.format( lm.getTimestamp() ));
-        msg += nonull("Severity   : ", lm.getSeverity());
-        msg += nonule("Request Id : ", lm.getReqId());
-        msg += nonull("Class      : ", lm.getMsgClass());
-        msg += nonull("Method     : ", lm.getMsgMethod());
-        msg += nonull("Message    : ", lm.getMsgDetails());
+        final int maxWidth = ((lm instanceof AuditLogMessage) && (((AuditLogMessage) lm).getAuditRecord() instanceof AdminAuditRecord))? 20 : 11; // "Identity Provider ID" width = 20 and "Entity name" width = 11
+        msg += nonull(TextUtils.pad("Node", maxWidth) + ": ", lm.getNodeName());
+        msg += nonull(TextUtils.pad("Time", maxWidth) + ": ", sdf.format( lm.getTimestamp() ));
+        msg += nonull(TextUtils.pad("Severity", maxWidth) + ": ", lm.getSeverity());
+        msg += nonule(TextUtils.pad("Request Id", maxWidth) + ": ", lm.getReqId());
+        msg += nonull(TextUtils.pad("Class", maxWidth) + ": ", lm.getMsgClass());
+        msg += nonull(TextUtils.pad("Method", maxWidth) + ": ", lm.getMsgMethod());
+        msg += nonull(TextUtils.pad("Message", maxWidth) + ": ", lm.getMsgDetails());
 
         if ( lm instanceof AuditLogMessage ) {
             AuditRecord arec = ((AuditLogMessage) lm).getAuditRecord();
@@ -845,15 +964,18 @@ public class LogPanel extends JPanel {
             String respXmlDisplayed = "";
             if (arec instanceof AdminAuditRecord) {
                 AdminAuditRecord aarec = (AdminAuditRecord) arec;
-                msg += "Event Type : Manager Action" + "\n";
-                msg += "Admin user : " + aarec.getUserName() + "\n";
-                msg += "Admin IP   : " + arec.getIpAddress() + "\n";
-                msg += "Action     : " + fixAction(aarec.getAction()) + "\n";
+                msg += "Event Type          : Manager Action" + "\n";
+                msg += "Admin User Name     : " + aarec.getUserName() + "\n";
+                msg += "Admin User ID       : " + aarec.getUserId() + "\n";
+                msg += "Identity Provider ID: " + aarec.getIdentityProviderOid() + "\n"; // "Identity Provider ID" width = 20
+                msg += "Admin IP            : " + arec.getIpAddress() + "\n";
+                msg += "\n";
+                msg += "Action              : " + fixAction(aarec.getAction()) + "\n";
                 if (AdminAuditRecord.ACTION_LOGIN != aarec.getAction() &&
                         AdminAuditRecord.ACTION_OTHER != aarec.getAction()) {
-                    msg += "Entity name: " + arec.getName() + "\n";
-                    msg += "Entity id  : " + aarec.getEntityOid() + "\n";
-                    msg += "Entity type: " + fixType(aarec.getEntityClassname()) + "\n";
+                    msg += "Entity Name         : " + arec.getName() + "\n";
+                    msg += "Entity ID           : " + aarec.getEntityOid() + "\n";
+                    msg += "Entity Type         : " + fixType(aarec.getEntityClassname()) + "\n";
                 }
             } else if (arec instanceof MessageSummaryAuditRecord) {
                 MessageSummaryAuditRecord sum = (MessageSummaryAuditRecord) arec;
@@ -913,7 +1035,7 @@ public class LogPanel extends JPanel {
                     msg += "User ID    : " + fixUserId(arec.getUserId()) + "\n";
                     msg += "User Name  : " + arec.getUserName() + "\n";
                 }
-                msg += "Entity name: " + arec.getName() + "\n";
+                msg += "Entity name: " + arec.getName() + "\n"; // "Entity name" width = 11
             } else {
                 msg += "Event Type : Unknown" + "\n";
                 msg += "Entity name: " + arec.getName() + "\n";
@@ -1833,13 +1955,20 @@ public class LogPanel extends JPanel {
             }
             //construct a LogRequest for the current search criteria
             LogRequest logRequest = new LogRequest.Builder().
-                    startMsgDate(new Date(System.currentTimeMillis() - duration)).
-                    nodeName(nodeToUse).
-                    auditType(auditType).
-                    logLevel(logLevelOption.getLevel()).
-                    message(message).
-                    serviceName(serviceName).
-                    requestId(requestId).build();
+                startMsgDate(new Date(System.currentTimeMillis() - duration)).
+                nodeName(nodeToUse).
+                auditType(auditType).
+                logLevel(logLevelOption.getLevel()).
+                message(message).
+                serviceName(serviceName).
+                requestId(requestId).
+                userName(userName).
+                userIdOrDn(userIdOrDn).
+                messageId(messageId).
+                paramValue(paramValue).
+                entityTypeName(entityTypeName).
+                entityId(entityId).
+                build();
 
             //save the log request
             ((AuditLogTableSorterModel) getMsgTable().getModel()).refreshLogs(this, logRequest, isAutoRefreshEffective());
@@ -1861,8 +1990,22 @@ public class LogPanel extends JPanel {
         Window window = SwingUtilities.getWindowAncestor(this);
         if (window != null && window.isVisible()) {
             //construct a LogRequest for the current search criteria
-            LogRequest logRequest = new LogRequest.Builder().startMsgDate(first).endMsgDate(last).
-                    nodeName(node).auditType(auditType).logLevel(logLevelOption.getLevel()).message(message).serviceName(serviceName).requestId(requestId).build();
+            LogRequest logRequest = new LogRequest.Builder().
+                startMsgDate(first).
+                endMsgDate(last).
+                nodeName(node).
+                auditType(auditType).
+                logLevel(logLevelOption.getLevel()).
+                message(message).
+                serviceName(serviceName).
+                requestId(requestId).
+                userName(userName).
+                userIdOrDn(userIdOrDn).
+                messageId(messageId).
+                paramValue(paramValue).
+                entityTypeName(entityTypeName).
+                entityId(entityId).
+                build();
 
             //save the log request
             AuditLogTableSorterModel altsm = (AuditLogTableSorterModel) getMsgTable().getModel();
@@ -2363,5 +2506,17 @@ public class LogPanel extends JPanel {
         private JPanel nodePane;
         private JPanel timeRangePane;
         private JButton searchButton;
+        private JTextField userNameTextField;
+        private JTextField userIdOrDnTextField;
+        private JTextField auditCodeTextField;
+        private JTextField paramValueTextField;
+        private JLabel entityIdLabel;
+        private JTextField entityIdTextField;
+        private JLabel entityTypeLabel;
+        private JComboBox entityTypeComboBox;
+        private JPanel entitySearchingPane;
+        private JPanel associatedLogsSearchingPane;
+        private JPanel userNamePane;
+        private JPanel userIdPane;
     }
 }

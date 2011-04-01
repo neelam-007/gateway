@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.console.table.AuditLogTableSorterModel;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 
@@ -151,8 +152,9 @@ public class ClusterLogWorker extends SwingWorker {
                     switch (logType) {
                         case GenericLogAdmin.TYPE_AUDIT:
                             AuditSearchCriteria asc = new AuditSearchCriteria.Builder(logRequest).
-                                    nodeId(nodeNameIdMap.get(logRequest.getNodeName())).
-                                    maxRecords(AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE).build();
+                                nodeId(nodeNameIdMap.get(logRequest.getNodeName())).
+                                entityClass(getEntityClassName(logRequest.getEntityTypeName())).
+                                maxRecords(AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE).build();
 
                             logger.finer("Start time to grab data:: " + new Date(System.currentTimeMillis()));
                             rawHeaders = logService.findHeaders(asc).toArray(new AuditRecordHeader[0]);
@@ -249,6 +251,26 @@ public class ClusterLogWorker extends SwingWorker {
             } else {
                 throw re;
             }
+        }
+    }
+
+    /**
+     * Find a corresponding entity class name for an entity identified by entityTypeName.
+     *
+     * @param entityTypeName: the name of the entity type.
+     * @return the entity class associated with the entity type.  If the return is null, it means the entity type is EntityType.ANY.
+     *               If the entity type does not exist, then just return the incorrect entity type name for future searching purpose.  
+     */
+    private String getEntityClassName(String entityTypeName) {
+        if ((entityTypeName == null || entityTypeName.trim().isEmpty()) ||
+            entityTypeName.equals(EntityType.ANY.getName())) {
+            return null; // null == any in future searching
+        } else if (entityTypeName.equals("<none>")) {
+            return "<none>";
+        } else {
+            EntityType type = EntityType.findTypeByName(entityTypeName);
+            if (type == null) return entityTypeName; // if no entity type found, then just return the incorrect entityTypeName for future searching
+            return type.getEntityClass().getName();
         }
     }
 

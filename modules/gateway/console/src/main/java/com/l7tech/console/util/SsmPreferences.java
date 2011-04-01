@@ -88,6 +88,13 @@ public interface SsmPreferences {
     String AUDIT_WINDOW_AUDIT_TYPE = "auditWindow.search.auditType";
     String AUDIT_WINDOW_NODE = "auditWindow.search.node";
     String AUDIT_WINDOW_REQUEST_ID = "auditWindow.search.requestId";
+    String AUDIT_WINDOW_USER_NAME = "auditWindow.search.userName";
+    String AUDIT_WINDOW_USER_ID_OR_DN = "auditWindow.search.userIdOrDn";
+    String AUDIT_WINDOW_MESSAGE_ID = "auditWindow.search.messageId";
+    String AUDIT_WINDOW_PARAM_VALUE = "auditWindow.search.paramValue";
+    String AUDIT_WINDOW_ENTITY_TYPE = "auditWindow.search.entityType";
+    String AUDIT_WINDOW_ENTITY_ID = "auditWindow.search.entityId";
+
     int MAX_RIGHT_COMMENT_SIZE = 4000;
     int MAX_LEFT_COMMENT_SIZE = 100;
     int DEFAULT_MAX_LEFT_COMMENT = 30;
