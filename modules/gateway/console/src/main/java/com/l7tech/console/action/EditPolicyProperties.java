@@ -78,7 +78,7 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
         final Functions.UnaryVoid<Boolean> callback = new Functions.UnaryVoid<Boolean>() {
             @Override
             public void call(Boolean changed) {
-                if (changed) {
+                if (changed != null && changed) {
                     policyNode.clearCachedEntities();
                     final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
                     if (tree != null) {
@@ -121,6 +121,13 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "problem modifying policy editor title");
                     }
+                } else {
+                    //change failed, reload policy
+                    try {
+                        policyNode.updateUserObject();
+                    } catch (FindException e) {
+                        logger.log(Level.WARNING, "cannot update policy following failed update.");
+                    }
                 }
             }
         };
@@ -145,7 +152,11 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                         if ( policy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
                             message += "The policy name is already in use or there is an existing\n" +
                                        "Global Policy Fragment with the '"+policy.getInternalTag()+"' tag.";
-                        } else {
+                        } else if (policy.getType() == PolicyType.INTERNAL && PolicyType.getAuditMessageFilterTags().contains(policy.getInternalTag())){
+                            message += "The policy name is already in use or there is an existing\n" +
+                                   "Internal Policy with the '"+policy.getInternalTag()+"' tag.";
+                        }
+                        else {
                             message += "The policy name is already used, please choose a different\n name and try again.";
                         }
 
@@ -163,9 +174,7 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                         success = false;
                     }
 
-                    if ( success != null ) {
-                        resultCallback.call(success);
-                    }
+                    resultCallback.call(success);
                 } else {
                     resultCallback.call(false);
                 }
