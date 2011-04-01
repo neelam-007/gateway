@@ -5,7 +5,6 @@
 package com.l7tech.identity;
 
 import com.l7tech.util.HexUtils;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
@@ -90,7 +89,7 @@ public class UserBean implements User, Serializable {
     public void setCleartextPassword(String password) throws IllegalStateException {
         if (password != null) {
             if (login == null) throw new IllegalStateException("login must be set prior to encoding the password");
-            this.hashedPassword = HexUtils.encodePasswd(login, password, HttpDigest.REALM);
+            this.hashedPassword = HexUtils.encodePasswd(login, password, HexUtils.REALM);
         } else {
             this.hashedPassword = null;
         }

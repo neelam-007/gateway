@@ -3,17 +3,14 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -307,7 +304,7 @@ public class PasswordDialog extends JDialog {
             return false;
         }
 
-        if (user.getHashedPassword().equals(HexUtils.encodePasswd(user.getLogin(), new String(newPass), HttpDigest.REALM))) {
+        if (user.getHashedPassword().equals(HexUtils.encodePasswd(user.getLogin(), new String(newPass), HexUtils.REALM))) {
             JOptionPane.showMessageDialog(
                     this,
                     resources.getString("sameOldPassord.question"),

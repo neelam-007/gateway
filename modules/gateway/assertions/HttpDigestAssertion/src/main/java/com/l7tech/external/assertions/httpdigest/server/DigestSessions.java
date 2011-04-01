@@ -1,20 +1,17 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+/**
+ * Copyright (C) 2008, Layer 7 Technologies Inc.
+ * @author darmstrong
  */
+package com.l7tech.external.assertions.httpdigest.server;
 
-package com.l7tech.server.policy.assertion.credential;
-
-import com.l7tech.message.Message;
 import com.l7tech.util.Background;
 import com.l7tech.util.HexUtils;
 
-import java.util.*;
 import java.security.SecureRandom;
+import java.util.*;
 
 /**
- * @author alex
+ * @author alex (moved from package com.l7tech.server.policy.assertion.credential)
  */
 public class DigestSessions {
     private static final Random random = new SecureRandom();

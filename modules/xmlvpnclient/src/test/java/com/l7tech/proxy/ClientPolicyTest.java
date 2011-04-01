@@ -8,22 +8,18 @@ package com.l7tech.proxy;
 
 import com.l7tech.message.Message;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.*;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpBasic;
+import com.l7tech.util.InvalidDocumentFormatException;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -31,6 +27,8 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.net.PasswordAuthentication;
+import java.security.GeneralSecurityException;
 import java.util.Arrays;
 
 /**
@@ -130,6 +128,8 @@ public class ClientPolicyTest extends TestCase {
         Document env = XmlUtil.stringToDocument("<foo/>");
         AssertionStatus result;
 
+        MockHttpDigestAssertion mockAssertion = new MockHttpDigestAssertion();
+
         {
             // Test (SSL + Basic) || Digest
             Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
@@ -137,7 +137,7 @@ public class ClientPolicyTest extends TestCase {
                     new SslAssertion(),
                     new HttpBasic()
                 })),
-                new HttpDigest(),
+                    mockAssertion,
             }));
 
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
@@ -166,7 +166,7 @@ public class ClientPolicyTest extends TestCase {
         {
             // Test Digest || (SSL + Basic)
             Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
-                new HttpDigest(),
+                    mockAssertion,
                 new AllAssertion(Arrays.asList(new Assertion[] {
                     new SslAssertion(),
                     new HttpBasic()
@@ -194,6 +194,45 @@ public class ClientPolicyTest extends TestCase {
         }
     }
 
+    public static class MockHttpDigestClientAssertion extends ClientAssertionWithMetaSupport{
+
+        public MockHttpDigestClientAssertion(MockHttpDigestAssertion assertion) {
+            super(assertion);
+        }
+
+        @Override
+        public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException {
+            return AssertionStatus.NONE;
+        }
+
+        @Override
+        public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
+            if (context.getSsg().isFederatedGateway()) {
+                System.out.println("this is a Federated SSG.  Assertion therefore fails.");
+                return AssertionStatus.FAILED;
+            }
+            PasswordAuthentication pw = context.getCachedCredentialsForTrustedSsg();
+            if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1) {
+                System.out.println("MockHttpDigestAssertion: No username/password credentials available for HTTP digest.  Assertion therefore fails.");
+                context.getDefaultAuthenticationContext().setAuthenticationMissing();
+                return AssertionStatus.FAILED;
+            }
+            context.setDigestAuthRequired(true);
+            return AssertionStatus.NONE;
+        }
+    }
+
+    public static class MockHttpDigestAssertion extends Assertion{
+        @Override
+        public AssertionMetadata meta() {
+            final DefaultAssertionMetadata meta = new DefaultAssertionMetadata(new HttpBasic());
+
+            meta.put(DefaultAssertionMetadata.CLIENT_ASSERTION_CLASSNAME, MockHttpDigestClientAssertion.class.getName());
+
+            return meta;
+        }
+    }
+    
     private boolean noUnknowns(ClientAssertion clientPolicy) {
         final boolean[] sawUnknown = new boolean[] { false };
         clientPolicy.visit(new ClientAssertion.ClientAssertionVisitor() {

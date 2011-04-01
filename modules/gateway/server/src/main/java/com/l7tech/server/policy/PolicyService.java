@@ -15,7 +15,6 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.*;
@@ -105,7 +104,6 @@ public class PolicyService extends ApplicationObjectSupport {
      * allowed to download the policy
      */
     private static final Assertion[] ALL_TRANSPORT_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[] {
-            new HttpDigest(),
             new WssBasic(), // included as transport since it requires a secure transport
             new HttpBasic(),
             new SslAssertion(true),

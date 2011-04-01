@@ -12,7 +12,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
@@ -133,7 +132,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             InternalUser newInternalUser = new InternalUser();
             newInternalUser.copyFrom(internalUser);
             newInternalUser.setVersion(internalUser.getVersion());
-            passwordEnforcerManager.isPasswordPolicyCompliant(newInternalUser, newpasswd, HexUtils.encodePasswd(newInternalUser.getLogin(), newpasswd, HttpDigest.REALM), oldpasswd);
+            passwordEnforcerManager.isPasswordPolicyCompliant(newInternalUser, newpasswd, HexUtils.encodePasswd(newInternalUser.getLogin(), newpasswd, HexUtils.REALM), oldpasswd);
             passwordEnforcerManager.setUserPasswordPolicyAttributes(newInternalUser,false);
             newInternalUser.setPasswordChanges(System.currentTimeMillis(), newpasswd);
 

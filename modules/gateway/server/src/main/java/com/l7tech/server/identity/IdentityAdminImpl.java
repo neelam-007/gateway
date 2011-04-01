@@ -10,7 +10,6 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.TrustedEsmUserManager;
@@ -449,7 +448,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                     byte[] randomPasswd = new byte[32];
                     getSecureRandom().nextBytes(randomPasswd);
                     try {
-                        newPasswd = HexUtils.encodePasswd(iuser.getLogin(), new String(randomPasswd, "ISO8859-1"), HttpDigest.REALM);
+                        newPasswd = HexUtils.encodePasswd(iuser.getLogin(), new String(randomPasswd, "ISO8859-1"), HexUtils.REALM);
                     } catch (UnsupportedEncodingException e) {
                         throw new RuntimeException(e); // Can't happen
                     }

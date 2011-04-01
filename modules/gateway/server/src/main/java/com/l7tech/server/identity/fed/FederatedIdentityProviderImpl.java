@@ -11,7 +11,6 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.cert.CertVerifier;
@@ -23,6 +22,7 @@ import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.HexUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -103,7 +103,7 @@ public class FederatedIdentityProviderImpl
      */
     @Override
     public String getAuthRealm() {
-        return HttpDigest.REALM;
+        return HexUtils.REALM;
     }
 
     @Override

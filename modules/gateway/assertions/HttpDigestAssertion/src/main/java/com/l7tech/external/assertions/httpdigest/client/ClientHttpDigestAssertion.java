@@ -1,15 +1,13 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+/**
+ * Copyright (C) 2008, Layer 7 Technologies Inc.
+ * @author darmstrong
  */
+package com.l7tech.external.assertions.httpdigest.client;
 
-package com.l7tech.proxy.policy.assertion.credential.http;
-
+import com.l7tech.external.assertions.httpdigest.HttpDigestAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertionWithMetaSupport;
 
@@ -18,12 +16,12 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
- * @version $Revision$
+ * @version $Revision: 24416 $
  */
-public class ClientHttpDigest extends ClientAssertionWithMetaSupport {
-    public static final Logger log = Logger.getLogger(ClientHttpDigest.class.getName());
+public class ClientHttpDigestAssertion extends ClientAssertionWithMetaSupport {
+    public static final Logger log = Logger.getLogger(ClientHttpDigestAssertion.class.getName());
 
-    public ClientHttpDigest( HttpDigest data ) {
+    public ClientHttpDigestAssertion( HttpDigestAssertion data ) {
         super(data);
         this.data = data;
     }
@@ -54,5 +52,6 @@ public class ClientHttpDigest extends ClientAssertionWithMetaSupport {
         return AssertionStatus.NONE;
     }
 
-    protected HttpDigest data;
+    protected HttpDigestAssertion data;
 }
+

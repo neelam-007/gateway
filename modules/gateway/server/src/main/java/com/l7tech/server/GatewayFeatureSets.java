@@ -8,6 +8,7 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.License;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.transport.PreemptiveCompression;
 import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
@@ -19,8 +20,6 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -301,7 +300,7 @@ public class GatewayFeatureSets {
             ass(MemberOfGroup.class),
             ass(AuthenticationAssertion.class),
             ass(HttpBasic.class),
-            ass(HttpDigest.class),
+            mass("assertion:HttpDigest"),
             ass(SslAssertion.class), // TODO omit client cert support from this grant (when it is possible to do so)
             ass(XpathCredentialSource.class),
             ass(RequireWssX509Cert.class),

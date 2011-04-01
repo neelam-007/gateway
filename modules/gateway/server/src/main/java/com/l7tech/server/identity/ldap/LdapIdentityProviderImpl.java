@@ -14,7 +14,6 @@ import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.Lifecycle;
 import com.l7tech.server.LifecycleException;
@@ -623,7 +622,7 @@ public class LdapIdentityProviderImpl
 
     @Override
     public String getAuthRealm() {
-        return HttpDigest.REALM;
+        return HexUtils.REALM;
     }
 
     /**

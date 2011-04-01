@@ -4,9 +4,6 @@
         <L7p:HttpBasic>
             <L7p:Enabled booleanValue="false"/>
         </L7p:HttpBasic>
-        <L7p:HttpDigest>
-            <L7p:Enabled booleanValue="false"/>
-        </L7p:HttpDigest>
         <L7p:HttpNegotiate>
             <L7p:Enabled booleanValue="false"/>
         </L7p:HttpNegotiate>

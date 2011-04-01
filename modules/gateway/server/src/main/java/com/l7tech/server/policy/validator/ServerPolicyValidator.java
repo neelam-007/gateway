@@ -18,7 +18,7 @@ import com.l7tech.kerberos.KerberosException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -239,10 +239,18 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                     break;
                 case ID_LDAP:
                     if ( pathContext != null && identityAssertion instanceof SpecificUser) {
-                        if (pathContext.contains(targetName, HttpDigest.class)) {
-                            result.addWarning(new PolicyValidatorResult.Warning( assertion,
-                                    "This identity may not be able to authenticate with the type of credential source specified.",
-                              null));
+                        final Collection<Assertion> credentaiSourceAssertions = pathContext.getCredentialSourceAssertions(targetName);
+                        //were looking for a digest assertion, which we cannot know will work with an external ldap. It might but we can't tell.
+                        for (Assertion aCredAssertion : credentaiSourceAssertions) {
+                            if(aCredAssertion instanceof HttpCredentialSourceAssertion){
+                                HttpCredentialSourceAssertion httpCredAssertion = (HttpCredentialSourceAssertion) aCredAssertion;
+                                if(httpCredAssertion.isDigestSource()){
+                                    result.addWarning(new PolicyValidatorResult.Warning( assertion,
+                                            "This identity may not be able to authenticate with the type of credential source specified.",
+                                      null));
+                                    break;
+                                }
+                            }
                         }
                     }
                     break;

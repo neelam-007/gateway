@@ -5,7 +5,6 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -180,7 +179,7 @@ public class InternalUser extends PersistentUser {
         if (newPassword.length() > 32) throw new InvalidPasswordException("Password must be no longer than 32 characters", null);
 
         if (login == null) throw new IllegalStateException("login must be set prior to encoding the password");
-        this.hashedPassword = HexUtils.encodePasswd(login, newPassword, HttpDigest.REALM);
+        this.hashedPassword = HexUtils.encodePasswd(login, newPassword, HexUtils.REALM);
     }
 
 
@@ -190,7 +189,7 @@ public class InternalUser extends PersistentUser {
         passChangeRecord.setLastChanged(passwordChangeTime);
         passChangeRecord.setPrevHashedPassword(this.getHashedPassword());
         this.passwordChangesHistory.add(passChangeRecord);
-        this.hashedPassword = HexUtils.encodePasswd(login, newPassword, HttpDigest.REALM);
+        this.hashedPassword = HexUtils.encodePasswd(login, newPassword, HexUtils.REALM);
         this.changePassword = false;
     }
 }

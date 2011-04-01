@@ -9,7 +9,6 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
@@ -155,7 +154,7 @@ public class IdentityProvider {
         UserBean u = new UserBean();
         u.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         u.setLogin(login);
-        String passwdenc = HexUtils.encodePasswd(u.getLogin(), passwd, HttpDigest.REALM);
+        String passwdenc = HexUtils.encodePasswd(u.getLogin(), passwd, HexUtils.REALM);
         u.setHashedPassword(passwdenc);
         u.setEmail(login + "@bogus.com");
         u.setName(login);

@@ -965,7 +965,6 @@ public class WspReaderTest {
             "            <L7p:TrueAssertion><L7p:Enabled booleanValue=\"false\"/></L7p:TrueAssertion>\n" +
             "            <wsp:OneOrMore wsp:Usage=\"Required\">\n" +
             "                <L7p:HttpBasic><L7p:Enabled booleanValue=\"false\"/></L7p:HttpBasic>\n" +
-            "                <L7p:HttpDigest/>\n" +
             "                <L7p:HttpNegotiate/>\n" +
             "                <L7p:TrueAssertion/>\n" +
             "                <L7p:OversizedText/>\n" +
@@ -985,7 +984,6 @@ public class WspReaderTest {
             "            <L7p:TrueAssertion/>\n" +
             "            <wsp:OneOrMore wsp:Usage=\"Required\" L7p:Enabled=\"false\">\n" +
             "                <L7p:HttpBasic/>\n" +
-            "                <L7p:HttpDigest/>\n" +
             "                <L7p:HttpNegotiate/>\n" +
             "                <L7p:TrueAssertion/>\n" +
             "                <L7p:OversizedText/>\n" +
@@ -1003,7 +1001,6 @@ public class WspReaderTest {
             "            <L7p:TrueAssertion><L7p:Enabled booleanValue=\"false\"/></L7p:TrueAssertion>\n" +
             "            <wsp:OneOrMore wsp:Usage=\"Required\" L7p:Enabled=\"false\">\n" +
             "                <L7p:HttpBasic/>\n" +
-            "                <L7p:HttpDigest/>\n" +
             "                <L7p:HttpNegotiate/>\n" +
             "                <L7p:TrueAssertion/>\n" +
             "                <L7p:OversizedText/>\n" +

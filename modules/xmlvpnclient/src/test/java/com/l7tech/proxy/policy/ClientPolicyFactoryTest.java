@@ -20,7 +20,6 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
 import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
@@ -72,7 +71,6 @@ public class ClientPolicyFactoryTest {
     private static final List<FalseAssertion> LIST_OF_FALSE = Collections.singletonList(new FalseAssertion());
     public static Assertion[] BRIDGE_EVERYTHING = new Assertion[]{
         new HttpBasic(),
-        new HttpDigest(),
         new WssBasic(),
         new EncryptedUsernameTokenAssertion(),
         new AllAssertion(LIST_OF_FALSE),

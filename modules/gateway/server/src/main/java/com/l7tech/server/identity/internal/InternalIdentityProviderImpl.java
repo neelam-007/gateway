@@ -11,7 +11,6 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.identity.Authenticated;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -131,7 +130,7 @@ public class InternalIdentityProviderImpl
         String authPassHash;
 
         if (format == CredentialFormat.CLEARTEXT) {
-            authPassHash = HexUtils.encodePasswd(login, new String(credentials), HttpDigest.REALM);
+            authPassHash = HexUtils.encodePasswd(login, new String(credentials), HexUtils.REALM);
             if (dbPassHash.equals(authPassHash))
                 return new AuthenticationResult(dbUser, pc.getSecurityTokens());
             logger.info("Incorrect password for login " + login);
@@ -160,7 +159,7 @@ public class InternalIdentityProviderImpl
     // TODO: Make this customizable
     @Override
     public String getAuthRealm() {
-        return HttpDigest.REALM;
+        return HexUtils.REALM;
     }
 
     @Override

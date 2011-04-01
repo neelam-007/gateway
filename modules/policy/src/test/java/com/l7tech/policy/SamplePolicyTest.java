@@ -12,10 +12,8 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
@@ -38,7 +36,6 @@ public class SamplePolicyTest extends TestCase {
     long identityProvider = 111;
     String userAlice = "alice";
     String userBob = "bob";
-    String groupStaff = "staff";
 
     public SamplePolicyTest(String name) {
         super(name);
@@ -71,20 +68,6 @@ public class SamplePolicyTest extends TestCase {
         }));
     }
 
-    public void testDigestAuth() {
-        // Require HTTP Digest auth.  Allow Alice in, but nobody else.
-        Assertion basicAuthPolicy = new AllAssertion(Arrays.asList(new Assertion[]{
-            // Identify:
-            new HttpDigest(),
-
-            // Authorize:
-            new SpecificUser(identityProvider, userAlice, null, null),
-
-            // Route:
-            new HttpRoutingAssertion()
-        }));
-    }
-
     public void testBasicSslAuth() {
         // Require HTTP Basic auth and SSL for link-level confidentiality.  Allow Bob or Alice in.
         Assertion basicAuthPolicy = new AllAssertion(Arrays.asList(new Assertion[]{
@@ -102,20 +85,6 @@ public class SamplePolicyTest extends TestCase {
 
             // Route:
             new HttpRoutingAssertion() // will use default URL for the PublishedService using this policy
-        }));
-    }
-
-    public void testDigestGroup() {
-        // Require HTTP Digest auth with group.  All staff get to use this service.
-        Assertion basicAuthPolicy = new AllAssertion(Arrays.asList(new Assertion[]{
-            // Identify:
-            new HttpDigest(),
-
-            // Authorize:
-            new MemberOfGroup(identityProvider, groupStaff, "666"),
-
-            // Route:
-            new HttpRoutingAssertion()
         }));
     }
 

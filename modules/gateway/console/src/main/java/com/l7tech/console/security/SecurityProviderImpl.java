@@ -17,7 +17,6 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
 import com.l7tech.objectmodel.InvalidPasswordException;
@@ -397,7 +396,7 @@ public class SecurityProviderImpl extends SecurityProvider
         byte[] certificate = adminLogin.getServerCertificate(credentials.getUserName());
         try {
             String password = new String(credentials.getPassword());
-            String encodedPassword = HexUtils.encodePasswd(credentials.getUserName(), password, HttpDigest.REALM);
+            String encodedPassword = HexUtils.encodePasswd(credentials.getUserName(), password, HexUtils.REALM);
             java.security.MessageDigest d = java.security.MessageDigest.getInstance("SHA-1");
             final byte[] bytes = encodedPassword.getBytes();
             d.update(bytes);

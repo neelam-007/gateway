@@ -28,6 +28,11 @@ import java.util.Random;
 public class HexUtils {
     private static final Random random = new SecureRandom();
 
+    /** The hard-coded HTTP Digest realm.  NOTE: If you change this, it will break A LOT of stuff!
+     * Moved from HttpDigest as part of modularizing of this assertion.
+     * */
+    public static final String REALM = "L7SSGDigestRealm"; // TODO: Make this configurable on a system-wide and eventually per-identity-provider basis
+
     public static byte[] getMd5Digest(byte[] stuffToDigest) {
         return getMd5().digest(stuffToDigest);
     }

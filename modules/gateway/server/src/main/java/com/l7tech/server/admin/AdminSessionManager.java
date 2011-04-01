@@ -11,7 +11,6 @@ import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.server.ServerConfig;
@@ -301,7 +300,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                 if ( authenticatedUser instanceof InternalUser ) {
                     InternalUser internalUser = (InternalUser) authenticatedUser;
                     checkPerms(internalUser);
-                    passwordEnforcerManager.isPasswordPolicyCompliant(internalUser, newPassword, HexUtils.encodePasswd(internalUser.getLogin(), newPassword, HttpDigest.REALM), password);
+                    passwordEnforcerManager.isPasswordPolicyCompliant(internalUser, newPassword, HexUtils.encodePasswd(internalUser.getLogin(), newPassword, HexUtils.REALM), password);
                     passwordEnforcerManager.setUserPasswordPolicyAttributes(internalUser,false);
                     internalUser.setPasswordChanges(System.currentTimeMillis(), newPassword);
                     ((InternalIdentityProvider)identityProvider).getUserManager().update(internalUser);

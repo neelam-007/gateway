@@ -46,9 +46,7 @@ import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
-import com.l7tech.server.policy.assertion.credential.DigestSessions;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
@@ -75,8 +73,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.PasswordAuthentication;
-import java.lang.reflect.Field;
-import java.lang.reflect.Constructor;
 
 /**
  * Functional tests for message processing.
@@ -91,11 +87,22 @@ public class PolicyProcessingTest {
     private static SoapFaultManager soapFaultManager = null;
     private static TestingHttpClientFactory testingHttpClientFactory = null;
     private static InboundSecureConversationContextManager inboundSecureConversationContextManager = null;
+    private static ServiceManager serviceManager = null;
+    
+    private static boolean initCache = true;
 
     static {
         System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
         JceProvider.init();
-    }    
+    }
+
+    public PolicyProcessingTest() throws Exception {
+        initCache = false;
+        if(policyCache == null){
+            setUpSuite();
+        }
+        setUpTest();
+    }
 
     /**
      * Test services, data is:
@@ -133,7 +140,6 @@ public class PolicyProcessingTest {
         {"/httpwssheaderpromote", "POLICY_httpwssheaderpromote.xml"},
         {"/attachment", "POLICY_signed_attachment.xml"},
         {"/requestnonxmlok", "POLICY_request_modified_non_xml.xml"},
-        {"/httpdigestauth", "POLICY_twohttpdigestauth.xml"},
         {"/x509token", "POLICY_wss_x509credssignedbody.xml"},
         {"/multiplesignatures", "POLICY_multiplesignatures.xml"},
         {"/multiplesignaturesnoid", "POLICY_multiplesignature_noidentity.xml"},
@@ -183,14 +189,39 @@ public class PolicyProcessingTest {
         inboundSecureConversationContextManager = applicationContext.getBean("inboundSecureConversationContextManager", InboundSecureConversationContextManager.class);
 
         ServiceCacheStub cache = applicationContext.getBean("serviceCache", ServiceCacheStub.class);
-        cache.initializeServiceCache();
-
-        buildServices( applicationContext.getBean("serviceManager", ServiceManager.class) );
-        buildUsers();
+        serviceManager = applicationContext.getBean("serviceManager", ServiceManager.class);
+        if(initCache){
+            //added to support runTestForModularAssertion, likely resource issue from where test is being invoked from?
+            cache.initializeServiceCache();
+            buildServices(serviceManager);
+            buildUsers();
+        }
 
         createSecureConversationSession(); // session used in testing
 
         auditContext.flush(); // ensure clear
+    }
+
+    /**
+     *
+     * Invoke processMessage for another module which wants to use this test functionality.
+     *
+     * @param service published service to invoke. Should have unique oid, a URI and policy XML.
+     * @param requestMessage message to invoke service with.
+     * @param expectedStatus fail if status from processMessage is not equal
+     * @param authHeader auth header, if any
+     * @throws Exception
+     */
+    public void runTestForModularAssertion(final PublishedService service,
+                                           final String requestMessage,
+                                           final AssertionStatus expectedStatus,
+                                           final String authHeader) throws Exception{
+        try {
+            serviceManager.update(service);
+            processMessage(service.getRoutingUri(), requestMessage, "10.0.0.1", expectedStatus.getNumeric(), null, authHeader);
+        } finally {
+            serviceManager.delete(service);
+        }
     }
 
     private long getServiceOid( String resolutionUri ) {
@@ -287,41 +318,6 @@ public class PolicyProcessingTest {
         finally {
             ResourceUtils.closeQuietly(in);
         }
-    }
-
-    /**
-     * Test case for having two Http Digest assertions
-     *
-      * @throws Exception
-     */
-    @SuppressWarnings({"unchecked"})
-    @Test
-	public void testTwoHttpDigestAuth() throws Exception {
-        String requestMessage = new String(loadResource("REQUEST_general.xml"));
-
-        //need to register the nonce so that we'll always be using the same nonce = 70ec76c747e23906120eec731341660f
-        //create new instance of nonce info so that it can be registered into the digest session
-        String nonce = "70ec76c747e23906120eec731341660f";
-        Class classNonceInfo = Class.forName("com.l7tech.server.policy.assertion.credential.DigestSessions$NonceInfo");
-        Constructor constructor = classNonceInfo.getDeclaredConstructor(String.class, Long.TYPE, Integer.TYPE);
-        constructor.setAccessible(true); //suppress Java language accesschecking
-
-        DigestSessions digestSession = DigestSessions.getInstance();
-        Field nonceInfoField = DigestSessions.class.getDeclaredField("_nonceInfos");
-        nonceInfoField.setAccessible(true);
-        Map<String,Object> nonceInfo = (Map<String,Object>) nonceInfoField.get(digestSession);    //grab the field from the digest session
-
-        //register the nonce
-        nonceInfo.put(nonce, constructor.newInstance(nonce, System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1), 3));
-
-        //create request header for http digest
-        String authHeader = "Digest username=\"testuser2\", realm=\"L7SSGDigestRealm\", nonce=\"70ec76c747e23906120eec731341660f\", " +
-                "uri=\"/ssg/soap\", response=\"326f367c241545fd0628bc0becf5948e\", qop=auth, nc=00000001, " +
-                "cnonce=\"c1f102ea2080f3694288f0841cbfc1b0\", opaque=\"2f9e9d78e4ec2de1258ee75634badb41\"";
-
-
-        processMessage("/httpdigestauth", requestMessage, "10.0.0.1", AssertionStatus.AUTH_REQUIRED.getNumeric(), null, null);
-        processMessage("/httpdigestauth", requestMessage, "10.0.0.1", AssertionStatus.NONE.getNumeric(), null, authHeader); 
     }
 
     /**
