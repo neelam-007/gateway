@@ -468,18 +468,21 @@ public class PolicyTree extends JTree implements DragSourceListener,
     }
 
     /**
-     * As JTree.isExpanded but reflects the model, not the UI.
+     * As JTree.isExpanded but checks both the model and the UI to see if either thinks the node is
+     * expanded.
      */
     private boolean isModelExpanded( final TreePath path ) {
         boolean expanded = true;
 
         AssertionTreeNode node = (AssertionTreeNode) path.getLastPathComponent();
-        while ( node != null ) {
-            if ( !node.isExpanded() ) {
+        TreePath nodePath = path;
+        while ( node != null && nodePath != null ) {
+            if ( !(node.isExpanded() || isExpanded(nodePath)) ) {
                 expanded = false;
                 break;
             }
             node = (AssertionTreeNode) node.getParent();
+            nodePath = nodePath.getParentPath();
         }
 
         return expanded;
