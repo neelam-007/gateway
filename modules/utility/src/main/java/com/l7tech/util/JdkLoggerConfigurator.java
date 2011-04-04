@@ -29,6 +29,8 @@ public class JdkLoggerConfigurator {
             new AtomicBoolean(SyspropUtil.getBoolean("com.l7tech.logging.debug"));
     private static AtomicReference<Properties> nonDefaultProperties =
             new AtomicReference<Properties>();
+    static final String LOG4J_JDK_LOG_APPENDER_CLASS = "com.l7tech.util.Log4jJdkLogAppender";
+    static final String LOG4J_JDK_LOG_APPENDER_INIT = "init";
 
     /**
      * this class cannot be instantiated
@@ -289,8 +291,8 @@ public class JdkLoggerConfigurator {
      */
     private static void setupLog4j(boolean succeedSilently) {
         try {
-            Class configClass = Class.forName("com.l7tech.common.util.Log4jJdkLogAppender");
-            java.lang.reflect.Method configMethod = configClass.getMethod("init", new Class[0]);
+            Class configClass = Class.forName( LOG4J_JDK_LOG_APPENDER_CLASS );
+            java.lang.reflect.Method configMethod = configClass.getMethod( LOG4J_JDK_LOG_APPENDER_INIT, new Class[0]);
             configMethod.invoke(null);
             // get logger here since we don't want this to occur on class load
             if (!succeedSilently)
