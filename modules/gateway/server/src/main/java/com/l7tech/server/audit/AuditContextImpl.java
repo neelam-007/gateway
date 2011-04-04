@@ -360,6 +360,9 @@ public class AuditContextImpl implements AuditContext {
             // Need to audit something about the failure, says func spec
             SystemAuditRecord fail = new SystemAuditRecord(Level.WARNING, nodeId, Component.GW_AUDIT_SYSTEM,
                     "Audit sink policy failed; status = " + sinkPolicyStatus.getNumeric(), false, 0, null, null, "Sink Failure", OUR_IP);
+            if(isSignAudits()){
+                signRecord(fail);
+            }
             auditRecordManager.save(fail);
         }
     }
