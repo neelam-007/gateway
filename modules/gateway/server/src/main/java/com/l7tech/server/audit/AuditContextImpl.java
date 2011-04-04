@@ -334,7 +334,13 @@ public class AuditContextImpl implements AuditContext {
                             null,
                             null,
                             "Audit Sink Properties Evaluation",
-                            OUR_IP);
+                            OUR_IP
+                        );
+
+                        if (isSignAudits()) {
+                            signRecord(auditFallbackDisabled);
+                        }
+
                         auditRecordManager.save(auditFallbackDisabled);
                     }
 
