@@ -124,6 +124,19 @@
 
     <bean id="ssgShutdown" class="com.l7tech.server.boot.ShutdownWatcher"/>
 
+    <bean id="jceProvider" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean" depends-on="cryptoInit clusterPropertyCache">
+        <property name="staticMethod" value="com.l7tech.security.prov.JceProvider.getInstance"/>
+    </bean>
+
+    <bean id="secureRandom" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
+        <property name="targetObject" ref="jceProvider"/>
+        <property name="targetMethod" value="getSecureRandom"/>
+    </bean>
+
+    <bean id="passwordHasher" class="com.l7tech.gateway.common.security.password.CryptL7PasswordHasher">
+        <constructor-arg ref="secureRandom"/>
+    </bean>
+
     <bean id="jmsThreadPool" class="com.l7tech.server.util.ThreadPoolBean">
         <constructor-arg index="0"  ref="serverConfig" />
         <constructor-arg index="1" value="JMS Thread Pool" />

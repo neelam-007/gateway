@@ -204,7 +204,7 @@ public class KeyStorePrivateKeyMasterPasswordUtil extends KeyStorePrivateKeyMast
         try {
             // Ensure the keystore contains a key entry with this alias that contains a non-empty cert
             // chain with a subject cert that uses the same algorithm.
-            if (!keyStore.containsAlias(alias) && !keyStore.isKeyEntry(alias)) {
+            if (!keyStore.containsAlias(alias) || !keyStore.isKeyEntry(alias)) {
                 logger.info("Master passphrase keystore does not contain any entry with alias '" + alias + "'");
                 return false;
             }

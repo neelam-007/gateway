@@ -24,7 +24,13 @@ public class CryptL7 {
     // This can be raised in the future with no backward-compatibility consequences.
     public static final int MAX_WORK_FACTOR = SyspropUtil.getInteger("com.l7tech.CryptL7.maxWorkFactor", 10);
 
-    // This is the minimum size of underlying hash
+    // Default work factor to use for new hashed passwords.  The value of 4 is optimized for speed, but can be raised to
+    // optimize for security instead.
+    public static final int DEFAULT_WORK_FACTOR = SyspropUtil.getInteger("com.l7tech.CryptL7.defaultWorkFactor", 4);
+
+    // This is the minimum size of underlying hash that we will allow.  This implementation will work
+    // with hashes with outputs as small as 1 byte, but MD5's 16 byte output is the smallest we should
+    // consider allowing in real life.
     public static final int MIN_HASH_OUTPUT_SIZE = SyspropUtil.getInteger("com.l7tech.CryptL7.minHashOutputSize", 16);
 
     /*
@@ -123,7 +129,7 @@ Output:
         int getOutputSizeInBytes();
 
         /**
-         * Process a single byte array as hash input and return the hashed result.
+         * Process one or more byte arrays as hash input, in the specified order, and return the hashed result.
          *
          * @param inputs  one or more byte arrays to hash in.  Must be non-null and contain at least one byte array.  Each contained byte array must be non-null but may be any length (including empty).  Required.
          * @return the result of hashing all input byte arrays in left-to-right order.  Always {@link #getOutputSizeInBytes()} bytes long.  Never null.
@@ -158,6 +164,8 @@ Output:
          * @param outputSize hash output size in bytes, or 0 to attempt to obtain this information from the MessageDigest instance.
          */
         public SingleThreadedJceMessageDigestHasher(MessageDigest md, int outputSize) {
+            if (md == null)
+                throw new NullPointerException("A MessageDigest must be provided");
             this.md = md;
             this.outputSize = outputSize != 0 ? outputSize : md.getDigestLength();
             if (this.outputSize < 1)
@@ -203,7 +211,7 @@ Output:
             h[i] = hasher.hash(h[i - 1]);
         byte[] hn = hasher.hash(h[15]);
 
-        for (int round = 0; round < rounds; ++round) {
+        for (long round = 0; round < rounds; ++round) {
             hn = performWorkRound(hasher, hashSize, hs, h, hn);
         }
 
@@ -228,6 +236,13 @@ Output:
     }
 
     /**
+     * @return the work factor currently recommended for new hashed passwords.
+     */
+    public byte getDefaultWorkFactor() {
+        return (byte)DEFAULT_WORK_FACTOR;
+    }
+
+    /**
      * Perform a single work round of the password hashing algorithm.
      * <p/>
      * This will interpret each byte of hn as a kind of bytecode saying what corresponding bytes to combine from what
@@ -240,7 +255,8 @@ Output:
      * @param hasher a Hasher to use for hashing the data at the end of this round.  Required.
      * @param hashSize the block size used by the hasher, passed in just in case it is slow to query from the hasher itself.  Required.
      * @param hs the hash of the salt.  Must be same length as hn.  Required.
-     * @param h  an array of the 16 previous hash values.  Must contain 16 values, each the same length as hn.  Required.  '''Note:''' two-way parameter, modified by this method; see method description.
+     * @param h  <b>(INOUT)</b> an array of the 16 previous hash values.  Must contain 16 values, each the same length as hn.  Required.
+     *           <b>Note:</b> two-way parameter, modified by this method; see method description.
      * @param hn the hn value output from the previous round (or the Hasher has of h[15], if this is the initial round).  Must be same length as hs and each row of h.  Required.
      * @return the hn value for the next round, already run though the Hasher.  If this is the final round, this is the final hashed password value.
      */
@@ -260,8 +276,8 @@ Output:
                 final int argNumB = (b & 0x07);
                 assert argNumB >= 0 && argNumB < 8;
 
-                final int argA = h[argNumA][i];
-                final int argB = h[argNumB + 8][i];
+                final int argA = ((int)h[argNumA][i]) & 0xFF;
+                final int argB = ((int)h[argNumB + 8][i]) & 0xFF;
 
                 final int out;
                 switch (opNum) {

@@ -3,6 +3,7 @@ package com.l7tech.gateway.common.security.password;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -63,6 +64,7 @@ public class CryptL7Test {
         new NullHasher().hash((byte[][])null);
     }
 
+    @SuppressWarnings({"ImplicitNumericConversion"})
     @Test
     public void testNullHasher() throws Exception {
         CryptL7.Hasher nullHasher = new NullHasher();
@@ -105,6 +107,7 @@ public class CryptL7Test {
     }
 
     CryptL7.Hasher nullHasher = new NullHasher();
+    @SuppressWarnings({"ImplicitNumericConversion"})
     byte[][] h = {
         { 1, 2, 3, 4, 5, 6, 7, 8}, // H0
         { 9,10,11,12,13,14,15,16}, // H1
@@ -124,8 +127,11 @@ public class CryptL7Test {
         {121,122,123,124,125,126,127,(byte)128} // H15
     };
     byte[][] oh = new byte[][] { h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8], h[9], h[10], h[11], h[12], h[13], h[14], h[15] };
+    @SuppressWarnings({"ImplicitNumericConversion"})
     byte[] hs = {-17,-18,-19,-20,-21,-22,-23,-24};
+    @SuppressWarnings({"ImplicitNumericConversion"})
     byte[] hn = {-9,-101,42,85,-86,-64,33,-5};
+    @SuppressWarnings({"ImplicitNumericConversion"})
     byte[] expectedFirstRoundUnhashedResultPrefix = {-114, 116, -58, 120, -126, -122, -50, -101}; // Computed tediously by hand
 
     @Test
@@ -296,6 +302,17 @@ public class CryptL7Test {
     }
 
     @Test
+    public void findMaxIntegerWorkFactor() {
+        for (int i = 0; i < 30; ++i) {
+            long rounds = new CryptL7().getNumRoundsForWorkFactor(i);
+            if (rounds > (long)Integer.MAX_VALUE) {
+                System.out.println("Work factor " + i + " results in " + rounds + " rounds");
+                return;
+            }
+        }
+    }
+
+    @Test
     public void testConstantDefaultValues() {
         assertEquals(3, CryptL7.MIN_WORK_FACTOR);
         assertEquals(10, CryptL7.MAX_WORK_FACTOR);
@@ -357,5 +374,17 @@ public class CryptL7Test {
     public void testKnownInput() throws Exception {
         String result = HexUtils.hexDump(new CryptL7().computeHash("sekrit".getBytes(), "blah".getBytes(), 8, sha256Hasher));
         assertEquals("021c1f88594c304b4b4151da6db39b0f230e5049cf62c38cd23bfc9bdee2567e", result);
+    }
+
+    @Ignore("Disabled because it is slow; enable in order to test performance with default work factor")
+    @Test
+    public void testTimingOfDefaultWorkFactor() throws Exception {
+        long before = System.currentTimeMillis();
+        for (int i = 0; i < 1000; ++i) {
+            new CryptL7().computeHash(password, salt, CryptL7.DEFAULT_WORK_FACTOR, sha256Hasher);
+        }
+        long after = System.currentTimeMillis();
+        long totalms = after - before;
+        System.out.println("Total time for 1000 hashes with default work factor: " + totalms + " ms");
     }
 }
