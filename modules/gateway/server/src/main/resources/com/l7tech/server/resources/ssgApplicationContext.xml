@@ -126,11 +126,9 @@
 
     <bean id="ssgShutdown" class="com.l7tech.server.boot.ShutdownWatcher"/>
 
-    <bean id="jceProvider" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean" depends-on="cryptoInit clusterPropertyCache">
-        <property name="staticMethod" value="com.l7tech.security.prov.JceProvider.getInstance"/>
-    </bean>
+    <bean id="jceProvider" class="com.l7tech.security.prov.JceProvider" factory-method="getInstance" depends-on="cryptoInit clusterPropertyCache"/>
 
-    <bean id="secureRandom" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
+    <bean id="secureRandom" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject" ref="jceProvider"/>
         <property name="targetMethod" value="getSecureRandom"/>
     </bean>
