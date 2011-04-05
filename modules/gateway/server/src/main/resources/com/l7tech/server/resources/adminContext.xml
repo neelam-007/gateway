@@ -132,25 +132,56 @@
     </bean>
 
     <!-- Exception advices for server side error handling -->
+    <bean id="auditingThrowsAdvice" class="com.l7tech.server.util.AuditingThrowsAdvice" depends-on="applicationEventPublisher">
+        <constructor-arg>
+            <bean class="com.l7tech.util.SwitchedConfig">
+                <constructor-arg index="0" ref="serverConfig"/>
+                <constructor-arg index="1"> <!-- Properties to switch property -->
+                    <props>
+                        <prop key="audit.adminExceptions.defaultIncludes">audit.adminExceptions.auditPermissionDenied</prop>
+                        <prop key="audit.adminExceptions.includes">audit.adminExceptions.auditPermissionDenied</prop>
+                    </props>
+                </constructor-arg>
+                <constructor-arg index="2"> <!-- Overrides for switched properties when enabled -->
+                    <map>
+                        <entry key="audit.adminExceptions.defaultIncludes"><value type="boolean">false</value></entry>
+                        <entry key="audit.adminExceptions.includes"><value type="java.lang.String">java.lang.Throwable com.l7tech.gateway.common.security.rbac.PermissionDeniedException</value></entry>
+                    </map>
+                </constructor-arg>
+                <constructor-arg index="3"> <!-- Overrides for switched properties when disabled -->
+                    <map>
+                        <entry key="audit.adminExceptions.defaultIncludes"><value type="boolean">false</value></entry>
+                        <entry key="audit.adminExceptions.includes"><value type="java.lang.String">java.lang.Throwable</value></entry>
+                    </map>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
+    </bean>
+    <bean id="auditingThrowsAdviceAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+        <property name="pointcut" ref="adminPointcut"/>
+        <property name="advice" ref="auditingThrowsAdvice"/>
+        <property name="order" value="5000"/>
+    </bean>
+
     <bean id="unsupportedExceptionThrowsAdvice" class="com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice"/>
     <bean id="unsupportedExceptionAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
         <property name="pointcut" ref="adminPointcut"/>
         <property name="advice" ref="unsupportedExceptionThrowsAdvice"/>
-        <property name="order" value="5000"/>
+        <property name="order" value="5001"/>
     </bean>
 
     <bean id="mysqlFailureThrowsAdvice" class="com.l7tech.server.util.MySqlFailureThrowsAdvice"/>
     <bean id="mysqlFailureAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
         <property name="pointcut" ref="adminPointcut"/>
         <property name="advice" ref="mysqlFailureThrowsAdvice"/>
-        <property name="order" value="5001"/>
+        <property name="order" value="5002"/>
     </bean>
 
     <bean id="constraintViolationThrowsAdvice" class="com.l7tech.server.util.ConstraintViolationThrowsAdvice"/>
     <bean id="constraintViolationAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
         <property name="pointcut" ref="adminPointcut"/>
         <property name="advice" ref="constraintViolationThrowsAdvice"/>
-        <property name="order" value="5002"/>
+        <property name="order" value="5003"/>
     </bean>
 
     <!-- Bean to switch db pools for admin vs other uses -->

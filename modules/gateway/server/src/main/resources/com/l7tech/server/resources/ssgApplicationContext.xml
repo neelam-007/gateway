@@ -27,6 +27,8 @@
 
     <context:annotation-config/>
 
+    <bean id="applicationEventPublisher" class="com.l7tech.server.util.ApplicationEventPublisherFactoryBean"/>
+
     <bean id="systemProperties" class="com.l7tech.server.SystemProperties">
         <!-- Don't fully initialize serverconfig (no cluster propertes / db access) -->
         <constructor-arg><bean class="com.l7tech.server.ServerConfig" factory-method="getInstance"/></constructor-arg>
@@ -388,6 +390,12 @@
                             </list>
                         </entry>
                         <entry key="remotingProvider"><list><value>logon.sessionExpiry</value></list></entry>
+                        <entry key="auditingThrowsAdvice">
+                            <list>
+                                <value>audit.adminExceptions.auditPermissionDenied</value>
+                                <value>audit.adminExceptions.excludes</value>
+                            </list>
+                        </entry>                        
                     </map>
                 </constructor-arg>
             </bean>

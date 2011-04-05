@@ -19,13 +19,19 @@ public class MySqlFailureThrowsAdvice extends ThrowsAdviceSupport {
 
     //- PUBLIC
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void afterThrowing(final Method method,
-                              final Object[] args,
-                              final Object target,
-                              final Throwable throwable) throws GatewayRuntimeException {
-        if ( ExceptionUtils.causedBy(throwable, CannotAcquireResourceException.class) ) {
+    public void afterThrowing( final Throwable throwable ) throws GatewayRuntimeException {
+        if ( isMySqlFailure( throwable ) ) {
             doMySQLFailure(throwable);
+        }
+    }
+
+    //- PACKAGE
+
+    static boolean isMySqlFailure( final Throwable throwable ) {
+        boolean mysql = false;
+
+        if ( ExceptionUtils.causedBy(throwable, CannotAcquireResourceException.class) ) {
+            mysql = true;
         } else if (MYSQL_COMMUNICATIONS != null) {
             if ( !ExceptionUtils.causedBy(throwable, MYSQL_PACKET_TOO_BIG) &&
                  ExceptionUtils.causedBy(throwable, MYSQL_COMMUNICATIONS)) {
@@ -33,13 +39,15 @@ public class MySqlFailureThrowsAdvice extends ThrowsAdviceSupport {
                 // if there is a JDBCConnectionException check the SQLState.
                 JDBCConnectionException jce = ExceptionUtils.getCauseIfCausedBy(throwable, JDBCConnectionException.class);
                 if (jce == null || CONNECT_FAILURE_STATE.equals(jce.getSQLState())) {
-                    doMySQLFailure(throwable);
-                } 
+                    mysql = true;
+                }
             } else if (ExceptionUtils.causedBy(throwable, MYSQL_TRANSIENT)) {
                 // handle any transient failure
-                doMySQLFailure(throwable);
+                mysql = true;
             }
         }
+
+        return mysql;
     }
 
     //- PRIVATE
