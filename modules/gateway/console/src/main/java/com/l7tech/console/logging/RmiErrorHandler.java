@@ -71,7 +71,7 @@ public class RmiErrorHandler implements ErrorHandler {
 
             Throwable t = e.getThrowable();
             String message = ERROR_MESSAGE;
-            e.getLogger().log(Level.SEVERE, message, t);
+            e.getLogger().log(Level.SEVERE, message, ExceptionUtils.getDebugException(t));
             if (rex instanceof NoSuchObjectException ||
                 throwable instanceof AccessControlException) {
                 message = "The Gateway restarted, please login again.";

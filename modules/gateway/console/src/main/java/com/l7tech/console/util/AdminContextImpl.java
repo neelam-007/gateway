@@ -21,10 +21,12 @@ import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import org.springframework.remoting.RemoteConnectFailureException;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.ConnectException;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
@@ -199,8 +201,14 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
             throw new RemoteInvocationCanceledException(msg, e);
         } catch (InvocationTargetException e) {
             //noinspection ThrowableInstanceNeverThrown
-            logger.log(Level.WARNING, "Exception during remote API call: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(new Throwable(e)));
+            ConnectException causedBy = ExceptionUtils.getCauseIfCausedBy(e, ConnectException.class);
+            if(causedBy!=null){
+                final String logMsg = causedBy.getMessage() != null? causedBy.getMessage(): "Error during remote API call";
+                logger.log(Level.WARNING, logMsg, ExceptionUtils.getDebugException(e));
 
+            } else{
+                logger.log(Level.WARNING, "Exception during remote API call: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(new Throwable(e)));
+            }
             Throwable target = e.getCause();
             if (target instanceof ThrowableWrapper) {
                 ThrowableWrapper wrapper = (ThrowableWrapper) target;

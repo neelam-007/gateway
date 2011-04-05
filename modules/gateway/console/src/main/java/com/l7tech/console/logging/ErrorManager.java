@@ -1,5 +1,7 @@
 package com.l7tech.console.logging;
 
+import com.l7tech.util.ExceptionUtils;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.logging.Level;
@@ -72,7 +74,7 @@ public class ErrorManager {
     public void notify(final Level level, final Throwable t, final String message, final Object[] args) {
         // log
         if ( log.isLoggable( Level.FINE )) {
-            log.log( Level.FINE, "Handling error notification with message '"+message+"'.", t );
+            log.log( Level.FINE, "Handling error notification with message '"+message+"'.", ExceptionUtils.getDebugException(t) );
         }
 
         // format if required

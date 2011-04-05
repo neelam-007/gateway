@@ -26,8 +26,10 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.remoting.RemoteAccessException;
+import org.springframework.remoting.RemoteConnectFailureException;
 
 import javax.security.auth.login.LoginException;
+import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -273,7 +275,24 @@ public class SecurityProviderImpl extends SecurityProvider
                             chire.setSession( hostAndPort.left, hostAndPort.right, cookie );
                             adminLogin.logout();
                         } catch (RuntimeException e) {
-                            logger.log(Level.WARNING, "Error logging out old admin session: " + ExceptionUtils.getMessage(e), e);
+                            String msg = "Error logging out admin session";
+
+                            if(ExceptionUtils.causedBy(e, AccessControlException.class)){
+                                //Expected exception. The gateway most likely restarted or was shut down.
+                                //Use the supplied exception message if available, as it likely more specific
+                                AccessControlException causedBy = ExceptionUtils.getCauseIfCausedBy(e, AccessControlException.class);
+                                final String logMsg = causedBy.getMessage() != null? causedBy.getMessage(): msg;
+                                logger.log(Level.WARNING, logMsg, ExceptionUtils.getDebugException(e));
+                            }
+                            else if (ExceptionUtils.causedBy(e,RemoteConnectFailureException.class)){
+                                ConnectException causedBy = ExceptionUtils.getCauseIfCausedBy(e, ConnectException.class);
+                                final String logMsg = causedBy!=null||causedBy.getMessage() != null? causedBy.getMessage(): msg;
+                                logger.log(Level.WARNING, logMsg, ExceptionUtils.getDebugException(e));
+                            }
+                            else
+                            {
+                                logger.log(Level.WARNING, msg + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));                                
+                            }
                         } finally {
                             chire.setSession( null, -1, null );
                         }
