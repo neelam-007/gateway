@@ -219,6 +219,7 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
             }
         });
         ((SpinnerNumberModel)minPasswordLengthSpinner.getModel()).setMinimum(3);
+        ((SpinnerNumberModel)minPasswordLengthSpinner.getModel()).setMaximum(128);
         ((SpinnerNumberModel)maxPasswordLengthSpinner.getModel()).setMinimum(3);
         ((SpinnerNumberModel)maxPasswordLengthSpinner.getModel()).setMaximum(128);
         ((SpinnerNumberModel)repeatFrequencySpinner.getModel()).setMinimum(0);
