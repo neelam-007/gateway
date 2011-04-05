@@ -141,24 +141,15 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
             if(policy == null)
                 return false;
 
-            try{
-                // check if paasswords are different
-                if(hashedNewPassword.equals(((InternalUser) user).getHashedPassword()))
-                    throw new InvalidPasswordException("New password must be different from old password",policy.getDescription());
-                
-                validatePasswordChangesAllowable(user, policy);
-                validatePasswordString(newPassword, policy);
-                validatePasswordIsDifferent(newPassword, currentUnHashedPassword, policy);
-                validateAgainstPrevPasswords(user, hashedNewPassword, policy);
-            }catch(InvalidPasswordException e){
-                applicationContext.publishEvent(new AdminEvent(this, MessageFormat.format(SystemMessages.PASSWORD_CHANGE_FAILED.getMessage(),user.getName())) {
-                        @Override
-                        public Level getMinimumLevel() {
-                            return SystemMessages.PASSWORD_CHANGE_FAILED.getLevel();
-                        }
-                    });
-                throw e;
-            }
+            // check if paasswords are different
+            if(hashedNewPassword.equals(((InternalUser) user).getHashedPassword()))
+                throw new InvalidPasswordException("New password must be different from old password",policy.getDescription());
+
+            validatePasswordChangesAllowable(user, policy);
+            validatePasswordString(newPassword, policy);
+            validatePasswordIsDifferent(newPassword, currentUnHashedPassword, policy);
+            validateAgainstPrevPasswords(user, hashedNewPassword, policy);
+
         }
         return true;
     }
@@ -168,17 +159,8 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
         if(policy == null)
             return false;
 
-        try{
-            validatePasswordString(newPassword, policy);
-        }catch(InvalidPasswordException e){
-            applicationContext.publishEvent(new AdminEvent(this, MessageFormat.format(SystemMessages.PASSWORD_CHANGE_FAILED.getMessage(),"password reset")) {
-                    @Override
-                    public Level getMinimumLevel() {
-                        return SystemMessages.PASSWORD_CHANGE_FAILED.getLevel();
-                    }
-                });
-            throw e;
-        }
+        validatePasswordString(newPassword, policy);
+
         return true;
     }
                                                                                                     
