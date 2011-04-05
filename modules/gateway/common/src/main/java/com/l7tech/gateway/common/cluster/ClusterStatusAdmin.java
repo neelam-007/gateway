@@ -25,8 +25,8 @@ import static com.l7tech.objectmodel.EntityType.SSG_KEY_ENTRY;
  * Remote interface for getting the status of nodes in a gateway cluster.
  */
 @Secured
-@Administrative
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
+@Administrative
 public interface ClusterStatusAdmin {
     /**
      * Returns true if this node is part of a cluster.
@@ -44,7 +44,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.FIND_ENTITIES)
-    @Administrative(licensed=false)
+    @Administrative(licensed=false, background = true)
     ClusterNodeInfo[] getClusterStatus() throws FindException;
 
     /**
@@ -57,7 +57,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.CLUSTER_INFO, stereotype=MethodStereotype.FIND_ENTITIES)
-    @Administrative(licensed=false)
+    @Administrative(licensed=false, background = true)
     CollectionUpdate<ClusterNodeInfo> getClusterNodesUpdate(int oldVersionID) throws FindException;
 
     /**
@@ -67,6 +67,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.SERVICE_USAGE, stereotype=MethodStereotype.FIND_ENTITIES)
+    @Administrative(background = true)
     ServiceUsage[] getServiceUsage() throws FindException;
 
     /**
@@ -100,7 +101,7 @@ public interface ClusterStatusAdmin {
      * @return java.util.Date  The current system time
      */
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    @Administrative(licensed=false)
+    @Administrative(licensed=false, background = true)
     java.util.Date getCurrentClusterSystemTime();
 
     /**
@@ -109,7 +110,7 @@ public interface ClusterStatusAdmin {
      * @return the current system time zone on the gateway
      */
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    @Administrative(licensed=false)
+    @Administrative(licensed=false, background = true)
     String getCurrentClusterTimeZone();
 
     /**
@@ -166,7 +167,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.FIND_ENTITY)
-    @Administrative(licensed=false)
+    @Administrative(licensed=false, background = true)
     ClusterProperty findPropertyByName(String name) throws FindException;
 
     /**
@@ -241,6 +242,8 @@ public interface ClusterStatusAdmin {
     /**
      * @return whether collection of service metrics is currently enabled
      */
+    @Transactional(readOnly=true)
+    @Administrative( background = true)
     boolean isMetricsEnabled();
 
     /**
@@ -248,6 +251,8 @@ public interface ClusterStatusAdmin {
      *
      * @return the fine bin interval in milliseconds
      */
+    @Transactional(readOnly=true)
+    @Administrative(background = true)
     int getMetricsFineInterval();
 
     /**
@@ -272,6 +277,7 @@ public interface ClusterStatusAdmin {
      * @throws FindException if there was a server-side problem accessing the requested information
      */
     @Transactional(readOnly=true)
+    @Administrative( background = true)
     Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId,
                                                     final long[] serviceOids,
                                                     final Integer resolution,
@@ -303,6 +309,7 @@ public interface ClusterStatusAdmin {
      * @throws FindException if there was a server-side problem accessing the requested information
      */
     @Transactional(readOnly=true)
+    @Administrative(background = true)
     Collection<MetricsSummaryBin> summarizeLatestByPeriod(final String nodeId,
                                                           final long[] serviceOids,
                                                           final Integer resolution,
@@ -332,6 +339,7 @@ public interface ClusterStatusAdmin {
      * @throws FindException if there was a server-side problem accessing the requested information
      */
     @Transactional(readOnly=true)
+    @Administrative(background = true)
     MetricsSummaryBin summarizeLatest(final String clusterNodeId,
                                       final long[] serviceOids,
                                       final int resolution,

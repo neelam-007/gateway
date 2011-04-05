@@ -53,7 +53,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      */
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     @Transactional(readOnly=true)
-    @Administrative(licensed=false)
+    @Administrative(licensed=false, background = true)
     ServiceHeader[] findAllPublishedServices() throws FindException;
 
     /**
@@ -161,7 +161,7 @@ public interface ServiceAdmin extends AsyncAdminMethods, AliasAdmin<PublishedSer
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_HEADERS)
-    @Administrative(licensed=false)
+    @Administrative(licensed=false, background = true)
     CollectionUpdate<ServiceHeader> getPublishedServicesUpdate(final int oldVersionID) throws FindException;
 
     /**

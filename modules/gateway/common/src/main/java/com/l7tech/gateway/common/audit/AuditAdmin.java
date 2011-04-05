@@ -40,7 +40,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITY)
-    @Administrative(licensed=false)
+    @Administrative(licensed=false, background = true)
     AuditRecord findByPrimaryKey(long oid) throws FindException;
 
     /**
@@ -60,7 +60,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @throws FindException if there was a problem retrieving Audit records from the database
      */
     @Secured(stereotype=FIND_ENTITIES)
-    @Administrative(licensed=false)
+    @Administrative(licensed=false, background = true)
     Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException;
 
     /**
@@ -70,7 +70,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @return The date of the first available audit or 0 if none are available.
      */
     @Transactional(readOnly=true)
-    @Administrative(licensed=false)
+    @Administrative(licensed=false, background = true)
     long hasNewAudits(Date date, Level level);
 
     /**
@@ -144,7 +144,6 @@ public interface AuditAdmin extends GenericLogAdmin {
      *
      * @return The date or null if not set
      */
-    @Administrative(licensed=false)
     Date markLastAcknowledgedAuditDate();
 
     /**
@@ -201,7 +200,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @throws FindException thrown when the property cannot be found.
      */
     @Transactional(readOnly=true)
-    @Administrative(licensed=false)
+    @Administrative(licensed=false, background = true)
     boolean isSigningEnabled() throws FindException;
 
     /**

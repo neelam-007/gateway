@@ -32,4 +32,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface Administrative {
     boolean authenticated() default true;
     boolean licensed() default true;
+
+    /**
+     *  Denotes if this administrative interface is used for background activity   (audit/dashboard requests)
+     * @return
+     */
+    boolean background() default false;
 }

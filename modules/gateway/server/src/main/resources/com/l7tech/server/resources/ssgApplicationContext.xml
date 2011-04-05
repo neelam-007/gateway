@@ -299,7 +299,7 @@
                                 <value>logon.maxAllowableAttempts</value>
                             </list>
                         </entry>
-                        <entry key="passwordEnforcerManager"><list><value>password.expiry</value></list></entry>
+                        <entry key="passwordEnforcerManager"><list><value>security.pcidss.enabled</value></list></entry>
                         <entry key="auditArchiver">
                             <list>
                                 <value>auditArchiverTimerPeriod</value>
@@ -387,6 +387,7 @@
                                 <value>audit.auditDetailExcludeList</value>
                             </list>
                         </entry>
+                        <entry key="remotingProvider"><list><value>logon.sessionExpiry</value></list></entry>
                     </map>
                 </constructor-arg>
             </bean>
