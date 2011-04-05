@@ -15,6 +15,7 @@ import java.security.cert.X509Certificate;
 public class TestDefaultKey extends DefaultKeyImpl {
     SsgKeyEntry sslInfo;
     SsgKeyEntry caInfo;
+    SsgKeyEntry auditViewerInfo;
 
     public TestDefaultKey() throws Exception {
         super(null, null, null, null);
@@ -58,8 +59,17 @@ public class TestDefaultKey extends DefaultKeyImpl {
         return caInfo;
     }
 
+    @Override
+    public SsgKeyEntry getAuditViewerInfo() {
+        return auditViewerInfo;
+    }
+
     public void setCaInfo(SsgKeyEntry caInfo) {
         this.caInfo = caInfo;
+    }
+
+    public void setAuditViewerInfo(SsgKeyEntry info) {
+        this.auditViewerInfo = info;
     }
 
     private SsgKeyEntry makeFakeKeyEntry(X509Certificate cert, PrivateKey key) {

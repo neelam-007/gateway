@@ -152,6 +152,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_KEYSTORE_SEARCH_FOR_ALIAS = "keyStoreSearchForAlias";
     public static final String PARAM_KEYSTORE_DEFAULT_SSL_KEY = "keyStoreDefaultSslKey";
     public static final String PARAM_KEYSTORE_DEFAULT_CA_KEY = "keyStoreDefaultCaKey";
+    public static final String PARAM_KEYSTORE_AUDIT_VIEWER_KEY = "keyStoreAuditViewerKey";
 
     public static final String PARAM_CERT_EXPIRY_CHECK_PERIOD = "trustedCert.expiryCheckPeriod";
     public static final String PARAM_CERT_EXPIRY_FINE_AGE = "trustedCert.expiryFineAge";

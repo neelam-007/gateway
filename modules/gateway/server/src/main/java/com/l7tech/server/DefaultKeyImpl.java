@@ -54,6 +54,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private final PlatformTransactionManager transactionManager;
     private final AtomicReference<SsgKeyEntry> cachedSslInfo = new AtomicReference<SsgKeyEntry>();
     private final AtomicReference<SsgKeyEntry> cachedCaInfo = new AtomicReference<SsgKeyEntry>();
+    private final AtomicReference<SsgKeyEntry> cachedAuditViewerInfo = new AtomicReference<SsgKeyEntry>();
     private static final String SC_PROP_SSL_KEY = ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY;
 
     public DefaultKeyImpl( final ServerConfig serverConfig,
@@ -240,6 +241,17 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         }
     }
 
+    @Override
+    public SsgKeyEntry getAuditViewerInfo() {
+        try {
+            return getCachedEntry(cachedAuditViewerInfo, ServerConfig.PARAM_KEYSTORE_AUDIT_VIEWER_KEY, false);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to look up audit viewer key: " + ExceptionUtils.getMessage(e), e);
+        } catch (ObjectNotFoundException e) {
+            throw new RuntimeException("Unable to look up audit viewer key: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
     public KeyManager[] getSslKeyManagers() {
         try {
             SsgKeyEntry info = getSslInfo();
@@ -263,6 +275,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private void invalidateCachedCerts() {
         cachedSslInfo.set(null);
         cachedCaInfo.set(null);
+        cachedAuditViewerInfo.set(null);
     }
 
     private SsgKeyEntry getCachedEntry(AtomicReference<SsgKeyEntry> cache, String propertyName, boolean required) throws IOException, ObjectNotFoundException {

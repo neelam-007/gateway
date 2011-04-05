@@ -672,6 +672,12 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
                     throw new ObjectNotFoundException("There is currently no default CA key.");
                 return ca;
 
+            case AUDIT_VIEWER:
+                SsgKeyEntry auditViewer = defaultKey.getAuditViewerInfo();
+                if (auditViewer == null)
+                    throw new ObjectNotFoundException("There is currently no audit viewer key.");
+                return auditViewer;
+
             default:
                 throw new IllegalArgumentException("No such keyType: " + keyType);
         }
@@ -679,13 +685,17 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
     @Override
     public boolean isDefaultKeyMutable(SpecialKeyType keyType) {
+        // We'll assume a designation is mutable unless it was set via its system property (instead of its cluster property)
         switch (keyType) {
             case SSL:
                 return "unset".equals(SyspropUtil.getString("com.l7tech.server.keyStore.defaultSsl.alias", "unset"));
 
             case CA:
                 return "unset".equals(SyspropUtil.getString("com.l7tech.server.keyStore.defaultCa.alias", "unset"));
-            
+
+            case AUDIT_VIEWER:
+                return "unset".equals(SyspropUtil.getString("com.l7tech.server.keyStore.auditViewer.alias", "unset"));
+
             default:
                 return false;
         }

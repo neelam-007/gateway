@@ -23,13 +23,22 @@ public interface DefaultKey {
     SsgKeyEntry getSslInfo() throws IOException;
 
     /**
-     * Get Gateway default CA private key and cert chain.
+     * Get Gateway default CA private key and cert chain, if one is set, otherwise null.
      * <p/>
      * <b>Note:</b> This differs from {@link #getSslInfo()} in that this method may return null.
      *
      * @return SignerInfo for the default CA private key, or null if no default CA key is currently designated.
      */
     SsgKeyEntry getCaInfo();
+
+    /**
+     * Get the Gateway audit viewer decryption key and cert chain, if one is set, otherwise null.
+     * <p/>
+     * <b>Note:</b> This differs from {@link #getSslInfo()} in that this method may return null.
+     *
+     * @return SignerInfo for the designated audit viewer decryption key, or null if one is not currently configured.
+     */
+    SsgKeyEntry getAuditViewerInfo();
 
     /**
      * Get an array containing a single KeyManager implementation which will always present the current

@@ -111,6 +111,25 @@ INSERT INTO rbac_predicate VALUES (-1274,0,-1273);
 INSERT INTO rbac_predicate_attribute VALUES (-1274,'name','logon.inactivityPeriod');
 
 --
+-- Manage private keys role gains ability to manage the audit viewer decryption key
+--
+INSERT INTO `rbac_permission` VALUES
+    (-1115,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
+    (-1116,0,-1100,'DELETE',NULL,'CLUSTER_PROPERTY'),
+    (-1117,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY'),
+    (-1118,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY');
+INSERT INTO `rbac_predicate` VALUES
+    (-1115,0,-1115),
+    (-1116,0,-1116),
+    (-1117,0,-1117),
+    (-1118,0,-1118);
+INSERT INTO `rbac_predicate_attribute` VALUES
+    (-1115,'name','keyStore.auditViewer.alias'),
+    (-1116,'name','keyStore.auditViewer.alias'),
+    (-1117,'name','keyStore.auditViewer.alias'),
+    (-1118,'name','keyStore.auditViewer.alias');
+
+--
 --
 -- Reenable FK at very end of script
 --

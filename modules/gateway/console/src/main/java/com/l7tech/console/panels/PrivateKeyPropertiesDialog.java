@@ -63,29 +63,51 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private JTextField locationField;
     private JTextField aliasField;
     private JTextField typeField;
-    private JButton makeDefaultSSLButton;
-    private JButton makeDefaultCAButton;
+    private JButton markAsSpecialPurposeButton;
     private JLabel defaultSslLabel;
     private JLabel defaultCaLabel;
+    private JLabel auditDecryptionLabel;
     private JLabel caCapableLabel;
     private JButton exportKeyButton;
     private PrivateKeyManagerWindow.KeyTableRow subject;
 
+    private Action makeDefaultSslAction = new AbstractAction("Make Default SSL Key") {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            makeDefaultSsl();
+        }
+    };
+
+    private Action makeDefaultCaAction = new AbstractAction("Make Default CA Key") {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            makeDefaultCa();
+        }
+    };
+
+    private Action makeAuditViewerKeyAction = new AbstractAction("Make Audit Viewer Key") {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            makeAuditViewerKey();
+        }
+    };
+
     private Logger logger = Logger.getLogger(PrivateKeyPropertiesDialog.class.getName());
     private boolean deleted = false;
     private boolean defaultKeyChanged = false;
+    private final DefaultAliasTracker defaultAliasTracker;
     private final PermissionFlags flags;
 
-    public PrivateKeyPropertiesDialog(JDialog owner, PrivateKeyManagerWindow.KeyTableRow subject, PermissionFlags flags,
-                                      boolean shouldEnableMakeDefaultSslButton, boolean shouldEnableMakeDefaultCaButton)
+    public PrivateKeyPropertiesDialog(JDialog owner, PrivateKeyManagerWindow.KeyTableRow subject, PermissionFlags flags, DefaultAliasTracker defaultAliasTracker)
     {
         super(owner, true);
+        this.defaultAliasTracker = defaultAliasTracker;
         this.subject = subject;
         this.flags = flags;
-        initialize(shouldEnableMakeDefaultSslButton, shouldEnableMakeDefaultCaButton);
+        initialize();
     }
 
-    private void initialize(boolean shouldEnableMakeDefaultSslButton, boolean shouldEnableMakeDefaultCaButton) {
+    private void initialize() {
         setContentPane(mainPanel);
         setTitle("Private Key Properties");
 
@@ -127,17 +149,10 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             }
         });
 
-        makeDefaultSSLButton.addActionListener(new ActionListener() {
+        markAsSpecialPurposeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                makeDefaultSsl();
-            }
-        });
-
-        makeDefaultCAButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                makeDefaultCa();
+                markAsSpecialPurpose();
             }
         });
 
@@ -170,14 +185,15 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
         defaultSslLabel.setVisible(subject.isDefaultSsl());
         defaultCaLabel.setVisible(subject.isDefaultCa());
+        auditDecryptionLabel.setVisible(subject.isAuditViewerKey());
         caCapableLabel.setVisible(isCertChainCaCapable(subject));
 
-        makeDefaultCAButton.setEnabled((!subject.isDefaultCa()) && shouldEnableMakeDefaultCaButton);
-        if (!shouldEnableMakeDefaultCaButton)
-            makeDefaultCAButton.setToolTipText("The default CA key cannot be changed on this system.");
-        makeDefaultSSLButton.setEnabled((!subject.isDefaultSsl()) && shouldEnableMakeDefaultSslButton);
-        if (!shouldEnableMakeDefaultSslButton)
-            makeDefaultSSLButton.setToolTipText("The default SSL key cannot be changed on this system.");
+        makeDefaultCaAction.setEnabled(!subject.isDefaultCa() && defaultAliasTracker.isDefaultCaKeyMutable());
+        makeDefaultSslAction.setEnabled(!subject.isDefaultSsl() && defaultAliasTracker.isDefaultSslKeyMutable());
+        makeAuditViewerKeyAction.setEnabled(!subject.isAuditViewerKey() && defaultAliasTracker.isDefaultAuditViewerMutable());
+        markAsSpecialPurposeButton.setEnabled(makeDefaultCaAction.isEnabled() || makeDefaultSslAction.isEnabled() || makeAuditViewerKeyAction.isEnabled());
+        if (!markAsSpecialPurposeButton.isEnabled())
+            markAsSpecialPurposeButton.setToolTipText("Special-purpose key roles cannot be changed.");
 
         certList.addListSelectionListener(new ListSelectionListener() {
             @Override
@@ -209,12 +225,19 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             replaceCertificateChainButton.setEnabled(false);
 
         Utilities.equalizeButtonSizes(new JButton[] {
-                makeDefaultCAButton,
-                makeDefaultSSLButton,
+                markAsSpecialPurposeButton,
                 generateCSRButton,
                 replaceCertificateChainButton,
                 exportKeyButton,
         });
+    }
+
+    private void markAsSpecialPurpose() {
+        JPopupMenu pop = new JPopupMenu();
+        pop.add(new JMenuItem(makeDefaultSslAction));
+        pop.add(new JMenuItem(makeDefaultCaAction));
+        pop.add(new JMenuItem(makeAuditViewerKeyAction));
+        pop.show(markAsSpecialPurposeButton, 0, 0);
     }
 
     private boolean isCertChainCaCapable(PrivateKeyManagerWindow.KeyTableRow subject) {
@@ -293,10 +316,12 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void makeDefaultSsl() {
+        // TODO should we disallow designating as the SSL key a key that is already designated as the audit viewer key?
+
         // Check for RSA cert that disallows keyEncipherment key usage, since this can lock you out of the SSM.  (Bug #6908)
         if (subject.getKeyType().toUpperCase().startsWith("RSA") && !isCertChainSslCapable(subject)) {
             DialogDisplayer.showMessageDialog(
-                    makeDefaultSSLButton,
+                    markAsSpecialPurposeButton,
                     "This key's certificate chain has a key usage disallowing use as an SSL server cert.\n" +
                     "Many SSL clients -- including the Policy Manager, and web browsers -- will refuse\n" +
                     "to connect to an SSL server that uses this key for its SSL server cert.",
@@ -308,7 +333,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         // Check for EC cert, since this can lock you out of the SSM.  (Bug #7563)
         if (subject.getKeyType().toUpperCase().startsWith("EC") && !SyspropUtil.getBoolean(PROP_ALLOW_EC_FOR_DEFAULT_SSL, false)) {
             DialogDisplayer.showConfirmDialog(
-                    makeDefaultSSLButton,
+                    markAsSpecialPurposeButton,
                     "This is an elliptic curve private key.\n\n" +
                     "Many SSL clients -- including the Gateway's browser-based admin applet when run\n" +
                     "with a standard Java install, and many web browsers -- will be unable to connect\n" +
@@ -330,7 +355,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void doMakeDefaultSsl() {
-        confirmPutClusterProperty(makeDefaultSSLButton, "SSL", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_SSL, subject);
+        confirmPutClusterProperty("Default SSL", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_SSL, subject);
     }
 
     private KeyUsagePolicy makeRsaSslServerKeyUsagePolicy() {
@@ -351,9 +376,11 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void makeDefaultCa() {
+        // TODO should we disallow designating as the CA key a key that is already designated as the audit viewer key?
+
         if (!isCertChainCaCapable(subject)) {
             DialogDisplayer.showConfirmDialog(
-                    makeDefaultCAButton,
+                    markAsSpecialPurposeButton,
                     "This certificate chain does not specifically enable use as a CA cert.\n" +
                     "Some software will reject client certificates signed by this key." +
                     "\n\nAre you sure you want the cluster to use this as the default CA private key?",
@@ -373,13 +400,42 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void doMakeDefaultCa() {
-        confirmPutClusterProperty(makeDefaultCAButton, "CA", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_CA, subject);
+        confirmPutClusterProperty("Default CA", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_CA, subject);
     }
 
-    private void confirmPutClusterProperty(final JButton triggerButton, final String what, final String clusterProp, final PrivateKeyManagerWindow.KeyTableRow subject) {
+    private void makeAuditViewerKey() {
+        // TODO should we disallow designating as the audit viewer key a key that is already designated as the SSL or CA key?
+
+        if (!"RSA".equalsIgnoreCase(subject.getCertificate().getPublicKey().getAlgorithm())) {
+            DialogDisplayer.showConfirmDialog(
+                    markAsSpecialPurposeButton,
+                    "This private key is an elliptic curve key.\n" +
+                    "The Gateway currently cannot use elliptic curve keys for message-level decryption.\n" +
+                    "An audit viewer policy will not be able to use this key to decrypt encrypted audit messages.\n" +
+                    "\n\nAre you sure you want the cluster to use this as the default audit viewer private key?",
+                    "Unsuitable Audit Viewer Certificate",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    new DialogDisplayer.OptionListener() {
+                        @Override
+                        public void reportResult(int option) {
+                            if (option == JOptionPane.YES_OPTION)
+                                doMakeAuditViewerKey();
+                        }
+                    });
+            return;
+        }
+        doMakeAuditViewerKey();
+    }
+
+    private void doMakeAuditViewerKey() {
+        confirmPutClusterProperty("Audit Viewer", DefaultAliasTracker.CLUSTER_PROP_AUDIT_VIEWER, subject);
+    }
+
+    private void confirmPutClusterProperty(final String what, final String clusterProp, final PrivateKeyManagerWindow.KeyTableRow subject) {
         DialogDisplayer.showConfirmDialog(
-                makeDefaultCAButton,
-                "Are you sure you wish to change the cluster default " + what + " private key?\n\n" +
+                markAsSpecialPurposeButton,
+                "Are you sure you wish to change the cluster " + what + " private key?\n\n" +
                 "All cluster nodes will need to be restarted before the change will fully take effect.",
                 "Confirm New Cluster " + what + " Key",
                 JOptionPane.YES_NO_OPTION,
@@ -388,20 +444,19 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     @Override
                     public void reportResult(int option) {
                         if (option == JOptionPane.YES_OPTION)
-                            doPutClusterProperty(triggerButton, what, clusterProp, subject);
+                            doPutClusterProperty(what, clusterProp, subject);
                     }
                 }
         );
     }
 
-    private void doPutClusterProperty(final JButton triggerButton, String what, String clusterProp, PrivateKeyManagerWindow.KeyTableRow subject) {
+    private void doPutClusterProperty(String what, String clusterProp, PrivateKeyManagerWindow.KeyTableRow subject) {
         String value = subject.getKeyEntry().getKeystoreId() + ":" + subject.getAlias();
         String failmess = "Failed to change default " + what + " key: ";
         try {
             ClusterPropertyCrud.putClusterProperty(clusterProp, value);            
-            TopComponents.getInstance().getBean("defaultAliasTracker", DefaultAliasTracker.class).invalidate();
+            defaultAliasTracker.invalidate();
 
-            triggerButton.setEnabled(false);
             DialogDisplayer.showMessageDialog(this,
                     "The " + what + " key has been changed.\n\nThe change will not fully take effect until all cluster nodes have been restarted.",
                     "Default " + what + " Key Updated",

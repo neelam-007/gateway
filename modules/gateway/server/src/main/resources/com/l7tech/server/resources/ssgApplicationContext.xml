@@ -292,6 +292,7 @@
                             <list>
                                 <value>keyStoreDefaultSslKey</value>
                                 <value>keyStoreDefaultCaKey</value>
+                                <value>keyStoreAuditViewerKey</value>
                                 <value>keyStoreSearchForAlias</value>
                             </list>
                         </entry>

@@ -110,7 +110,7 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative>, 
                 }
                 sessionActivityMap.put(user,System.currentTimeMillis());
             }
-            System.out.print("\nUser:"+user.getLogin() +" Activity: "+activity + " time:"+ System.currentTimeMillis());
+            //System.out.print("\nUser:"+user.getLogin() +" Activity: "+activity + " time:"+ System.currentTimeMillis());
         }
     }
 

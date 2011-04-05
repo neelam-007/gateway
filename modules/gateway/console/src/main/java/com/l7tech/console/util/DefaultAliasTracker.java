@@ -23,13 +23,16 @@ public class DefaultAliasTracker implements ApplicationListener {
 
     public static final String CLUSTER_PROP_DEFAULT_SSL = "keyStore.defaultSsl.alias";
     public static final String CLUSTER_PROP_DEFAULT_CA = "keyStore.defaultCa.alias";
+    public static final String CLUSTER_PROP_AUDIT_VIEWER = "keyStore.auditViewer.alias";
 
     private static final Pattern KEYSTORE_ID_AND_ALIAS_PATTERN = Pattern.compile("^(-?\\d+):(.*)$");
 
     private String defaultSslAlias = null;
     private String defaultCaAlias = null;
+    private String defaultAuditViewerAlias = null;
     private boolean defaultSslMutability;
     private boolean defaultCaMutability;
+    private boolean defaultAuditViewerMutability;
 
     /**
      * @return the current (possibly cached) default SSL alias.  Normally never null.
@@ -47,12 +50,18 @@ public class DefaultAliasTracker implements ApplicationListener {
         return defaultCaAlias;
     }
 
+    public String getDefaultAuditViewerAlias() {
+        checkUpdate();
+        return defaultAuditViewerAlias;
+    }
+
     /**
      * Forget any cached information about the default SSL and CA certs.
      */
     public void invalidate() {
         defaultSslAlias = null;
         defaultCaAlias = null;
+        defaultAuditViewerAlias = null;
     }
 
     public boolean isDefaultSslKeyMutable() {
@@ -63,6 +72,11 @@ public class DefaultAliasTracker implements ApplicationListener {
     public boolean isDefaultCaKeyMutable() {
         checkUpdate();
         return defaultCaMutability;
+    }
+
+    public boolean isDefaultAuditViewerMutable() {
+        checkUpdate();
+        return defaultAuditViewerMutability;
     }
 
     private void checkUpdate() {
@@ -87,6 +101,7 @@ public class DefaultAliasTracker implements ApplicationListener {
     private void updateDefaultAliases() {
         defaultSslMutability = Registry.getDefault().getTrustedCertManager().isDefaultKeyMutable(TrustedCertAdmin.SpecialKeyType.SSL);
         defaultCaMutability = Registry.getDefault().getTrustedCertManager().isDefaultKeyMutable(TrustedCertAdmin.SpecialKeyType.CA);
+        defaultAuditViewerMutability = Registry.getDefault().getTrustedCertManager().isDefaultKeyMutable(TrustedCertAdmin.SpecialKeyType.AUDIT_VIEWER);
 
         try {
             defaultSslAlias = Registry.getDefault().getTrustedCertManager().findDefaultKey(TrustedCertAdmin.SpecialKeyType.SSL).getAlias();
@@ -108,6 +123,18 @@ public class DefaultAliasTracker implements ApplicationListener {
                 defaultCaAlias = getAlias(CLUSTER_PROP_DEFAULT_CA, null);
             } catch (FindException e1) {
                 logger.log(Level.WARNING, "Unable to determine default CA alias using cluster property: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+        try {
+            defaultAuditViewerAlias = Registry.getDefault().getTrustedCertManager().findDefaultKey(TrustedCertAdmin.SpecialKeyType.AUDIT_VIEWER).getAlias();
+        } catch (ObjectNotFoundException e) {
+            logger.info("There is currently no audit viewer key");
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to determine default audit viewer alias using findDefaultKey: " + ExceptionUtils.getMessage(e), e);
+            try {
+                defaultAuditViewerAlias = getAlias(CLUSTER_PROP_AUDIT_VIEWER, null);
+            } catch (FindException e1) {
+                logger.log(Level.WARNING, "Unable to determine default audit viewer alias using cluster property: " + ExceptionUtils.getMessage(e), e);
             }
         }
     }

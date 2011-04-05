@@ -389,9 +389,12 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
         SSL,
 
         /** Represents a key marked as the default CA key. */
-        CA;
+        CA,
 
-        private static final long serialVersionUID = 932856867393187254L;
+        /** Represents a key marked as the default audit viewer/decryption key. */
+        AUDIT_VIEWER;
+
+        private static final long serialVersionUID = 932856867393187255L;
     }
 
     /**

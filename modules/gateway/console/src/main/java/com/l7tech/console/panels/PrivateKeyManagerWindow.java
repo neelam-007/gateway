@@ -52,6 +52,7 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
 import java.util.Timer;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,6 +61,8 @@ import java.util.logging.Logger;
  */
 public class PrivateKeyManagerWindow extends JDialog {
     protected static final Logger logger = Logger.getLogger(PrivateKeyManagerWindow.class.getName());
+
+    private static final int TICKS_PER_ICON_REPAINT = 3;
 
     private JPanel mainPanel;
     private JScrollPane keyTableScrollPane;
@@ -72,6 +75,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     private DefaultAliasTracker defaultAliasTracker;
 
     private static final Timer jobStatusTimer = new Timer("PrivateKeyManagerWindow job status timer");
+    private static final AtomicInteger iconFlipCount = new AtomicInteger(0);
     private static final Map<PrivateKeyManagerWindow, Object> timerClients = new WeakHashMap<PrivateKeyManagerWindow, Object>();
     static {
         TimerTask task = new TimerTask() {
@@ -80,6 +84,8 @@ public class PrivateKeyManagerWindow extends JDialog {
                 SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
+                        iconFlipCount.incrementAndGet();
+
                         // Deliver tick events on the swing thread, as long as we are connected to the SSG
                         if (timerClients.isEmpty() || !Registry.getDefault().isAdminContextPresent())
                             return;
@@ -549,7 +555,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
     private void doProperties() {
         final KeyTableRow data = getSelectedObject();
-        final PrivateKeyPropertiesDialog dlg = new PrivateKeyPropertiesDialog(this, data, flags, defaultAliasTracker.isDefaultSslKeyMutable(), defaultAliasTracker.isDefaultCaKeyMutable());
+        final PrivateKeyPropertiesDialog dlg = new PrivateKeyPropertiesDialog(this, data, flags, defaultAliasTracker);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -606,6 +612,8 @@ public class PrivateKeyManagerWindow extends JDialog {
     private void onTimerTick() {
         if (activeKeypairJob != null || showingInScrollPane != keyTable)
             loadPrivateKeys();
+        if (iconFlipCount.get() % TICKS_PER_ICON_REPAINT == 0)
+            keyTable.repaint();  // TODO repaint just the affected cells, not the whole table
     }
 
     /*
@@ -653,7 +661,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             for (KeystoreFileEntityHeader keystore : getTrustedCertAdmin().findAllKeystores(true)) {
                 if (mutableKeystore == null && !keystore.isReadonly()) mutableKeystore = keystore;
                 for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getOid())) {
-                    keyList.add(new KeyTableRow(keystore, entry, isDefaultSslCert(entry), isDefaultCaCert(entry)));
+                    keyList.add(new KeyTableRow(keystore, entry, isDefaultSslCert(entry), isDefaultCaCert(entry), isAuditViewerCert(entry)));
                 }
             }
 
@@ -786,6 +794,11 @@ public class PrivateKeyManagerWindow extends JDialog {
         return alias != null && alias.equalsIgnoreCase(defaultAliasTracker.getDefaultCaAlias());
     }
 
+    public boolean isAuditViewerCert(SsgKeyEntry entry) {
+        String alias = entry.getAlias();
+        return alias != null && alias.equalsIgnoreCase(defaultAliasTracker.getDefaultAuditViewerAlias());
+    }
+
     /** Represents a row in the Manage Private Keys table. */
     public static class KeyTableRow {
         private final KeystoreFileEntityHeader keystoreInfo;
@@ -793,13 +806,15 @@ public class PrivateKeyManagerWindow extends JDialog {
         private String keyType = null;
         private boolean defaultSsl;
         private boolean defaultCa;
+        private boolean auditViewerKey;
         private boolean certCaCapable;
 
-        public KeyTableRow(KeystoreFileEntityHeader keystoreInfo, SsgKeyEntry keyEntry, boolean defaultSsl, boolean defaultCa) {
+        public KeyTableRow(KeystoreFileEntityHeader keystoreInfo, SsgKeyEntry keyEntry, boolean defaultSsl, boolean defaultCa, boolean auditViewerKey) {
             this.keystoreInfo = keystoreInfo;
             this.keyEntry = keyEntry;
             this.defaultSsl = defaultSsl;
             this.defaultCa = defaultCa;
+            this.auditViewerKey = auditViewerKey;
             this.certCaCapable = keyEntry != null && CertUtils.isCertCaCapable(keyEntry.getCertificate());
         }
 
@@ -867,6 +882,10 @@ public class PrivateKeyManagerWindow extends JDialog {
             return defaultCa;
         }
 
+        public boolean isAuditViewerKey() {
+            return auditViewerKey;
+        }
+
         public boolean isCertCaCapable() {
             return certCaCapable;
         }
@@ -876,7 +895,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         private static final String RESDIR = MainWindow.RESOURCE_PATH;
         private static final String PATH_SSL = RESDIR + "/cert_flag_ssl_16.png";
         private static final String PATH_CA = RESDIR + "/cert_flag_ca_16.png";
-        private static final String PATH_SSLCA = RESDIR + "/cert_flag_sslca_16.png";
+        private static final String PATH_AUDITVIEWER = RESDIR + "/cert_flag_auditviewer_16.png";
         private static final String PATH_CERT_SSL = RESDIR + "/cert_ssl_16.gif";
         private static final String PATH_CERT_CA = RESDIR + "/cert_ca_16.gif";
 
@@ -948,7 +967,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 abstract Object getValueForRow(KeyTableRow row);
             }
 
-            public static final Col[] columns = new Col[] {
+            private final Col[] columns = new Col[] {
                     new Col(" ", 19, 19, 19, Object.class) {
                         @Override
                         Object getValueForRow(KeyTableRow row) {
@@ -997,20 +1016,35 @@ public class PrivateKeyManagerWindow extends JDialog {
                     new Col(" ", 19, 19, 19, Object.class) {
                         @Override
                         Object getValueForRow(KeyTableRow row) {
-                            int val = row.isDefaultSsl() ? 1 : 0;
-                            if (row.isDefaultCa()) val += 2;
-                            switch (val) {
-                                case 0:
-                                    return "";
-                                case 1:
-                                    return ImageCache.getInstance().getIconAsIcon(PATH_SSL);
-                                case 2:
-                                    return ImageCache.getInstance().getIconAsIcon(PATH_CA);
-                                case 3:
-                                    return ImageCache.getInstance().getIconAsIcon(PATH_SSLCA);
-                            }
-                            /* NOTREACHED */
-                            return "";
+                            final ImageIcon sslIcon = ImageCache.getInstance().getIconAsIcon(PATH_SSL);
+                            final List<ImageIcon> icons = new ArrayList<ImageIcon>();
+                            if (row.isDefaultSsl())
+                                icons.add(sslIcon);
+                            if (row.isDefaultCa())
+                                icons.add(ImageCache.getInstance().getIconAsIcon(PATH_CA));
+                            if (row.isAuditViewerKey())
+                                icons.add(ImageCache.getInstance().getIconAsIcon(PATH_AUDITVIEWER));
+                            final int numIcons = icons.size();
+
+                            return numIcons < 1 ? "" : new Icon() {
+                                @Override
+                                public void paintIcon(Component c, Graphics g, int x, int y) {
+                                    int toDisp = (iconFlipCount.get() / TICKS_PER_ICON_REPAINT) % numIcons;
+                                    Icon icon = icons.get(toDisp);
+                                    if (icon != null)
+                                        icon.paintIcon(c, g, x,y);
+                                }
+
+                                @Override
+                                public int getIconWidth() {
+                                    return sslIcon.getIconWidth();
+                                }
+
+                                @Override
+                                public int getIconHeight() {
+                                    return sslIcon.getIconHeight();
+                                }
+                            };
                         }
                         { isImage = true; }
                     },

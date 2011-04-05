@@ -1493,8 +1493,11 @@ INSERT INTO `rbac_permission` VALUES
     (-1111,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY'),
     (-1112,0,-1100,'UPDATE',NULL,'SSG_KEYSTORE'),
     (-1113,0,-1100,'DELETE',NULL,'CLUSTER_PROPERTY'),
-    (-1114,0,-1100,'READ',NULL,'SSG_KEYSTORE');
-
+    (-1114,0,-1100,'READ',NULL,'SSG_KEYSTORE'),
+    (-1115,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
+    (-1116,0,-1100,'DELETE',NULL,'CLUSTER_PROPERTY'),
+    (-1117,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY'),
+    (-1118,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY');
 INSERT INTO `rbac_predicate` VALUES
     (-1101,0,-1101),
     (-1103,0,-1103),
@@ -1503,7 +1506,11 @@ INSERT INTO `rbac_predicate` VALUES
     (-1109,0,-1109),
     (-1110,0,-1110),
     (-1111,0,-1111),
-    (-1113,0,-1113);
+    (-1113,0,-1113),
+    (-1115,0,-1115),
+    (-1116,0,-1116),
+    (-1117,0,-1117),
+    (-1118,0,-1118);
 INSERT INTO `rbac_predicate_attribute` VALUES
     (-1101,'name','keyStore.defaultSsl.alias'),
     (-1103,'name','keyStore.defaultCa.alias'),
@@ -1512,7 +1519,11 @@ INSERT INTO `rbac_predicate_attribute` VALUES
     (-1109,'name','keyStore.defaultSsl.alias'),
     (-1110,'name','keyStore.defaultCa.alias'),
     (-1111,'name','keyStore.defaultSsl.alias'),
-    (-1113,'name','keyStore.defaultCa.alias');
+    (-1113,'name','keyStore.defaultCa.alias'),
+    (-1115,'name','keyStore.auditViewer.alias'),
+    (-1116,'name','keyStore.auditViewer.alias'),
+    (-1117,'name','keyStore.auditViewer.alias'),
+    (-1118,'name','keyStore.auditViewer.alias');
 
 INSERT INTO rbac_role VALUES (-1150,0,'Manage Password Policies', null,null,null, 'Users assigned to the {0} role have the ability to read and update any stored password policy and view the identity providers.');
 INSERT INTO rbac_permission VALUES (-1151,0,-1150,'READ',NULL,'PASSWORD_POLICY');
