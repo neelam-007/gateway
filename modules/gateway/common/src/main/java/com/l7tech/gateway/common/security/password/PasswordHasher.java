@@ -9,9 +9,8 @@ public interface PasswordHasher {
      *
      * @param passwordBytes the bytes of the password to hash.  Required.
      * @return a verifier string for the specified password, in a format determined by this particular hasher implementation.  Never null or empty.
-     * @throws PasswordHashingException if there is an error constructing the verifier hash.
      */
-    String hashPassword(byte[] passwordBytes) throws PasswordHashingException;
+    String hashPassword(byte[] passwordBytes);
 
     /**
      * Verify the specified password against the specified verifier hash string.

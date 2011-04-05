@@ -31,14 +31,14 @@ public class CryptL7PasswordHasher implements PasswordHasher {
     }
 
     @Override
-    public String hashPassword(byte[] passwordBytes) throws PasswordHashingException {
+    public String hashPassword(byte[] passwordBytes) {
         try {
             byte workFactor = crypt.getDefaultWorkFactor();
             byte[] salt = newSalt();
             byte[] hashed = crypt.computeHash(passwordBytes, salt, workFactor, getHasher());
             return encodeVerifier(workFactor, salt, hashed);
         } catch (NoSuchAlgorithmException e) {
-            throw new PasswordHashingException("Unable to hash password: " + ExceptionUtils.getMessage(e), e);
+            throw new RuntimeException("Unable to hash password: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
