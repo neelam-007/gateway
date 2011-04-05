@@ -68,7 +68,7 @@ public class GenericUserPanel extends UserPanel {
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
     private static final String MEMBERSHIP_LABEL = "Groups";
-    private static final String ROLES_LABEL = "Administrations";
+    private static final String ROLES_LABEL = "Administration";
     private static final String CERTIFICATE_LABEL = "Certificate";
 
     private static final String CANCEL_BUTTON = "Cancel";
