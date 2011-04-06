@@ -77,6 +77,11 @@
     <bean id="adminSessionManager" class="com.l7tech.server.admin.AdminSessionManager">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="logonService"/>
+        <constructor-arg index="2">
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Inactive User Checker"/>
+            </bean>
+        </constructor-arg>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
         <property name="roleManager" ref="roleManager"/>
         <property name="passwordEnforcerManager" ref="passwordEnforcerManager"/>

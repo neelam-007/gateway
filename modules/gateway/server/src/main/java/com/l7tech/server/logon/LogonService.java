@@ -41,4 +41,9 @@ public interface LogonService {
      * @param user  the user who's  fail count will be rest back to zero
      */
     public void resetLogonFailCount(User user)  throws FindException, UpdateException;
+
+    /**
+     * Updates logon info to reflect inactive users.
+     */
+    public void updateInactivityInfo();
 }

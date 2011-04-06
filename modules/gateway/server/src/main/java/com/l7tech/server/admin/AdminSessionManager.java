@@ -15,6 +15,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -51,9 +52,10 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     //- PUBLIC
 
-    public AdminSessionManager( final ServerConfig config, final LogonService logonService ) {
+    public AdminSessionManager( final ServerConfig config, final LogonService logonService , final Timer timer) {
         this.serverConfig = config;
         this.logonService = logonService;
+        this.timer = timer;
 
         int cacheSize = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_SIZE, 100);
         int cacheMaxTime = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
@@ -88,6 +90,15 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             if (eie.getEntityClass() == IdentityProviderConfig.class) {
                 setupAdminProviders();
             }
+        }
+        if (event instanceof ReadyForMessages){
+            // check for inactive users once a day
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    logonService.updateInactivityInfo();
+                }
+            }, 1 ,24*60*60*1000); // 24 hours in ms
         }
     }
 
@@ -460,6 +471,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     // spring components
     private final ServerConfig serverConfig;
     private final LogonService logonService;
+    private final Timer timer;
     private IdentityProviderFactory identityProviderFactory;
     private PasswordEnforcerManager passwordEnforcerManager;
     private IdentityProviderPasswordPolicyManager passwordPolicyManager;

@@ -15,10 +15,8 @@ import com.l7tech.util.Functions;
 import javax.security.auth.Subject;
 import java.security.Principal;
 import java.security.PrivilegedAction;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
-import java.util.Calendar;
+import java.text.MessageFormat;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.beans.PropertyChangeListener;
@@ -234,6 +232,42 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
             logonManager.update(logonInfo);
         }
 
+    }
+
+    @Override
+    public void updateInactivityInfo(){
+        try {
+            final long now = System.currentTimeMillis();
+
+            Calendar inactivityCal = Calendar.getInstance();
+            Collection<LogonInfo> logonInfos = logonManager.findAll();
+
+            for (LogonInfo logonInfo: logonInfos){
+                if(logonInfo.getState()!=LogonInfo.State.ACTIVE)
+                    continue;
+                inactivityCal.setTimeInMillis(now);
+                inactivityCal.setTimeInMillis(logonInfo.getLastActivity());
+                inactivityCal.add(Calendar.HOUR,  24);
+                if (this.maxInactivityPeriod !=0 &&
+                        logonInfo.getLastActivity()>0 &&
+                        inactivityCal.getTimeInMillis() <= now)
+                {
+                    long daysAgo = inactivityCal.getTimeInMillis() / 1000 / 60 / 24;
+                    auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_INACTIVITY, logonInfo.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
+                    String msg = MessageFormat.format(SystemMessages.AUTH_USER_EXCEED_INACTIVITY.getMessage(),logonInfo.getLogin());
+                    logger.info(msg);
+                    logonInfo.setState(LogonInfo.State.INACTIVE);
+                    try {
+                        logonManager.update(logonInfo);
+                    } catch (UpdateException e) {
+                        logger.log(Level.WARNING, "Failed to update inactivity for '"+logonInfo.getLogin()+"'", ExceptionUtils.getDebugException(e));
+
+                    }
+                }
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Failed to update users inactivity", ExceptionUtils.getDebugException(e));
+        }
     }
 
     //- PRIVATE
