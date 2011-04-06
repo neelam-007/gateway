@@ -7,7 +7,9 @@ import com.l7tech.server.ServerConfigStub;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
@@ -20,13 +22,14 @@ public class AuditSinkPropertiesCheckerTest {
     private static final String TEST_POLICY_GUID = "testpolicyguid";
     private ServerConfigStub serverConfig = new ServerConfigStub();
     private AuditSinkPropertiesChecker propChecker;
-    private boolean[] prevPropStatus = new boolean[2];
-
+    private Map<String, Boolean> propStatusMap;
+    
     @Before
     public void setUp() {
         serverConfig = new ServerConfigStub();
-        propChecker = new AuditSinkPropertiesChecker(serverConfig);
+        propChecker = new AuditSinkPropertiesChecker(serverConfig, null);
         propChecker.setApplicationContext(ApplicationContexts.getTestApplicationContext());
+        propStatusMap = new HashMap<String, Boolean>();
     }
 
     @Test
@@ -69,29 +72,37 @@ public class AuditSinkPropertiesCheckerTest {
     @Test
     public void testAuditStatusOfInternalAuditSystem() {
         // Case 1: "Internal Audit System started" is audited
-        // 1.1 Internal Audit System Previous Status is disabled and the property is turned on now.
-        prevPropStatus[0] = false; // The "Internal Audit System" Property Previous Status
+        // 1.1 When Internal Audit System Previous Status is disabled, turn on the property now.
+        propStatusMap.clear();
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, false); // The Previous Status of "Internal Audit System" Cluster Property
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, true);      // The Current Status of "Audit Sink Policy" Cluster Property
         ClusterProperty prop = new ClusterProperty(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, "true");
-        List<String> auditMessages = propChecker.checkAndAuditPropsStatus(prop, prevPropStatus, false, null);
 
+        AuditSinkPropertiesChecker.AuditPropertyStatus propertyStatus = propChecker.getAndUpdatePropertyStatus(prop, propStatusMap, false);
+        List<String> auditMessages = propChecker.checkAndAuditPropsStatus(propertyStatus);
         assertEquals("Internal Audit System started", AuditSinkPropertiesChecker.INTERNAL_AUDIT_SYSTEM_STARTED, auditMessages.get(0));
 
-        // 1.2 Internal Audit System Previous Status is disabled and the Audit Sink Policy property is deleted.
-        serverConfig.putProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, TEST_POLICY_GUID);
-        prevPropStatus[0] = true;  // The "Audit Sink Policy" Property Previous Status
-        prevPropStatus[1] = false; // The "Internal Audit System" Property Previous Status
+        // 1.2 When Internal Audit System Previous Status is disabled, deleting Audit Sink Policy property will enable Internal Audit System.
+        propStatusMap.clear();
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, false); // The Previous Status of "Internal Audit System" Cluster Property
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, true);       // The Previous Status of "Audit Sink Policy" Cluster Property
         prop = new ClusterProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, null);
-        auditMessages = propChecker.checkAndAuditPropsStatus(prop, prevPropStatus, true, null);
 
-        assertEquals("Internal Audit System started", AuditSinkPropertiesChecker.INTERNAL_AUDIT_SYSTEM_STARTED, auditMessages.get(0));
-        assertEquals("Audit Sink Policy disabled", AuditSinkPropertiesChecker.AUDIT_SINK_POLICY_DISABLED, auditMessages.get(1));
+        propertyStatus = propChecker.getAndUpdatePropertyStatus(prop, propStatusMap, true);
+        auditMessages = propChecker.checkAndAuditPropsStatus(propertyStatus);
+
+        assertEquals("Internal Audit System started", AuditSinkPropertiesChecker.INTERNAL_AUDIT_SYSTEM_STARTED, auditMessages.get(1));
+        assertEquals("Audit Sink Policy disabled", AuditSinkPropertiesChecker.AUDIT_SINK_POLICY_DISABLED, auditMessages.get(0));
 
         // Case 2: "Internal Audit System disabled" is audited
-        // Internal Audit System Previous Status is enabled and the property is turned off now.
-        prevPropStatus[0] = true; // The "Internal Audit System" Property Previous Status
+        // 2.1 When Internal Audit System Previous Status is enabled, turn off the property now.
+        propStatusMap.clear();
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, true); // The Previous Status of "Internal Audit System" Cluster Property
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, true);     // The Current Status of "Audit Sink Policy" Cluster Property
         prop = new ClusterProperty(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, "false");
-        serverConfig.putProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, TEST_POLICY_GUID); // Since Internal Audit System will be disabled, then the Audit Sink Policy must be specified.
-        auditMessages = propChecker.checkAndAuditPropsStatus(prop, prevPropStatus, false, null);
+
+        propertyStatus = propChecker.getAndUpdatePropertyStatus(prop, propStatusMap, false);
+        auditMessages = propChecker.checkAndAuditPropsStatus(propertyStatus);
 
         assertEquals("Internal Audit System disabled", AuditSinkPropertiesChecker.INTERNAL_AUDIT_SYSTEM_DISABLED, auditMessages.get(0));
     }
@@ -99,44 +110,69 @@ public class AuditSinkPropertiesCheckerTest {
     @Test
     public void testAuditStatusOfAuditSinkPolicy() {
         // Case 1: "Audit Sink Policy started" is audited
-        // 1.1 Audit Sink Policy Previous Status is disabled and the property is specified now.
-        prevPropStatus[0] = false; // The "Audit Sink Policy" Property Previous Status
+        // 1.1 When Audit Sink Policy Previous Status is disabled, specify the property now.
+        propStatusMap.clear();
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, true); // The Current Status of "Internal Audit System" Property
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, false);    // The Previous Status of "Audit Sink Policy" Cluster Property
         ClusterProperty prop = new ClusterProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, TEST_POLICY_GUID);
-        List<String> auditMessages = propChecker.checkAndAuditPropsStatus(prop, prevPropStatus, false, null);
+
+        AuditSinkPropertiesChecker.AuditPropertyStatus propertyStatus = propChecker.getAndUpdatePropertyStatus(prop, propStatusMap, false);
+        List<String> auditMessages = propChecker.checkAndAuditPropsStatus(propertyStatus);
 
         assertEquals("Audit Sink Policy started", AuditSinkPropertiesChecker.AUDIT_SINK_POLICY_STARTED, auditMessages.get(0));
 
         // Case 2: "Audit Sink Policy disabled" is audited
-        // Audit Sink Policy Previous Status is enabled and the Audit Sink Policy property is deleted.
-        serverConfig.putProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, TEST_POLICY_GUID);
-        prevPropStatus[0] = true;  // The "Audit Sink Policy" Property Previous Status
-        prevPropStatus[1] = false; // The "Internal Audit System" Property Previous Status
+        // 2.1 When Audit Sink Policy Previous Status is enabled, delete the property now.
+        propStatusMap.clear();
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK, false); // The Previous Status of "Internal Audit System" Cluster Property
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, true);      // The Previous Status of "Audit Sink Policy" Cluster Property
         prop = new ClusterProperty(ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID, null);
-        auditMessages = propChecker.checkAndAuditPropsStatus(prop, prevPropStatus, true, null);
 
-        assertEquals("Internal Audit System started", AuditSinkPropertiesChecker.INTERNAL_AUDIT_SYSTEM_STARTED, auditMessages.get(0));
-        assertEquals("Audit Sink Policy disabled", AuditSinkPropertiesChecker.AUDIT_SINK_POLICY_DISABLED, auditMessages.get(1));
+        propertyStatus = propChecker.getAndUpdatePropertyStatus(prop, propStatusMap, true);
+        auditMessages = propChecker.checkAndAuditPropsStatus(propertyStatus);
+
+        assertEquals("Internal Audit System started", AuditSinkPropertiesChecker.INTERNAL_AUDIT_SYSTEM_STARTED, auditMessages.get(1));
+        assertEquals("Audit Sink Policy disabled", AuditSinkPropertiesChecker.AUDIT_SINK_POLICY_DISABLED, auditMessages.get(0));
     }
 
     @Test
     public void testFallbackToInternal() {
         // Case 1: "Fall back on internal audit system is enabled" is audited
         // 1.1 Turn the property from off to on
-        prevPropStatus[0] = false; // The "Fall back to Internal" Property Previous Status
+        propStatusMap.clear();
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, false); // The Previous Status of "Fall back to Internal" Property
         ClusterProperty prop = new ClusterProperty(ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, "true");
-        List<String> auditMessages = propChecker.checkAndAuditPropsStatus(prop, prevPropStatus, false, null);
+
+        AuditSinkPropertiesChecker.AuditPropertyStatus propertyStatus = propChecker.getAndUpdatePropertyStatus(prop, propStatusMap, false);
+        List<String> auditMessages = propChecker.checkAndAuditPropsStatus(propertyStatus);
+
         assertEquals("Fall back on internal audit system enabled", AuditSinkPropertiesChecker.AUDIT_SINK_FALL_BACK_ENABLED, auditMessages.get(0));
 
         // 1.2 Delete the cluster property
-        prevPropStatus[0] = false; // The "Fall back to Internal" Property Previous Status
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, false); // The Previous Status of "Fall back to Internal" Property
         prop = new ClusterProperty(ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, null);
-        auditMessages = propChecker.checkAndAuditPropsStatus(prop, prevPropStatus, true, null);
+
+        propertyStatus = propChecker.getAndUpdatePropertyStatus(prop, propStatusMap, true);
+        auditMessages = propChecker.checkAndAuditPropsStatus(propertyStatus);
+
         assertEquals("Fall back on internal audit system enabled", AuditSinkPropertiesChecker.AUDIT_SINK_FALL_BACK_ENABLED, auditMessages.get(0));
 
         // Case 2: "Fall back on internal audit system is disabled" is audited
-        prevPropStatus[0] = true;  // The "Fall back to Internal" Property Previous Status
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, true); // The Previous Status of "Fall back to Internal" Property
         prop = new ClusterProperty(ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, "false");
-        auditMessages = propChecker.checkAndAuditPropsStatus(prop, prevPropStatus, false, null);
+
+        propertyStatus = propChecker.getAndUpdatePropertyStatus(prop, propStatusMap, false);
+        auditMessages = propChecker.checkAndAuditPropsStatus(propertyStatus);
+
         assertEquals("Fall back on internal audit system disabled", AuditSinkPropertiesChecker.AUDIT_SINK_FALL_BACK_DISABLED, auditMessages.get(0));
+
+        // Case 3: No status change will not audit.  For example, when the previous status is enabled, delete the property now.
+        propStatusMap.put(ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, true); // The Previous Status of "Fall back to Internal" Property
+        prop = new ClusterProperty(ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, null);
+
+        propertyStatus = propChecker.getAndUpdatePropertyStatus(prop, propStatusMap, true);
+        auditMessages = propChecker.checkAndAuditPropsStatus(propertyStatus);
+
+        assertEquals("No status change will not audit", 0, auditMessages.size());
     }
 }
