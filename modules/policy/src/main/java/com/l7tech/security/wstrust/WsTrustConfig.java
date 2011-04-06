@@ -189,7 +189,7 @@ public abstract class WsTrustConfig {
         }
 
         // Add Lifetime
-        if ( lifetime > 30000 ) {
+        if ( lifetime > 0L ) {
             final Element lifetimeElement = DomUtils.createAndAppendElementNS(rst, "Lifetime", getWstNs(), "wst");
             final Element createdElement = DomUtils.createAndAppendElementNS(lifetimeElement, "Created", SoapConstants.WSU_NAMESPACE, "wsu");
             final Element expiresElement = DomUtils.createAndAppendElementNS(lifetimeElement, "Expires", SoapConstants.WSU_NAMESPACE, "wsu");
@@ -221,7 +221,7 @@ public abstract class WsTrustConfig {
         } else{
             final Element securityHeader = SoapUtil.makeSecurityElement(rstDocument, SoapConstants.SECURITY_NAMESPACE, null, null, false);
 
-            SoapUtil.addTimestamp( securityHeader, SoapConstants.WSU_NAMESPACE, null, true, 0, 300000 );
+            SoapUtil.addTimestamp( securityHeader, SoapConstants.WSU_NAMESPACE, null, true, 0L, 300000L );
 
             appendToken( rstDocument, securityHeader, tokenElement );
         }
