@@ -6,6 +6,8 @@ import org.junit.Test;
 import java.security.SecureRandom;
 
 import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -70,5 +72,17 @@ public class CryptL7PasswordHasherTest {
     @Test(expected = PasswordHashingException.class)
     public void testBadVerifier_missingSalt() throws Exception {
         hasher.verifyPassword(SEKRIT_PASS, "$L7H$j5l2mcXu/cylM0FcoxsXsWPQaLiiIyyg4PZb0qv9pjg=");
+    }
+
+    @Test
+    public void testIsVerifierRecognized() {
+        assertTrue(hasher.isVerifierRecognized(SEKRIT_HASH));
+        assertFalse(hasher.isVerifierRecognized("$L7H$j5l2mcXu/cylM0FcoxsXsWPQaLiiIyyg4PZb0qv9pjg="));
+        assertFalse(hasher.isVerifierRecognized("$L7h$BLzzjTZpUgf/0sY=$j5l2mcXu/cylM0FcoxsXsWPQaLiiIyyg4PZb0qv9pjg="));
+    }
+
+    @Test
+    public void testGetPrefix() {
+        assertEquals("$L7H$", hasher.getPrefix());
     }
 }

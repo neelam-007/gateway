@@ -21,4 +21,22 @@ public interface PasswordHasher {
      * @throws PasswordHashingException if there is an error performing the verification.
      */
     void verifyPassword(byte[] passwordBytes, String expectedHashedPassword) throws IncorrectPasswordException, PasswordHashingException;
+
+    /**
+     * Quickly check whether this PasswordHasher implementation will likely be able to accept the specified verifier string.
+     * <p/>
+     * This check must be very fast, and will typically be based on the prefix only.  No actual hashing or computation will be done.
+     *
+     * @param verifierString a verifier to examine.  Required.
+     * @return true if the specified verifier string might be accepted by {@link #verifyPassword(byte[], String)}.
+     *         false if the specified verifier string is not in the correct format for this PasswordHasher and is guaranteed never to be accepted by {@link #verifyPassword(byte[], String)}.
+     */
+    boolean isVerifierRecognized(String verifierString);
+
+    /**
+     * Get the prefix used for verifier strings created by this PasswordHasher.
+     *
+     * @return the verifier string prefix, ie "$FOO$".  Never null, but may be empty if this PasswordHasher implementation does not use a static verifier string prefix.
+     */
+    String getPrefix();
 }

@@ -71,6 +71,21 @@ public class CryptL7PasswordHasher implements PasswordHasher {
         throw new IncorrectPasswordException();
     }
 
+    @Override
+    public boolean isVerifierRecognized(String verifierString) {
+        try {
+            decodeVerifier(verifierString);
+            return true;
+        } catch (PasswordHashingException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public String getPrefix() {
+        return PREFIX;
+    }
+
     private byte[] newSalt() {
         byte[] salt = new byte[SALT_BYTES];
         secureRandom.nextBytes(salt);
