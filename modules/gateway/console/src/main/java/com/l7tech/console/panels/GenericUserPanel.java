@@ -381,13 +381,15 @@ public class GenericUserPanel extends UserPanel {
 
     private JCheckBox getEnabledCheckBox(){
         // If scroll pane not already created
+        if(enabledCheckBox != null) return enabledCheckBox;
+
+        // create
+        enabledCheckBox = new JCheckBox("Enabled");
+
         if (user instanceof  InternalUser )
         {
             InternalUser iu = (InternalUser)user;
-            if(enabledCheckBox != null) return enabledCheckBox;
 
-            // create
-            enabledCheckBox = new JCheckBox("Enabled");
             enabledCheckBox.setBorder(BorderFactory.createEmptyBorder(16,0,0,0));
             enabledCheckBox.addItemListener(new ItemListener() {
                 @Override
@@ -400,7 +402,7 @@ public class GenericUserPanel extends UserPanel {
 
             return enabledCheckBox;
         }
-        return null;
+        return enabledCheckBox;
     }
 
     /**
