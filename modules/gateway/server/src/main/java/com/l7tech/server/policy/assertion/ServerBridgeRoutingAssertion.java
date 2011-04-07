@@ -364,10 +364,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             } catch (NoSuchPartException e) {
                 thrown = e;
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
-            } catch (SignatureException e) {
-                thrown = e;
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
-            } catch (CertificateException e) {
+            } catch (GeneralSecurityException e) {
                 thrown = e;
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             } finally {
@@ -445,7 +442,11 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
             @Override
             public PrivateKey getClientCertificatePrivateKey() {
-                return useClientCert ? signerInfo.getPrivate() : null;
+                try {
+                    return useClientCert ? signerInfo.getPrivate() : null;
+                } catch (UnrecoverableKeyException e) {
+                    throw new RuntimeException("Unable to access bridge routing private key: " + ExceptionUtils.getMessage(e), e);
+                }
             }
         };
     }
@@ -905,7 +906,11 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
         @Override
         public PrivateKey getClientCertPrivateKey(PasswordAuthentication passwordAuthentication) {
-            return useClientCert ? signerInfo.getPrivate() : null;
+            try {
+                return useClientCert ? signerInfo.getPrivate() : null;
+            } catch (UnrecoverableKeyException e) {
+                throw new RuntimeException("Unable to access bridge routing private key: " + ExceptionUtils.getMessage(e), e);
+            }
         }
 
         @Override

@@ -589,7 +589,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     }
                     admin.assignNewCert(subject.getKeystore().getOid(), subject.getAlias(), pemchain);
                     //re-get the entry from the ssg after assigning (weird but see bzilla #3852)
-                    List<SsgKeyEntry> tmp = admin.findAllKeys(subject.getKeystore().getOid());
+                    List<SsgKeyEntry> tmp = admin.findAllKeys(subject.getKeystore().getOid(), true);
                     for (SsgKeyEntry ske : tmp) {
                         if (ske.getAlias().equalsIgnoreCase(subject.getAlias())) {
                             subject.setKeyEntry(ske);

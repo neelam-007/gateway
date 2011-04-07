@@ -50,6 +50,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.net.URL;
 import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.logging.Logger;
 
@@ -268,10 +269,10 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
      * @throws java.io.IOException If there is an error getting the request document
      * @throws java.security.SignatureException If an error occurs when signing
      * @throws java.security.cert.CertificateException If the signing certificate is invalid.
+     * @throws java.security.UnrecoverableKeyException If the signing key is unavailable
      */
     protected void doAttachSamlSenderVouches(Message message, LoginCredentials svInputCredentials, SignerInfo signerInfo)
-            throws SAXException, IOException, SignatureException, CertificateException
-    {
+            throws SAXException, IOException, SignatureException, CertificateException, UnrecoverableKeyException {
         if (svInputCredentials == null) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_SAML_SV_NOT_AUTH);
             return;

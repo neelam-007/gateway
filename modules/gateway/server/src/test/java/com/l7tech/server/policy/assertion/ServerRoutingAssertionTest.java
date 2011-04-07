@@ -35,6 +35,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -355,7 +356,7 @@ public class ServerRoutingAssertionTest {
         }
 
         @Override
-        public void doAttachSamlSenderVouches(Message message, LoginCredentials svInputCredentials, SignerInfo signerInfo) throws SAXException, IOException, SignatureException, CertificateException {
+        public void doAttachSamlSenderVouches(Message message, LoginCredentials svInputCredentials, SignerInfo signerInfo) throws SAXException, IOException, SignatureException, CertificateException, UnrecoverableKeyException {
             super.doAttachSamlSenderVouches(message, svInputCredentials, signerInfo);
         }
     }

@@ -23,6 +23,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
@@ -31,6 +32,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
+import java.security.UnrecoverableKeyException;
 
 /**
  * Support class for assertion that configure WSS signature decoration requirements.
@@ -167,16 +169,23 @@ public class AddWssSignatureSupport implements AuditHaver {
             }
         }
 
-        if ( isPreferred ) {
-            if (wssReq.getPreferredSigningTokenType() == null)
-                wssReq.setPreferredSigningTokenType(DecorationRequirements.PreferredSigningTokenType.X509);
-            wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
-            wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
-        } else if ((wssReq.getEncryptedKeyReferenceInfo() == null || wssReq.getEncryptedKey() == null)
-            && wssReq.getKerberosTicket() == null) {
-            // No luck with #EncryptedKeySHA1 or Kerberos, so we'll have to do a full RSA signature using our own cert.
-            wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
-            wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+        try {
+            if ( isPreferred ) {
+                if (wssReq.getPreferredSigningTokenType() == null)
+                    wssReq.setPreferredSigningTokenType(DecorationRequirements.PreferredSigningTokenType.X509);
+                wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
+                wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+            } else if ((wssReq.getEncryptedKeyReferenceInfo() == null || wssReq.getEncryptedKey() == null)
+                    && wssReq.getKerberosTicket() == null) {
+                // No luck with #EncryptedKeySHA1 or Kerberos, so we'll have to do a full RSA signature using our own cert.
+                wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
+                wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+            }
+        } catch (UnrecoverableKeyException e) {
+            String msg = "Unable to access configured private key: " + ExceptionUtils.getMessage(e);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.SERVER_ERROR;
         }
 
         // how was the keyreference requested?

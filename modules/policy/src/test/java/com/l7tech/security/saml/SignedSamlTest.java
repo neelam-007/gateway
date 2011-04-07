@@ -28,6 +28,7 @@ import java.io.FileOutputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
@@ -71,7 +72,7 @@ public class SignedSamlTest extends TestCase {
         System.out.println("Client PEM:\n" + CertUtils.encodeAsPEM(clientCertChain[0]));
     }
 
-    private Document getUnsignedHolderOfKeyAssertion(String id, boolean useThumbprintForSubject, int samlVersion) throws CertificateException, SignatureException {
+    private Document getUnsignedHolderOfKeyAssertion(String id, boolean useThumbprintForSubject, int samlVersion) throws CertificateException, SignatureException, UnrecoverableKeyException {
         X509BinarySecurityTokenImpl token = new X509BinarySecurityTokenImpl(clientCertChain[0], null);
         token.onPossessionProved();
         LoginCredentials creds = LoginCredentials.makeLoginCredentials(token, RequireWssX509Cert.class);
@@ -86,7 +87,7 @@ public class SignedSamlTest extends TestCase {
         return generator.createAssertion(subjectStatement, samlOptions);
     }
 
-    private Document getUnsignedHolderOfKeyAssertionTwoStatements(String id, boolean useThumbprintForSubject, int samlVersion) throws CertificateException, SignatureException {
+    private Document getUnsignedHolderOfKeyAssertionTwoStatements(String id, boolean useThumbprintForSubject, int samlVersion) throws CertificateException, SignatureException, UnrecoverableKeyException {
         X509BinarySecurityTokenImpl token = new X509BinarySecurityTokenImpl(clientCertChain[0], null);
         token.onPossessionProved();
         LoginCredentials creds = LoginCredentials.makeLoginCredentials(token, RequireWssX509Cert.class);

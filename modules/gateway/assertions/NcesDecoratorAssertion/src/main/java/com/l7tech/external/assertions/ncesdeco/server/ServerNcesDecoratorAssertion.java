@@ -42,6 +42,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
+import java.security.UnrecoverableKeyException;
 import java.util.logging.Logger;
 
 /**
@@ -142,7 +143,12 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             return AssertionStatus.BAD_REQUEST;
         }
 
-        decoReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+        try {
+            decoReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+        } catch (UnrecoverableKeyException e) {
+            auditor.logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[]{what, ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.FAILED;
+        }
         decoReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
 
         if (!applyImmediately) {

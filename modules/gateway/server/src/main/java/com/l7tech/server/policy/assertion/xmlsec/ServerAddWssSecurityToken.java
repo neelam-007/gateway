@@ -37,6 +37,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Map;
@@ -160,7 +161,13 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
         }
 
         dreq.setSenderSamlToken(samlAssertion, assertion.isProtectTokens());
-        dreq.setSenderMessageSigningPrivateKey(addWssSignatureSupport.getSignerInfo().getPrivate());
+        try {
+            dreq.setSenderMessageSigningPrivateKey(addWssSignatureSupport.getSignerInfo().getPrivate());
+        } catch (UnrecoverableKeyException e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            auditor.logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, new String[] { "Unable to access configured private key: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.SERVER_ERROR;
+        }
 
         if (samlAssertion.isHolderOfKey()) {
             dreq.setPreferredSigningTokenType(DecorationRequirements.PreferredSigningTokenType.SAML_HOK);

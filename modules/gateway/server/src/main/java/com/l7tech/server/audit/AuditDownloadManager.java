@@ -1,31 +1,21 @@
 package com.l7tech.server.audit;
 
-import com.l7tech.util.OpaqueId;
-import com.l7tech.util.Background;
-import com.l7tech.server.DefaultKey;
 import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.util.Background;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.OpaqueId;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
-import java.util.Map;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.TimerTask;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Timer;
-import java.util.Date;
+import java.io.*;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.X509Certificate;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
-import java.security.PrivateKey;
-import java.io.PipedOutputStream;
-import java.io.PipedInputStream;
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.io.InputStream;
-
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
 
 /**
  *
@@ -47,7 +37,11 @@ public class AuditDownloadManager implements ApplicationContextAware  {
         SignerInfo sslKey = defaultKey==null ?  null : defaultKey.getSslInfo();
         if (sslKey != null) {
             signingCert = sslKey.getCertificateChain()[0];
-            signingKey = sslKey.getPrivate();
+            try {
+                signingKey = sslKey.getPrivate();
+            } catch (UnrecoverableKeyException e) {
+                throw new RuntimeException("Unable to access default SSL key for signing audit download: " + ExceptionUtils.getMessage(e), e);
+            }
         } else {
             throw new RuntimeException("Unable to sign exported audits: no default SSL key is currently designated");
         }

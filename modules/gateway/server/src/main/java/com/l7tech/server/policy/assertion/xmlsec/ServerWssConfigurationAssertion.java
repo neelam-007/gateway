@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.message.MessageRole;
@@ -16,14 +17,17 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.IOException;
 import java.security.KeyStoreException;
+import java.security.UnrecoverableKeyException;
 import java.util.logging.Logger;
 
-import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.*;
+import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.ALWAYS_SIGN_WSA_HEADERS;
+import static com.l7tech.security.xml.decorator.DecorationRequirements.WsaHeaderSigningStrategy.NEVER_SIGN_WSA_HEADERS;
 
 /**
  * Server side implementation for {@link com.l7tech.policy.assertion.xmlsec.WssConfigurationAssertion}.
@@ -99,7 +103,12 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
 
         if (signerInfo != null) {
             dreq.setSenderMessageSigningCertificate(signerInfo.getCertificate());
-            dreq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+            try {
+                dreq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+            } catch (UnrecoverableKeyException e) {
+                //noinspection ThrowableResultOfMethodCallIgnored
+                auditor.logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, new String[] { "Unable to access configured private key: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            }
         }
 
         return AssertionStatus.NONE;

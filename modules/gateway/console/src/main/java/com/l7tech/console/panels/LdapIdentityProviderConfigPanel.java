@@ -358,7 +358,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private PrivateKeysComboBox getPrivateKeysComboBox() {
         if (privateKeyComboBox != null) return privateKeyComboBox;
 
-        privateKeyComboBox = new PrivateKeysComboBox(false, true);
+        privateKeyComboBox = new PrivateKeysComboBox(false, true, false);
         return privateKeyComboBox;
     }
 

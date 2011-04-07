@@ -45,6 +45,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SignatureException;
 import java.security.KeyStoreException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.Map;
@@ -480,9 +481,11 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
             return new String(XmlUtil.toByteArray(request));
 
         } catch (SignatureException sigEx) {
-            throw new SamlpAssertionException("Error while signing SAMLP request", sigEx);
+            throw new SamlpAssertionException("Error while signing SAMLP request: " + ExceptionUtils.getMessage(sigEx), sigEx);
         } catch (IOException ioex) {
             throw new SamlpAssertionException("Error while serializing signed SAMLP request", ioex);
+        } catch (UnrecoverableKeyException e) {
+            throw new SamlpAssertionException("Error while signing SAMLP request: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

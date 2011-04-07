@@ -275,6 +275,8 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
             return new KeyManager[] { new SingleCertX509KeyManager(chain, key, alias) };
         } catch (IOException e) {
             throw new RuntimeException("No default SSL key available: " + ExceptionUtils.getMessage(e), e);
+        } catch (UnrecoverableKeyException e) {
+            throw new RuntimeException("Unable to access default SSL key: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

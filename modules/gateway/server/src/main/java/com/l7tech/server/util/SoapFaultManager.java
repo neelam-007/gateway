@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
+import java.security.UnrecoverableKeyException;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.util.*;
@@ -424,6 +425,7 @@ public class SoapFaultManager implements ApplicationContextAware {
         return signedSoapMessage;
     }
 
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     private void signFault( final Document soapDoc,
                             final AuthenticationContext authenticationContext,
                             final SecurityKnob reqSec,
@@ -489,6 +491,8 @@ public class SoapFaultManager implements ApplicationContextAware {
             } else {
                 logger.log( Level.WARNING, "Error signing SOAP Fault.", kse );
             }
+        } catch (UnrecoverableKeyException e) {
+            logger.log( Level.WARNING, "Error signing SOAP Fault: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
         } catch (GeneralSecurityException e) {
             logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
         }

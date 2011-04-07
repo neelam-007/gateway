@@ -32,6 +32,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -243,7 +244,11 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         final SignerInfo ca = defaultKey.getCaInfo();
         if (ca == null)
             throw new NoCaException();
-        return JceProvider.getInstance().createRsaSignerEngine(ca.getPrivate(), ca.getCertificateChain());
+        try {
+            return JceProvider.getInstance().createRsaSignerEngine(ca.getPrivate(), ca.getCertificateChain());
+        } catch (UnrecoverableKeyException e) {
+            throw new NoCaException("Unable to access configured CA private key: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     private static Config validated( final Config config,
@@ -256,7 +261,14 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         return vc;
     }
 
-    private static final class NoCaException extends Exception {}
+    private static final class NoCaException extends Exception {
+        private NoCaException() {
+        }
+
+        private NoCaException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 
     private Config config;
     private DefaultKey defaultKey;

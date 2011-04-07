@@ -9,8 +9,6 @@ import com.l7tech.message.TcpKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import static com.l7tech.policy.assertion.SamlIssuerConfiguration.DecorationType.*;
-
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -19,11 +17,11 @@ import com.l7tech.security.saml.Attribute;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.SubjectStatement;
+import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
-import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -43,12 +41,13 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
-import java.security.SignatureException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Logger;
+
+import static com.l7tech.policy.assertion.SamlIssuerConfiguration.DecorationType.*;
 
 /**
  * @author alex
@@ -291,11 +290,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
             auditDone();
             return AssertionStatus.NONE;
-        } catch (SignatureException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to sign assertion: " + ExceptionUtils.getMessage(e) }, e);
-            return AssertionStatus.FAILED;
-        } catch (CertificateException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to process certificate: " + ExceptionUtils.getMessage(e) }, e);
+        } catch (GeneralSecurityException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to issue assertion: " + ExceptionUtils.getMessage(e) }, e);
             return AssertionStatus.FAILED;
         }
     }

@@ -47,9 +47,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
+import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
-import java.security.SignatureException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
@@ -422,11 +421,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             thrown = e;
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
-        } catch (SignatureException e) {
-            thrown = e;
-            auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
-            logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);
-        } catch (CertificateException e) {
+        } catch (GeneralSecurityException e) {
             thrown = e;
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
             logger.log(Level.FINEST, "Problem routing: " + thrown.getMessage(), thrown);

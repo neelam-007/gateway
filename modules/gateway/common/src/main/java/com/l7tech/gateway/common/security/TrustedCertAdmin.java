@@ -197,6 +197,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * Retrieves all SsgKeyEntry instances available in the specified keystore.
      *
      * @param keystoreId the key store in which to find the key entries.
+     * @param includeRestrictedAccessKeys true if restricted access keys (eg, the audit viewer private key) should be included in the returned list.
      * @return a List of SsgKeyEntry.  May be empty but never null.
      * @throws IOException if there is a problem reading necessary keystore data
      * @throws CertificateException if the keystore contents are corrupt
@@ -204,7 +205,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.SUPPORTS)
     @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
-    public List<SsgKeyEntry> findAllKeys(long keystoreId) throws IOException, CertificateException, FindException;
+    public List<SsgKeyEntry> findAllKeys(long keystoreId, boolean includeRestrictedAccessKeys) throws IOException, CertificateException, FindException;
 
     /**
      * Find a key entry using the rules assertions and connectors would follow.
@@ -266,7 +267,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param makeCaCert    true if the new certificate is intended to be used to sign other certs.  Normally false.
      *                      If this is true, the new certificate will have the "cA" basic constraint and the "keyCertSign" key usage.
      * @param sigAlg signature algorithm for the initial self-signed cert, ie "SHA384withECDSA", or null to select one automatically.
-     * @return the job identifier of the key generation job.  Call {@link #getJobStatus} to poll for job completion
+     * @return the job identifier of the key generation job.  Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId)} to poll for job completion
      *         and {@link #getJobResult(JobId)} to pick up the result in the form of a self-signed X509Certificate.
      * @throws FindException if there is a problem getting info from the database
      * @throws java.security.GeneralSecurityException if there is a problem generating or signing the cert
@@ -383,7 +384,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws ObjectNotFoundException, FindException, KeyStoreException, UnrecoverableKeyException;
 
 
-    /** Describes a type of specially-marked key that can be located by {@link TrustedCertAdmin#findDefaultKey}. */
+    /** Describes a type of specially-marked key that can be located by {@link TrustedCertAdmin#findDefaultKey(com.l7tech.gateway.common.security.TrustedCertAdmin.SpecialKeyType)}. */
     public static enum SpecialKeyType {
         /** Represents a key marked as the default SSL key. */
         SSL,
@@ -436,7 +437,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      *                       If this has the objectid {@link SecurePassword#DEFAULT_OID}, this will be saved as a new SecurePassword.
      *                       Otherwise, it will attempt to update an existing password.
      *                       Any encodedPassword field present in the securePassword will be ignored.  To set or change
-     *                       the actual raw password characters, use the {@link #setSecurePassword} method.
+     *                       the actual raw password characters, use the {@link #setSecurePassword(long, char[])} method.
      * @return the objectid of the securePassword instance that was saved or updated.
      * @throws UpdateException if there is a problem updating an existing entity.
      * @throws FindException if there is a problem locating an existing entity in order to update it.

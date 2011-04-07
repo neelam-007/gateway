@@ -22,10 +22,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Set;
@@ -84,7 +81,7 @@ public class SamlAssertionGenerator {
      * @throws CertificateException on certificate error
      */
     public Document createAssertion(SubjectStatement subjectStatement, Options options)
-      throws SignatureException, CertificateException {
+            throws SignatureException, CertificateException, UnrecoverableKeyException {
         final String caDn = assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
 
         Document doc = options.getVersion()==Options.VERSION_1 ?
@@ -111,7 +108,7 @@ public class SamlAssertionGenerator {
      * @throws CertificateException on certificate error
      */
     public Document createAssertion(SubjectStatement[] statements, Options options)
-      throws SignatureException, CertificateException {
+            throws SignatureException, CertificateException, UnrecoverableKeyException {
         final String caDn = assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
 
         Document doc = options.getVersion()==Options.VERSION_1 ?
@@ -139,7 +136,7 @@ public class SamlAssertionGenerator {
      * @throws CertificateException on certificate error
      */
     public Document attachStatement(Document document, SubjectStatement subject, Options options)
-      throws SignatureException, CertificateException {
+            throws SignatureException, CertificateException, UnrecoverableKeyException {
         final String caDn = assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
 
         Document doc = options.getVersion()==Options.VERSION_1 ?

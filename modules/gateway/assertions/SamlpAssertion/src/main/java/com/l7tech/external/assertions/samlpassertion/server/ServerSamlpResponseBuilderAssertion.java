@@ -5,7 +5,6 @@ import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.samlpassertion.SamlStatus;
-import com.l7tech.external.assertions.samlpassertion.SamlVersion;
 import com.l7tech.external.assertions.samlpassertion.SamlpResponseBuilderAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
@@ -31,14 +30,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import saml.support.xenc.EncryptedDataType;
-import saml.v1.assertion.*;
+import saml.v1.assertion.AuthenticationStatementType;
+import saml.v1.assertion.SubjectStatementAbstractType;
 import saml.v2.assertion.*;
-import saml.v2.assertion.AssertionType;
-import saml.v2.assertion.ConditionAbstractType;
-import saml.v2.assertion.ConditionsType;
-import saml.v2.assertion.StatementAbstractType;
-import saml.v2.assertion.SubjectConfirmationType;
-import saml.v2.assertion.SubjectType;
 import saml.v2.protocol.ExtensionsType;
 import saml.v2.protocol.ResponseType;
 import saml.v2.protocol.StatusDetailType;
@@ -55,6 +49,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyStoreException;
 import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -193,7 +188,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
      */
     private void signResponse(final Document responseDoc)
             throws InvalidRuntimeValueException, KeyStoreException, SignatureException,
-            SignatureStructureException, XSignatureException {
+            SignatureStructureException, XSignatureException, UnrecoverableKeyException {
         final Element responseElement = responseDoc.getDocumentElement();
 
         final String xsdIdAttribute;

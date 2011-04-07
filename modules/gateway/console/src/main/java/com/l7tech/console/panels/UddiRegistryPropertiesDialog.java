@@ -1,30 +1,32 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.uddi.*;
-import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.console.util.Registry;
-import static com.l7tech.console.panels.UddiRegistryPropertiesDialog.UDDI_URL_TYPE.*;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
-import com.l7tech.util.ValidationUtils;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.uddi.UDDIException;
+import com.l7tech.uddi.UDDIRegistryInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.FocusListener;
+import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
-import java.util.Collection;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Arrays;
-import java.net.URL;
+import java.awt.event.FocusListener;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.l7tech.console.panels.UddiRegistryPropertiesDialog.UDDI_URL_TYPE.*;
 
 public class UddiRegistryPropertiesDialog extends JDialog {
 
@@ -597,7 +599,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
      * Code called by Idea form code
      */
     private void createUIComponents() {
-        privateKeyComboBox = new PrivateKeysComboBox(true, false);
+        privateKeyComboBox = new PrivateKeysComboBox(true, false, false);
 
         //Registry type
         UDDIRegistry.UDDIRegistryType[] types = UDDIRegistry.UDDIRegistryType.values();

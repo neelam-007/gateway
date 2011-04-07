@@ -501,7 +501,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
     }
 
     private void createUIComponents() {
-        privateKeyComboBox = new PrivateKeysComboBox(true, false);
+        privateKeyComboBox = new PrivateKeysComboBox(true, false, false);
         passwordComboBox = new SecurePasswordComboBox();
         proxyPasswordComboBox = new SecurePasswordComboBox();
     }

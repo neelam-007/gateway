@@ -61,7 +61,7 @@ import java.util.logging.Logger;
 public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements ApplicationEventPublisherAware, TrustedCertAdmin {
 
     /**
-     * Provider for parsing PKCS#12 files when someone calls {@link #importKeyFromPkcs12}.  Values:
+     * Provider for parsing PKCS#12 files when someone calls {@link #importKeyFromPkcs12(long, String, byte[], char[], String)}.  Values:
      *   "default" to use the system current most-preferred implementation of KeyStore.PKCS12;  "BC" to use
      *   Bouncy Castle's implementation (note that Bouncy Castle need not be registered as a Security provider
      *   for this to work); or else the name of any registered Security provider that offers KeyStore.PKCS12.
@@ -249,7 +249,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public List<SsgKeyEntry> findAllKeys(long keystoreId) throws IOException, CertificateException, FindException {
+    public List<SsgKeyEntry> findAllKeys(long keystoreId, boolean includeRestrictedAccessKeys) throws IOException, CertificateException, FindException {
         try {
             SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
 
@@ -257,7 +257,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             List<String> aliases = keyFinder.getAliases();
             for (String alias : aliases) {
                 SsgKeyEntry entry = keyFinder.getCertificateChain(alias);
-                list.add(entry);
+                if (includeRestrictedAccessKeys || !entry.isRestrictedAccess())
+                    list.add(entry);
             }
 
             return list;

@@ -27,6 +27,7 @@ import org.w3c.dom.Node;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
@@ -73,7 +74,7 @@ public class SignedSaml2Test extends TestCase {
         System.out.println("Client PEM:\n" + CertUtils.encodeAsPEM(clientCertChain[0]));
     }
 
-    private Document getUnsignedHolderOfKeyAssertion(String id, boolean useThumbprintForSubject) throws CertificateException, SignatureException {
+    private Document getUnsignedHolderOfKeyAssertion(String id, boolean useThumbprintForSubject) throws CertificateException, SignatureException, UnrecoverableKeyException {
         X509BinarySecurityTokenImpl token = new X509BinarySecurityTokenImpl(clientCertChain[0], null);
         token.onPossessionProved();
         LoginCredentials creds = LoginCredentials.makeLoginCredentials(token, RequireWssX509Cert.class);

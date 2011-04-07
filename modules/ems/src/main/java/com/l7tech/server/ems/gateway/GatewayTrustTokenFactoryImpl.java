@@ -9,8 +9,8 @@ import com.l7tech.security.saml.Attribute;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
-import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
@@ -21,8 +21,7 @@ import org.w3c.dom.Document;
 
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.security.SignatureException;
-import java.security.cert.CertificateException;
+import java.security.GeneralSecurityException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -105,11 +104,8 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
         } catch ( IOException ioe ) {
             logger.log( Level.WARNING, "Error accessing signer.", ioe );
             throw new GatewayException( "Error generating token." );
-        } catch (SignatureException se) {
+        } catch (GeneralSecurityException se) {
             logger.log( Level.WARNING, "Error signing token.", se );
-            throw new GatewayException( "Error generating token." );
-        } catch (CertificateException ce) {
-            logger.log( Level.WARNING, "Error with signing certificate.", ce );
             throw new GatewayException( "Error generating token." );
         }
     }

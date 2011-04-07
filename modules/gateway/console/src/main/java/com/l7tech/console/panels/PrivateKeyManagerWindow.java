@@ -660,7 +660,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             java.util.List<KeyTableRow> keyList = new ArrayList<KeyTableRow>();
             for (KeystoreFileEntityHeader keystore : getTrustedCertAdmin().findAllKeystores(true)) {
                 if (mutableKeystore == null && !keystore.isReadonly()) mutableKeystore = keystore;
-                for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getOid())) {
+                for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getOid(), true)) {
                     keyList.add(new KeyTableRow(keystore, entry, isDefaultSslCert(entry), isDefaultCaCert(entry), isAuditViewerCert(entry)));
                 }
             }

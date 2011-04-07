@@ -23,6 +23,7 @@ import org.w3c.dom.Node;
 import javax.xml.XMLConstants;
 import java.security.SecureRandom;
 import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Random;
@@ -57,7 +58,7 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
         return AssertionStatus.NONE;
     }
 
-    private int signElement(int count, Element elementToSign, SignerInfo signer) throws SignatureException, SignatureStructureException, XSignatureException {
+    private int signElement(int count, Element elementToSign, SignerInfo signer) throws SignatureException, SignatureStructureException, XSignatureException, UnrecoverableKeyException {
         Pair<Integer, String> p = generateId(count, elementToSign);
         count = p.left;
         String idValue = p.right;

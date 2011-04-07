@@ -52,6 +52,7 @@ public class PrivateKeysComboBox extends JComboBox {
 
     private boolean _includeHardwareKeystore;
     private boolean _includeDefaultSslKey;
+    private boolean _includeRestrictedAccessKeys;
 
     /**
      * Sorts the private key by alias while maintaining that the default private key label is the first one
@@ -75,7 +76,7 @@ public class PrivateKeysComboBox extends JComboBox {
      * keystores; and with none selected initially.
      */
     public PrivateKeysComboBox() {
-        this(true, true);
+        this(true, true, true);
     }
 
     /**
@@ -83,10 +84,12 @@ public class PrivateKeysComboBox extends JComboBox {
      * @param includeHardwareKeystore  if true, hardware keystores should be included in the list.
      * @param includeDefaultSslKey   if true, includes the < Default SSK Key > in the list.  Otherwise, only explicitly
      *                               configured key aliases are permitted.
+     * @param includeRestrictedAccessKeys if true, includes keys marked as restricted access (eg, the audit viewer private key) in the list.
      */
-    public PrivateKeysComboBox(final boolean includeHardwareKeystore, final boolean includeDefaultSslKey) {
+    public PrivateKeysComboBox(final boolean includeHardwareKeystore, final boolean includeDefaultSslKey, final boolean includeRestrictedAccessKeys) {
         _includeHardwareKeystore = includeHardwareKeystore;
         _includeDefaultSslKey = includeDefaultSslKey;
+        _includeRestrictedAccessKeys = includeRestrictedAccessKeys;
         populate();
     }
 
@@ -107,7 +110,7 @@ public class PrivateKeysComboBox extends JComboBox {
             if (_includeDefaultSslKey)
                 items.add(ITEM_DEFAULT_SSL);
             for (KeystoreFileEntityHeader keystore : keystores) {
-                for (SsgKeyEntry entry : certAdmin.findAllKeys(keystore.getOid())) {
+                for (SsgKeyEntry entry : certAdmin.findAllKeys(keystore.getOid(), _includeRestrictedAccessKeys)) {
                     items.add(new PrivateKeyItem(keystore.getOid(), keystore.getName(), entry.getAlias(), entry.getCertificate().getPublicKey().getAlgorithm()));
                 }
             }
@@ -221,5 +224,21 @@ public class PrivateKeysComboBox extends JComboBox {
 
     public static void main(String[] args) {
         new PrivateKeysComboBox();
+    }
+
+    public boolean isIncludeRestrictedAccessKeys() {
+        return _includeRestrictedAccessKeys;
+    }
+
+    public void setIncludeRestrictedAccessKeys(boolean includeRestrictedAccessKeys) {
+        if (this._includeRestrictedAccessKeys != includeRestrictedAccessKeys) {
+            this._includeRestrictedAccessKeys = includeRestrictedAccessKeys;
+
+            // Repopulate list and restore previous selection
+            final PrivateKeyItem item = (PrivateKeyItem)getSelectedItem();
+            populate();
+            if (item != null)
+                select(item.keystoreId, item.keyAlias);
+        }
     }
 }

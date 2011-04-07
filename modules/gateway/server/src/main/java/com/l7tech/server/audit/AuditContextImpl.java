@@ -4,7 +4,6 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.objectmodel.SaveException;
@@ -13,9 +12,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Pair;
 
-import java.security.*;
+import java.security.PrivateKey;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -406,7 +407,7 @@ public class AuditContextImpl implements AuditContext {
             PrivateKey pk = keystore.getSslInfo().getPrivate();
             new AuditRecordSigner(pk).signAuditRecord(signatureSubject);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "ERROR GENERATING AUDIT SIGNATURE", e);
+            logger.log(Level.WARNING, "ERROR GENERATING AUDIT SIGNATURE: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

@@ -1,43 +1,44 @@
 package com.l7tech.external.assertions.saml2attributequery.server;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.external.assertions.saml2attributequery.SignResponseElementAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.KeyReference;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
-import com.l7tech.xml.ElementCursor;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.DomElementCursor;
+import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathResultIterator;
-import com.l7tech.message.Message;
-
-import java.util.logging.Logger;
-import java.io.IOException;
-import java.security.SignatureException;
-
+import org.bouncycastle.jce.X509Principal;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.bouncycastle.jce.X509Principal;
 
 import javax.xml.xpath.XPathExpressionException;
+import java.io.IOException;
+import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
  * User: njordan
  * Date: 28-Jan-2009
  * Time: 7:30:01 PM
- * To change this template use File | Settings | File Templates.
  */
+@SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
 public class ServerSignResponseElementAssertion extends AbstractServerAssertion<SignResponseElementAssertion> {
     private static final Logger logger = Logger.getLogger(ServerSignResponseElementAssertion.class.getName());
 
@@ -106,19 +107,26 @@ public class ServerSignResponseElementAssertion extends AbstractServerAssertion<
                 RequestSigner.signSamlpRequest(doc, ec.asDomElement(), si.getPrivate(), si.getCertificateChain(), keyInfoInclusionType);
             }
         } catch(SAXException se) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, se.toString());
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { ExceptionUtils.getMessage(se) }, ExceptionUtils.getDebugException(se));
             return AssertionStatus.FAILED;
         } catch(SignatureException se) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, se.toString());
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { ExceptionUtils.getMessage(se) }, ExceptionUtils.getDebugException(se));
             return AssertionStatus.FAILED;
         } catch(InvalidXpathException ixe) {
+            if (logger.isLoggable(Level.FINEST))
+                logger.log(Level.FINEST, "Invalid xpath: " + ExceptionUtils.getMessage(ixe), ixe);
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
             return AssertionStatus.FAILED;
         } catch(XPathExpressionException xee) {
+            if (logger.isLoggable(Level.FINEST))
+                logger.log(Level.FINEST, "XPath expresion error: " + ExceptionUtils.getMessage(xee), xee);
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
             return AssertionStatus.FAILED;
         } catch(NoSuchVariableException nsve) {
             auditor.logAndAudit(AssertionMessages.VARIABLE_IS_NULL, assertion.getPrivateKeyDnVariable());
+        } catch (UnrecoverableKeyException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.FAILED;
         }
 
 

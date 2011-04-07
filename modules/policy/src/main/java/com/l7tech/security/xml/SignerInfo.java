@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -69,8 +70,9 @@ public class SignerInfo implements Serializable {
      * Returns a reference to the private key
      * 
      * @return a reference to the private key, or null if the private key is not available here.
+     * @throws java.security.UnrecoverableKeyException if the private key is not acessible in the current context.
      */
-    public PrivateKey getPrivate() {
+    public PrivateKey getPrivate() throws UnrecoverableKeyException {
         return privateKey;
     }
 

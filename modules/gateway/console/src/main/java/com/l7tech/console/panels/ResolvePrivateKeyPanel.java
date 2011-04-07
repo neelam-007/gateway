@@ -129,7 +129,7 @@ public class ResolvePrivateKeyPanel extends WizardStepPanel {
                 final java.util.List<ComboEntry> comboEntries = new ArrayList<ComboEntry>();
                 final ComboEntry previousSelection = (ComboEntry) aliasCombo.getSelectedItem();
                 for ( final KeystoreFileEntityHeader header : keystores ) {
-                    for ( final SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(header.getOid()) ) {
+                    for ( final SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(header.getOid(), true) ) {
                         final ComboEntry comboEntry = new ComboEntry(header.getOid(), header.getName(), entry.getAlias());
                         comboEntries.add(comboEntry);
                     }

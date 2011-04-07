@@ -107,7 +107,12 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
      * @return true if getPrivateKey() would return non-null without throwing (aside from restricted key access issues).
      */
     public boolean isPrivateKeyAvailable() {
-        return super.getPrivate() != null;
+        try {
+            return super.getPrivate() != null;
+        } catch (UnrecoverableKeyException e) {
+            // Can't happen here
+            return false;
+        }
     }
 
     /**
@@ -117,13 +122,16 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
         return isPrivateKeyAvailable() && isAccessAllowed();
     }
 
+    /**
+     * @return true if this key entry has restricted private key access.
+     */
+    public boolean isRestrictedAccess() {
+        return restrictedAccess;
+    }
+
     @Override
-    public PrivateKey getPrivate() {
-        try {
-            return getPrivateKey();
-        } catch (UnrecoverableKeyException e) {
-            throw new RuntimeException(e);
-        }
+    public PrivateKey getPrivate() throws UnrecoverableKeyException {
+        return getPrivateKey();
     }
 
     /**

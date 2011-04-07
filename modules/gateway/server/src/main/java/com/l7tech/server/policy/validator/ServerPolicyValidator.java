@@ -123,7 +123,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                 final Iterator<Assertion> assertions = assertion.preorderIterator( getAssertionTranslator() );
                 while ( assertions.hasNext() ) {
                     final Assertion as = assertions.next();
-                    if (as.isEnabled()) validateAssertion( as, null, result, null );
+                    if (as.isEnabled()) validateAssertion( as, null, pvc, result, null );
                 }
             } catch ( PolicyAssertionException e) {
                 result.addError(new PolicyValidatorResult.Error(e.getAssertion(), e.getMessage(), e));
@@ -139,14 +139,14 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         Assertion[] ass = path.getPath();
         PathContext pathContext = new PathContext();
         for (Assertion as : ass) {
-            if (as.isEnabled()) validateAssertion( as, pathContext, result, path );
+            if (as.isEnabled()) validateAssertion( as, pathContext, pvc, result, path );
         }
     }
 
     /**
      * Validate the specific assertion.
      * Precondition: the assertion "a" must have been pre-checked to be enabled.
-     * @see {@link com.l7tech.server.policy.validator.ServerPolicyValidator#validatePath}
+     * @see {@link com.l7tech.server.policy.validator.ServerPolicyValidator#validatePath(com.l7tech.policy.AssertionPath, com.l7tech.policy.validator.PolicyValidationContext, com.l7tech.policy.AssertionLicense, com.l7tech.policy.PolicyValidatorResult)}
      * @param assertion: the assertion to be validated.
      * @param pathContext: the assertion path context (May be null)
      * @param result: storing the validation result.
@@ -155,6 +155,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     @SuppressWarnings(value = "fallthrough")
     private void validateAssertion( final Assertion assertion,
                                     final PathContext pathContext,
+                                    final PolicyValidationContext pvc,
                                     final PolicyValidatorResult result,
                                     final AssertionPath path ) {
         final String targetName = AssertionUtils.getTargetName( assertion );
@@ -381,7 +382,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         }
 
         if ( assertion instanceof PrivateKeyable) {
-            checkPrivateKey((PrivateKeyable) assertion, path, result);
+            checkPrivateKey((PrivateKeyable) assertion, path, pvc, result);
         }
 
         if ( assertion instanceof JdbcConnectionable ) {
@@ -483,7 +484,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         }
     }
 
-    protected void checkPrivateKey(PrivateKeyable a, AssertionPath ap, PolicyValidatorResult r) {
+    protected void checkPrivateKey(PrivateKeyable a, AssertionPath ap, PolicyValidationContext pvc, PolicyValidatorResult r) {
         if (!a.isUsesDefaultKeyStore()) {
             boolean found = false;
             try {
@@ -502,6 +503,14 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                                                                        "a Private Key with a matching alias in the keystore '" + name + "' and will use that.",
                                                                        null));
                     }
+
+                    boolean frag = isPolicyFragement(pvc);
+                    boolean avp = isAuditViewerPolicy(pvc);
+                    if (!frag && foundKey.isRestrictedAccess() && !avp) {
+                        // TODO replace with more generic message as soon as there is a restricted access key other than the audit viewer key
+                        r.addError(new PolicyValidatorResult.Error((Assertion)a,
+                                "This assertion refers to the audit viewer private key, which can only be used from within the audit viewer internal policy.", null));
+                    }
                 }
             } catch (ObjectModelException e) {
                 logger.log(Level.WARNING, "error looking for private key: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -517,6 +526,15 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
                                                            null));
             }
         }
+    }
+
+    private static boolean isPolicyFragement(PolicyValidationContext pvc) {
+        PolicyType type = pvc.getPolicyType();
+        return type != null && type.isPolicyFragment();
+    }
+
+    private static boolean isAuditViewerPolicy(PolicyValidationContext pvc) {
+        return PolicyType.TAG_AUDIT_VIEWER.equals(pvc.getPolicyInternalTag());
     }
 
     protected void checkJdbcConnection( final JdbcConnectionable jdbcConnectionable,
