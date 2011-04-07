@@ -103,7 +103,7 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative>, 
             }
             else{
                 if(lastActivity<(System.currentTimeMillis() - sessionExpiryInMils)) {
-                    System.out.print("\nUser:"+user.getLogin() +" EXPIRE" + System.currentTimeMillis() + " Expiry:"+ sessionExpiryInMils);
+                    //System.out.print("\nUser:"+user.getLogin() +" EXPIRE" + System.currentTimeMillis() + " Expiry:"+ sessionExpiryInMils);
                     sessionActivityMap.remove(user);
                     adminSessionManager.destroySession(user);
                     throw new AccessControlException("Gateway sesson expired");
