@@ -52,6 +52,7 @@ CREATE TABLE internal_group (
   version int(11) NOT NULL,
   name varchar(128) NOT NULL,
   description mediumtext,
+  enabled boolean DEFAULT TRUE,
   PRIMARY KEY  (objectid),
   UNIQUE KEY g_idx (name)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;

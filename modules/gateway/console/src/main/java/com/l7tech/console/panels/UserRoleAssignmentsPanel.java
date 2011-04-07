@@ -8,6 +8,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
@@ -70,7 +71,7 @@ public class UserRoleAssignmentsPanel extends JPanel {
     }
 
     private void populateStatus() throws FindException {
-        if(user instanceof FederatedUser ||
+        if(user instanceof LdapUser ||
            user instanceof InternalUser){
 
             LogonInfo info = Registry.getDefault().getIdentityAdmin().getLogonInfo(user);

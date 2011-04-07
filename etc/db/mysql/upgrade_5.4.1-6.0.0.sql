@@ -70,6 +70,12 @@ ALTER TABLE internal_user ADD COLUMN enabled boolean DEFAULT TRUE;
 
 
 --
+-- internal group changes
+--
+ALTER TABLE internal_group ADD COLUMN enabled boolean DEFAULT TRUE;
+
+
+--
 -- manage admin accounts config role
 --
 INSERT INTO rbac_role VALUES (-1250,0,'Manage Administrative Accounts Configuration', null,null,null, 'Users assigned to the {0} role have the ability edit administrative accounts configurations.');

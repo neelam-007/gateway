@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.identity.User;
+import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.EntityFinder;
@@ -98,14 +99,29 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                 }
 
                 //Now get the Roles the user can access via it's group membership
-                List<String> groupNames = new ArrayList<String>();
+                List<Long> groupIds = new ArrayList<Long>();
                 for( IdentityHeader groupHeader : groupHeaders ){
                     if ( groupHeader != null && groupHeader.getProviderOid()==user.getProviderId() ) {
-                        groupNames.add( groupHeader.getStrId() );
+                        groupIds.add(groupHeader.getOid());
                     }
                 }
-                if(groupNames.size() == 0) return roles;
+                if(groupIds.size() == 0) return roles;
 
+                // get only enabled groups
+                Criteria enabledGroupsQuery = session.createCriteria(InternalGroup.class);
+                enabledGroupsQuery.add(Restrictions.in("oid", groupIds));
+                enabledGroupsQuery.add(Restrictions.eq("enabled", true));
+                List enabledGroupsList = enabledGroupsQuery.list();
+
+                if(enabledGroupsList.size() == 0) return roles;
+
+                List<String> groupNames = new ArrayList<String>();
+                for (Object enabledGroup : enabledGroupsList) {
+                    InternalGroup ig = (InternalGroup) enabledGroup;
+                    groupNames.add( ig.getId() );
+                }
+
+                // get roles from groups
                 Criteria groupQuery = session.createCriteria(RoleAssignment.class);
                 groupQuery.add(Restrictions.in("identityId", groupNames));
                 groupQuery.add(Restrictions.eq("providerId", user.getProviderId()));
