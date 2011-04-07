@@ -101,7 +101,7 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         ((SpinnerNumberModel)invalidAttemptsSpinner.getModel()).setMinimum(1);
         ((SpinnerNumberModel)invalidAttemptsSpinner.getModel()).setMaximum(20);
         ((SpinnerNumberModel)minLockoutSpinner.getModel()).setMinimum(1);
-        ((SpinnerNumberModel)minLockoutSpinner.getModel()).setMaximum(365);
+        ((SpinnerNumberModel)minLockoutSpinner.getModel()).setMaximum(1440); // 1 day
         ((SpinnerNumberModel)expirySpinner.getModel()).setMinimum(0);
         ((SpinnerNumberModel)expirySpinner.getModel()).setMaximum(60);
         ((SpinnerNumberModel)inactivitySpinner.getModel()).setMinimum(0);
