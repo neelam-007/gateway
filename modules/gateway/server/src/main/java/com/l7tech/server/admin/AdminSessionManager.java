@@ -25,9 +25,12 @@ import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.security.rbac.RoleManagerIdentitySourceSupport;
 import com.l7tech.util.Background;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
+import com.l7tech.util.ValidatedConfig;
 import org.apache.commons.collections.map.LRUMap;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -38,6 +41,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,8 +56,10 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     //- PUBLIC
 
-    public AdminSessionManager( final ServerConfig config, final LogonService logonService , final Timer timer) {
-        this.serverConfig = config;
+    public AdminSessionManager( final Config config,
+                                final LogonService logonService,
+                                final Timer timer ) {
+        this.config = validated( config );
         this.logonService = logonService;
         this.timer = timer;
 
@@ -62,13 +68,14 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         int cacheMaxGroups = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_PRINCIPAL_GROUPS, 50);
 
         this.groupCache = new GroupCache( "PrincipalCache_unified", cacheSize, cacheMaxTime, cacheMaxGroups );
+        this.sessionExpiryMillis.set( loadExpiryMillis() );
     }
 
     public void setRoleManager( final RoleManager roleManager ) {
         this.roleManager = roleManager;
     }
 
-    public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
+    public void setIdentityProviderFactory(final IdentityProviderFactory identityProviderFactory) {
         this.identityProviderFactory = identityProviderFactory;
     }
 
@@ -84,7 +91,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * Reloads IdentityProviders on change.
      */
     @Override
-    public void onApplicationEvent(ApplicationEvent event) {
+    public void onApplicationEvent( final ApplicationEvent event ) {
         if (event instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
             if (eie.getEntityClass() == IdentityProviderConfig.class) {
@@ -98,17 +105,24 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                 public void run() {
                     logonService.updateInactivityInfo();
                 }
-            }, 1 ,24*60*60*1000); // 24 hours in ms
+            }, 1L , TimeUnit.HOURS.toMillis(24L) );
         }
     }
 
     @Override
     public void propertyChange( final PropertyChangeEvent event ) {
-        if ( event.getPropertyName().equals("principalSessionCacheMaxTime") &&
-             event.getNewValue() != null ) {
-            int cacheMaxTime = serverConfig.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
+        final String propertyName = event.getPropertyName();
+
+        if ( propertyName != null && propertyName.equals("principalSessionCacheMaxTime") ) {
+            int cacheMaxTime = config.getIntProperty( ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000 );
             logger.config("Updating principal session cache max time '"+cacheMaxTime+"'.");
             groupCache.setCacheMaxTime( cacheMaxTime );
+        }
+
+        if ( propertyName != null && propertyName.equals(ServerConfig.PARAM_SESSION_EXPIRY) ){
+            long expiryMillis = loadExpiryMillis();
+            logger.config("Updating session inactivity period '"+expiryMillis+"'.");
+            this.sessionExpiryMillis.set( expiryMillis );
         }
     }
 
@@ -120,7 +134,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @return The user or null if not authenticated.
      * @throws ObjectModelException If an error occurs during authorization.
      */
-    public User authorize( final long providerId, final String userId ) throws ObjectModelException {
+    public User authorize( final long providerId,
+                           final String userId ) throws ObjectModelException {
         Set<IdentityProvider> providers = getAdminIdentityProviders();
         User user = null;
 
@@ -170,7 +185,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
                 //verify if the client was assigned with a cert already and require to use it.  We only inforce this
                 //for internal identity provider
-                boolean useCert = serverConfig.getBooleanProperty("security.policyManager.forbidPasswordWhenCertPresent", true);
+                boolean useCert = config.getBooleanProperty("security.policyManager.forbidPasswordWhenCertPresent", true);
                 if (useCert) {
                     if (creds.getFormat() == CredentialFormat.CLEARTEXT && provider.hasClientCert(creds.getLogin())) {
                         needsClientCert = true;
@@ -247,7 +262,9 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @return  TRUE if the password was changed
      * @throws ObjectModelException 
      */
-    public boolean changePassword(final String username, final String password, final String newPassword) throws LoginException, ObjectModelException {
+    public boolean changePassword( final String username,
+                                   final String password,
+                                   final String newPassword ) throws LoginException, ObjectModelException {
         //try the internal first (internal accounts with the same credentials should hide externals)
         Set<IdentityProvider> providers = getAdminIdentityProviders();
 
@@ -336,7 +353,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @return a cookie string that can be used with {@link #resumeSession} later to recover the principal.  Never null or empty.
      *         Always contains at least 16 bytes of entropy.
      */
-    public synchronized String createSession( final User authenticatedUser, final Object sessionInfo ) {
+    public synchronized String createSession( final User authenticatedUser,
+                                              final Object sessionInfo ) {
         if (authenticatedUser == null) throw new NullPointerException();
 
         byte[] bytes = new byte[20];
@@ -376,7 +394,6 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             logger.log(Level.WARNING, "Admin session/cookie not found: {0}.", logger.isLoggable(Level.FINER) ? session : "<not shown>");
             return null;
         }
-        holder.onUsed();
 
         User user = holder.getUser();
         checkPerms( user );
@@ -385,30 +402,44 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     }
 
     /**
-     * Attempt to destroy a session for a previously-authenticated user.  Takes no action if the
-     * specified session does not exist.
+     * Destroy the session with the given identifier, does nothing if the session is not found.
      *
-     * @param user the user that was originally passed to {@link #createSession}.
+     * @param session The session identifier
      */
     @SuppressWarnings({"unchecked"})
-    public synchronized void destroySession( final User user ) {
-        boolean destroyed = false;
-        for (Iterator<SessionHolder> iter = sessionMap.values().iterator(); iter.hasNext();) {
-            SessionHolder holder = iter.next();
-            // Object equality, not login name! (one user can have many sessions)
-            if (holder.getUser() == user) {
-                if ( !destroyed ) {
-                    destroyed = true;
-                    iter.remove();
-                } else {
-                    logger.warning("Admin session destroy matched multiple sessions for principal '"+user.getLogin()+"'.");
+    public synchronized void destroySession( final String session ) {
+        sessionMap.remove( session );
+    }
+
+    /**
+     * Check if the given session is expired.
+     *
+     * <p>If the session is not expired the last activity for the session is
+     * optionally updated</p>
+     *
+     * @param session The session identifier to check.
+     * @param updateActivity True to update the last activity for the session.
+     * @return True if the session is expired or not found.
+     */
+    public boolean isExpired( final String session,
+                              final boolean updateActivity ) {
+        boolean expired = true;
+
+        final SessionHolder holder = session==null ? null : (SessionHolder)sessionMap.get(session);
+        if ( holder != null ) {
+            if ( (System.currentTimeMillis() - holder.getLastUsed()) <= sessionExpiryMillis.get() ) {
+                expired = false;
+
+                if ( updateActivity ) {
+                    holder.onUsed();
                 }
+            } else {
+                logger.info( "Expiring administrative session for user '"+holder.getUser().getName()+"'." );
+                sessionMap.remove( session );
             }
         }
 
-        if ( !destroyed ) {
-            logger.warning("Admin session not found for principal '"+user.getLogin()+"'.");
-        }
+        return expired;
     }
 
     /**
@@ -418,7 +449,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * group headers.</p>
      */
     @Override
-    public Set<IdentityHeader> getGroups(final User u, boolean skipAccountValidation) throws FindException {
+    public Set<IdentityHeader> getGroups( final User u,
+                                          final boolean skipAccountValidation ) throws FindException {
         Long pId = u.getProviderId();
 
         // Try internal first (internal accounts with the same credentials should hide externals)
@@ -447,6 +479,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         return Collections.emptySet();
     }
 
+    //- PROTECTED
+
     @Override
     protected Set<IdentityProvider> getAdminIdentityProviders(){
         Set<IdentityProvider> providers;
@@ -465,11 +499,14 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private static final Logger logger = Logger.getLogger(AdminSessionManager.class.getName());
     private static final InternalFirstComparator INTERNAL_FIRST_COMPARATOR = new InternalFirstComparator();
 
-    private static final long REAP_DELAY = TimeUnit.MINUTES.toMillis(20); // Check every 20 min for stale sessions
-    private static final long REAP_STALE_AGE = TimeUnit.DAYS.toMillis(1); // reap sessions after 24 hours of inactivity
+    private static final long DEFAULT_MAX_INACTIVITY_TIME = TimeUnit.DAYS.toMillis(1L); // close after 24 hours of inactivity
+    private static final long DEFAULT_SESSION_CLEANUP_INTERVAL = TimeUnit.MINUTES.toMillis(1L); // check every minute for stale sessions
+
+    private static final long MAX_INACTIVITY_TIME = SyspropUtil.getLong( "com.l7tech.server.admin.sessionExpiryAge", DEFAULT_MAX_INACTIVITY_TIME );
+    private static final long SESSION_CLEANUP_INTERVAL = SyspropUtil.getLong( "com.l7tech.server.admin.sessionCleanupInterval", DEFAULT_SESSION_CLEANUP_INTERVAL );
 
     // spring components
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final LogonService logonService;
     private final Timer timer;
     private IdentityProviderFactory identityProviderFactory;
@@ -484,29 +521,35 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private final GroupCache groupCache;
 
     private Set<IdentityProvider> adminProviders;
+    private static final long DEFAULT_GATEWAY_SESSION_EXPIRY = TimeUnit.MINUTES.toMillis(15L);
+    private final AtomicLong sessionExpiryMillis = new AtomicLong();
+
+    private long loadExpiryMillis() {
+        return config.getTimeUnitProperty( ServerConfig.PARAM_SESSION_EXPIRY, DEFAULT_GATEWAY_SESSION_EXPIRY );
+    }
 
     {
         Background.scheduleRepeated(new TimerTask() {
             @Override
             public void run() {
                 synchronized (AdminSessionManager.this) {
-                    Collection values = sessionMap.values();
-                    long now = System.currentTimeMillis();
-                    for (Iterator i = values.iterator(); i.hasNext();) {
-                        SessionHolder holder = (SessionHolder)i.next();
-                        long age = now - holder.getLastUsed();
-                        if (age > REAP_STALE_AGE) {
+                    final Collection values = sessionMap.values();
+                    final long now = System.currentTimeMillis();
+                    for ( final Iterator i = values.iterator(); i.hasNext(); ) {
+                        final SessionHolder holder = (SessionHolder)i.next();
+                        final long age = now - holder.getLastUsed();
+                        if ( age > sessionExpiryMillis.get() ) {
                             if (logger.isLoggable(Level.INFO))
-                                logger.log(Level.INFO, "Removing stale admin session: " + holder.getUser().getName());
+                                logger.log(Level.INFO, "Expiring administrative session for user '"+holder.getUser().getName()+"'.");
                             i.remove();
                         }
                     }
                 }
             }
-        }, REAP_DELAY, REAP_DELAY);
+        }, SESSION_CLEANUP_INTERVAL * 4L, SESSION_CLEANUP_INTERVAL );
     }
 
-    private void checkPerms(final User user) throws AuthenticationException, FindException {
+    private void checkPerms( final User user ) throws AuthenticationException, FindException {
         boolean hasPermission = false;
         // TODO is holding any CRUD permission sufficient?
         Collection<Role> roles = roleManager.getAssignedRoles(user);
@@ -546,6 +589,14 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         }
     }
 
+    private Config validated( final Config config ) {
+        final ValidatedConfig validatedConfig = new ValidatedConfig( config, logger );
+        validatedConfig.setMinimumValue( ServerConfig.PARAM_SESSION_EXPIRY, TimeUnit.MINUTES.toMillis( 1L ) );
+        validatedConfig.setMaximumValue( ServerConfig.PARAM_SESSION_EXPIRY, MAX_INACTIVITY_TIME );
+        return validatedConfig;
+    }
+
+
     /**
      * Within internal providers, lower-numbered providers sort first, and all internal providers sort before all
      * non-internal providers.
@@ -569,9 +620,11 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         private final User user;
         private final String cookie;
         private final Object sessionInfo;
-        private long lastUsed;
+        private volatile long lastUsed;
 
-        public SessionHolder( User user, String cookie, Object sessionInfo) {
+        private SessionHolder( final User user,
+                               final String cookie,
+                               final Object sessionInfo ) {
             this.user = user;
             this.cookie = cookie;
             this.lastUsed = System.currentTimeMillis();

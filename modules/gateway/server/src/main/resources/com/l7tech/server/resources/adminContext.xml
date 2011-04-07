@@ -70,7 +70,6 @@
         <constructor-arg ref="adminSessionManager"/>
         <constructor-arg ref="clusterInfoManager"/>
         <constructor-arg ref="defaultKey"/>
-        <constructor-arg ref="serverConfig"/>
     </bean>
 
     <!-- admin session tracker -->

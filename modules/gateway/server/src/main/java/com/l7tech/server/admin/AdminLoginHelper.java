@@ -12,16 +12,19 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
+import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.Config;
 import org.springframework.context.support.ApplicationObjectSupport;
 
+import javax.security.auth.Subject;
 import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlException;
 import java.security.cert.X509Certificate;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -89,6 +92,39 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
             getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + creds.getLogin() + "'"));
             throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded inactivity period.");
         }
+    }
+
+    //- PACKAGE
+
+    /**
+     * Get the session identifier for the active session.
+     *
+     * @return The session identifier or null
+     */
+    static String getSessionId() {
+        return getSessionId( JaasUtils.getCurrentSubject() );
+    }
+
+    /**
+     * Get the session identifier for the given Subject.
+     *
+     * @param subject The subject to check (optional)
+     * @return The session identifier or null.
+     */
+    static String getSessionId( final Subject subject ) {
+        String sessionId = null;
+
+        if ( subject != null ) {
+            final Set<String> credentials = subject.getPublicCredentials( String.class );
+            if ( credentials.size() == 1 ) {
+                final String perhapsSessionId = credentials.iterator().next();
+                if ( perhapsSessionId != null && !perhapsSessionId.isEmpty() ) {
+                    sessionId = perhapsSessionId;
+                }
+            }
+        }
+
+        return sessionId;
     }
 
     //- PRIVATE

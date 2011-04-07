@@ -1,4 +1,4 @@
- package com.l7tech.server.admin;
+package com.l7tech.server.admin;
 
 import com.l7tech.gateway.common.spring.remoting.RemotingProvider;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
@@ -12,7 +12,6 @@ import com.l7tech.gateway.common.admin.AdminSessionValidationRuntimeException;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -25,14 +24,9 @@ import com.l7tech.common.io.CertUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.security.auth.Subject;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collection;
-import java.util.Set;
 import java.security.AccessControlException;
 import java.security.cert.X509Certificate;
 import java.net.InetAddress;
@@ -45,7 +39,7 @@ import java.io.IOException;
  *
  * @author steve
  */
-public class AdminRemotingProvider implements RemotingProvider<Administrative>, SecureHttpInvokerServiceExporter.SecurityCallback, PropertyChangeListener {
+public class AdminRemotingProvider implements RemotingProvider<Administrative>, SecureHttpInvokerServiceExporter.SecurityCallback {
 
     //- PUBLIC
 
@@ -56,24 +50,18 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative>, 
     public AdminRemotingProvider( final LicenseManager licenseManager,
                                   final AdminSessionManager adminSessionManager,
                                   final ClusterInfoManager clusterInfoManager,
-                                  final DefaultKey defaultKey,
-                                  final ServerConfig serverConfig) {
+                                  final DefaultKey defaultKey ) {
         this.licenseManager = licenseManager;
         this.adminSessionManager = adminSessionManager;
         this.clusterInfoManager = clusterInfoManager;
         this.defaultKey = defaultKey;
-        this.serverConfig = serverConfig;
-        this.sessionExpiryInMils = serverConfig.getIntProperty(ServerConfig.PARAM_SESSION_EXPIRY, -1)* minuteToMils;
-        if (this.sessionExpiryInMils <= 0) {
-            this.sessionExpiryInMils = DEFAULT_GATEWAY_SESSION_EXPIRY;
-        }
-        sessionActivityMap = new ConcurrentHashMap<User,Long>();
     }
 
+    @Override
     public void checkPermitted( final Administrative adminAnno,
                                 final String facility,
                                 final String activity ) {
-        if ( FACILITY_CLUSTER.equals(facility) ) {
+        if ( FACILITY_CLUSTER.equals( facility ) ) {
             enforceClusterEnabled();
         } else if ( FACILITY_ADMIN.equals(facility) ) {
             if (adminAnno == null || adminAnno.licensed()) {
@@ -82,9 +70,7 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative>, 
 
             enforceAdminEnabled( adminAnno == null || adminAnno.authenticated() );
 
-            if (adminAnno == null || !adminAnno.background()) {
-                enforceExpiry(activity);
-            }
+            enforceExpiry( adminAnno == null || !adminAnno.background() );
 
         } else {
             throw new IllegalArgumentException( "Unknown facility " + facility );
@@ -94,23 +80,12 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative>, 
     /**
      * Assert that the user of this request has generated activity within the session expiry period
      */
-    private void enforceExpiry(String activity) {
-        User user = JaasUtils.getCurrentUser();
-        if (user!=null){
-            Long lastActivity = sessionActivityMap.get(user);
-            if(lastActivity== null){
-                sessionActivityMap.put(user,System.currentTimeMillis());
-            }
-            else{
-                if(lastActivity<(System.currentTimeMillis() - sessionExpiryInMils)) {
-                    //System.out.print("\nUser:"+user.getLogin() +" EXPIRE" + System.currentTimeMillis() + " Expiry:"+ sessionExpiryInMils);
-                    sessionActivityMap.remove(user);
-                    adminSessionManager.destroySession(user);
-                    throw new AccessControlException("Gateway sesson expired");
-                }
-                sessionActivityMap.put(user,System.currentTimeMillis());
-            }
-            //System.out.print("\nUser:"+user.getLogin() +" Activity: "+activity + " time:"+ System.currentTimeMillis());
+    private void enforceExpiry( final boolean updateActivity ) {
+        final User user = JaasUtils.getCurrentUser();
+        final String sessionId = AdminLoginHelper.getSessionId();
+
+        if ( user != null && adminSessionManager.isExpired( sessionId, updateActivity ) ) {
+            throw new AccessControlException("Session expired");
         }
     }
 
@@ -123,24 +98,6 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative>, 
         }
     }
 
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        String propertyName = evt.getPropertyName();
-        String newValue = (String) evt.getNewValue();
-
-        if ( propertyName != null && propertyName.equals(ServerConfig.PARAM_SESSION_EXPIRY) ){
-            try {
-                this.sessionExpiryInMils = serverConfig.getIntProperty(ServerConfig.PARAM_SESSION_EXPIRY, -1) * minuteToMils;
-                if (this.sessionExpiryInMils <= 0) {
-                    this.sessionExpiryInMils = DEFAULT_GATEWAY_SESSION_EXPIRY;
-                }
-            } catch (NumberFormatException nfe) {
-                sessionExpiryInMils = DEFAULT_GATEWAY_SESSION_EXPIRY;
-                logger.warning("Parameter " + propertyName + " value '" + newValue + "' not a positive integer value. Reuse default value '" + sessionExpiryInMils/minuteToMils + "'");
-            }
-        }
-    }
-
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( AdminRemotingProvider.class.getName() );
@@ -149,12 +106,6 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative>, 
     private final AdminSessionManager adminSessionManager;
     private final ClusterInfoManager clusterInfoManager;
     private final DefaultKey defaultKey;
-    private final ServerConfig serverConfig;
-
-    private final ConcurrentMap<User,Long> sessionActivityMap;
-    private static final long minuteToMils = 60000;
-    private static final long DEFAULT_GATEWAY_SESSION_EXPIRY = 30 * minuteToMils;
-    private long sessionExpiryInMils;
 
     private void enforceLicensed( String action ) {
         try {
@@ -193,18 +144,17 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative>, 
         }
 
         if ( subject.getPrincipals(User.class).isEmpty() ) {
+            final String sessionId = AdminLoginHelper.getSessionId( subject );
+            if ( sessionId == null ) {
+                throw new AccessControlException("Admin request disallowed: no credentials.");
+            }
+
             try {
-                final Set<String> credentials = subject.getPublicCredentials(String.class);
-                if ( credentials.isEmpty() ) {
-                    throw new AccessControlException("Admin request disallowed: no credentials.");
+                final User user = adminSessionManager.resumeSession( sessionId );
+                if( user != null ){
+                    subject.getPrincipals().add(user);
                 } else {
-                    final String cookie = credentials.iterator().next();
-                    final User user = adminSessionManager.resumeSession(cookie);
-                    if( user != null ){
-                        subject.getPrincipals().add(user);
-                    } else {
-                        throw new AccessControlException("Admin request disallowed: session not found.");                        
-                    }
+                    throw new AccessControlException("Admin request disallowed: session not found.");
                 }
             } catch (ObjectModelException fe) {
                 logger.log(Level.WARNING, "Error resuming administrative user session '"+ ExceptionUtils.getMessage(fe)+"'.",fe);

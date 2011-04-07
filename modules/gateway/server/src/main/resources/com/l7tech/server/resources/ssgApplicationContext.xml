@@ -339,7 +339,12 @@
                                 <value>maxLdapSearchResultSize</value>
                             </list>
                         </entry>
-                        <entry key="adminSessionManager"><list><value>principalSessionCacheMaxTime</value></list></entry>
+                        <entry key="adminSessionManager">
+                            <list>
+                                <value>principalSessionCacheMaxTime</value>
+                                <value>logon.sessionExpiry</value>
+                            </list>
+                        </entry>
                         <entry key="logRecordRingBuffer">
                             <list>
                                 <value>logBuffer.paramSize</value>
@@ -388,7 +393,6 @@
                                 <value>audit.auditDetailExcludeList</value>
                             </list>
                         </entry>
-                        <entry key="remotingProvider"><list><value>logon.sessionExpiry</value></list></entry>
                         <entry key="auditingThrowsAdvice">
                             <list>
                                 <value>audit.adminExceptions.auditPermissionDenied</value>

@@ -204,7 +204,7 @@ public class AdminLoginImpl
     public void logout() {
         User user = JaasUtils.getCurrentUser();
         getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGOFF));
-        sessionManager.destroySession(user);
+        sessionManager.destroySession( AdminLoginHelper.getSessionId() );
     }
 
     public void setAdminSessionManager(AdminSessionManager sessionManager) {
