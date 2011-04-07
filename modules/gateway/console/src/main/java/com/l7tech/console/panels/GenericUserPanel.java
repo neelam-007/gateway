@@ -627,7 +627,7 @@ public class GenericUserPanel extends UserPanel {
                     expireTimeChooser.getDateEditor().getUiComponent().setBackground(Color.RED);
                 }
             }
-            expireStateLabel.setVisible(expired);
+            expireStateLabel.setVisible(expired );
             accountNeverExpiresCheckbox.setSelected(neverExpires);
 
             accountNeverExpiresCheckbox.addActionListener(new ActionListener() {
@@ -651,7 +651,7 @@ public class GenericUserPanel extends UserPanel {
         expireTimeChooser.setEnabled(!neverExpire);
         expireTimeChooser.getDateEditor().getUiComponent().setBackground(notExpired|| neverExpire ? Color.WHITE : Color.RED);
         expiresLabel.setEnabled(neverExpire);
-        expireStateLabel.setVisible(!notExpired);
+        expireStateLabel.setVisible(!notExpired && !neverExpire);
         enabledCheckBox.setEnabled(neverExpire || notExpired);
     }
 
