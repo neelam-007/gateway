@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.GatewayKeyAccessFilter;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.AdminInfo;
@@ -27,6 +28,7 @@ import org.springframework.context.ApplicationContextAware;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,6 +55,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private AuditArchiver auditArchiver;
     private ApplicationContext applicationContext;
     private AuditFilterPolicyManager auditFilterPolicyManager;
+    private GatewayKeyAccessFilter keyAccessFilter;
 
     public AuditAdminImpl() {
         Background.scheduleRepeated( new TimerTask(){
@@ -227,6 +230,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     public void setAuditFilterPolicyManager(AuditFilterPolicyManager auditFilterPolicyManager) {
         this.auditFilterPolicyManager = auditFilterPolicyManager;
+    }
+
+    public void setKeyAccessFilter(GatewayKeyAccessFilter keyAccessFilter) {
+        this.keyAccessFilter = keyAccessFilter;
     }
 
     @Override
@@ -439,7 +446,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     }
 
     @Override
-    public String invokeAuditViewerPolicyForMessage(long auditRecordId, boolean isRequest) throws FindException {
+    public String invokeAuditViewerPolicyForMessage(long auditRecordId, final boolean isRequest) throws FindException {
 
         final List<Pair<Level, String>> auditMessages = new ArrayList<Pair<Level, String>>();
         try {
@@ -470,8 +477,16 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
             }
 
             try {
-                return auditFilterPolicyManager.evaluateAuditViewerPolicy(messageXml, isRequest);
+                return keyAccessFilter.doWithRestrictedKeyAccess(new Callable<String>() {
+                    @Override
+                    public String call() throws Exception {
+                        return auditFilterPolicyManager.evaluateAuditViewerPolicy(messageXml, isRequest);
+                    }
+                });
             } catch (AuditFilterPolicyManager.AuditViewerPolicyException e) {
+                final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
+                addInvokeAuditViewerAuditMsg(auditMessages, params);
+            } catch (Exception e) {
                 final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
                 addInvokeAuditViewerAuditMsg(auditMessages, params);
             }
@@ -521,7 +536,12 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                         return null;
                     }
                     try {
-                        return auditFilterPolicyManager.evaluateAuditViewerPolicy(detailParams[0], null);
+                        return keyAccessFilter.doWithRestrictedKeyAccess(new Callable<String>() {
+                            @Override
+                            public String call() throws Exception {
+                                return auditFilterPolicyManager.evaluateAuditViewerPolicy(detailParams[0], null);
+                            }
+                        });
                     } catch (Exception e) {
                         final String msg = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
                         addInvokeAuditViewerAuditMsg(auditMessages, msg, Level.WARNING);

@@ -2,12 +2,8 @@ package com.l7tech.server.upgrade;
 
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.security.keystore.*;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
-import com.l7tech.server.security.keystore.SsgKeyStore;
-import com.l7tech.server.security.keystore.SsgKeyFinder;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.server.security.keystore.KeystoreFileManager;
-import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
 import com.l7tech.server.util.PropertiesDecryptor;
 import com.l7tech.util.MasterPasswordManager;
@@ -263,7 +259,12 @@ public class Upgrade465To50UpgradeKeystores implements UpgradeTask {
                 throw new FatalUpgradeException("Keystore upgrade is for HSM, but there is no HSM keystore database entry.");
             }
 
-            ScaSsgKeyStore scaKeyStore = ScaSsgKeyStore.getInstance(hsmKeystoreFile.getOid(), hsmKeystoreFile.getName(), keystoreInfo.sslPassphrase, keystoreFileManager);
+            ScaSsgKeyStore scaKeyStore = ScaSsgKeyStore.getInstance(hsmKeystoreFile.getOid(), hsmKeystoreFile.getName(), keystoreInfo.sslPassphrase, keystoreFileManager, new KeyAccessFilter() {
+                @Override
+                public boolean isRestrictedAccessKeyEntry(SsgKeyEntry keyEntry) {
+                    return false;
+                }
+            });
 
             // Re-encrypt the cluster shared key for the cluster passphrase
             SsgKeyEntry entry = scaKeyStore.getCertificateChain(keystoreInfo.sslAlias);

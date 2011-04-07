@@ -64,6 +64,11 @@ public class TestDefaultKey extends DefaultKeyImpl {
         return auditViewerInfo;
     }
 
+    @Override
+    public String getAuditViewerAlias() {
+        return auditViewerInfo == null ? null : auditViewerInfo.getAlias();
+    }
+
     public void setCaInfo(SsgKeyEntry caInfo) {
         this.caInfo = caInfo;
     }

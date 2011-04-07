@@ -36,6 +36,14 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     private static ExecutorService mutationExecutor = new ThreadPoolExecutor(1, 1, 5 * 60, TimeUnit.SECONDS, mutationQueue);
     private static final AtomicBoolean startedRef = new AtomicBoolean(false);
 
+    protected final KeyAccessFilter keyAccessFilter;
+
+    protected JdkKeyStoreBackedSsgKeyStore(KeyAccessFilter keyAccessFilter) {
+        if (keyAccessFilter == null)
+            throw new NullPointerException("keyAccessFilter is required");
+        this.keyAccessFilter = keyAccessFilter;
+    }
+
     public static final class StartupListener implements ApplicationListener {
         @Override
         public void onApplicationEvent(ApplicationEvent event) {
@@ -116,7 +124,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             // Fallthrough and do without
         }
 
-        return new SsgKeyEntry(getOid(), alias, x509chain, privateKey);
+        SsgKeyEntry ssgKeyEntry = new SsgKeyEntry(getOid(), alias, x509chain, privateKey);
+        if (keyAccessFilter.isRestrictedAccessKeyEntry(ssgKeyEntry))
+            ssgKeyEntry.setRestrictedAccess();
+        return ssgKeyEntry;
     }
 
     /**
@@ -322,4 +333,5 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
      * @return the value returned by the mutator
      */
     protected abstract <OUT> Future<OUT> mutateKeystore(Runnable transactionCallback, Callable<OUT> mutator) throws KeyStoreException;
+
 }

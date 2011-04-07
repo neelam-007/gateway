@@ -41,6 +41,13 @@ public interface DefaultKey {
     SsgKeyEntry getAuditViewerInfo();
 
     /**
+     * Get just the alias of the audit viewer decryption key, if one is set, otherwise null.
+     *
+     * @return the audit viewer key alias, or null if not set.
+     */
+    String getAuditViewerAlias();
+
+    /**
      * Get an array containing a single KeyManager implementation which will always present the current
      * default SSL cert as the server cert.
      *

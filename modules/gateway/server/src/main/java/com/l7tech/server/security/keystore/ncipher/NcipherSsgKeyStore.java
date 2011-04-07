@@ -4,10 +4,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.event.AdminInfo;
-import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
-import com.l7tech.server.security.keystore.KeystoreFile;
-import com.l7tech.server.security.keystore.KeystoreFileManager;
-import com.l7tech.server.security.keystore.SsgKeyStore;
+import com.l7tech.server.security.keystore.*;
 import com.l7tech.util.*;
 
 import java.io.ByteArrayInputStream;
@@ -46,7 +43,8 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     private int keystoreVersion = -1;
     private long lastLoaded = 0;
 
-    public NcipherSsgKeyStore(long id, String name, KeystoreFileManager kem) throws KeyStoreException {
+    public NcipherSsgKeyStore(long id, String name, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter) throws KeyStoreException {
+        super(keyAccessFilter);
         this.id = id;
         this.name = name;
         this.kem = kem;

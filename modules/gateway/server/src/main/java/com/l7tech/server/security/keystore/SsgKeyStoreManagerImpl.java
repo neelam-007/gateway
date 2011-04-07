@@ -49,6 +49,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
 
     private boolean initialized = false;
     private List<SsgKeyFinder> keystores = null;
+    private KeyAccessFilter keyAccessFilter;
 
     public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, ServerConfig serverConfig, char[] sslKeystorePassphrase, MasterPasswordManager passwordManager) throws KeyStoreException, FindException {
         if ( sslKeystorePassphrase == null || sslKeystorePassphrase.length==0 ) throw new IllegalArgumentException("sslKeystorePassphrase is required");
@@ -70,6 +71,12 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
     private synchronized void init() throws KeyStoreException, FindException {
         if (initialized)
             return;
+
+        if (keyAccessFilter == null) {
+            String msg = "No KeyAccessFilter set yet -- incorrect initialization order";
+            logger.severe(msg);
+            throw new IllegalStateException(msg);
+        }
 
         List<SsgKeyFinder> list = new ArrayList<SsgKeyFinder>();
         Collection<KeystoreFile> dbFiles = keystoreFileManager.findAll();
@@ -103,7 +110,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
 
                     String encryptedPassword = dbFile.getProperty("passphrase");
                     char[] decryptedPassword = dbEncrypter.decryptPasswordIfEncrypted(encryptedPassword);
-                    list.add(ScaSsgKeyStore.getInstance(id, name, decryptedPassword, keystoreFileManager));
+                    list.add(ScaSsgKeyStore.getInstance(id, name, decryptedPassword, keystoreFileManager, keyAccessFilter));
                     createdHsmFinder = true;
                 }
             } else if (format.startsWith("hsm.Ncipher")) {
@@ -113,7 +120,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
                     if (createdNcipher)
                         throw new KeyStoreException("Database contains more than one keystore_file row with a format of hsm.Ncipher");
 
-                    list.add(new NcipherSsgKeyStore(id, name, keystoreFileManager));
+                    list.add(new NcipherSsgKeyStore(id, name, keystoreFileManager, keyAccessFilter));
                     createdNcipher = true;
                 }
             } else if (format.equals("ss")) {
@@ -122,20 +129,20 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
                 if (haveSca || haveLuna || haveNcipher || haveGeneric)
                     logger.info("Ignoring keystore_file row with a format of sdb because this Gateway node is using an HSM or Luna or generic provider instead");
                 else
-                    list.add(new DatabasePkcs12SsgKeyStore(id, name, keystoreFileManager,  softwareKeystorePasssword));
+                    list.add(new DatabasePkcs12SsgKeyStore(id, name, keystoreFileManager,  softwareKeystorePasssword, keyAccessFilter));
             }
 
             // We'll ignore the placeholder row for Luna, if any
         }
 
         if (haveLuna && list.isEmpty()) {
-            list.add(new LunaSsgKeyStore(3, SsgKeyFinder.SsgKeyStoreType.LUNA_HARDWARE, "SafeNet HSM"));
+            list.add(new LunaSsgKeyStore(3, SsgKeyFinder.SsgKeyStoreType.LUNA_HARDWARE, "SafeNet HSM", keyAccessFilter));
         }
 
         if (haveGeneric && list.isEmpty()) {
             String password = SyspropUtil.getString(GenericSsgKeyStore.PROP_KEYSTORE_PASSWORD, GenericSsgKeyStore.DEFAULT_KEYSTORE_PASSWORD);
             char[] decryptedPassword = password == null ? null : dbEncrypter.decryptPasswordIfEncrypted(password);
-            list.add(new GenericSsgKeyStore(5, SsgKeyFinder.SsgKeyStoreType.GENERIC, "Generic", decryptedPassword));
+            list.add(new GenericSsgKeyStore(5, SsgKeyFinder.SsgKeyStoreType.GENERIC, "Generic", decryptedPassword, keyAccessFilter));
         }
 
         // Force all keyfinders to initialize their keystores early, so they don't end up trying to do so lazily
@@ -233,5 +240,9 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
     @Override
     public void afterPropertiesSet() throws Exception {
         init();
+    }
+
+    public void setKeyAccessFilter(KeyAccessFilter keyAccessFilter) {
+        this.keyAccessFilter = keyAccessFilter;
     }
 }

@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.security.keystore;
 
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.util.Functions;
 
 import java.io.Serializable;
 import java.security.PrivateKey;
@@ -13,10 +14,13 @@ import java.security.cert.X509Certificate;
  * RSA private key.
  */
 public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable {
-    private static final long serialVersionUID = 23272983482973429L;
+    private static final long serialVersionUID = 23272983482973430L;
+
+    private static Functions.Nullary<Boolean> restrictedKeyAccessChecker;
 
     private long keystoreId;
     private String alias;
+    private boolean restrictedAccess;
 
     /**
      * Create an SsgKeyEntry.
@@ -38,6 +42,21 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
             throw new IllegalArgumentException("certificateChain must contain at least one certificate");
         this.keystoreId = keystoreId;
         this.alias = alias;
+    }
+
+    /**
+     * Configure code which will check whether the current thread context has permission to use a restricted-access private key.
+     * <p/>
+     * This method may only be called once for the lifetime of our class loader.
+     *
+     * @param accessChecker an access checker to set.  If null, this method takes no action.
+     */
+    public static void setRestrictedKeyAccessChecker(Functions.Nullary<Boolean> accessChecker) {
+        if (accessChecker != null) {
+            if (restrictedKeyAccessChecker != null)
+                throw new IllegalStateException("Restricted key access checker has already been set.");
+            restrictedKeyAccessChecker = accessChecker;
+        }
     }
 
     /**
@@ -85,10 +104,26 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
     }
 
     /**
-     * @return true if getPrivateKey() would return non-null without throwing.
+     * @return true if getPrivateKey() would return non-null without throwing (aside from restricted key access issues).
      */
     public boolean isPrivateKeyAvailable() {
-        return getPrivate() != null;
+        return super.getPrivate() != null;
+    }
+
+    /**
+     * @return true if getPrivateKey() would return non-null without throwing if called now, by the current thread in the current context.
+     */
+    public boolean isPrivateKeyAvailableAndAccessible() {
+        return isPrivateKeyAvailable() && isAccessAllowed();
+    }
+
+    @Override
+    public PrivateKey getPrivate() {
+        try {
+            return getPrivateKey();
+        } catch (UnrecoverableKeyException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -98,11 +133,21 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
      *                                    is never sent outside the Gateway (and in any case may just be a handle
      *                                    to a secure PKCS#11 object).
      */
-    public PrivateKey getPrivateKey() throws UnrecoverableKeyException {
+    public final PrivateKey getPrivateKey() throws UnrecoverableKeyException {
         PrivateKey privateKey = super.getPrivate();
         if (privateKey == null)
             throw new UnrecoverableKeyException("The private key is not available to this code");
+        checkRestrictedAccess();
         return privateKey;
+    }
+
+    private boolean isAccessAllowed() {
+        return !restrictedAccess || restrictedKeyAccessChecker == null || restrictedKeyAccessChecker.call();
+    }
+
+    private void checkRestrictedAccess() throws UnrecoverableKeyException {
+        if (!isAccessAllowed())
+            throw new UnrecoverableKeyException("Use of this private key is restricted and its use is not permitted in this context.");
     }
 
     /** @return the keystore id from which this entry came. */
@@ -118,6 +163,18 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
     /** @param alias the new alias. */
     public void setAlias(String alias) {
         this.alias = alias;
+    }
+
+    /**
+     * Set restricted access to the private key field of this key entry.
+     * <p/>
+     * This will prevent access to the private key unless the restrictedKeyAccessChecker approves access
+     * (or there is no restrictedKeyAccessChecker, in which case access is always approved).
+     * <p/>
+     * Restriction cannot be turned off, once enabled, without creating a new key entry.
+     */
+    public void setRestrictedAccess() {
+        this.restrictedAccess = true;
     }
 
     /** @param certificateChain the new certificate chain.  Must contain at least one certificate. */

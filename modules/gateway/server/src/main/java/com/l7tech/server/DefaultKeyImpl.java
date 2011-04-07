@@ -252,6 +252,20 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         }
     }
 
+    @Override
+    public String getAuditViewerAlias() {
+        SsgKeyEntry info = cachedAuditViewerInfo.get();
+        if (info != null)
+            return info.getAlias();
+
+        try {
+            Pair<Long, String> idAndAlias = getKeyStoreOidAndAlias(ServerConfig.PARAM_KEYSTORE_AUDIT_VIEWER_KEY);
+            return idAndAlias == null ? null : idAndAlias.right;
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to look up audit viewer key alias: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
     public KeyManager[] getSslKeyManagers() {
         try {
             SsgKeyEntry info = getSslInfo();

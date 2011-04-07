@@ -170,14 +170,11 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
                 try {
                     SsgKeyEntry entry = keyFinder.getCertificateChain(alias);
                     if (entry.isPrivateKeyAvailable()) {
-
-                        infos.add(new SignerInfo(entry.getPrivateKey(), entry.getCertificateChain()));
+                        infos.add(entry);
                     }
                 } catch (ObjectNotFoundException e) {
                     logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 } catch (KeyStoreException e) {
-                    logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
-                } catch (UnrecoverableKeyException e) {
                     logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
                 }
             }
