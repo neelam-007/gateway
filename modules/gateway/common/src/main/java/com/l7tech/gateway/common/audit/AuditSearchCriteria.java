@@ -398,7 +398,7 @@ public final class AuditSearchCriteria implements Serializable {
 
         public Builder userIdOrDn(String value) {
             if (value != null && !value.trim().isEmpty()) {
-                userIdOrDn = value;
+                userIdOrDn = value.replace("*", "%");//translate any wildcard chars from GUI to mysql format
             }
             return this;
         }

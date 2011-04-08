@@ -452,7 +452,7 @@ public class AuditRecordManagerImpl
                 criterion.add(Restrictions.ilike(PROP_USER_NAME, criteria.userName));
             }
             if (criteria.userIdOrDn != null) {
-                criterion.add(Restrictions.eq(PROP_USER_ID, criteria.userIdOrDn));
+                criterion.add(Restrictions.ilike(PROP_USER_ID, criteria.userIdOrDn));
             }
         }
 
