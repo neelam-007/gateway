@@ -608,8 +608,8 @@ public class Saml2WssProcessorImpl {
             // Make a new virtual token
             found = WssProcessorUtil.makeEncryptedKey(releventSecurityHeader.getOwnerDocument(), cachedSecretKey, eksha1);
             securityTokens.add(found);
-        } else if (cachedSecretKey != null && !found.isUnwrapped() && found instanceof EncryptedKeyImpl) {
-            EncryptedKeyImpl eki = (EncryptedKeyImpl)found;
+        } else if (cachedSecretKey != null && !found.isUnwrapped() && found instanceof Saml2AttrQueryEncryptedKeyImpl) {
+            Saml2AttrQueryEncryptedKeyImpl eki = (Saml2AttrQueryEncryptedKeyImpl)found;
             eki.setSecretKey(cachedSecretKey);
         }
 
@@ -983,7 +983,7 @@ public class Saml2WssProcessorImpl {
     //         a reference list.
     //
     // If the encrypted key was addressed to us, it will have been added to the context ProcessedEncryptedKeys set.
-    private EncryptedKeyImpl processEncryptedKey(Element encryptedKeyElement)
+    private Saml2AttrQueryEncryptedKeyImpl processEncryptedKey(Element encryptedKeyElement)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
     {
         if(logger.isLoggable(Level.FINEST)) logger.finest("Processing EncryptedKey");
@@ -999,9 +999,9 @@ public class Saml2WssProcessorImpl {
         // verify that the algo is supported
         lastKeyEncryptionAlgorithm = XencUtil.checkEncryptionMethod(encryptedKeyElement);
 
-        final EncryptedKeyImpl ekTok;
+        final Saml2AttrQueryEncryptedKeyImpl ekTok;
         try {
-            ekTok = new EncryptedKeyImpl(encryptedKeyElement, securityTokenResolver, getMessageX509TokenResolver());
+            ekTok = new Saml2AttrQueryEncryptedKeyImpl(encryptedKeyElement, securityTokenResolver, getMessageX509TokenResolver());
         } catch (IOException e) {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
@@ -1015,7 +1015,7 @@ public class Saml2WssProcessorImpl {
         return ekTok;
     }
 
-    public EncryptedKeyImpl getEncryptedKey(Element encryptedContainerElement)
+    public Saml2AttrQueryEncryptedKeyImpl getEncryptedKey(Element encryptedContainerElement)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
     {
         // Look inside the real EncryptedData element for the key
@@ -1055,7 +1055,7 @@ public class Saml2WssProcessorImpl {
             throws GeneralSecurityException, IOException, SAXException,
                    ProcessorException, InvalidDocumentFormatException
     {
-        EncryptedKeyImpl ekTok = getEncryptedKey(encryptedDataElement);
+        Saml2AttrQueryEncryptedKeyImpl ekTok = getEncryptedKey(encryptedDataElement);
         boolean removeEncryptedKey = ekTok.getElement().getParentNode() == encryptedDataElement;
 
         byte[] key = ekTok.getSecretKey();
@@ -1263,7 +1263,7 @@ public class Saml2WssProcessorImpl {
         }
     }
 
-    private static class EncryptedKeyImpl extends SigningSecurityTokenImpl implements EncryptedKey {
+    private static class Saml2AttrQueryEncryptedKeyImpl extends SigningSecurityTokenImpl implements EncryptedKey {
         private final String elementWsuId;
         private final byte[] encryptedKeyBytes;
         private final SignerInfo signerInfo;
@@ -1272,7 +1272,7 @@ public class Saml2WssProcessorImpl {
         private byte[] secretKeyBytes = null;
 
         // Constructor that supports lazily-unwrapping the key
-        EncryptedKeyImpl(Element encryptedKeyEl, SecurityTokenResolver tokenResolver, Resolver<String,X509Certificate> x509Resolver)
+        Saml2AttrQueryEncryptedKeyImpl(Element encryptedKeyEl, SecurityTokenResolver tokenResolver, Resolver<String, X509Certificate> x509Resolver)
                 throws InvalidDocumentFormatException, IOException, GeneralSecurityException, UnexpectedKeyInfoException {
             super(encryptedKeyEl);
             this.elementWsuId = SoapUtil.getElementWsuId(encryptedKeyEl);
