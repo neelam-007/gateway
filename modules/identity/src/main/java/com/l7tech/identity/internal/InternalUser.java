@@ -222,7 +222,7 @@ public class InternalUser extends PersistentUser {
     public void setPasswordChanges(String newPasswordHash) {
         PasswordChangeRecord passChangeRecord = new PasswordChangeRecord(
                 this, System.currentTimeMillis(), getHashedPassword());
-        this.passwordChangesHistory.add(passChangeRecord);
+        this.passwordChangesHistory.add(passChangeRecord);  //todo [Donal ensure that with hibernate this cannot result in a NPE
         this.hashedPassword = newPasswordHash;
         this.changePassword = false;
     }

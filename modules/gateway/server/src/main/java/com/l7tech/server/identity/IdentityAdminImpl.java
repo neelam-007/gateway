@@ -20,6 +20,7 @@ import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.internal.InternalUserManager;
+import com.l7tech.server.identity.internal.InternalUserPasswordManager;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.logon.LogonInfoManager;
 import com.l7tech.server.logon.LogonService;
@@ -335,7 +336,9 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                     // Reset password expiration and force password change
                     passwordEnforcerManager.setUserPasswordPolicyAttributes(internalUser, true);
                     InternalUserManager internalManager = (InternalUserManager) userManager;
-                    internalManager.configureUserPasswordHashes(internalUser, clearTextPassword);
+                    final InternalUserPasswordManager passwordManager = internalManager.getUserPasswordManager();
+                    final boolean updateRequired = passwordManager.configureUserPasswordHashes(internalUser, clearTextPassword);
+                    assert(updateRequired);
                 }
             }
 
@@ -399,11 +402,11 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             }
         }
 
-
         passwordEnforcerManager.isPasswordPolicyCompliant(newClearTextPassword);
-        final boolean updateUser = userManager.configureUserPasswordHashes(disconnectedUser, newClearTextPassword);
+        final InternalUserPasswordManager passwordManager = userManager.getUserPasswordManager();
+        final boolean updateUser = passwordManager.configureUserPasswordHashes(disconnectedUser, newClearTextPassword);
         if(!updateUser){
-            throw new IllegalStateException("Users should require update.");//todo deal with this invariant better. Refactor.
+            throw new IllegalStateException("Users should require update.");
         }
         passwordEnforcerManager.setUserPasswordPolicyAttributes(disconnectedUser, true);
         logger.info("Updated password for Internal User " + disconnectedUser.getLogin() + " [" + disconnectedUser.getOid() + "]");

@@ -483,6 +483,12 @@
         <constructor-arg ref="clientCertManager"/>
         <constructor-arg ref="logonManager"/>
         <constructor-arg ref="passwordHasher"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.identity.internal.InternalUserPasswordManagerImpl">
+                <constructor-arg ref="serverConfig"/>
+                <constructor-arg ref="passwordHasher"/>
+            </bean>
+        </constructor-arg>
     </bean>
     <bean name="internalGroupManager" class="com.l7tech.server.identity.internal.InternalGroupManagerImpl" scope="prototype" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>

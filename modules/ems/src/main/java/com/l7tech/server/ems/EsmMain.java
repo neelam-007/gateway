@@ -57,7 +57,7 @@ public class EsmMain {
                 if ( serverConfig.getProperty("em.admin.user") == null ) {
                     logger.info("Creating default administration account on startup.");
                     serverConfig.putProperty("em.admin.user", "admin");
-                    serverConfig.putProperty("em.admin.pass", "a41306e4b1b5858d3e3d705dd2e738e2");
+                    serverConfig.putProperty("em.admin.pass", "$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ.");
                 }
             }
 

@@ -22,6 +22,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.internal.InternalUserManager;
+import com.l7tech.server.identity.internal.InternalUserPasswordManager;
 import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -343,9 +344,10 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                     passwordEnforcerManager.setUserPasswordPolicyAttributes(disconnectedUser,false);
 
                     InternalUserManager userManager = ((InternalIdentityProvider)identityProvider).getUserManager();
-                    final boolean updated = userManager.configureUserPasswordHashes(disconnectedUser, newPassword);
+                    final InternalUserPasswordManager passwordManager = userManager.getUserPasswordManager();
+                    final boolean updated = passwordManager.configureUserPasswordHashes(disconnectedUser, newPassword);
                     if(!updated){
-                        throw new IllegalStateException("User should have been updated");//todo [Donal] refactor better way to handle this.                        
+                        throw new IllegalStateException("User should have been updated");
                     }
                     userManager.update(disconnectedUser);
                     passwordUpdated = true;
