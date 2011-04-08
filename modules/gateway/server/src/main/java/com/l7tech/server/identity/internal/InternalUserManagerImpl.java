@@ -119,6 +119,13 @@ public class InternalUserManagerImpl
               + user.getLogin() + "\' present.");
         }
 
+        final String newHash = user.getHashedPassword();
+        if(newHash == null || newHash.trim().isEmpty()){
+            throw new SaveException("Cannot save user without hashedPassword property.");
+        }
+        if(!passwordHasher.isVerifierRecognized(newHash)){
+            throw new SaveException("Cannot save user as hashedPassword property contains an unrecognized hashing scheme.");
+        }
     }
 
     @Override
@@ -187,6 +194,14 @@ public class InternalUserManagerImpl
         final String originalUserHash = originalUser.getHashedPassword();
         final boolean isUpgrade = originalUserHash == null || originalUserHash.trim().isEmpty();
         //Note: if the original has has changed, then so has the digest, if this property is configured to be persisted
+
+        final String newHash = updatedUser.getHashedPassword();
+        if(newHash == null || newHash.trim().isEmpty()){
+            throw new UpdateException("Cannot update user without hashedPassword property.");
+        }
+        if(!passwordHasher.isVerifierRecognized(newHash)){
+            throw new UpdateException("Cannot update user as hashedPassword property contains an unrecognized hashing scheme.");
+        }
 
         if(!isUpgrade){
             //only consider revoking the cert when the password was changed and not upgraded.
