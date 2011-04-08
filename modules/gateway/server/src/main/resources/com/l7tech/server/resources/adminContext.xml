@@ -81,6 +81,7 @@
                 <constructor-arg value="Inactive User Checker"/>
             </bean>
         </constructor-arg>
+        <constructor-arg index="3" ref="passwordHasher"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
         <property name="roleManager" ref="roleManager"/>
         <property name="passwordEnforcerManager" ref="passwordEnforcerManager"/>
@@ -225,6 +226,7 @@
         <constructor-arg ref="passwordEnforcerManager"/>
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="logonService"/>
+        <constructor-arg ref="passwordHasher"/>
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
@@ -246,7 +248,6 @@
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
         <property name="auditArchiver" ref="auditArchiver"/>
         <property name="auditFilterPolicyManager" ref="auditFilterPolicyManager"/>
-        <property name="keyAccessFilter" ref="keyAccessFilter"/>
     </bean>
 
     <!-- service admin servant -->

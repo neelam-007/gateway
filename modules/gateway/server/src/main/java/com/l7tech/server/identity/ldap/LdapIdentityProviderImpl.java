@@ -17,11 +17,9 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.Lifecycle;
 import com.l7tech.server.LifecycleException;
+import com.l7tech.server.identity.*;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.identity.ConfigurableIdentityProvider;
-import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
@@ -247,6 +245,21 @@ public class LdapIdentityProviderImpl
 
     @Override
     public AuthenticationResult authenticate(final LoginCredentials pc) throws AuthenticationException {
+        return authenticate(pc, AuthenticationType.MESSAGE_TRAFFIC);
+    }
+
+    @Override
+    public AuthenticationResult authenticateAdministrator(final LoginCredentials pc,
+                                                          final ClientType clientType) throws AuthenticationException {
+        if(clientType == ClientType.POLICY_MANAGER){
+            return authenticate(pc, AuthenticationType.ADMINISTRATION_POLICY_MANAGER);
+        }
+
+        throw new IllegalArgumentException("Unsupported client type " + clientType);
+    }
+
+    private AuthenticationResult authenticate(final LoginCredentials pc,
+                                              final AuthenticationType authType) throws AuthenticationException {
         LdapUser realUser;
         try {
             realUser = findUserByCredential( pc );
@@ -261,15 +274,16 @@ public class LdapIdentityProviderImpl
 
         if (realUser == null) return null;
 
+        final boolean isMsgAuth = authType == AuthenticationType.MESSAGE_TRAFFIC;
         final CredentialFormat format = pc.getFormat();
         if (format == CredentialFormat.CLEARTEXT) {
             return authenticatePasswordCredentials(pc, realUser);
-        } else if (format == CredentialFormat.DIGEST) {
+        } else if (format == CredentialFormat.DIGEST && isMsgAuth) {
             return DigestAuthenticator.authenticateDigestCredentials(pc, realUser);
-        } else if (format  == CredentialFormat.KERBEROSTICKET) {
+        } else if (format  == CredentialFormat.KERBEROSTICKET && isMsgAuth) {
             return new AuthenticationResult( realUser, pc.getSecurityTokens() );
         } else {
-            if (format == CredentialFormat.CLIENTCERT || format == CredentialFormat.SAML) {
+            if (format == CredentialFormat.CLIENTCERT || (format == CredentialFormat.SAML && isMsgAuth)) {
 
                     //get the LDAP cert for this user if LDAP certs are enabled for this provider
                     if (certsAreEnabled() && realUser.getLdapCertBytes() != null) {

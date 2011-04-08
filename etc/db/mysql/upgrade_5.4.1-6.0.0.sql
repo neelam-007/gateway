@@ -136,6 +136,17 @@ INSERT INTO `rbac_predicate_attribute` VALUES
     (-1118,'name','keyStore.auditViewer.alias');
 
 --
+-- Password storage changes
+--
+
+-- first modify the password column to be http_digest
+ALTER TABLE internal_user CHANGE COLUMN password digest VARCHAR(32) DEFAULT NULL;
+-- then add the new password column
+ALTER TABLE internal_user ADD COLUMN password VARCHAR(256) NOT NULL AFTER login;
+
+ALTER TABLE password_history MODIFY COLUMN prev_password VARCHAR(256) NOT NULL;
+
+--
 --
 -- Reenable FK at very end of script
 --

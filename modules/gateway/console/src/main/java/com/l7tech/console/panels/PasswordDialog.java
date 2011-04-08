@@ -304,17 +304,6 @@ public class PasswordDialog extends JDialog {
             return false;
         }
 
-        if (user.getHashedPassword().equals(HexUtils.encodePasswd(user.getLogin(), new String(newPass), HexUtils.REALM))) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    resources.getString("sameOldPassord.question"),
-                    resources.getString("sameOldPassord.title"),
-                    JOptionPane.ERROR_MESSAGE);
-            newPasswordField.setText("");
-            confirmPasswordField.setText("");
-            return false;
-        }
-
         return true;
     }
 
@@ -336,11 +325,8 @@ public class PasswordDialog extends JDialog {
                 }
             }
 
-            user.setPasswordChanges(Registry.getDefault().getClusterStatusAdmin().getCurrentClusterSystemTime().getTime(), new String(newPass));
-            Registry.getDefault().getIdentityAdmin().isPasswordPolicyCompliant(new String(newPass), IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-            Registry.getDefault().getIdentityAdmin().saveUser(
-                    IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, user, null); // TODO make sure passing null here won't clear group memberships
-            Registry.getDefault().getIdentityAdmin().resetLogonFailCount(user);
+            Registry.getDefault().getIdentityAdmin().changeUsersPassword(
+                    IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, user.getOid(), new String(newPass));
             dispose();
             if (listener != null) {
                 EntityHeader eh = new EntityHeader();

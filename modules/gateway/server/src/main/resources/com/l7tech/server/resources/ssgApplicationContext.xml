@@ -476,11 +476,13 @@
         <property name="certificateAuthenticator" ref="certificateAuthenticator"/>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager" ref="internalGroupManager"/>
+        <property name="passwordHasher" ref="passwordHasher"/>
     </bean>
     <bean name="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" scope="prototype" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="clientCertManager"/>
         <constructor-arg ref="logonManager"/>
+        <constructor-arg ref="passwordHasher"/>
     </bean>
     <bean name="internalGroupManager" class="com.l7tech.server.identity.internal.InternalGroupManagerImpl" scope="prototype" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
@@ -592,6 +594,7 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="passwordPolicyManger"/>
         <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="passwordHasher"/>
     </bean>
 
     <bean id="passwordPolicyManger" class="com.l7tech.server.identity.IdentityProviderPasswordPolicyManagerImpl" parent="hibernateBean"/>   

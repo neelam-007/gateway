@@ -1,5 +1,8 @@
 package com.l7tech.server.identity.internal;
 
+import com.l7tech.gateway.common.security.password.IncorrectPasswordException;
+import com.l7tech.gateway.common.security.password.PasswordHasher;
+import com.l7tech.gateway.common.security.password.PasswordHashingException;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
@@ -7,13 +10,18 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.PersistentUserManagerImpl;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.logon.LogonInfoManager;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -32,12 +40,15 @@ public class InternalUserManagerImpl
         implements InternalUserManager 
 {
     private final RoleManager roleManager;
+    private final PasswordHasher passwordHasher;
 
     public InternalUserManagerImpl(final RoleManager roleManager,
                                    final ClientCertManager clientCertManager,
-                                   final LogonInfoManager logonInfoManager) {
+                                   final LogonInfoManager logonInfoManager,
+                                   final PasswordHasher passwordHasher) {
         super( clientCertManager, logonInfoManager );
         this.roleManager = roleManager;
+        this.passwordHasher = passwordHasher;
     }
 
     @Override
@@ -67,6 +78,7 @@ public class InternalUserManagerImpl
         iu.setName(bean.getName());
         iu.setOid(bean.getId() == null ? InternalUser.DEFAULT_OID : Long.valueOf(bean.getId()));
         iu.setHashedPassword(bean.getHashedPassword());
+        iu.setHttpDigest(bean.getHttpDigest());
         iu.setSubjectDn(bean.getSubjectDn());
         iu.setChangePassword(bean.isChangePassword());
         iu.setPasswordExpiry(bean.getPasswordExpiry());
@@ -106,21 +118,90 @@ public class InternalUserManagerImpl
             throw new DuplicateObjectException("Cannot save this user. Existing user with login \'"
               + user.getLogin() + "\' present.");
         }
+
+    }
+
+    @Override
+    public boolean configureUserPasswordHashes(final InternalUser dbUser, final String clearTextPassword){
+        final String userHashedPassword = dbUser.getHashedPassword();
+        final boolean userHasHashedPassword = userHashedPassword != null && !userHashedPassword.trim().isEmpty();
+
+        boolean userWasUpdated = false;
+        final StringBuilder fineLogMsg = new StringBuilder("Updating password storage for login '" + dbUser.getLogin() + "'. ");
+
+        //first check to see if this admin user is new or being upgraded, in which case the user needs a new hash
+        if(!userHasHashedPassword){
+            dbUser.setHashedPassword(passwordHasher.hashPassword(clearTextPassword.getBytes(Charsets.UTF8)));
+            userWasUpdated = true;
+            fineLogMsg.append("Set password hash. ");
+        } else {
+            //does the existing hash verify for the incoming password?
+            boolean isNewPassword = true;
+            try {
+                if(passwordHasher.isVerifierRecognized(userHashedPassword)){
+                    passwordHasher.verifyPassword(clearTextPassword.getBytes(Charsets.UTF8), userHashedPassword);
+                    isNewPassword = false;
+                }
+            } catch (IncorrectPasswordException e) {
+                //fall through ok
+            } catch (PasswordHashingException e) {
+                //fall through ok
+            }
+
+            if(isNewPassword){
+                dbUser.setPasswordChanges(passwordHasher.hashPassword(clearTextPassword.getBytes(Charsets.UTF8)));
+                userWasUpdated = true;
+            }
+        }
+
+        //update digest if state has changed.
+        final String httpDigestEnable = ServerConfig.getInstance().getPropertyCached("httpDigest.enable");
+        boolean isHttpDigestEnabled = httpDigestEnable != null && Boolean.valueOf(httpDigestEnable);
+
+        final String userDigest = dbUser.getHttpDigest();
+        final boolean userHasDigest = userDigest != null && !userDigest.trim().isEmpty();
+        final String calculatedDigest = HexUtils.encodePasswd(dbUser.getLogin(), clearTextPassword, HexUtils.REALM);
+
+        if (isHttpDigestEnabled) {
+            if (!userHasDigest || userWasUpdated) {//if hashed password changed then update the digest if enabled
+                dbUser.setHttpDigest(calculatedDigest);
+                userWasUpdated = true;
+                fineLogMsg.append("Set digest property. ");
+            }
+        } else if (userHasDigest) {
+            dbUser.setHttpDigest(null);
+            userWasUpdated = true;
+            fineLogMsg.append("Cleared digest property. ");
+        }
+
+        if(logger.isLoggable(Level.FINE)){
+            logger.log(Level.FINE, fineLogMsg.toString());
+        }
+        
+        return userWasUpdated;
     }
 
     @Override
     protected void checkUpdate(InternalUser originalUser,
                                InternalUser updatedUser) throws ObjectModelException {
-        // checks whether the updatedUser changed his password
-        String originalPasswd = originalUser.getHashedPassword();
-        String newPasswd = updatedUser.getHashedPassword();
+        final String originalUserHash = originalUser.getHashedPassword();
+        final boolean isUpgrade = originalUserHash == null || originalUserHash.trim().isEmpty();
+        //Note: if the original has has changed, then so has the digest, if this property is configured to be persisted
 
-        // if password has changed, any cert should be revoked
-        if (!originalPasswd.equals(newPasswd)) {
-            logger.info("Revoking cert for updatedUser " + originalUser.getLogin() + " because he is changing his password.");
-            // must revoke the cert
+        if(!isUpgrade){
+            //only consider revoking the cert when the password was changed and not upgraded.
 
-            revokeCert(originalUser);
+            // checks whether the updatedUser changed his password
+            String originalPasswd = originalUser.getHashedPassword();
+            String newPasswd = updatedUser.getHashedPassword();
+
+            // if password has changed, any cert should be revoked
+            if (!originalPasswd.equals(newPasswd)) {
+                logger.info("Revoking cert for user " + originalUser.getLogin() + " as password was changed.");
+                // must revoke the cert
+
+                revokeCert(originalUser);
+            }
         }
     }
 

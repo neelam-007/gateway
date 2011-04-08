@@ -1567,7 +1567,6 @@ public class PolicyProcessingTest {
             if (contextAuth != null) {
                 UserBean user = new UserBean();
                 user.setLogin(contextAuth.getUserName());
-                user.setCleartextPassword(new String(contextAuth.getPassword()));
                 context.getDefaultAuthenticationContext().addAuthenticationResult(
                         new AuthenticationResult(user, new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, contextAuth)));
             }

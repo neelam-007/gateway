@@ -26,11 +26,27 @@ public interface AuthenticatingIdentityProvider<UT extends User, GT extends Grou
      * authorized is then left up to the implementations of ServerIdentityAssertion, namely
      * {@link com.l7tech.server.policy.assertion.identity.ServerSpecificUser} and
      * {@link com.l7tech.server.policy.assertion.identity.ServerMemberOfGroup}.
+     * <p>
+     * This method is not intended to authenticate administrative users. This method allows a user to be authenticated
+     * using any supported mechanism including HTTP Digest. Note HTTP Digest may not be supported for Internal or external
+     * users.
      *
      * @param pc an identity and a set of credentials.
      * @return an authenticated {@link com.l7tech.identity.User}. May be null if no user matching the specified credentials can be found for this provider.
      */
-    AuthenticationResult authenticate( LoginCredentials pc ) throws AuthenticationException;
+    AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException;
+
+    /**
+     * Called to authenticate a user for administrative functions.
+     *
+     * Gateway - This should allow a user to be authenticated using either user name + password or to log in with a certificate.
+     * ESM - This should allow a user to authenticate only with a user name + password.
+     *
+     * @param pc an identity and a set of credentials.
+     * @param clientType
+     * @return an authenticated {@link com.l7tech.identity.User}. May be null if no user matching the specified credentials can be found for this provider.
+     */
+    AuthenticationResult authenticateAdministrator(LoginCredentials pc, ClientType clientType) throws AuthenticationException;
 
     /**
      * Find a user that matches the given credential.
@@ -65,4 +81,9 @@ public interface AuthenticatingIdentityProvider<UT extends User, GT extends Grou
      * @return the certificate or null if not found.
      */
     X509Certificate findCertByThumbprintSHA1(final String thumbprintSHA1) throws FindException;
+
+    enum ClientType {
+        ESM,
+        POLICY_MANAGER
+    }
 }

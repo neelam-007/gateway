@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.security.password.PasswordHasher;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
@@ -45,12 +46,14 @@ import java.util.logging.Level;
  */
 public class PasswdServlet extends AuthenticatableHttpServlet {
     private PasswordEnforcerManager passwordEnforcerManager;
+    private PasswordHasher passwordHasher;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
         WebApplicationContext appcontext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
         this.passwordEnforcerManager = appcontext.getBean("passwordEnforcerManager", PasswordEnforcerManager.class);
+        this.passwordHasher = appcontext.getBean("passwordHasher", PasswordHasher.class); 
     }
 
     protected String getFeature() {
@@ -132,9 +135,11 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             InternalUser newInternalUser = new InternalUser();
             newInternalUser.copyFrom(internalUser);
             newInternalUser.setVersion(internalUser.getVersion());
-            passwordEnforcerManager.isPasswordPolicyCompliant(newInternalUser, newpasswd, HexUtils.encodePasswd(newInternalUser.getLogin(), newpasswd, HexUtils.REALM), oldpasswd);
+            final String newPasswordHashed = passwordHasher.hashPassword(newpasswd.getBytes(Charsets.UTF8));
+            passwordEnforcerManager.isPasswordPolicyCompliant(newInternalUser, newpasswd, oldpasswd);
             passwordEnforcerManager.setUserPasswordPolicyAttributes(newInternalUser,false);
-            newInternalUser.setPasswordChanges(System.currentTimeMillis(), newpasswd);
+
+            newInternalUser.setPasswordChanges(newPasswordHashed);//todo [Donal] test
 
             InternalUserManager userManager = internalProvider.getUserManager();
             userManager.update(newInternalUser);

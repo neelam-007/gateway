@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui;
 
+import com.l7tech.gateway.common.security.password.PasswordHasher;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
@@ -13,6 +14,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.Authorizer;
@@ -52,12 +54,14 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
 
     //- PUBLIC
 
-    public EsmSecurityManagerImpl( final IdentityProviderFactory identityProviderFactory,
-                                   final RoleManager roleManager,
-                                   final LicenseManager licenseManager ) {
+    public EsmSecurityManagerImpl(final IdentityProviderFactory identityProviderFactory,
+                                  final RoleManager roleManager,
+                                  final LicenseManager licenseManager,
+                                  final PasswordHasher passwordHasher) {
         this.identityProviderFactory = identityProviderFactory;
         this.roleManager = roleManager;
         this.licenseManager = licenseManager;
+        this.passwordHasher = passwordHasher;        
     }
 
     @Override
@@ -212,8 +216,8 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
 
         logger.info("Authenticating user '"+username+"'.");
         for ( IdentityProvider provider : getAdminIdentityProviders() ) {
-            try {
-                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
+            try {                         //todo [Donal] test ESM usage
+                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticateAdministrator(creds, AuthenticatingIdentityProvider.ClientType.ESM);
                 user = authResult == null ? null : authResult.getUser();
                 if ( applicationContext != null && user != null ) {
                     applicationContext.publishEvent( new LogonEvent(user, LogonEvent.LOGON) );
@@ -290,8 +294,9 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
                 InternalIdentityProvider internalIdentityProvider = (InternalIdentityProvider) provider;
                 AuthenticationResult authResult = internalIdentityProvider.authenticate(creds);
                 if ( authResult != null ) {
+                    InternalUser.validateEsmPassword(newPassword);
                     InternalUser authUser = (InternalUser) authResult.getUser();
-                    authUser.setCleartextPassword(newPassword);
+                    authUser.setHashedPassword(passwordHasher.hashPassword(newPassword.getBytes(Charsets.UTF8)));
                     internalIdentityProvider.getUserManager().update(authUser);
                     passwordChanged = true;
                 }
@@ -394,6 +399,7 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     private final LicenseManager licenseManager;
     private final SessionAuthorizer authorizer = new SessionAuthorizer();
     private ApplicationContext applicationContext;
+    private final PasswordHasher passwordHasher;
 
     private boolean isValidUser( final User user ) {
         boolean valid = false;

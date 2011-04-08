@@ -285,6 +285,7 @@ public class AdminLoginImpl
 
     private byte[] getDigest(String password, X509Certificate serverCertificate)
       throws NoSuchAlgorithmException, CertificateEncodingException {
+        //todo [Donal] - common place to do this. Same code is in SecurityProviderImpl
         java.security.MessageDigest d = java.security.MessageDigest.getInstance("SHA-1");
         byte[] bytes = password.getBytes();
         d.update(bytes);

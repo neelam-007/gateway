@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import com.l7tech.gateway.common.security.password.PasswordHasher;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
@@ -36,6 +37,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
@@ -80,6 +82,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected WspReader wspReader;
     protected IdentityProviderFactory identityProviderFactory;
     private LicenseManager licenseManager;
+    private PasswordHasher passwordHasher;//todo this can likely be removed if / when this class is updated to user AdminSessionManager
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -97,6 +100,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         serviceCache = getBean("serviceCache", ServiceCache.class);
         policyManager = getBean("policyManager", PolicyManager.class);
         wspReader = getBean("wspReader", WspReader.class);
+        passwordHasher = getBean("passwordHasher", PasswordHasher.class);
     }
 
     protected Object getBean(String name) throws ServletException {
@@ -385,7 +389,9 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                         UserBean user = new UserBean();
                         user.setProviderId(Long.MAX_VALUE);
                         user.setLogin(creds.getLogin());
-                        user.setCleartextPassword(new String(creds.getCredentials()));
+                        final String passwordHashed = passwordHasher.hashPassword(new String(creds.getCredentials()).getBytes(Charsets.UTF8));
+                        //todo [Donal] test
+                        user.setHashedPassword(passwordHashed);
                         return new AuthenticationResult[] { new AuthenticationResult(user, creds.getSecurityTokens()) };
                     }
                 }

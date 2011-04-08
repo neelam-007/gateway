@@ -32,6 +32,13 @@ import org.hibernate.annotations.Proxy;
 public class InternalUser extends PersistentUser {
     private long expiration = -1;
     protected String hashedPassword;
+    /**
+     * DigestAuthenticator is the only applicable client of this property.
+     * Should not be used anywhere for authentication other than HTTPDigest, which is deprecated.
+     * Cannot be used to authenticate administrative users.
+     */
+    private String httpDigest;
+
     private List<PasswordChangeRecord> passwordChangesHistory;
     private long passwordExpiry;
     private boolean changePassword;
@@ -66,15 +73,39 @@ public class InternalUser extends PersistentUser {
         setPasswordExpiry(imp.getPasswordExpiry());
         setChangePassword(imp.isChangePassword());
         setEnabled(imp.isEnabled());
+        setHttpDigest(imp.getHttpDigest());
     }
 
+    /**
+     * If you are changing the users password, do not use this. Use {@link InternalUser#setPasswordChanges(String)} instead.
+     * This setter is intended for Hibernate.
+     * @param password
+     */
     public void setHashedPassword(String password) {
         this.hashedPassword = password;
     }
 
-    @Column(name="password", nullable=false, length=32)
+    @Column(name="password", nullable=false, length=256)
     public String getHashedPassword() {
         return hashedPassword;
+    }
+
+    /**
+     * @return Digest compatible with HTTP Digest. May be null if digest is not supported by the Gateway.
+     */
+    @Column(name="digest", nullable=true, length=32)
+    public String getHttpDigest() {
+        return httpDigest;
+    }
+
+    /**
+     * Do not use this method unless you will maintain the invariant that the clear text password this digest
+     * represents is the same as the clear text password maintained by hashedPassword.
+     * 
+     * @param httpDigest
+     */
+    public void setHttpDigest(String httpDigest) {
+        this.httpDigest = httpDigest;
     }
 
     @Override
@@ -136,7 +167,7 @@ public class InternalUser extends PersistentUser {
 
     public void setPasswordChangesHistory(List<PasswordChangeRecord> passwordChangesHistory) {
         if ( this.passwordChangesHistory != null) {
-            for (PasswordChangeRecord changeRecord : passwordChangesHistory) {
+            for (PasswordChangeRecord changeRecord : passwordChangesHistory) {//todo is this actually needed?
                 if (!this.passwordChangesHistory.contains(changeRecord)) {
                     this.passwordChangesHistory.add(changeRecord);
                 }
@@ -172,24 +203,27 @@ public class InternalUser extends PersistentUser {
         return result;
     }
 
-    @Transient
-    public void setCleartextPassword(String newPassword) throws InvalidPasswordException {
+    /**
+     * Use to validate an ESM password only. Cannot be used to validate a password on the Gateway. 
+     * @param newPassword
+     * @throws InvalidPasswordException
+     *///todo find better home for this on the ESM, or update ESM to use password policy as is done on the Gateway post Chinook
+    public static void validateEsmPassword(String newPassword) throws InvalidPasswordException {
         if (newPassword == null) throw new InvalidPasswordException("Empty password is not valid", null);
         if (newPassword.length() < 6) throw new InvalidPasswordException("Password must be no shorter than 6 characters", null);
         if (newPassword.length() > 32) throw new InvalidPasswordException("Password must be no longer than 32 characters", null);
-
-        if (login == null) throw new IllegalStateException("login must be set prior to encoding the password");
-        this.hashedPassword = HexUtils.encodePasswd(login, newPassword, HexUtils.REALM);
     }
 
-
-    public void setPasswordChanges(long passwordChangeTime, String newPassword) {
-        PasswordChangeRecord passChangeRecord = new PasswordChangeRecord();
-        passChangeRecord.setInternalUser(this);
-        passChangeRecord.setLastChanged(passwordChangeTime);
-        passChangeRecord.setPrevHashedPassword(this.getHashedPassword());
+    /**
+     * Record a password change for a user.
+     *
+     * @param newPasswordHash HASHED version of the users new password.
+     */
+    public void setPasswordChanges(String newPasswordHash) {
+        PasswordChangeRecord passChangeRecord = new PasswordChangeRecord(
+                this, System.currentTimeMillis(), getHashedPassword());
         this.passwordChangesHistory.add(passChangeRecord);
-        this.hashedPassword = HexUtils.encodePasswd(login, newPassword, HexUtils.REALM);
+        this.hashedPassword = newPasswordHash;
         this.changePassword = false;
     }
 }

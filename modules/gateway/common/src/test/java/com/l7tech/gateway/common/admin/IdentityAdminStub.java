@@ -106,7 +106,7 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders ) throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException {
+    public String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders ) throws SaveException, UpdateException, ObjectNotFoundException {
         if (!(user instanceof PersistentUser)) throw new IllegalArgumentException("IdentityAdminStub only supports Internal and Federated users");
         PersistentUser pu = (PersistentUser) user;
         final StubDataStore store = StubDataStore.defaultStore();
@@ -128,6 +128,16 @@ public class IdentityAdminStub implements IdentityAdmin {
             }
         }
         return pu.getId();
+    }
+
+    @Override
+    public String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders, String clearTextPassword) throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException {
+        return null;
+    }
+
+    @Override
+    public void changeUsersPassword(long idProvCfgId, long userId, String newClearTextPassword) {
+
     }
 
     @Override
@@ -274,10 +284,6 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public void resetLogonFailCount(User user) throws FindException, UpdateException {
-    }
-
-    @Override
     public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException {
         return null; // TODO ?
     }
@@ -285,11 +291,6 @@ public class IdentityAdminStub implements IdentityAdmin {
     @Override
     public String getPasswordPolicyDescriptionForIdentityProvider() throws FindException {
         return null; // TODO ?        
-    }
-
-    @Override
-    public boolean isPasswordPolicyCompliant(String newPassword, long providerId) throws InvalidPasswordException {
-        return false;  // TODO ?
     }
 
     @Override

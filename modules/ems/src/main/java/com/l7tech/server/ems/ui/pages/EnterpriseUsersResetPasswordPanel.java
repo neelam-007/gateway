@@ -1,5 +1,7 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.gateway.common.security.password.PasswordHasher;
+import com.l7tech.util.Charsets;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.form.Form;
@@ -63,6 +65,9 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
     @Inject
     private Config config;
 
+    @Inject
+    private PasswordHasher passwordHasher; //todo [Donal] test
+
     private UserModel buildUserModel( final String username ) {
         UserModel model = null;
         try {
@@ -88,7 +93,8 @@ public class EnterpriseUsersResetPasswordPanel extends Panel {
         try {
             InternalUser user = emsAccountManager.findByLogin( model.userId );
             if ( user != null ) {
-                user.setCleartextPassword( model.password );
+                InternalUser.validateEsmPassword( model.password );
+                user.setHashedPassword(passwordHasher.hashPassword( model.password.getBytes( Charsets.UTF8 ) ) );
                 emsAccountManager.update( user );
                 form.info( new StringResourceModel("message.reset", this, null, new Object[]{ model.userId } ).getString() );
             } else {

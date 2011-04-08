@@ -6,6 +6,11 @@
 
 package com.l7tech.policy.assertion.credential;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Typesafe enum. Not currently persistent.
  *
@@ -47,6 +52,12 @@ public class CredentialFormat {
      * An opaque token such as a single sign on session cookie.
      */
     public static final CredentialFormat OPAQUETOKEN = new CredentialFormat("Opaque Token");
+
+    public static final Set<CredentialFormat> POLICY_MANAGER_ADMINISTRATION =
+            Collections.unmodifiableSet(new HashSet<CredentialFormat>(Arrays.asList(CLEARTEXT, CLIENTCERT)));
+
+    public static final Set<CredentialFormat> ESM_ADMINISTRATION =
+            Collections.unmodifiableSet(new HashSet<CredentialFormat>(Arrays.asList(CLEARTEXT)));
 
     public String toString() {
         return "<CredentialFormat name='" + _name + "'/>";

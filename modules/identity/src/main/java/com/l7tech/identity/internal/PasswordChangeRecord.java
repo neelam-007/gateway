@@ -24,6 +24,18 @@ public class PasswordChangeRecord extends PersistentEntityImp {
     private String prevHashedPassword; //previous password before password was changed
     private int _orderId;
 
+    /**
+     * For hibernate only.
+     */
+    public PasswordChangeRecord() {
+    }
+
+    public PasswordChangeRecord(InternalUser internalUser, long lastChanged, String prevHashedPassword) {
+        this.internalUser = internalUser;
+        this.lastChanged = lastChanged;
+        this.prevHashedPassword = prevHashedPassword;
+    }
+
     @ManyToOne
     @JoinColumn(name="internal_user_oid", nullable=false)
     public InternalUser getInternalUser() {
@@ -31,7 +43,7 @@ public class PasswordChangeRecord extends PersistentEntityImp {
     }
 
     @Column(name="order_id")
-    public int getOrderId() {
+    public int getOrderId() {//todo delete this property and remove from ssg.sql
         return _orderId;
     }
 
@@ -52,7 +64,7 @@ public class PasswordChangeRecord extends PersistentEntityImp {
         this.lastChanged = lastChanged;
     }
 
-    @Column(name="prev_password")
+    @Column(name="prev_password", nullable = false)
     public String getPrevHashedPassword() {
         return prevHashedPassword;
     }

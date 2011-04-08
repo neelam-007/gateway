@@ -1,5 +1,6 @@
 package com.l7tech.server.admin;
 
+import com.l7tech.gateway.common.security.password.PasswordHasher;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
@@ -20,6 +21,7 @@ import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
+import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -58,10 +60,12 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     public AdminSessionManager( final Config config,
                                 final LogonService logonService,
-                                final Timer timer ) {
+                                final Timer timer,
+                                final PasswordHasher passwordHasher) {
         this.config = validated( config );
         this.logonService = logonService;
         this.timer = timer;
+        this.passwordHasher = passwordHasher;
 
         int cacheSize = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_SIZE, 100);
         int cacheMaxTime = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
@@ -201,7 +205,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                     }
 
                     logonService.hookPreLoginCheck( currentUser );
-                    authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
+                    authResult = ((AuthenticatingIdentityProvider)provider).authenticateAdministrator(creds,
+                            AuthenticatingIdentityProvider.ClientType.POLICY_MANAGER);//not currently used from ESM, if it is configure in spring.
                     User authdUser = authResult == null ? null : authResult.getUser();
                     if ( authdUser != null ) {
                         //Validate the user , now authenticated so that we know all of their group roles
@@ -293,7 +298,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     }
 
     /**
-     * Change password for the given user.
+     * Change password for the given administrative user.
      *
      * @param user The user
      * @param password The password for the user
@@ -322,16 +327,27 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             LoginCredentials creds = LoginCredentials.makeLoginCredentials(
                     new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, user.getLogin(), password.toCharArray()) , null);
             try {
-                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)identityProvider).authenticate(creds);
+                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)identityProvider).authenticateAdministrator(creds, AuthenticatingIdentityProvider.ClientType.POLICY_MANAGER);
                 User authenticatedUser = authResult == null ? null : authResult.getUser();
 
                 if ( authenticatedUser instanceof InternalUser ) {
-                    InternalUser internalUser = (InternalUser) authenticatedUser;
-                    checkPerms(internalUser);
-                    passwordEnforcerManager.isPasswordPolicyCompliant(internalUser, newPassword, HexUtils.encodePasswd(internalUser.getLogin(), newPassword, HexUtils.REALM), password);
-                    passwordEnforcerManager.setUserPasswordPolicyAttributes(internalUser,false);
-                    internalUser.setPasswordChanges(System.currentTimeMillis(), newPassword);
-                    ((InternalIdentityProvider)identityProvider).getUserManager().update(internalUser);
+                    final InternalUser disconnectedUser = new InternalUser();
+                    {   //limit scope
+                        InternalUser internalUser = (InternalUser) authenticatedUser;
+                        disconnectedUser.copyFrom(internalUser);
+                        disconnectedUser.setVersion(internalUser.getVersion());
+                    }
+                    checkPerms(disconnectedUser);
+
+                    passwordEnforcerManager.isPasswordPolicyCompliant(disconnectedUser, newPassword, password);
+                    passwordEnforcerManager.setUserPasswordPolicyAttributes(disconnectedUser,false);
+
+                    InternalUserManager userManager = ((InternalIdentityProvider)identityProvider).getUserManager();
+                    final boolean updated = userManager.configureUserPasswordHashes(disconnectedUser, newPassword);
+                    if(!updated){
+                        throw new IllegalStateException("User should have been updated");//todo [Donal] refactor better way to handle this.                        
+                    }
+                    userManager.update(disconnectedUser);
                     passwordUpdated = true;
                 } else {
                     throw new IllegalStateException("Cannot change password for user.");
@@ -512,6 +528,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private IdentityProviderFactory identityProviderFactory;
     private PasswordEnforcerManager passwordEnforcerManager;
     private IdentityProviderPasswordPolicyManager passwordPolicyManager;
+    private final PasswordHasher passwordHasher; //todo [Donal] remove
 
     //
     @SuppressWarnings({"deprecation"})

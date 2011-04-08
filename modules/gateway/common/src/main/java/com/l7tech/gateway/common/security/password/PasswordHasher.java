@@ -7,7 +7,7 @@ public interface PasswordHasher {
     /**
      * Construct a string encoding a verifier hash for the specified password bytes.
      *
-     * @param passwordBytes the bytes of the password to hash.  Required.
+     * @param passwordBytes the bytes of the password to hash.  Required. If converting from a String, use "password".getBytes(Charsets.UTF8)
      * @return a verifier string for the specified password, in a format determined by this particular hasher implementation.  Never null or empty.
      */
     String hashPassword(byte[] passwordBytes);

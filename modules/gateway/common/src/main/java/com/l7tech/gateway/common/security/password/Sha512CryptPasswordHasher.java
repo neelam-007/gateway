@@ -1,5 +1,6 @@
 package com.l7tech.gateway.common.security.password;
 
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 
@@ -20,6 +21,10 @@ public class Sha512CryptPasswordHasher implements PasswordHasher {
         if (secureRandom == null)
             throw new NullPointerException("secureRandom is required");
         this.secureRandom = secureRandom;
+    }
+
+    public Sha512CryptPasswordHasher() {
+        secureRandom = new SecureRandom();
     }
 
     @Override

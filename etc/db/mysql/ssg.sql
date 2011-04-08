@@ -67,7 +67,8 @@ CREATE TABLE internal_user (
   version int(11) NOT NULL,
   name varchar(128) default NULL,
   login varchar(255) NOT NULL,
-  password varchar(32) NOT NULL,
+  password varchar(256) NOT NULL,
+  digest varchar(32) default NULL,
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
   email varchar(128) default NULL,
@@ -85,7 +86,7 @@ CREATE TABLE internal_user (
 --
 
 
-INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd2e738e2','','','','',-1,1577865600000,FALSE, TRUE);
+INSERT INTO internal_user VALUES (3,0,'admin','admin','','a41306e4b1b5858d3e3d705dd2e738e2','','','','',-1,1577865600000,FALSE, TRUE);
 
 --
 -- Table structure for table 'internal_user_group'
@@ -152,7 +153,7 @@ CREATE TABLE password_history (
   internal_user_oid bigint(20) NOT NULL,
   last_changed bigint(20) NOT NULL,
   order_id bigint(20) NOT NULL,
-  prev_password varchar(32),
+  prev_password varchar(256) NULL,
   PRIMARY KEY (objectid),
   FOREIGN KEY (internal_user_oid) REFERENCES internal_user (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;

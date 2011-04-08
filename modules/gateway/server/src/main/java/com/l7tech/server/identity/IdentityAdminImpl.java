@@ -1,6 +1,9 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.security.password.IncorrectPasswordException;
+import com.l7tech.gateway.common.security.password.PasswordHasher;
+import com.l7tech.gateway.common.security.password.PasswordHashingException;
 import com.l7tech.identity.LogonInfo;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.audit.SystemMessages;
@@ -15,19 +18,21 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
+import com.l7tech.server.identity.internal.InternalIdentityProvider;
+import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.logon.LogonInfoManager;
 import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
 import javax.inject.Inject;
 import javax.security.auth.x500.X500Principal;
-import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -59,7 +64,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private final IdentityProviderPasswordPolicyManager passwordPolicyManger;
     private final LogonService logonServ;
     private LogonInfoManager logonManager;
-
+    private final PasswordHasher passwordHasher;
 
     @Inject
     private TrustedEsmUserManager trustedEsmUserManager;
@@ -70,7 +75,8 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                              final IdentityProviderPasswordPolicyManager passwordPolicyManger,
                              final PasswordEnforcerManager passwordEnforcerManager,
                              final DefaultKey defaultKey,
-                             final LogonService logonServ) {
+                             final LogonService logonServ,
+                             final PasswordHasher passwordHasher) {
         if (roleManager == null) throw new IllegalArgumentException("roleManager is required");
 
         this.roleManager = roleManager;
@@ -78,6 +84,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         this.passwordPolicyManger = passwordPolicyManger;
         this.passwordEnforcerManager = passwordEnforcerManager;
         this.logonServ = logonServ;
+        this.passwordHasher = passwordHasher;
     }
 
     @Override
@@ -285,8 +292,19 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public String saveUser(long identityProviderConfigId, User user, Set groupHeaders)
-      throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException {
+    public String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders)
+            throws SaveException, UpdateException, ObjectNotFoundException {
+        try {
+            return saveUser(idProvCfgId, user, groupHeaders, null);
+        } catch (InvalidPasswordException e) {
+            //cannot happen
+            throw new IllegalStateException("InvalidPasswordException caught when updating an existing user.");
+        }
+    }
+
+    @Override
+    public String saveUser(long identityProviderConfigId, User user, Set groupHeaders, String clearTextPassword)
+            throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException {
         boolean isSave = true;
         try {
             String id = user.getId();
@@ -298,21 +316,26 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
             if(user instanceof InternalUser) {
                 InternalUser internalUser = (InternalUser)user;
-                // Reset password expiration and force password change
-                if(isSave) {
-                    passwordEnforcerManager.setUserPasswordPolicyAttributes(internalUser, true);
+                if(!isSave){
+                    //ensure password has not changed
+                    final InternalUser originalUser = (InternalUser) userManager.findByPrimaryKey(internalUser.getId());
+                    if(!originalUser.getHashedPassword().equals(internalUser.getHashedPassword())){
+                        throw new UpdateException("Cannot modify existing users password using this api.");
+                    }
+                    final String origDigest = originalUser.getHttpDigest();
+                    if(origDigest == null && internalUser.getHttpDigest() != null){
+                        throw new UpdateException("Cannot modify existing users digest using this api.");
+                    }
+                    if(origDigest != null && !origDigest.equals(internalUser.getHttpDigest())){
+                        throw new UpdateException("Cannot modify existing users digest using this api.");    
+                    }
                 } else {
-                    User u = userManager.findByPrimaryKey(internalUser.getId());
-                    InternalUser existingDude = null;
-                    if(u != null && u instanceof InternalUser) {
-                        existingDude = (InternalUser)u;
-                    }
-
-                    if(existingDude != null) {
-                        if(!internalUser.getHashedPassword().equals(existingDude.getHashedPassword())) {
-                            passwordEnforcerManager.setUserPasswordPolicyAttributes(internalUser, true);
-                        }
-                    }
+                    //validate password
+                    passwordEnforcerManager.isPasswordPolicyCompliant(clearTextPassword);
+                    // Reset password expiration and force password change
+                    passwordEnforcerManager.setUserPasswordPolicyAttributes(internalUser, true);
+                    InternalUserManager internalManager = (InternalUserManager) userManager;
+                    internalManager.configureUserPasswordHashes(internalUser, clearTextPassword);
                 }
             }
 
@@ -338,6 +361,57 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         }
     }
 
+    @Override
+    public void changeUsersPassword(long idProvCfgId, long userId, String newClearTextPassword)
+            throws FindException, UpdateException, InvalidPasswordException {
+
+        IdentityProvider provider = identityProviderFactory.getProvider(idProvCfgId);
+        if (provider == null) throw new FindException("IdentityProvider could not be found");
+        if(!(provider instanceof InternalIdentityProvider)){
+            throw new UpdateException("Cannot change non internal users password.");
+        }
+
+        if(newClearTextPassword == null || newClearTextPassword.trim().isEmpty()){
+            //this is a client error
+            throw new InvalidPasswordException("newClearTextPassword must be supplied.");
+        }
+
+        InternalUserManager userManager = (InternalUserManager) provider.getUserManager();
+        final InternalUser disconnectedUser = new InternalUser();
+        {//limit session connected internal user scope
+            final InternalUser internalUser = userManager.findByPrimaryKey(String.valueOf(userId));
+            disconnectedUser.copyFrom(internalUser);
+            disconnectedUser.setVersion(internalUser.getVersion());
+        }
+
+        //check if users password is the same
+        final String hashedPassword = disconnectedUser.getHashedPassword();
+
+        if(passwordHasher.isVerifierRecognized(hashedPassword)){
+            try {
+                passwordHasher.verifyPassword(newClearTextPassword.getBytes(Charsets.UTF8), hashedPassword);
+                //same error string that used to be shown in PasswordDialog
+                throw new InvalidPasswordException("The new password is the same as the old one.\nPlease enter a different password.");
+            } catch (IncorrectPasswordException e) {
+                //fall through ok
+            } catch (PasswordHashingException e) {
+                //fall through ok
+            }
+        }
+
+
+        passwordEnforcerManager.isPasswordPolicyCompliant(newClearTextPassword);
+        final boolean updateUser = userManager.configureUserPasswordHashes(disconnectedUser, newClearTextPassword);
+        if(!updateUser){
+            throw new IllegalStateException("Users should require update.");//todo deal with this invariant better. Refactor.
+        }
+        passwordEnforcerManager.setUserPasswordPolicyAttributes(disconnectedUser, true);
+        logger.info("Updated password for Internal User " + disconnectedUser.getLogin() + " [" + disconnectedUser.getOid() + "]");
+        //todo - may not be an admin user, could check first
+        logonServ.resetLogonFailCount(disconnectedUser);
+
+        userManager.update(disconnectedUser);
+    }
 
     @Override
     public EntityHeaderSet<IdentityHeader> findAllGroups(long cfgid) throws FindException {
@@ -447,11 +521,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                     // Set a random password (effectively disables password-based authentication as this user)
                     byte[] randomPasswd = new byte[32];
                     getSecureRandom().nextBytes(randomPasswd);
-                    try {
-                        newPasswd = HexUtils.encodePasswd(iuser.getLogin(), new String(randomPasswd, "ISO8859-1"), HexUtils.REALM);
-                    } catch (UnsupportedEncodingException e) {
-                        throw new RuntimeException(e); // Can't happen
-                    }
+                    newPasswd = passwordHasher.hashPassword(randomPasswd);
                 }
                 dbuser.setHashedPassword(newPasswd);
                 userManager.update(dbuser);
@@ -509,11 +579,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public void resetLogonFailCount(User user) throws FindException, UpdateException {
-        logonServ.resetLogonFailCount(user);
-    }
-
-    @Override
     public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException {
         return passwordPolicyManger.findByInternalIdentityProviderOid(providerId);  
     }
@@ -529,15 +594,13 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public boolean isPasswordPolicyCompliant( String newPassword, long providerId) throws InvalidPasswordException{
-        return passwordEnforcerManager.isPasswordPolicyCompliant(newPassword,providerId);
-    }
-
-    @Override
     public String updatePasswordPolicy(long providerId, IdentityProviderPasswordPolicy policy) throws SaveException, UpdateException, ObjectNotFoundException {
+        if(providerId != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID){
+            throw new SaveException("Cannot update password policy for identity provider [" + providerId+"].");
+        }
+
         policy.setInternalIdentityProviderOid(providerId);
         passwordPolicyManger.update(policy);
-        passwordEnforcerManager.auditPasswordPolicy(policy);
         return  policy.getOidAsLong().toString();
     }
 

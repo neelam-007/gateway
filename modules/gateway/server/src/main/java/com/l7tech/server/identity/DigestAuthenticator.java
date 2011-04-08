@@ -44,15 +44,20 @@ public class DigestAuthenticator {
             throws MissingCredentialsException, BadCredentialsException
     {
         Object payload = pc.getPayload();
-        String hashedPass;
+        String hashedPass = null;
         if (user instanceof InternalUser) {
-            hashedPass = ((InternalUser) user).getHashedPassword();
+            hashedPass = ((InternalUser) user).getHttpDigest();
         } else if (user instanceof LdapUser) {
             // Unlikely to work... most LDAPs have passwords that are either invisible to us, or hashed using some
             // algorithm other than ours.
             LdapUser ldapUser = (LdapUser) user;
-            hashedPass = HexUtils.encodePasswd(ldapUser.getLogin(), ldapUser.getPassword(), HexUtils.REALM);
-        } else {
+            final String ldapPassword = ldapUser.getPassword();
+            if(ldapPassword != null){
+                hashedPass = HexUtils.encodePasswd(ldapUser.getLogin(), ldapPassword, HexUtils.REALM);
+            }
+        } 
+
+        if(hashedPass == null){
             throw new BadCredentialsException("User does not have a usable password for digest authentication");
         }
 

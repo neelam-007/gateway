@@ -4,7 +4,6 @@ import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.action.GenericUserPropertiesAction;
@@ -295,17 +294,15 @@ public class NewInternalUserDialog extends JDialog {
         user.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         user.setName( name );
         user.setLogin( name );
-        user.setCleartextPassword(password);
 
         try {
             EntityHeader header = new EntityHeader();
             header.setType(EntityType.USER);
             header.setName(name);
-            Registry.getDefault().getIdentityAdmin().isPasswordPolicyCompliant(password,IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
             final String userId =
                 Registry.getDefault().getIdentityAdmin().saveUser(
                     IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID,
-                    user, null);
+                    user, null, password);
             header.setStrId(userId);
             user.setUniqueIdentifier(header.getStrId());
             fireEventUserAdded(header);

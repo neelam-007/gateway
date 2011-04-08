@@ -3,7 +3,11 @@
  */
 package com.l7tech.server.identity.internal;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.security.password.IncorrectPasswordException;
+import com.l7tech.gateway.common.security.password.PasswordHasher;
+import com.l7tech.gateway.common.security.password.PasswordHashingException;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalGroup;
@@ -13,12 +17,12 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.identity.Authenticated;
-import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.identity.ConfigurableIdentityProvider;
-import com.l7tech.server.identity.DigestAuthenticator;
-import com.l7tech.server.identity.PersistentIdentityProviderImpl;
+import com.l7tech.server.identity.*;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -26,6 +30,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.cert.X509Certificate;
+import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,13 +46,16 @@ public class InternalIdentityProviderImpl
         implements ApplicationContextAware, InternalIdentityProvider, ConfigurableIdentityProvider
 {
     private static final Logger logger = Logger.getLogger(InternalIdentityProviderImpl.class.getName());
-
+    private final static boolean allowDigestFallback = SyspropUtil.getBoolean("com.l7tech.server.identity.internal.allowDigestFallback", true);
+    
     private IdentityProviderConfig config;
     private InternalUserManager userManager;
     private InternalGroupManager groupManager;
     private CertificateAuthenticator certificateAuthenticator;
     private ApplicationContext springContext;
     private Auditor auditor;
+    private PasswordHasher passwordHasher;
+
 
     public InternalIdentityProviderImpl() {
     }
@@ -64,53 +72,73 @@ public class InternalIdentityProviderImpl
 
     @Override
     @Transactional(propagation=Propagation.REQUIRED, noRollbackFor=AuthenticationException.class)
-    public AuthenticationResult authenticate( LoginCredentials pc )
-            throws AuthenticationException
-    {
-        AuthenticationResult ar = null;
+    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
+        return authenticate(pc, AuthenticationType.MESSAGE_TRAFFIC);
+    }
+
+    @Override
+    @Transactional(propagation=Propagation.REQUIRED, noRollbackFor=AuthenticationException.class)
+    public AuthenticationResult authenticateAdministrator(LoginCredentials pc, ClientType clientType)
+            throws AuthenticationException {
+        switch (clientType){
+            case POLICY_MANAGER:
+                return authenticate(pc, AuthenticationType.ADMINISTRATION_POLICY_MANAGER);
+            case ESM:
+                return authenticate(pc, AuthenticationType.ADMINISTRATION_ESM);
+        }
+        throw new IllegalArgumentException("Unsupported client type " + clientType);
+    }
+
+    private AuthenticationResult authenticate(LoginCredentials pc, AuthenticationType authType)
+            throws AuthenticationException {
+        final String login = pc.getLogin();
+        final InternalUser dbUser = getUser(login);
+
+        if (dbUser == null) {
+            logger.info("Couldn't find user with login " + login);
+            return null;
+        }
+
+        validateUserAccount(login, dbUser);
+
+        CredentialFormat format = pc.getFormat();
+        final AuthenticationResult ar;
+        if ((format.isClientCert() && authType != AuthenticationType.ADMINISTRATION_ESM)  
+                || (format == CredentialFormat.SAML && authType == AuthenticationType.MESSAGE_TRAFFIC)) {
+            ar = certificateAuthenticator.authenticateX509Credentials(pc, dbUser, config.getCertificateValidationType(), auditor);
+        } else {
+            ar = authenticatePasswordCredentials(pc, dbUser, authType);
+        }
+
+        springContext.publishEvent(new Authenticated(ar));
+        return ar;
+    }
+
+    private InternalUser getUser(String login) throws AuthenticationException {
+        InternalUser dbUser;
         try {
-            String login = pc.getLogin();
+            dbUser = userManager.findByLogin(login);
+        } catch (FindException e) {
+            throw new AuthenticationException("Couldn't authenticate credentials", e);
+        }
+        return dbUser;
+    }
 
-            InternalUser dbUser;
-            try {
-                dbUser = userManager.findByLogin(login);
-            } catch (FindException e) {
-                throw new AuthenticationException("Couldn't authenticate credentials", e);
-            }
-            
-            if (dbUser == null) {
-                logger.info("Couldn't find user with login " + login);
-                return null;
-            }
+    private void validateUserAccount(String login, InternalUser dbUser) throws AuthenticationException {
+        if ( !dbUser.isEnabled() ) {
+            String err = "Credentials' login matches an internal user " + login + " but that " +
+                    "account is disabled.";
+            logger.info(err);
+            auditor.logAndAudit(SystemMessages.AUTH_USER_DISABLED, login);
+            throw new AuthenticationException(err);
+        }
 
-            if ( !dbUser.isEnabled() ) {
-                String err = "Credentials' login matches an internal user " + login + " but that " +
-                        "account is disabled.";
-                logger.info(err);
-                auditor.logAndAudit(SystemMessages.AUTH_USER_DISABLED, login);
-                throw new AuthenticationException(err);
-            }
-
-            if ( isExpired(dbUser) ) {
-                String err = "Credentials' login matches an internal user " + login + " but that " +
-                        "account is now expired.";
-                logger.info(err);
-                auditor.logAndAudit(SystemMessages.AUTH_USER_EXPIRED, login);
-                throw new AuthenticationException(err);
-            }
-
-            CredentialFormat format = pc.getFormat();
-            if (format.isClientCert() || format == CredentialFormat.SAML) {
-                ar = certificateAuthenticator.authenticateX509Credentials(pc, dbUser, config.getCertificateValidationType(), auditor);
-            } else {
-                ar = authenticatePasswordCredentials(pc, dbUser);
-            }
-
-            return ar;
-        } finally {
-            if (ar != null) {
-                springContext.publishEvent(new Authenticated(ar));
-            }
+        if ( isExpired(dbUser) ) {
+            String err = "Credentials' login matches an internal user " + login + " but that " +
+                    "account is now expired.";
+            logger.info(err);
+            auditor.logAndAudit(SystemMessages.AUTH_USER_EXPIRED, login);
+            throw new AuthenticationException(err);
         }
     }
 
@@ -120,22 +148,80 @@ public class InternalIdentityProviderImpl
         return userManager.findByLogin(login);
     }
 
-    private AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc, InternalUser dbUser)
+    private AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc,
+                                                                 InternalUser dbUser,
+                                                                 AuthenticationType authType)
             throws MissingCredentialsException, BadCredentialsException
     {
         CredentialFormat format = pc.getFormat();
         String login = dbUser.getLogin();
         char[] credentials = pc.getCredentials();
-        String dbPassHash = dbUser.getHashedPassword();
-        String authPassHash;
 
         if (format == CredentialFormat.CLEARTEXT) {
-            authPassHash = HexUtils.encodePasswd(login, new String(credentials), HexUtils.REALM);
-            if (dbPassHash.equals(authPassHash))
+            final String userHashedPassword = dbUser.getHashedPassword();
+            final boolean userHasHashedPassword = userHashedPassword != null && !userHashedPassword.trim().isEmpty();
+
+            boolean userAuthenticated = false;
+            if(userHasHashedPassword){
+                try {
+                    if(passwordHasher.isVerifierRecognized(userHashedPassword)){
+                        passwordHasher.verifyPassword(new String(credentials).getBytes(Charsets.UTF8), userHashedPassword);
+                        userAuthenticated = true;
+                    }
+                } catch (IncorrectPasswordException e) {
+                    //fall through ok
+                } catch (PasswordHashingException e) {
+                    //fall through ok
+                }
+            }
+
+            //check if we need to fall back on old digest
+            final String userDigest = dbUser.getHttpDigest();
+            final boolean userHasDigest = userDigest != null && !userDigest.trim().isEmpty();
+            final String calculatedDigest = HexUtils.encodePasswd(login, new String(credentials), HexUtils.REALM);
+
+            if(!userAuthenticated && allowDigestFallback){
+                if(userHasDigest){
+                    if(calculatedDigest.equals(userDigest)){
+                        //message traffic or admin - we just authenticated the user based on the users old digest
+                        if(logger.isLoggable(Level.FINE)){
+                            logger.log(Level.FINE, "Authenticated user '" + dbUser.getLogin()+"' using http digest compatible password hash.");
+                        }
+                        userAuthenticated = true;
+                    }
+                }
+            }
+
+            if(userAuthenticated &&
+                    (authType == AuthenticationType.ADMINISTRATION_POLICY_MANAGER ||
+                            authType == AuthenticationType.ADMINISTRATION_ESM)){
+                //Warning - we may do a db update here...We ARE NOT on a message processing thread!! If this is changed for
+                //message traffic users then the db update will need to be handed off background processing.
+                final boolean userNeedsUpdate = userManager.configureUserPasswordHashes(dbUser, new String(credentials));
+                if(userNeedsUpdate){
+                    try {
+                        //user manager is responsible for logic including appropriate logging.
+                        final InternalUser disconnectedUser = new InternalUser();
+                        disconnectedUser.copyFrom(dbUser);
+                        disconnectedUser.setVersion(dbUser.getVersion());
+                        userManager.update(disconnectedUser);
+                    } catch (Exception e) {
+                        final String msg = "Could not upgrade password storage for login '" + dbUser.getLogin() + "'. " + ExceptionUtils.getMessage(e);
+                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{msg}, ExceptionUtils.getDebugException(e));
+                        //fall through, cannot authenticate, cannot update. Should not happen.
+                    }
+                }
+            }
+
+            if(userAuthenticated){
                 return new AuthenticationResult(dbUser, pc.getSecurityTokens());
-            logger.info("Incorrect password for login " + login);
+            }
+
+            if(logger.isLoggable(Level.INFO)){
+                logger.info("Incorrect password for login " + login);
+            }
             throw new BadCredentialsException("Invalid password");
-        } else if (format == CredentialFormat.DIGEST) {
+        } else if (format == CredentialFormat.DIGEST && authType == AuthenticationType.MESSAGE_TRAFFIC) {
             return DigestAuthenticator.authenticateDigestCredentials(pc, dbUser);
         } else {
             throwUnsupportedCredentialFormat(format);
@@ -201,6 +287,10 @@ public class InternalIdentityProviderImpl
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.springContext = applicationContext;
         this.auditor = new Auditor(this, applicationContext, logger);
+    }
+
+    public void setPasswordHasher(PasswordHasher passwordHasher) {
+        this.passwordHasher = passwordHasher;
     }
 
     /*

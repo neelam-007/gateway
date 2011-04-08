@@ -48,6 +48,10 @@ public class UserBean implements User, Serializable {
         return hashedPassword;
     }
 
+    public String getHttpDigest() {
+        return httpDigest;
+    }
+
     public String getFirstName() {
         return firstName;
     }
@@ -81,18 +85,8 @@ public class UserBean implements User, Serializable {
         this.hashedPassword = password;
     }
 
-    /**
-     * Set the password for this user
-     *
-     * @param password the password (clear or encoded)
-     */
-    public void setCleartextPassword(String password) throws IllegalStateException {
-        if (password != null) {
-            if (login == null) throw new IllegalStateException("login must be set prior to encoding the password");
-            this.hashedPassword = HexUtils.encodePasswd(login, password, HexUtils.REALM);
-        } else {
-            this.hashedPassword = null;
-        }
+    public void setHttpDigest(String httpDigest) {
+        this.httpDigest = httpDigest;
     }
 
     public void setFirstName(String firstName) {
@@ -206,6 +200,7 @@ public class UserBean implements User, Serializable {
     protected String name;
     protected String login;
     protected String hashedPassword;
+    protected String httpDigest;
     protected String firstName;
     protected String lastName;
     protected String email;

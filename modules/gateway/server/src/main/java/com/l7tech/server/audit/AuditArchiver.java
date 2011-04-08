@@ -137,7 +137,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
             lock = getNewLock();
         }
 
-        long newPeriod = serverConfig.getLongProperty(PARAM_AUDIT_ARCHIVER_TIMER_PERIOD, 10) * 1000;
+        long newPeriod = serverConfig.getLongProperty(PARAM_AUDIT_ARCHIVER_TIMER_PERIOD, 10) * 1000;//todo incorrect default based on serverconfig.properties should be 600 - 10 minutes
         if ( newPeriod < 0 ) {
             newPeriod = 0;
         }

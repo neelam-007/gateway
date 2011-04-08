@@ -183,6 +183,8 @@ public interface IdentityAdmin {
      * {@link User} contains a unique identifier that already exists, this will replace
      * the objects current state with the new state.  Otherwise, a new object will be created.
      *
+     * Warning: this method cannot be used to change a users password. Any attempts to do so will be rejected.
+     *
      * @param idProvCfgId the {@link IdentityProviderConfig} in which the {@link User} already exists, or in which it
      *                    should be created.  Must not be null
      * @param user         the new or updated {@link User} instance.  Must not be null.  If this user contains
@@ -194,15 +196,29 @@ public interface IdentityAdmin {
      *                     May be empty but not null.
      *                     If the user already exists, any existing group memberships not included in this set will
      *                     be severed.
+     * @param clearTextPassword if not null, then the user is being created. If this is not true an exception will be thrown.
      * @return the unique identifier that was updated or created.
      * @throws SaveException   if the requested information could not be saved
      * @throws UpdateException if the requested information could not be updated
      * @throws ObjectNotFoundException  if the user contained a non-null unique identifier, but no {@link User} with this
      *                                  unique identifier exists in the specified identity provider.
+     * @throws com.l7tech.objectmodel.InvalidPasswordException if clearTextPassword does not meet the password requirements
+     */
+    @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)
+    String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders, String clearTextPassword)
+      throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException;
+
+    /**
+     * See {@link IdentityAdmin#saveUser(long, com.l7tech.identity.User, java.util.Set, String)}. Delegates with a value
+     * of null for clearTextPassword. This method cannot be used to create a new Internal User.
      */
     @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)
     String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders)
-      throws SaveException, UpdateException, ObjectNotFoundException, InvalidPasswordException;
+      throws SaveException, UpdateException, ObjectNotFoundException;
+
+    @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)      //todo [Donal] java doc
+    void changeUsersPassword(long idProvCfgId, long userId, String newClearTextPassword) 
+            throws FindException, UpdateException, InvalidPasswordException;
 
     /**
      * Retrieve all available {@link com.l7tech.identity.Group}s for a given {@link IdentityProviderConfig}.
@@ -379,16 +395,6 @@ public interface IdentityAdmin {
     Set<IdentityHeader> getUserHeaders(long providerId, String groupId) throws FindException;
 
     /**
-     * Resets the logon fail count to zero without changing the last login attempted time value.
-     *
-     * @param user  User to update the fail count
-     * @throws FindException
-     * @throws UpdateException
-     */
-    @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)
-    void resetLogonFailCount(User user) throws FindException, UpdateException;
-
-    /**
      * Get the password policy associated with the identity provider
      *
      * @param providerId  The identity provider that the password policy is associated with
@@ -409,18 +415,8 @@ public interface IdentityAdmin {
     String getPasswordPolicyDescriptionForIdentityProvider() throws FindException;
 
     /**
-     * Checks if the new password is password policy compliant
-     * @param newPassword the new password to verify
-     * @param providerId the identity provider oid
-     * @return true if new password is password policy compliant, throws exception otherwise
-     * @throws InvalidPasswordException
-     */
-    @Transactional(readOnly=true)
-    boolean isPasswordPolicyCompliant(String newPassword, long providerId) throws InvalidPasswordException;
-
-    /**
      * Saves the password policy for the identity provider
-     * Note: only works for the ONE internal identity provider
+     * Note: only works for the ONE internal identity provider with special oid {@link IdentityProviderConfigManager#INTERNALPROVIDER_SPECIAL_OID}
      *
      * @param providerId Identity provider ID
      * @param policy  password policy to save

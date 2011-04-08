@@ -364,6 +364,7 @@
         <constructor-arg index="0" ref="roleManager"/>
         <constructor-arg index="1"><null/></constructor-arg>
         <constructor-arg index="2" ref="logonManager"/>
+        <constructor-arg index="3" ref="passwordHasher"/>
     </bean>
     <bean id="internalIdentityProvider" class="com.l7tech.server.identity.internal.InternalIdentityProviderImpl" scope="prototype">
         <property name="clientCertManager"><null/></property>
@@ -430,7 +431,10 @@
         <constructor-arg index="0" ref="identityProviderFactory"/>
         <constructor-arg index="1" ref="roleManager"/>
         <constructor-arg index="2" ref="licenseManager"/>
+        <constructor-arg index="3" ref="passwordHasher"/>
     </bean>
+
+    <bean id="passwordHasher" class="com.l7tech.gateway.common.security.password.Sha512CryptPasswordHasher" />
 
     <bean id="servletContainer" class="com.l7tech.server.ems.listener.EsmServletContainer">
         <constructor-arg index="0" ref="serverConfig"/>

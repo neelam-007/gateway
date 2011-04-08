@@ -513,7 +513,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
             if (addAuth) {
                 UserBean user = new UserBean();
                 user.setLogin("test");
-                user.setCleartextPassword("password");
                 context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(user, new OpaqueSecurityToken()));
             }
 

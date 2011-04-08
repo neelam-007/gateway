@@ -28,7 +28,8 @@ public class InternalAttributeExtractor
         if (identity instanceof InternalUser) {
             InternalUser internalUser = (InternalUser) identity;
             if (header == InternalAttributeMapping.INTERNAL_USER_EXPIRATION) return a(new Date(internalUser.getExpiration()));
-            if (header == AttributeHeader.L7_DIGEST_PASSWORD) return a(internalUser.getHashedPassword());
+            //todo [Donal] validate this modification, which may result in a null pointer
+            if (header == AttributeHeader.L7_DIGEST_PASSWORD) return a(internalUser.getHttpDigest());
         } // No custom properties in InternalGroup, we're OK with super here
         return EMPTY;
     }

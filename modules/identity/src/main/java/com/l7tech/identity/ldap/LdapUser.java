@@ -83,6 +83,7 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
     /**
      * set the login before setting the password.
      * if the password is not encoded, this will encode it.
+     * - //todo - fix comment or method - password will not be encoded by this method.
      */
     public void setPassword(String pass) throws IllegalStateException {
         if (pass != null) {
@@ -99,6 +100,9 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
         this.password = pass;
     }
 
+    /**
+     * @return password, likely to be null.
+     */
     public String getPassword() {
         return password;
     }
