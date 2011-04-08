@@ -402,13 +402,12 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * Look up the current default SSL or CA key.
      *
      * @param keyType  whether to find the SSL or CA key.  Required.
-     * @return the current default SSL or CA key.  Never null.
-     * @throws ObjectNotFoundException  if keyType was CA but there is not currently a default CA key.
+     * @return the current default SSL or CA key, or null if there is no key currently designated with the specified keyType.
      * @throws KeyStoreException if there is a problem reading a keystore.
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype=FIND_ENTITY, types=SSG_KEY_ENTRY)
-    SsgKeyEntry findDefaultKey(SpecialKeyType keyType) throws ObjectNotFoundException, KeyStoreException;
+    SsgKeyEntry findDefaultKey(SpecialKeyType keyType) throws KeyStoreException;
 
     /**
      * Check whether the default key can be changed by editing the appropriate cluster property.

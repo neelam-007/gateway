@@ -93,18 +93,14 @@ public class PrivateKeysComboBox extends JComboBox {
         populate();
     }
 
-    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        return Registry.getDefault().getTrustedCertManager();
-    }
-
     private void populate() {
         try {
-            final TrustedCertAdmin certAdmin = getTrustedCertAdmin();
-            if (certAdmin == null) {
-                _logger.log(Level.WARNING, "Unable to populate PrivateKeysComboBox: No TrustedCertAdmin available (not connected to Gateway?)");
+            if (!Registry.getDefault().isAdminContextPresent()) {
+                _logger.log(Level.WARNING, "Unable to populate PrivateKeysComboBox: Not connected to Gateway");
                 setModel(new DefaultComboBoxModel(new PrivateKeyItem[0]));
                 return;
             }
+            final TrustedCertAdmin certAdmin = Registry.getDefault().getTrustedCertManager();
             final java.util.List<KeystoreFileEntityHeader> keystores = certAdmin.findAllKeystores(_includeHardwareKeystore);
             final List<PrivateKeyItem> items = new ArrayList<PrivateKeyItem>();
             if (_includeDefaultSslKey)
@@ -233,12 +229,16 @@ public class PrivateKeysComboBox extends JComboBox {
     public void setIncludeRestrictedAccessKeys(boolean includeRestrictedAccessKeys) {
         if (this._includeRestrictedAccessKeys != includeRestrictedAccessKeys) {
             this._includeRestrictedAccessKeys = includeRestrictedAccessKeys;
+        }
+    }
 
-            // Repopulate list and restore previous selection
-            final PrivateKeyItem item = (PrivateKeyItem)getSelectedItem();
-            populate();
-            if (item != null)
-                select(item.keystoreId, item.keyAlias);
+    public boolean isIncludeDefaultSslKey() {
+        return _includeDefaultSslKey;
+    }
+
+    public void setIncludeDefaultSslKey(boolean incDef) {
+        if (this._includeDefaultSslKey != incDef) {
+            this._includeDefaultSslKey = incDef;
         }
     }
 }

@@ -658,7 +658,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public SsgKeyEntry findDefaultKey(SpecialKeyType keyType) throws ObjectNotFoundException, KeyStoreException {
+    public SsgKeyEntry findDefaultKey(SpecialKeyType keyType) throws KeyStoreException {
         switch (keyType) {
             case SSL:
                 try {
@@ -668,16 +668,10 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
                 }
 
             case CA:
-                SsgKeyEntry ca = defaultKey.getCaInfo();
-                if (ca == null)
-                    throw new ObjectNotFoundException("There is currently no default CA key.");
-                return ca;
+                return defaultKey.getCaInfo();
 
             case AUDIT_VIEWER:
-                SsgKeyEntry auditViewer = defaultKey.getAuditViewerInfo();
-                if (auditViewer == null)
-                    throw new ObjectNotFoundException("There is currently no audit viewer key.");
-                return auditViewer;
+                return defaultKey.getAuditViewerInfo();
 
             default:
                 throw new IllegalArgumentException("No such keyType: " + keyType);

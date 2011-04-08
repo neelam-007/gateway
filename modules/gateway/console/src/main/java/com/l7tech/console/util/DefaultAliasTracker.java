@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -115,8 +114,6 @@ public class DefaultAliasTracker implements ApplicationListener {
         }
         try {
             defaultCaAlias = Registry.getDefault().getTrustedCertManager().findDefaultKey(TrustedCertAdmin.SpecialKeyType.CA).getAlias();
-        } catch (ObjectNotFoundException e) {
-            logger.info("There is currently no default CA key");
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to determine default CA alias using findDefaultKey: " + ExceptionUtils.getMessage(e), e);
             try {
@@ -127,8 +124,6 @@ public class DefaultAliasTracker implements ApplicationListener {
         }
         try {
             defaultAuditViewerAlias = Registry.getDefault().getTrustedCertManager().findDefaultKey(TrustedCertAdmin.SpecialKeyType.AUDIT_VIEWER).getAlias();
-        } catch (ObjectNotFoundException e) {
-            logger.info("There is currently no audit viewer key");
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to determine default audit viewer alias using findDefaultKey: " + ExceptionUtils.getMessage(e), e);
             try {

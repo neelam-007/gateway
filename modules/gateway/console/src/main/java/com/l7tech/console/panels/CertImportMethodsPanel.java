@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.FontUtil;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
@@ -24,13 +25,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessControlException;
 import java.security.AccessController;
+import java.security.KeyStoreException;
 import java.security.PrivilegedAction;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,6 +56,10 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private JTextField urlConnTextField;
     private JRadioButton base64PEMRadioButton;
     private JRadioButton base64RadioButton;
+    private JRadioButton trustedCertRadioButton;
+    private JRadioButton privateKeyRadioButton;
+    private JComboBox trustedCertsComboBox;
+    private PrivateKeysComboBox privateKeysComboBox;
     private X509Certificate[] certChain = null;
     private boolean defaultToSslOption;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
@@ -106,6 +111,19 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         bg.add(copyAndPasteRadioButton);
         bg.add(fileRadioButton);
         bg.add(urlConnRadioButton);
+        bg.add(trustedCertRadioButton);
+        bg.add(privateKeyRadioButton);
+
+        if (!Registry.getDefault().isAdminContextPresent()) {
+            fileRadioButton.setSelected(true);
+            trustedCertRadioButton.setEnabled(false);
+            privateKeyRadioButton.setEnabled(false);
+        }
+
+        privateKeysComboBox.setIncludeDefaultSslKey(false);
+        privateKeysComboBox.setIncludeRestrictedAccessKeys(true);
+        privateKeysComboBox.repopulate();
+        repopulateTrustedCertsComboBox();
 
         // urlConnection as the default
         if (defaultToSslOption) {
@@ -114,58 +132,69 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             fileRadioButton.setSelected(true);
         }
 
-        enableDisableBase64RadioButtons(false);
         updateEnableDisable();
 
-        copyAndPasteRadioButton.addChangeListener(new ChangeListener() {
+        final ChangeListener enableListener = new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
                 updateEnableDisable();
             }
-        });
-
-        fileRadioButton.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                updateEnableDisable();
-            }
-        });
-
-        urlConnRadioButton.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                updateEnableDisable();
-            }
-        });
+        };
+        copyAndPasteRadioButton.addChangeListener(enableListener);
+        fileRadioButton.addChangeListener(enableListener);
+        urlConnRadioButton.addChangeListener(enableListener);
+        trustedCertRadioButton.addChangeListener(enableListener);
+        privateKeyRadioButton.addChangeListener(enableListener);
     }
 
-    private void enableDisableBase64RadioButtons(boolean enable){
-        base64PEMRadioButton.setEnabled(enable);
-        base64RadioButton.setEnabled(enable);
+    private static class CertComboEntry {
+        final TrustedCert cert;
+        final String name;
+
+        private CertComboEntry(TrustedCert cert) {
+            this.cert = cert;
+            this.name = cert.getCertificate().getSubjectDN().getName();
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
+
+    private void repopulateTrustedCertsComboBox() {
+        List<CertComboEntry> certs = new ArrayList<CertComboEntry>();
+        if (Registry.getDefault().isAdminContextPresent()) {
+            try {
+                List<TrustedCert> tcs = Registry.getDefault().getTrustedCertManager().findAllCerts();
+                for (TrustedCert tc : tcs) {
+                    certs.add(new CertComboEntry(tc));
+                }
+            } catch (FindException e) {
+                //noinspection ThrowableResultOfMethodCallIgnored
+                logger.log(Level.WARNING, "Unable to read trusted certs: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
+        trustedCertsComboBox.setModel(new DefaultComboBoxModel(certs.toArray()));
+    }
+
     /**
      * Enable/disable the fields according the current selection.
      */
     private void updateEnableDisable() {
-        if (copyAndPasteRadioButton.isSelected()) {
-            browseButton.setEnabled(false);
-            copyAndPasteTextArea.setEnabled(true);
-            urlConnTextField.setEnabled(false);
-            certFileName.setEnabled(false);
-            enableDisableBase64RadioButtons(true);
-        } else if (fileRadioButton.isSelected()) {
-            browseButton.setEnabled(true);
-            copyAndPasteTextArea.setEnabled(false);
-            urlConnTextField.setEnabled(false);
-            certFileName.setEnabled(true);
-            enableDisableBase64RadioButtons(false);
-        } else if (urlConnRadioButton.isSelected()) {
-            browseButton.setEnabled(false);
-            copyAndPasteTextArea.setEnabled(false);
-            urlConnTextField.setEnabled(true);
-            certFileName.setEnabled(false);
-            enableDisableBase64RadioButtons(false);
-        }
+        final boolean copyPaste = copyAndPasteRadioButton.isSelected();
+        copyAndPasteTextArea.setEnabled(copyPaste);
+        base64PEMRadioButton.setEnabled(copyPaste);
+        base64RadioButton.setEnabled(copyPaste);
+
+        final boolean file = fileRadioButton.isSelected();
+        browseButton.setEnabled(file);
+        certFileName.setEnabled(file);
+
+        urlConnTextField.setEnabled(urlConnRadioButton.isSelected());
+
+        privateKeysComboBox.setEnabled(privateKeyRadioButton.isSelected());
+        trustedCertsComboBox.setEnabled(trustedCertRadioButton.isSelected());
     }
 
     /**
@@ -205,10 +234,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                         try {
                             return new FileInputStream(new File(certFileName.getText().trim()));
                         } catch (FileNotFoundException fne) {
-                            JOptionPane.showMessageDialog(CertImportMethodsPanel.this,
-                                                          resources.getString("view.error.filenotfound"),
-                                                          resources.getString("view.error.title"),
-                                                          JOptionPane.ERROR_MESSAGE);
+                            showViewError("view.error.filenotfound");
                             return null;
                         } catch (AccessControlException ace) {
                             TopComponents.getInstance().showNoPrivilegesErrorMessage();
@@ -237,9 +263,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             try {
                 certURL = urlConnTextField.getText().trim();
                 if (!certURL.startsWith("https://") && !certURL.startsWith("ldaps://")) {
-                    JOptionPane.showMessageDialog(this, resources.getString("view.error.urlNotSsl"),
-                                                  resources.getString("view.error.title"),
-                                                  JOptionPane.ERROR_MESSAGE);
+                    showViewError("view.error.urlNotSsl");
                     return false;
                 }
 
@@ -255,9 +279,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                     new URL(certURL);
                 }
             } catch (MalformedURLException e) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.urlMalformed"),
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
+                showViewError("view.error.urlMalformed");
                 return false;
             }
 
@@ -332,9 +354,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             String certPem = copyAndPasteTextArea.getText();
             if (certPem == null || certPem.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.content"),
-                        resources.getString("view.error.title"),
-                        JOptionPane.ERROR_MESSAGE);
+                showViewError("view.error.pem.cert.content");
                 return false;
             }
             certPem = certPem.trim();
@@ -349,23 +369,46 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             try {
                 is = new ByteArrayInputStream(bytes);
                 Collection<? extends Certificate> certs = CertUtils.getFactory().generateCertificates(is);
-                certChain = certs.toArray(new X509Certificate[0]);
+                certChain = CertUtils.asX509CertificateArray(certs.toArray(new Certificate[certs.size()]));
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.cert.generate") + " "
-                        + ExceptionUtils.getMessage(e), resources.getString("view.error.title"),
-                        JOptionPane.ERROR_MESSAGE);
+                showViewError("view.error.cert.generate", e);
                 return false;
             }
 
+        } else if (privateKeyRadioButton.isSelected()) {
+            String alias = privateKeysComboBox.getSelectedKeyAlias();
+            long keystoreId = privateKeysComboBox.getSelectedKeystoreId();
+            if (alias == null) {
+                showViewError("view.error.privatekey.noneselected");
+                return false;
+            }
+
+            try {
+                SsgKeyEntry entry = Registry.getDefault().getTrustedCertManager().findKeyEntry(alias, keystoreId);
+                certChain = entry.getCertificateChain();
+            } catch (FindException e) {
+                showViewError("view.error.privatekey.bad", e);
+                return false;
+            } catch (KeyStoreException e) {
+                showViewError("view.error.privatekey.bad", e);
+                return false;
+            }
+        } else if (trustedCertRadioButton.isSelected()) {
+            Object item = trustedCertsComboBox.getSelectedItem();
+            if (!(item instanceof CertComboEntry)) {
+                showViewError("view.error.trustedcert.nonselected");
+                return false;
+            }
+
+            CertComboEntry entry = (CertComboEntry) item;
+            certChain = new X509Certificate[] { entry.cert.getCertificate() };
         }
 
         if (is != null) {
             try {
                 is.close();
             } catch (IOException e) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.close.InputStream"),
-                                              resources.getString("view.error.title"),
-                                              JOptionPane.ERROR_MESSAGE);
+                showViewError("view.error.close.InputStream");
                 // continue regardless of this error.
             }
         }
@@ -373,6 +416,13 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         return true;
     }
 
+    private void showViewError(String msg) {
+        JOptionPane.showMessageDialog(this, resources.getString(msg), resources.getString("view.error.title"), JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void showViewError(String msg, Exception e) {
+        JOptionPane.showMessageDialog(this, resources.getString(msg) + " " + ExceptionUtils.getMessage(e), resources.getString("view.error.title"), JOptionPane.ERROR_MESSAGE);
+    }
 
     /**
      * Store the values of all fields on the panel to the wizard object which is a used for

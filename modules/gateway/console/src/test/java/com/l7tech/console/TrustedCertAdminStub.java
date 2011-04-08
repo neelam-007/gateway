@@ -144,8 +144,9 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public SsgKeyEntry findDefaultKey(SpecialKeyType keyType) throws ObjectNotFoundException, KeyStoreException {
-        throw new ObjectNotFoundException("not currently implemented in stub");
+    public SsgKeyEntry findDefaultKey(SpecialKeyType keyType) throws KeyStoreException {
+        // not currently implemented in stub
+        return null;
     }
 
     @Override

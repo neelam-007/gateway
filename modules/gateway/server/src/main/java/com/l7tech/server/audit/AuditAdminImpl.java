@@ -490,9 +490,13 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                 });
             } catch (AuditFilterPolicyManager.AuditViewerPolicyException e) {
                 final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
+                //noinspection ThrowableResultOfMethodCallIgnored
+                logger.log(Level.WARNING, params, ExceptionUtils.getDebugException(e));
                 addInvokeAuditViewerAuditMsg(auditMessages, params);
             } catch (Exception e) {
                 final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
+                //noinspection ThrowableResultOfMethodCallIgnored
+                logger.log(Level.WARNING, params, ExceptionUtils.getDebugException(e));
                 addInvokeAuditViewerAuditMsg(auditMessages, params);
             }
 
@@ -549,6 +553,8 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                         });
                     } catch (Exception e) {
                         final String msg = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
+                        //noinspection ThrowableResultOfMethodCallIgnored
+                        logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
                         addInvokeAuditViewerAuditMsg(auditMessages, msg, Level.WARNING);
                     }
                 }
