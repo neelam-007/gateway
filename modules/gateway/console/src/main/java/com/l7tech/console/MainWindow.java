@@ -3102,6 +3102,9 @@ public class MainWindow extends JFrame implements SheetHolder {
                     try {
                         getWorkSpacePanel().clearWorkspace();  // vetoable
                         MainWindow.this.disconnectFromGateway();
+                        SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+                        if (securityProvider != null) securityProvider.logoff();
+
                         // add a top level dlg that indicates the connection was closed
                         DialogDisplayer.showMessageDialog(MainWindow.this,
                                                       "The Policy Manager connection has been closed due\n" +

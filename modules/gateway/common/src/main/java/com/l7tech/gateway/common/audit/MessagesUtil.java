@@ -100,9 +100,9 @@ public class MessagesUtil {
         new CommonMessages();
         new AssertionMessages();
         new BootMessages();
+        new AdminMessages();
         new MessageProcessingMessages();
         new SystemMessages();
         new ServiceMessages();
     }
-
 }

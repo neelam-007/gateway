@@ -323,13 +323,13 @@ public class AuditContextImpl implements AuditContext {
 
                     if (isPCIDSSEnabled()) {
                         // If audit sink policy fails and internal audit fall back is disabled, then log and audit a warning "audit sink policy failed and internal audit fall back is disabled."
-                        logger.warning(AuditSinkPropertiesChecker.AUDIT_SINK_FALL_BACK_WARNING);
+                        logger.warning(AuditClusterPropertiesChecker.AUDIT_SINK_FALL_BACK_WARNING);
 
                         SystemAuditRecord auditFallbackDisabled = new SystemAuditRecord(
                             Level.WARNING,
                             nodeId,
                             Component.GW_AUDIT_SYSTEM,
-                            AuditSinkPropertiesChecker.AUDIT_SINK_FALL_BACK_WARNING,
+                            AuditClusterPropertiesChecker.AUDIT_SINK_FALL_BACK_WARNING,
                             false,
                             0,
                             null,

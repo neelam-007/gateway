@@ -132,7 +132,12 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         }
 
         if ( audit ) {
-            final AuditViewGatewayAuditsData auditEvent = new AuditViewGatewayAuditsData(this, criteria.getAuditQueryDetails(false));
+            final Pair<String, String> details = criteria.getAuditQueryDetails(); // In a pair, Left = partial details; Right = full details
+            final AuditDetailEvent detailEvent = new AuditDetailEvent(this,
+                new AuditDetail(AdminMessages.AUDIT_SEARCH_CRITERIA_FULL_DETAILS, details.right), null, logger.getName());
+            applicationContext.publishEvent(detailEvent);
+
+            final AuditViewGatewayAuditsData auditEvent = new AuditViewGatewayAuditsData(this, details.left);
             applicationContext.publishEvent( auditEvent );
         }
     }

@@ -1024,8 +1024,8 @@
       <constructor-arg ref="defaultKey"/>
     </bean>
 
-    <!-- Checking Audit Sink Options-->
-    <bean id="auditSinkPropertiesChecker" class="com.l7tech.server.audit.AuditSinkPropertiesChecker">
+    <!-- Checking Audit Cluster Properties -->
+    <bean id="auditClusterPropertiesChecker" class="com.l7tech.server.audit.AuditClusterPropertiesChecker">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="entityVersionCheckerTimer"/>
     </bean>

@@ -12,34 +12,48 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import static com.l7tech.server.ServerConfig.PARAM_AUDIT_SINK_ALWAYS_FALLBACK;
-import static com.l7tech.server.ServerConfig.PARAM_AUDIT_SINK_FALLBACK_ON_FAIL;
-import static com.l7tech.server.ServerConfig.PARAM_AUDIT_SINK_POLICY_GUID;
+import static com.l7tech.server.ServerConfig.*;
 
 /**
- * Check the status of Audit Sink Properties such as  "audit.sink.alwaysSaveInternal" and "audit.sink.policy.guid", and "audit.sink.fallbackToInternal",
- * and audit their status, when the gateway starts and the audit sink systems is enabled back from disabled.
+ * Check the status of Audit Cluster Properties such as audit sink properties ("audit.sink.alwaysSaveInternal" and "audit.sink.policy.guid",
+ * "audit.sink.fallbackToInternal") and "audit.adminThreshold", and audit their status, when the gateway starts, the audit sink systems is
+ * changed, or the admin audit threshold is changed to WARNING or SEVERE.
  *
  * @author ghuang
  */
-public class AuditSinkPropertiesChecker implements ApplicationContextAware, ApplicationListener {
-    public static final String INTERNAL_AUDIT_SYSTEM_STARTED = "Internal Audit System started";
-    public static final String INTERNAL_AUDIT_SYSTEM_DISABLED = "Internal Audit System disabled";
-    public static final String AUDIT_SINK_POLICY_STARTED = "Audit Sink Policy started";
-    public static final String AUDIT_SINK_POLICY_DISABLED = "Audit Sink Policy disabled";
-    public static final String AUDIT_SINK_FALL_BACK_ENABLED = "Fall back on internal audit system enabled";
-    public static final String AUDIT_SINK_FALL_BACK_DISABLED = "Fall back on internal audit system disabled";
+public class AuditClusterPropertiesChecker implements ApplicationContextAware, ApplicationListener {
+    public static final String CLUSTER_PROP_ADMIN_AUDIT_THRESHOLD = "audit.adminThreshold";
+    public static final String INTERNAL_AUDIT_SYSTEM = "Internal Audit System";
+    public static final String AUDIT_SINK_POLICY = "Audit Sink Policy";
+    public static final String AUDIT_SINK_SYSTEM_STARTED = "{0} started";
+    public static final String AUDIT_SINK_SYSTEM_DISABLED = "{0} disabled";
+    public static final String AUDIT_SINK_FALL_BACK_STATUS = "Fall back on internal audit system {0}";
+    public static final String ENABLED = "enabled";
+    public static final String DISABLED = "disabled";
+
+    public static final String INTERNAL_AUDIT_SYSTEM_STARTED = MessageFormat.format(AUDIT_SINK_SYSTEM_STARTED, INTERNAL_AUDIT_SYSTEM);
+    public static final String INTERNAL_AUDIT_SYSTEM_DISABLED = MessageFormat.format(AUDIT_SINK_SYSTEM_DISABLED, INTERNAL_AUDIT_SYSTEM);
+    public static final String AUDIT_SINK_POLICY_STARTED = MessageFormat.format(AUDIT_SINK_SYSTEM_STARTED, AUDIT_SINK_POLICY);
+    public static final String AUDIT_SINK_POLICY_DISABLED = MessageFormat.format(AUDIT_SINK_SYSTEM_DISABLED, AUDIT_SINK_POLICY);
+    public static final String AUDIT_SINK_FALL_BACK_ENABLED = MessageFormat.format(AUDIT_SINK_FALL_BACK_STATUS, ENABLED);
+    public static final String AUDIT_SINK_FALL_BACK_DISABLED = MessageFormat.format(AUDIT_SINK_FALL_BACK_STATUS, DISABLED);
     public static final String AUDIT_SINK_FALL_BACK_WARNING = "Audit Sink Policy failed and Internal Audit Fall Back is disabled.";
+    public static final String AUDIT_ADMIN_THRESHOLD_WARNING =
+        "The admin audit threshold set to {0} level will cause most admin audits to not be persisted or sent to the audit sink policy.";
+
+    private static final Logger logger = Logger.getLogger(AuditClusterPropertiesChecker.class.getName());
 
     private ApplicationContext applicationContext;
     private final ServerConfig serverConfig;
     private final Timer timer;
     private final Map<String, Boolean> propStatusMap = new HashMap<String, Boolean>();
 
-    public AuditSinkPropertiesChecker(ServerConfig serverConfig, Timer timer) {
+    public AuditClusterPropertiesChecker(ServerConfig serverConfig, Timer timer) {
         this.serverConfig = serverConfig;
         this.timer = timer;
     }
@@ -62,20 +76,40 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
 
                 if (! PARAM_AUDIT_SINK_ALWAYS_FALLBACK.equals(clusterProperty.getName()) &&
                     ! PARAM_AUDIT_SINK_POLICY_GUID.equals(clusterProperty.getName()) &&
-                    ! PARAM_AUDIT_SINK_FALLBACK_ON_FAIL.equals(clusterProperty.getName())) {
+                    ! PARAM_AUDIT_SINK_FALLBACK_ON_FAIL.equals(clusterProperty.getName()) &&
+                    ! CLUSTER_PROP_ADMIN_AUDIT_THRESHOLD.equals(clusterProperty.getName())) {
                     return;
                 }
 
-                final boolean deleted = EntityInvalidationEvent.DELETE == (entityInvalidationEvent.getEntityOperations()[0]);
-                final AuditPropertyStatus propStatus = getAndUpdatePropertyStatus(clusterProperty, propStatusMap, deleted);
-                if (propStatus == null) return;
+                if (CLUSTER_PROP_ADMIN_AUDIT_THRESHOLD.equals(clusterProperty.getName())) {
+                    final Level currentThreshold = getAdminAuditThresholdByName(clusterProperty.getValue());
+                    if (currentThreshold.intValue() > Level.INFO.intValue()) {
+                        applicationContext.publishEvent(
+                            new SystemEvent(AuditClusterPropertiesChecker.this,
+                                Component.GW_AUDIT_PROPERTIES_CONFIG,
+                                null,
+                                Level.WARNING,
+                                MessageFormat.format(AUDIT_ADMIN_THRESHOLD_WARNING, currentThreshold.getName())) {
 
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        checkAndAuditPropsStatus(propStatus);
+                                @Override
+                                public String getAction() {
+                                    return "Admin Audit Threshold Evaluation";
+                                }
+                            }
+                        );
                     }
-                }, 100L);
+                } else {
+                    final boolean deleted = EntityInvalidationEvent.DELETE == (entityInvalidationEvent.getEntityOperations()[0]);
+                    final AuditPropertyStatus propStatus = getAndUpdatePropertyStatus(clusterProperty, propStatusMap, deleted);
+                    if (propStatus == null) return;
+
+                    timer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            checkAndAuditPropsStatus(propStatus);
+                        }
+                    }, 100L);
+                }
             }
         }
     }
@@ -88,10 +122,11 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
         propStatusMap.put(PARAM_AUDIT_SINK_POLICY_GUID, isAuditSinkPolicyEnabled());
         propStatusMap.put(PARAM_AUDIT_SINK_FALLBACK_ON_FAIL, isFallbackToDatabaseIfSinkPolicyFails());
 
+        // Check Internal Audit System Property
         if (isInternalAuditSystemEnabled(true)) {
             applicationContext.publishEvent(
-                new SystemEvent(AuditSinkPropertiesChecker.this,
-                    Component.GW_AUDIT_SINK_CONFIG,
+                new SystemEvent(AuditClusterPropertiesChecker.this,
+                    Component.GW_AUDIT_PROPERTIES_CONFIG,
                     null,
                     Level.INFO,
                     INTERNAL_AUDIT_SYSTEM_STARTED) {
@@ -104,10 +139,11 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
             );
         }
 
+        // Check Audit Sink Policy Property
         if (isAuditSinkPolicyEnabled()) {
             applicationContext.publishEvent(
-                new SystemEvent(AuditSinkPropertiesChecker.this,
-                    Component.GW_AUDIT_SINK_CONFIG,
+                new SystemEvent(AuditClusterPropertiesChecker.this,
+                    Component.GW_AUDIT_PROPERTIES_CONFIG,
                     null,
                     Level.INFO,
                     AUDIT_SINK_POLICY_STARTED) {
@@ -115,6 +151,24 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
                     @Override
                     public String getAction() {
                         return "Audit Sink Properties Evaluation";
+                    }
+                }
+            );
+        }
+
+        // Check Admin Audit Threshold Property
+        final Level currentThreshold = getAdminAuditThresholdByName(serverConfig.getPropertyCached(PARAM_AUDIT_ADMIN_THRESHOLD));
+        if (currentThreshold.intValue() > Level.INFO.intValue()) {
+            applicationContext.publishEvent(
+                new SystemEvent(AuditClusterPropertiesChecker.this,
+                    Component.GW_AUDIT_PROPERTIES_CONFIG,
+                    null,
+                    Level.WARNING,
+                    MessageFormat.format(AUDIT_ADMIN_THRESHOLD_WARNING, currentThreshold.getName())) {
+
+                    @Override
+                    public String getAction() {
+                        return "Admin Audit Threshold Evaluation";
                     }
                 }
             );
@@ -152,6 +206,22 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
     public boolean isFallbackToDatabaseIfSinkPolicyFails() {
         final String propValue = serverConfig.getPropertyUncached(PARAM_AUDIT_SINK_FALLBACK_ON_FAIL);
         return propValue == null || Boolean.parseBoolean(propValue); // If this prop does not exist, it is equivalent to set "true".
+    }
+
+    private Level getAdminAuditThresholdByName(String levelName) {
+        Level level = null;
+        if (levelName != null) {
+            try {
+                level = Level.parse(levelName);
+            } catch(IllegalArgumentException e) {
+                logger.warning("Invalid admin threshold value '" + levelName + "'. Will use default " +
+                    Level.WARNING.getName() + " instead.");
+            }
+        }
+        if (level == null) {
+            level = Level.WARNING;
+        }
+        return level;
     }
 
     /**
@@ -288,8 +358,8 @@ public class AuditSinkPropertiesChecker implements ApplicationContextAware, Appl
         if (!auditMessages.isEmpty()) {
             for (String auditMessage: auditMessages) {
                 applicationContext.publishEvent(
-                    new SystemEvent(AuditSinkPropertiesChecker.this,
-                        Component.GW_AUDIT_SINK_CONFIG,
+                    new SystemEvent(AuditClusterPropertiesChecker.this,
+                        Component.GW_AUDIT_PROPERTIES_CONFIG,
                         null,
                         Level.INFO,
                         auditMessage) {

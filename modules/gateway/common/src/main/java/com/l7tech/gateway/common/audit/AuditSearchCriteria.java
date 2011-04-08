@@ -8,6 +8,7 @@ package com.l7tech.gateway.common.audit;
 
 import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.identity.User;
+import com.l7tech.util.Pair;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -129,117 +130,136 @@ public final class AuditSearchCriteria implements Serializable {
     public final long entityId;
 
     /**
-     * Grabs information about the search critiera.  Similiar to toString() method.
+     * Grabs information about the search criteria.  Similar to toString() method.
      *
-     * @param moreDetails   Can give give full details if TRUE, FALSE will only give certain information.
-     * @return  Details of the search criteria
+     * @return  Details of the search criteria in a pair object (Left = partial details, Right = full details)
      */
-    public String getAuditQueryDetails(boolean moreDetails) {
-        StringBuffer searchCriteria = new StringBuffer();
+    public Pair<String, String> getAuditQueryDetails() {
+        final StringBuilder partialDetailsOnSearchCriteria = new StringBuilder();
+        final StringBuilder fullDetailsOnSearchCriteria = new StringBuilder();
 
         //construct time information
         Date fromTime = this.fromTime;
         Date toTime = this.toTime;
         final String fromStr = (fromTime == null || fromTime.getTime() == 0) ? "<Start of calendar>" : fromTime.toString();
         if (fromTime != null && toTime != null) {
-            searchCriteria.append("Time: " + fromStr + " to " + toTime.toString() + " ");
+            partialDetailsOnSearchCriteria.append("Time: " + fromStr + " to " + toTime.toString() + " ");
+            fullDetailsOnSearchCriteria.append("{Time: " + fromStr + " to " + toTime.toString() + "} ");
         } else if (fromTime != null && toTime == null) {
-            searchCriteria.append("Start Time: " + fromStr + " ");
+            partialDetailsOnSearchCriteria.append("Start Time: " + fromStr + " ");
+            fullDetailsOnSearchCriteria.append("{Start Time: " + fromStr + "} ");
         } else if (fromTime == null && toTime != null) {
-            searchCriteria.append("End Time: " + toTime.toString() + " ");
+            partialDetailsOnSearchCriteria.append("End Time: " + toTime.toString() + " ");
+            fullDetailsOnSearchCriteria.append("{End Time: " + toTime.toString() + "} ");
         }
 
         //construct level
-        if (moreDetails) {
-            Level fromLevel = this.fromLevel;
-            if (fromLevel == null) fromLevel = Level.FINEST;
-            Level toLevel = this.toLevel;
-            if (toLevel == null) toLevel = Level.SEVERE;
+        Level fromLevel = this.fromLevel;
+        if (fromLevel == null) fromLevel = Level.FINEST;
+        Level toLevel = this.toLevel;
+        if (toLevel == null) toLevel = Level.SEVERE;
 
-            if (fromLevel.equals(toLevel)) {
-                searchCriteria.append("Level: " + fromLevel.getName() + " ");
-            } else {
-                searchCriteria.append("Level: " + fromLevel + " to " + toLevel + " ");
-            }
+        if (fromLevel.equals(toLevel)) {
+            fullDetailsOnSearchCriteria.append("{Level: " + fromLevel.getName() + "} ");
+        } else {
+            fullDetailsOnSearchCriteria.append("{Level: " + fromLevel + " to " + toLevel + "} ");
         }
 
         //construct message number range
-        if(moreDetails) {
-            if (this.startMessageNumber > 0 && this.endMessageNumber > 0) {
-                searchCriteria.append("Message number range: " + this.startMessageNumber + " to " + this.endMessageNumber + " ");
-            } else if (this.startMessageNumber > 0 && this.endMessageNumber <= 0) {
-                searchCriteria.append("Message number greater than: " + this.startMessageNumber + " ");
-            } else if (this.startMessageNumber <= 0 && this.endMessageNumber > 0) {
-                searchCriteria.append("Message number less than: " + this.endMessageNumber + " ");
-            }
+        if (startMessageNumber > 0 && endMessageNumber > 0) {
+            fullDetailsOnSearchCriteria.append("{Message number range: " + startMessageNumber + " to " + endMessageNumber + "} ");
+        } else if (startMessageNumber > 0 && endMessageNumber <= 0) {
+            fullDetailsOnSearchCriteria.append("{Message number greater than: " + startMessageNumber + "} ");
+        } else if (startMessageNumber <= 0 && endMessageNumber > 0) {
+            fullDetailsOnSearchCriteria.append("{Message number less than: " + endMessageNumber + "} ");
         }
 
+        //construct record class (Audit Type)
+        if (recordClass != null) fullDetailsOnSearchCriteria.append("{Audit Type: " + recordClass.getName() + "} ");
+
         //construct request ID
-        if (this.requestId != null && moreDetails) searchCriteria.append("Request ID: " + this.requestId + " ");
+        if (requestId != null) fullDetailsOnSearchCriteria.append("{Request ID: " + requestId + "} ");
 
         //construct service name
-        if (this.serviceName != null && moreDetails) searchCriteria.append("Service name: " + this.serviceName + " ");
+        if (serviceName != null) fullDetailsOnSearchCriteria.append("{Service name: " + serviceName + "} ");
 
         //construct message
-        if (this.message != null && moreDetails) searchCriteria.append("Message contains: " + this.message + " ");
+        if (message != null) fullDetailsOnSearchCriteria.append("{Message contains: " + message + "} ");
 
         //construct node ID
-        if (this.nodeId != null && moreDetails) searchCriteria.append("Node ID: " + this.nodeId + " ");
+        if (nodeId != null) fullDetailsOnSearchCriteria.append("{Node ID: " + nodeId + "} ");
 
         // construct User Name
-        if (userName != null) searchCriteria.append("User Name: " + userName + " ");
+        if (userName != null) fullDetailsOnSearchCriteria.append("{User Name: " + userName + "} ");
 
         // construct User ID or DN
-        if (userIdOrDn != null) searchCriteria.append("User ID or DN: " + userIdOrDn + " ");
+        if (userIdOrDn != null) fullDetailsOnSearchCriteria.append("{User ID or DN: " + userIdOrDn + "} ");
 
         // construct Audit Code
-        if (messageId != null) searchCriteria.append("Audit Code: " + messageId + " ");
+        if (messageId != null) fullDetailsOnSearchCriteria.append("{Audit Code: " + messageId + "} ");
 
         // construct Aduit Detail Parameter Value
-        if (paramValue != null) searchCriteria.append("Audit Detail Parameter Value: " + paramValue + " ");
+        if (paramValue != null) fullDetailsOnSearchCriteria.append("{Audit Detail Parameter Value: " + paramValue + "} ");
 
-        // construct Entity Type
-        if (entityClassName != null) searchCriteria.append("Entity Class: " + entityClassName + " ");
+        // Entity Type and Entity ID search criteria are only applied to Audit Type, ANY and Admin.
+        if (recordClass == null || recordClass.equals(AdminAuditRecord.class)) {
+            // construct Entity Type
+            if (entityClassName != null) fullDetailsOnSearchCriteria.append("{Entity Class: " + entityClassName + "} ");
 
-        // construct Entity ID
-        if (entityId >= 0) searchCriteria.append("Entity ID: " + entityId + " ");
+            // construct Entity ID
+            if (entityId >= 0) fullDetailsOnSearchCriteria.append("{Entity ID: " + entityId + "} ");
+        }
 
-        return searchCriteria.toString();
+        return new Pair<String, String>(partialDetailsOnSearchCriteria.toString(), fullDetailsOnSearchCriteria.toString());
     }
 
     /**
-     * Compares if the criteria is similar to this instance one.  It'll will only compare the following
-     * <ul>
-     *  <li>Level</li>
-     *  <li>Request ID</li>
-     *  <li>Service name</li>
-     *  <li>Message</li>
-     *  <li>Node ID</li>
-     * </ul>
+     * Compares if the criteria is similar to this instance one.
      * @param criteria
      * @return
      */
     public boolean containsSimilarCritiera(final AuditSearchCriteria criteria) {
         if ((fromLevel == null && criteria.fromLevel != null)
-                || (fromLevel != null && !fromLevel.equals(criteria.fromLevel))) return false;
+            || (fromLevel != null && !fromLevel.equals(criteria.fromLevel))) return false;
 
         if ((toLevel == null && criteria.toLevel != null)
-                || (toLevel != null && !toLevel.equals(criteria.toLevel))) return false;
-
-        if ((requestId == null && criteria.requestId != null)
-                || (requestId != null && !requestId.equals(criteria.requestId))) return false;
-
-        if ((serviceName == null && criteria.serviceName != null)
-                || (serviceName != null && !serviceName.equals(criteria.serviceName))) return false;
-
-        if ((message == null && criteria.message != null)
-                || (message != null && !message.equals(criteria.message))) return false;
-        
-        if ((nodeId == null && criteria.nodeId != null)
-                || (nodeId != null && !nodeId.equals(criteria.nodeId))) return false;
+            || (toLevel != null && !toLevel.equals(criteria.toLevel))) return false;
 
         if ((recordClass == null && criteria.recordClass != null)
-                || (recordClass != null && !recordClass.equals(criteria.recordClass))) return false;
+            || (recordClass != null && !recordClass.equals(criteria.recordClass))) return false;
+
+        if ((requestId == null && criteria.requestId != null)
+            || (requestId != null && !requestId.equals(criteria.requestId))) return false;
+
+        if ((serviceName == null && criteria.serviceName != null)
+            || (serviceName != null && !serviceName.equals(criteria.serviceName))) return false;
+
+        if ((message == null && criteria.message != null)
+            || (message != null && !message.equals(criteria.message))) return false;
+
+        if ((nodeId == null && criteria.nodeId != null)
+            || (nodeId != null && !nodeId.equals(criteria.nodeId))) return false;
+
+        if ((userName == null && criteria.userName != null)
+            || (userName != null && !userName.equals(criteria.userName))) return false;
+
+        if ((userIdOrDn == null && criteria.userIdOrDn != null)
+            || (userIdOrDn != null && !userIdOrDn.equals(criteria.userIdOrDn))) return false;
+
+        if ((messageId == null && criteria.messageId != null)
+            || (messageId != null && !messageId.equals(criteria.messageId))) return false;
+
+        if ((paramValue == null && criteria.paramValue != null)
+            || (paramValue != null && !paramValue.equals(criteria.paramValue))) return false;
+
+        // Entity Type and Entity ID search criteria are only applied to Audit Type, ANY and Admin.
+        if (recordClass == null || recordClass.equals(AdminAuditRecord.class)) {
+            if ((entityClassName == null && criteria.entityClassName != null)
+                || (entityClassName != null && !entityClassName.equals(criteria.entityClassName))) return false;
+
+            if (entityId != criteria.entityId) return false;
+        }
+
         return true;
     }
 

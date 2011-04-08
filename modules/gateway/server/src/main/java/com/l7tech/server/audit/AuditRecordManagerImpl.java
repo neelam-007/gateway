@@ -456,12 +456,16 @@ public class AuditRecordManagerImpl
             }
         }
 
-        if (criteria.entityClassName != null && !criteria.entityClassName.trim().isEmpty()) {
-            criterion.add(Restrictions.eq(PROP_ENTITY_CLASS, criteria.entityClassName));
-        }
+        // Entity Type and Entity ID search criteria are only applied to Audit Type, ANY and Admin.
+        final Class auditRecordType = criteria.recordClass;
+        if (auditRecordType == null || auditRecordType.equals(AdminAuditRecord.class)) {
+            if (criteria.entityClassName != null && !criteria.entityClassName.trim().isEmpty()) {
+                criterion.add(Restrictions.eq(PROP_ENTITY_CLASS, criteria.entityClassName));
+            }
 
-        if (criteria.entityId >= 0) {
-            criterion.add(Restrictions.eq(PROP_ENTITY_ID, criteria.entityId));
+            if (criteria.entityId >= 0) {
+                criterion.add(Restrictions.eq(PROP_ENTITY_ID, criteria.entityId));
+            }
         }
 
         return criterion.toArray( new Criterion[criterion.size()] );

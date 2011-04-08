@@ -21,7 +21,8 @@ public class Messages {
      *
      * Messages:                       0001 - 0099  (Generic messages, e.g. Exception)
      * CommonMessages:                 0100 - 0999
-     * BootMessages:                   1000 - 1999
+     * BootMessages:                   1000 - 1499
+     * AdminMessages:                  1500 - 1999
      * SystemMessages:                 2000 - 2999
      * MessageProcessingMessages:      3000 - 3499
      * ServiceMessages:                3500 - 3999

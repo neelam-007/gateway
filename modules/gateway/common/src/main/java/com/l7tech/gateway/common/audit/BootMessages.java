@@ -11,7 +11,7 @@ import java.util.logging.Level;
 
 /**
  * Message catalog for {@link com.l7tech.server.BootProcess} and associated classes.
- * The ID range 1000-1999 inclusive is reserved for these messages.
+ * The ID range 1000-1499 inclusive is reserved for these messages.
  */
 public class BootMessages extends Messages {
     public static final M DELETING_ATTACHMENT   = m(1000, Level.INFO,    "Deleting leftover attachment cache file: {0}");
@@ -28,5 +28,5 @@ public class BootMessages extends Messages {
     public static final M UPGRADE_TASK_FATAL    = m(1011, Level.WARNING, "Upgrade task failed; unable to proceed: {0}");
     public static final M UPGRADE_TASK_WARNING  = m(1012, Level.WARNING, "Upgrade task warning: {0}");
     public static final M NO_DETECTED_LOCAL_IP  = m(1013, Level.WARNING, "Unable to retrieve local IP address; audit records will use {0}");
-    // MAX -                                      m(1999
+    // MAX -                                      m(1499
 }
