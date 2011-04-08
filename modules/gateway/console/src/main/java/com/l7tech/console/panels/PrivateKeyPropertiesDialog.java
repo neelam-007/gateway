@@ -316,7 +316,10 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void makeDefaultSsl() {
-        // TODO should we disallow designating as the SSL key a key that is already designated as the audit viewer key?
+        if (subject.isAuditViewerKey()) {
+            showAlreadyDesignatedForAuditViewingMessage();
+            return;
+        }
 
         // Check for RSA cert that disallows keyEncipherment key usage, since this can lock you out of the SSM.  (Bug #6908)
         if (subject.getKeyType().toUpperCase().startsWith("RSA") && !isCertChainSslCapable(subject)) {
@@ -355,7 +358,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void doMakeDefaultSsl() {
-        confirmPutClusterProperty("Default SSL", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_SSL, subject);
+        confirmPutClusterProperty("Default SSL", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_SSL, subject, null);
     }
 
     private KeyUsagePolicy makeRsaSslServerKeyUsagePolicy() {
@@ -370,13 +373,17 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             return new KeyUsageChecker(makeRsaSslServerKeyUsagePolicy(), KeyUsageChecker.ENFORCEMENT_MODE_ALWAYS).permitsActivity(KeyUsageActivity.sslServerRemote, subject.getCertificate());
         } catch (CertificateParsingException e) {
             // Can't happen by this point
+            //noinspection ThrowableResultOfMethodCallIgnored
             logger.log(Level.WARNING, "Unable to parse certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return false;
         }
     }
 
     private void makeDefaultCa() {
-        // TODO should we disallow designating as the CA key a key that is already designated as the audit viewer key?
+        if (subject.isAuditViewerKey()) {
+            showAlreadyDesignatedForAuditViewingMessage();
+            return;
+        }
 
         if (!isCertChainCaCapable(subject)) {
             DialogDisplayer.showConfirmDialog(
@@ -399,12 +406,31 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         doMakeDefaultCa();
     }
 
+    private void showAlreadyDesignatedForAuditViewingMessage() {
+        DialogDisplayer.showMessageDialog(
+                markAsSpecialPurposeButton,
+                "This key is already designated as the audit viewer private key.\n\n" +
+                        "The Gateway is unable to permit the audit viewer key to be used for any other purpose.\n",
+                "Key Already Designated For Audit Viewing",
+                JOptionPane.WARNING_MESSAGE,
+                null);
+    }
+
     private void doMakeDefaultCa() {
-        confirmPutClusterProperty("Default CA", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_CA, subject);
+        confirmPutClusterProperty("Default CA", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_CA, subject, null);
     }
 
     private void makeAuditViewerKey() {
-        // TODO should we disallow designating as the audit viewer key a key that is already designated as the SSL or CA key?
+        if (subject.isDefaultSsl() || subject.isDefaultCa()) {
+            DialogDisplayer.showMessageDialog(
+                    markAsSpecialPurposeButton,
+                    "This key is already designated for another special purpose and cannot be used as the audit viewer key.\n\n" +
+                    "The Gateway is unable to permit the audit viewer key to be used for any other purpose.\n",
+                    "Key Already Designated For Conflicting Special Purpose",
+                    JOptionPane.WARNING_MESSAGE,
+                    null);
+            return;
+        }
 
         if (!"RSA".equalsIgnoreCase(subject.getCertificate().getPublicKey().getAlgorithm())) {
             DialogDisplayer.showConfirmDialog(
@@ -412,7 +438,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     "This private key is an elliptic curve key.\n" +
                     "The Gateway currently cannot use elliptic curve keys for message-level decryption.\n" +
                     "An audit viewer policy will not be able to use this key to decrypt encrypted audit messages.\n" +
-                    "\n\nAre you sure you want the cluster to use this as the default audit viewer private key?",
+                    "\nAre you sure you want the cluster to use this as the default audit viewer private key?",
                     "Unsuitable Audit Viewer Certificate",
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE,
@@ -429,14 +455,21 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void doMakeAuditViewerKey() {
-        confirmPutClusterProperty("Audit Viewer", DefaultAliasTracker.CLUSTER_PROP_AUDIT_VIEWER, subject);
+        confirmPutClusterProperty("Audit Viewer", DefaultAliasTracker.CLUSTER_PROP_AUDIT_VIEWER, subject,
+                "The current Audit Viewer Key will become available for use elsewhere in the Gateway.\n" +
+                "Delete the existing key to ensure it cannot be used to decrypt any audits encrypted for it.\n" +
+                "\nThe new Audit Viewer key will no longer be available for any other usage in the Gateway.\n" +
+                "Ensure this will not break any existing policies or configuration before continuing.\n\n");
     }
 
-    private void confirmPutClusterProperty(final String what, final String clusterProp, final PrivateKeyManagerWindow.KeyTableRow subject) {
-        DialogDisplayer.showConfirmDialog(
+    private void confirmPutClusterProperty(final String what, final String clusterProp, final PrivateKeyManagerWindow.KeyTableRow subject, String extraParagraph) {
+        if (extraParagraph == null)
+            extraParagraph = "";
+        DialogDisplayer.showSafeConfirmDialog(
                 markAsSpecialPurposeButton,
                 "Are you sure you wish to change the cluster " + what + " private key?\n\n" +
-                "All cluster nodes will need to be restarted before the change will fully take effect.",
+                        extraParagraph +
+                        "All cluster nodes will need to be restarted before the change will fully take effect.",
                 "Confirm New Cluster " + what + " Key",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE,

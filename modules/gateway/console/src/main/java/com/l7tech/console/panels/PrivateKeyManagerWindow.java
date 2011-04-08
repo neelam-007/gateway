@@ -119,6 +119,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     private PermissionFlags flags;
     private KeyTable keyTable = null;
     private Component showingInScrollPane = null;
+    private boolean hasAtLeastOneMultiRoleKey = false;
 
     public PrivateKeyManagerWindow( Window owner ) {
         super(owner, resources.getString("keydialog.title"), DEFAULT_MODALITY_TYPE);
@@ -612,7 +613,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     private void onTimerTick() {
         if (activeKeypairJob != null || showingInScrollPane != keyTable)
             loadPrivateKeys();
-        if (iconFlipCount.get() % TICKS_PER_ICON_REPAINT == 0)
+        if (hasAtLeastOneMultiRoleKey && iconFlipCount.get() % TICKS_PER_ICON_REPAINT == 0)
             keyTable.repaint();  // TODO repaint just the affected cells, not the whole table
     }
 
@@ -657,11 +658,15 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
 
         try {
+            hasAtLeastOneMultiRoleKey = false;
             java.util.List<KeyTableRow> keyList = new ArrayList<KeyTableRow>();
             for (KeystoreFileEntityHeader keystore : getTrustedCertAdmin().findAllKeystores(true)) {
                 if (mutableKeystore == null && !keystore.isReadonly()) mutableKeystore = keystore;
                 for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getOid(), true)) {
-                    keyList.add(new KeyTableRow(keystore, entry, isDefaultSslCert(entry), isDefaultCaCert(entry), isAuditViewerCert(entry)));
+                    final KeyTableRow row = new KeyTableRow(keystore, entry, isDefaultSslCert(entry), isDefaultCaCert(entry), isAuditViewerCert(entry));
+                    if (row.isMultiRoleKey())
+                        hasAtLeastOneMultiRoleKey = true;
+                    keyList.add(row);
                 }
             }
 
@@ -888,6 +893,17 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         public boolean isCertCaCapable() {
             return certCaCapable;
+        }
+
+        /**
+         * @return true if this key has more than one special purpose role designated
+         */
+        public boolean isMultiRoleKey() {
+            int num = 0;
+            if (defaultSsl) num++;
+            if (defaultCa) num++;
+            if (auditViewerKey) num++;
+            return num > 1;
         }
     }
 
