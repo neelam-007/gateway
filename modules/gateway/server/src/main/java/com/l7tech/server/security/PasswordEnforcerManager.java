@@ -130,12 +130,12 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
 
         if (!aboveMinimum) {
             // log audit message
-            applicationContext.publishEvent(new AdminEvent(this, MessageFormat.format(SystemMessages.PASSWORD_BELOW_MINIMUM.getMessage(), isSTIG ? "STIG" : "PCI-DSS", "Internal Identity Provider")) {
-                @Override
-                public Level getMinimumLevel() {
-                    return SystemMessages.PASSWORD_BELOW_MINIMUM.getLevel();
-                }
-            });
+            applicationContext.publishEvent(new AdminEvent(this, MessageFormat.format("Password requirements are below {0} for {1}", isSTIG? "STIG":"PCI-DSS", "Internal Identity Provider")) {
+                        @Override
+                        public Level getMinimumLevel() {
+                            return Level.WARNING;
+                        }
+                    });
         }
     }
 
@@ -340,17 +340,14 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
 
             List<PasswordChangeRecord> changeHistory = internalUser.getPasswordChangesHistory();
             if (changeHistory != null) {
-                for (PasswordChangeRecord changeRecord : changeHistory) {
-                    long lastChangedMillis = changeRecord.getLastChanged();
-                    lastChange.setTimeInMillis(lastChangedMillis);
+                PasswordChangeRecord lastChangeRecord = changeHistory.get(changeHistory.size()-1);
+                long lastChangedMillis = lastChangeRecord.getLastChanged();
+                lastChange.setTimeInMillis(lastChangedMillis);
 
-                    if (lastChange.after(xDaysAgo)) {
-                        long nextChangeMinutes = 24 * 60 - (now - lastChangedMillis) / (1000 * 60);
-                        throw new InvalidPasswordException(
-                                MessageFormat.format("Password cannot be changed more than once every 24 hours. Please retry in {0} minutes",
-                                (nextChangeMinutes >= 60 ? nextChangeMinutes / 60 + " hours and " : "") + nextChangeMinutes % 60 ),
-                                internalIdpPasswordPolicy.getDescription()) ;
-                    }
+                if (lastChange.after(xDaysAgo)) {
+                    long nextChangeMinutes = 24 * 60 - (now - lastChangedMillis) / (1000 * 60);
+                    throw new InvalidPasswordException(MessageFormat.format("Password cannot be changed more than once every 24 hours. Please retry in {0} minutes",
+                            (nextChangeMinutes >= 60 ? nextChangeMinutes / 60 + " hours and " : "") + nextChangeMinutes % 60 ),internalIdpPasswordPolicy.getDescription()) ;
                 }
             }
         }
