@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.xmlsec.server;
 
+import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.xmlsec.NonSoapEncryptElementAssertion;
 import com.l7tech.message.Message;
@@ -14,8 +15,8 @@ import com.l7tech.util.Pair;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -25,6 +26,9 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -38,7 +42,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
 
     @BeforeClass
     public static void setUpCert() throws Exception {
-        Pair<X509Certificate, PrivateKey> got = new TestCertificateGenerator().daysUntilExpiry(5000).generateWithKey();
+        Pair<X509Certificate, PrivateKey> got = TestKeys.getCertAndKey("RSA_1024");
         recipCert = got.left;
         recipPrivateKey = got.right;
         recipb64 = HexUtils.encodeBase64(recipCert.getEncoded());
