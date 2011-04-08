@@ -46,15 +46,6 @@ public class PasswordChangeRecord extends PersistentEntityImp {
         return internalUser;
     }
 
-    @Column(name="order_id")
-    public int getOrderId() {//todo delete this property and remove from ssg.sql
-        return _orderId;
-    }
-
-    public void setOrderId(int orderId) {
-        _orderId = orderId;
-    }
-
     public void setInternalUser(InternalUser internalUser) {
         this.internalUser = internalUser;
     }
