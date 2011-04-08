@@ -8,9 +8,11 @@
 # PREREQUISITES
 # 1. THE DATABASE IS UP AND RUNNING
 #
-# This script asks for a username and password and adds an entry in the
-# database.
-# The database username/passwd must be provided as arguments
+# This script resets the password to 'password' for the root admin account.
+# Asks for the name of the gateway database and the name of the root admin account.
+# The root admin should update their password immediately following this operation.
+#
+# The database username and database name must be provided as arguments
 # -----------------------------------------------------------------------------
 #
 
@@ -33,52 +35,17 @@ if [ ! $2 ]; then
 	exit -1
 fi
 
+# GET GATEWAY DATABASE NAME
+echo "Please enter the Layer7 Gateway database name"
+read DATABASE_NAME
+
 # GET AN ADMIN ACCOUNT NAME
-echo "Please choose your ssg admin account name"
+echo "Please enter your ssg admin account name"
 read ACCOUNT_NAME
 
-# GET AN ADMIN PASSWORD FROM CALLER
-echo "Please provide an administrator password"
-read -s ADMIN_PASSWORD
-echo "Please repeat"
-read -s ADMIN_PASSWORD_REPEAT
-
-# VERIFY THAT PASSWORDS ARE EQUAL
-if [ ! $ADMIN_PASSWORD = $ADMIN_PASSWORD_REPEAT ]; then
-	echo "ERROR : passwords do not match"
-	exit -1
-fi
-
-# VERIFY THAT THE PASSWORD IS LONG ENOUGH
-PASSWORD_LENGTH=${#ADMIN_PASSWORD}
-if [ "$PASSWORD_LENGTH" -lt 6 ]; then
-	echo "ERROR : the admin password must be at least 6 characters long"
-	exit -1
-fi
-
-# ENCODE PASSWORD
-# RESOLVE THE DIRECTORY WHERE THESE SCRIPTS RESIDE
-PRG="$0"
-while [ -h "$PRG" ]; do
-  ls=`ls -ld "$PRG"`
-  link=`expr "$ls" : '.*-> \(.*\)$'`
-  if expr "$link" : '.*/.*' > /dev/null; then
-    PRG="$link"
-  else
-    PRG=`dirname "$PRG"`/"$link"
-  fi
-done
-PRGDIR=`dirname "$PRG"`
-ENCODED_ADMIN_PASSWD=`perl $PRGDIR/md5passwd.pl $ACCOUNT_NAME:L7SSGDigestRealm:$ADMIN_PASSWORD`
-
-# VERIFY THAT THE LAST OPERATION SUCCEEDED
-PASSWORD_LENGTH=${#ENCODED_ADMIN_PASSWD}
-if [ "$PASSWORD_LENGTH" -lt 31 ]; then
-	echo "ERROR : the operation failed"
-	exit -1
-fi
+ADMIN_HASH='$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ.'
 
 # UPDATE DATABASE
-UPDATE_SYNTAX="UPDATE internal_user SET password='$ENCODED_ADMIN_PASSWD', login='$ACCOUNT_NAME', name='$ACCOUNT_NAME' WHERE objectid=3"
-RES=`mysql -h localhost -u $1 -p$2 ssg -e "${UPDATE_SYNTAX}"`
+UPDATE_SYNTAX="UPDATE internal_user SET password='$ADMIN_HASH', login='$ACCOUNT_NAME', name='$ACCOUNT_NAME' WHERE objectid=3"
+RES=`mysql -h localhost -u $1 -p$2 $DATABASE_NAME -e "${UPDATE_SYNTAX}"`
 echo $RES
