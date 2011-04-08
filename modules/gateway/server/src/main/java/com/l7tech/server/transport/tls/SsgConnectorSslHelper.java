@@ -72,6 +72,7 @@ public class SsgConnectorSslHelper {
         SsgKeyEntry keyEntry = transportModule.getKeyEntry(ssgConnector);
         sslContext.init(getKeyManagers(keyEntry), getTrustManagers(), JceProvider.getInstance().getSecureRandom());
         sslServerSocketFactory = sslContext.getServerSocketFactory();
+        logger.fine("Using TLS provider " + sslContext.getProvider().getName() + " for listen port " + c.getScheme() + "/" + c.getPort());
 
         // Configure SSL session cache
         int sessionCacheSize = getIntProperty(SsgConnector.PROP_TLS_SESSION_CACHE_SIZE, 0);

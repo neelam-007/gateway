@@ -72,6 +72,10 @@ public class EncryptedKeyImpl extends SigningSecurityTokenImpl implements Encryp
                                                                   SoapConstants.XMLENC_NS,
                                                                   "EncryptionMethod");
         secretKeyBytes = XencUtil.decryptKey(encryptedKeyBytes, XencUtil.getOaepBytes(encMethod), signerInfo.getPrivate());
+        if (signerInfo.isRestrictedAccess()) {
+            // Prevent publishing of secret keys unwrapped using a restricted access private key
+            tokenResolver = null;
+        }
 
         // Since we've just done the expensive work, ensure that it gets saved for future reuse
         maybePublish();

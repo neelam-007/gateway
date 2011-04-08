@@ -125,6 +125,7 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
     /**
      * @return true if this key entry has restricted private key access.
      */
+    @Override
     public boolean isRestrictedAccess() {
         return restrictedAccess;
     }

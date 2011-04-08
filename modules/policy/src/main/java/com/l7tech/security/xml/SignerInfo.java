@@ -135,6 +135,13 @@ public class SignerInfo implements Serializable {
         }
     }
 
+    /**
+     * @return true if the private key has restricted access.
+     */
+    public boolean isRestrictedAccess() {
+        return false;
+    }
+
     private void writeObject(ObjectOutputStream out) throws IOException {
         if (((certificateChain == null) != (subjectDns == null)) ||
             (certificateChain != null && certificateChain.length != subjectDns.length)) {
