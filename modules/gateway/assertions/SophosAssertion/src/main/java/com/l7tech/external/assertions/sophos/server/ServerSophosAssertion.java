@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.message.Message;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
@@ -20,8 +21,8 @@ import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
-import com.l7tech.util.Background;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.*;
 import org.springframework.context.ApplicationContext;
 
 import com.l7tech.server.ServerConfig;
@@ -89,6 +90,15 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
         }
     }
 
+    private Pair<String, String> getClusterProperties() {
+        String connectTimeout = clusterPropertyCache.getPropertyValue(SophosAssertion.CPROP_SOPHOS_SOCKET_CONNECT_TIMEOUT);
+        String readTimeout = clusterPropertyCache.getPropertyValue(SophosAssertion.CPROP_SOPHOS_SOCKET_READ_TIMEOUT);
+        connectTimeout = connectTimeout == null? SophosAssertion.DEFAULT_TIMEOUT : connectTimeout;
+        readTimeout = readTimeout == null? SophosAssertion.DEFAULT_TIMEOUT : readTimeout;
+
+        return new Pair<String, String>(connectTimeout, readTimeout);
+    }
+
     public AssertionStatus doCheckRequest(PolicyEnforcementContext context,
                                           final Message message,
                                           final String messageDescription,
@@ -99,12 +109,28 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
         try {
                 for(int i = 0;i < ServerConfig.getInstance().getIntProperty(SophosAssertion.PARAM_SOPHOS_FAILOVER_RETRIES, 5);i++) {
                     String hostPort = failoverStrategy.selectService();
-                    String host = hostPort.substring(0, hostPort.lastIndexOf(':'));
-                    int port = Integer.parseInt(hostPort.substring(hostPort.lastIndexOf(':') + 1));
+                    Pair<String, String> hostAndPort = InetAddressUtil.getHostAndPort(hostPort, SophosAssertion.DEFAULT_PORT);
 
-                    client = new SsspClient(host, port);
+                    String host = hostAndPort.left;
+                    String portStr = hostAndPort.right;
+                    int port;
+
+                    try{
+                        // check for context vars
+                        host = host.indexOf("${") > -1 ? getContextVariable(context, host): host;
+                        portStr = portStr.indexOf("${") > -1 ? getContextVariable(context, portStr): portStr;
+                        port = Integer.parseInt(portStr);
+                    }catch (NumberFormatException ne){
+                        port = 0;
+                        // do nothing
+                    }
+                    Pair<String, String> connectAndReadTimeouts = getClusterProperties();
+                    int connectTimeout = Integer.parseInt(connectAndReadTimeouts.left);
+                    int readTimeout = Integer.parseInt(connectAndReadTimeouts.right);
+
                     try {
-                        client.connect();
+                        client = new SsspClient(host, port);
+                        client.connect(connectTimeout, readTimeout);
                         failoverStrategy.reportSuccess(hostPort);
                         break;
                     } catch(IOException ioe) {
@@ -115,8 +141,11 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
                 }
 
                 if(client == null) {
-                    throw new IOException("Failed to connect to a Sophos AV host for virus scanning.");
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Failed to connect to a Sophos AV host for virus scanning."});
+                    return AssertionStatus.FAILED;
+                    //throw new IOException("Failed to connect to a Sophos AV host for virus scanning.");
                 }
+
                 client.setOption("savigrp", "GrpArchiveUnpack 1");
                 client.setOption("output", "xml");
                 client.setOption("report", "virus");
@@ -147,8 +176,9 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
                     }
 
                 }
-
+                client.closeSophosSession();
                 client.close();
+
                 if(!virusFoundNameList.isEmpty()){ context.setVariable(assertion.getPrefixVariable() + ".name", virusFoundNameList.toArray(new String[virusFoundNameList.size()])); }
                 if(!virusFoundTypeList.isEmpty()){ context.setVariable(assertion.getPrefixVariable() + ".type", virusFoundTypeList.toArray(new String[virusFoundTypeList.size()])); }
                 if(!virusFoundLocationList.isEmpty()){  context.setVariable(assertion.getPrefixVariable() + ".location", virusFoundLocationList.toArray(new String[virusFoundLocationList.size()])); }
@@ -171,6 +201,15 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
         }
         
         return AssertionStatus.NONE;
+    }
+
+    private String getContextVariable(PolicyEnforcementContext context, String conVar) {
+        if(conVar != null && conVar.length() > 0) {
+          Map<String, Object> vars = context.getVariableMap(Syntax.getReferencedNames(conVar), auditor);
+          conVar = ExpandVariables.process(conVar, vars, auditor);
+        }
+        return conVar;
+
     }
 
 }

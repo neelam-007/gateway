@@ -11,9 +11,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -30,7 +27,7 @@ public class SsspClient {
         private String virusType;
         private String virusLocation;
         private String disinfectable;
-
+        
         public ScanResult(boolean clean, String virusName) {
             this.clean = clean;
             this.virusName = virusName;
@@ -67,10 +64,12 @@ public class SsspClient {
         this.port = port;
     }
 
-    public void connect() throws IOException {
-        InetSocketAddress inetAddr = new InetSocketAddress(address, port);
+    public void connect(int connectTimeout, int readTimeout) throws IOException {
+        InetSocketAddress inetAddr =  new InetSocketAddress(address, port);
         saviSocket = new Socket();
-        saviSocket.connect(inetAddr, 1000);
+        saviSocket.connect(inetAddr, connectTimeout);
+
+        saviSocket.setSoTimeout(readTimeout);
         reader = new BufferedReader( new InputStreamReader(saviSocket.getInputStream()));
         writer = new OutputStreamWriter(saviSocket.getOutputStream());
 
@@ -101,6 +100,20 @@ public class SsspClient {
         reader.close();
         writer.close();
         saviSocket.close();
+    }
+
+    /*
+     * after communication with Sophos has ended
+     * close session with sophos by a "BYE" handshake (refer to Sophos docs)
+     * @throws IOException
+     */
+    public void closeSophosSession() throws IOException {
+        writer.write("BYE\n");
+        writer.flush();
+        String r = reader.readLine(); //BYE read
+        if(r.length() != 0 &&!r.startsWith("BYE ")) {
+            throw new IOException("Unexpected SAVI server response when ending session(BYE write) with sophos. Throwing Exception...");
+        }
     }
 
     public void setOption(String name, String value) throws IOException {
@@ -160,7 +173,7 @@ public class SsspClient {
             if(bytesRead == -1) {
                 break;
             }
-            saviSocket.getOutputStream().write(buffer);
+            saviSocket.getOutputStream().write(buffer, 0, bytesRead);
         }
         saviSocket.getOutputStream().flush();
 
@@ -192,9 +205,7 @@ public class SsspClient {
 
         scanResponse = sb.toString();
 
-        writer.write("BYE\n");
-        writer.flush();
-        r = reader.readLine(); //BYE read
+
 
 //        reader.close();
 //        writer.close();
@@ -208,7 +219,7 @@ public class SsspClient {
 
             Document resultDoc = parser.parse(new ByteArrayInputStream(scanResponse.getBytes()));
             NodeList nodes = resultDoc.getElementsByTagName("done");
-            //List myScanArray = new ArrayList<ScanResult>(); - return an arraylist of type scanresult
+
             if(nodes.getLength() > 0) {
                 Element doneEl = (Element)nodes.item(0);
 

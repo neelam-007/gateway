@@ -4,6 +4,8 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +19,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.CLUSTER_PROPERTIES;
 /**
  *
  */
-public class SophosAssertion extends MessageTargetableAssertion {
+public class SophosAssertion extends MessageTargetableAssertion implements SetsVariables {
     protected static final Logger logger = Logger.getLogger(SophosAssertion.class.getName());
 
     private String failoverStrategyName;
@@ -29,13 +31,27 @@ public class SophosAssertion extends MessageTargetableAssertion {
     public static final String CPROP_SOPHOS_FAILOVER_RETRIES = "sophos.failover.retries";
     public static final String PARAM_SOPHOS_FAILOVER_RETRIES = ClusterProperty.asServerConfigPropertyName(CPROP_SOPHOS_FAILOVER_RETRIES);
     public static final String CPROP_SOPHOS_VIRUS_FOUND_LOG_LEVEL = "sophos.virus.found.log.level";
+    public static final String CPROP_SOPHOS_SOCKET_CONNECT_TIMEOUT = "sophos.socket.connect.timeout";
+    public static final String CPROP_SOPHOS_SOCKET_READ_TIMEOUT = "sophos.socket.read.timeout";
     public static final String DEFAULT_LOG_LEVEL = "WARNING";
-   
+    public static final String DEFAULT_PORT = "0";
+    public static final String DEFAULT_TIMEOUT = "5000";
+
     //
     // Metadata
     //
     private static final String META_INITIALIZED = SophosAssertion.class.getName() + ".metadataInitialized";
-
+    
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+         return new VariableMetadata[] {
+                new VariableMetadata(getPrefixVariable()+".name", false, true, null, false, DataType.STRING),
+                new VariableMetadata(getPrefixVariable()+".location", false, true, null, false, DataType.STRING),
+                new VariableMetadata(getPrefixVariable()+".type", false, true, null, false, DataType.STRING),
+                new VariableMetadata(getPrefixVariable()+".disinfectable", false, true, null, false, DataType.STRING),
+                new VariableMetadata(getPrefixVariable()+".count", false, true, null, false, DataType.STRING),
+        };
+    }
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -51,11 +67,21 @@ public class SophosAssertion extends MessageTargetableAssertion {
                 "Logging level to use when a virus is detected. Default is WARNING",
                 "WARNING"
         });
+        props.put(CPROP_SOPHOS_SOCKET_CONNECT_TIMEOUT, new String[] {
+                "Sophos socket connection timeout. Default is 5 seconds",
+                "5000"
+        });
+
+        props.put(CPROP_SOPHOS_SOCKET_READ_TIMEOUT, new String[] {
+                "Sophos socket read timeout(post connection). Default is 5 seconds",
+                "5000"
+        });
+
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Sophos Virus Scanning");
-        meta.put(AssertionMetadata.LONG_NAME, "Sophos Virus Scanning");
+        meta.put(AssertionMetadata.SHORT_NAME, "Scan using Sophos Antivirus");
+        meta.put(AssertionMetadata.LONG_NAME, "This assertion scans all message attachments for viruses using Sophos Antivirus running on another machine.");
 
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
@@ -64,7 +90,7 @@ public class SophosAssertion extends MessageTargetableAssertion {
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.sophos.console.SophosAssertionPropertiesPanel");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Sophos Virus Scanning Properties");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Sophos Antivirus Properties");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");

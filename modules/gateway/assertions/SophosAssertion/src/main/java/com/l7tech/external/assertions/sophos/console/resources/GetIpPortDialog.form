@@ -81,9 +81,11 @@
               <text value="Port"/>
             </properties>
           </component>
-          <component id="b61ca" class="javax.swing.JSpinner" binding="portSpinner">
+          <component id="93c4b" class="javax.swing.JTextField" binding="portField">
             <constraints>
-              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="100" height="-1"/>
+              </grid>
             </constraints>
             <properties/>
           </component>

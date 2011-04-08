@@ -38,6 +38,7 @@ public class SophosAssertionPropertiesPanel extends AssertionPropertiesOkCancelS
     private JCheckBox failAssertionOnErrorCheckBox;
     private JPanel listPanel;
 
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.sophos.console.GetIpPortDialog");
     public SophosAssertionPropertiesPanel(Frame parent, SophosAssertion assertion) {
         super(SophosAssertion.class, parent, assertion.getPropertiesDialogTitle(), true);
 
@@ -85,23 +86,24 @@ public class SophosAssertionPropertiesPanel extends AssertionPropertiesOkCancelS
 
                 String hostPort = (String)ipPortList.getSelectedValue();
                 String host = hostPort.substring(0, hostPort.lastIndexOf(':'));
-                int port = Integer.parseInt(hostPort.substring(hostPort.lastIndexOf(':') + 1));
+                String portStr = hostPort.substring(hostPort.lastIndexOf(':') + 1);
+                //int port = Integer.parseInt(hostPort.substring(hostPort.lastIndexOf(':') + 1));
 
                 final GetIpPortDialog dlg;
                 final String title = "Edit Host/Port";
                 if (rootPane instanceof Frame)
-                    dlg = new GetIpPortDialog((Frame)rootPane, title, host, port);
+                    dlg = new GetIpPortDialog((Frame)rootPane, title, host, portStr);
                 else if (rootPane instanceof Dialog)
-                    dlg = new GetIpPortDialog((Dialog)rootPane, title, host, port);
+                    dlg = new GetIpPortDialog((Dialog)rootPane, title, host, portStr);
                 else
-                    dlg = new GetIpPortDialog((Frame)null, title, host, port);
+                    dlg = new GetIpPortDialog((Frame)null, title, host, portStr);
 
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
 
                 dlg.setVisible(true);
                 if(dlg.isConfirmed()) {
-                    ipPortListModel.setElementAt(dlg.getHost() + ":" + dlg.getPort(), ipPortList.getSelectedIndex());
+                   ipPortListModel.setElementAt(dlg.getHost() + ":" + dlg.getPort(), ipPortList.getSelectedIndex());
                 }
             }
         });
@@ -113,11 +115,11 @@ public class SophosAssertionPropertiesPanel extends AssertionPropertiesOkCancelS
                 final GetIpPortDialog dlg;
                 final String title = "Add Host/Port";
                 if (rootPane instanceof Frame)
-                    dlg = new GetIpPortDialog((Frame)rootPane, title, null, 4000);
+                    dlg = new GetIpPortDialog((Frame)rootPane, title, null, "4010");
                 else if (rootPane instanceof Dialog)
-                    dlg = new GetIpPortDialog((Dialog)rootPane, title, null, 4000);
+                    dlg = new GetIpPortDialog((Dialog)rootPane, title, null, "4010");
                 else
-                    dlg = new GetIpPortDialog((Frame)null, title, null, 4000);
+                    dlg = new GetIpPortDialog((Frame)null, title, null, "4010");
 
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
