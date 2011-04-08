@@ -196,7 +196,7 @@ public class InternalIdentityProviderImpl
                     (authType == AuthenticationType.ADMINISTRATION_POLICY_MANAGER ||
                             authType == AuthenticationType.ADMINISTRATION_ESM)){
                 //Warning - we may do a db update here...We ARE NOT on a message processing thread!! If this is changed for
-                //message traffic users then the db update will need to be handed off background processing.
+                //message traffic users then the db update will need to be handed off for background processing.
                 final boolean userNeedsUpdate = userManager.configureUserPasswordHashes(dbUser, new String(credentials));
                 if(userNeedsUpdate){
                     try {

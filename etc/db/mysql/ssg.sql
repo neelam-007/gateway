@@ -152,7 +152,6 @@ CREATE TABLE password_history (
   objectid bigint(20) NOT NULL,
   internal_user_oid bigint(20) NOT NULL,
   last_changed bigint(20) NOT NULL,
-  order_id bigint(20) NOT NULL,
   prev_password varchar(256) NULL,
   PRIMARY KEY (objectid),
   FOREIGN KEY (internal_user_oid) REFERENCES internal_user (objectid)

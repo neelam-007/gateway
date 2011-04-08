@@ -145,6 +145,7 @@ ALTER TABLE internal_user CHANGE COLUMN password digest VARCHAR(32) DEFAULT NULL
 ALTER TABLE internal_user ADD COLUMN password VARCHAR(256) NOT NULL AFTER login;
 
 ALTER TABLE password_history MODIFY COLUMN prev_password VARCHAR(256) NOT NULL;
+ALTER TABLE password_history DROP COLUMN order_id;
 
 --
 --

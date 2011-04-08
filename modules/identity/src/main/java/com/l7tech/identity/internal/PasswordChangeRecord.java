@@ -31,6 +31,10 @@ public class PasswordChangeRecord extends PersistentEntityImp {
     }
 
     public PasswordChangeRecord(InternalUser internalUser, long lastChanged, String prevHashedPassword) {
+        if(internalUser == null) throw new NullPointerException("internalUser cannot be null.");
+        if(prevHashedPassword == null || prevHashedPassword.trim().isEmpty())
+            throw new IllegalArgumentException("prevHashedPassword cannot be null or empty.");
+        
         this.internalUser = internalUser;
         this.lastChanged = lastChanged;
         this.prevHashedPassword = prevHashedPassword;
