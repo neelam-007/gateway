@@ -43,6 +43,11 @@ public class IdentityProviderPasswordPolicyManagerImpl
     }
 
     @Override
+    protected UniqueType getUniqueType() {
+        return UniqueType.OTHER;
+    }
+
+    @Override
     public EntityType getEntityType() {
         return EntityType.PASSWORD_POLICY;
     }
