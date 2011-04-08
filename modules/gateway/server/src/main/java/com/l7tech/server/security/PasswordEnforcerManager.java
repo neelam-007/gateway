@@ -1,6 +1,6 @@
 package com.l7tech.server.security;
 
-import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.security.password.IncorrectPasswordException;
 import com.l7tech.gateway.common.security.password.PasswordHasher;
 import com.l7tech.gateway.common.security.password.PasswordHashingException;
@@ -16,8 +16,11 @@ import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.admin.AdminEvent;
+import com.l7tech.server.event.system.ReadyForMessages;
+import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.Config;
 import com.l7tech.util.HexUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -39,23 +42,23 @@ import java.util.logging.Logger;
  * User: dlee
  * Date: Jun 18, 2008
  */
-public class PasswordEnforcerManager  implements PropertyChangeListener, ApplicationContextAware, ApplicationListener {
+public class PasswordEnforcerManager implements PropertyChangeListener, ApplicationContextAware, ApplicationListener {
 
     private static final Logger logger = Logger.getLogger(PasswordEnforcerManager.class.getName());
 
     private final IdentityProviderPasswordPolicyManager passwordPolicyManager;
-    private final ServerConfig serverConfig;
+    private final Config config;
     private ApplicationContext applicationContext;
     private final RoleManager roleManager;
     private final PasswordHasher passwordHasher;
     private IdentityProviderPasswordPolicy internalIdpPasswordPolicy;
 
-    public PasswordEnforcerManager(ServerConfig serverConfig,
+    public PasswordEnforcerManager(Config config,
                                    IdentityProviderPasswordPolicyManager passwordPolicyManager,
                                    RoleManager roleManager,
                                    PasswordHasher passwordHasher) {
         this.passwordPolicyManager = passwordPolicyManager;
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.roleManager = roleManager;
         this.passwordHasher = passwordHasher;
     }
@@ -66,16 +69,17 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
         
         this.applicationContext = applicationContext;
         internalIdpPasswordPolicy = getInternalIdpPasswordPolicy();
-        auditPasswordPolicyMinimums(!serverConfig.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED,false), internalIdpPasswordPolicy);
     }
 
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if(applicationEvent instanceof EntityInvalidationEvent){
+        if(applicationEvent instanceof ReadyForMessages){
+            auditPasswordPolicyMinimums(!config.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED,false), internalIdpPasswordPolicy);
+        } else if(applicationEvent instanceof EntityInvalidationEvent){
             EntityInvalidationEvent eie = (EntityInvalidationEvent) applicationEvent;
-            if(eie.getEntityClass() == IdentityProviderPasswordPolicy.class){
+            if(IdentityProviderPasswordPolicy.class.equals(eie.getEntityClass())){
                 internalIdpPasswordPolicy = getInternalIdpPasswordPolicy();
-                auditPasswordPolicyMinimums(!serverConfig.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED,false), internalIdpPasswordPolicy);
+                auditPasswordPolicyMinimums(!config.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED,false), internalIdpPasswordPolicy);
             }
         }
     }
@@ -84,7 +88,7 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
         String propertyName = evt.getPropertyName();
         String newValue = (String) evt.getNewValue();
 
-        if ( propertyName != null && propertyName.equals(ServerConfig.PARAM_PCIDSS_ENABLED) ){
+        if ( propertyName != null && ServerConfig.PARAM_PCIDSS_ENABLED.equals(propertyName)){
             boolean newVal = Boolean.valueOf(newValue);
             auditPasswordPolicyMinimums(!newVal, internalIdpPasswordPolicy);
         }
@@ -130,12 +134,20 @@ public class PasswordEnforcerManager  implements PropertyChangeListener, Applica
 
         if (!aboveMinimum) {
             // log audit message
-            applicationContext.publishEvent(new AdminEvent(this, MessageFormat.format("Password requirements are below {0} for {1}", isSTIG? "STIG":"PCI-DSS", "Internal Identity Provider")) {
-                        @Override
-                        public Level getMinimumLevel() {
-                            return Level.WARNING;
-                        }
-                    });
+            final String msg = MessageFormat.format("Password requirements are below {0} minimum for {1}", isSTIG ? "STIG" : "PCI-DSS", "Internal Identity Provider");
+            applicationContext.publishEvent(
+                new SystemEvent(this,
+                    Component.GW_PASSWD_POLICY_MGR,
+                    null,
+                    Level.WARNING,
+                    msg) {
+
+                    @Override
+                    public String getAction() {
+                        return "Password Policy Validation";
+                    }
+                }
+            );
         }
     }
 

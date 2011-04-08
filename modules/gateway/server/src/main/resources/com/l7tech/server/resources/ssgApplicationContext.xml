@@ -1359,6 +1359,7 @@
                 <ref bean="securePasswordManager" />
                 <ref bean="httpConfigurationManager" />
                 <ref bean="resolutionConfigurationManager" />
+                <ref bean="passwordPolicyManger" />
             </list>
         </property>
         <property name="timer" ref="entityVersionCheckerTimer"/>

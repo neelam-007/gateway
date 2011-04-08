@@ -60,6 +60,13 @@ public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
         this.internalIdentityProviderOid = oid;
     }
 
+    @Override
+    @Version
+    @Column(name = "version")
+    public int getVersion() {
+        return super.getVersion();
+    }
+    
     /**
      * for serialization by axis and hibernate only.
      * to get the properties, call getProperty
