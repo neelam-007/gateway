@@ -319,8 +319,10 @@ public class KeyInfoElement implements ParsedElement {
                     return found;
 
                 logger.fine("Ignoring embedded certificate which was unrecognized");
-                // Fallthrough and look for other keyinfo.
+            } else {
+                logger.fine("Ignoring KeyInfo which did not contain a SecurityTokenReference");
             }
+            return null;
         }
 
         Element ki = DomUtils.findOnlyOneChildElementByName(str,
