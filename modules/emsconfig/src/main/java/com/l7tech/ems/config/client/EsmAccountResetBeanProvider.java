@@ -65,7 +65,7 @@ public class EsmAccountResetBeanProvider extends EsmDbConfigurationBeanProvider 
                             "SET password=?, expiration=-1, password_expiry=0, change_password=0 " +
                             "WHERE login = ?"
                     );
-                    statement.setString(1, HexUtils.encodePasswd(username, password, "L7SSGDigestRealm"));
+                    statement.setString(1, HexUtils.encodePasswd(username, password, "L7SSGDigestRealm"));  //todo [Donal] update to use password hasher
                     statement.setString(2, username);
                     int result = statement.executeUpdate();
                     if ( result != 1 ) {

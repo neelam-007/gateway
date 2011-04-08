@@ -90,11 +90,6 @@ public class FederatedIdentityProviderImpl
         }
     }
 
-    @Override
-    public AuthenticationResult authenticateAdministrator(LoginCredentials pc, ClientType clientType) throws AuthenticationException {
-        throw new UnsupportedOperationException("Federated Identity Provider cannot be used to authenticate administrative users.");
-    }
-
     /**
      * This provider does not support lookup of users by credential. 
      */

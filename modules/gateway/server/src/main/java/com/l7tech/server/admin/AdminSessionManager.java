@@ -179,6 +179,10 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         AuthenticationResult authResult = null;
         User user = null;
 
+        final CredentialFormat credentialFormat = creds.getFormat();
+        boolean formatOkForAdminAccess = credentialFormat == CredentialFormat.CLEARTEXT || credentialFormat != CredentialFormat.CLIENTCERT;
+        if(!formatOkForAdminAccess) throw new LoginException("Unsupported credential format for admin access: " + credentialFormat);
+
         boolean needsClientCert = false;
         User providerFoundUser = null;  //temp provider container to know which provider first failed to authenticate
         for (IdentityProvider provider : providers) {
@@ -192,7 +196,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                 //for internal identity provider
                 boolean useCert = config.getBooleanProperty("security.policyManager.forbidPasswordWhenCertPresent", true);
                 if (useCert) {
-                    if (creds.getFormat() == CredentialFormat.CLEARTEXT && provider.hasClientCert(creds.getLogin())) {
+                    if (credentialFormat == CredentialFormat.CLEARTEXT && provider.hasClientCert(creds.getLogin())) {
                         needsClientCert = true;
                         throw new BadCredentialsException("User '" + creds.getLogin() + "' did not use certificate as login credentials.");
                     }
@@ -206,8 +210,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                     }
 
                     logonService.hookPreLoginCheck( currentUser );
-                    authResult = ((AuthenticatingIdentityProvider)provider).authenticateAdministrator(creds,
-                            AuthenticatingIdentityProvider.ClientType.POLICY_MANAGER);//not currently used from ESM, if it is configure in spring.
+                    authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds, true);
                     User authdUser = authResult == null ? null : authResult.getUser();
                     if ( authdUser != null ) {
                         //Validate the user , now authenticated so that we know all of their group roles
@@ -265,8 +268,9 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @param username  The username
      * @param password  The password for the user
      * @param newPassword   The new password for the user
-     * @return  TRUE if the password was changed
-     * @throws ObjectModelException 
+     * @return  TRUE if the password was changed, false if user could not be authenticated.
+     * @throws ObjectModelException problem updating user
+     * @throws IllegalStateException if user is not internal 
      */
     public boolean changePassword( final String username,
                                    final String password,
@@ -328,7 +332,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             LoginCredentials creds = LoginCredentials.makeLoginCredentials(
                     new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, user.getLogin(), password.toCharArray()) , null);
             try {
-                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)identityProvider).authenticateAdministrator(creds, AuthenticatingIdentityProvider.ClientType.POLICY_MANAGER);
+                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)identityProvider).authenticate(creds, true);
                 User authenticatedUser = authResult == null ? null : authResult.getUser();
 
                 if ( authenticatedUser instanceof InternalUser ) {

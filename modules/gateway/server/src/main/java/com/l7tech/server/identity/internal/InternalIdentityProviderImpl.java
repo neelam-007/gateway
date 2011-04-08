@@ -73,24 +73,11 @@ public class InternalIdentityProviderImpl
     @Override
     @Transactional(propagation=Propagation.REQUIRED, noRollbackFor=AuthenticationException.class)
     public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
-        return authenticate(pc, AuthenticationType.MESSAGE_TRAFFIC);
+        return authenticate(pc, false);
     }
 
     @Override
-    @Transactional(propagation=Propagation.REQUIRED, noRollbackFor=AuthenticationException.class)
-    public AuthenticationResult authenticateAdministrator(LoginCredentials pc, ClientType clientType)
-            throws AuthenticationException {
-        switch (clientType){
-            case POLICY_MANAGER:
-                return authenticate(pc, AuthenticationType.ADMINISTRATION_POLICY_MANAGER);
-            case ESM:
-                return authenticate(pc, AuthenticationType.ADMINISTRATION_ESM);
-        }
-        throw new IllegalArgumentException("Unsupported client type " + clientType);
-    }
-
-    private AuthenticationResult authenticate(LoginCredentials pc, AuthenticationType authType)
-            throws AuthenticationException {
+    public AuthenticationResult authenticate(LoginCredentials pc, boolean allowUserUpgrade) throws AuthenticationException {
         final String login = pc.getLogin();
         final InternalUser dbUser = getUser(login);
 
@@ -103,11 +90,11 @@ public class InternalIdentityProviderImpl
 
         CredentialFormat format = pc.getFormat();
         final AuthenticationResult ar;
-        if ((format.isClientCert() && authType != AuthenticationType.ADMINISTRATION_ESM)  
-                || (format == CredentialFormat.SAML && authType == AuthenticationType.MESSAGE_TRAFFIC)) {
+        if ((format.isClientCert())
+                || (format == CredentialFormat.SAML)) {
             ar = certificateAuthenticator.authenticateX509Credentials(pc, dbUser, config.getCertificateValidationType(), auditor);
         } else {
-            ar = authenticatePasswordCredentials(pc, dbUser, authType);
+            ar = authenticatePasswordCredentials(pc, dbUser, allowUserUpgrade);
         }
 
         springContext.publishEvent(new Authenticated(ar));
@@ -150,7 +137,7 @@ public class InternalIdentityProviderImpl
 
     private AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc,
                                                                  InternalUser dbUser,
-                                                                 AuthenticationType authType)
+                                                                 boolean allowUserUpgrade)
             throws MissingCredentialsException, BadCredentialsException
     {
         CredentialFormat format = pc.getFormat();
@@ -192,9 +179,7 @@ public class InternalIdentityProviderImpl
                 }
             }
 
-            if(userAuthenticated &&
-                    (authType == AuthenticationType.ADMINISTRATION_POLICY_MANAGER ||
-                            authType == AuthenticationType.ADMINISTRATION_ESM)){
+            if (userAuthenticated && allowUserUpgrade) {
                 //Warning - we may do a db update here...We ARE NOT on a message processing thread!! If this is changed for
                 //message traffic users then the db update will need to be handed off for background processing.
                 final InternalUserPasswordManager passwordManager = userManager.getUserPasswordManager();
@@ -222,7 +207,7 @@ public class InternalIdentityProviderImpl
                 logger.info("Incorrect password for login " + login);
             }
             throw new BadCredentialsException("Invalid password");
-        } else if (format == CredentialFormat.DIGEST && authType == AuthenticationType.MESSAGE_TRAFFIC) {
+        } else if (format == CredentialFormat.DIGEST) {
             return DigestAuthenticator.authenticateDigestCredentials(pc, dbUser);
         } else {
             throwUnsupportedCredentialFormat(format);

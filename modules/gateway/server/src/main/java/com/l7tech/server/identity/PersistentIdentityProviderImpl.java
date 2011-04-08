@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.identity;
 
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.PersistentGroup;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.ValidationException;
@@ -12,6 +13,7 @@ import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -98,6 +100,11 @@ public abstract class PersistentIdentityProviderImpl<UT extends PersistentUser, 
     @Override
     public X509Certificate findCertByThumbprintSHA1( final String thumbprintSHA1 ) throws FindException {
         return processCertificateSearch( clientCertManager.findByThumbprint(thumbprintSHA1) );
+    }
+
+    @Override
+    public AuthenticationResult authenticate(LoginCredentials pc, boolean allowUserUpgrade) throws AuthenticationException {
+        return authenticate(pc);
     }
 
     private X509Certificate processCertificateSearch( final List<CertEntryRow> rows ) throws FindException{

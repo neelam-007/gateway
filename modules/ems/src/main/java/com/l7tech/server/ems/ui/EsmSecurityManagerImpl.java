@@ -217,7 +217,7 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
         logger.info("Authenticating user '"+username+"'.");
         for ( IdentityProvider provider : getAdminIdentityProviders() ) {
             try {                         //todo [Donal] test ESM usage
-                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticateAdministrator(creds, AuthenticatingIdentityProvider.ClientType.ESM);
+                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds, true);
                 user = authResult == null ? null : authResult.getUser();
                 if ( applicationContext != null && user != null ) {
                     applicationContext.publishEvent( new LogonEvent(user, LogonEvent.LOGON) );
@@ -292,7 +292,7 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
             provider = identityProviderFactory.getProvider( user.getProviderId() );
             if ( provider instanceof InternalIdentityProvider ) {
                 InternalIdentityProvider internalIdentityProvider = (InternalIdentityProvider) provider;
-                AuthenticationResult authResult = internalIdentityProvider.authenticate(creds);
+                AuthenticationResult authResult = internalIdentityProvider.authenticate(creds, true);
                 if ( authResult != null ) {
                     InternalUser.validateEsmPassword(newPassword);
                     InternalUser authUser = (InternalUser) authResult.getUser();

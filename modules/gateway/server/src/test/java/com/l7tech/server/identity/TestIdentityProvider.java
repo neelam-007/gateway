@@ -112,7 +112,12 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     }
     
     @Override
-    public AuthenticationResult authenticateAdministrator(LoginCredentials pc, ClientType clientType) throws AuthenticationException {
+    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
+        return authenticate(pc, false);
+    }
+
+    @Override
+    public AuthenticationResult authenticate(LoginCredentials pc, boolean allowUserUpgrade) throws AuthenticationException {
         MyUser mu = usernameMap.get(pc.getLogin());
         if (mu == null) return null;
         if (mu.password != null && pc.getCredentials()!=null && Arrays.equals(mu.password, pc.getCredentials())) {
@@ -122,11 +127,6 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
             return new AuthenticationResult(mu.user, pc.getSecurityTokens(), pc.getClientCert(), false);
         }
         throw new AuthenticationException("Invalid username or password");
-    }
-
-    @Override
-    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
-        return authenticateAdministrator(pc, ClientType.POLICY_MANAGER);
     }
 
     @Override

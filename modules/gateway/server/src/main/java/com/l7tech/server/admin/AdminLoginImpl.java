@@ -141,7 +141,9 @@ public class AdminLoginImpl
 
         //attempt to change the password
         try {
-            sessionManager.changePassword(username, oldPassword, newPassword);
+            if (!sessionManager.changePassword(username, oldPassword, newPassword)) {
+                throw new FailedLoginException("'" + username + "'" + " could not be authenticated");
+            }
         } catch (ObjectModelException ome) {
             //generally this is caused where new password is not password policy compliant
             if(ome instanceof InvalidPasswordException)

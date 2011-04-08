@@ -45,7 +45,7 @@ public class EsmConfigurationBeanProvider extends PropertiesConfigurationBeanPro
         if ( CONFIG_ADMIN_PASS.equals(name) && value != null ) {
             // encode the password before storing to the properties file
             Object userObj = this.getConfigurationBeanValue( CONFIG_ADMIN_USER, beans );
-            persistValue = HexUtils.encodePasswd( userObj==null ? "" : userObj.toString(), value.toString(), "L7SSGDigestRealm" );
+            persistValue = HexUtils.encodePasswd( userObj==null ? "" : userObj.toString(), value.toString(), "L7SSGDigestRealm" );//todo [Donal] update to use password hasheer
         } else {
             persistValue = super.onPersist( name, value, beans );
         }

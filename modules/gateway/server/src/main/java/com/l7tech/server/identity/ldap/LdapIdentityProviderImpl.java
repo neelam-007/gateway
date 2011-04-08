@@ -245,21 +245,6 @@ public class LdapIdentityProviderImpl
 
     @Override
     public AuthenticationResult authenticate(final LoginCredentials pc) throws AuthenticationException {
-        return authenticate(pc, AuthenticationType.MESSAGE_TRAFFIC);
-    }
-
-    @Override
-    public AuthenticationResult authenticateAdministrator(final LoginCredentials pc,
-                                                          final ClientType clientType) throws AuthenticationException {
-        if(clientType == ClientType.POLICY_MANAGER){
-            return authenticate(pc, AuthenticationType.ADMINISTRATION_POLICY_MANAGER);
-        }
-
-        throw new IllegalArgumentException("Unsupported client type " + clientType);
-    }
-
-    private AuthenticationResult authenticate(final LoginCredentials pc,
-                                              final AuthenticationType authType) throws AuthenticationException {
         LdapUser realUser;
         try {
             realUser = findUserByCredential( pc );
@@ -274,16 +259,15 @@ public class LdapIdentityProviderImpl
 
         if (realUser == null) return null;
 
-        final boolean isMsgAuth = authType == AuthenticationType.MESSAGE_TRAFFIC;
         final CredentialFormat format = pc.getFormat();
         if (format == CredentialFormat.CLEARTEXT) {
             return authenticatePasswordCredentials(pc, realUser);
-        } else if (format == CredentialFormat.DIGEST && isMsgAuth) {
+        } else if (format == CredentialFormat.DIGEST) {
             return DigestAuthenticator.authenticateDigestCredentials(pc, realUser);
-        } else if (format  == CredentialFormat.KERBEROSTICKET && isMsgAuth) {
+        } else if (format  == CredentialFormat.KERBEROSTICKET) {
             return new AuthenticationResult( realUser, pc.getSecurityTokens() );
         } else {
-            if (format == CredentialFormat.CLIENTCERT || (format == CredentialFormat.SAML && isMsgAuth)) {
+            if (format == CredentialFormat.CLIENTCERT || format == CredentialFormat.SAML) {
 
                     //get the LDAP cert for this user if LDAP certs are enabled for this provider
                     if (certsAreEnabled() && realUser.getLdapCertBytes() != null) {
@@ -305,6 +289,11 @@ public class LdapIdentityProviderImpl
                 throw new AuthenticationException(msg);
             }
         }
+    }
+
+    @Override
+    public AuthenticationResult authenticate(LoginCredentials pc, boolean allowUserUpgrade) throws AuthenticationException {
+        return authenticate(pc);
     }
 
     /**
