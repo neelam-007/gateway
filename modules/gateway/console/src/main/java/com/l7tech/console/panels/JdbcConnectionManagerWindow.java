@@ -94,6 +94,7 @@ public class JdbcConnectionManagerWindow extends JDialog {
             }
         });
 
+        Utilities.setDoubleClickAction(connectionTable, editButton);
         enableOrDisableButtons();
     }
 
@@ -127,7 +128,6 @@ public class JdbcConnectionManagerWindow extends JDialog {
                 enableOrDisableButtons();
             }
         });
-        Utilities.setDoubleClickAction(connectionTable, editButton);
     }
 
     private class JdbcConnectionTableModel extends AbstractTableModel {
