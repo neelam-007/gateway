@@ -3,8 +3,10 @@
  */
 package com.l7tech.server.policy;
 
+import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.service.ServiceHeader;
@@ -14,7 +16,9 @@ import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.rbac.RbacServices;
@@ -23,10 +27,12 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.HexUtils;
 
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.security.cert.CertificateEncodingException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,6 +57,9 @@ public class PolicyAdminImpl implements PolicyAdmin {
     private final PolicyAliasManager policyAliasManager;
 
     private ServerConfig serverConfig;
+    private LicenseManager licenseManager;
+    private DefaultKey defaultKey;
+
 
     public PolicyAdminImpl(final PolicyManager policyManager,
                            final PolicyAliasManager policyAliasManager,
@@ -58,7 +67,9 @@ public class PolicyAdminImpl implements PolicyAdmin {
                            final PolicyVersionManager policyVersionManager,
                            final ServiceManager serviceManager,
                            final ClusterPropertyManager clusterPropertyManager,
-                           final RbacServices rbacServices)
+                           final RbacServices rbacServices,
+                           final LicenseManager licenseManager,
+                           final DefaultKey defaultKey)
     {
         this.policyManager = policyManager;
         this.policyAliasManager = policyAliasManager;
@@ -67,6 +78,8 @@ public class PolicyAdminImpl implements PolicyAdmin {
         this.serviceManager = serviceManager;
         this.clusterPropertyManager = clusterPropertyManager;
         this.rbacServices = rbacServices;
+        this.licenseManager = licenseManager;
+        this.defaultKey = defaultKey;
     }
 
     @Override
@@ -549,6 +562,195 @@ public class PolicyAdminImpl implements PolicyAdmin {
             throw new IllegalArgumentException("type cannot be null. internalTag cannot be null or empty.");
         }
         
-        return policyManager.getDefaultPolicyXml(type, internalTag);
+        if(type == PolicyType.INTERNAL){
+            if( PolicyType.TAG_AUDIT_MESSAGE_FILTER.equals(internalTag)){
+                return getAuditMessageFilterDefaultPolicy();
+            } else if (PolicyType.TAG_AUDIT_VIEWER.equals(internalTag)){
+                return getAuditViewerDefaultPolicy();
+            }
+        }
+        return null;
     }
+
+    private String getAuditMessageFilterDefaultPolicy(){
+        //By using XML, which should always be backwards compatible, we don't need to add dependencies for
+        //modular assertions
+
+        String auditViewerCertB64 = null;
+        if (defaultKey != null) {
+            SsgKeyEntry avInfo = defaultKey.getAuditViewerInfo();
+            if (avInfo != null && avInfo.getCertificate() != null) {
+                try {
+                    auditViewerCertB64 = HexUtils.encodeBase64(avInfo.getCertificate().getEncoded(), true);
+                } catch (CertificateEncodingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        return getDefaultXmlBasedOnLicense(getDefaultAuditMessageFilterPolicyXml(auditViewerCertB64),
+                FALLBACK_AUDIT_MESSAGE_FILTER_POLICY_XML, PolicyType.TAG_AUDIT_MESSAGE_FILTER);
+    }
+
+    private String getAuditViewerDefaultPolicy(){
+        return getDefaultXmlBasedOnLicense(DEFAULT_AUDIT_VIEWER_POLICY_XML,
+                FALLBACK_AUDIT_VIEWER_POLICY_XML, PolicyType.TAG_AUDIT_VIEWER);
+
+    }
+
+    /**
+     * Choose between the default xml and the fallback xml.
+     * <p/>
+     * Protected visibility for test cases.
+     *
+     * @param defaultXml        desired default xml. Validated to be valid.
+     * @param fallbackXml       fallback xml, not validated.
+     * @param policyInternalTag internal tag string used for logging warning.
+     * @return defaultXml if it contains no unlicensed assertions and is valid policy XML, otherwise the fallbackXml.
+     */
+    protected String getDefaultXmlBasedOnLicense(final String defaultXml,
+                                                 final String fallbackXml,
+                                                 final String policyInternalTag) {
+        try {
+            final Assertion assertion = WspReader.getDefault().parsePermissively(
+                    defaultXml, WspReader.INCLUDE_DISABLED);
+
+            if (assertion instanceof CompositeAssertion) {
+                CompositeAssertion root = (CompositeAssertion) assertion;
+                final boolean defaultContainsUnlicensedAssertion = xmlContainsUnlicensedAssertion(root);
+                if (defaultContainsUnlicensedAssertion) {
+                    return fallbackXml;
+                }
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Could not parse default " + policyInternalTag + " policy xml.");
+            //should not happen
+            //fall through
+        }
+
+        return defaultXml;
+    }
+
+    private boolean xmlContainsUnlicensedAssertion(CompositeAssertion parent){
+        final List<Assertion> kids = parent.getChildren();
+        if (kids.isEmpty()) return false;
+
+        for (Assertion kid : kids) {
+            if (kid instanceof CompositeAssertion){
+                if(xmlContainsUnlicensedAssertion((CompositeAssertion) kid)){
+                    return true;
+                }
+            }
+            final String featureSetName = kid.getFeatureSetName();
+            if (!licenseManager.isFeatureEnabled(featureSetName)){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static final String AMF_COMMENT_FRAGMENT =
+            "        <L7p:CommentAssertion>\n" +
+            "            <L7p:Comment stringValue=\"// Add policy logic to scrub / protect the request or response messages before they are audited.\"/>\n" +
+            "        </L7p:CommentAssertion>\n" +
+            "        <L7p:CommentAssertion>\n" +
+            "            <L7p:Comment stringValue=\"// Policy is invoked by the audit sub system post service and global policy processing.\"/>\n" +
+            "        </L7p:CommentAssertion>\n";
+
+    public static String getDefaultAuditMessageFilterPolicyXml(String recipientCertBase64) {
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            AMF_COMMENT_FRAGMENT +
+            "        <L7p:EncodeDecode>\n" +
+            "            <L7p:SourceVariableName stringValue=\"request.mainpart\"/>\n" +
+            "            <L7p:TargetContentType stringValue=\"text/xml; charset=utf-8\"/>\n" +
+            "            <L7p:TargetDataType variableDataType=\"message\"/>\n" +
+            "            <L7p:TargetVariableName stringValue=\"request\"/>\n" +
+            "            <L7p:TransformType transformType=\"BASE64_ENCODE\"/>\n" +
+            "        </L7p:EncodeDecode>\n" +
+            "        <L7p:SetVariable>\n" +
+            "            <L7p:Base64Expression stringValue=\"PHNhdmVkbWVzc2FnZSB4bWxucz0iaHR0cDovL2xheWVyN3RlY2guY29tL25zL2F1ZGl0Ij4NCiR7cmVxdWVzdC5tYWlucGFydH0NCjwvc2F2ZWRtZXNzYWdlPg==\"/>\n" +
+            "            <L7p:ContentType stringValue=\"text/xml; charset=utf-8\"/>\n" +
+            "            <L7p:DataType variableDataType=\"message\"/>\n" +
+            "            <L7p:VariableToSet stringValue=\"request\"/>\n" +
+            "        </L7p:SetVariable>\n" + (recipientCertBase64 != null ? "" :
+            "        <L7p:CommentAssertion>\n" +
+            "            <L7p:Comment stringValue=\"Configure cert to use here. Should match the Audit Viewer Private Key if defined.\"/>\n" +
+            "        </L7p:CommentAssertion>\n") +
+            "        <L7p:NonSoapEncryptElement>\n" + (recipientCertBase64 == null ? ""
+                      : "<L7p:RecipientCertificateBase64 stringValueReference=\"inline\"><![CDATA[" + recipientCertBase64 + "]]></L7p:RecipientCertificateBase64>") +
+            "            <L7p:Target target=\"REQUEST\"/>\n" +
+            "            <L7p:XpathExpression xpathExpressionValue=\"included\">\n" +
+            "                <L7p:Expression stringValue=\"//*\"/>\n" +
+            "                <L7p:Namespaces mapValue=\"included\">\n" +
+            "                    <L7p:entry>\n" +
+            "                        <L7p:key stringValue=\"xenc\"/>\n" +
+            "                        <L7p:value stringValue=\"http://www.w3.org/2001/04/xmlenc#\"/>\n" +
+            "                    </L7p:entry>\n" +
+            "                    <L7p:entry>\n" +
+            "                        <L7p:key stringValue=\"ds\"/>\n" +
+            "                        <L7p:value stringValue=\"http://www.w3.org/2000/09/xmldsig#\"/>\n" +
+            "                    </L7p:entry>\n" +
+            "                </L7p:Namespaces>\n" +
+            "            </L7p:XpathExpression>\n" +
+            "        </L7p:NonSoapEncryptElement>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+    }
+
+    public static final String FALLBACK_AUDIT_MESSAGE_FILTER_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            AMF_COMMENT_FRAGMENT +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    private static final String AV_COMMENT_FRAGMENT =
+            "        <L7p:CommentAssertion>\n" +
+            "            <L7p:Comment stringValue=\"// Add logic to transform audited messages and details.\"/>\n" +
+            "        </L7p:CommentAssertion>\n" +
+            "        <L7p:CommentAssertion>\n" +
+            "            <L7p:Comment stringValue=\"// Policy is invoked from the audit viewer.\"/>\n" +
+            "        </L7p:CommentAssertion>\n";
+
+    public static final String DEFAULT_AUDIT_VIEWER_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            AV_COMMENT_FRAGMENT +
+            "        <L7p:NonSoapDecryptElement/>\n" +
+            "        <L7p:RequestXpathAssertion>\n" +
+            "            <L7p:VariablePrefix stringValue=\"output\"/>\n" +
+            "            <L7p:XpathExpression xpathExpressionValue=\"included\">\n" +
+            "                <L7p:Expression stringValue=\"/ns:savedmessage\"/>\n" +
+            "                <L7p:Namespaces mapValue=\"included\">\n" +
+            "                    <L7p:entry>\n" +
+            "                        <L7p:key stringValue=\"ns\"/>\n" +
+            "                        <L7p:value stringValue=\"http://layer7tech.com/ns/audit\"/>\n" +
+            "                    </L7p:entry>\n" +
+            "                    <L7p:entry>\n" +
+            "                        <L7p:key stringValue=\"s\"/>\n" +
+            "                        <L7p:value stringValue=\"http://schemas.xmlsoap.org/soap/envelope/\"/>\n" +
+            "                    </L7p:entry>\n" +
+            "                </L7p:Namespaces>\n" +
+            "            </L7p:XpathExpression>\n" +
+            "        </L7p:RequestXpathAssertion>\n" +
+            "        <L7p:EncodeDecode>\n" +
+            "            <L7p:CharacterEncoding stringValueNull=\"null\"/>\n" +
+            "            <L7p:SourceVariableName stringValue=\"output.result\"/>\n" +
+            "            <L7p:TargetContentType stringValue=\"text/xml; charset=utf-8\"/>\n" +
+            "            <L7p:TargetDataType variableDataType=\"message\"/>\n" +
+            "            <L7p:TargetVariableName stringValue=\"request\"/>\n" +
+            "            <L7p:TransformType transformType=\"BASE64_DECODE\"/>\n" +
+            "        </L7p:EncodeDecode>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    public static final String FALLBACK_AUDIT_VIEWER_POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            AV_COMMENT_FRAGMENT +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
 }

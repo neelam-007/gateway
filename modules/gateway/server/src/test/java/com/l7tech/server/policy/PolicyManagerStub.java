@@ -74,9 +74,4 @@ public class PolicyManagerStub extends EntityManagerStub<Policy,PolicyHeader> im
     protected PolicyHeader header(Policy entity) {
         return new PolicyHeader(entity);
     }
-
-    @Override
-    public String getDefaultPolicyXml(PolicyType type, String internalTag) {
-        return null;
-    }
 }

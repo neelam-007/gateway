@@ -1576,7 +1576,6 @@
         <constructor-arg ref="roleManager"/>
         <constructor-arg ref="policyAliasManager"/>
         <constructor-arg ref="folderManager"/>
-        <constructor-arg ref="licenseManager"/>
         <property name="policyCache" ref="policyCache"/>
     </bean>
 

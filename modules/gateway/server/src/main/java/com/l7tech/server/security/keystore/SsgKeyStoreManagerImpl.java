@@ -53,7 +53,10 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
 
     public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, ServerConfig serverConfig, char[] sslKeystorePassphrase, MasterPasswordManager passwordManager) throws KeyStoreException, FindException {
         if ( sslKeystorePassphrase == null || sslKeystorePassphrase.length==0 ) throw new IllegalArgumentException("sslKeystorePassphrase is required");
-        if ( kem instanceof KeystoreFileManagerImpl ) throw new IllegalArgumentException("kem autoproxy failure");
+        if ( kem instanceof KeystoreFileManagerImpl ) {
+            logger.severe("kem autoproxy failure");
+            kem = null;
+        }
         this.keystoreFileManager = kem;
         this.softwareKeystorePasssword = toPassphrase(skm.getSharedKey());
         this.serverConfig = serverConfig;

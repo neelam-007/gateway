@@ -1,17 +1,16 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.policy.PolicyHeader;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyVersion;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyVersion;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.Map;
-
-import org.springframework.transaction.annotation.Transactional;
+import java.util.Set;
 
 /**
  * Delegating PolicyManager that performs versioning of Policies.
@@ -188,11 +187,6 @@ public class VersioningPolicyManager implements PolicyManager {
     @Override
     public void deleteRoles( final long entityOid ) throws DeleteException {
         policyManager.deleteRoles( entityOid );
-    }
-
-    @Override
-    public String getDefaultPolicyXml(PolicyType type, String internalTag) {
-        return policyManager.getDefaultPolicyXml(type, internalTag);
     }
 
     //- PRIVATE

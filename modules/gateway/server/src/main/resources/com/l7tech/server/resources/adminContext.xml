@@ -399,6 +399,8 @@
         <constructor-arg ref="serviceManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
         <constructor-arg ref="rbacServices"/>
+        <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="defaultKey"/>
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
 

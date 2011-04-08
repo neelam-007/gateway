@@ -10,32 +10,32 @@ import com.l7tech.test.BugNumber;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class PolicyManagerImplTest {
+public class PolicyAdminImplTest {
     @Test
     @BugNumber(10057)
     public void testDefaultAuditMessageFilterPolicyXml_Licensed(){
 
         final TestLicenseManager licenseManager = new TestLicenseManager();
 
-        PolicyManagerImpl policyManager = new PolicyManagerImpl(null, null, null, licenseManager);
+        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, licenseManager, null);
 
         final String amfDefaultXml = policyManager.getDefaultPolicyXml(PolicyType.INTERNAL, PolicyType.TAG_AUDIT_MESSAGE_FILTER);
-        Assert.assertEquals("Default XML should have been returned", PolicyManagerImpl.DEFAULT_AUDIT_MESSAGE_FILTER_POLICY_XML, amfDefaultXml);
+        Assert.assertEquals("Default XML should have been returned", PolicyAdminImpl.getDefaultAuditMessageFilterPolicyXml(null), amfDefaultXml);
 
         final String avDefaultXml = policyManager.getDefaultPolicyXml(PolicyType.INTERNAL, PolicyType.TAG_AUDIT_VIEWER);
-        Assert.assertEquals("Default XML should have been returned", PolicyManagerImpl.DEFAULT_AUDIT_VIEWER_POLICY_XML, avDefaultXml);
+        Assert.assertEquals("Default XML should have been returned", PolicyAdminImpl.DEFAULT_AUDIT_VIEWER_POLICY_XML, avDefaultXml);
     }
 
     @Test
     @BugNumber(10057)
     public void testDefaultAuditMessageFilterPolicyXml_NotLicensed(){
-        PolicyManagerImpl policyManager = new PolicyManagerImpl(null, null, null, NO_UNKNOWN_LICENSE_MANAGER);
+        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, NO_UNKNOWN_LICENSE_MANAGER, null);
 
         final String amfDefaultXml = policyManager.getDefaultPolicyXml(PolicyType.INTERNAL, PolicyType.TAG_AUDIT_MESSAGE_FILTER);
-        Assert.assertEquals("Default XML should have been returned", PolicyManagerImpl.FALLBACK_AUDIT_MESSAGE_FILTER_POLICY_XML, amfDefaultXml);
+        Assert.assertEquals("Default XML should have been returned", PolicyAdminImpl.FALLBACK_AUDIT_MESSAGE_FILTER_POLICY_XML, amfDefaultXml);
 
         final String avDefaultXml = policyManager.getDefaultPolicyXml(PolicyType.INTERNAL, PolicyType.TAG_AUDIT_VIEWER);
-        Assert.assertEquals("Default XML should have been returned", PolicyManagerImpl.FALLBACK_AUDIT_VIEWER_POLICY_XML, avDefaultXml);
+        Assert.assertEquals("Default XML should have been returned", PolicyAdminImpl.FALLBACK_AUDIT_VIEWER_POLICY_XML, avDefaultXml);
     }
 
     /**
@@ -47,7 +47,7 @@ public class PolicyManagerImplTest {
     @Test
     @BugNumber(10057)
     public void testAllLicensed() throws Exception {
-        PolicyManagerImpl policyManager = new PolicyManagerImpl(null, null, null, NO_UNKNOWN_LICENSE_MANAGER);
+        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, NO_UNKNOWN_LICENSE_MANAGER, null);
 
         final String defaultXml = policyManager.getDefaultXmlBasedOnLicense(allLicensedXml, "", PolicyType.TAG_AUDIT_MESSAGE_FILTER);
         Assert.assertEquals("Default should be returned", allLicensedXml, defaultXml);
@@ -61,7 +61,7 @@ public class PolicyManagerImplTest {
     @Test
     @BugNumber(10057)
     public void testAllLicensedApartFromUnknown() throws Exception{
-        PolicyManagerImpl policyManager = new PolicyManagerImpl(null, null, null, NO_UNKNOWN_LICENSE_MANAGER);
+        PolicyAdminImpl policyManager = new PolicyAdminImpl(null, null, null, null, null, null, null, NO_UNKNOWN_LICENSE_MANAGER, null);
 
         final String fallbackXml = "fallback";
         final String defaultXml = policyManager.getDefaultXmlBasedOnLicense(
@@ -102,8 +102,7 @@ public class PolicyManagerImplTest {
     private static final TestLicenseManager NO_UNKNOWN_LICENSE_MANAGER = new TestLicenseManager() {
         @Override
         public boolean isFeatureEnabled(String feature) {
-            if (feature.endsWith("Unknown")) return false;
-            return super.isFeatureEnabled(feature);
+            return !feature.endsWith("Unknown") && super.isFeatureEnabled(feature);
         }
     };
     
