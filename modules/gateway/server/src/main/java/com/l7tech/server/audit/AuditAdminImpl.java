@@ -56,6 +56,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private ApplicationContext applicationContext;
     private AuditFilterPolicyManager auditFilterPolicyManager;
     private GatewayKeyAccessFilter keyAccessFilter;
+    private Auditor auditor;
 
     public AuditAdminImpl() {
         Background.scheduleRepeated( new TimerTask(){
@@ -97,6 +98,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+        auditor = new Auditor(this, applicationContext, logger);
     }
 
     @Override
@@ -133,9 +135,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
         if ( audit ) {
             final Pair<String, String> details = criteria.getAuditQueryDetails(); // In a pair, Left = partial details; Right = full details
-            final AuditDetailEvent detailEvent = new AuditDetailEvent(this,
-                new AuditDetail(AdminMessages.AUDIT_SEARCH_CRITERIA_FULL_DETAILS, details.right), null, logger.getName());
-            applicationContext.publishEvent(detailEvent);
+            auditor.logAndAudit(AdminMessages.AUDIT_SEARCH_CRITERIA_FULL_DETAILS, details.right);
 
             final AuditViewGatewayAuditsData auditEvent = new AuditViewGatewayAuditsData(this, details.left);
             applicationContext.publishEvent( auditEvent );
