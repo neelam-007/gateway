@@ -77,6 +77,7 @@ public class InternalIdentityProviderImpl
     }
 
     @Override
+    @Transactional(propagation=Propagation.REQUIRED, noRollbackFor=AuthenticationException.class)
     public AuthenticationResult authenticate(LoginCredentials pc, boolean allowUserUpgrade) throws AuthenticationException {
         final String login = pc.getLogin();
         final InternalUser dbUser = getUser(login);
