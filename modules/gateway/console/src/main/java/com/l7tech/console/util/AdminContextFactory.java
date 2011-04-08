@@ -2,6 +2,7 @@ package com.l7tech.console.util;
 
 import com.l7tech.gateway.common.admin.AdminContext;
 import com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
+import com.l7tech.util.Functions;
 
 import java.util.Collection;
 
@@ -13,9 +14,11 @@ public class AdminContextFactory {
     //- PUBLIC
 
     public AdminContextFactory( final Collection<Object> remoteObjects,
-                                final ConfigurableHttpInvokerRequestExecutor configurableInvoker ) {
+                                final ConfigurableHttpInvokerRequestExecutor configurableInvoker,
+                                final Functions.Nullary<Void> activityCallback ) {
         this.remoteObjects = remoteObjects;
         this.configurableInvoker = configurableInvoker;
+        this.activityCallback = activityCallback;
     }
 
     /**
@@ -29,11 +32,12 @@ public class AdminContextFactory {
     public AdminContext buildAdminContext( final String host,
                                            final int port,
                                            final String sessionId ) {
-        return new AdminContextImpl( host, port, sessionId, remoteObjects, configurableInvoker );
+        return new AdminContextImpl( host, port, sessionId, remoteObjects, configurableInvoker, activityCallback );
     }
 
     //- PRIVATE
 
     private final Collection<Object> remoteObjects;
     private final ConfigurableHttpInvokerRequestExecutor configurableInvoker;
+    private final Functions.Nullary<Void> activityCallback;
 }

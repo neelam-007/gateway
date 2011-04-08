@@ -40,7 +40,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=FIND_ENTITY)
-    @Administrative(licensed=false, background = true)
+    @Administrative(licensed=false)
     AuditRecord findByPrimaryKey(long oid) throws FindException;
 
     /**

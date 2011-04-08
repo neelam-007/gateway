@@ -207,6 +207,10 @@ public class AdminLoginImpl
         sessionManager.destroySession( AdminLoginHelper.getSessionId() );
     }
 
+    @Override
+    public void ping() {
+    }
+
     public void setAdminSessionManager(AdminSessionManager sessionManager) {
         this.sessionManager = sessionManager;
     }

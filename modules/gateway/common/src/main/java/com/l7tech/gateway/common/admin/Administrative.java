@@ -30,12 +30,25 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 @Target({METHOD, TYPE})
 public @interface Administrative {
+
+    /**
+     * Set to false if the method does not require an authenticated user.
+     *
+     * @return True if the caller must be authenticated.
+     */
     boolean authenticated() default true;
+
+    /**
+     * Set to false if the method does not require a valid license.
+     *
+     * @return True if the method can be invoked without being licensed.
+     */
     boolean licensed() default true;
 
     /**
-     *  Denotes if this administrative interface is used for background activity   (audit/dashboard requests)
-     * @return
+     * Set to true if this method is treated as "background" activity (such as audit/dashboard requests)
+     *
+     * @return True if the method can be invoked without user interaction.
      */
     boolean background() default false;
 }

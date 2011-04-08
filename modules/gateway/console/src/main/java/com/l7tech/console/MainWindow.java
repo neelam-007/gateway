@@ -38,6 +38,7 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.TimeUnit;
 
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
@@ -84,6 +85,9 @@ public class MainWindow extends JFrame implements SheetHolder {
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
 
     public static final String CONNECTION_PREFIX = " [connected to node: ";
+
+    private static final long PING_INTERVAL = SyspropUtil.getLong( "com.l7tech.console.sessionPingInterval", 50000L );
+
     /**
      * the resource bundle name
      */
@@ -3049,7 +3053,9 @@ public class MainWindow extends JFrame implements SheetHolder {
 
 
     // -------------- inactivitiy timeout (close your eyes) -------------------
-    private long lastActivityTime = System.currentTimeMillis();
+    private volatile long inactivityTimeout = TimeUnit.MINUTES.toMillis( 30L ); // AbstractSsmPreferences.DEFAULT_INACTIVITY_TIMEOUT
+    private volatile long lastActivityTime = System.currentTimeMillis();
+    private volatile long lastRemoteActivityTime = System.currentTimeMillis();
 
     private void installInactivityTimerEventListener() {
         if (ssmApplication.isApplet()) return; // no inactivity timer on applet
@@ -3081,11 +3087,11 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     private void onInactivityTimerTick() {
-        if (ssmApplication.isApplet()) return;  // timer disabled on applet
+        if ( ssmApplication.isApplet() ) return;
 
-        long now = System.currentTimeMillis();
-        double inactive = (now - lastActivityTime);
-        if (Math.round(inactive / inactivityTimer.getDelay()) >= 1) { // match
+        final long now = System.currentTimeMillis();
+        if ( inactivityTimeout > 0L &&
+             (now - lastActivityTime) > inactivityTimeout ) { // match
             inactivityTimer.stop(); // stop timer
             MainWindow.this.getStatusMsgRight().
               setText("inactivity timeout expired; disconnecting...");
@@ -3106,12 +3112,21 @@ public class MainWindow extends JFrame implements SheetHolder {
                     }
                 }
             });
+        } else if ( Registry.getDefault().isAdminContextPresent() &&
+                    (now - lastRemoteActivityTime) > PING_INTERVAL && lastActivityTime > lastRemoteActivityTime ) {
+            // If the user is interacting with the Manager then ping the Gateway periodically
+            // to keep the remote session alive if there are no other remote calls.
+            try {
+                Registry.getDefault().getAdminLogin().ping();
+                updateRemoteLastActivityTime(); // should also get updated by pinging
+            } catch ( IllegalStateException ise ) {
+                // admin context not available
+            }
         }
     }
 
-    final Timer
-      inactivityTimer =
-      new Timer(60 * 1000 * 20,
+    private final Timer inactivityTimer =
+      new Timer( (int)TimeUnit.SECONDS.toMillis( 10L ),
         new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -3123,6 +3138,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         lastActivityTime = System.currentTimeMillis();
     }
 
+    public void updateRemoteLastActivityTime() {
+        lastRemoteActivityTime = System.currentTimeMillis();
+    }
+
     // -------------- inactivitiy timeout end (open your eyes) -------------------
 
 
@@ -3131,32 +3150,15 @@ public class MainWindow extends JFrame implements SheetHolder {
      *
      * @param newTimeout new inactivity timeout
      */
-    public void setInactivitiyTimeout(int newTimeout) {
-        int inactivityTimeout = newTimeout * 60 * 1000;
+    public void setInactivitiyTimeout( int newTimeout ) {
+        inactivityTimeout = TimeUnit.MINUTES.toMillis( (long)newTimeout );
         if (!isConnected()) return;
 
-        if (ssmApplication.isApplet()) {
-            inactivityTimer.stop();
-            log.log(Level.INFO, "inactivity timeout disabled for applet");
-            return;
-        }
-
-        if (inactivityTimeout == 0) {
-            if (inactivityTimer.isRunning()) {
-                inactivityTimer.stop();
-                log.log(Level.WARNING, "inactivity timeout disabled (timeout = 0)");
-            }
-        } else if (inactivityTimeout > 0) {
-            //  substract 1 secs (tollerance)
-            inactivityTimer.setDelay(inactivityTimeout);
-            inactivityTimer.setInitialDelay(inactivityTimeout);
-            if (inactivityTimer.isRunning()) {
-                inactivityTimer.stop();
-            }
-            inactivityTimer.start();
-            log.log(Level.INFO, "inactivity timeout enabled (timeout = " + inactivityTimeout + ")");
+        if ( inactivityTimeout >= 0 ) {
+            log.log(Level.INFO, "Inactivity timeout updated (timeout = " + inactivityTimeout + ")");
+            if ( !inactivityTimer.isRunning() ) inactivityTimer.start();
         } else {
-            log.log(Level.WARNING, "incorrect timeout value " + inactivityTimeout);
+            log.log(Level.WARNING, "Incorrect timeout value " + inactivityTimeout);
             setInactivitiyTimeout(0);
         }
     }
@@ -3849,5 +3851,13 @@ public class MainWindow extends JFrame implements SheetHolder {
     private void setFilterAndSortMenuEnabled(boolean status) {
         getFilterServiceAndPolicyTreeMenu().setEnabled(status);
         getSortServiceAndPolicyTreeMenu().setEnabled(status);
+    }
+
+    public static final class RemoteActivityListener implements Functions.Nullary<Void> {
+        @Override
+        public Void call() {
+            TopComponents.getInstance().updateLastRemoteActivityTime();
+            return null;
+        }
     }
 }

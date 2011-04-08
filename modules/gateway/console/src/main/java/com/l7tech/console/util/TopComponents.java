@@ -47,6 +47,10 @@ public class TopComponents {
         getMainWindow().updateLastActivityTime();
     }
 
+    public void updateLastRemoteActivityTime() {
+        getMainWindow().updateRemoteLastActivityTime();
+    }
+
     public void firePolicyEditDone() {
         getMainWindow().firePolicyEditDone();
     }

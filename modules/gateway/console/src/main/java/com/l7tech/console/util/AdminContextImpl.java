@@ -20,6 +20,7 @@ import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.SyspropUtil;
 import org.springframework.remoting.RemoteConnectFailureException;
 
@@ -148,8 +149,10 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
                       final int port,
                       final String sessionId,
                       final Collection<Object> remoteObjects,
-                      final ConfigurableHttpInvokerRequestExecutor configurableInvoker ) {
+                      final ConfigurableHttpInvokerRequestExecutor configurableInvoker,
+                      final Functions.Nullary<Void> activityCallback ) {
         super( host, port, sessionId, remoteObjects, configurableInvoker );
+        this.activityCallback = activityCallback;
     }
 
     //- PROTECTED
@@ -171,15 +174,30 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
         }
     }
 
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(AdminContextImpl.class.getName());
+
+    private static final String PROP_BASE = "com.l7tech.console.";
+    private static final boolean NO_CANCEL_DIALOGS = SyspropUtil.getBoolean(PROP_BASE + "suppressRemoteInvocationCancelDialog");
+    private static final long MS_BEFORE_DLG = SyspropUtil.getLong(PROP_BASE + "remoteInvocationCancelDialogDelayMillis", 2500L);
+    private static final boolean TRACE = SyspropUtil.getBoolean(PROP_BASE + "remoteInvocationTracing", false);
+
+    private final Functions.Nullary<Void> activityCallback;
+
     private Object reallyDoRemoteInvocation( final Object targetObject,
                                          final Method method,
                                          final Object[] args) throws Throwable {
         if (NO_CANCEL_DIALOGS || !SwingUtilities.isEventDispatchThread() || Utilities.isAnyThreadDoingWithDelayedCancelDialog())
             return super.doRemoteInvocation(targetObject, method, args);    //To change body of overridden methods use File | Settings | File Templates.
 
+        // Track activity that will keep the session alive on the Gateway
+        final Administrative administrative = method.getAnnotation( Administrative.class );
+        final boolean background = administrative!=null && administrative.background();
+
         // Running on Swing event thread, and no delayed cancel dialog already pending
         try {
-            return CancelableOperationDialog.doWithDelayedCancelDialog(new Callable<Object>() {
+            final Object result = CancelableOperationDialog.doWithDelayedCancelDialog(new Callable<Object>() {
                 @Override
                 public Object call() throws Exception {
                     try {
@@ -191,6 +209,10 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
                     }
                 }
             }, null, "Waiting for Server", "Waiting for response from Gateway...", MS_BEFORE_DLG);
+            if ( !background && activityCallback != null ) {
+                activityCallback.call();
+            }
+            return result;
         } catch (InterruptedException e) {
             String msg = "Remote invocation canceled by user: " + ExceptionUtils.getMessage(e);
 
@@ -219,15 +241,6 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
             throw e;
         }
     }
-
-    //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(AdminContextImpl.class.getName());
-
-    private static final String PROP_BASE = "com.l7tech.console.";
-    private static final boolean NO_CANCEL_DIALOGS = SyspropUtil.getBoolean(PROP_BASE + "suppressRemoteInvocationCancelDialog");
-    private static final long MS_BEFORE_DLG = SyspropUtil.getLong(PROP_BASE + "remoteInvocationCancelDialogDelayMillis", 2500L);
-    private static final boolean TRACE = SyspropUtil.getBoolean(PROP_BASE + "remoteInvocationTracing", false);
 
     private static class ThrowableWrapper extends Exception {
         private ThrowableWrapper(Throwable cause) {

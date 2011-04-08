@@ -110,7 +110,7 @@ public interface ClusterStatusAdmin {
      * @return the current system time zone on the gateway
      */
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    @Administrative(licensed=false, background = true)
+    @Administrative(licensed=false)
     String getCurrentClusterTimeZone();
 
     /**
@@ -167,7 +167,7 @@ public interface ClusterStatusAdmin {
      */
     @Transactional(readOnly=true)
     @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.FIND_ENTITY)
-    @Administrative(licensed=false, background = true)
+    @Administrative(licensed=false)
     ClusterProperty findPropertyByName(String name) throws FindException;
 
     /**
@@ -252,7 +252,7 @@ public interface ClusterStatusAdmin {
      * @return the fine bin interval in milliseconds
      */
     @Transactional(readOnly=true)
-    @Administrative(background = true)
+    @Administrative
     int getMetricsFineInterval();
 
     /**

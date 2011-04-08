@@ -111,6 +111,12 @@ public interface AdminLogin {
     void changePassword(String currentPassword, String newPassword)
             throws LoginException;
 
+    /**
+     * Can be called periodically to prevent administrative session timeout.
+     */
+    @Administrative(licensed=false)
+    void ping();
+
      /**
      * Get a property, pci-dss enabled.
      *

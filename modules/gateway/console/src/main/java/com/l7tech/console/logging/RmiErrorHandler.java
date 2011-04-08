@@ -74,7 +74,7 @@ public class RmiErrorHandler implements ErrorHandler {
             e.getLogger().log(Level.SEVERE, message, ExceptionUtils.getDebugException(t));
             if (rex instanceof NoSuchObjectException ||
                 throwable instanceof AccessControlException) {
-                message = "The Gateway restarted, please login again.";
+                message = "Gateway restarted or session expired, please login again.";
                 t = null;
             }
             else if ((rex instanceof ConnectException) ||

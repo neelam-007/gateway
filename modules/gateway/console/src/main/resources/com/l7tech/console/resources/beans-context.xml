@@ -38,6 +38,9 @@
             </list>
         </constructor-arg>
         <constructor-arg index="1" ref="httpRequestExecutor"/>
+        <constructor-arg index="2">
+            <bean class="com.l7tech.console.MainWindow$RemoteActivityListener"/>
+        </constructor-arg>
     </bean>
 
     <bean id="adminLogin" parent="invokerCommon">
