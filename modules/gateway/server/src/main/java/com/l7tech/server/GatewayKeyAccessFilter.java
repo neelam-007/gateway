@@ -29,9 +29,6 @@ public class GatewayKeyAccessFilter implements KeyAccessFilter, InitializingBean
 
     @Override
     public boolean isRestrictedAccessKeyEntry(SsgKeyEntry keyEntry) {
-        if (restrictedKeyAccess.get())
-            return false; // restrictions turned off on this thread
-
         if (defaultKey == null) {
             String msg = "defaultKey not provided yet -- incorrect initialization order";
             logger.severe(msg);
