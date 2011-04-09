@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
@@ -380,8 +381,13 @@ public class WsspWriter {
         SecureConversation.class
     ));
 
+    /**
+     * Note current invariant between this set and SUPPORTED_ASSERTIONS. HttpDigest does not belong to this other collection
+     * so it is not currently supported.
+     */
     private static final Collection<Class<? extends Assertion>> TRANSPORT_ASSERTIONS = Collections.unmodifiableCollection(Arrays.<Class<? extends Assertion>>asList(
         SslAssertion.class,
+        HttpDigest.class,
         HttpBasic.class
     ));
 

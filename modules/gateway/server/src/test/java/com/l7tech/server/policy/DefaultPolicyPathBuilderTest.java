@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
@@ -277,6 +278,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         credentialsLocationList.add(new TrueAssertion());
 
         credentialsLocationList.add(new HttpBasic());
+        credentialsLocationList.add(new HttpDigest());
         credentialsLocationList.add(new SslAssertion(true));
         credentialsLocationList.add(new WssBasic());
         credentialsLocationList.add(new RequireWssX509Cert());

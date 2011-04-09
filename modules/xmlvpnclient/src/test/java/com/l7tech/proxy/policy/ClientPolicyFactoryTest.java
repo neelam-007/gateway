@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.transport.PreemptiveCompression;
 import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
@@ -71,6 +72,7 @@ public class ClientPolicyFactoryTest {
     private static final List<FalseAssertion> LIST_OF_FALSE = Collections.singletonList(new FalseAssertion());
     public static Assertion[] BRIDGE_EVERYTHING = new Assertion[]{
         new HttpBasic(),
+        new HttpDigest(),
         new WssBasic(),
         new EncryptedUsernameTokenAssertion(),
         new AllAssertion(LIST_OF_FALSE),

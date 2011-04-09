@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import junit.framework.Test;
@@ -139,6 +140,7 @@ public class SsgManagerTest extends TestCase {
 
         Assertion policy2 = new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
             policy1,
+            new HttpDigest(),
             new HttpNegotiate()
         }));
 

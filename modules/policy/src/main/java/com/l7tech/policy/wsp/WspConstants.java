@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -212,6 +213,7 @@ public class WspConstants {
 
         // Leaf assertions
         new AssertionMapping(new HttpBasic(), "HttpBasic"),
+        new AssertionMapping(new HttpDigest(), "HttpDigest"),
         new AssertionMapping(new HttpNegotiate(), "HttpNegotiate"),
         new AssertionMapping(new FalseAssertion(), "FalseAssertion"),
         new AssertionMapping(new SslAssertion(), "SslAssertion"),

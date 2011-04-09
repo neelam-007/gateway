@@ -17,7 +17,6 @@
 	</configurations>
 	<publications>
 		<artifact name="HttpDigestAssertion" type="aar" ext="aar" conf="master"/>
-        <artifact name="HttpDigestAssertion-client" type="aar" ext="aar" conf="client"/>
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"

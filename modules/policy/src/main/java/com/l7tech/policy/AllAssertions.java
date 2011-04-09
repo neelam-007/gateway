@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -47,6 +48,7 @@ public class AllAssertions {
         new TrueAssertion(),
         new FalseAssertion(),
         new HttpBasic(),
+        new HttpDigest(),
         new HttpNegotiate(),
         new WssBasic(),
         new WssDigest(),
@@ -118,6 +120,7 @@ public class AllAssertions {
      */
     public static Assertion[] SERIALIZABLE_EVERYTHING = new Assertion[]{
         new HttpBasic(),
+        new HttpDigest(),            
         new HttpNegotiate(),
         new WssBasic(),
         new WssDigest(),

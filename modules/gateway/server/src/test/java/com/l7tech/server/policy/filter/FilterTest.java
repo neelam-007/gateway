@@ -6,6 +6,7 @@
 
 package com.l7tech.server.policy.filter;
 
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.internal.InternalUser;
@@ -81,6 +82,7 @@ public class FilterTest{
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[] {
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
                 new AllAssertion(Arrays.asList(new Assertion[] {
+                    new HttpDigest(),
                     new HttpBasic(),
                     new SpecificUser(providerid, "bob", null, null),
                     new HttpRoutingAssertion()

@@ -2,7 +2,7 @@
  * Copyright (C) 2008, Layer 7 Technologies Inc.
  * @author darmstrong
  */
-package com.l7tech.external.assertions.httpdigest.server;
+package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.util.Background;
 import com.l7tech.util.HexUtils;

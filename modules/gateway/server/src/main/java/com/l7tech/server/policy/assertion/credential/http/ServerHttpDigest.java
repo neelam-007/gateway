@@ -1,18 +1,22 @@
-package com.l7tech.external.assertions.httpdigest.server;
+/**
+ * Copyright (C) 2008, Layer 7 Technologies Inc.
+ * @author darmstrong
+ */
+package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.security.token.http.HttpDigestToken;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.external.assertions.httpdigest.HttpDigestAssertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpCredentialSource;
+import com.l7tech.server.policy.assertion.credential.DigestSessions;
 import com.l7tech.util.HexUtils;
 import org.springframework.context.ApplicationContext;
 
@@ -20,29 +24,27 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Server side implementation of the HttpDigestAssertion.
  *
- * @see com.l7tech.external.assertions.httpdigest.HttpDigestAssertion
- * @author Alex (moved from package com.l7tech.server.policy.assertion.credential.http)
+ * @see HttpDigest
+ * @author Alex (moved from package com.l7tech.server.policy.assertion.credential.http and back again.)
  */
-public class ServerHttpDigestAssertion extends ServerHttpCredentialSource<HttpDigestAssertion> {
+public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
 
     // - PUBLIC
 
-    public ServerHttpDigestAssertion(HttpDigestAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
+    public ServerHttpDigest(HttpDigest assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion, context);
 
         this.assertion = assertion;
         this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
-        this.variablesUsed = assertion.getVariablesUsed();
     }
 
     // - PROTECTED
-    
+
     /**
      * Returns the authentication realm to use for this assertion.
      * We have little choice but to return a hardcoded value here because passwords are hashed with
@@ -58,14 +60,14 @@ public class ServerHttpDigestAssertion extends ServerHttpCredentialSource<HttpDi
     protected AssertionStatus checkAuthParams(Map authParams) {
         if ( authParams == null ) return AssertionStatus.AUTH_REQUIRED;
 
-        String nonce = (String)authParams.get( HttpDigestAssertion.PARAM_NONCE );
-        String userName = (String)authParams.get( HttpDigestAssertion.PARAM_USERNAME );
-        String realmName = (String)authParams.get( HttpDigestAssertion.PARAM_REALM );
-        String nc = (String)authParams.get( HttpDigestAssertion.PARAM_NC );
-        String cnonce = (String)authParams.get( HttpDigestAssertion.PARAM_CNONCE );
-        String qop = (String)authParams.get( HttpDigestAssertion.PARAM_QOP );
-        String uri = (String)authParams.get( HttpDigestAssertion.PARAM_URI );
-        String digestResponse = (String)authParams.get( HttpDigestAssertion.PARAM_RESPONSE );
+        String nonce = (String)authParams.get( HttpDigest.PARAM_NONCE );
+        String userName = (String)authParams.get( HttpDigest.PARAM_USERNAME );
+        String realmName = (String)authParams.get( HttpDigest.PARAM_REALM );
+        String nc = (String)authParams.get( HttpDigest.PARAM_NC );
+        String cnonce = (String)authParams.get( HttpDigest.PARAM_CNONCE );
+        String qop = (String)authParams.get( HttpDigest.PARAM_QOP );
+        String uri = (String)authParams.get( HttpDigest.PARAM_URI );
+        String digestResponse = (String)authParams.get( HttpDigest.PARAM_RESPONSE );
 
         if ( (userName == null) || (realmName == null) || (nonce == null)
              || (uri == null) || ( digestResponse == null) )
@@ -91,12 +93,12 @@ public class ServerHttpDigestAssertion extends ServerHttpCredentialSource<HttpDi
     {
         if ( authParams == null ) return null;
 
-        String userName = authParams.get( HttpDigestAssertion.PARAM_USERNAME );
-        String realmName = authParams.get( HttpDigestAssertion.PARAM_REALM );
-        String digestResponse = authParams.get( HttpDigestAssertion.PARAM_RESPONSE );
+        String userName = authParams.get( HttpDigest.PARAM_USERNAME );
+        String realmName = authParams.get( HttpDigest.PARAM_REALM );
+        String digestResponse = authParams.get( HttpDigest.PARAM_RESPONSE );
 
-        authParams.put( HttpDigestAssertion.PARAM_URI, request.getHttpRequestKnob().getRequestUri() );
-        authParams.put( HttpDigestAssertion.PARAM_METHOD, request.getHttpRequestKnob().getMethod().name() );
+        authParams.put( HttpDigest.PARAM_URI, request.getHttpRequestKnob().getRequestUri() );
+        authParams.put( HttpDigest.PARAM_METHOD, request.getHttpRequestKnob().getMethod().name() );
 
         if ( (userName == null) || (realmName == null) || ( digestResponse == null) )
             return null;
@@ -117,7 +119,7 @@ public class ServerHttpDigestAssertion extends ServerHttpCredentialSource<HttpDi
     protected Map<String,String> challengeParams( Message request, Map<String, String> requestAuthParams ) {
         DigestSessions sessions = DigestSessions.getInstance();
 
-        String nonce = requestAuthParams == null ? null : requestAuthParams.get(HttpDigestAssertion.PARAM_NONCE);
+        String nonce = requestAuthParams == null ? null : requestAuthParams.get(HttpDigest.PARAM_NONCE);
 
         if ( nonce == null || nonce.length() == 0 ) {
             // New session
@@ -128,7 +130,7 @@ public class ServerHttpDigestAssertion extends ServerHttpCredentialSource<HttpDi
             // Existing digest session
             if ( !sessions.use( nonce ) ) {
                 // Nonce has been invalidated or is expired
-                final String username = requestAuthParams.get(HttpDigestAssertion.PARAM_USERNAME);
+                final String username = requestAuthParams.get(HttpDigest.PARAM_USERNAME);
                 auditor.logAndAudit(AssertionMessages.HTTPDIGEST_NONCE_EXPIRED, nonce, username == null ? "<unknown>" : username);
                 sessions.invalidate( nonce );
                 nonce = sessions.generate(assertion.getNonceTimeout(), assertion.getMaxNonceCount() );
@@ -139,7 +141,7 @@ public class ServerHttpDigestAssertion extends ServerHttpCredentialSource<HttpDi
     }
 
     protected String scheme() {
-        return HttpDigestAssertion.SCHEME;
+        return HttpDigest.SCHEME;
     }
 
     protected LoginCredentials findCredentials( Message request, Map<String, String> authParams )
@@ -205,17 +207,16 @@ public class ServerHttpDigestAssertion extends ServerHttpCredentialSource<HttpDi
 
     // - PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerHttpDigestAssertion.class.getName());
+    private static final Logger logger = Logger.getLogger(ServerHttpDigest.class.getName());
 
-    private final HttpDigestAssertion assertion;
+    private final HttpDigest assertion;
     private final Auditor auditor;
-    private final String[] variablesUsed;
 
     private Map<String,String> myChallengeParams( String nonce ) {
         Map<String,String> params = new HashMap<String,String>();
-        params.put( HttpDigestAssertion.PARAM_QOP, HttpDigestAssertion.QOP_AUTH );
-        params.put( HttpDigestAssertion.PARAM_NONCE, nonce );
-        params.put( HttpDigestAssertion.PARAM_OPAQUE, HexUtils.encodeMd5Digest( HexUtils.getMd5Digest( nonce.getBytes() ) ) );
+        params.put( HttpDigest.PARAM_QOP, HttpDigest.QOP_AUTH );
+        params.put( HttpDigest.PARAM_NONCE, nonce );
+        params.put( HttpDigest.PARAM_OPAQUE, HexUtils.encodeMd5Digest( HexUtils.getMd5Digest( nonce.getBytes() ) ) );
         return params;
     }
 }

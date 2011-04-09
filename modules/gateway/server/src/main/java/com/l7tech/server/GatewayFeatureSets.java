@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.License;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.transport.PreemptiveCompression;
 import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
@@ -300,7 +301,7 @@ public class GatewayFeatureSets {
             ass(MemberOfGroup.class),
             ass(AuthenticationAssertion.class),
             ass(HttpBasic.class),
-            mass("assertion:HttpDigest"),
+            ass(HttpDigest.class),
             ass(SslAssertion.class), // TODO omit client cert support from this grant (when it is possible to do so)
             ass(XpathCredentialSource.class),
             ass(RequireWssX509Cert.class),

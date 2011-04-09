@@ -1637,6 +1637,7 @@
 
     <bean id="securityTokenServiceTemplateRegistry" class="com.l7tech.server.tokenservice.SecurityTokenServiceTemplateRegistry">
         <constructor-arg index="0" ref="serviceTemplateManager"/>
+        <constructor-arg index="1" ref="serverConfig"/>
     </bean>
 
     <bean id="esmSubscriptionManager" class="com.l7tech.server.wsdm.subscription.SubscriptionManagerImpl" parent="hibernateBean"/>

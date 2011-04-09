@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
@@ -366,6 +367,10 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         OneOrMoreAssertion validCredsOverSSL = new OneOrMoreAssertion();
         validCredsOverSSL.addChild(new HttpBasic());
         validCredsOverSSL.addChild(new WssBasic());
+        final boolean enableDigest = config.getBooleanProperty("httpDigest.enable", false);
+        if(enableDigest){
+            validCredsOverSSL.addChild(new HttpDigest());
+        }
         validCredsOverSSL.addChild(new SslAssertion(true));
         RequireWssSaml samlBearerToken = new RequireWssSaml();
         validCredsOverSSL.addChild(samlBearerToken);

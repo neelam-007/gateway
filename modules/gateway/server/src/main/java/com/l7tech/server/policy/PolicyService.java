@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.*;
@@ -147,7 +148,15 @@ public class PolicyService extends ApplicationObjectSupport {
 
         // populate all possible credentials sources
         this.allMessageCredentialAssertions = buildCredentialAssertions( ALL_MESSAGE_CREDENTIAL_ASSERTIONS_TYPES );
-        this.allTransportCredentialAssertions = buildCredentialAssertions( ALL_TRANSPORT_CREDENTIAL_ASSERTIONS_TYPES );
+        
+        final boolean enableDigest = config.getBooleanProperty("httpDigest.enable", false);
+        final List<Assertion> assertionList = new ArrayList<Assertion>(//need a modifiable list
+                Arrays.asList(ALL_TRANSPORT_CREDENTIAL_ASSERTIONS_TYPES));
+        if(enableDigest) {
+            assertionList.add(0, new HttpDigest());
+        }
+
+        this.allTransportCredentialAssertions = buildCredentialAssertions( assertionList.toArray(new Assertion[assertionList.size()]) );
     }
 
     private List<Assertion> buildCredentialAssertions( final Assertion[] assertions ) {

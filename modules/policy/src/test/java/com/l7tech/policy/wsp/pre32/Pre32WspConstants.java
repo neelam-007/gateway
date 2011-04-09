@@ -95,6 +95,7 @@ public class Pre32WspConstants {
 
         // Leaf assertions
         new Pre32AssertionMapping(new FakeAssertion(), "HttpBasic"),
+        new Pre32AssertionMapping(new FakeAssertion(), "HttpDigest"),
         new Pre32AssertionMapping(new FakeAssertion(), "WssBasic"),
         new Pre32AssertionMapping(new FakeAssertion(), "FalseAssertion"),
         new Pre32AssertionMapping(new FakeAssertion(), "SslAssertion"),
