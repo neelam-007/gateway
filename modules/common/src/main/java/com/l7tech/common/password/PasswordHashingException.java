@@ -1,4 +1,4 @@
-package com.l7tech.gateway.common.security.password;
+package com.l7tech.common.password;
 
 /**
  * Exception thrown if an error occurs while hashing a password.

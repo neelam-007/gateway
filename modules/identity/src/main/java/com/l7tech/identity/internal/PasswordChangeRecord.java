@@ -22,7 +22,6 @@ public class PasswordChangeRecord extends PersistentEntityImp {
     private InternalUser internalUser;
     private long lastChanged; //that last changed timestamp
     private String prevHashedPassword; //previous password before password was changed
-    private int _orderId;
 
     /**
      * For hibernate only.

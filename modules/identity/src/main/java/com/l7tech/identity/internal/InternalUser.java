@@ -1,10 +1,8 @@
 package com.l7tech.identity.internal;
 
-import com.l7tech.util.HexUtils;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.InvalidPasswordException;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -201,17 +199,6 @@ public class InternalUser extends PersistentUser {
         result = 31 * result + Boolean.valueOf(changePassword).hashCode();
         result = 31 * result + Boolean.valueOf(enabled).hashCode();
         return result;
-    }
-
-    /**
-     * Use to validate an ESM password only. Cannot be used to validate a password on the Gateway. 
-     * @param newPassword
-     * @throws InvalidPasswordException
-     *///todo find better home for this on the ESM, or update ESM to use password policy as is done on the Gateway post Chinook
-    public static void validateEsmPassword(String newPassword) throws InvalidPasswordException {
-        if (newPassword == null) throw new InvalidPasswordException("Empty password is not valid", null);
-        if (newPassword.length() < 6) throw new InvalidPasswordException("Password must be no shorter than 6 characters", null);
-        if (newPassword.length() > 32) throw new InvalidPasswordException("Password must be no longer than 32 characters", null);
     }
 
     /**

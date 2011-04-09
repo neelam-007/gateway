@@ -263,6 +263,9 @@
         <constructor-arg index="2" ref="serverConfig"/>
         <constructor-arg index="3" value=" "/>  <!-- This is for SCA, and we don't have one -->
         <constructor-arg index="4"><null/></constructor-arg>
+        <property name="keyAccessFilter">
+            <bean class="com.l7tech.server.security.keystore.PermissiveKeyAccessFilter"/>
+        </property>
     </bean>
 
     <!-- server side log manager -->
@@ -377,6 +380,7 @@
         <property name="certificateAuthenticator"><null/></property>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager"><null/></property>
+        <property name="passwordHasher" ref="passwordHasher"/>
     </bean>
 
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
@@ -440,7 +444,7 @@
         <constructor-arg index="3" ref="passwordHasher"/>
     </bean>
 
-    <bean id="passwordHasher" class="com.l7tech.gateway.common.security.password.Sha512CryptPasswordHasher" />
+    <bean id="passwordHasher" class="com.l7tech.common.password.Sha512CryptPasswordHasher" />
 
     <bean id="servletContainer" class="com.l7tech.server.ems.listener.EsmServletContainer">
         <constructor-arg index="0" ref="serverConfig"/>

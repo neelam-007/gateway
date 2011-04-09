@@ -220,7 +220,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager {
                     try {
                         InternalUserManager internalUserManager = getInternalUserManager();
                         if ( internalUserManager != null ) {
-                            //todo [Donal] - test following update to properties
                             String initialAdminUsername = serverConfig.getProperty("em.admin.user");
                             String initialAdminPassword = serverConfig.getProperty("em.admin.pass");
 

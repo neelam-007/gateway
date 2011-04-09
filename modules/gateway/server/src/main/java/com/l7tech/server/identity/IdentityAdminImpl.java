@@ -1,9 +1,9 @@
 package com.l7tech.server.identity;
 
+import com.l7tech.common.password.PasswordHashingException;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.gateway.common.security.password.IncorrectPasswordException;
-import com.l7tech.gateway.common.security.password.PasswordHasher;
-import com.l7tech.gateway.common.security.password.PasswordHashingException;
+import com.l7tech.common.password.IncorrectPasswordException;
+import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.identity.LogonInfo;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.audit.SystemMessages;

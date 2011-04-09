@@ -1,4 +1,4 @@
-package com.l7tech.gateway.common.security.password;
+package com.l7tech.common.password;
 
 /**
  * Exception thrown when a password does not match the expected hashed value.

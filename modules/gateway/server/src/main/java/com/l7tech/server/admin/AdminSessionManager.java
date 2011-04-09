@@ -1,6 +1,6 @@
 package com.l7tech.server.admin;
 
-import com.l7tech.gateway.common.security.password.PasswordHasher;
+import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;

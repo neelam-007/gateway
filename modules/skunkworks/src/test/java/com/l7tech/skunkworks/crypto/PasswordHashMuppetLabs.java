@@ -1,6 +1,6 @@
 package com.l7tech.skunkworks.crypto;
 
-import com.l7tech.gateway.common.security.password.CryptL7;
+import com.l7tech.common.password.CryptL7;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 

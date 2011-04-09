@@ -1,6 +1,6 @@
 package com.l7tech.server;
 
-import com.l7tech.gateway.common.security.password.PasswordHasher;
+import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;

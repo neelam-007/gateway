@@ -1,9 +1,9 @@
 package com.l7tech.server.security;
 
 import com.l7tech.gateway.common.Component;
-import com.l7tech.gateway.common.security.password.IncorrectPasswordException;
-import com.l7tech.gateway.common.security.password.PasswordHasher;
-import com.l7tech.gateway.common.security.password.PasswordHashingException;
+import com.l7tech.common.password.PasswordHasher;
+import com.l7tech.common.password.IncorrectPasswordException;
+import com.l7tech.common.password.PasswordHashingException;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderPasswordPolicy;
@@ -15,7 +15,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.security.rbac.RoleManager;

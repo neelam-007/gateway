@@ -1,4 +1,4 @@
-package com.l7tech.gateway.common.security.password;
+package com.l7tech.common.password;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;

@@ -133,7 +133,7 @@
         <property name="targetMethod" value="getSecureRandom"/>
     </bean>
 
-    <bean id="passwordHasher" class="com.l7tech.gateway.common.security.password.Sha512CryptPasswordHasher">
+    <bean id="passwordHasher" class="com.l7tech.common.password.Sha512CryptPasswordHasher">
         <constructor-arg ref="secureRandom"/>
     </bean>
 

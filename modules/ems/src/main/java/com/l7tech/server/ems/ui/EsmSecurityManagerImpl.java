@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.ui;
 
-import com.l7tech.gateway.common.security.password.PasswordHasher;
+import com.l7tech.common.password.PasswordHasher;
+import com.l7tech.server.ems.user.EsmAccountUtils;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
@@ -216,7 +217,7 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
 
         logger.info("Authenticating user '"+username+"'.");
         for ( IdentityProvider provider : getAdminIdentityProviders() ) {
-            try {                         //todo [Donal] test ESM usage
+            try {
                 AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds, true);
                 user = authResult == null ? null : authResult.getUser();
                 if ( applicationContext != null && user != null ) {
@@ -294,9 +295,10 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
                 InternalIdentityProvider internalIdentityProvider = (InternalIdentityProvider) provider;
                 AuthenticationResult authResult = internalIdentityProvider.authenticate(creds, true);
                 if ( authResult != null ) {
-                    InternalUser.validateEsmPassword(newPassword);
+                    EsmAccountUtils.validateEsmPassword( newPassword );
                     InternalUser authUser = (InternalUser) authResult.getUser();
                     authUser.setHashedPassword(passwordHasher.hashPassword(newPassword.getBytes(Charsets.UTF8)));
+                    authUser.setHttpDigest( null );
                     internalIdentityProvider.getUserManager().update(authUser);
                     passwordChanged = true;
                 }

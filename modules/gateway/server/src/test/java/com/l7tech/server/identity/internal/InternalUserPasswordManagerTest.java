@@ -4,8 +4,8 @@
  */
 package com.l7tech.server.identity.internal;
 
-import com.l7tech.gateway.common.security.password.PasswordHasher;
-import com.l7tech.gateway.common.security.password.Sha512CryptPasswordHasher;
+import com.l7tech.common.password.PasswordHasher;
+import com.l7tech.common.password.Sha512CryptPasswordHasher;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.internal.PasswordChangeRecord;
 import com.l7tech.util.Charsets;

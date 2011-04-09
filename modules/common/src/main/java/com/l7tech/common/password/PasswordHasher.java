@@ -1,4 +1,4 @@
-package com.l7tech.gateway.common.security.password;
+package com.l7tech.common.password;
 
 /**
  * Interface implemented by a scheme that hashes and verified passwords.

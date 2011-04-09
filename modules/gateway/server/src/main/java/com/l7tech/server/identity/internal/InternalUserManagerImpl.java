@@ -1,8 +1,6 @@
 package com.l7tech.server.identity.internal;
 
-import com.l7tech.gateway.common.security.password.IncorrectPasswordException;
-import com.l7tech.gateway.common.security.password.PasswordHasher;
-import com.l7tech.gateway.common.security.password.PasswordHashingException;
+import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
@@ -10,18 +8,13 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.PersistentUserManagerImpl;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.logon.LogonInfoManager;
-import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**

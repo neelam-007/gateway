@@ -3,11 +3,11 @@
  */
 package com.l7tech.server.identity.internal;
 
+import com.l7tech.common.password.IncorrectPasswordException;
+import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.gateway.common.security.password.IncorrectPasswordException;
-import com.l7tech.gateway.common.security.password.PasswordHasher;
-import com.l7tech.gateway.common.security.password.PasswordHashingException;
+import com.l7tech.common.password.PasswordHashingException;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalGroup;
@@ -30,7 +30,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.cert.X509Certificate;
-import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

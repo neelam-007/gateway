@@ -2,7 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.security.password.PasswordHasher;
+import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;

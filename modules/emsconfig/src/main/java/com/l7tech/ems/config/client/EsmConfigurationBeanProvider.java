@@ -2,11 +2,13 @@ package com.l7tech.ems.config.client;
 
 import com.l7tech.config.client.beans.PropertiesConfigurationBeanProvider;
 import com.l7tech.config.client.beans.ConfigurationBean;
+import com.l7tech.common.password.Sha512CryptPasswordHasher;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.HexUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collection;
@@ -44,13 +46,19 @@ public class EsmConfigurationBeanProvider extends PropertiesConfigurationBeanPro
 
         if ( CONFIG_ADMIN_PASS.equals(name) && value != null ) {
             // encode the password before storing to the properties file
-            Object userObj = this.getConfigurationBeanValue( CONFIG_ADMIN_USER, beans );
-            persistValue = HexUtils.encodePasswd( userObj==null ? "" : userObj.toString(), value.toString(), "L7SSGDigestRealm" );//todo [Donal] update to use password hasheer
+            persistValue = hashPassword( value.toString() );
         } else {
             persistValue = super.onPersist( name, value, beans );
         }
 
         return persistValue;
+    }
+
+    //- PACKAGE
+
+    static String hashPassword( final String password ) {
+        final Sha512CryptPasswordHasher cryptHasher = new Sha512CryptPasswordHasher();
+        return cryptHasher.hashPassword( password.getBytes( Charsets.UTF8 ) );
     }
 
     //- PRIVATE
