@@ -28,10 +28,10 @@ public final class LogRequest {
     private final AuditType auditType;
     private final String userName;
     private final String userIdOrDn;
-    private final Long messageId;
+    private final Integer messageId; // null = any
     private final String paramValue;
     private final String entityTypeName;
-    private final long entityId;
+    private final Long entityId; // null = any
 
     private int retrievedLogCount;
 
@@ -87,10 +87,10 @@ public final class LogRequest {
         private AuditType auditType = AuditType.ALL;
         private String userName;
         private String userIdOrDn;
-        private Long messageId = null;
+        private Integer messageId; // null = any
         private String paramValue;
         private String entityTypeName = EntityType.ANY.getName();
-        private long entityId = -1;
+        private Long entityId; // null = any
 
         public Builder(){
         }
@@ -154,7 +154,7 @@ public final class LogRequest {
             return this;
         }
 
-        public Builder messageId(Long value) {
+        public Builder messageId(Integer value) {
             messageId = value;
             return this;
         }
@@ -169,7 +169,7 @@ public final class LogRequest {
             return this;
         }
 
-        public Builder entityId(long value) {
+        public Builder entityId(Long value) {
             entityId = value;
             return this;
         }
@@ -293,7 +293,7 @@ public final class LogRequest {
         return auditType;
     }
 
-    public long getEntityId() {
+    public Long getEntityId() {
         return entityId;
     }
 
@@ -301,7 +301,7 @@ public final class LogRequest {
         return entityTypeName;
     }
 
-    public Long getMessageId() {
+    public Integer getMessageId() {
         return messageId;
     }
 

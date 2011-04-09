@@ -134,6 +134,9 @@ public class AuditRecordManagerImpl
         final boolean searchingMsgIdEnabled = criteria.messageId != null;
         final boolean searchingParamValueEnabled = criteria.paramValue != null && !criteria.paramValue.trim().isEmpty();
 
+        // If message id is equal to Integer.MIN_VALUE, then this means message id is invalid, then return false.
+        if (searchingMsgIdEnabled && criteria.messageId.equals(Integer.MIN_VALUE)) return false;
+
         // If both searching criteria are not enabled, then ignore the checking procedure and return true.
         if (!searchingMsgIdEnabled && !searchingParamValueEnabled) return true;
 
@@ -463,7 +466,7 @@ public class AuditRecordManagerImpl
                 criterion.add(Restrictions.eq(PROP_ENTITY_CLASS, criteria.entityClassName));
             }
 
-            if (criteria.entityId >= 0) {
+            if (criteria.entityId != null) {
                 criterion.add(Restrictions.eq(PROP_ENTITY_ID, criteria.entityId));
             }
         }

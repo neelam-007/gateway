@@ -124,10 +124,10 @@ public final class AuditSearchCriteria implements Serializable {
 
     public final String userName;
     public final String userIdOrDn;
-    public final Long messageId;
+    public final Integer messageId; // null = any
     public final String paramValue;
     public final String entityClassName; // Initial value: null, which means Entity Type Search Criterion is not set.
-    public final long entityId;
+    public final Long entityId; // null = any
 
     /**
      * Grabs information about the search criteria.  Similar to toString() method.
@@ -207,7 +207,7 @@ public final class AuditSearchCriteria implements Serializable {
             if (entityClassName != null) fullDetailsOnSearchCriteria.append("{Entity Class: " + entityClassName + "} ");
 
             // construct Entity ID
-            if (entityId >= 0) fullDetailsOnSearchCriteria.append("{Entity ID: " + entityId + "} ");
+            if (entityId != null) fullDetailsOnSearchCriteria.append("{Entity ID: " + entityId + "} ");
         }
 
         return new Pair<String, String>(partialDetailsOnSearchCriteria.toString(), fullDetailsOnSearchCriteria.toString());
@@ -257,7 +257,8 @@ public final class AuditSearchCriteria implements Serializable {
             if ((entityClassName == null && criteria.entityClassName != null)
                 || (entityClassName != null && !entityClassName.equals(criteria.entityClassName))) return false;
 
-            if (entityId != criteria.entityId) return false;
+            if ((entityId == null && criteria.entityId != null)
+                || (entityId != null && !entityId.equals(criteria.entityId))) return false;
         }
 
         return true;
@@ -281,10 +282,10 @@ public final class AuditSearchCriteria implements Serializable {
 
         private String userName; // null == any
         private String userIdOrDn; // null == any
-        private Long messageId; // null == any
+        private Integer messageId; // null == any
         private String paramValue; // null == any
         private String entityClassName; // null == any
-        private long entityId = -1; // -1 == any
+        private Long entityId; // null == any
 
         public Builder() {
         }
@@ -354,6 +355,8 @@ public final class AuditSearchCriteria implements Serializable {
         public Builder serviceName(String value) {
             if (value != null && value.length() > 0) {
                 serviceName = value.replace("*", "%");//translate any wildcard chars from GUI to mysql format
+            } else {
+                serviceName = null;
             }
             return this;
         }
@@ -361,6 +364,8 @@ public final class AuditSearchCriteria implements Serializable {
         public Builder message(String value) {
             if (value != null && value.length() > 0) {
                 message = value.replace("*", "%");//translate any wildcard chars from GUI to mysql format
+            } else {
+                message = null;
             }
             return this;
         }
@@ -368,6 +373,8 @@ public final class AuditSearchCriteria implements Serializable {
         public Builder requestId(String value) {
             if (value != null && value.length() > 0) {
                 requestId = value.replace("*", "%");//translate any wildcard chars from GUI to mysql format
+            } else {
+                requestId = null;
             }
             return this;
         }
@@ -392,6 +399,8 @@ public final class AuditSearchCriteria implements Serializable {
         public Builder userName(String value) {
             if (value != null && !value.trim().isEmpty()) {
                 userName = value.replace("*", "%"); //translate any wildcard chars from GUI to mysql format
+            } else {
+                userName = null;
             }
             return this;
         }
@@ -399,35 +408,33 @@ public final class AuditSearchCriteria implements Serializable {
         public Builder userIdOrDn(String value) {
             if (value != null && !value.trim().isEmpty()) {
                 userIdOrDn = value.replace("*", "%");//translate any wildcard chars from GUI to mysql format
+            } else {
+                userIdOrDn = null;
             }
             return this;
         }
 
-        public Builder messageId(Long value) {
-            if (value != null) {
-                messageId = new Long(value);
-            }
+        public Builder messageId(Integer value) {
+            messageId = value;
             return this;
         }
 
         public Builder paramValue(String value) {
             if (value != null && !value.trim().isEmpty()) {
                 paramValue = value;  // Pattern match is done in AuditRecordManagerImpl.
+            } else {
+                paramValue = null;
             }
             return this;
         }
 
         public Builder entityClass(String value) {
-            if (value != null) {
-                entityClassName = value;
-            }
+            entityClassName = value; // Valid Card Not Supported, since the entity class is got from the drop-down list in the audit search pane.
             return this;
         }
 
-        public Builder entityId(long value) {
-            if (value >= 0) {
-                entityId = value;
-            }
+        public Builder entityId(Long value) {
+            entityId = value;
             return this;
         }
 

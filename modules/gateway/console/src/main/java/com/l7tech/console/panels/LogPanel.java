@@ -226,10 +226,10 @@ public class LogPanel extends JPanel {
 
     private String userName;
     private String userIdOrDn;
-    private Long messageId = null;
+    private Integer messageId; // null = any
     private String paramValue;
     private String entityTypeName = EntityType.ANY.getName();
-    private long entityId = -1;
+    private Long entityId; // null = any
 
     public enum LogLevelOption {
         ALL("All", Level.ALL), INFO("Info", Level.INFO), WARNING("Warning", Level.WARNING), SEVERE("Severe", Level.SEVERE);
@@ -545,17 +545,29 @@ public class LogPanel extends JPanel {
         requestId = controlPanel.requestIdTextField.getText();
         userName = controlPanel.userNameTextField.getText();
         userIdOrDn = controlPanel.userIdOrDnTextField.getText();
+
         try {
-            messageId = new Long(controlPanel.auditCodeTextField.getText());
+            String msgIdTxt = controlPanel.auditCodeTextField.getText();
+            if (msgIdTxt == null || msgIdTxt.trim().isEmpty()) {
+                messageId = null;
+            } else {
+                messageId = Integer.parseInt(msgIdTxt);
+            }
         } catch (NumberFormatException e) {
-            messageId = null;
+            messageId = Integer.MIN_VALUE; // This case presents  Invalid Message Id
         }
         paramValue = controlPanel.paramValueTextField.getText();
         entityTypeName = (String) controlPanel.entityTypeComboBox.getSelectedItem();
+
         try {
-            entityId = Long.parseLong(controlPanel.entityIdTextField.getText());
+            String entityIdTxt = controlPanel.entityIdTextField.getText();
+            if (entityIdTxt == null || entityIdTxt.trim().isEmpty()) {
+                entityId = null;
+            } else {
+                entityId = Long.parseLong(entityIdTxt);
+            }
         } catch (NumberFormatException e) {
-            entityId = -1;
+            entityId = Long.MIN_VALUE; // This case presents Invalid Entity Id.
         }
     }
 
@@ -585,10 +597,19 @@ public class LogPanel extends JPanel {
         controlPanel.requestIdTextField.setText(requestId);
         controlPanel.userNameTextField.setText(userName);
         controlPanel.userIdOrDnTextField.setText(userIdOrDn);
-        if (messageId != null) controlPanel.auditCodeTextField.setText(messageId.toString());
+
+        if (messageId != null) {
+            String msgIdTxt = messageId.equals(Integer.MIN_VALUE)? preferences.getString(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID) : messageId.toString();
+            controlPanel.auditCodeTextField.setText(msgIdTxt);
+        }
+
         controlPanel.paramValueTextField.setText(paramValue);
         controlPanel.entityTypeComboBox.setSelectedItem(entityTypeName);
-        if (entityId >= 0) controlPanel.entityIdTextField.setText(Long.toString(entityId));
+
+        if (entityId != null) {
+            String entityIdTxt = entityId.equals(Long.MIN_VALUE)? preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_ID) : entityId.toString();
+            controlPanel.entityIdTextField.setText(entityIdTxt);
+        }
         enableOrDisableComponents();
     }
 
@@ -692,10 +713,12 @@ public class LogPanel extends JPanel {
             final String messageIdProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID);
             if (messageIdProperty != null) {
                 try {
-                    messageId = new Long(messageIdProperty);
+                    messageId = Integer.parseInt(messageIdProperty);
                 } catch (NumberFormatException e) {
-                    messageId = null;
+                    messageId = Integer.MIN_VALUE; // This case represents Invalid Message Id
                 }
+            } else {
+                messageId = null; // null = Any
             }
 
             final String paramValueProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_PARAM_VALUE);
@@ -715,10 +738,10 @@ public class LogPanel extends JPanel {
                 try {
                     entityId = Long.parseLong(entityIdProperty);
                 } catch (NumberFormatException e) {
-                    entityId = -1; // Does not exist.
+                    entityId = Long.MIN_VALUE; // This case represents Invalid Entity Id
                 }
             } else {
-                entityId = -1; // Does not exist.
+                entityId = null; // null = Any
             }
         } else { // We are displaying logs.
             retrievalMode = RetrievalMode.DURATION;
@@ -767,7 +790,8 @@ public class LogPanel extends JPanel {
                 preferences.remove(SsmPreferences.AUDIT_WINDOW_USER_ID_OR_DN);
             }
             if (messageId != null) {
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID, messageId.toString());
+                String msgIdPreference = messageId.equals(Integer.MIN_VALUE)? controlPanel.auditCodeTextField.getText() : messageId.toString();
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID, msgIdPreference);
             } else {
                 preferences.remove(SsmPreferences.AUDIT_WINDOW_MESSAGE_ID);
             }
@@ -781,8 +805,9 @@ public class LogPanel extends JPanel {
             } else {
                 preferences.remove(SsmPreferences.AUDIT_WINDOW_ENTITY_TYPE);
             }
-            if (entityId >= 0) {
-                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_ENTITY_ID, Long.toString(entityId));
+            if (entityId != null) {
+                String entityIdPreference = entityId.equals(Long.MIN_VALUE)? controlPanel.entityIdTextField.getText() : entityId.toString();
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_ENTITY_ID, entityIdPreference);
             } else {
                 preferences.remove(SsmPreferences.AUDIT_WINDOW_ENTITY_ID);
             }
