@@ -134,13 +134,15 @@ public class InternalUserManagerImpl
                                InternalUser updatedUser) throws ObjectModelException {
         final String originalUserHash = originalUser.getHashedPassword();
         final boolean isUpgrade = originalUserHash == null || originalUserHash.trim().isEmpty();
-        //Note: if the original has has changed, then so has the digest, if this property is configured to be persisted
 
         final String newHash = updatedUser.getHashedPassword();
         if(newHash == null || newHash.trim().isEmpty()){
-            throw new UpdateException("Cannot update user without hashedPassword property.");
-        }
-        if(!passwordHasher.isVerifierRecognized(newHash)){
+            //before rejecting update, check if the user has yet to be updated.
+            final String digest = originalUser.getHttpDigest();
+            if(digest == null || !digest.equals(updatedUser.getHttpDigest())){
+                throw new UpdateException("Cannot update user without hashedPassword property.");
+            }
+        } else if(!passwordHasher.isVerifierRecognized(newHash)){
             throw new UpdateException("Cannot update user as hashedPassword property contains an unrecognized hashing scheme.");
         }
 
