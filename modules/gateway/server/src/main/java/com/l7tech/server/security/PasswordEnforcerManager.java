@@ -313,7 +313,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
                     //for backwards compatibility, check against old hashing scheme
                     final String oldHash = HexUtils.encodePasswd(user.getLogin(), newPassword, HexUtils.REALM);
                     if (prevHash.equals(oldHash)) {
-                        isReusedTooSoon = true;   //todo [Donal] test again on an upgraded system
+                        isReusedTooSoon = true;
                     }
                 }
 

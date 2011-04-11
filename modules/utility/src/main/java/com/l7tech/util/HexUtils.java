@@ -339,6 +339,12 @@ public class HexUtils {
         return sha1;
     }
 
+    /**
+     * Ensure this is not being used to create a hashed password for an InternalUser. 
+     *
+     * This should only be used by functionality related to HTTP Digest and legacy support for internal users passwords
+     * based on http digest.
+     */
     public static String encodePasswd( String login, String passwd, String realm ) {
         String toEncode = login + ":" + realm + ":" + passwd;
         return hexDump(getMd5Digest(toEncode.getBytes(Charsets.UTF8)));

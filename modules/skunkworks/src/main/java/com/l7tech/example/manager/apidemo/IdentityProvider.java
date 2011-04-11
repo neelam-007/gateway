@@ -3,6 +3,9 @@
  */
 package com.l7tech.example.manager.apidemo;
 
+import com.l7tech.common.password.PasswordHasher;
+import com.l7tech.common.password.Sha512CryptPasswordHasher;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -30,6 +33,7 @@ public class IdentityProvider {
 
     private static final Logger logger = Logger.getLogger(IdentityProvider.class.getName());
     private SsgAdminSession session;
+    private final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
 
     /**
      * Bulk creates users using following arguments:
@@ -154,7 +158,7 @@ public class IdentityProvider {
         UserBean u = new UserBean();
         u.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         u.setLogin(login);
-        String passwdenc = HexUtils.encodePasswd(u.getLogin(), passwd, HexUtils.REALM);
+        String passwdenc = passwordHasher.hashPassword(passwd.getBytes(Charsets.UTF8));
         u.setHashedPassword(passwdenc);
         u.setEmail(login + "@bogus.com");
         u.setName(login);
