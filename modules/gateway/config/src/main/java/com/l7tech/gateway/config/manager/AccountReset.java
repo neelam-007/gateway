@@ -1,13 +1,8 @@
 package com.l7tech.gateway.config.manager;
 
-import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.common.password.PasswordHasher;
+import com.l7tech.common.password.Sha512CryptPasswordHasher;
+import com.l7tech.util.*;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
@@ -25,12 +20,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 /**
- * Utility to allow creation of administrative user account.
+ * Utility to allow creation of administrative user account. If the account already exists, then various fields
+ * including the password will not be modifed and the existing values will be favoured.
  */
 public class AccountReset {
     private static final Logger logger = Logger.getLogger(AccountReset.class.getName());
     private static final String CONFIG_PATH = "../node/default/etc/conf";
     private static final int PASSWORD_EXPIRY_DAYS = 90;
+    private static final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
 
     public static void main(String[] args) {
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
@@ -57,7 +54,7 @@ public class AccountReset {
             );
             statement.setString(1, accountname);
             statement.setString(2, accountname);
-            statement.setString(3, HexUtils.encodePasswd(accountname, accountPassword, "L7SSGDigestRealm"));
+            statement.setString(3, passwordHasher.hashPassword(accountPassword.getBytes(Charsets.UTF8)));
             statement.setLong(4, TimeUnit.DAYS.toMillis(PASSWORD_EXPIRY_DAYS) + System.currentTimeMillis());
             statement.executeUpdate();
         } catch ( SQLException se ) {

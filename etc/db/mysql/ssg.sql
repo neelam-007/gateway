@@ -85,8 +85,8 @@ CREATE TABLE internal_user (
 -- Dumping data for table 'internal_user'
 --
 
-
-INSERT INTO internal_user VALUES (3,0,'admin','admin','','a41306e4b1b5858d3e3d705dd2e738e2','','','','',-1,1577865600000,FALSE, TRUE);
+-- The same hash from resetAdmin.sh is used here. Digest property is set to NULL by default.
+INSERT INTO internal_user VALUES (3,0,'admin','admin','$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ.',NULL,'','','','',-1,1577865600000,FALSE, TRUE);
 
 --
 -- Table structure for table 'internal_user_group'
