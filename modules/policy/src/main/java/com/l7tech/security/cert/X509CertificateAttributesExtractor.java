@@ -41,7 +41,7 @@ public class X509CertificateAttributesExtractor {
     /**
      * Get the value of the specified attribute.
      *
-     * @param attribute The name of the attribute, ie {@link #ATTR_SIG_ALG_NAME}.
+     * @param attributeName The name of the attribute, ie {@link CertificateAttribute#SIG_ALG_NAME}.
      * @return The attribute value or null if it does not exist.
      */
     public Object getAttributeValue( final String attributeName ) {

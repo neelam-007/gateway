@@ -1,33 +1,32 @@
 package com.l7tech.security.cert;
 
-import com.l7tech.util.ISO8601Date;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.common.io.CertUtils;
-
-import javax.security.auth.x500.X500Principal;
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
-import javax.naming.directory.Attribute;
-import javax.naming.NamingEnumeration;
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateParsingException;
-import java.security.cert.CertificateEncodingException;
-import java.io.IOException;
-
+import com.l7tech.util.ISO8601Date;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DERPrintableString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
 import sun.security.util.DerValue;
+
+import javax.naming.NamingEnumeration;
+import javax.naming.directory.Attribute;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
+import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 
 /**
@@ -37,6 +36,7 @@ import sun.security.util.DerValue;
  * Attribute name lookups are case insensitive.
  *
  */
+@SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
 public enum CertificateAttribute {
 
     /**
@@ -522,7 +522,7 @@ public enum CertificateAttribute {
         X400         ("altNameX400",         3),   // x400Address                [3]     ORAddress,
         DIRECTORY    ("altNameDirectory",    4),   // directoryName              [4]     Name,
         EDI_PARTY    ("altNameEdiParty",     5),   // ediPartyName               [5]     EDIPartyName,
-        URI          ("aleNameURI",          6),   // uniformResourceIdentifier  [6]     IA5String,
+        URI          ("altNameURI",          6),   // uniformResourceIdentifier  [6]     IA5String,
         IP           ("altNameIPAddress",    7),   // iPAddress                  [7]     OCTET STRING,
         REGISTERED_ID("altNameRegisteredID", 8),   // registeredID               [8]     OBJECT IDENTIFIER}
         ;
