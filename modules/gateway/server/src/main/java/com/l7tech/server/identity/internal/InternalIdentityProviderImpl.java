@@ -144,6 +144,8 @@ public class InternalIdentityProviderImpl
         String login = dbUser.getLogin();
         char[] credentials = pc.getCredentials();
 
+        final BadCredentialsException credsException = new BadCredentialsException("Invalid password");
+
         if (format == CredentialFormat.CLEARTEXT) {
             final String userHashedPassword = dbUser.getHashedPassword();
             final boolean userHasHashedPassword = userHashedPassword != null && !userHashedPassword.trim().isEmpty();
@@ -156,9 +158,18 @@ public class InternalIdentityProviderImpl
                         userAuthenticated = true;
                     }
                 } catch (IncorrectPasswordException e) {
-                    //fall through ok
+                    //fall through ok - expected when password is incorrect
                 } catch (PasswordHashingException e) {
+                    if(logger.isLoggable(Level.FINE)){
+                        logger.log(Level.FINE, "Password hashing exception for user login '" + login+"'. Details: " + ExceptionUtils.getMessage(e));
+                    }
                     //fall through ok
+                }
+                if(!userAuthenticated){
+                    if(logger.isLoggable(Level.INFO)){
+                        logger.info("Incorrect password for login " + login);
+                    }
+                    throw credsException;
                 }
             }
 
@@ -191,6 +202,7 @@ public class InternalIdentityProviderImpl
                         disconnectedUser.copyFrom(dbUser);
                         disconnectedUser.setVersion(dbUser.getVersion());
                         userManager.update(disconnectedUser);
+                        logger.log(Level.FINE, "Upgraded password storage for user with login '" + login + "'.");
                     } catch (Exception e) {
                         final String msg = "Could not upgrade password storage for login '" + dbUser.getLogin() + "'. " + ExceptionUtils.getMessage(e);
                         auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{msg}, ExceptionUtils.getDebugException(e));
@@ -206,7 +218,7 @@ public class InternalIdentityProviderImpl
             if(logger.isLoggable(Level.INFO)){
                 logger.info("Incorrect password for login " + login);
             }
-            throw new BadCredentialsException("Invalid password");
+            throw credsException;
         } else if (format == CredentialFormat.DIGEST) {
             return DigestAuthenticator.authenticateDigestCredentials(pc, dbUser);
         } else {
