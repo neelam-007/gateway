@@ -1,11 +1,13 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.Test;
 
 import java.security.cert.X509Certificate;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -166,6 +168,56 @@ public class X509CertificateAttributesExtractorTest {
         assertEquals("CA", citizenships[0]);
         assertEquals("US", citizenships[1]);
         assertEquals("FR", citizenships[2]);
+    }
+
+    @Test
+    @BugNumber(10211)
+    public void testDodCertCountryOfCitizenShipAndSubjectAltName() throws Exception {
+        String certb64 =
+            "MIIFETCCA/mgAwIBAgIDFo8TMA0GCSqGSIb3DQEBBQUAMIGQMQswCQYDVQQGEwJV\n" +
+            "UzEYMBYGA1UEChMPVS5TLiBHb3Zlcm5tZW50MQwwCgYDVQQLEwNOU1MxDDAKBgNV\n" +
+            "BAsTA0RvRDEiMCAGA1UECxMZQ2VydGlmaWNhdGlvbiBBdXRob3JpdGllczEnMCUG\n" +
+            "A1UEAxMeVE1TLUNBLTEgQ2VydGlmaWNhdGUgQXV0aG9yaXR5MB4XDTExMDMwOTE0\n" +
+            "MTQyN1oXDTE0MDMwOTE0MTQyN1oweDELMAkGA1UEBhMCVVMxGDAWBgNVBAoTD1Uu\n" +
+            "Uy4gR292ZXJubWVudDEMMAoGA1UECxMDTlNTMQwwCgYDVQQLEwNEb0QxDDAKBgNV\n" +
+            "BAsTA1VTQTElMCMGA1UEAxMcVEVTVFVTLkpPSE4uSEFSUlkuMTcwMDAwMDAwMDCC\n" +
+            "ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIv0rry390Ob1Wn85E5dT2o2\n" +
+            "GTvh8HYMwtGzn8hyz7ZDc2crbDq8GlwkZZWmy9Ok8T+NsQp+uweKnGpC86UXbYDA\n" +
+            "/nSnrXUxUD83IRJ6KF8RmyznkEjmeZy27U3qPueR9Ef0p4QDobA3EiHQT78MDNB0\n" +
+            "aN0R/k+cvD+ughe+LedJmpka1IfFzqAaSwnT9GFDmD8mRgWZE375EsK9Pye8qkzW\n" +
+            "/1VYu12IrcE5py0+bb1UwuqipKPhV3Bokfzl2uhmItya8fSXmY/I4qzbfh6mKzXc\n" +
+            "kSQIuXycM+WP0yJ1jdlxBQgfDs+aqUCsTSTf6jBnn59/ZYAvzpAi/asWnO0ZhPkC\n" +
+            "AwEAAaOCAYkwggGFMB8GA1UdIwQYMBaAFB7SsZ2vfcozUGxW2zwTpKaBrkAwME0G\n" +
+            "A1UdHwRGMEQwQqBAoD6GPGh0dHA6Ly9jcmwuZ2RzLm5pdC5kaXNhLm1pbC9jcmwv\n" +
+            "TlNTSklUQ0RPRFNVQk9SRElOQVRFQ0ExLmNybDAOBgNVHQ8BAf8EBAMCB4AwFwYD\n" +
+            "VR0gBBAwDjAMBgpghkgBZQMCARUCMB0GA1UdDgQWBBSzU9dWEVcG+IA36kxiMYGd\n" +
+            "v0lKIzBgBggrBgEFBQcBAQRUMFIwUAYIKwYBBQUHMAKGRGh0dHA6Ly9jcmwuZ2Rz\n" +
+            "Lm5pdC5kaXNhLm1pbC9pc3N1ZWR0by9OU1NKSVRDRE9EU1VCT1JESU5BVEVDQTFf\n" +
+            "SVQucDdjMBYGA1UdCQQPMA0wCwYDVQQGMQQTAlVTMDAGA1UdEQQpMCegJQYKKwYB\n" +
+            "BAGCNxQCA6AXDBUxNzAwMDAwMDAwLlZAc21pbC5taWwwHwYDVR0lBBgwFgYKKwYB\n" +
+            "BAGCNxQCAgYIKwYBBQUHAwIwDQYJKoZIhvcNAQEFBQADggEBAGkOHcAv25n8rkoo\n" +
+            "v2lAcENZ/AUICTqsnQ5C14ji+ijAxu0+wSvCWP5AOUcdrdk9zEXeJatZh8HVpdkk\n" +
+            "xzSfkpUurJusbXnLQBEC8fL/QouYnDqyn1i1c3VRVXpXUEa1WpIA7sDhAi2tvIDU\n" +
+            "gRdFDERqH2HGWUfIxUSTNhCpZ+rn+5CpQ529VLyKhdmx7VPjr2hKF2ImK9phjbbH\n" +
+            "XR9iyR6uUd47hl5gXAXVbDqWcFpzEZgkUme6CAxkF4feFyLejz24r8xUXzDFXnoR\n" +
+            "02X6Cs2Gws7gYPRuDsh6/+gwZsMcO1dHaAL1azeGHtT3JSPAG9wS5XpDtglPseNE\n" +
+            "loz7OH4=";
+        X509Certificate cert = CertUtils.decodeFromPEM(certb64, false);
+
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
+
+        // TODO current expected result is for this to fail, since we do not expose otherName.  Update test if support is later added
+        assertNull("otherName not exposed as subjectAltNameDNS", cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_DNS.toString()));
+        assertNull("otherName not exposed as subjectAltNameEmail", cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_EMAIL.toString()));
+        assertNull("otherName not exposed as subjectAltNameURI", cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_URI.toString()));
+
+        // TODO current expected result is for this to fail, since we do not recognize OID "2.5.4.6" (X509Name country code) as
+        // equivalent to "1.3.6.1.5.5.7.9.4" (id-pda-countryOfCitizenship).  Update test if this islater modified.
+        final Object countriesOfCitizenship = cae.getAttributeValue("countryOfCitizenship");
+        assertTrue("Countries of citizenship returns an array", countriesOfCitizenship instanceof Object[]);
+        Object[] citizenships = (Object[]) countriesOfCitizenship;
+        assertEquals("citizenships", 0, citizenships.length);
+        //assertEquals("US", citizenships[0]);
     }
 
     @Test
