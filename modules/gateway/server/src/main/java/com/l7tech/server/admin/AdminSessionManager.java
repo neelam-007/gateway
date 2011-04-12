@@ -547,7 +547,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private final GroupCache groupCache;
 
     private Set<IdentityProvider> adminProviders;
-    private static final long DEFAULT_GATEWAY_SESSION_EXPIRY = TimeUnit.MINUTES.toMillis(15L);
+    private static final long DEFAULT_GATEWAY_SESSION_EXPIRY = TimeUnit.MINUTES.toMillis(30L);
     private final AtomicLong sessionExpiryMillis = new AtomicLong();
 
     private long loadExpiryMillis() {
