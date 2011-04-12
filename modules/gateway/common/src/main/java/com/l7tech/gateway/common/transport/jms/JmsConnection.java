@@ -5,6 +5,7 @@
 package com.l7tech.gateway.common.transport.jms;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
 import org.hibernate.annotations.Proxy;
@@ -131,6 +132,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
 
     @Size(max=255)
     @Column(name="password", length=255)
+    @WspSensitive
     public String getPassword() {
         return _password;
     }

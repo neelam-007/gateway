@@ -9,6 +9,7 @@ package com.l7tech.gateway.common.transport.jms;
 import com.l7tech.gateway.common.security.password.SecurePasswordReferenceExpander;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.policy.wsp.WspSensitive;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
@@ -110,6 +111,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
 
     @Size(max=255)
     @Column(name="password",length=255)
+    @WspSensitive
     public String getPassword() {
         return _password;
     }
