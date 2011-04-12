@@ -140,7 +140,7 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         noWarning = ((Integer)invalidAttemptsSpinner.getValue() <= (STIG?STIG_ATTEMPTS : PCI_ATTEMPTS));
         noWarning = noWarning && ((Integer)minLockoutSpinner.getValue() <= (STIG?STIG_LOCKOUT : PCI_LOCKOUT));
         noWarning = noWarning && ((Integer)expirySpinner.getValue() <= (STIG?STIG_EXPIRY: PCI_EXPIRY));
-        noWarning = noWarning && ((Integer)invalidAttemptsSpinner.getValue() <= (STIG?STIG_INACTIVITY : PCI_INACTIVITY));
+        noWarning = noWarning && ((Integer)inactivitySpinner.getValue() <= (STIG?STIG_INACTIVITY : PCI_INACTIVITY));
 
 
         warningLabel.setText(noWarning? null: (STIG? getResourceString("below.stig.warning"):getResourceString("below.pcidss.warning")));
@@ -150,16 +150,18 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
      * Configure the GUI control states with information gathered from the userAccountPolicy instance.
      */
     private void modelToView() {
-        invalidAttemptProperty = getClusterProp(PARAM_LOGIN_ATTEMPTS);
+        Collection<ClusterPropertyDescriptor>  descriptors = getClusterAdmin().getAllPropertyDescriptors();
+
+        invalidAttemptProperty = getClusterProp(PARAM_LOGIN_ATTEMPTS,descriptors);
         invalidAttemptsSpinner.setValue(Integer.parseInt(invalidAttemptProperty.getValue()));
 
-        minLockoutProperty = getClusterProp(PARAM_LOCKOUT);
+        minLockoutProperty = getClusterProp(PARAM_LOCKOUT,descriptors);
         minLockoutSpinner.setValue(Integer.parseInt(minLockoutProperty.getValue())/60);
 
-        expiryProperty = getClusterProp(PARAM_EXPIRY);
+        expiryProperty = getClusterProp(PARAM_EXPIRY,descriptors);
         expirySpinner.setValue(Integer.parseInt(expiryProperty.getValue()));
 
-        inactivityProperty = getClusterProp(PARAM_INACTIVITY);
+        inactivityProperty = getClusterProp(PARAM_INACTIVITY,descriptors);
         inactivitySpinner.setValue(Integer.parseInt(inactivityProperty.getValue()));
     }
 
@@ -198,26 +200,35 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
             prop.setValue(value.toString());
             getClusterAdmin().saveProperty(prop);
         } catch (SaveException e) {
-            logger.log(Level.SEVERE, "exception setting property", e);
+            logger.log(Level.SEVERE, "Exception setting property", e);
         } catch (UpdateException e) {
-            logger.log(Level.SEVERE, "exception setting property", e);
+            logger.log(Level.SEVERE, "Exception setting property", e);
         } catch (DeleteException e) {
-            logger.log(Level.SEVERE, "exception setting property", e);
+            logger.log(Level.SEVERE, "Exception setting property", e);
         }
     }
 
-    private ClusterProperty getClusterProp(String name){
+    private ClusterProperty getClusterProp(String name, Collection<ClusterPropertyDescriptor> descriptors){
         try {
             ClusterProperty prop = getClusterAdmin().findPropertyByName(name);
             if(prop==null){
-                String value = getClusterAdmin().getClusterProperty(name);
+                String value = findDefaultValue(descriptors,name);
                 prop = new ClusterProperty(name,value);
             }
             return prop;
         } catch (FindException e) {
-            logger.log(Level.SEVERE, "exception getting properties", e);
+            logger.log(Level.SEVERE, "Exception getting properties", e);
             return null;
         }
+    }
+
+    private String findDefaultValue( Collection<ClusterPropertyDescriptor> descriptors, String name){
+        for(ClusterPropertyDescriptor desc : descriptors){
+            if(desc.getName().equals(name))
+                return desc.getDefaultValue();
+        }
+        logger.log(Level.SEVERE, "Exception getting default value for property :"+name);
+        return null;
     }
 
     private ClusterStatusAdmin getClusterAdmin(){

@@ -155,11 +155,6 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
-    public String getClusterProperty(String name) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public ClusterProperty findPropertyByName(String key) throws FindException {
         throw new UnsupportedOperationException();
     }

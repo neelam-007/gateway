@@ -225,11 +225,6 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     }
 
     @Override
-    public String getClusterProperty(String name){
-        return serverConfig.getProperty(name);    
-    }
-
-    @Override
     public Collection<ClusterPropertyDescriptor> getAllPropertyDescriptors() {
         Map<String,String> namesToDesc =  serverConfig.getClusterPropertyNames();
         Map<String,String> namesToDefs =  serverConfig.getClusterPropertyDefaults();
