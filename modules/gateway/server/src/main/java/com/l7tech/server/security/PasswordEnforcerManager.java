@@ -250,11 +250,15 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
     }
 
     /**
-     * Validates that the new password is at least x chracters are different from the current password.
+     * Validates that the new password is at least x characters are different from the current password.
      *
      * @throws InvalidPasswordException
      */
     private void validatePasswordIsDifferent(final String newPassword, final String currentUnHashedPassword) throws InvalidPasswordException {
+        if(newPassword.equals(currentUnHashedPassword)){
+            throw new InvalidPasswordException("New password is the same as the users current password.");
+        }
+
         HashSet<String> oldChars = new HashSet<String>();
         for (int i=0; i<currentUnHashedPassword.length(); i++)
             oldChars.add(currentUnHashedPassword.substring(i,i+1));

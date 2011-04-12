@@ -263,7 +263,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     /**
      * Change password for the given user.  This is just another method to assist in changing the password by supplying
-     * a username instead of the user object.
+     * a username instead of the user object. The String username should be the user requesting the change. This will
+     * result in all password rules being applied and a password history update for the user.
      *  
      * @param username  The username
      * @param password  The password for the user
@@ -349,10 +350,12 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
                     InternalUserManager userManager = ((InternalIdentityProvider)identityProvider).getUserManager();
                     final InternalUserPasswordManager passwordManager = userManager.getUserPasswordManager();
+                    final String oldPassword = disconnectedUser.getHashedPassword();
                     final boolean updated = passwordManager.configureUserPasswordHashes(disconnectedUser, newPassword);
                     if(!updated){
                         throw new IllegalStateException("User should have been updated");
                     }
+                    disconnectedUser.addPasswordChange(oldPassword);
                     userManager.update(disconnectedUser);
                     passwordUpdated = true;
                 } else {

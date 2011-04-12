@@ -75,11 +75,6 @@ public class InternalUser extends PersistentUser {
         setHttpDigest(imp.getHttpDigest());
     }
 
-    /**
-     * If you are changing the users password, do not use this. Use {@link InternalUser#setPasswordChanges(String)} instead.
-     * This setter is intended for Hibernate.
-     * @param password
-     */
     public void setHashedPassword(String password) {
         this.hashedPassword = password;
     }
@@ -203,15 +198,17 @@ public class InternalUser extends PersistentUser {
     }
 
     /**
-     * Record a password change for a user.
+     * Record a password change for a user. Does not modify users current hashed password.
      *
      * @param newPasswordHash HASHED version of the users new password.
      */
-    public void setPasswordChanges(String newPasswordHash) {
+    public void addPasswordChange(String newPasswordHash) {
+        if(hashedPassword == null) throw new IllegalStateException("Cannot set password history before user has a hashed password.");
+        if(hashedPassword.equals(newPasswordHash)) throw new IllegalArgumentException("Cannot add a password change record for users current password.");
+
         PasswordChangeRecord passChangeRecord = new PasswordChangeRecord(
                 this, System.currentTimeMillis(), getHashedPassword());
         this.passwordChangesHistory.add(passChangeRecord);
-        this.hashedPassword = newPasswordHash;
         this.changePassword = false;
     }
 }

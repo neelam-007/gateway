@@ -6,7 +6,6 @@ package com.l7tech.server.identity.internal;
 
 import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
-import com.l7tech.common.password.PasswordHashingException;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Config;
@@ -50,7 +49,8 @@ public class InternalUserPasswordManagerImpl implements InternalUserPasswordMana
             }
 
             if(isNewPassword){
-                internalUser.setPasswordChanges(passwordHasher.hashPassword(clearTextPassword.getBytes(Charsets.UTF8)));
+                internalUser.setHashedPassword(passwordHasher.hashPassword(clearTextPassword.getBytes(Charsets.UTF8)));
+                internalUser.setChangePassword(false);
                 userWasUpdated = true;
             }
         }

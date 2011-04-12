@@ -139,7 +139,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             passwordEnforcerManager.isPasswordPolicyCompliant(newInternalUser, newpasswd, oldpasswd);
             passwordEnforcerManager.setUserPasswordPolicyAttributes(newInternalUser,false);
 
-            newInternalUser.setPasswordChanges(newPasswordHashed);//todo [Donal] test
+            newInternalUser.addPasswordChange(newPasswordHashed);//todo [Donal] this needs to use admin session manager
 
             InternalUserManager userManager = internalProvider.getUserManager();
             userManager.update(newInternalUser);

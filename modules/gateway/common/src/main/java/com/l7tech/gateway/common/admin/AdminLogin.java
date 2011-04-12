@@ -100,7 +100,9 @@ public interface AdminLogin {
     /**
      * Change administrator password.
      *
-     * <p>This changes the password of the currently logged-in administrator.<p>
+     * <p>This changes the password of the currently logged-in administrator.
+     * Passsword is subject to all policy rules. A password change will be recorded if the change is successful.
+     * <p>
      *
      * @param currentPassword The users current password.
      * @param newPassword The new password for the user.
