@@ -371,10 +371,17 @@ public class JmsRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                     @Override
                     public void run() {
                         if (!pd.isCanceled()) {
+                            // must validate well before calling pack()
+                            // e.g. doesn't work if this line is right before pack()
+                            JmsRoutingAssertionDialog.this.validate();
+
                             newlyCreatedEndpoint = pd.getEndpoint();
                             newlyCreatedConnection = pd.getConnection();
                             getQueueComboBox().setModel(new DefaultComboBoxModel(loadQueueItems()));
                             JmsUtilities.selectEndpoint(getQueueComboBox(), newlyCreatedEndpoint);
+
+                            // resize dialog to fit new content
+                            DialogDisplayer.pack(JmsRoutingAssertionDialog.this);
                         }
                     }
                 });

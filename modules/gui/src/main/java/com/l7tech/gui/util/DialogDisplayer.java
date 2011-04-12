@@ -144,6 +144,39 @@ public class DialogDisplayer {
         displayNatively(dialog, continuation);
     }
 
+    public static void pack(JDialog dialog) {
+        SheetHolder holder = getSheetHolderAncestor(dialog.getParent());
+        if (holder != null) {
+            if (mustShowNative(dialog, holder)) {
+                if (dialog != null) {
+                    dialog.pack();
+                }
+                return;
+            }
+            final JLayeredPane layers = holder.getLayeredPane();
+            final SheetStack sheetStack = getOrCreateSheetStack(layers);
+            final JInternalFrame sheet = sheetStack.peek().sheet;
+
+            // in Sheet.layoutComponents(...) content "stolen" from dialog
+            // we swap content back temporarily so pack() will resize with the dialog's components
+            final Container dialogContentPane = dialog.getContentPane();
+            dialog.setContentPane(sheet.getContentPane());
+            sheet.setContentPane(dialogContentPane);
+            dialog.pack();
+
+            // undo temporary content swap
+            sheet.setContentPane(dialog.getContentPane());
+            dialog.setContentPane(dialogContentPane);
+
+            sheet.setSize(dialog.getSize());
+            return;
+        }
+
+        if (dialog != null) {
+            dialog.pack();
+        }
+    }
+
     private static boolean mustShowNative(RootPaneContainer dialog, SheetHolder holder) {
         return forceNative ||
                isSuppressSheetDisplay(dialog) ||
