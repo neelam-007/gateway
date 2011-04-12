@@ -6,65 +6,36 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.MessagesUtil;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.server.MockClusterPropertyManager;
-import com.l7tech.server.cluster.ClusterPropertyCache;
-import com.l7tech.server.cluster.ClusterPropertyListener;
-import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.util.Config;
+import com.l7tech.util.MockConfig;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.beans.PropertyChangeEvent;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 
 public class AuditLevelDetailFilterTest {
 
-    private static MockClusterPropertyManager clusterPropManager;
     private static AuditLevelDetailFilter filter;
-    private static ClusterPropertyCache cache;
-    
-    static {
-        clusterPropManager = new MockClusterPropertyManager();
-        cache = new ClusterPropertyCache();
-        cache.setClusterPropertyManager(clusterPropManager);
-        filter = new AuditLevelDetailFilter(cache);
-        try {
-            filter.afterPropertiesSet();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        cache.setClusterPropertyListener(new ClusterPropertyListener() {
-            @Override
-            public void clusterPropertyChanged(ClusterProperty clusterPropertyOld, ClusterProperty clusterPropertyNew) {
-                filter.propertyChange(new PropertyChangeEvent(cache, clusterPropertyNew.getName(), clusterPropertyOld, clusterPropertyNew));
-            }
-
-            @Override
-            public void clusterPropertyDeleted(ClusterProperty clusterProperty) {
-                filter.propertyChange(new PropertyChangeEvent(cache, clusterProperty.getName(), clusterProperty, null));
-            }
-        });
-    }
+    private Properties props;
 
     @Before
-    public void cleanUpAfterTests() throws Exception {
-        final Collection<EntityHeader> headers = clusterPropManager.findAllHeaders();
-        for (EntityHeader header : headers) {
-            clusterPropManager.delete(header.getOid());
-            fireEvent(header.getOid(), true);
-        }
+    public void setUp() throws Exception {
+        props = new Properties();
+        final Config config = new MockConfig(props);
+        filter = new AuditLevelDetailFilter(config);
+        filter.afterPropertiesSet();
     }
 
     @Test
     public void testNever() throws Exception {
-        final ClusterProperty property = clusterPropManager.putProperty("audit.auditDetailExcludeList", mixOfLevels);
-        fireEvent(property.getOid());
+        props.setProperty("audit.auditDetailExcludeList", mixOfLevels);
+        filter.propertyChange(new PropertyChangeEvent(this, "audit.auditDetailExcludeList", null, mixOfLevels));
+
         for (AuditDetailMessage auditDetailMessage : messageList) {
             final Level level = filter.filterLevelForAuditDetailMessage(auditDetailMessage.getId(), auditDetailMessage.getLevel());
             Assert.assertNull(level);
@@ -108,28 +79,19 @@ public class AuditLevelDetailFilterTest {
 
     @Test
     public void testNoChange() throws Exception{
-        final ClusterProperty property = clusterPropManager.putProperty("audit.setDetailLevel.FINE", mixOfLevels);
-        fireEvent(property.getOid());
+        props.setProperty("audit.setDetailLevel.FINE", mixOfLevels);
+        filter.propertyChange(new PropertyChangeEvent(this, "audit.setDetailLevel.FINE", null, mixOfLevels));
         final Level level = filter.filterLevelForAuditDetailMessage(4104, Level.INFO);
         Assert.assertEquals("Level should not have been changed", Level.INFO, level);
     }
 
     private void testAuditLevelsChanged(Level expectedLevel) throws Exception {
-        final ClusterProperty property = clusterPropManager.putProperty("audit.setDetailLevel." + expectedLevel.getName(), mixOfLevels);
-        fireEvent(property.getOid());
+        props.setProperty("audit.setDetailLevel." + expectedLevel.getName(), mixOfLevels);
+        filter.propertyChange(new PropertyChangeEvent(this, "audit.setDetailLevel." + expectedLevel.getName(), null, mixOfLevels));
         for (AuditDetailMessage auditDetailMessage : messageList) {
             final Level level = filter.filterLevelForAuditDetailMessage(auditDetailMessage.getId(), auditDetailMessage.getLevel());
             Assert.assertEquals("Level should have been changed", expectedLevel, level);
         }
-    }
-
-    private void fireEvent(long cpOid){
-        fireEvent(cpOid, false);
-    }
-
-    private void fireEvent(long cpOid, boolean isDelete){
-        EntityInvalidationEvent event = new EntityInvalidationEvent(this, ClusterProperty.class, new long[]{cpOid}, new char[]{(isDelete)?'D': 'U'});
-        cache.onApplicationEvent(event);
     }
 
     //2200 = SEVERE

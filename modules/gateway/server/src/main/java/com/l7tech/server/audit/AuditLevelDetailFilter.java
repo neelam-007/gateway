@@ -5,7 +5,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.MessagesUtil;
-import com.l7tech.server.cluster.ClusterPropertyCache;
+import com.l7tech.util.Config;
 import com.l7tech.util.Pair;
 import org.springframework.beans.factory.InitializingBean;
 
@@ -19,12 +19,12 @@ import java.util.logging.Logger;
 
 /**
  * Allow audit message levels to be modified based on audit.setDetailLevel.SEVERE down to FINEST cluster property values.
- * Backed by a ClusterPropertyCache so modifications at runtime are picked up.
+ * Changes to these properties will be picked up at runtime.
  */
 public class AuditLevelDetailFilter implements MessagesUtil.AuditDetailLevelFilter, InitializingBean, PropertyChangeListener {
 
-    public AuditLevelDetailFilter(ClusterPropertyCache clusterPropertyCache) {
-        this.clusterPropertyCache = clusterPropertyCache;
+    public AuditLevelDetailFilter(Config config) {
+        this.config = config;
     }
 
     @Override
@@ -64,7 +64,7 @@ public class AuditLevelDetailFilter implements MessagesUtil.AuditDetailLevelFilt
 
     // - PRIVATE
 
-    final private ClusterPropertyCache clusterPropertyCache;
+    final private Config config;
     final private static String clusterPropPrefix= "audit.setDetailLevel.";
     final private static String clusterPropNever= "audit.auditDetailExcludeList";
     //Order is important. These levels are ordered from highest value to lowest. Do not modify without updating usages.
@@ -80,7 +80,7 @@ public class AuditLevelDetailFilter implements MessagesUtil.AuditDetailLevelFilt
         //order is important.
         List<Pair<Level, Set<String>>> pairList = new ArrayList<Pair<Level, Set<String>>>();
         for (Level level : allLevels) {
-            final String idsForLevel = clusterPropertyCache.getPropertyValue(clusterPropPrefix + level);
+            final String idsForLevel = config.getProperty(clusterPropPrefix + level, null);
             if(idsForLevel != null){
                 final Set<String> idsForSet = new HashSet<String>(Arrays.asList(idsForLevel.trim().split("\\s+")));
                 Pair<Level, Set<String>> levelToIds = new Pair<Level, Set<String>>(level, idsForSet);
@@ -91,7 +91,7 @@ public class AuditLevelDetailFilter implements MessagesUtil.AuditDetailLevelFilt
         copyOnWritePairLevelList.set(new CopyOnWriteArrayList<Pair<Level, Set<String>>>(pairList));
 
         //Get the never list
-        final String neverIds = clusterPropertyCache.getPropertyValue(clusterPropNever);
+        final String neverIds = config.getProperty(clusterPropNever, null);
         final Set<String> neverSet = new HashSet<String>();
         if(neverIds != null){
             neverSet.addAll(Arrays.asList(neverIds.split("\\s+|,")));

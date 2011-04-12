@@ -1615,7 +1615,7 @@
     </bean>
 
     <bean id="auditLevelDetailFilter" class="com.l7tech.server.audit.AuditLevelDetailFilter">
-        <constructor-arg ref="clusterPropertyCache" />
+        <constructor-arg ref="serverConfig" />
     </bean>
 
     <bean id="auditLogListener" class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
