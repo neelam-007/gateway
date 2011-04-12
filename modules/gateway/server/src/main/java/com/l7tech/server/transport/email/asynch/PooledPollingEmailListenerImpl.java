@@ -1,23 +1,29 @@
 package com.l7tech.server.transport.email.asynch;
 
-import com.l7tech.server.event.system.EmailEvent;
-import com.l7tech.server.transport.email.*;
-import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
-import com.l7tech.server.LifecycleException;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.LifecycleException;
+import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.event.system.EmailEvent;
+import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.server.transport.email.EmailListenerConfig;
+import com.l7tech.server.transport.email.EmailListenerManager;
+import com.l7tech.server.transport.email.EmailMessages;
+import com.l7tech.server.transport.email.PollingEmailListener;
+import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ThreadPool;
 import com.l7tech.util.TimeUnit;
 
-import javax.mail.internet.MimeMessage;
 import javax.mail.*;
+import javax.mail.internet.MimeMessage;
 import javax.mail.search.FlagTerm;
+import java.beans.PropertyChangeEvent;
+import java.util.Properties;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.*;
-import java.beans.PropertyChangeEvent;
 
 /**
  * A PollingEmailListener that creates EmailTask's so that a thread pool can process the messages.
@@ -130,14 +136,14 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                                                                          emailListenerCfg.getEmailListener().getPort(),
                                                                          null,
                                                                          emailListenerCfg.getEmailListener().getUsername(),
-                                                                         emailListenerCfg.getEmailListener().getPassword()));
+                                                                         ServerVariables.expandPasswordOnlyVariable(new LogOnlyAuditor(_logger), emailListenerCfg.getEmailListener().getPassword())));
                     } else if(emailListenerCfg.getEmailListener().getServerType() == EmailServerType.IMAP) {
                         messageStore = emailSession.getStore(new URLName(emailListenerCfg.getEmailListener().isUseSsl() ? "imaps" : "imap",
                                                                          emailListenerCfg.getEmailListener().getHost(),
                                                                          emailListenerCfg.getEmailListener().getPort(),
                                                                          null,
                                                                          emailListenerCfg.getEmailListener().getUsername(),
-                                                                         emailListenerCfg.getEmailListener().getPassword()));
+                                                                         ServerVariables.expandPasswordOnlyVariable(new LogOnlyAuditor(_logger), emailListenerCfg.getEmailListener().getPassword())));
                     }
                 }
 
@@ -157,6 +163,9 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
             } catch (RuntimeException e) {
                 message = ExceptionUtils.getMessage(e);
                 throw e;
+            } catch (FindException e) {
+                message = ExceptionUtils.getMessage(e);
+                throw new RuntimeException(e);
             } finally {
                 if (ok) {
                     if (!_started) {

@@ -1,26 +1,26 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.gateway.common.transport.email.EmailListener;
-import com.l7tech.gateway.common.transport.email.EmailServerType;
-import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.transport.email.EmailListener;
+import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
+import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gui.util.*;
-import com.l7tech.util.ValidationUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ValidationUtils;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.text.MessageFormat;
+import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -50,15 +50,12 @@ public class EmailListenerPropertiesDialog extends JDialog {
     private JSpinner checkInterval;
     private JTextField username;
     private JPasswordField password;
+    private JCheckBox showPasswordCheckBox;
+    private JLabel plaintextPasswordWarningLabel;
     private JButton testButton;
     private JCheckBox deleteOnReceiveCheckbox;
     private JCheckBox activeCheckbox;
-    private JRadioButton hardwiredServiceSpecifyContentType;
-    private JTextField hardwiredServiceContentTypeValue;
-    private JRadioButton hardwiredServiceContentTypeFromProperty;
-    private JTextField hardwiredServiceContentTypeProperty;
     private JCheckBox associateWithPublishedService;
-    private JPanel serviceNamePanel;
     private JLabel serviceNameLabel;
     private JComboBox serviceNameCombo;
 
@@ -299,9 +296,10 @@ public class EmailListenerPropertiesDialog extends JDialog {
             }
         });
         inputValidator.validateWhenDocumentChanges(password);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(password, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         // Folder field must not be empty and must not be longer than 255 characters
-        ((AbstractDocument)folderName.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
+                ((AbstractDocument) folderName.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
         inputValidator.constrainTextFieldToBeNonEmpty("Folder", folderName, new InputValidator.ComponentValidationRule(folderName) {
             @Override
             public String getValidationError() {

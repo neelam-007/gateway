@@ -1,8 +1,9 @@
 package com.l7tech.gateway.common.transport.email;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.util.PoolByteArrayOutputStream;
+import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Proxy;
 
@@ -249,6 +250,7 @@ public class EmailListener extends NamedEntityImp {
     }
 
     @Column(name="password", length=32, nullable=false)
+    @WspSensitive
     public String getPassword() {
         return password;
     }
