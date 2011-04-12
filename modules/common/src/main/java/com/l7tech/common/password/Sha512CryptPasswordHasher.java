@@ -33,7 +33,7 @@ public class Sha512CryptPasswordHasher implements PasswordHasher {
     }
 
     @Override
-    public void verifyPassword(byte[] passwordBytes, String expectedHashedPassword) throws IncorrectPasswordException, PasswordHashingException {
+    public void verifyPassword(byte[] passwordBytes, String expectedHashedPassword) throws IncorrectPasswordException {
         Pair<MessageDigest, MessageDigest> digs = getDigests();
         if (!Sha512Crypt.verifyPassword(digs.left, digs.right, passwordBytes, expectedHashedPassword))
             throw new IncorrectPasswordException();
