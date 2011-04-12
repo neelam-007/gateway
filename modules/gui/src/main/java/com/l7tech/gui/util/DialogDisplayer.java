@@ -419,18 +419,20 @@ public class DialogDisplayer {
      * @param title: a title message (may be null)
      * @param message: a message to be displayed in the dialog (must not be null)
      * @param throwable: an exception (may be null)
+     * @param callback: callback to invoke when dialog is dismissed (may be null)
      */
     public static void showMessageDialog(final Component component,
                                          final String title,
                                          final String message,
-                                         final Throwable throwable) {
+                                         final Throwable throwable,
+                                         final Runnable callback) {
         Window parent;
         if (component instanceof Window) {
             parent = (Window) component;
         } else {
             parent = SwingUtilities.getWindowAncestor(component);
         }
-        
+
         if (throwable == null) { // Use a JOptionPane to display a message:
             String dialogTitle = ErrorMessageDialog.resources.getString("ssm.message.title");
             if (title != null) {
@@ -445,7 +447,7 @@ public class DialogDisplayer {
                 object = message;
             }
 
-            showMessageDialog(parent, object, dialogTitle, JOptionPane.WARNING_MESSAGE, null);
+            showMessageDialog(parent, object, dialogTitle, JOptionPane.WARNING_MESSAGE, callback);
         } else {                 // Otherwise, use an error dialog to display an error message:
             // Create an error dialog
             ErrorMessageDialog emd;
@@ -454,10 +456,25 @@ public class DialogDisplayer {
             } else {
                 emd = new ErrorMessageDialog((Dialog)parent, message, throwable);
             }
-            
+
             // Check if there is an extra job to be done after showing the error dialog
             display(emd);
         }
+    }
+
+    /**
+     * First decide if a message is displayed by a message dialog or an error message dialog.  Then display it.
+     *
+     * @param component: component in the parent window (must not be null)
+     * @param title: a title message (may be null)
+     * @param message: a message to be displayed in the dialog (must not be null)
+     * @param throwable: an exception (may be null)
+     */
+    public static void showMessageDialog(final Component component,
+                                         final String title,
+                                         final String message,
+                                         final Throwable throwable) {
+        showMessageDialog(component, title, message, throwable, null);
     }
 
     /**

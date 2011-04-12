@@ -78,43 +78,52 @@ public class CreatePolicyAction extends SecureAction {
 
                 AbstractTreeNode root = TopComponents.getInstance().getPoliciesFolderNode();
 
-                Policy policy = dlg.getValue();
+                final Policy dlgPolicy = dlg.getValue();
                 long oid = -1;
                 try {
                     //if the editor didn't already create some policy content, create a default here
-                    if (!(policy.getType() == PolicyType.INTERNAL)) {
-                        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Policy Fragment: " + policy.getName()))));
-                        policy.setXml( xml );
-                    } else if (policy.getXml() == null) {
+                    if (!(dlgPolicy.getType() == PolicyType.INTERNAL)) {
+                        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Policy Fragment: " + dlgPolicy.getName()))));
+                        dlgPolicy.setXml( xml );
+                    } else if (dlgPolicy.getXml() == null) {
                         final String defaultPolicyXml =
-                                Registry.getDefault().getPolicyAdmin().getDefaultPolicyXml(policy.getType(), policy.getInternalTag());
+                                Registry.getDefault().getPolicyAdmin().getDefaultPolicyXml(dlgPolicy.getType(), dlgPolicy.getInternalTag());
 
                         String xml = (defaultPolicyXml != null)? defaultPolicyXml: WspWriter.getPolicyXml(
-                                new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + policy.getName()))));
-                        policy.setXml( xml );
+                                new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + dlgPolicy.getName()))));
+                        dlgPolicy.setXml( xml );
                     }
-                    policy.setFolder(((RootNode)root).getFolder());
-                    oid = Registry.getDefault().getPolicyAdmin().savePolicy(policy);
-                    policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(oid);
+                    dlgPolicy.setFolder(((RootNode)root).getFolder());
+                    oid = Registry.getDefault().getPolicyAdmin().savePolicy(dlgPolicy);
                 } catch ( DuplicateObjectException doe) {
-                    String message = "Unable to save the policy '" + policy.getName() + "'.\n";
-                    if ( policy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
+                    String message = "Unable to save the policy '" + dlgPolicy.getName() + "'.\n";
+                    if ( dlgPolicy.getType() == PolicyType.GLOBAL_FRAGMENT ) {
                         message += "The policy name is already in use or there is an existing\n" +
-                                   "Global Policy Fragment with the '"+policy.getInternalTag()+"' tag.";
-                    } else if (policy.getType() == PolicyType.INTERNAL && PolicyType.getAuditMessageFilterTags().contains(policy.getInternalTag())){
+                                   "Global Policy Fragment with the '"+dlgPolicy.getInternalTag()+"' tag.";
+                    } else if (dlgPolicy.getType() == PolicyType.INTERNAL && PolicyType.getAuditMessageFilterTags().contains(dlgPolicy.getInternalTag())){
                         message += "The policy name is already in use or there is an existing\n" +
-                                   "Internal Policy with the '"+policy.getInternalTag()+"' tag.";
+                                   "Internal Policy with the '"+dlgPolicy.getInternalTag()+"' tag.";
                     }
                     else {
                         message += "The policy name is already used, please choose a different\n name and try again.";
 
                     }
-                    DialogDisplayer.showMessageDialog(parent, "Duplicate policy", message, null);
-                    doEdit( parent, policy );
+                    DialogDisplayer.showMessageDialog(parent, "Duplicate policy", message, null, new Runnable() {
+                        @Override
+                        public void run() {
+                            // callback when dialog dismissed
+                            doEdit( parent, dlgPolicy );
+                        }
+                     });
                 } catch (PolicyAssertionException e) {
                     throw new RuntimeException("Couldn't save Policy", e);
                 } catch (SaveException e) {
                     throw new RuntimeException("Couldn't save Policy", e);
+                }
+
+                Policy savedPolicy;
+                try {
+                    savedPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(oid);
                 } catch (FindException e) {
                     throw new RuntimeException("Policy saved, but couldn't be retrieved", e);
                 }
@@ -131,7 +140,7 @@ public class CreatePolicyAction extends SecureAction {
                     //Remove any filter before insert
                     TopComponents.getInstance().clearFilter();
 
-                    PolicyHeader ph = new PolicyHeader(policy);
+                    PolicyHeader ph = new PolicyHeader(savedPolicy);
                     final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(ph, null);
                     model.insertNodeInto(sn, root, root.getInsertPosition(sn, RootNode.getComparator()));
                     RootNode rootNode = (RootNode) model.getRoot();

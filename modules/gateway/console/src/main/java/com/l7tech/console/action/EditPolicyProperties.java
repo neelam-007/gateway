@@ -160,8 +160,13 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                             message += "The policy name is already used, please choose a different\n name and try again.";
                         }
 
-                        DialogDisplayer.showMessageDialog(mw, "Duplicate policy", message, null);
-                        editPolicyProperties( policy, resultCallback, canUpdate );
+                        DialogDisplayer.showMessageDialog(mw, "Duplicate policy", message, null, new Runnable() {
+                            @Override
+                            public void run() {
+                                // callback when dialog dismissed
+                                editPolicyProperties( policy, resultCallback, canUpdate );
+                            }
+                        });
                     } catch (SaveException e) {
                         String msg = "Error updating policy:" + e.getMessage();
                         logger.log(Level.INFO, msg, e);
