@@ -16,7 +16,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.TrustedEsmUserManager;
-import com.l7tech.server.event.admin.AdminEvent;
+import com.l7tech.server.event.admin.AdministrativePasswordsResetEvent;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.internal.InternalUserManager;
@@ -607,30 +607,22 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override                                         
-    public void forceAdminUsersResetPassword(long identityProviderConfigId) throws FindException, SaveException, UpdateException, InvalidPasswordException {
-        if (identityProviderConfigId != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) return;
-
-        IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
-        if (provider == null) throw new FindException("IdentityProvider could not be found");
-
-        UserManager userManager = provider.getUserManager();
-        EntityHeaderSet<IdentityHeader> headers = findAllUsers(identityProviderConfigId);
-        for(IdentityHeader header : headers){
-            User user = userManager.findByPrimaryKey(Long.toString(header.getOid()));
-             if(user !=  null && user instanceof InternalUser ) {
-                InternalUser internalUser = (InternalUser)user;
-                if (isAdministrativeUser(internalUser)){
-                    internalUser.setChangePassword(true);
-                    saveUser(identityProviderConfigId, internalUser, null) ;
+    public void forceAdminUsersResetPassword( final long identityProviderConfigId ) throws ObjectModelException {
+        final IdentityProvider provider = identityProviderFactory.getProvider( identityProviderConfigId );
+        if ( provider instanceof InternalIdentityProvider ) {
+            final InternalIdentityProvider internalProvider = (InternalIdentityProvider) provider;
+            final InternalUserManager internalUserManager = internalProvider.getUserManager();
+            final Collection<IdentityHeader> headers = internalUserManager.findAllHeaders();
+            for( final IdentityHeader header : headers ){
+                final InternalUser user = internalUserManager.findByPrimaryKey( header.getStrId() );
+                if ( isAdministrativeUser( user ) ){
+                    user.setChangePassword( true );
+                    internalUserManager.update( user, null );
                 }
-             }
+            }
+
+            applicationEventPublisher.publishEvent( new AdministrativePasswordsResetEvent( this, internalProvider.getConfig().getName() ) );
         }
-        IdentityProviderConfig idConfig = findIdentityProviderConfigByID(identityProviderConfigId);
-        applicationEventPublisher.publishEvent(new AdminEvent(this, MessageFormat.format(SystemMessages.FORCE_PASSWORD_RESET.getMessage(), idConfig.getName())) {
-                    public Level getMinimumLevel() {
-                        return Level.WARNING;
-                    }
-                });
     }
 
     @Override
@@ -664,15 +656,9 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
      *
      * @return  TRUE if has roles, otherwise FALSE
      */
-    private boolean isAdministrativeUser(InternalUser internalUser) {
-        try {
-            Collection<Role> roles = roleManager.getAssignedRoles(internalUser);
-
-            if (roles == null) return false;
-            return !roles.isEmpty();
-        } catch(FindException e) {
-            return false;
-        }
+    private boolean isAdministrativeUser( final User user ) throws FindException {
+        final Collection<Role> roles = roleManager.getAssignedRolesSkippingUserAccountValidation(user);
+        return roles != null && !roles.isEmpty();
     }
 
     private static final SecureRandom secureRandom = new SecureRandom();

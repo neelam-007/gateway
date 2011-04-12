@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.server.event.admin;
 
 import com.l7tech.server.audit.AdminAuditConstants;
@@ -13,19 +7,30 @@ import java.util.logging.Level;
 
 /**
  * Implementations are events in the lifecycle of a {@link com.l7tech.objectmodel.PersistentEntity}.
+ *
  * @author alex
- * @version $Revision$
  */
 public abstract class AdminEvent extends ApplicationEvent {
+    protected static final int MESSAGE_MAX_LENGTH = 255;
+    private final Level level;
     private boolean auditIgnore;
+    protected String note;
 
-    public AdminEvent(Object source) {
-        super(source);
+    public AdminEvent( final Object source ) {
+        this( source, null, AdminAuditConstants.DEFAULT_LEVEL );
     }
 
-    public AdminEvent(Object source, String note) {
-        this(source);
+    public AdminEvent( final Object source,
+                       final String note ) {
+        this( source, note, AdminAuditConstants.DEFAULT_LEVEL );
+    }
+
+    public AdminEvent( final Object source,
+                       final String note,
+                       final Level level ) {
+        super( source );
         this.note = note;
+        this.level = level;
     }
 
     public String getNote() {
@@ -33,10 +38,8 @@ public abstract class AdminEvent extends ApplicationEvent {
     }
 
     public Level getMinimumLevel() {
-        return AdminAuditConstants.DEFAULT_LEVEL;
+        return level;
     }
-
-    protected String note;
 
     /**
      * @return true if the audit listener should ignore this event.

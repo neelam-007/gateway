@@ -146,10 +146,6 @@ public class SystemMessages extends Messages {
     // Caches
     public static final M URL_OBJECT_CACHE_REUSE = m( 2320, Level.WARNING, "Reusing previously-cached copy of remote {0}: URL {1}: {2}" );
 
-    public static final M PASSWORD_BELOW_MINIMUM = m( 2340, Level.WARNING, "Password requirements are below {0} for {1}" );
-    public static final M PASSWORD_CHANGE_FAILED = m( 2341, Level.WARNING, "Password change failed for user ''{0}''" );
-    public static final M FORCE_PASSWORD_RESET   = m( 2342, Level.WARNING, "Force administrative user password reset in {0} " );
-
     //audit-message-filter and audit-viewer policies
     public static final M AUDIT_MESSAGE_FILTER_POLICY_FAILED = m( 2360, Level.WARNING, "Audit message filter policy failed for the {0}. No message was audited." );
 

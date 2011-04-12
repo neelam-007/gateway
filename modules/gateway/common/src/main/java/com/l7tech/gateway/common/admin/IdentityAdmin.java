@@ -444,14 +444,10 @@ public interface IdentityAdmin {
      * 
      * Note: only works for the ONE internal identity provider
      * @param identityProviderConfigId  the ID of the identity provider
-     * @throws FindException
-     * @throws SaveException
-     * @throws UpdateException
-     * @throws InvalidPasswordException
+     * @throws ObjectModelException If an error occurs
      */
-    @Administrative(licensed=false)
-    @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)    
-    public void forceAdminUsersResetPassword(long identityProviderConfigId) throws FindException, SaveException, UpdateException, InvalidPasswordException;
+    @Secured(types=ID_PROVIDER_CONFIG, stereotype=SAVE_OR_UPDATE)
+    public void forceAdminUsersResetPassword(long identityProviderConfigId) throws ObjectModelException;
 
     /**
      * Activates the user by resetting the values in the corresponding logon info

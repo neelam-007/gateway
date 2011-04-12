@@ -86,21 +86,12 @@ public class ForceAdminPasswordResetAction extends NodeAction {
             f, "Are you sure you want to force all administrative users in the identity provider to reset their passwords ", getName(), JOptionPane.YES_NO_OPTION);
 
         if (result == JOptionPane.YES_OPTION){
-            if (header.getOid() != -1) {
+            if (header.getOid() != -1L) {
                 final long oid = header.getOid();
                 try {
                     getIdentityAdmin().forceAdminUsersResetPassword(oid);
-                } catch (FindException e) {
+                } catch (ObjectModelException e) {
                     logger.log(Level.WARNING, "Failed to force password change: " + ExceptionUtils.getMessage(e), e);
-                    DialogDisplayer.showMessageDialog(f, "Failed to force password change: " + ExceptionUtils.getMessage(e), "Edit Failed", JOptionPane.ERROR_MESSAGE, null);
-                } catch (SaveException e) {
-                    logger.log(Level.WARNING, "Failed to force password change: " + ExceptionUtils.getMessage(e), e);
-                    DialogDisplayer.showMessageDialog(f, "Failed to force password change: " + ExceptionUtils.getMessage(e), "Edit Failed", JOptionPane.ERROR_MESSAGE, null);
-                } catch (UpdateException e) {
-                    logger.log(Level.WARNING, "Failed to force password change: " + ExceptionUtils.getMessage(e), e);
-                    DialogDisplayer.showMessageDialog(f, "Failed to force password change: " + ExceptionUtils.getMessage(e), "Edit Failed", JOptionPane.ERROR_MESSAGE, null);
-                }  catch (InvalidPasswordException e) {
-                    logger.log(Level.WARNING, "Failed to force password change: " + ExceptionUtils.getMessage(e), e);  // should not happen
                     DialogDisplayer.showMessageDialog(f, "Failed to force password change: " + ExceptionUtils.getMessage(e), "Edit Failed", JOptionPane.ERROR_MESSAGE, null);
                 }
             }
