@@ -6,7 +6,7 @@ package com.l7tech.common.password;
  * Throwers of this exception should take care to avoid revealing any password material either directly or
  * indirectly in the exception message or cause chain.
  */
-public class PasswordHashingException extends Exception {
+public class PasswordHashingException extends RuntimeException {
     public PasswordHashingException() {
     }
 
