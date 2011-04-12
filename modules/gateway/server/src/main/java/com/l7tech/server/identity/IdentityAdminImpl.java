@@ -365,10 +365,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public void changeUsersPassword(long idProvCfgId, long userId, String newClearTextPassword)
+    public void changeUsersPassword(User user, String newClearTextPassword)
             throws FindException, UpdateException, InvalidPasswordException {
 
-        IdentityProvider provider = identityProviderFactory.getProvider(idProvCfgId);
+        IdentityProvider provider = identityProviderFactory.getProvider(user.getProviderId());
         if (provider == null) throw new FindException("IdentityProvider could not be found");
         if(!(provider instanceof InternalIdentityProvider)){
             throw new UpdateException("Cannot change non internal users password.");
@@ -382,7 +382,8 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         InternalUserManager userManager = (InternalUserManager) provider.getUserManager();
         final InternalUser disconnectedUser = new InternalUser();
         {//limit session connected internal user scope
-            final InternalUser internalUser = userManager.findByPrimaryKey(String.valueOf(userId));
+            //were ignoring the incoming entity, were just using it for rbac and a container for it's id and provider id
+            final InternalUser internalUser = userManager.findByPrimaryKey(String.valueOf(user.getId()));
             disconnectedUser.copyFrom(internalUser);
             disconnectedUser.setVersion(internalUser.getVersion());
         }

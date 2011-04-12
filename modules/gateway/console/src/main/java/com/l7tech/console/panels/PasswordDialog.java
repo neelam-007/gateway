@@ -325,8 +325,7 @@ public class PasswordDialog extends JDialog {
                 }
             }
 
-            Registry.getDefault().getIdentityAdmin().changeUsersPassword(
-                    IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, user.getOid(), new String(newPass));
+            Registry.getDefault().getIdentityAdmin().changeUsersPassword(user, new String(newPass));
             dispose();
             if (listener != null) {
                 EntityHeader eh = new EntityHeader();

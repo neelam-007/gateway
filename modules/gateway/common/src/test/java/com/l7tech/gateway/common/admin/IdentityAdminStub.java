@@ -136,7 +136,7 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public void changeUsersPassword(long idProvCfgId, long userId, String newClearTextPassword) {
+    public void changeUsersPassword(User user, String newClearTextPassword) throws FindException, UpdateException, InvalidPasswordException {
 
     }
 

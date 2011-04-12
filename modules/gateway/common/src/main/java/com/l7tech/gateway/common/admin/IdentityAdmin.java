@@ -216,8 +216,18 @@ public interface IdentityAdmin {
     String saveUser(long idProvCfgId, User user, Set<IdentityHeader> groupHeaders)
       throws SaveException, UpdateException, ObjectNotFoundException;
 
-    @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg=1)      //todo [Donal] java doc
-    void changeUsersPassword(long idProvCfgId, long userId, String newClearTextPassword) 
+    /**
+     * Change a users password.
+     *
+     * @param user user to set password for. Any changes on this User entity are ignored
+     * @param newClearTextPassword users clear text password
+     * @throws FindException any problems finding user
+     * @throws UpdateException any problems updating user
+     * @throws InvalidPasswordException if users new password does not meet the password requirements for the internal
+     * identity provider.
+     */
+    @Secured(types=USER, stereotype=SAVE_OR_UPDATE, relevantArg = 0)
+    void changeUsersPassword(User user, String newClearTextPassword)
             throws FindException, UpdateException, InvalidPasswordException;
 
     /**
