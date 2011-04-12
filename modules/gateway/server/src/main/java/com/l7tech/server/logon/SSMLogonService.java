@@ -165,11 +165,9 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                     break; //
                 case INACTIVE: {
                     String msg = "Access is denied because of inactivity";
-                    // todo audit ? auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_ATTEMPT, user.getLogin(), Integer.toString(logonInfo.getFailCount()), Integer.toString(this.maxLoginAttempts));
                     logger.info(msg);
                     throw new FailInactivityPeriodExceededException(msg);  }
             }
-            //doUpdateLogonState(user,InternalUser.State.EXCEED_ATTEMPT);return;
 
             //verify if has reached login attempts
             if (logonInfo.getState()== LogonInfo.State.EXCEED_ATTEMPT || logonInfo.getFailCount() >= this.maxLoginAttempts) {
@@ -196,8 +194,8 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
             Calendar inactivityCal = Calendar.getInstance();
             inactivityCal.setTimeInMillis(logonInfo.getLastActivity());
             inactivityCal.add(Calendar.HOUR, this.maxInactivityPeriod * 24);
-            if (this.maxInactivityPeriod !=0 && logonInfo.getLastActivity()>0 && inactivityCal.getTimeInMillis() <= now) {
-                long daysAgo = inactivityCal.getTimeInMillis() / 1000 / 60 / 24;
+            if (this.maxInactivityPeriod !=0 && logonInfo.getLastActivity() > 0 && inactivityCal.getTimeInMillis() <= now) {
+                long daysAgo = (now - logonInfo.getLastActivity() ) / 1000 / 60 / 60 / 24;
                 auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_INACTIVITY, user.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
                 String msg = "Credentials login matches an internal user " + user.getLogin() + ", but access is denied because of account inactivity.";
                 logger.info(msg);
@@ -247,14 +245,14 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                     continue;
                 inactivityCal.setTimeInMillis(now);
                 inactivityCal.setTimeInMillis(logonInfo.getLastActivity());
-                inactivityCal.add(Calendar.HOUR,  24);
+                inactivityCal.add(Calendar.HOUR, this.maxInactivityPeriod * 24);
                 if (this.maxInactivityPeriod !=0 &&
                         logonInfo.getLastActivity()>0 &&
                         inactivityCal.getTimeInMillis() <= now)
                 {
-                    long daysAgo = inactivityCal.getTimeInMillis() / 1000 / 60 / 24;
+                    long daysAgo = (now - logonInfo.getLastActivity()) / 1000 / 60 / 60 / 24;
                     auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_INACTIVITY, logonInfo.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
-                    String msg = MessageFormat.format(SystemMessages.AUTH_USER_EXCEED_INACTIVITY.getMessage(),logonInfo.getLogin());
+                    String msg = MessageFormat.format(SystemMessages.AUTH_USER_EXCEED_INACTIVITY.getMessage(),logonInfo.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
                     logger.info(msg);
                     logonInfo.setState(LogonInfo.State.INACTIVE);
                     try {
