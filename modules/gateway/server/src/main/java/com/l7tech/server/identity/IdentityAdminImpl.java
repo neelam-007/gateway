@@ -642,9 +642,12 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
-    public LogonInfo getLogonInfo(User user) throws FindException{
+    public LogonInfo.State getLogonState(User user) throws FindException{
     try {
-            return logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), false);
+            LogonInfo info = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), false);
+            if(info != null)
+                return info.getState();
+            return null;
         } catch (FindException e) {
             throw new FindException( "No logon info for '" + user.getLogin() + "'", e);
         }

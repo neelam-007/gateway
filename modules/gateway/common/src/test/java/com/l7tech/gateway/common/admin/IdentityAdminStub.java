@@ -309,7 +309,7 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
-    public LogonInfo getLogonInfo(User user) throws FindException {
+    public LogonInfo.State getLogonState(User user) throws FindException {
         return null; // TODO?
     }
 }

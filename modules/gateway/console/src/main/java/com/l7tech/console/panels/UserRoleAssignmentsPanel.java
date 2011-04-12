@@ -6,7 +6,6 @@ import com.l7tech.gateway.common.security.rbac.RbacAdmin;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
-import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.*;
@@ -74,15 +73,14 @@ public class UserRoleAssignmentsPanel extends JPanel {
         if(user instanceof LdapUser ||
            user instanceof InternalUser){
 
-            LogonInfo info = Registry.getDefault().getIdentityAdmin().getLogonInfo(user);
-            if(info == null){
+            LogonInfo.State userState = Registry.getDefault().getIdentityAdmin().getLogonState(user);
+            if(userState == null){
                 statusTextLabel.setVisible(false);
                 statusLabel.setVisible(false);
                 statusButton.setVisible(false);
                 return;
             }
 
-            LogonInfo.State userState = info.getState();
             statusLabel.setText(getStateString(userState));
 
             statusButton.setVisible(canUpdate && userState!= LogonInfo.State.ACTIVE);

@@ -412,7 +412,7 @@ public interface IdentityAdmin {
      * @throws FindException
      */
     @Transactional(readOnly=true)
-    @Secured(types=PASSWORD_POLICY, stereotype=FIND_ENTITY, relevantArg=1)
+    @Secured(types=PASSWORD_POLICY, stereotype=FIND_ENTITY)
     IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException;
 
      /**
@@ -455,10 +455,10 @@ public interface IdentityAdmin {
      * @throws FindException
      * @throws UpdateException
      */
-    @Secured(types=USER, stereotype=GET_PROPERTY_OF_ENTITY)
+    @Secured(types=USER, stereotype=SAVE_OR_UPDATE)
     void activateUser(User user) throws FindException, UpdateException;
 
     @Transactional(readOnly=true)
     @Secured(types=USER, stereotype=GET_PROPERTY_OF_ENTITY)
-    LogonInfo getLogonInfo(User user) throws FindException;
+    LogonInfo.State getLogonState(User user) throws FindException;
 }
