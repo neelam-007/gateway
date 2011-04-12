@@ -1,38 +1,36 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
-import com.l7tech.uddi.EndpointPair;
-import com.l7tech.uddi.WsdlPortInfoImpl;
-import com.l7tech.uddi.*;
-import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.transport.SsgConnectorActivationListener;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.io.SingleCertX509KeyManager;
-import com.l7tech.util.InetAddressUtil;
+import com.l7tech.gateway.common.uddi.UDDIRegistry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.transport.SsgConnectorActivationListener;
+import com.l7tech.uddi.*;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.SyspropUtil;
+import org.apache.cxf.configuration.jsse.TLSClientParameters;
+import org.apache.cxf.jaxws.JaxWsClientProxy;
+import org.apache.cxf.transport.http.HTTPConduit;
 
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.TrustManager;
 import java.lang.reflect.Proxy;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
 import java.text.MessageFormat;
-import java.net.URL;
-import java.net.MalformedURLException;
-
-import org.apache.cxf.jaxws.JaxWsClientProxy;
-import org.apache.cxf.transport.http.HTTPConduit;
-import org.apache.cxf.configuration.jsse.TLSClientParameters;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.HostnameVerifier;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * UDDI utility methods.
@@ -350,8 +348,9 @@ public class UDDIHelper implements SsgConnectorActivationListener {
      *
      * @param uddiRegistry The registry to access.
      * @return The UDDIClientConfig
+     * @throws com.l7tech.objectmodel.FindException if a password reference cannot be expanded
      */
-    public UDDIClientConfig newUDDIClientConfig( final UDDIRegistry uddiRegistry ) {
+    public UDDIClientConfig newUDDIClientConfig( final UDDIRegistry uddiRegistry ) throws FindException {
         boolean closeSession = true;
 
         UDDITemplate template = uddiTemplateManager.getUDDITemplate( uddiRegistry.getUddiRegistryType() );
@@ -365,7 +364,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
                 uddiRegistry.getSubscriptionUrl(),
                 uddiRegistry.getSecurityUrl(),
                 uddiRegistry.getRegistryAccountUserName(),
-                uddiRegistry.getRegistryAccountPassword(),
+                ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(logger), uddiRegistry.getRegistryAccountPassword()),
                 closeSession,
                 buildTLSConfig(uddiRegistry) );
     }
@@ -375,8 +374,9 @@ public class UDDIHelper implements SsgConnectorActivationListener {
      *
      * @param uddiRegistry The registry to access.
      * @return The UDDIClient
+     * @throws com.l7tech.objectmodel.FindException if a password reference cannot be expanded
      */
-    public UDDIClient newUDDIClient( final UDDIRegistry uddiRegistry ) {
+    public UDDIClient newUDDIClient( final UDDIRegistry uddiRegistry ) throws FindException {
         UDDIClientFactory factory = UDDIClientFactory.getInstance();
         return factory.newUDDIClient( newUDDIClientConfig(uddiRegistry) );
     }

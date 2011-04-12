@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.uddi.UDDIRegistry;
@@ -61,6 +62,8 @@ public class UddiRegistryPropertiesDialog extends JDialog {
     private JLabel userNameLabel;
     private JTextField userNameTextField;
     private JPasswordField passwordTextField;
+    private JCheckBox showPasswordCheckBox;
+    private JLabel plaintextPasswordWarningLabel;
     private JLabel publishUrlLabel;
     private JLabel registryAccountLabel;
     private JLabel passwordLabel;
@@ -300,6 +303,8 @@ public class UddiRegistryPropertiesDialog extends JDialog {
                 return error;
             }
         });
+
+        PasswordGuiUtils.configureOptionalSecurePasswordField(passwordTextField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         modelToView( uddiRegistry );
     }

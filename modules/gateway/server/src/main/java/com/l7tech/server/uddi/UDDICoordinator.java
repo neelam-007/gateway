@@ -1,55 +1,50 @@
 package com.l7tech.server.uddi;
 
-import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
-import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.uddi.*;
-import com.l7tech.util.*;
-import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.event.system.ReadyForMessages;
-import com.l7tech.server.event.system.UDDISystemEvent;
-import com.l7tech.server.util.ManagedTimerTask;
-import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.cluster.ClusterMaster;
-import com.l7tech.server.audit.AuditContextUtils;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.gateway.common.uddi.*;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.cluster.ClusterMaster;
+import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.system.ReadyForMessages;
+import com.l7tech.server.event.system.UDDISystemEvent;
+import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.util.ManagedTimerTask;
+import com.l7tech.uddi.*;
+import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
-
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.*;
 import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The UDDICoordinator handles events and task processing for UDDI
@@ -813,8 +808,9 @@ public class UDDICoordinator implements ApplicationContextAware, InitializingBea
          * <p>The caller is responsible for closing the client.</p>
          *
          * @return The UDDIClient
+         * @throws com.l7tech.objectmodel.FindException if a password reference cannot be expanded
          */
-        UDDIClient getUDDIClient() {
+        UDDIClient getUDDIClient() throws FindException {
             return uddiHelper.newUDDIClient( registry );
         }
 

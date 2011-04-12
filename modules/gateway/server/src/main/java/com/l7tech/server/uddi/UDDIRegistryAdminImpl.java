@@ -1,25 +1,27 @@
 package com.l7tech.server.uddi;
 
 import com.l7tech.gateway.common.admin.UDDIRegistryAdmin;
-import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.server.service.ServiceManager;
-import com.l7tech.uddi.*;
+import com.l7tech.gateway.common.uddi.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.service.ServiceCache;
+import com.l7tech.server.service.ServiceManager;
+import com.l7tech.uddi.UDDIClient;
+import com.l7tech.uddi.UDDIException;
+import com.l7tech.uddi.UDDIKeyedReference;
+import com.l7tech.uddi.UDDIUtilities;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.server.service.ServiceCache;
 import com.l7tech.wsdl.Wsdl;
-
-import javax.wsdl.WSDLException;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import javax.wsdl.WSDLException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Copyright (C) 2008, Layer 7 Technologies Inc.
@@ -157,12 +159,14 @@ public class UDDIRegistryAdminImpl implements UDDIRegistryAdmin {
         } catch (UDDIException e) {
             //the original exception may not be serializable
             throw new UDDIException(ExceptionUtils.getMessage(e));
+        } catch (FindException e) {
+            throw new UDDIException(e);
         } finally {
             ResourceUtils.closeQuietly( uddiClient );
         }
     }
 
-    private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) {
+    private UDDIClient getUDDIClient(final UDDIRegistry uddiRegistry) throws FindException {
         return uddiHelper.newUDDIClient( uddiRegistry );
     }
 

@@ -4,11 +4,13 @@
  */
 package com.l7tech.gateway.common.uddi;
 
+import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.policy.wsp.WspSensitive;
 import org.hibernate.annotations.Proxy;
 
-import javax.persistence.*;
-
-import com.l7tech.objectmodel.imp.NamedEntityImp;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 @Entity
 @Proxy(lazy=false)
@@ -184,6 +186,7 @@ public class UDDIRegistry extends NamedEntityImp {
     }
 
     @Column(name="password")
+    @WspSensitive
     public String getRegistryAccountPassword() {
         return registryAccountPassword;
     }
