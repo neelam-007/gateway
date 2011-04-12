@@ -180,7 +180,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         User user = null;
 
         final CredentialFormat credentialFormat = creds.getFormat();
-        boolean formatOkForAdminAccess = credentialFormat == CredentialFormat.CLEARTEXT || credentialFormat != CredentialFormat.CLIENTCERT;
+        boolean formatOkForAdminAccess = credentialFormat == CredentialFormat.CLEARTEXT || credentialFormat == CredentialFormat.CLIENTCERT;
         if(!formatOkForAdminAccess) throw new LoginException("Unsupported credential format for admin access: " + credentialFormat);
 
         boolean needsClientCert = false;
