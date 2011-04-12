@@ -147,7 +147,7 @@ public class SystemMessages extends Messages {
     public static final M URL_OBJECT_CACHE_REUSE = m( 2320, Level.WARNING, "Reusing previously-cached copy of remote {0}: URL {1}: {2}" );
 
     //audit-message-filter and audit-viewer policies
-    public static final M AUDIT_MESSAGE_FILTER_POLICY_FAILED = m( 2360, Level.WARNING, "Audit message filter policy failed for the {0}. No message was audited." );
+    public static final M AUDIT_MESSAGE_FILTER_POLICY_FAILED = m( 2360, Level.WARNING, "Audit message filter policy failed for the {0}. No message was audited. {1}" );
 
     // MAX -                                      m(2999
 }

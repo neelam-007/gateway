@@ -126,9 +126,9 @@ public class AuditFilterPolicyManagerTest {
         updatePolicyXml(successPolicyXml);
         final String requestXml = "<xml>test</xml>";
         final Message requestMsg = new Message();
-        requestMsg.initialize(ContentTypeHeader.parseValue("text/xml"), requestXml.getBytes());
+        requestMsg.initialize(ContentTypeHeader.XML_DEFAULT, requestXml.getBytes());
         final Message responseMsg = new Message();
-        responseMsg.initialize(ContentTypeHeader.parseValue("text/xml"), requestXml.getBytes());
+        responseMsg.initialize(ContentTypeHeader.XML_DEFAULT, requestXml.getBytes());
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, responseMsg);
 
         filterPolicyManager.filterAuditRecord(record, context, auditLogListener, new  AuditLogFormatter() );
@@ -137,13 +137,13 @@ public class AuditFilterPolicyManagerTest {
     }
 
     @Test
-    public void testAmfFailsForReqeustAndResponse() throws Exception {
+    public void testAmfFailsForRequestAndResponse() throws Exception {
         updatePolicyXml(policyToReturnErrorStatus);
         final String requestXml = "<xml>test</xml>";
         final Message requestMsg = new Message();
-        requestMsg.initialize(ContentTypeHeader.parseValue("text/xml"), requestXml.getBytes());
+        requestMsg.initialize(ContentTypeHeader.XML_DEFAULT, requestXml.getBytes());
         final Message responseMsg = new Message();
-        responseMsg.initialize(ContentTypeHeader.parseValue("text/xml"), requestXml.getBytes());
+        responseMsg.initialize(ContentTypeHeader.XML_DEFAULT, requestXml.getBytes());
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, responseMsg);
 
         filterPolicyManager.filterAuditRecord(record, context, auditLogListener, new  AuditLogFormatter() );
@@ -157,7 +157,7 @@ public class AuditFilterPolicyManagerTest {
         updatePolicyXml(successPolicyXml);
         final String requestXml = "<xml>test</xml>";
         final Message requestMsg = new Message();
-        final ContentTypeHeader xmlTypeHeader = ContentTypeHeader.parseValue("text/xml");
+        final ContentTypeHeader xmlTypeHeader = ContentTypeHeader.XML_DEFAULT;
         requestMsg.initialize(xmlTypeHeader, requestXml.getBytes());
         final Message responseMsg = new Message();//not initialized, so no input stream
         responseMsg.close();
@@ -183,13 +183,12 @@ public class AuditFilterPolicyManagerTest {
         updatePolicyXml(successPolicyXml);
         final String requestXml = "<xml>test</xml>";
         final Message requestMsg = new Message();
-        final ContentTypeHeader xmlTypeHeader = ContentTypeHeader.parseValue("text/xml");
-        requestMsg.initialize(xmlTypeHeader, requestXml.getBytes());
+        requestMsg.initialize(ContentTypeHeader.XML_DEFAULT, requestXml.getBytes());
         final InputStream inputStream = requestMsg.getMimeKnob().getPart(0).getInputStream(true);
         IOUtils.slurpStream(inputStream);
         
         final Message responseMsg = new Message();//not initialized, so no input stream
-        responseMsg.initialize(xmlTypeHeader, requestXml.getBytes());
+        responseMsg.initialize(ContentTypeHeader.XML_DEFAULT, requestXml.getBytes());
         IOUtils.slurpStream(responseMsg.getMimeKnob().getPart(0).getInputStream(true));
         
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, responseMsg);

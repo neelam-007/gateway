@@ -167,28 +167,28 @@ public class AuditFilterPolicyManager {
                                       final AuditLogListener listener,
                                       final AuditLogFormatter formatter) {
         //fault may be any content type as the Customize Error Response assertion can change the content type of a fault.
-        final String contentType;
+        //the actual contents of the customized fault will already be in responseFaultXml
+        ContentTypeHeader typeHeader = null;
         if (faultlevel != null && faultlevel.getFaultTemplateContentType() != null) {
-            contentType = faultlevel.getFaultTemplateContentType();
-        } else {
-            contentType = "text/xml";
+            final String contentType = faultlevel.getFaultTemplateContentType();
+            try {
+                typeHeader = ContentTypeHeader.parseValue(contentType);
+                //no exception simply means that the type is syntactically correct, the type may not exist.
+                //this is fine so long as the AMF policy can deal with it, which the default AMF policy can.
+                //this should not happen as Customize Error Response only allows valid content types.
+            } catch (IOException e) {
+                final String msg = "Cannot parse content type of response fault message: " + contentType;
+                auditProcessingProblem(messageAudit, listener, formatter, msg, ExceptionUtils.getDebugException(e), false);
+            }
         }
 
-        ContentTypeHeader typeHeader;
-        try {
-            typeHeader = ContentTypeHeader.parseValue(contentType);
-            //no exception simply means that the type is syntactically correct, the type may not exist.
-            //this is fine so long as the AMF policy can deal with it, which the default AMF policy can.
-            //this should not happen as Customize Error Response only allows valid content types.
-        } catch (IOException e) {
-            final String msg = "Cannot parse content type of response fault message: " + contentType;
-            auditProcessingProblem(messageAudit, listener, formatter, msg, ExceptionUtils.getDebugException(e), false);
-            typeHeader = ContentTypeHeader.XML_DEFAULT;
+        if(typeHeader == null){
+            typeHeader = ContentTypeHeader.XML_DEFAULT;//has default encoding - UTF8
         }
 
         final Message faultMsg = new Message();
         try {
-            faultMsg.initialize(typeHeader, responseFaultXml.getBytes());
+            faultMsg.initialize(typeHeader, responseFaultXml.getBytes(typeHeader.getEncoding()));
         } catch (IOException e) {
             final String msg = "Cannot create message from response fault message: " + ExceptionUtils.getMessage(e);
             auditProcessingProblem(messageAudit, listener, formatter, msg, ExceptionUtils.getDebugException(e), true);
@@ -202,7 +202,7 @@ public class AuditFilterPolicyManager {
         try {
             output = filterMessage(faultMsg, handle, false);
         } catch (AuditPolicyNoValidOutputException e) {
-            auditThatMessageFilterPolicyFailed(messageAudit, listener, formatter, false, ExceptionUtils.getDebugException(e));
+            auditThatMessageFilterPolicyFailed(messageAudit, listener, formatter, false, e);
         } finally {
             messageAudit.setResponseXml(output);
         }
@@ -218,10 +218,10 @@ public class AuditFilterPolicyManager {
         try {
             output = processMessage(realMessage, isRequest, handle);
         } catch (AuditPolicyNoValidOutputException e) {
-            auditThatMessageFilterPolicyFailed(messageAudit, listener, formatter, isRequest, ExceptionUtils.getDebugException(e));
+            auditThatMessageFilterPolicyFailed(messageAudit, listener, formatter, isRequest, e);
         } catch (CannotGetMessageBodyException e) {
             auditProcessingProblem(messageAudit, listener, formatter, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), true);
-            auditThatMessageFilterPolicyFailed(messageAudit, listener, formatter, isRequest, null);
+            auditThatMessageFilterPolicyFailed(messageAudit, listener, formatter, isRequest, e);
         } finally {
             if (isRequest) {
                 messageAudit.setRequestXml(output);
@@ -261,13 +261,25 @@ public class AuditFilterPolicyManager {
     }
 
     private static class AuditPolicyNoValidOutputException extends Exception {
-        private AuditPolicyNoValidOutputException(String message) {
+        private AuditPolicyNoValidOutputException(String message, AssertionStatus assertionStatus) {
             super(message);
+            this.assertionStatus = assertionStatus;
         }
 
         private AuditPolicyNoValidOutputException(String message, Throwable cause) {
             super(message, cause);
+            this.assertionStatus = null;
         }
+
+        /**
+         * Get the status returned by the audit policy.
+         * @return
+         */
+        public AssertionStatus getAssertionStatus() {
+            return assertionStatus;
+        }
+
+        private final AssertionStatus assertionStatus;
     }
 
     /**
@@ -317,7 +329,7 @@ public class AuditFilterPolicyManager {
             throw caughtException[0];
         }
 
-        throw new AuditPolicyNoValidOutputException("Audit message filter policy returned an error status: " + result);
+        throw new AuditPolicyNoValidOutputException("Audit message filter policy returned an error status: " + result, result);
     }
 
     private void auditProcessingProblem(
@@ -338,8 +350,20 @@ public class AuditFilterPolicyManager {
             final boolean isRequest,
             final Exception exceptionIfAny) {
 
-        final String[] params = new String[]{(isRequest) ? "request" : "response"};
-        auditMessage(messageAudit, SystemMessages.AUDIT_MESSAGE_FILTER_POLICY_FAILED, params, exceptionIfAny, listener, formatter);
+        String extraMessage = "";
+        if(exceptionIfAny != null){
+            if(exceptionIfAny instanceof AuditPolicyNoValidOutputException){
+                AuditPolicyNoValidOutputException avException = (AuditPolicyNoValidOutputException) exceptionIfAny;
+                AssertionStatus status = avException.getAssertionStatus();
+                if(status != null) {
+                    extraMessage = "Policy returned status '" + status.getMessage() + "'.";
+                }
+            }
+        }
+
+        final String[] params = new String[]{(isRequest) ? "request" : "response", extraMessage};
+
+        auditMessage(messageAudit, SystemMessages.AUDIT_MESSAGE_FILTER_POLICY_FAILED, params, ExceptionUtils.getDebugException(exceptionIfAny), listener, formatter);
     }
 
     private void auditMessage(final MessageSummaryAuditRecord messageAudit,
