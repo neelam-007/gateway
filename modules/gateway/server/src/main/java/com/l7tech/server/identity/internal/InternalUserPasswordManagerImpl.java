@@ -25,16 +25,16 @@ public class InternalUserPasswordManagerImpl implements InternalUserPasswordMana
     }
 
     @Override
-    public boolean configureUserPasswordHashes(InternalUser dbUser, String clearTextPassword) {
-        final String userHashedPassword = dbUser.getHashedPassword();
+    public boolean configureUserPasswordHashes(InternalUser internalUser, String clearTextPassword) {
+        final String userHashedPassword = internalUser.getHashedPassword();
         final boolean userHasHashedPassword = userHashedPassword != null && !userHashedPassword.trim().isEmpty();
 
         boolean userWasUpdated = false;
-        final StringBuilder fineLogMsg = new StringBuilder("Updating password storage for login '" + dbUser.getLogin() + "'. ");
+        final StringBuilder fineLogMsg = new StringBuilder("Updating password storage for login '" + internalUser.getLogin() + "'. ");
 
         //first check to see if this admin user is new or being upgraded, in which case the user needs a new hash
         if(!userHasHashedPassword){
-            dbUser.setHashedPassword(passwordHasher.hashPassword(clearTextPassword.getBytes(Charsets.UTF8)));
+            internalUser.setHashedPassword(passwordHasher.hashPassword(clearTextPassword.getBytes(Charsets.UTF8)));
             userWasUpdated = true;
             fineLogMsg.append("Set password hash. ");
         } else {
@@ -46,13 +46,11 @@ public class InternalUserPasswordManagerImpl implements InternalUserPasswordMana
                     isNewPassword = false;
                 }
             } catch (IncorrectPasswordException e) {
-                //fall through ok
-            } catch (PasswordHashingException e) {
-                //fall through ok
+                //fall through ok - hashedPassword property has been modified.
             }
 
             if(isNewPassword){
-                dbUser.setPasswordChanges(passwordHasher.hashPassword(clearTextPassword.getBytes(Charsets.UTF8)));
+                internalUser.setPasswordChanges(passwordHasher.hashPassword(clearTextPassword.getBytes(Charsets.UTF8)));
                 userWasUpdated = true;
             }
         }
@@ -61,18 +59,18 @@ public class InternalUserPasswordManagerImpl implements InternalUserPasswordMana
         final String httpDigestEnable = config.getProperty("httpDigest.enable", "false");
         boolean isHttpDigestEnabled = httpDigestEnable != null && Boolean.valueOf(httpDigestEnable);
 
-        final String userDigest = dbUser.getHttpDigest();
+        final String userDigest = internalUser.getHttpDigest();
         final boolean userHasDigest = userDigest != null && !userDigest.trim().isEmpty();
-        final String calculatedDigest = HexUtils.encodePasswd(dbUser.getLogin(), clearTextPassword, HexUtils.REALM);
+        final String calculatedDigest = HexUtils.encodePasswd(internalUser.getLogin(), clearTextPassword, HexUtils.REALM);
 
         if (isHttpDigestEnabled) {
             if (!userHasDigest || userWasUpdated) {//if hashed password changed then update the digest if enabled
-                dbUser.setHttpDigest(calculatedDigest);
+                internalUser.setHttpDigest(calculatedDigest);
                 userWasUpdated = true;
                 fineLogMsg.append("Set digest property. ");
             }
         } else if (userHasDigest) {
-            dbUser.setHttpDigest(null);
+            internalUser.setHttpDigest(null);
             userWasUpdated = true;
             fineLogMsg.append("Cleared digest property. ");
         }

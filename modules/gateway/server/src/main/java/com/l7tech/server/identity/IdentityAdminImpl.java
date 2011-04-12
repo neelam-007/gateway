@@ -397,9 +397,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                 //same error string that used to be shown in PasswordDialog
                 throw new InvalidPasswordException("The new password is the same as the old one.\nPlease enter a different password.");
             } catch (IncorrectPasswordException e) {
-                //fall through ok
-            } catch (PasswordHashingException e) {
-                //fall through ok
+                //fall through ok - this is the expected case - the password being set is different.
             }
         }
 
@@ -411,7 +409,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         }
         passwordEnforcerManager.setUserPasswordPolicyAttributes(disconnectedUser, true);
         logger.info("Updated password for Internal User " + disconnectedUser.getLogin() + " [" + disconnectedUser.getOid() + "]");
-        //todo - may not be an admin user, could check first
+        //todo [Donal] - may not be an admin user, could check first
         logonServ.resetLogonFailCount(disconnectedUser);
 
         userManager.update(disconnectedUser);

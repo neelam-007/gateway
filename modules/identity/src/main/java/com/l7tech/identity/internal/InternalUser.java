@@ -53,6 +53,7 @@ public class InternalUser extends PersistentUser {
     /**
      * allows to set all properties from another object
      */
+    @Override
     public void copyFrom( User objToCopy ) {
         InternalUser imp = (InternalUser)objToCopy;
         setOid(imp.getOid());
@@ -165,7 +166,7 @@ public class InternalUser extends PersistentUser {
 
     public void setPasswordChangesHistory(List<PasswordChangeRecord> passwordChangesHistory) {
         if ( this.passwordChangesHistory != null) {
-            for (PasswordChangeRecord changeRecord : passwordChangesHistory) {//todo is this actually needed?
+            for (PasswordChangeRecord changeRecord : passwordChangesHistory) {
                 if (!this.passwordChangesHistory.contains(changeRecord)) {
                     this.passwordChangesHistory.add(changeRecord);
                 }
@@ -209,7 +210,7 @@ public class InternalUser extends PersistentUser {
     public void setPasswordChanges(String newPasswordHash) {
         PasswordChangeRecord passChangeRecord = new PasswordChangeRecord(
                 this, System.currentTimeMillis(), getHashedPassword());
-        this.passwordChangesHistory.add(passChangeRecord);  //todo [Donal ensure that with hibernate this cannot result in a NPE
+        this.passwordChangesHistory.add(passChangeRecord);
         this.hashedPassword = newPasswordHash;
         this.changePassword = false;
     }
