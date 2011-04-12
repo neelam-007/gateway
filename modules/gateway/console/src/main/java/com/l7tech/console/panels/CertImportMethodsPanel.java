@@ -153,7 +153,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
         private CertComboEntry(TrustedCert cert) {
             this.cert = cert;
-            this.name = cert.getCertificate().getSubjectDN().getName();
+            String n = cert.getCertificate().getSubjectDN().getName();
+            this.name = n == null || n.length() < 50 ? n : (n.substring(0, 48) + "...");
         }
 
         @Override
