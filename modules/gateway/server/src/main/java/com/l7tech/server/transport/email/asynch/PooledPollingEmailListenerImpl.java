@@ -136,14 +136,14 @@ public class PooledPollingEmailListenerImpl implements PollingEmailListener {
                                                                          emailListenerCfg.getEmailListener().getPort(),
                                                                          null,
                                                                          emailListenerCfg.getEmailListener().getUsername(),
-                                                                         ServerVariables.expandPasswordOnlyVariable(new LogOnlyAuditor(_logger), emailListenerCfg.getEmailListener().getPassword())));
+                                                                         ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(_logger), emailListenerCfg.getEmailListener().getPassword())));
                     } else if(emailListenerCfg.getEmailListener().getServerType() == EmailServerType.IMAP) {
                         messageStore = emailSession.getStore(new URLName(emailListenerCfg.getEmailListener().isUseSsl() ? "imaps" : "imap",
                                                                          emailListenerCfg.getEmailListener().getHost(),
                                                                          emailListenerCfg.getEmailListener().getPort(),
                                                                          null,
                                                                          emailListenerCfg.getEmailListener().getUsername(),
-                                                                         ServerVariables.expandPasswordOnlyVariable(new LogOnlyAuditor(_logger), emailListenerCfg.getEmailListener().getPassword())));
+                                                                         ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(_logger), emailListenerCfg.getEmailListener().getPassword())));
                     }
                 }
 

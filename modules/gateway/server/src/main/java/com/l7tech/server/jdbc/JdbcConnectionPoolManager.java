@@ -280,7 +280,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         }
         cpds.setJdbcUrl(connection.getJdbcUrl());
         cpds.setUser(connection.getUserName());
-        cpds.setPassword(ServerVariables.expandPasswordOnlyVariable(new LogOnlyAuditor(logger), connection.getPassword()));
+        cpds.setPassword(ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(logger), connection.getPassword()));
 
         // Set C3P0 basic properties
         cpds.setInitialPoolSize(connection.getMinPoolSize());
