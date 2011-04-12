@@ -1744,6 +1744,29 @@ public class CertUtils {
         return new KeyStore.PrivateKeyEntry((PrivateKey)key, chainToImport);
     }
 
+    /**
+     * Returns SHA512(p, SHA512(p, c, s)) where p is a verifier shared secret byte array, c is the encoded certificate bytes, and s is a client-chosen random salt.
+     *
+     * @param verifierSharedSecret a secret byte array that will be used to check a certificate.  Must be nonempty.  Required.
+     * @param clientSalt random bytes chosen by the client and given to the server.  Must be nonempty.  Required.
+     * @param serverCertificate  certificate whose verifier to compute.  Required.
+     * @return the verifier bytes for this certificate.  Never null.
+     * @throws NoSuchAlgorithmException if a required algorithm is unavailable.
+     * @throws CertificateEncodingException if the encoded form of the certificate could not be produced.
+     */
+    public static byte[] getVerifierBytes(byte[] verifierSharedSecret, byte[] clientSalt, X509Certificate serverCertificate) throws NoSuchAlgorithmException, CertificateEncodingException {
+        MessageDigest inner = MessageDigest.getInstance("SHA-512");
+        inner.update(verifierSharedSecret);
+        inner.update(serverCertificate.getEncoded());
+        inner.update(verifierSharedSecret);
+
+        MessageDigest outer = MessageDigest.getInstance("SHA-512");
+        outer.update(verifierSharedSecret);
+        outer.update(inner.digest());
+
+        return outer.digest();
+    }
+
     private static final String FACTORY_ALGORITHM = "X.509";
 
     /**

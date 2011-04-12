@@ -407,4 +407,26 @@ public final class Sha512Crypt {
 
         return true;
     }
+
+    public static String extractSalt(String saltStr) {
+        if (saltStr.startsWith(sha512_salt_prefix)) {
+            String clipped = saltStr.substring(sha512_salt_prefix.length());
+            String num = "";
+
+            if (clipped.startsWith(sha512_rounds_prefix)) {
+                num = sha512_rounds_prefix + clipped.substring(sha512_rounds_prefix.length(), clipped.indexOf('$')) + "$";
+                clipped = clipped.substring(clipped.indexOf('$') + 1);
+            }
+
+            int dollarPos = clipped.indexOf('$');
+            if (dollarPos >= 0) {
+                // Salt string is actually a complete password verifier
+                clipped = clipped.substring(0, dollarPos);
+            }
+
+            return sha512_salt_prefix + num + clipped;
+        }
+
+        return saltStr;
+    }
 }

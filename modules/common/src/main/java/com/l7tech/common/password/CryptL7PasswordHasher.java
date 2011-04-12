@@ -86,6 +86,15 @@ public class CryptL7PasswordHasher implements PasswordHasher {
         return PREFIX;
     }
 
+    @Override
+    public byte[] extractSaltFromVerifier(String hashedPassword) {
+        try {
+            return decodeVerifier(hashedPassword).salt;
+        } catch (PasswordHashingException e) {
+            return null;
+        }
+    }
+
     private byte[] newSalt() {
         byte[] salt = new byte[SALT_BYTES];
         secureRandom.nextBytes(salt);

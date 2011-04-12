@@ -3,23 +3,25 @@
  */
 package com.l7tech.console.security;
 
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.util.*;
-import com.l7tech.gateway.common.VersionException;
-import com.l7tech.gateway.common.audit.LogonEvent;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.password.Sha512Crypt;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.util.AdminContextFactory;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.gateway.common.admin.*;
-import com.l7tech.identity.User;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.VersionException;
+import com.l7tech.gateway.common.admin.AdminContext;
+import com.l7tech.gateway.common.admin.AdminLogin;
+import com.l7tech.gateway.common.admin.AdminLoginResult;
+import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerRequestExecutor;
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.InvalidPasswordException;
+import com.l7tech.util.*;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -34,7 +36,9 @@ import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.AccessControlException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -87,7 +91,7 @@ public class SecurityProviderImpl extends SecurityProvider
             AdminLogin adminLogin = getAdminLoginRemoteReference();
 
             // dummy call, just to establish SSL connection (if none)
-            adminLogin.getServerCertificate("admin");
+            adminLogin.getServerCertificateVerificationInfo("dummyInvocation", new byte[] {(byte) 1} );
             if (Thread.currentThread().isInterrupted()) throw new LoginException("Login interrupted.");
 
             // check cert if new
@@ -412,17 +416,18 @@ public class SecurityProviderImpl extends SecurityProvider
      */
     private void validateServer(PasswordAuthentication credentials, X509Certificate serverCertificate, AdminLogin adminLogin, String host)
       throws SecurityException {
-        byte[] certificate = adminLogin.getServerCertificate(credentials.getUserName());
+        byte[] clientSalt = new byte[20];
+        new SecureRandom().nextBytes(clientSalt);
+        Pair<byte[], byte[]> v = adminLogin.getServerCertificateVerificationInfo(credentials.getUserName(), clientSalt);
+        String hashSaltString = new String(v.left, Charsets.UTF8);
+        byte[] serverVerifierBytes = v.right;
+
         try {
             String password = new String(credentials.getPassword());
-            String encodedPassword = HexUtils.encodePasswd(credentials.getUserName(), password, HexUtils.REALM);
-            java.security.MessageDigest d = java.security.MessageDigest.getInstance("SHA-1");
-            final byte[] bytes = encodedPassword.getBytes();
-            d.update(bytes);
-            d.update(serverCertificate.getEncoded());
-            d.update(bytes);
-            byte[] digested = d.digest();
-            if (!Arrays.equals(certificate, digested)) {
+            String hashedPassword = Sha512Crypt.crypt(MessageDigest.getInstance("SHA-512"), MessageDigest.getInstance("SHA-512"), password.getBytes(Charsets.UTF8), hashSaltString);
+            byte[] clientVerifierBytes = CertUtils.getVerifierBytes(hashedPassword.getBytes(Charsets.UTF8), clientSalt, serverCertificate);
+
+            if (!Arrays.equals(clientVerifierBytes, serverVerifierBytes)) {
                 logger.warning("Unable to verify the server certificate at (could mean invalid password entered) " + host);
                 throw new InvalidHostCertificateException(serverCertificate, "Unable to verify the server certificate at "+host);
             }

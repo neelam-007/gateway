@@ -3,6 +3,8 @@
  */
 package com.l7tech.server.admin;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.admin.AdminLoginResult;
@@ -12,7 +14,9 @@ import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.InvalidPasswordException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
@@ -26,6 +30,8 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BuildInfo;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.Pair;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -55,11 +61,13 @@ public class AdminLoginImpl
     private final SsgKeyStoreManager ssgKeyStoreManager;
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
+    private PasswordHasher passwordHasher;
     private ServerConfig serverConfig;
 
-    public AdminLoginImpl(DefaultKey defaultKey, SsgKeyStoreManager ssgKeyStoreManager) {
+    public AdminLoginImpl(DefaultKey defaultKey, SsgKeyStoreManager ssgKeyStoreManager, PasswordHasher passwordHasher) {
         this.defaultKey = defaultKey;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
+        this.passwordHasher = passwordHasher;
     }
 
     @Override
@@ -217,30 +225,22 @@ public class AdminLoginImpl
         this.sessionManager = sessionManager;
     }
 
-    /**
-     * Method that returns the SHA-1 hash over admin certificate and the admins
-     * password.
-     *
-     * <p>This provides a way for the admin to validate the server certificate.</p>
-     *
-     * <p>Note that if you pass in an incorrect admin username you will get back
-     * garbage.</p>
-     *
-     * @param username The name of the user.
-     * @return The hash.
-     * @throws java.security.AccessControlException
-     *                                  on access denied for the given credentials
-     */
     @Override
-    public byte[] getServerCertificate(String username)
-      throws AccessControlException {
+    public Pair<byte[], byte[]> getServerCertificateVerificationInfo(final String username, byte[] clientSalt) throws AccessControlException {
         try {
-            String digestWith = null;
+            byte[] passwordSalt = null;
+            byte[] verifierSharedSecret = null;
 
             if ( username != null && serverConfig.getBooleanProperty( "admin.certificateDiscoveryEnabled", true ) ) {
                 try {
                     InternalUser user = getInternalIdentityProvider().getUserManager().findByLogin(username);
-                    if (user != null) digestWith = user.getHashedPassword(); 
+                    if (user != null) {
+                        String hashedPassword = user.getHashedPassword();
+                        if (passwordHasher != null && passwordHasher.isVerifierRecognized(hashedPassword)) {
+                            passwordSalt = passwordHasher.extractSaltFromVerifier(hashedPassword);
+                            verifierSharedSecret = hashedPassword.getBytes(Charsets.UTF8);
+                        }
+                    }
                 } catch (ObjectModelException e) {
                     // catch here so there is no difference to the client for one username vs another.
                     logger.log(Level.WARNING, "Authentication provider error", e);
@@ -250,12 +250,19 @@ public class AdminLoginImpl
             // If we don't known the password use a value that will fail but will
             // always give the same value for the name. This may help prevent discovery of
             // admin account usernames
-            if ( digestWith == null ) {
-                digestWith = username + AdminLogin.class.hashCode();
+            if ( verifierSharedSecret == null ) {
+                verifierSharedSecret = (username + AdminLogin.class.hashCode()).getBytes(Charsets.UTF8);
+                passwordSalt = passwordHasher.extractSaltFromVerifier(passwordHasher.hashPassword(verifierSharedSecret));
+            }
+
+            if (clientSalt == null) {
+                // Invalid call, but we'll generate a bogus client salt to prevent an NPE and return a bogus verifier hash instead
+                clientSalt = new byte[] {(byte) 66, (byte) 33, (byte) 11, (byte) 44};
             }
 
             X509Certificate certificate = getCurrentConnectorCertificate();
-            return getDigest(digestWith, certificate);
+            return new Pair<byte[], byte[]>(passwordSalt, CertUtils.getVerifierBytes(verifierSharedSecret, clientSalt, certificate));
+
         } catch (InvalidIdProviderCfgException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw buildAccessControlException("Authentication provider error", e);
@@ -283,17 +290,6 @@ public class AdminLoginImpl
     @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
     private AccessControlException buildAccessControlException( final String message, final Throwable cause ) {
         return (AccessControlException)new AccessControlException(message).initCause(cause);
-    }
-
-    private byte[] getDigest(String password, X509Certificate serverCertificate)
-      throws NoSuchAlgorithmException, CertificateEncodingException {
-        //todo [Donal] - common place to do this. Same code is in SecurityProviderImpl
-        java.security.MessageDigest d = java.security.MessageDigest.getInstance("SHA-1");
-        byte[] bytes = password.getBytes();
-        d.update(bytes);
-        d.update(serverCertificate.getEncoded());
-        d.update(bytes);
-        return d.digest();
     }
 
     private X509Certificate getDefaultSslCertificate() throws IOException {

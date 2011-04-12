@@ -1,5 +1,6 @@
 package com.l7tech.common.password;
 
+import com.l7tech.util.Charsets;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 
@@ -47,6 +48,11 @@ public class Sha512CryptPasswordHasher implements PasswordHasher {
     @Override
     public String getPrefix() {
         return Sha512Crypt.sha512_salt_prefix;
+    }
+
+    @Override
+    public byte[] extractSaltFromVerifier(String hashedPassword) {
+        return Sha512Crypt.extractSalt(hashedPassword).getBytes(Charsets.UTF8);
     }
 
     private Pair<MessageDigest, MessageDigest> getDigests() {

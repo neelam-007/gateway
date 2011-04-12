@@ -39,4 +39,12 @@ public interface PasswordHasher {
      * @return the verifier string prefix, ie "$FOO$".  Never null, but may be empty if this PasswordHasher implementation does not use a static verifier string prefix.
      */
     String getPrefix();
+
+    /**
+     * Examine the specified verifier string and extract the salt bytes, if any are present.
+     *
+     * @param hashedPassword the password verifier string to examine.  Required.
+     * @return the salt bytes.  May be null.
+     */
+    byte[] extractSaltFromVerifier(String hashedPassword);
 }

@@ -18,6 +18,7 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.admin.AdminLogin"/>
         <property name="permittedClassNames">
             <set>
+                <value>[B</value>
                 <value>[Ljava.lang.Class;</value>
                 <value>[Ljava.lang.Object;</value>
                 <value>java.lang.Class</value>

@@ -8,7 +8,7 @@ package com.l7tech.gateway.common.admin;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.InvalidPasswordException;
-import org.springframework.transaction.annotation.Transactional;
+import com.l7tech.util.Pair;
 
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlException;
@@ -29,19 +29,20 @@ import java.security.AccessControlException;
 @Administrative
 public interface AdminLogin {
     /**
-     * Method that returns the SHA-1 hash over admin certificate and the admin
+     * Method that returns the SHA-512 hash over admin certificate and the admin
      * password.
      * This then provides a way for the admin to validate the server certificate
      * against the server certificate that has been obtained through SSL session
      * for example or out of bound.
      *
-     * @param username The name of the user.
-     * @return The Server certificate.
+     * @param username The name of the admin user.  Must be a user for whom the password is available.  Required.
+     * @param clientSalt random bytes from client to add to hash.  Required.
+     * @return a Pair< SALT, CHECKHASH > where SALT is the salt value for the user's hashed password and CHECKHASH is the server certificate check hash bytes.
      * @throws AccessControlException on access denied, if the user is not of
      *         any admin role
      */
     @Administrative(authenticated =false, licensed=false)
-    byte[] getServerCertificate(String username)
+    Pair<byte[], byte[]> getServerCertificateVerificationInfo(String username, byte[] clientSalt)
             throws AccessControlException;
 
     /**

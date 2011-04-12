@@ -191,4 +191,13 @@ public class Sha512CryptTest {
         assertTrue(Sha512Crypt.verifyHashTextFormat(verifier));
         assertTrue(Sha512Crypt.verifyPassword(ctx, alt_ctx, p, verifier));
     }
+
+    @Test
+    public void testExtractSalt() throws Exception {
+        assertEquals("", Sha512Crypt.extractSalt(""));
+        assertEquals("asdf", Sha512Crypt.extractSalt("asdf"));
+        assertEquals("$6$rounds=5000$blahsalt", Sha512Crypt.extractSalt("$6$rounds=5000$blahsalt$QO7R6BG1VY.HEC0GLiR.qdDaKfU3v.Eug35ENsE29KmeDQrL71vI3P7FLQq2/7325QWfjgAdLnrY"));
+        assertEquals("$6$", Sha512Crypt.extractSalt("$6$$6B9OBs7yTMgDWPpqaAzI4nnQ37aDUD9fW.XPohFTR5nL9YlpfgAJ4PVDiM0W6dEffk1N0YmfY1uct4qBA25FN/"));
+        assertEquals("$6$blahsalt", Sha512Crypt.extractSalt("$6$blahsalt$QO7R6BG1VY.HEC0GLiR.qdDaKfU3v.Eug35ENsE29KmeDQrL71vI3P7FLQq2/7325QWfjgAdLnrY"));
+    }
 }

@@ -86,6 +86,15 @@ public class Sha512CryptPasswordHasherTest {
         assertEquals("$6$", hasher.getPrefix());
     }
 
+    @Test
+    public void testExtractSaltFromVerifier() {
+        assertEquals("", new String(hasher.extractSaltFromVerifier("")));
+        assertEquals("asdf", new String(hasher.extractSaltFromVerifier("asdf")));
+        assertEquals("$6$rounds=5000$blahsalt", new String(hasher.extractSaltFromVerifier("$6$rounds=5000$blahsalt$QO7R6BG1VY.HEC0GLiR.qdDaKfU3v.Eug35ENsE29KmeDQrL71vI3P7FLQq2/7325QWfjgAdLnrY")));
+        assertEquals("$6$", new String(hasher.extractSaltFromVerifier("$6$$6B9OBs7yTMgDWPpqaAzI4nnQ37aDUD9fW.XPohFTR5nL9YlpfgAJ4PVDiM0W6dEffk1N0YmfY1uct4qBA25FN/")));
+        assertEquals("$6$blahsalt", new String(hasher.extractSaltFromVerifier("$6$blahsalt$QO7R6BG1VY.HEC0GLiR.qdDaKfU3v.Eug35ENsE29KmeDQrL71vI3P7FLQq2/7325QWfjgAdLnrY")));
+    }
+
     @Ignore("Enable to run perf test")
     @Test
     public void testPerformanceDefaultRounds() {
