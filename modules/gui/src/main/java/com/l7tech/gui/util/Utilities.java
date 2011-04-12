@@ -862,7 +862,7 @@ public class Utilities {
             @Override
             public void actionPerformed(final ActionEvent e) {
                 char echoChar = showPasswordCheckBox.isSelected() ?
-                        0 :
+                        (char) 0 :
                         '\u25cf';
                 passwordField.setEchoChar(echoChar);
             }

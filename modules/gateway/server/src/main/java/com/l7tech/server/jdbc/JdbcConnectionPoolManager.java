@@ -1,25 +1,29 @@
 package com.l7tech.server.jdbc;
 
-import com.l7tech.server.*;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.jdbc.InvalidPropertyException;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.LifecycleBean;
+import com.l7tech.server.LifecycleException;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.Pair;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
-import javax.naming.InitialContext;
 import javax.naming.Context;
-import javax.naming.NamingException;
+import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
+import javax.naming.NamingException;
 import javax.sql.DataSource;
-import java.util.logging.Logger;
-import java.util.*;
+import java.beans.PropertyVetoException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.beans.PropertyVetoException;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * An implementation manages JDBC connection pooling and data sources (i.e., pools).
@@ -141,6 +145,10 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
                     String errMsg = e.getMessage();
                     auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
                     return new Pair<ComboPooledDataSource, String>(null, errMsg);
+                } catch (FindException e) {
+                    String errMsg = e.getMessage();
+                    auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
+                    return new Pair<ComboPooledDataSource, String>(null, errMsg);
                 }
                 // Rebind the data source
                 try {
@@ -163,6 +171,10 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         try {
             setDataSourceByJdbcConnection(cpds, connection);
         } catch (InvalidPropertyException e) {
+            String errMsg = e.getMessage();
+            auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
+            return new Pair<ComboPooledDataSource, String>(null, errMsg);
+        } catch (FindException e) {
             String errMsg = e.getMessage();
             auditor.logAndAudit(AssertionMessages.JDBC_CANNOT_CONFIG_CONNECTION_POOL, connection.getName(), errMsg);
             return new Pair<ComboPooledDataSource, String>(null, errMsg);
@@ -259,7 +271,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
      * @param connection: a JDBC Connection entity containing all connection properties.
      * @throws InvalidPropertyException: thrown when invalid properties are used.
      */
-    private void setDataSourceByJdbcConnection(ComboPooledDataSource cpds, JdbcConnection connection) throws InvalidPropertyException {
+    private void setDataSourceByJdbcConnection(ComboPooledDataSource cpds, JdbcConnection connection) throws InvalidPropertyException, FindException {
         // Set basic configuration
         try {
             cpds.setDriverClass(connection.getDriverClass());
@@ -268,7 +280,7 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
         }
         cpds.setJdbcUrl(connection.getJdbcUrl());
         cpds.setUser(connection.getUserName());
-        cpds.setPassword(connection.getPassword());
+        cpds.setPassword(ServerVariables.expandPasswordOnlyVariable(new LogOnlyAuditor(logger), connection.getPassword()));
 
         // Set C3P0 basic properties
         cpds.setInitialPoolSize(connection.getMinPoolSize());

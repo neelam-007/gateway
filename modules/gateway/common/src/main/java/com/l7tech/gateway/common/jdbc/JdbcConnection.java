@@ -2,9 +2,10 @@ package com.l7tech.gateway.common.jdbc;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.util.PoolByteArrayOutputStream;
+import com.l7tech.policy.wsp.WspSensitive;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.Proxy;
 
@@ -75,6 +76,7 @@ public class JdbcConnection extends NamedEntityImp implements Comparable {
     }
 
     @Column(name="password")
+    @WspSensitive
     public String getPassword() {
         return password;
     }

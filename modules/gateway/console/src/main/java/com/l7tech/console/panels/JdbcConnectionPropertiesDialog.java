@@ -1,32 +1,33 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.console.util.MutablePair;
+import com.l7tech.console.util.PasswordGuiUtils;
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.jdbc.JdbcAdmin;
+import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.MaxLengthDocument;
-import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.gateway.common.jdbc.JdbcAdmin;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.MutablePair;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.ArrayList;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
-import java.io.IOException;
 
 /**
  * GUI for creating or editing properties of a JDBC Connection entity.
@@ -46,6 +47,8 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
     private JTextField jdbcUrlTextField;
     private JTextField usernameTextField;
     private JPasswordField passwordField;
+    private JCheckBox showPasswordCheckBox;
+    private JLabel plaintextPasswordWarningLabel;
     private JSpinner minPoolSizeSpinner;
     private JSpinner maxPoolSizeSpinner;
 
@@ -157,6 +160,8 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
                 doCancel();
             }
         });
+
+        PasswordGuiUtils.configureOptionalSecurePasswordField(passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         modelToView();
         enableOrDisableButtons();
