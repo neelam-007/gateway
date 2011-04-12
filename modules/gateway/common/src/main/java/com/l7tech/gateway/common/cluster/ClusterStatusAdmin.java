@@ -158,6 +158,7 @@ public interface ClusterStatusAdmin {
      * @return property descriptor
      */
     @Transactional(readOnly=true)
+    @Secured(types=EntityType.CLUSTER_PROPERTY, stereotype=MethodStereotype.FIND_ENTITY)
     @Administrative(licensed=false)
     String getClusterProperty(String name);
 
