@@ -15,32 +15,22 @@
 # from the user setting up the SSG appliance
 
 # TBD:
-# how should we add the firewall rule to allow access to radius/ldap server?
-# should we provide the option to use LDAP without Radius? YES
-# should we provide the option to use Radius without LDAP? YES
-#
+# should we add a firewall rule to allow access to radius/ldap server?
 
-# The SSG 5.4.1 64bit system has the following packages already installed:
+# The SSG Virtual Appliance 5.4.1 64bit system has the following packages already installed:
 # openldap-2.3.43-12.el5_6.7.x86_64.rpm
 # nss_ldap-253-37.el5.rpm
 
-# do we need this on a client?
-#rpm -ivh --quiet openldap-devel-2.3.43-12.el5_6.7.rpm
-
 source $1
-
-# the below list should be in the correct order in order not to fail because of dependencies
-#RPM_FILES_LDAP="openldap-clients-2.3.43-12.el5_6.7.x86_64.rpm"
-#RPM_FILES_RADIUS="freeradius2-2.1.7-7.el5.x86_64.rpm freeradius2-utils-2.1.7-7.el5.x86_64.rpm pam_radius-1.3.17-2.el5.x86_64.rpm"
-# libtool-ltdl-1.5.22-7.el5_4 is this necessary?
 
 # Define variables that will not be taken from the radius_ldap.config file:
 
 LDAP_CONF_FILE1="/etc/openldap/ldap.conf"
 LDAP_CONF_FILE2="/etc/ldap.conf"
 LDAP_NSS_FILE="/etc/nsswitch.conf"
+PAM_RADIUS_CONF_FILE="/etc/pam_radius.conf"
 BK_TIME=$(date +"%Y%m%d_%H%M%S")
-LOG_FILE="/root/scripts/script.log"
+LOG_FILE="/opt/SecureSpan/Appliance/config/radius_ldap_setup.log"
 
 # END of variable definition section
 
@@ -50,6 +40,9 @@ toLog () {
 local DATE=$(which date)
 if [ "X$?" == "X0" ]; then
         LOG_TIME=$(date "+"%a" "%b" "%e" "%H:%M:%S" "%Y"")
+		# we make no verification that the above syntax is working properly
+		# in case there will be changes in the coreutils package that brings
+		# the date binary
 else
         echo -e "ERROR - The 'date' command does not appear to be available."
 fi
@@ -84,8 +77,7 @@ doConfigure () {
 #                             sufficient to querry a LDAP server
 #
 # We will configure both of them although authconfig-tui would only modify
-# the /etc/ldap.conf file
-#
+# the /etc/ldap.conf file (and the /etc/nsswitch.conf)
 
 ## ==========================================
 ##     Configuration for LDAP Only Auth
@@ -168,7 +160,6 @@ if [ "X$1" == "Xldap" ]; then
                         toLog "Success - Configuration of $LDAP_NSS_FILE completed."
                 fi
         fi
-
 ## ==========================================
 ##     Configuration for RADIUS Only Auth
 ## ==========================================
@@ -201,29 +192,31 @@ elif [ "X$1" == "Xradius" ]; then
                         toLog "Warning - /etc/pam.d/sshd seems to be already configured."
                 else
                         cp -a /etc/pam.d/sshd /etc/pam.d/sshd_orig_"$BK_TIME"
-                        toLog "Info - /etc/pamd/sshd_orig_"$BK_TIME" backup file created."
+                        toLog "Info - /etc/pam.d/sshd_orig_$BK_TIME backup file created."
                         sed -i "s/\(.*requisite.*$\)/auth\tsufficient\tpam_radius_auth.so conf=\/etc\/pam_radius.conf retry=2 localifdown\n\1/" /etc/pam.d/sshd
                         toLog "Success - Configuration of /etc/pam.d/sshd completed."
-                # just adding the line for pam_radius with sufficient will ensure that SSHD will allow
-                # logins if radius server fails
+                # adding the line for pam_radius with 'sufficient' ensures that
+				# SSHD will allow logins if radius server fails; also, the 'retry=2' and 
+				# 'localifdown' option makes sure that after 2 retries the auth process
+				# will fall back to local authentication
                 fi
         fi
 
-        # Configuration of linux radius client:
-        checkFile_exists /etc/pam_radius.conf
+        # Configuration of linux pam radius module:
+        checkFile_exists $PAM_RADIUS_CONF_FILE
         if [ "X$RETVAL" == "X1" ]; then
                 # the file does not exits so we should exit with error
                 exit 1;
         else
-                CMD2=$(grep -v "^#\|^$\|secret" /etc/pam_radius.conf | wc -l)
+                CMD2=$(grep -v "^#\|^$\|secret" $PAM_RADIUS_CONF_FILE | wc -l)
                 if [ "X$CMD2" == "X1" ]; then
-                        toLog "Warning - /etc/pam_radius.conf seems to be already configured."
+                        toLog "Warning - $PAM_RADIUS_CONF_FILE seems to be already configured."
                 else
-                        cp -a /etc/pam_radius.conf /etc/pam_radius.conf_orig_"$BK_TIME"
-                        toLog "Info - /etc/pam_radius.conf_orig_"$BK_TIME" backup file created."
-                        sed -i "s/\(^127.0.0.1.*$\)/###\1/" /etc/pam_radius.conf
-                        sed -i "s/^other-server.*$/$RADIUS_SRV_IP\t$SECRET\t$TIMEOUT/" /etc/pam_radius.conf
-                        toLog "Success - Configuration of /etc/pam_radius.conf completed."
+                        cp -a $PAM_RADIUS_CONF_FILE $PAM_RADIUS_CONF_FILE"_orig_"$BK_TIME
+                        toLog "Info - /etc/$PAM_RADIUS_CONF_FILE_orig_$BK_TIME backup file created."
+                        sed -i "s/\(^127.0.0.1.*$\)/###\1/" $PAM_RADIUS_CONF_FILE
+                        sed -i "s/^other-server.*$/$RADIUS_SRV_IP\t$SECRET\t$TIMEOUT/" $PAM_RADIUS_CONF_FILE
+                        toLog "Success - Configuration of $PAM_RADIUS_CONF_FILE completed."
                 fi
         fi
 else
@@ -257,27 +250,5 @@ case "$CFG_TYPE" in
                 toLog "ERROR - Not a valid configuration type!"
                 exit 1;
 esac
-
-
-# The below operations are not in the purpose of this script.
-
-# Creating home directory for the user
-
-#mkdir -p /home/$USERNAME
-#chmod 700 /home/$USERNAME
-#cp /etc/skel/.* /home/$USERNAME
-
-
-# Changing the ownership of the home directory
-
-# At this point the LDAP server should be working
-# and be accessible by this client as there is no
-# local user $USERNAME and so the chown command
-# will faill if LDAP is not providing the user name
-#chown -R $USERNAME /home/$USERNAME
-
-
-# Testing:
-# tail -f /var/log/messages | grep "slapd"
 
 # END of script
