@@ -316,6 +316,10 @@ public class AuditFilterPolicyManager {
                 }
             });
             result = handle.checkRequest(finalCtx);
+        } catch (RuntimeException e) {
+            final String msg = "Unexpected exception caught from audit filter policy: " +
+                    ExceptionUtils.getMessage(e);
+            throw new AuditPolicyNoValidOutputException(msg, ExceptionUtils.getDebugException(e));
         } finally {
             ResourceUtils.closeQuietly(pec);
         }
@@ -357,6 +361,8 @@ public class AuditFilterPolicyManager {
                 AssertionStatus status = avException.getAssertionStatus();
                 if(status != null) {
                     extraMessage = "Policy returned status '" + status.getMessage() + "'.";
+                } else {
+                    extraMessage = ExceptionUtils.getMessage(exceptionIfAny);
                 }
             }
         }
