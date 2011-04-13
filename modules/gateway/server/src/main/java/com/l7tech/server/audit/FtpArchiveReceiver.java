@@ -1,34 +1,35 @@
 package com.l7tech.server.audit;
 
-import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
+import com.jscape.inet.ftp.FtpException;
+import com.l7tech.common.io.DigestZipOutputStream;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.server.transport.ftp.FtpClientUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
 
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.beans.PropertyChangeListener;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.X509TrustManager;
 import java.beans.PropertyChangeEvent;
-import java.io.*;
-import java.util.Date;
-import java.util.TimeZone;
+import java.beans.PropertyChangeListener;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.security.PrivateKey;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.HostnameVerifier;
-
-import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.transport.ftp.FtpClientUtils;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.DefaultKey;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.common.io.DigestZipOutputStream;
-import com.jscape.inet.ftp.FtpException;
+import java.util.Date;
+import java.util.TimeZone;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -315,6 +316,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
                         // actual deserialization
                         ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(HexUtils.decodeBase64(serializedConfig)));
                         ftpConfig = (FtpClientConfig) in.readObject();
+                        ftpConfig.setPass(ServerVariables.expandSinglePasswordOnlyVariable(new LogOnlyAuditor(logger), ftpConfig.getPass()));
                     } catch (Exception e) {
                         logger.log(Level.WARNING, "Invalid serialized form retrieved from the database.", e);
                     }

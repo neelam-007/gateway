@@ -4,6 +4,7 @@
 
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -46,6 +47,8 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
     private JTextField _directoryTextField;             // blank allowed
     private JTextField _userNameTextField;              // blank not allowed
     private JPasswordField _passwordField;              // blank allowed
+    private JCheckBox showPasswordCheckBox;
+    private JLabel plaintextPasswordWarningLabel;
     private JTextField _timeoutTextField;               // blank allowed
     private JCheckBox enabledCheckBox;
     private JButton _testButton;
@@ -206,6 +209,7 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
         });
         Utilities.enableGrayOnDisabled(_userNameTextField);
         Utilities.enableGrayOnDisabled(_passwordField);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(_passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         _testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
