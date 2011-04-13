@@ -1,0 +1,239 @@
+Purpose:
+OS level only user centralized authentication using:
+	- LDAP only
+	- Radius only
+	- Radius with LDAP
+
+This means the SSG system will not have users added but will provide login for users
+configured in the centralized authentication server (LDAP, Radius or Radius+LDAP).
+
+This should work for console and SSH access.
+
+===================================================================
+SSH/Console access via LDAP Auth only:
+-------------------------------------------------------------------
+
+# The SSG 5.4.1 64bit system has the following packages already installed:
+# openldap-2.3.43-12.el5_6.7.x86_64.rpm
+# nss_ldap-253-37.el5.rpm
+
+INSTALL:
+	- openldap-clients-2.3.43-12.el5_6.7.x86_64.rpm
+
+CONFIGURE:
+	- /etc/openldap/ldap.conf
+		URI ldap://LDAP_SRV_IP/
+		BASE LDAP_BASE
+	- /etc/ldap.conf
+		###host 127.0.0.1
+		base dc=example,dc=com
+		uri ldap://LDAP_SRV_IP/
+		ssl no
+		tls_cacertdir /etc/openldap/cacerts
+		pam_password md5
+	- /etc/nsswitch.conf
+		###passwd:     files
+		passwd: files ldap
+		###shadow:     files
+		shadow: files ldap
+		###group:      files
+		group: files ldap
+		netgroup: files ldap
+		automount: files ldap
+
+# Configuring ldap client
+# there are 2 configuration files (confusing at fisrt):
+# - /etc/ldap.conf - not part of OpenLDAP; used by LDAP PAM module
+#                    and Nameservice switch libraries for authentication
+#                    or name service resolution; installed by nss_ldap package
+# - /etc/openldap/ldap.conf - part of/installed by OpenLDAP package; it is
+#                             be sufficient to querry a LDAP server
+#
+# We will configure both of them although authconfig-tui would only modify
+# the /etc/ldap.conf file
+
+===================================================================
+
+
+
+
+===================================================================
+SSH/Console access via Radius Auth only:
+-------------------------------------------------------------------
+
+ssh client
+  > SSHD:
+    /etc/ssh/sshd_config: usePAM=yes
+    v
+    /etc/pam.d/sshd: pam_radius_auth.so
+    v
+    /etc/pam_radius.conf:  server[:port] / shared_secret / timeout
+  v
+  > radius server:
+    - LDAP
+    - MySQL
+    - file (/etc/passwd and /etc/raddb/users)
+  v
+  SSHD
+
+
+Implementation:
+
+INSTALL: 
+	- libtool-ltdl-1.5.22-7.el5_4.x86_64.rpm
+	- freeradius2-2.1.7-7.el5.x86_64.rpm
+	- freeradius2-utils-2.1.7-7.el5.x86_64.rpm
+	- pam_radius-1.3.17-2.el5.x86_64.rpm
+
+CONFIGURE:
+	- /etc/ssh/sshd_config
+		UsePAM yes
+	- /etc/pam.d/sshd
+		auth       sufficient   pam_radius_auth.so
+	- /etc/pam_radius.conf (0600)
+		RADIUS_SRV	secret	3
+
+The users from radius server should exist on the machine that is accessed via SSH
+but they can have no password set - this is how you actually test that radius
+is supplying the password to sshd to give you access.... if they have a local
+password set the configuration will allows falling back to local auth if Radius
+server fails for any reason
+
+===================================================================
+
+
+
+
+
+===================================================================
+SSH/Console access via Radius + LDAP Auth:
+-------------------------------------------------------------------
+
+????
+
+
+http://blog.sgicc.com/?p=284
+
+
+
+
+
+
+http://sarek/mediawiki/index.php?title=Command_Line_Radius_Support
+
+
+
+===================================================================
+
+
+
+TESTING
+
+=============================
+Radius_only tesing:
+-----------------------------
+
+Radius server should be installed and default configuration used:
+- insert as first line the next line to /etc/raddb/users:
+test1     Cleartext-Password := "pass1"
+- stop radius: /etc/init.d/radiusd stop
+- start radius in debug, foreground mode: /usr/sbin/radiusd -X
+- use another consoile on the same machine to test with the following command:
+
+radtest test1 pass1 localhost 0 testing123
+
+- we should obntain something similar to:
+Sending Access-Request of id 120 to 127.0.0.1 port 1812
+        User-Name = "test1"
+        User-Password = "pass1"
+        NAS-IP-Address = 127.0.0.1
+        NAS-Port = 0
+rad_recv: Access-Accept packet from host 127.0.0.1 port 1812, id=120, length=20
+
+
+Providing we have configure the radius server to accept the SSG appliance as client:
+/etc/raddb/clients.conf should contain:
+
+client 10.7.48.109 {
+        secret = qwer1234
+}
+
+Where "10.7.48.109" is the IP of the SSG appliance
+
+We can test the radius cleint/server configuration the SSG appliance:
+
+radtest test1 pass1 10.7.48.130 0 qwer1234
+
+should end up in something similar to:
+
+Sending Access-Request of id 244 to 10.7.48.130 port 1812
+        User-Name = "test1"
+        User-Password = "pass1"
+        NAS-IP-Address = 127.0.0.1
+        NAS-Port = 0
+rad_recv: Access-Accept packet from host 10.7.48.130 port 1812, id=244, length=20
+
+
+- and we can see that there is no test1 local user on the SSG appliance with:
+
+cat /etc/passwd | grep test1
+
+SSH login with user test1:
+
+Using putty: test1@10.4.7.130 and pass1:
+
+
+
+============================
+LDAP only testing:
+----------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Server side info:
+
+
+PAP:
+- client authenticates itself by sending a user name and an (optionally encrypted) password
+to the server, which the server compares to its secrets database.
+- it requires the client to authenticate itself at startup time
+- is vulnerable to traffic snifing and repeated trial and error attacks
+
+CHAP:
+
+1. - the server (authenticator) sends to the client
+	- a randomly generated ``challenge'' string
+	- its own hostname
+2. - the client:
+	- uses the hostname to look up the appropriate secret
+	- combines the secret with the challenge
+	- encrypts the string using a one-way hashing function
+	- returns the result to the server along with the client's hostname
+3. - the server:
+	- performs the same computation
+	- acknowledges the client if it arrives at the same result
+
+- is not vulnerable to traffic sniffing and/or brute force attacks
+- it requires the client to authenticate itself at startup time
+- sends challenges at regular intervals to make sure the client hasn't been replaced by an intruder
+
+
