@@ -238,6 +238,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @param ordinal position of the audit detail record to process within the set of audit details for the audit record.
      * @return String output of the audit policy or null if policy did not complete successfully.
      * @throws FindException if AV policy cannot be accessed.
+     * @throws AuditViewerPolicyNotAvailableException if audit viewer policy is not available
      */
     @Secured(stereotype = ENTITY_OPERATION, otherOperation = "audit-viewer policy", relevantArg = 0)
     String invokeAuditViewerPolicyForDetail(long auditRecordId, long ordinal) throws FindException, AuditViewerPolicyNotAvailableException;

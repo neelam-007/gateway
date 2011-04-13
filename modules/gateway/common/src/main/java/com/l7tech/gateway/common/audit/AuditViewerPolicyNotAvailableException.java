@@ -7,7 +7,7 @@ package com.l7tech.gateway.common.audit;
 /**
  * The audit viewer policy is not available.
  */
-public class AuditViewerPolicyNotAvailableException extends Exception{
+public class AuditViewerPolicyNotAvailableException extends AuditPolicyException{
     public AuditViewerPolicyNotAvailableException(String message) {
         super(message);
     }

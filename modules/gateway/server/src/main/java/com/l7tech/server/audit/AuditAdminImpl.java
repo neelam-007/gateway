@@ -482,32 +482,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                 messageXml = messageAudit.getResponseXml();
             }
 
-            try {
-                return keyAccessFilter.doWithRestrictedKeyAccess(new Callable<String>() {
-                    @Override
-                    public String call() throws Exception {
-                        return auditFilterPolicyManager.evaluateAuditViewerPolicy(messageXml, isRequest);
-                    }
-                });
-            } catch (AuditFilterPolicyManager.AuditViewerPolicyException e) {
-                final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
-                //noinspection ThrowableResultOfMethodCallIgnored
-                logger.log(Level.FINE, params, ExceptionUtils.getDebugException(e));
-                addInvokeAuditViewerAuditMsg(auditMessages, params);
-            } catch (AuditViewerPolicyNotAvailableException e) {
-                final String params = ExceptionUtils.getMessage(e);
-                //noinspection ThrowableResultOfMethodCallIgnored
-                logger.log(Level.FINE, params, ExceptionUtils.getDebugException(e));
-                addInvokeAuditViewerAuditMsg(auditMessages, params);
-                throw e;
-            } catch (Exception e) {
-                final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
-                //noinspection ThrowableResultOfMethodCallIgnored
-                logger.log(Level.FINE, params, ExceptionUtils.getDebugException(e));
-                addInvokeAuditViewerAuditMsg(auditMessages, params);
-            }
-
-            return null;
+            return evaluatePolicy(messageXml, isRequest, auditMessages);
         } finally {
             publishInvokeAuditViewerAudits(auditMessages);
         }
@@ -551,25 +526,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                         addInvokeAuditViewerAuditMsg(auditMessages, auditMsg);
                         return null;
                     }
-                    try {
-                        return keyAccessFilter.doWithRestrictedKeyAccess(new Callable<String>() {
-                            @Override
-                            public String call() throws Exception {
-                                return auditFilterPolicyManager.evaluateAuditViewerPolicy(detailParams[0], null);
-                            }
-                        });
-                    } catch (AuditViewerPolicyNotAvailableException e){
-                        final String params = ExceptionUtils.getMessage(e);
-                        //noinspection ThrowableResultOfMethodCallIgnored
-                        logger.log(Level.FINE, params, ExceptionUtils.getDebugException(e));
-                        addInvokeAuditViewerAuditMsg(auditMessages, params);
-                        throw e;
-                    } catch (Exception e) {
-                        final String msg = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
-                        //noinspection ThrowableResultOfMethodCallIgnored
-                        logger.log(Level.FINE, msg, ExceptionUtils.getDebugException(e));
-                        addInvokeAuditViewerAuditMsg(auditMessages, msg, Level.WARNING);
-                    }
+                    return evaluatePolicy(detailParams[0], null, auditMessages);
                 }
             }
 
@@ -577,6 +534,37 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         } finally {
             publishInvokeAuditViewerAudits(auditMessages);
         }
+    }
+
+    private String evaluatePolicy(final String messageXml,
+                                  final Boolean isRequest,
+                                  final List<Pair<Level, String>> auditMessages) throws AuditViewerPolicyNotAvailableException {
+        try {
+            return keyAccessFilter.doWithRestrictedKeyAccess(new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    return auditFilterPolicyManager.evaluateAuditViewerPolicy(messageXml, isRequest);
+                }
+            });
+        } catch (AuditViewerPolicyNotAvailableException e) {
+            final String params = ExceptionUtils.getMessage(e);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            logger.log(Level.FINE, params, ExceptionUtils.getDebugException(e));
+            addInvokeAuditViewerAuditMsg(auditMessages, params);
+            throw e;//clients want to know about this issue explicitly
+        } catch (AuditPolicyException e) {
+            final String params = ExceptionUtils.getMessage(e);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            logger.log(Level.FINE, params, ExceptionUtils.getDebugException(e));
+            addInvokeAuditViewerAuditMsg(auditMessages, params);
+        } catch (Exception e) {//only runtime, side effect of callable above.
+            final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            logger.log(Level.FINE, params, ExceptionUtils.getDebugException(e));
+            addInvokeAuditViewerAuditMsg(auditMessages, params);
+        }
+
+        return null;
     }
 
     private void publishInvokeAuditViewerAudits(List<Pair<Level, String>> auditMessages) {
@@ -600,10 +588,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private void addInvokeAuditViewerAuditMsg(final List<Pair<Level, String>> auditMessages,
                                               final String params,
                                               final Level level){
-        final String avPolicyFailedAudit = "Audit viewer policy failed. {0}";
-        auditMessages.add(new Pair<Level, String>(
-                level,
-                MessageFormat.format(avPolicyFailedAudit, params)));
+        auditMessages.add(new Pair<Level, String>( level,params));
     }
     
     /**

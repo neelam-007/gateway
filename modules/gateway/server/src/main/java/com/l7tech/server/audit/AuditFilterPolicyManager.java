@@ -116,12 +116,12 @@ public class AuditFilterPolicyManager {
      * @param isRequest  true if the message is the request, false otherwise, null if neither.
      * @return String output from the audit viewer policy. Null if the audit viewer policy did not return
      *         {@link com.l7tech.policy.assertion.AssertionStatus#NONE}.
-     * @throws AuditViewerPolicyException any problem parsing the messageXml or executing the audit viewer policy.
+     * @throws AuditPolicyException any problem parsing the messageXml or executing the audit viewer policy.
      * @throws AuditViewerPolicyNotAvailableException if the audit viewer policy is not available.
      */
     public String evaluateAuditViewerPolicy(final String messageXml,
                                             final Boolean isRequest)
-            throws AuditViewerPolicyException, AuditViewerPolicyNotAvailableException {
+            throws AuditPolicyException {
         final Set<String> guids = policyCache.getPoliciesByTypeAndTag(PolicyType.INTERNAL, PolicyType.TAG_AUDIT_VIEWER);
 
         if (guids.isEmpty() || guids.iterator().next() == null) {
@@ -132,7 +132,7 @@ public class AuditFilterPolicyManager {
         try {
             message = new Message(XmlUtil.parse(messageXml));
         } catch (Exception e) {
-            throw new AuditViewerPolicyException("Cannot create message from saved audit record: " + ExceptionUtils.getMessage(e),
+            throw new AuditPolicyException("Cannot create message from saved audit record: " + ExceptionUtils.getMessage(e),
                     ExceptionUtils.getDebugException(e));
         }
 
@@ -141,22 +141,12 @@ public class AuditFilterPolicyManager {
         try {
             handle = policyCache.getServerPolicy(guid);
             if (handle != null) {
-                return evaluatePolicy(message, handle, isRequest);
+                return evaluatePolicy(message, handle, isRequest, PolicyType.TAG_AUDIT_VIEWER);
             }
-        } catch (Exception e) {
-           throw new AuditViewerPolicyException("Problem invoking " + PolicyType.TAG_AUDIT_VIEWER+" policy: " +
-                   ExceptionUtils.getMessage(e), 
-                   ExceptionUtils.getDebugException(e));
+            //should not happen
+            throw new AuditViewerPolicyNotAvailableException("Could not find audit viewer policy in policy cache.");
         } finally {
             ResourceUtils.closeQuietly(handle);
-        }
-
-        return null;
-    }
-
-    public static class AuditViewerPolicyException extends Exception{
-        public AuditViewerPolicyException(String message, Throwable cause) {
-            super(message, cause);
         }
     }
 
@@ -203,7 +193,7 @@ public class AuditFilterPolicyManager {
         String output = null;
         try {
             output = filterMessage(faultMsg, handle, false);
-        } catch (AuditPolicyNoValidOutputException e) {
+        } catch (AuditPolicyException e) {
             auditThatMessageFilterPolicyFailed(messageAudit, listener, formatter, false, e);
         } finally {
             messageAudit.setResponseXml(output);
@@ -219,7 +209,7 @@ public class AuditFilterPolicyManager {
         String output = null;
         try {
             output = processMessage(realMessage, isRequest, handle);
-        } catch (AuditPolicyNoValidOutputException e) {
+        } catch (AuditPolicyException e) {
             auditThatMessageFilterPolicyFailed(messageAudit, listener, formatter, isRequest, e);
         } catch (CannotGetMessageBodyException e) {
             auditProcessingProblem(messageAudit, listener, formatter, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e), true);
@@ -234,7 +224,7 @@ public class AuditFilterPolicyManager {
     }
 
     private String processMessage(final Message realMessage, final boolean isRequest, final ServerPolicyHandle handle)
-            throws AuditPolicyNoValidOutputException, CannotGetMessageBodyException {
+            throws AuditPolicyException, CannotGetMessageBodyException {
         final Message copyMsg = copyMessageFirstPart(realMessage, isRequest);
         return filterMessage(copyMsg, handle, isRequest);
     }
@@ -250,38 +240,8 @@ public class AuditFilterPolicyManager {
     private String filterMessage(final Message copyMsg,
                                  final ServerPolicyHandle handle,
                                  final boolean isRequest)
-            throws AuditPolicyNoValidOutputException {
-        try {
-            return evaluatePolicy(copyMsg, handle, isRequest);
-        } catch (IOException e) {
-            throw new AuditPolicyNoValidOutputException(ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        } catch (PolicyAssertionException e) {
-            throw new AuditPolicyNoValidOutputException(ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        } catch (CannotGetMessageBodyException e) {
-            throw new AuditPolicyNoValidOutputException(ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        }
-    }
-
-    private static class AuditPolicyNoValidOutputException extends Exception {
-        private AuditPolicyNoValidOutputException(String message, AssertionStatus assertionStatus) {
-            super(message);
-            this.assertionStatus = assertionStatus;
-        }
-
-        private AuditPolicyNoValidOutputException(String message, Throwable cause) {
-            super(message, cause);
-            this.assertionStatus = null;
-        }
-
-        /**
-         * Get the status returned by the audit policy.
-         * @return
-         */
-        public AssertionStatus getAssertionStatus() {
-            return assertionStatus;
-        }
-
-        private final AssertionStatus assertionStatus;
+            throws AuditPolicyException {
+        return evaluatePolicy(copyMsg, handle, isRequest, PolicyType.TAG_AUDIT_MESSAGE_FILTER);
     }
 
     /**
@@ -290,13 +250,13 @@ public class AuditFilterPolicyManager {
      * code of 4{@link AssertionStatus#NONE}.
      *  
      * @return Contents of Request message after policy completes, providing status was AssertionStatus.NONE. null is
-     *         retunred for any other status.
-     * @throws Exception Any problems executing policy.
+     *         returned for any other status.
      */
     private String evaluatePolicy(final Message copyMsg,
                                   final ServerPolicyHandle handle,
-                                  final Boolean isRequest)
-            throws IOException, PolicyAssertionException, CannotGetMessageBodyException, AuditPolicyNoValidOutputException {
+                                  final Boolean isRequest,
+                                  final String policyType)
+            throws AuditPolicyException {
         PolicyEnforcementContext pec = null;
         final String[] capturePolicyRequestOutput = new String[1];
         final CannotGetMessageBodyException[] caughtException = new CannotGetMessageBodyException[1];
@@ -319,9 +279,11 @@ public class AuditFilterPolicyManager {
             });
             result = handle.checkRequest(finalCtx);
         } catch (RuntimeException e) {
-            final String msg = "Unexpected exception caught from audit filter policy: " +
-                    ExceptionUtils.getMessage(e);
-            throw new AuditPolicyNoValidOutputException(msg, ExceptionUtils.getDebugException(e));
+            return handlePolicyException(e, policyType);
+        } catch (IOException e) {
+            return handlePolicyException(e, policyType);
+        } catch (PolicyAssertionException e) {
+            return handlePolicyException(e, policyType);
         } finally {
             ResourceUtils.closeQuietly(pec);
         }
@@ -332,10 +294,17 @@ public class AuditFilterPolicyManager {
         }
 
         if (caughtException[0] != null) {
-            throw caughtException[0];
+            handlePolicyException(caughtException[0], policyType);
         }
 
-        throw new AuditPolicyNoValidOutputException("Audit message filter policy returned an error status: " + result, result);
+        throw new AuditPolicyException("Audit policy '" + policyType + "' returned status '" + result.getMessage() + "'");
+    }
+
+    private String handlePolicyException(final Exception e,
+                                         final String policyType) throws AuditPolicyException {
+        final String msg = "Unexpected exception caught from audit '" + policyType + "'policy : " +
+                ExceptionUtils.getMessage(e);
+        throw new AuditPolicyException(msg, ExceptionUtils.getDebugException(e));
     }
 
     private void auditProcessingProblem(
@@ -358,18 +327,12 @@ public class AuditFilterPolicyManager {
 
         String extraMessage = "";
         if(exceptionIfAny != null){
-            if(exceptionIfAny instanceof AuditPolicyNoValidOutputException){
-                AuditPolicyNoValidOutputException avException = (AuditPolicyNoValidOutputException) exceptionIfAny;
-                AssertionStatus status = avException.getAssertionStatus();
-                if(status != null) {
-                    extraMessage = "Policy returned status '" + status.getMessage() + "'.";
-                } else {
-                    extraMessage = ExceptionUtils.getMessage(exceptionIfAny);
-                }
+            if(exceptionIfAny instanceof AuditPolicyException){
+                extraMessage = ExceptionUtils.getMessage(exceptionIfAny);
             }
         }
 
-        final String[] params = new String[]{(isRequest) ? "request" : "response", extraMessage};
+        final String[] params = new String[]{extraMessage, (isRequest) ? "Request" : "Response"};
 
         auditMessage(messageAudit, SystemMessages.AUDIT_MESSAGE_FILTER_POLICY_FAILED, params, ExceptionUtils.getDebugException(exceptionIfAny), listener, formatter);
     }
