@@ -31,8 +31,10 @@ public class MasterPasswordManager {
             /* FALLTHROUGH and log it */
             t = e;
         }
-        if (ret == null)
-            logger.log(Level.WARNING, "Unable to find master password -- assuming unencrypted passwords", t);
+        if (ret == null) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            logger.log(Level.WARNING, "Unable to find master password -- assuming unencrypted passwords: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
+        }
         return ret;
     }
 
