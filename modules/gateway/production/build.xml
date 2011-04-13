@@ -1,4 +1,4 @@
-<project name="layer7-gateway-processcontroller" default="compile">
+<project name="layer7-gateway-production" default="compile">
     <property name="module.package.dependencies.skip" value="true"/>
     <property name="module.idea.configurations" value="default,test,module,module-optional"/>
 

@@ -255,6 +255,32 @@
     </macrodef>
 
     <!--
+      Module task to verify dependencies against a whitelist.
+    -->
+    <macrodef name="jar-include-verify">
+        <attribute name="file"/>
+        <attribute name="module"/>
+        <attribute name="whitelist"/>
+        <sequential>
+            <ivy:resolve file="@{file}" conf="runtime" showprogress="false" log="quiet"/>
+            <ivy:cachepath
+                    pathid="@{module}.layer7.dependency.path"
+                    organisation="com.l7tech"
+                    module="@{module}"
+                    conf="runtime"
+                    log="quiet"/>
+            <pathconvert property="@{module}.layer7.dependency.path.text" pathsep=" " refid="@{module}.layer7.dependency.path">
+                <mapper type="regexp" from=".*[/\\](layer7-.*${module.version.target}.*)?\.jar" to="\1"/>
+            </pathconvert>
+            <condition property="@{module}.included.dependencies">
+                <!-- Whitelist of modules that are included below -->
+                <matches pattern="^((@{whitelist})-${module.version.target} ?){1,1000}$" string="${@{module}.layer7.dependency.path.text}"/>
+            </condition>
+            <fail unless="@{module}.included.dependencies" message="Missing included module JAR(s) for applet ${@{module}.layer7.dependency.path.text}"/>
+        </sequential>
+    </macrodef>
+
+    <!--
       Show build info for the module
     -->
     <target name="info">
@@ -607,6 +633,7 @@
     -->
     <target name="publish" depends="info, clean, package" description="Publish this project in the Ivy repository">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+                     module="${ant.project.name}"
                      conf="default, master, master-unsigned, compile, runtime, optional, core, client"
                      resolver="shared"
                      pubrevision="${version}"
@@ -621,6 +648,7 @@
     <target name="publish-all" depends="info, clean, package, packagetests"
             description="Publish all artifacts for this project in the Ivy repository">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+                     module="${ant.project.name}"
                      resolver="shared"
                      pubrevision="${version}"
                      status="release"
@@ -638,6 +666,7 @@
     <target name="publish-all-quick" depends="info, clean, skiptests, package, packagetests"
             description="Publish all artifacts for this project in the Ivy repository (Skip tests)">
         <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+                     module="${ant.project.name}"
                      resolver="shared"
                      pubrevision="${version}"
                      status="release"

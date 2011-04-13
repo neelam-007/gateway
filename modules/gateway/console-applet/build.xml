@@ -1,4 +1,4 @@
-<project name="layer7-gateway-console-applet" default="compile">
+<project name="layer7-gateway-console-applet" default="compile" xmlns:ivy="antlib:org.apache.ivy.ant">
     <property name="module.main" value="com.l7tech.console.AppletMain"/>
     <property name="module.sign" value="true"/>
     <property name="module.package.jar.required" value="true"/>
@@ -10,6 +10,13 @@
 
     <!-- Custom packaging step to include an artifact into this module -->
     <target name="package.custom">
+        <!-- Verify dependencies and ensure we are including them all below -->
+        <jar-include-verify
+                file="../console/ivy.xml"
+                module="layer7-gateway-console"
+                whitelist="layer7-gateway-common|layer7-kerberos|layer7-policy|layer7-policy-exporter|layer7-identity|layer7-common|layer7-gui|layer7-uddi|layer7-utility|layer7-wsdl|layer7-json"/>
+
+        <!-- Add dependencies here and to this modules IVY file when added to the console or a dependency -->
         <jar-include name="layer7-gateway-console"/>
         <jar-include name="layer7-gateway-common"/>
         <jar-include name="layer7-kerberos"/>
@@ -21,6 +28,7 @@
         <jar-include name="layer7-uddi"/>
         <jar-include name="layer7-utility"/>
         <jar-include name="layer7-wsdl"/>
+        <jar-include name="layer7-json"/>
     </target>
 
     <target name="package.custom.post" if="module.pack200">

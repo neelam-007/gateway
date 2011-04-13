@@ -32,6 +32,7 @@
         <dependency name="layer7-uddi" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
+        <dependency name="layer7-json" rev="latest.integration" force="true" conf="core"/>
         <exclude org="com.l7tech"/>
     </dependencies>
 </ivy-module>
