@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
@@ -31,18 +32,212 @@ import java.net.ConnectException;
  */
 
 public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
-    private static final int TOP_SPACING = 8;
+    static final Logger log = Logger.getLogger(LdapIdentityProviderConfigPanel.class.getName());
 
-    /** Creates new form ServicePanel */
+    private JPanel mainPanel;
+    private JButton moveUpButton;
+    private JButton moveDownButton;
+    private JButton addButton;
+    private JButton editButton;
+    private JButton removeButton;
+    private JTextField providerNameTextField;
+    private JPasswordField ldapBindPasswordField;
+    private JTextField ldapBindDNTextField;
+    private JTextField ldapSearchBaseTextField;
+    private JComboBox providerTypesCombo;
+    private JPanel configPanel;
+    private JList ldapUrlList;
+    private PrivateKeysComboBox privateKeyComboBox;
+    private JCheckBox showPasswordCheckBox;
+    private JLabel plaintextPasswordWarningLabel;
+    private JCheckBox adminEnabledCheckbox;
+    private JCheckBox clientAuthenticationCheckbox;
+
+    private boolean providerTypeSelectable;
+    private boolean finishAllowed = false;
+    private boolean advanceAllowed = false;
+    private ResourceBundle resources = null;
+
+    // Creates new form ServicePanel
     public LdapIdentityProviderConfigPanel(WizardStepPanel next, boolean providerTypeSelectable) {
         super(next);
         this.providerTypeSelectable = providerTypeSelectable;
         initResources();
         setLayout(new BorderLayout());
-        add(getTypePanel(), BorderLayout.NORTH);
-        add(getConfigPanel(), BorderLayout.CENTER);
-        add(Box.createVerticalStrut( 320 ), BorderLayout.WEST);
-        getConfigPanel().setVisible(false);
+        add(mainPanel, BorderLayout.CENTER);
+        initGui();
+    }
+
+    private void initGui() {
+        privateKeyComboBox.selectDefaultSsl();
+        providerNameTextField.addKeyListener(keyListener);
+
+        DefaultComboBoxModel urlListModel = new DefaultComboBoxModel();
+        // To update buttons if there are any changes in the Ldap Host List,
+        // add a ListDataListener for the list.
+        urlListModel.addListDataListener(new ListDataListener() {
+            @Override
+            public void intervalAdded(ListDataEvent e) {
+                updateControlButtonState();
+            }
+
+            @Override
+            public void intervalRemoved(ListDataEvent e) {
+                updateControlButtonState();
+            }
+
+            @Override
+            public void contentsChanged(ListDataEvent e) {
+                updateControlButtonState();
+            }
+        });
+        ldapUrlList.setModel(urlListModel);
+
+        Utilities.equalizeButtonSizes(new JButton[]{moveUpButton, moveDownButton});
+
+        moveUpButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int currentPos = ldapUrlList.getSelectedIndex();
+                if (currentPos >= 0) {
+                    // make sure not already in last position
+                    Object selected = ldapUrlList.getSelectedValue();
+                    if (currentPos > 0) {
+                        DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
+                        model.removeElementAt(currentPos);
+                        model.insertElementAt(selected, currentPos-1);
+                    }
+                }
+            }
+        });
+
+        moveDownButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int currentPos = ldapUrlList.getSelectedIndex();
+                if (currentPos >= 0) {
+                    // make sure not already in last position
+                    DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
+                    if (model.getSize() > (currentPos+1)) {
+                        Object selected = ldapUrlList.getSelectedValue();
+                        model.removeElementAt(currentPos);
+                        model.insertElementAt(selected, currentPos+1);
+                    }
+                }
+            }
+        });
+
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String newUrl = (String)JOptionPane.showInputDialog(addButton,
+                                                            "Enter the LDAP URL:",
+                                                            "Add LDAP Host URL  ",
+                                                            JOptionPane.PLAIN_MESSAGE,
+                                                            null, null,
+                                                            "ldap://host:port");
+                DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
+                if (newUrl != null && newUrl.trim().length()>0) {
+                    if (model.getIndexOf(newUrl) < 0) {
+                        model.insertElementAt(newUrl, model.getSize());
+                    }
+                    if(model.getSize() > 0) {
+                        updateControlButtonState();
+                    }
+                }
+            }
+        });
+
+        editButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selected = ldapUrlList.getSelectedIndex();
+                if (selected < 0) return;
+                DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
+                String currentUrl = (String)model.getElementAt(selected);
+                String newUrl = (String)JOptionPane.showInputDialog(editButton, "Change the LDAP URL:", "Edit LDAP Host URL",
+                                                                    JOptionPane.PLAIN_MESSAGE, null, null, currentUrl);
+                if (newUrl != null && newUrl.trim().length()>0) {
+                    // Check if the modified url exists in the list.
+                    if (model.getIndexOf(newUrl) < 0) {
+                        model.removeElementAt(selected);
+                        model.insertElementAt(newUrl, selected);
+                    }
+                }
+            }
+        });
+
+        removeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selected = ldapUrlList.getSelectedIndex();
+                if (selected > -1) {
+                    ((DefaultComboBoxModel)ldapUrlList.getModel()).removeElementAt(selected);
+                    if(ldapUrlList.getModel().getSize() == 0) {
+                        updateControlButtonState();
+                    }
+                }
+            }
+        });
+
+        Utilities.equalizeButtonSizes(addButton, editButton, removeButton);
+
+        ldapSearchBaseTextField.addKeyListener(keyListener);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(ldapBindPasswordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
+
+        clientAuthenticationCheckbox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                privateKeyComboBox.setEnabled(clientAuthenticationCheckbox.isSelected());
+            }
+        });
+
+        privateKeyComboBox.setEnabled(clientAuthenticationCheckbox.isSelected());
+
+        providerTypesCombo.setEnabled(providerTypeSelectable);
+        LdapIdentityProviderConfig[] templates;
+        try {
+            templates = getIdentityAdmin().getLdapTemplates();
+        } catch (FindException e) {
+            log.log(Level.WARNING, "cannot retrieve templates", e);
+            templates = new LdapIdentityProviderConfig[0];
+        } catch (Exception e) {
+            if (ExceptionUtils.causedBy(e, ConnectException.class)) {
+                log.log(Level.WARNING, "the connection to the Gateway is lost during getting identity provider types.", e);
+                throw new RuntimeException(e);
+            }
+            log.log(Level.WARNING, "cannot retrieve templates", e);
+            templates = new LdapIdentityProviderConfig[0];
+        }
+        Object[] providerTypeItems = new Object[1 + templates.length];
+        providerTypeItems[0] = "Select the provider type";
+        System.arraycopy( templates, 0, providerTypeItems, 1, templates.length );
+        providerTypesCombo.setModel(new DefaultComboBoxModel(providerTypeItems));
+        providerTypesCombo.setRenderer(providerTypeRenderer);
+        providerTypesCombo.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
+        providerTypesCombo.setPreferredSize(new Dimension(217, 20));
+        providerTypesCombo.setMinimumSize(new Dimension(217, 20));
+
+        providerTypesCombo.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Object o = providerTypesCombo.getSelectedItem();
+
+                if (o instanceof LdapIdentityProviderConfig) {
+                    configPanel.setVisible(true);
+                    updateControlButtonState();
+                } else {
+                    configPanel.setVisible(false);
+                    advanceAllowed = false;
+                    finishAllowed = false;
+                }
+
+                // notify the wizard to update the state of the control buttons
+                notifyListeners();
+            }
+        });
+
+        configPanel.setVisible(false);
     }
 
     /**
@@ -64,577 +259,10 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         return "Provider Configuration";
     }
 
-    /**
-     * A method that returns a JTextField containing provider information
-     *
-     * @return the ID textfield
-     */
-    public JTextField getProviderNameTextField() {
-        if (providerNameTextField != null) return providerNameTextField;
-
-        providerNameTextField = new JTextField();
-        providerNameTextField.setToolTipText(resources.getString("providerNameTextField.tooltip"));
-        providerNameTextField.addKeyListener(keyListener);
-
-        return providerNameTextField;
-    }
-
-    private JList getLdapHostList() {
-        if (ldapUrlList == null) {
-            DefaultComboBoxModel model = new DefaultComboBoxModel();
-            // To update buttons if there are any changes in the Ldap Host List,
-            // add a ListDataListener for the list.
-            model.addListDataListener(new ListDataListener() {
-                @Override
-                public void intervalAdded(ListDataEvent e) {
-                    updateControlButtonState();
-                }
-                @Override
-                public void intervalRemoved(ListDataEvent e) {
-                    updateControlButtonState();
-                }
-                @Override
-                public void contentsChanged(ListDataEvent e) {
-                    updateControlButtonState();
-                }
-            });
-            ldapUrlList = new JList(model);
-        }
-        return ldapUrlList;
-    }
-
-    private JComponent getLdapHostListPanel() {
-        JScrollPane listpanel = new JScrollPane(getLdapHostList());
-
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
-        buttonPanel.add(getUpButton());
-        buttonPanel.add(getDownButton());
-        buttonPanel.add(Box.createVerticalGlue());
-        Utilities.equalizeButtonSizes(new JButton[]{getUpButton(), getDownButton()});
-
-        JPanel output = new JPanel();
-        output.setLayout(new BorderLayout());
-        output.add(Box.createHorizontalStrut(320), BorderLayout.NORTH);
-        output.add(Box.createVerticalStrut(60), BorderLayout.WEST);
-        output.add(listpanel, BorderLayout.CENTER);
-        output.add(buttonPanel, BorderLayout.EAST);
-
-        return output;
-    }
-
-    private JButton getUpButton() {
-        if (upbutton == null) {
-            /*upbutton = new JButton(new ArrowIcon(ArrowIcon.UP)) {
-                int fixedsize = ArrowIcon.DEFAULT_SIZE+6;
-                public Dimension getSize() {
-                    return new Dimension(fixedsize, fixedsize);
-                }
-                public void setSize(Dimension d) {
-                    super.setSize(new Dimension(fixedsize, fixedsize));
-                }
-                public void setBounds(int x, int y, int width, int height) {
-                    if (height > fixedsize && y > height) {
-                        y += height - fixedsize;
-                    }
-                    super.setBounds(x, y, fixedsize, fixedsize);
-                }
-            };*/
-            upbutton = new JButton("Move Up");
-            upbutton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    int currentPos = getLdapHostList().getSelectedIndex();
-                    if (currentPos >= 0) {
-                        // make sure not already in last position
-                        Object selected = getLdapHostList().getSelectedValue();
-                        if (currentPos > 0) {
-                            DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
-                            model.removeElementAt(currentPos);
-                            model.insertElementAt(selected, currentPos-1);
-                        }
-                    }
-                }
-            });
-        }
-        return upbutton;
-    }
-
-    private JButton getDownButton() {
-        if (downbutton == null) {
-            /*downbutton = new JButton(new ArrowIcon(ArrowIcon.DOWN)) {
-                int fixedsize = ArrowIcon.DEFAULT_SIZE+6;
-                public Dimension getSize() {
-                    return new Dimension(fixedsize, fixedsize);
-                }
-                public void setSize(Dimension d) {
-                    super.setSize(new Dimension(fixedsize, fixedsize));
-                }
-                public void setBounds(int x, int y, int width, int height) {
-                    if (height > fixedsize && y > 0) {
-                        y += height - fixedsize;
-                    }
-                    super.setBounds(x, y, fixedsize, fixedsize);
-                }
-            };*/
-            downbutton = new JButton("Move Down");
-            downbutton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    int currentPos = getLdapHostList().getSelectedIndex();
-                    if (currentPos >= 0) {
-                        // make sure not already in last position
-                        DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
-                        if (model.getSize() > (currentPos+1)) {
-                            Object selected = getLdapHostList().getSelectedValue();
-                            model.removeElementAt(currentPos);
-                            model.insertElementAt(selected, currentPos+1);
-                            //model.setSelectedItem(null);
-                        }
-                    }
-                }
-            });
-        }
-        return downbutton;
-    }
-
-    private JButton getAddButton() {
-        if (addButt != null) return addButt;
-        addButt = new JButton("Add");
-        addButt.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String newUrl = (String)JOptionPane.showInputDialog(addButt,
-                                                            "Enter the LDAP URL:",
-                                                            "Add LDAP Host URL  ",
-                                                            JOptionPane.PLAIN_MESSAGE,
-                                                            null, null,
-                                                            "ldap://host:port");
-                DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
-                if (newUrl != null && newUrl.trim().length()>0) {
-                    if (model.getIndexOf(newUrl) < 0) {
-                        model.insertElementAt(newUrl, model.getSize());
-                    }
-                    if(model.getSize() > 0) {
-                        updateControlButtonState();
-                    }
-                }
-            }
-        });
-        return addButt;
-    }
-
-    private JButton getEditButton() {
-        if (editButt != null) return editButt;
-        editButt = new JButton("Edit");
-        editButt.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int selected = getLdapHostList().getSelectedIndex();
-                if (selected < 0) return;
-                DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
-                String currentUrl = (String)model.getElementAt(selected);
-                String newUrl = (String)JOptionPane.showInputDialog(editButt, "Change the LDAP URL:", "Edit LDAP Host URL",
-                                                                    JOptionPane.PLAIN_MESSAGE, null, null, currentUrl);
-                if (newUrl != null && newUrl.trim().length()>0) {
-                    // Check if the modified url exists in the list.
-                    if (model.getIndexOf(newUrl) < 0) {
-                        model.removeElementAt(selected);
-                        model.insertElementAt(newUrl, selected);
-                    }
-                }
-            }
-        });
-        return editButt;
-    }
-
-    private JButton getRemoveButton() {
-        if (removeButt != null) return removeButt;
-        removeButt = new JButton("Remove");
-        removeButt.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int selected = getLdapHostList().getSelectedIndex();
-                if (selected > -1) {
-                    ((DefaultComboBoxModel)getLdapHostList().getModel()).removeElementAt(selected);
-                    if(getLdapHostList().getModel().getSize() == 0) {
-                        updateControlButtonState();
-                    }
-                }
-            }
-        });
-        return removeButt;
-    }
-
-    private JTextField getLdapSearchBaseTextField() {
-        if (ldapSearchBaseTextField != null) return ldapSearchBaseTextField;
-
-        ldapSearchBaseTextField = new JTextField();
-        ldapSearchBaseTextField.setToolTipText(resources.getString("ldapSearchBaseTextField.tooltip"));
-
-        ldapSearchBaseTextField.setText("");
-        ldapSearchBaseTextField.addKeyListener(keyListener);
-
-        return ldapSearchBaseTextField;
-    }
-
-    private JTextField getLdapBindDNTextField() {
-        if (ldapBindDNTextField != null) return ldapBindDNTextField;
-
-        ldapBindDNTextField = new JTextField();
-        ldapBindDNTextField.setToolTipText(resources.getString("ldapBindDNTextField.tooltip"));
-
-        ldapBindDNTextField.setText("");
-        return ldapBindDNTextField;
-    }
-
-    private JPasswordField getLdapBindPasswordField() {
-        if (ldapBindPasswordField != null) return ldapBindPasswordField;
-
-        ldapBindPasswordField = new JPasswordField();
-        ldapBindPasswordField.setToolTipText(resources.getString("ldapBindPassTextField.tooltip"));
-
-        ldapBindPasswordField.setText("");
-        return ldapBindPasswordField;
-    }
-
-    private JCheckBox getAdminEnabledCheckbox() {
-        if (adminEnabledCheckbox != null) return adminEnabledCheckbox;
-
-        adminEnabledCheckbox = new JCheckBox(resources.getString("ldapAdminEnabledCheckbox.text"));
-        adminEnabledCheckbox.setToolTipText(resources.getString("ldapAdminEnabledCheckbox.tooltip"));
-        return adminEnabledCheckbox;
-    }
-
-    private JCheckBox getClientAuthenticationCheckbox() {
-        if (clientAuthenticationCheckbox != null) return clientAuthenticationCheckbox;
-
-        clientAuthenticationCheckbox = new JCheckBox(resources.getString("useClientAuthenticationCheckbox.text"));
-        clientAuthenticationCheckbox.setToolTipText(resources.getString("useClientAuthenticationCheckbox.tooltip"));
-
-        clientAuthenticationCheckbox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                keyStoreLabel.setEnabled(getClientAuthenticationCheckbox().isSelected());
-                getPrivateKeysComboBox().setEnabled(getClientAuthenticationCheckbox().isSelected());
-            }
-        });
-
-        keyStoreLabel.setEnabled(clientAuthenticationCheckbox.isSelected());
-        getPrivateKeysComboBox().setEnabled(clientAuthenticationCheckbox.isSelected());
-
-        return clientAuthenticationCheckbox;
-    }
-
-    private JPanel getKeystorePanel() {
-        if (keyStorePanel != null) return keyStorePanel;
-
-        keyStorePanel = new JPanel(new GridBagLayout());
-        getPrivateKeysComboBox().selectDefaultSsl();
-
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 1;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(0,0,0,0);
-        keyStorePanel.add(keyStoreLabel, constraints);
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = 1;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.LAST_LINE_END;
-        constraints.insets = new Insets(0,0,0,0);
-        keyStorePanel.add(privateKeyComboBox, constraints);
-
-        return keyStorePanel;
-    }
-
-    private PrivateKeysComboBox getPrivateKeysComboBox() {
-        if (privateKeyComboBox != null) return privateKeyComboBox;
-
-        privateKeyComboBox = new PrivateKeysComboBox(false, true, false);
-        return privateKeyComboBox;
-    }
 
     private IdentityAdmin getIdentityAdmin()
             throws RuntimeException {
         return Registry.getDefault().getIdentityAdmin();
-    }
-
-    /**
-     * This method is called from within the constructor to
-     * initialize the dialog.
-     */
-    private JPanel getTypePanel() {
-
-        if(typePanel != null) return typePanel;
-
-        typePanel = new JPanel();
-        typePanel.setLayout(new GridBagLayout());
-        typePanel.setPreferredSize(new Dimension(400, 60));
-        typePanel.setMinimumSize(new Dimension(400, 40));
-
-        GridBagConstraints constraints;
-
-        // provider types
-        JLabel providerTypesLabel = new JLabel();
-        providerTypesLabel.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
-        providerTypesLabel.setText(resources.getString("providerTypeTextField.label"));
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 0, 0, 0);
-        typePanel.add(providerTypesLabel, constraints);
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 20, 0, 0);
-        typePanel.add(getProviderTypes(), constraints);
-
-        getProviderTypes().setEnabled(providerTypeSelectable);
-
-        return typePanel;
-    }
-
-    private JPanel getAddEditRemoveButtons() {
-        JPanel output = new JPanel(new BorderLayout());
-        output.add(getAddButton(), BorderLayout.WEST);
-        output.add(getEditButton(), BorderLayout.CENTER);
-        output.add(getRemoveButton(), BorderLayout.EAST);
-        return output;
-    }
-
-    private JPanel getConfigPanel() {
-        if( configPanel != null)  return configPanel;
-
-        configPanel = new JPanel();
-
-        configPanel.setLayout(new GridBagLayout());
-        GridBagConstraints constraints;
-
-        int rowIndex = 0;
-
-        // Provider ID label
-        JLabel providerNameLabel = new JLabel();
-        providerNameLabel.setToolTipText(resources.getString("providerNameTextField.tooltip"));
-        providerNameLabel.setText(resources.getString("providerNameTextField.label"));
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = rowIndex;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(TOP_SPACING, 12, 0, 0);
-        configPanel.add(providerNameLabel, constraints);
-
-        // Provider ID text field
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = rowIndex++;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(TOP_SPACING, 7, 0, 11);
-        configPanel.add(getProviderNameTextField(), constraints);
-
-        // LDAP host
-        JLabel ldapHostLabel = new JLabel();
-        ldapHostLabel.setToolTipText(resources.getString("ldapHostTextField.tooltip"));
-        ldapHostLabel.setText(resources.getString("ldapHostTextField.label"));
-
-        constraints.gridx = 1;
-        constraints.gridy = rowIndex;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.NORTHWEST;
-        constraints.insets = new Insets(TOP_SPACING, 12, 0, 0);
-        configPanel.add(ldapHostLabel, constraints);
-
-        // ldap host text field
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = rowIndex++;
-        constraints.weightx = 0.3;
-        constraints.weighty = 0.9;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(TOP_SPACING, 7, 0, 11);
-        configPanel.add(getLdapHostListPanel(), constraints);
-
-        // add, remove buttons
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = rowIndex++;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.SOUTHWEST;
-        constraints.insets = new Insets(0, 7, 0, 0);
-        configPanel.add(getAddEditRemoveButtons(), constraints);
-
-        //client authentication checkbox
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = rowIndex++;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 2;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
-        configPanel.add(getClientAuthenticationCheckbox(), constraints);
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = rowIndex++;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(0, 25, 0, 0);
-        configPanel.add(getKeystorePanel(), constraints);
-
-        // search base label
-        JLabel ldapSearchBaseLabel = new JLabel();
-        ldapSearchBaseLabel.setToolTipText(resources.getString("ldapSearchBaseTextField.tooltip"));
-        ldapSearchBaseLabel.setText(resources.getString("ldapSearchBaseTextField.label"));
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = rowIndex;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.0;
-        constraints.insets = new Insets(TOP_SPACING, 12, 0, 0);
-        configPanel.add(ldapSearchBaseLabel, constraints);
-
-        // search base text field
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = rowIndex++;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.0;
-        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
-        configPanel.add(getLdapSearchBaseTextField(), constraints);
-
-        // Binding DN label
-        JLabel ldapBindDNLabel = new JLabel();
-        ldapBindDNLabel.setToolTipText(resources.getString("ldapBindDNTextField.tooltip"));
-        ldapBindDNLabel.setText(resources.getString("ldapBindDNTextField.label"));
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = rowIndex;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.0;
-        constraints.insets = new Insets(TOP_SPACING, 12, 0, 0);
-        configPanel.add(ldapBindDNLabel, constraints);
-
-        // Binding DN textfield
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = rowIndex++;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.0;
-        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
-        configPanel.add(getLdapBindDNTextField(), constraints);
-
-        // Binding password label
-        JLabel ldapBindPassLabel = new JLabel();
-        ldapBindPassLabel.setToolTipText(resources.getString("ldapBindPassTextField.tooltip"));
-        ldapBindPassLabel.setText(resources.getString("ldapBindPassTextField.label"));
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = rowIndex;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.0;
-        constraints.insets = new Insets(TOP_SPACING, 12, 0, 0);
-        configPanel.add(ldapBindPassLabel, constraints);
-
-        // Binding password textfield
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = rowIndex++;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.0;
-        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
-        configPanel.add(getLdapBindPasswordField(), constraints);
-
-        // Admin Enabled checkbox
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = rowIndex++;
-        constraints.gridwidth = 2;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.0;
-        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
-        configPanel.add(getAdminEnabledCheckbox(), constraints);
-
-        // Horizontal Spacers
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = rowIndex;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.3;
-        constraints.weighty = 0.0;
-        constraints.insets = new Insets(0, 0, 0, 0);
-        configPanel.add(new JPanel(), constraints);
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 3;
-        constraints.gridy = rowIndex;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.3;
-        constraints.weighty = 0.0;
-        constraints.insets = new Insets(0, 0, 0, 0);
-        configPanel.add(new JPanel(), constraints);
-
-        // Vertical Spacer
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = rowIndex;
-        constraints.gridwidth = 2;
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.weightx = 0.0;
-        constraints.weighty = 0.1;
-        constraints.insets = new Insets(0, 0, 0, 0);
-        configPanel.add(new JPanel(), constraints);
-
-        return configPanel;
     }
 
     /**
@@ -659,65 +287,11 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     }
 
 
-    /**
-     * A method that returns a JCheckBox that indicates
-     * wether the user wishes to define additional properties
-     * of the entity
-     *
-     * @return the CheckBox component
-     */
-    private JComboBox getProviderTypes() {
-        if (providerTypesCombo == null) {
-            LdapIdentityProviderConfig[] templates;
-            try {
-                templates = getIdentityAdmin().getLdapTemplates();
-            } catch (FindException e) {
-                log.log(Level.WARNING, "cannot retrieve templates", e);
-                templates = new LdapIdentityProviderConfig[0];
-            } catch (Exception e) {
-                if (ExceptionUtils.causedBy(e, ConnectException.class)) {
-                    log.log(Level.WARNING, "the connection to the Gateway is lost during getting identity provider types.", e);
-                    throw new RuntimeException(e);
-                }
-                log.log(Level.WARNING, "cannot retrieve templates", e);
-                templates = new LdapIdentityProviderConfig[0];
-            }
-            Object[] items = new Object[1 + templates.length];
-            items[0] = "Select the provider type";
-            System.arraycopy( templates, 0, items, 1, templates.length );
-            providerTypesCombo = new JComboBox(items);
-            providerTypesCombo.setRenderer(providerTypeRenderer);
-            providerTypesCombo.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
-            providerTypesCombo.setPreferredSize(new Dimension(217, 20));
-            providerTypesCombo.setMinimumSize(new Dimension(217, 20));
-
-            providerTypesCombo.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    Object o = providerTypesCombo.getSelectedItem();
-
-                    if (o instanceof LdapIdentityProviderConfig) {
-                        getConfigPanel().setVisible(true);
-                        updateControlButtonState();
-                    } else {
-                        getConfigPanel().setVisible(false);
-                        advanceAllowed = false;
-                        finishAllowed = false;
-                    }
-
-                    // notify the wizard to update the state of the control buttons
-                    notifyListeners();
-                }
-            });
-        }
-        return providerTypesCombo;
-    }
-
     private void updateControlButtonState() {
-        if (getProviderNameTextField().getText().length() > 0 &&
+        if (providerNameTextField.getText().length() > 0 &&
                 //getLdapHostTextField().getText().length() > 0 &&
-                getLdapHostList().getModel().getSize() > 0 &&
-                getLdapSearchBaseTextField().getText().length() > 0) {
+                ldapUrlList.getModel().getSize() > 0 &&
+                ldapSearchBaseTextField.getText().length() > 0) {
             // can advance to next panel only when the above three fields are not empty
             advanceAllowed = true;
             finishAllowed = true;
@@ -747,33 +321,32 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
                 if (acceptNewProvider || iProviderConfig.getOid() != -1) {
 
-                    getProviderNameTextField().setText(iProviderConfig.getName());
-                    getLdapBindPasswordField().setText(iProviderConfig.getBindPasswd());
-                    getLdapBindDNTextField().setText(iProviderConfig.getBindDN());
-                    getLdapSearchBaseTextField().setText(iProviderConfig.getSearchBase());
-                    getAdminEnabledCheckbox().setSelected(iProviderConfig.isAdminEnabled());
-                    getClientAuthenticationCheckbox().setSelected(iProviderConfig.isClientAuthEnabled());                    
-                    if (getClientAuthenticationCheckbox().isSelected()) {
+                    providerNameTextField.setText(iProviderConfig.getName());
+                    ldapBindPasswordField.setText(iProviderConfig.getBindPasswd());
+                    ldapBindDNTextField.setText(iProviderConfig.getBindDN());
+                    ldapSearchBaseTextField.setText(iProviderConfig.getSearchBase());
+                    adminEnabledCheckbox.setSelected(iProviderConfig.isAdminEnabled());
+                    clientAuthenticationCheckbox.setSelected(iProviderConfig.isClientAuthEnabled());
+                    if (clientAuthenticationCheckbox.isSelected()) {
                         if ( iProviderConfig.getKeystoreId() != null && iProviderConfig.getKeyAlias() != null ) {
-                            getPrivateKeysComboBox().select( iProviderConfig.getKeystoreId(), iProviderConfig.getKeyAlias() );
+                            privateKeyComboBox.select(iProviderConfig.getKeystoreId(), iProviderConfig.getKeyAlias());
                         }
-                        if (getPrivateKeysComboBox().getSelectedItem() == null) {
+                        if (privateKeyComboBox.getSelectedItem() == null) {
                             //the selected key doesnt exists
                             JOptionPane.showMessageDialog(this, 
                                     "Keystore alias not found, will use default SSL key.",
                                     "Keystore alias not found",
                                     JOptionPane.WARNING_MESSAGE);
-                            getPrivateKeysComboBox().selectDefaultSsl();
+                            privateKeyComboBox.selectDefaultSsl();
                         }
                     }
-                    keyStoreLabel.setEnabled(getClientAuthenticationCheckbox().isSelected());
-                    getPrivateKeysComboBox().setEnabled(getClientAuthenticationCheckbox().isSelected());
+                    privateKeyComboBox.setEnabled(clientAuthenticationCheckbox.isSelected());
 
                     // populate host list based on what is in the iProviderConfig
-                    ((DefaultComboBoxModel)getLdapHostList().getModel()).removeAllElements();
+                    ((DefaultComboBoxModel)ldapUrlList.getModel()).removeAllElements();
                     String[] ldapUrls = iProviderConfig.getLdapUrl();
                     for ( String ldapUrl : ldapUrls ) {
-                        ( (DefaultComboBoxModel) getLdapHostList().getModel() ).addElement( ldapUrl );
+                        ( (DefaultComboBoxModel) ldapUrlList.getModel() ).addElement( ldapUrl );
                     }
 
                 }
@@ -822,21 +395,21 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 }
 
                 ldapSettings.setTemplateName(ldapType.getTemplateName());
-                DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
+                DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
                 String[] newlist = new String[model.getSize()];
                 for (int i = 0; i < newlist.length; i++) {
                     newlist[i] = (String)model.getElementAt(i);
                 }
                 ldapSettings.setLdapUrl(newlist);
-                ldapSettings.setName(getProviderNameTextField().getText());
-                ldapSettings.setSearchBase(getLdapSearchBaseTextField().getText());
-                ldapSettings.setBindDN(getLdapBindDNTextField().getText());
-                ldapSettings.setBindPasswd(String.valueOf(getLdapBindPasswordField().getPassword()));
-                ldapSettings.setAdminEnabled(getAdminEnabledCheckbox().isSelected());
-                ldapSettings.setClientAuthEnabled(getClientAuthenticationCheckbox().isSelected());
-                if ( getClientAuthenticationCheckbox().isSelected() && !getPrivateKeysComboBox().isSelectedDefaultSsl() ) {
-                    ldapSettings.setKeystoreId(getPrivateKeysComboBox().getSelectedKeystoreId());
-                    ldapSettings.setKeyAlias(getPrivateKeysComboBox().getSelectedKeyAlias());
+                ldapSettings.setName(providerNameTextField.getText());
+                ldapSettings.setSearchBase(ldapSearchBaseTextField.getText());
+                ldapSettings.setBindDN(ldapBindDNTextField.getText());
+                ldapSettings.setBindPasswd(String.valueOf(ldapBindPasswordField.getPassword()));
+                ldapSettings.setAdminEnabled(adminEnabledCheckbox.isSelected());
+                ldapSettings.setClientAuthEnabled(clientAuthenticationCheckbox.isSelected());
+                if ( clientAuthenticationCheckbox.isSelected() && !privateKeyComboBox.isSelectedDefaultSsl() ) {
+                    ldapSettings.setKeystoreId(privateKeyComboBox.getSelectedKeystoreId());
+                    ldapSettings.setKeyAlias(privateKeyComboBox.getSelectedKeyAlias());
                 } else {
                     ldapSettings.setKeystoreId(null);    
                     ldapSettings.setKeyAlias(null);
@@ -919,28 +492,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
             };
 
-    private ResourceBundle resources = null;
-    private JTextField providerNameTextField = null;
-    private JPasswordField ldapBindPasswordField = null;
-    private JTextField ldapBindDNTextField = null;
-    private JTextField ldapSearchBaseTextField = null;
-    //private JTextField ldapHostTextField = null;
-    private JComboBox providerTypesCombo = null;
-    static final Logger log = Logger.getLogger(LdapIdentityProviderConfigPanel.class.getName());
-    private boolean providerTypeSelectable;
-    private boolean finishAllowed = false;
-    private boolean advanceAllowed = false;
-    private JPanel configPanel = null;
-    private JPanel typePanel = null;
-    private JList ldapUrlList = null;
-    private JButton addButt;
-    private JButton editButt;
-    private JButton removeButt;
-    private JButton upbutton;
-    private JButton downbutton;
-    private JCheckBox adminEnabledCheckbox;
-    private JCheckBox clientAuthenticationCheckbox;
-    private JPanel keyStorePanel;
-    private JLabel keyStoreLabel = new JLabel("Keystore: ");
-    private PrivateKeysComboBox privateKeyComboBox;
+    private void createUIComponents() {
+        privateKeyComboBox = new PrivateKeysComboBox(false, true, false);
+    }
 }

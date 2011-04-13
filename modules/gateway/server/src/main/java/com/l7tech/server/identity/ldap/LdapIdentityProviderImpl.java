@@ -5,11 +5,7 @@ import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.identity.ldap.GroupMappingConfig;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.ldap.LdapUser;
-import com.l7tech.identity.ldap.UserMappingConfig;
-import com.l7tech.identity.ldap.MemberStrategy;
+import com.l7tech.identity.ldap.*;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -17,15 +13,14 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.Lifecycle;
 import com.l7tech.server.LifecycleException;
-import com.l7tech.server.identity.*;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.ConfigurableIdentityProvider;
+import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ArrayUtils;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.util.*;
 import com.sun.jndi.ldap.LdapURL;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -39,8 +34,8 @@ import java.math.BigInteger;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -708,7 +703,12 @@ public class LdapIdentityProviderImpl
             env.put( Context.REFERRAL, LdapUtils.ENV_VALUE_REFERRAL );
             String dn = config.getBindDN();
             if (dn != null && dn.length() > 0) {
-                String pass = config.getBindPasswd();
+                final String pass;
+                try {
+                    pass = ServerVariables.expandSinglePasswordOnlyVariable(auditor, config.getBindPasswd());
+                } catch (FindException e) {
+                    throw (ConfigurationException)new ConfigurationException("Unable to expand LDAP bind password: " + ExceptionUtils.getMessage(e)).initCause(e);
+                }
                 env.put(Context.SECURITY_AUTHENTICATION, "simple");
                 env.put(Context.SECURITY_PRINCIPAL, dn);
                 env.put(Context.SECURITY_CREDENTIALS, pass);
