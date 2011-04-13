@@ -9,8 +9,10 @@ import com.l7tech.objectmodel.*;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.Serializable;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.util.Map;
 import java.util.Set;
 
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
@@ -425,6 +427,24 @@ public interface IdentityAdmin {
     String getPasswordPolicyDescriptionForIdentityProvider() throws FindException;
 
     /**
+     * Get the account minimums or null if there are none.
+     *
+     * @return The account minimums.
+     */
+    @Transactional(readOnly = true)
+    AccountMinimums getAccountMinimums();
+
+    /**
+     * Get the Map of password policy minimums.
+     *
+     * <p>The Map is of names to password policies.</p>
+     *
+     * @return The minimums map.
+     */
+    @Transactional(readOnly = true)
+    Map<String,IdentityProviderPasswordPolicy> getPasswordPolicyMinimums();
+
+    /**
      * Saves the password policy for the identity provider
      * Note: only works for the ONE internal identity provider with special oid {@link IdentityProviderConfigManager#INTERNALPROVIDER_SPECIAL_OID}
      *
@@ -447,7 +467,7 @@ public interface IdentityAdmin {
      * @throws ObjectModelException If an error occurs
      */
     @Secured(types=ID_PROVIDER_CONFIG, stereotype=SAVE_OR_UPDATE)
-    public void forceAdminUsersResetPassword(long identityProviderConfigId) throws ObjectModelException;
+    void forceAdminUsersResetPassword(long identityProviderConfigId) throws ObjectModelException;
 
     /**
      * Activates the user by resetting the values in the corresponding logon info
@@ -461,4 +481,79 @@ public interface IdentityAdmin {
     @Transactional(readOnly=true)
     @Secured(types=USER, stereotype=GET_PROPERTY_OF_ENTITY)
     LogonInfo.State getLogonState(User user) throws FindException;
+
+    /**
+     * Account minimums bean
+     */
+    class AccountMinimums implements Serializable {
+        private final String name;
+        private final int attempts;
+        private final int lockout;
+        private final int expiry;
+        private final int inactivity;
+
+        public AccountMinimums( final String name,
+                                final int attempts,
+                                final int lockout,
+                                final int expiry,
+                                final int inactivity ) {
+            this.name = name;
+            this.attempts = attempts;
+            this.lockout = lockout;
+            this.expiry = expiry;
+            this.inactivity = inactivity;
+        }
+
+        /**
+         * Get the name for the account minimums.
+         *
+         * @return The name
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * Get the number of permitted logon attempts.
+         *
+         * @return The permitted number of attempts.
+         */
+        public int getAttempts() {
+            return attempts;
+        }
+
+        /**
+         * The session inactivity timeout.
+         *
+         * <p>The number of minutes of inactivity after which a logon session
+         * will expire.</p>
+         *
+         * @return The session expiry time.
+         */
+        public int getExpiry() {
+            return expiry;
+        }
+
+        /**
+         * Get the account inactivity threshold.
+         *
+         * <p>The number of days after which an account is considered inactive.</p>
+         *
+         * @return The inactivity threshold.
+         */
+        public int getInactivity() {
+            return inactivity;
+        }
+
+        /**
+         * Get the account lockout duration.
+         *
+         * <p>The number of minutes an account is locked out for.</p>
+         *
+         * @return The lockout duration.
+         */
+        public int getLockout() {
+            return lockout;
+        }
+    }
 }

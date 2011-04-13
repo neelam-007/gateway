@@ -119,11 +119,4 @@ public interface AdminLogin {
      */
     @Administrative(licensed=false)
     void ping();
-
-     /**
-     * Get a property, pci-dss enabled.
-     *
-     * @return a boolean, pci-dss enabled.
-     */
-     boolean getPropertyPCIDSSEnabled();
 }

@@ -1,7 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.event.EntityEvent;
-import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.panels.IdProviderPasswordPolicyDialog;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.IdentityProviderNode;
@@ -14,13 +12,11 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.IdentityProviderPasswordPolicy;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
-import javax.swing.event.EventListenerList;
-import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
-import java.util.EventListener;
+import java.util.Collections;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -30,7 +26,6 @@ import java.util.logging.Level;
  * @author wlui
  */
 public class IdentityProviderManagePasswordPolicyAction extends NodeAction {
-    private EventListenerList listenerList = new EventListenerList();
     private AttemptedUpdate attemptedUpdatePasswordPolicy;
 
     public IdentityProviderManagePasswordPolicyAction(IdentityProviderNode nodeIdentity) {
@@ -64,7 +59,7 @@ public class IdentityProviderManagePasswordPolicyAction extends NodeAction {
     @Override
     public boolean isAuthorized() {
         if (attemptedUpdatePasswordPolicy == null) {
-            attemptedUpdatePasswordPolicy = new AttemptedUpdate(EntityType.PASSWORD_POLICY, new IdentityProviderPasswordPolicy(-2));
+            attemptedUpdatePasswordPolicy = new AttemptedUpdate(EntityType.PASSWORD_POLICY, new IdentityProviderPasswordPolicy(-2L));
         }
         return canAttemptOperation(attemptedUpdatePasswordPolicy);
     }
@@ -81,7 +76,7 @@ public class IdentityProviderManagePasswordPolicyAction extends NodeAction {
         EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
         final IdentityProviderPasswordPolicy passwordPolicy;
         Frame f = TopComponents.getInstance().getTopParent();
-        if (header.getOid() != -1) {
+        if (header.getOid() != -1L) {
             final long oid = header.getOid();
             try {
                 passwordPolicy =
@@ -91,8 +86,14 @@ public class IdentityProviderManagePasswordPolicyAction extends NodeAction {
                 DialogDisplayer.showMessageDialog(f, "Failed to find password policy: " + ExceptionUtils.getMessage(e), "Find Failed", JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
-            boolean pciEnabled = Registry.getDefault().getAdminLogin().getPropertyPCIDSSEnabled();
-            final IdProviderPasswordPolicyDialog dlg = new IdProviderPasswordPolicyDialog(f,  passwordPolicy, pciEnabled, false);
+            final IdentityAdmin.AccountMinimums accountMinimums = getIdentityAdmin().getAccountMinimums();
+            final Map<String,IdentityProviderPasswordPolicy> policyMinimums = getIdentityAdmin().getPasswordPolicyMinimums();
+            final IdProviderPasswordPolicyDialog dlg = new IdProviderPasswordPolicyDialog(
+                    f,
+                    passwordPolicy,
+                    accountMinimums==null?null:accountMinimums.getName(),
+                    policyMinimums==null?Collections.<String, IdentityProviderPasswordPolicy>emptyMap():policyMinimums,
+                    false);
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             DialogDisplayer.display(dlg, new Runnable() {
@@ -101,13 +102,7 @@ public class IdentityProviderManagePasswordPolicyAction extends NodeAction {
                    if (dlg.isConfirmed()) {
                        try {
                            getIdentityAdmin().updatePasswordPolicy(oid, passwordPolicy);
-                       } catch (SaveException e) {
-                           logger.log(Level.WARNING, "Failed to save password policy: " + ExceptionUtils.getMessage(e), e);
-                           DialogDisplayer.showMessageDialog(dlg, "Failed to save password policy: " + ExceptionUtils.getMessage(e), "Save Failed", JOptionPane.ERROR_MESSAGE, null);
-                       } catch (UpdateException e) {
-                           logger.log(Level.WARNING, "Failed to save password policy: " + ExceptionUtils.getMessage(e), e);
-                           DialogDisplayer.showMessageDialog(dlg, "Failed to save password policy: " + ExceptionUtils.getMessage(e), "Save Failed", JOptionPane.ERROR_MESSAGE, null);
-                       } catch (ObjectNotFoundException e) {
+                       } catch (ObjectModelException e) {
                            logger.log(Level.WARNING, "Failed to save password policy: " + ExceptionUtils.getMessage(e), e);
                            DialogDisplayer.showMessageDialog(dlg, "Failed to save password policy: " + ExceptionUtils.getMessage(e), "Save Failed", JOptionPane.ERROR_MESSAGE, null);
                        }
@@ -116,62 +111,6 @@ public class IdentityProviderManagePasswordPolicyAction extends NodeAction {
             });
 
         }
-    }
-
-    private void handleProviderDeleted( final EntityHeader header ) {
-        DialogDisplayer.showMessageDialog(
-                TopComponents.getInstance().getTopParent(),
-                "The Identity Provider '"+ TextUtils.truncStringMiddleExact( header.getName(), 60 )+"' is no longer available.",
-                "Identity Provider Removed",
-                JOptionPane.WARNING_MESSAGE,
-                new Runnable(){
-            @Override
-            public void run() {
-                final DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                model.removeNodeFromParent( node );
-                fireEventProviderRemoved( header );
-            }
-        } );
-    }
-
-    /**
-     * notify the listeners that the entity has been removed
-     */
-    private void fireEventProviderRemoved(EntityHeader header) {
-        final EntityEvent event = new EntityEvent(this, header);
-        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
-        for (EventListener listener : listeners) {
-            ((EntityListener) listener).entityRemoved(event);
-        }
-    }
-
-    /**
-     * notify the listeners that the entity has been updated
-     */
-    private void fireEventProviderUpdated(EntityHeader header) {
-        EntityEvent event = new EntityEvent(this, header);
-        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
-        for (EventListener listener : listeners) {
-            ((EntityListener) listener).entityUpdated(event);
-        }
-    }
-
-    /**
-     * add the EntityListener
-     *
-     * @param listener the EntityListener
-     */
-    public void addEntityListener(EntityListener listener) {
-        listenerList.add(EntityListener.class, listener);
-    }
-
-    /**
-     * remove the the EntityListener
-     *
-     * @param listener the EntityListener
-     */
-    public void removeEntityListener(EntityListener listener) {
-        listenerList.remove(EntityListener.class, listener);
     }
 
     private IdentityAdmin getIdentityAdmin() {

@@ -51,15 +51,21 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
     private final RoleManager roleManager;
     private final PasswordHasher passwordHasher;
     private IdentityProviderPasswordPolicy internalIdpPasswordPolicy;
+    private final IdentityProviderPasswordPolicy stigPasswordPolicy;
+    private final IdentityProviderPasswordPolicy pcidssPasswordPolicy;
 
-    public PasswordEnforcerManager(Config config,
-                                   IdentityProviderPasswordPolicyManager passwordPolicyManager,
-                                   RoleManager roleManager,
-                                   PasswordHasher passwordHasher) {
+    public PasswordEnforcerManager( final Config config,
+                                    final IdentityProviderPasswordPolicyManager passwordPolicyManager,
+                                    final RoleManager roleManager,
+                                    final PasswordHasher passwordHasher,
+                                    final IdentityProviderPasswordPolicy stigPasswordPolicy,
+                                    final IdentityProviderPasswordPolicy pcidssPasswordPolicy ) {
         this.passwordPolicyManager = passwordPolicyManager;
         this.config = config;
         this.roleManager = roleManager;
         this.passwordHasher = passwordHasher;
+        this.stigPasswordPolicy = stigPasswordPolicy;
+        this.pcidssPasswordPolicy = pcidssPasswordPolicy;
     }
 
     @Override
@@ -93,45 +99,13 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         }
     }
 
-    private void auditPasswordPolicyMinimums(boolean isSTIG, IdentityProviderPasswordPolicy passwordPolicy) {
-        // STIG minimum values
-        boolean STIG_FORCE_CHANGE = true;
-        int STIG_MIN_LENGTH = 8;
-        int STIG_MAX_LENGTH = 32;
-        int STIG_FREQUENCY = 10;
-        int STIG_EXPIRY = 90;
-        boolean STIG_ALLOW_CHANGE = true;
-        int STIG_UPPER = 1;
-        int STIG_LOWER = 1;
-        int STIG_NUM = 1;
-        int STIG_SYMBOL = 1;
-        int STIG_DIFF = 4;
-        boolean STIG_REPEAT = true;
+    private void auditPasswordPolicyMinimums( final boolean isSTIG,
+                                              final IdentityProviderPasswordPolicy passwordPolicy ) {
+        final IdentityProviderPasswordPolicy policy = isSTIG ?
+                stigPasswordPolicy :
+                pcidssPasswordPolicy;
 
-        // PCI-DSS minimum values
-        boolean PCI_FORCE_CHANGE = true;
-        int PCI_MIN_LENGTH = 7;
-        int PCI_FREQUENCY = 4;
-        int PCI_EXPIRY = 90;
-        int PCI_UPPER = 1;
-        int PCI_LOWER = 1;
-        int PCI_NUM = 1;
-
-        boolean aboveMinimum;
-        aboveMinimum = (passwordPolicy.getBooleanProperty(IdentityProviderPasswordPolicy.FORCE_PWD_CHANGE));
-        aboveMinimum = aboveMinimum && passwordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH) >= (isSTIG ? STIG_MIN_LENGTH : PCI_MIN_LENGTH);
-        aboveMinimum = aboveMinimum && (!isSTIG || passwordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.MAX_PASSWORD_LENGTH) >= STIG_MAX_LENGTH);
-        aboveMinimum = aboveMinimum && (passwordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.REPEAT_FREQUENCY) >= (isSTIG ? STIG_FREQUENCY : PCI_FREQUENCY));
-        aboveMinimum = aboveMinimum && (passwordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.PASSWORD_EXPIRY) >= (isSTIG ? STIG_EXPIRY : PCI_EXPIRY));
-        aboveMinimum = aboveMinimum && (!isSTIG || passwordPolicy.getBooleanProperty(IdentityProviderPasswordPolicy.ALLOWABLE_CHANGES) == STIG_ALLOW_CHANGE);
-        aboveMinimum = aboveMinimum && (passwordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN) >= (isSTIG ? STIG_UPPER : PCI_UPPER));
-        aboveMinimum = aboveMinimum && (passwordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN) >= (isSTIG ? STIG_LOWER : PCI_LOWER));
-        aboveMinimum = aboveMinimum && (passwordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN)) >= (isSTIG ? STIG_NUM : PCI_NUM);
-        aboveMinimum = aboveMinimum && (!isSTIG || passwordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN) >= STIG_SYMBOL);
-        aboveMinimum = aboveMinimum && (!isSTIG || passwordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.CHARACTER_DIFF_MIN) >= STIG_DIFF);
-        aboveMinimum = aboveMinimum && (!isSTIG || passwordPolicy.getBooleanProperty(IdentityProviderPasswordPolicy.NO_REPEAT_CHARS) == STIG_REPEAT);
-
-        if (!aboveMinimum) {
+        if ( !passwordPolicy.hasStrengthOf( policy ) ) {
             // log audit message
             final String msg = MessageFormat.format("Password requirements are below {0} minimum for {1}", isSTIG ? "STIG" : "PCI-DSS", "Internal Identity Provider");
             applicationContext.publishEvent(

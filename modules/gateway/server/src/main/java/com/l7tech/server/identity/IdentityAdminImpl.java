@@ -1,12 +1,10 @@
 package com.l7tech.server.identity;
 
-import com.l7tech.common.password.PasswordHashingException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.identity.LogonInfo;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
-import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -15,6 +13,7 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.event.admin.AdministrativePasswordsResetEvent;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
@@ -28,7 +27,10 @@ import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.Config;
+import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.Pair;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
@@ -37,9 +39,10 @@ import javax.security.auth.x500.X500Principal;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
-import java.text.MessageFormat;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,9 +69,13 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private final LogonService logonServ;
     private LogonInfoManager logonManager;
     private final PasswordHasher passwordHasher;
+    private final Collection<Pair<AccountMinimums,IdentityProviderPasswordPolicy>> policyMinimums;
 
     @Inject
     private TrustedEsmUserManager trustedEsmUserManager;
+
+    @Inject
+    private Config config;
 
     private static final String DEFAULT_ID = Long.toString(PersistentEntity.DEFAULT_OID);
 
@@ -77,7 +84,8 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                              final PasswordEnforcerManager passwordEnforcerManager,
                              final DefaultKey defaultKey,
                              final LogonService logonServ,
-                             final PasswordHasher passwordHasher) {
+                             final PasswordHasher passwordHasher,
+                             final Collection<Pair<AccountMinimums,IdentityProviderPasswordPolicy>> policyMinimums ) {
         if (roleManager == null) throw new IllegalArgumentException("roleManager is required");
 
         this.roleManager = roleManager;
@@ -86,6 +94,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         this.passwordEnforcerManager = passwordEnforcerManager;
         this.logonServ = logonServ;
         this.passwordHasher = passwordHasher;
+        this.policyMinimums = policyMinimums;
     }
 
     @Override
@@ -112,7 +121,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     @Override
     public EntityHeader[] findAllIdentityProviderConfig() throws FindException {
             Collection<EntityHeader> res = getIdProvCfgMan().findAllHeaders();
-        return res.toArray(new EntityHeader[0]);
+        return res.toArray(new EntityHeader[res.size()]);
     }
 
     /**
@@ -234,14 +243,14 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     @Override
     public EntityHeaderSet<IdentityHeader> findAllUsers(long identityProviderConfigId) throws FindException {
-            UserManager userManager = retrieveUserManager(identityProviderConfigId);
+            UserManager<?> userManager = retrieveUserManager(identityProviderConfigId);
             return userManager.findAllHeaders();
     }
 
     @Override
     public EntityHeaderSet<IdentityHeader> searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
       throws FindException {
-            IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
+            IdentityProvider<?,?,?,?> provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             return provider.search(types, pattern);
     }
@@ -490,9 +499,9 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     @Override
     public String getUserCert(User user) throws FindException, CertificateEncodingException {
-            // get cert from internal CA
-            Certificate cert = clientCertManager.getUserCert(user);
-            if (cert == null) return null;
+        // get cert from internal CA
+        Certificate cert = clientCertManager.getUserCert(user);
+        if (cert == null) return null;
 
         return HexUtils.encodeBase64(cert.getEncoded());
     }
@@ -583,6 +592,40 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     @Override
     public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException {
         return passwordPolicyManger.findByInternalIdentityProviderOid(providerId);  
+    }
+
+    @Override
+    public AccountMinimums getAccountMinimums() {
+        final String policyName = config.getBooleanProperty( ServerConfig.PARAM_PCIDSS_ENABLED, false ) ?
+                "PCI-DSS" :
+                "STIG";
+
+        final Pair<AccountMinimums,IdentityProviderPasswordPolicy> minimums = Functions.grepFirst(
+                policyMinimums,
+                new Functions.Unary<Boolean, Pair<AccountMinimums, IdentityProviderPasswordPolicy>>() {
+                    @Override
+                    public Boolean call( final Pair<AccountMinimums, IdentityProviderPasswordPolicy> accountMinimumsIdentityProviderPasswordPolicyPair ) {
+                        return policyName.equals( accountMinimumsIdentityProviderPasswordPolicyPair.left.getName() );
+                    }
+                } );
+
+        return minimums == null ? null : minimums.left;
+    }
+
+    @Override
+    public Map<String, IdentityProviderPasswordPolicy> getPasswordPolicyMinimums() {
+        return Functions.reduce(
+                policyMinimums,
+                new HashMap<String,IdentityProviderPasswordPolicy>(),
+                new Functions.Binary<Map<String,IdentityProviderPasswordPolicy>,Map<String,IdentityProviderPasswordPolicy>,Pair<AccountMinimums,IdentityProviderPasswordPolicy>>(){
+                    @Override
+                    public Map<String, IdentityProviderPasswordPolicy> call(
+                            final Map<String, IdentityProviderPasswordPolicy> passwordPolicyMap,
+                            final Pair<AccountMinimums, IdentityProviderPasswordPolicy> minimumsPair ) {
+                        passwordPolicyMap.put( minimumsPair.left.getName(), minimumsPair.right );
+                        return passwordPolicyMap;
+                    }
+                });
     }
 
     @Override
@@ -760,7 +803,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return provider.getUserManager();
     }
 
-    private GroupManager retrieveGroupManager(long cfgid) throws FindException {
+    private GroupManager<?,?> retrieveGroupManager(long cfgid) throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
 
         if (provider == null)

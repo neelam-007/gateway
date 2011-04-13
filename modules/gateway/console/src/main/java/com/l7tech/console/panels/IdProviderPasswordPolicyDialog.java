@@ -9,11 +9,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.MessageFormat;
+import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 
 public class IdProviderPasswordPolicyDialog extends JDialog {
-    private static final Logger logger = Logger.getLogger(IdProviderPasswordPolicyDialog.class.getName());
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.IdProviderPasswordPolicyDialog");
 
     private static final String DIALOG_TITLE = resources.getString("dialog.title");
@@ -54,40 +54,21 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
     private JCheckBox repeatFrequencyCheckBox;
     private JLabel warningLabel;
 
-    private InputValidator inputValidator;
     private IdentityProviderPasswordPolicy passwordPolicy;
-    private boolean pciEnabled;
+    private String minimumsName;
+    private Map<String,IdentityProviderPasswordPolicy> minimumsPolicies;
     private boolean confirmed = false;
     private boolean isReadOnly = false;
 
-    // STIG minimum values
-    private static boolean STIG_FORCE_CHANGE = true;
-    private static int STIG_MIN_LENGTH = 8;
-    private static int STIG_MAX_LENGTH = 32;
-    private static int STIG_FREQUENCY = 10;
-    private static int STIG_EXPIRY = 90;
-    private static boolean STIG_ALLOW_CHANGE = true;
-    private static int STIG_UPPER = 1;
-    private static int STIG_LOWER = 1;
-    private static int STIG_NUM = 1;
-    private static int STIG_SYMBOL = 1;
-    private static int STIG_DIFF = 4;
-    private static boolean STIG_REPEAT = true;
-
-    // PCI-DSS minimum values
-    private static boolean PCI_FORCE_CHANGE = true;
-    private static int PCI_MIN_LENGTH = 7;
-    private static int PCI_FREQUENCY = 4;
-    private static int PCI_EXPIRY = 90;
-    private static int PCI_UPPER = 1;
-    private static int PCI_LOWER = 1;
-    private static int PCI_NUM = 1;
-
-
-    public IdProviderPasswordPolicyDialog(Window owner, IdentityProviderPasswordPolicy passwordPolicy, boolean pciEnabled, boolean isReadOnly) {
+    public IdProviderPasswordPolicyDialog( final Window owner,
+                                           final IdentityProviderPasswordPolicy passwordPolicy,
+                                           final String minimumsName,
+                                           final Map<String,IdentityProviderPasswordPolicy> minimumsPolicies,
+                                           boolean isReadOnly) {
         super(owner, DIALOG_TITLE, IdProviderPasswordPolicyDialog.DEFAULT_MODALITY_TYPE);
         this.isReadOnly = isReadOnly;
-        this.pciEnabled = pciEnabled;
+        this.minimumsName = minimumsName;
+        this.minimumsPolicies = minimumsPolicies;
         initialize(passwordPolicy);
     }
 
@@ -96,100 +77,97 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
         setContentPane(contentPane);
         getRootPane().setDefaultButton(okButton);
 
-        inputValidator = new InputValidator(this, DIALOG_TITLE);
+        final InputValidator inputValidator = new InputValidator( this, DIALOG_TITLE );
        
-        inputValidator.addRule(new InputValidator.ValidationRule(){
+        inputValidator.addRule( new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if ((Integer)minPasswordLengthSpinner.getValue() < 1) {
-                    return getResourceString("password.min.length.error");
+                if ( (Integer) minPasswordLengthSpinner.getValue() < 1 ) {
+                    return getResourceString( "password.min.length.error" );
                 }
                 return null;
             }
-        });
-        inputValidator.addRule(new InputValidator.ValidationRule(){
+        } );
+        inputValidator.addRule( new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if (maxPasswordLengthCheckBox.isSelected() &&
-                    ((Integer)maxPasswordLengthSpinner.getValue()<1)) {
-                    return getResourceString("password.max.length.error");
+                if ( maxPasswordLengthCheckBox.isSelected() &&
+                        ((Integer) maxPasswordLengthSpinner.getValue() < 1) ) {
+                    return getResourceString( "password.max.length.error" );
                 }
                 return null;
             }
-        });
-        inputValidator.addRule(new InputValidator.ValidationRule(){
+        } );
+        inputValidator.addRule( new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if (maxPasswordLengthCheckBox.isSelected() &&
-                    ((Integer)minPasswordLengthSpinner.getValue() > (Integer)maxPasswordLengthSpinner.getValue())) {
-                    return getResourceString("password.length.error");
+                if ( maxPasswordLengthCheckBox.isSelected() &&
+                        ((Integer) minPasswordLengthSpinner.getValue() > (Integer) maxPasswordLengthSpinner.getValue()) ) {
+                    return getResourceString( "password.length.error" );
                 }
                 return null;
             }
-        });
-        inputValidator.addRule(new InputValidator.ValidationRule(){
+        } );
+        inputValidator.addRule( new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if (repeatFrequencyCheckBox.isSelected() && (Integer)repeatFrequencySpinner.getValue() < 1) {
-                    return getResourceString("repeat.frequency.error");
+                if ( repeatFrequencyCheckBox.isSelected() && (Integer) repeatFrequencySpinner.getValue() < 1 ) {
+                    return getResourceString( "repeat.frequency.error" );
                 }
                 return null;
             }
-        });
-        inputValidator.addRule(new InputValidator.ValidationRule(){
+        } );
+        inputValidator.addRule( new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if (passwordExpiryCheckBox.isSelected() && (Integer)passwordExpirySpinner.getValue() < 1) {
-                    return getResourceString("expiry.error");
+                if ( passwordExpiryCheckBox.isSelected() && (Integer) passwordExpirySpinner.getValue() < 1 ) {
+                    return getResourceString( "expiry.error" );
                 }
                 return null;
             }
-        });
-        inputValidator.addRule(new InputValidator.ValidationRule(){
+        } );
+        inputValidator.addRule( new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
                 int sum = 0;
-                if(upperCaseCheckBox.isSelected())
-                    sum +=(Integer)upperCaseSpinner.getValue();
-                if(lowercaseCheckBox.isSelected())
-                    sum +=(Integer)lowerCaseSpinner.getValue();
-                if(numbersCheckBox.isSelected())
-                    sum +=(Integer)numberSpinner.getValue();
-                if(symbolCheckBox.isSelected())
-                    sum +=(Integer)symbolSpinner.getValue();
+                if ( upperCaseCheckBox.isSelected() )
+                    sum += (Integer) upperCaseSpinner.getValue();
+                if ( lowercaseCheckBox.isSelected() )
+                    sum += (Integer) lowerCaseSpinner.getValue();
+                if ( numbersCheckBox.isSelected() )
+                    sum += (Integer) numberSpinner.getValue();
+                if ( symbolCheckBox.isSelected() )
+                    sum += (Integer) symbolSpinner.getValue();
 
-                if(sum > (Integer)minPasswordLengthSpinner.getValue())
-                {
-                    return getResourceString("minimum.characters.error");
+                if ( sum > (Integer) minPasswordLengthSpinner.getValue() ) {
+                    return getResourceString( "minimum.characters.error" );
                 }
-                
-                int nonNumericMax = (Integer) nonNumericSpinner.getValue() + (Integer)numberSpinner.getValue();
-                if(nonNumericCheckBox.isSelected() &&
-                   nonNumericMax > (Integer)minPasswordLengthSpinner.getValue())
-                {
-                    return getResourceString("minimum.characters.error");
+
+                int nonNumericMax = (Integer) nonNumericSpinner.getValue() + (Integer) numberSpinner.getValue();
+                if ( nonNumericCheckBox.isSelected() &&
+                        nonNumericMax > (Integer) minPasswordLengthSpinner.getValue() ) {
+                    return getResourceString( "minimum.characters.error" );
                 }
                 return null;
             }
-        });
-        inputValidator.addRule(new InputValidator.ValidationRule(){
+        } );
+        inputValidator.addRule( new InputValidator.ValidationRule() {
             @Override
             public String getValidationError() {
-                if(characterDifferenceCheckBox.isSelected() && 
-                   (Integer) charDifferenceSpinner.getValue() > (Integer)minPasswordLengthSpinner.getValue())
-                {
-                    return getResourceString("minimum.characters.error");
+                if ( characterDifferenceCheckBox.isSelected() &&
+                        (Integer) charDifferenceSpinner.getValue() > (Integer) minPasswordLengthSpinner.getValue() ) {
+                    return getResourceString( "minimum.characters.error" );
                 }
 
                 return null;
             }
-        });
-        inputValidator.attachToButton(okButton, new ActionListener() {
+        } );
+        inputValidator.attachToButton( okButton, new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed( ActionEvent e ) {
                 onOk();
             }
-        });
+        } );
         
         cancelButton.addActionListener(new ActionListener() {
             @Override
@@ -282,31 +260,19 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
         
         Utilities.setEscKeyStrokeDisposes(this);
 
-        modelToView();
+        modelToView( passwordPolicy );
     }
 
     private void updateRequirementWarning() {
-        boolean STIG = !pciEnabled;  // todolk;
-        boolean noWarning;
-        noWarning = (forcePwdChangeCheckBox.isSelected());
-        noWarning = noWarning && ((Integer)minPasswordLengthSpinner.getValue() >= (STIG?STIG_MIN_LENGTH : PCI_MIN_LENGTH));
-        noWarning = noWarning && (!STIG || (maxPasswordLengthCheckBox.isSelected() && (Integer) maxPasswordLengthSpinner.getValue() >= STIG_MAX_LENGTH));
-        noWarning = noWarning && (repeatFrequencyCheckBox.isSelected() &&
-                                   (Integer)repeatFrequencySpinner.getValue() >= (STIG?STIG_FREQUENCY : PCI_FREQUENCY));
-        noWarning = noWarning && (passwordExpiryCheckBox.isSelected() &&
-                                   (Integer)passwordExpirySpinner.getValue() >= (STIG?STIG_EXPIRY : PCI_EXPIRY));
-        noWarning = noWarning && (!STIG || allowableChangesCheckBox.isSelected() == STIG_ALLOW_CHANGE);
-        noWarning = noWarning && (upperCaseCheckBox.isSelected() &&
-                                   (Integer)upperCaseSpinner.getValue() >= (STIG?STIG_UPPER : PCI_UPPER));
-        noWarning = noWarning && (lowercaseCheckBox.isSelected() &&
-                                   (Integer)lowerCaseSpinner.getValue() >= (STIG?STIG_LOWER : PCI_LOWER));
-        noWarning = noWarning && (numbersCheckBox.isSelected() &&
-                                   (Integer)numberSpinner.getValue() >= (STIG?STIG_NUM : PCI_NUM));
-        noWarning = noWarning && (!STIG || (symbolCheckBox.isSelected() && (Integer) symbolSpinner.getValue() >= STIG_SYMBOL));
-        noWarning = noWarning && (!STIG || (characterDifferenceCheckBox.isSelected() && (Integer) charDifferenceSpinner.getValue() >= STIG_DIFF));
-        noWarning = noWarning && (!STIG || noRepeatingCharactersCheckBox.isSelected() == STIG_REPEAT);
+        boolean noWarning = true;
 
-        warningLabel.setText(noWarning? null: (STIG? getResourceString("below.stig.warning"):getResourceString("below.pcidss.warning")));
+        if ( minimumsName != null && minimumsPolicies.get( minimumsName ) != null ) {
+            final IdentityProviderPasswordPolicy passwordPolicy = new IdentityProviderPasswordPolicy();
+            viewToModel( passwordPolicy );
+            noWarning = passwordPolicy.hasStrengthOf( minimumsPolicies.get( minimumsName ) );
+        }
+
+        warningLabel.setText(noWarning? null: (MessageFormat.format( getResourceString( "below.warning" ), minimumsName )));
     }
 
     private String getResourceString(String key){
@@ -343,7 +309,7 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
     /**
      * Configure the GUI control states with information gathered from the passwordPolicy instance.
      */
-    private void modelToView() {
+    private void modelToView( final IdentityProviderPasswordPolicy passwordPolicy ) {
 
         forcePwdChangeCheckBox.setSelected(passwordPolicy.getBooleanProperty( IdentityProviderPasswordPolicy.FORCE_PWD_CHANGE));
 
@@ -409,15 +375,13 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
      * Configure the passwordPolicy instance with information gathered from the GUI control states.
      * Assumes caller has already checked view state against the inputValidator.
      */
-    private void viewToModel() {
-
+    private void viewToModel( final IdentityProviderPasswordPolicy passwordPolicy ) {
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.FORCE_PWD_CHANGE , forcePwdChangeCheckBox.isSelected());
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH,minPasswordLengthSpinner.getValue());
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.MAX_PASSWORD_LENGTH,maxPasswordLengthCheckBox.isSelected()? maxPasswordLengthSpinner.getValue():null);
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.REPEAT_FREQUENCY,repeatFrequencyCheckBox.isSelected()?(Integer)repeatFrequencySpinner.getValue():null);
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.PASSWORD_EXPIRY,passwordExpiryCheckBox.isSelected()?passwordExpirySpinner.getValue():null);
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.ALLOWABLE_CHANGES,allowableChangesCheckBox.isSelected());
-
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.UPPER_MIN,upperCaseCheckBox.isSelected()?(Integer)upperCaseSpinner.getValue():null);
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.LOWER_MIN,lowercaseCheckBox.isSelected()?(Integer)lowerCaseSpinner.getValue():null);
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.NUMBER_MIN,numbersCheckBox.isSelected()?(Integer)numberSpinner.getValue():null);
@@ -425,7 +389,6 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN,nonNumericCheckBox.isSelected()?(Integer)nonNumericSpinner.getValue():null);
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.CHARACTER_DIFF_MIN,characterDifferenceCheckBox.isSelected()?(Integer)charDifferenceSpinner.getValue():null);
         passwordPolicy.setProperty(IdentityProviderPasswordPolicy.NO_REPEAT_CHARS,noRepeatingCharactersCheckBox.isSelected());
-
     }
 
     @Override
@@ -451,58 +414,25 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
         repeatFrequencyCheckBox.setSelected(false);
     }
 
+    private void resetToPolicy( final IdentityProviderPasswordPolicy passwordPolicy ){
+        if ( passwordPolicy != null ) {
+            clearValues();
+            modelToView( passwordPolicy );
+            enableOrDisableComponents();
+            updateRequirementWarning();
+        }
+    }
+
     private void resetToSTIG(){
-        clearValues();
-        minPasswordLengthSpinner.setValue(STIG_MIN_LENGTH);
-        maxPasswordLengthCheckBox.setSelected(true);
-        maxPasswordLengthSpinner.setValue(STIG_MAX_LENGTH);
-
-        upperCaseCheckBox.setSelected(true);
-        upperCaseSpinner.setValue(STIG_UPPER);
-        lowercaseCheckBox.setSelected(true);
-        lowerCaseSpinner.setValue(STIG_LOWER);
-        numbersCheckBox.setSelected(true);
-        numberSpinner.setValue(STIG_NUM);
-        symbolCheckBox.setSelected(true);
-        symbolSpinner.setValue(STIG_SYMBOL);
-        characterDifferenceCheckBox.setSelected(true);
-        charDifferenceSpinner.setValue(STIG_DIFF);
-        noRepeatingCharactersCheckBox.setSelected(true);
-
-        passwordExpiryCheckBox.setSelected(true);
-        passwordExpirySpinner.setValue(STIG_EXPIRY);
-        repeatFrequencyCheckBox.setSelected(true);
-        repeatFrequencySpinner.setValue(STIG_FREQUENCY);
-        forcePwdChangeCheckBox.setSelected(STIG_FORCE_CHANGE);
-        allowableChangesCheckBox.setSelected(STIG_ALLOW_CHANGE);
-
-        enableOrDisableComponents();
-        updateRequirementWarning();
+        resetToPolicy( minimumsPolicies.get( "STIG" ) );
     }
     
     private void resetToPCIDSS(){
-        clearValues();
-        
-        minPasswordLengthSpinner.setValue(PCI_MIN_LENGTH);
-        upperCaseCheckBox.setSelected(true);
-        upperCaseSpinner.setValue(PCI_UPPER);
-        lowercaseCheckBox.setSelected(true);
-        lowerCaseSpinner.setValue(PCI_LOWER);
-        numbersCheckBox.setSelected(true);
-        numberSpinner.setValue(PCI_NUM);
-
-        repeatFrequencyCheckBox.setSelected(true);
-        repeatFrequencySpinner.setValue(PCI_FREQUENCY);
-        forcePwdChangeCheckBox.setSelected(true);
-        passwordExpirySpinner.setValue(PCI_EXPIRY); 
-        passwordExpiryCheckBox.setSelected(true);
-
-        enableOrDisableComponents();
-        updateRequirementWarning();
+        resetToPolicy( minimumsPolicies.get( "PCI-DSS" ) );
     }
 
     private void onOk() {
-        viewToModel();
+        viewToModel( passwordPolicy );
         confirmed = true;
         dispose();
     }

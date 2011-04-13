@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
@@ -16,6 +17,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -37,7 +39,6 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
     private ClusterProperty expiryProperty;
     private ClusterProperty inactivityProperty;
 
-
     private JPanel contentPane;
     private JButton okButton;
     private JButton cancelButton;
@@ -47,22 +48,9 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
     private JSpinner inactivitySpinner;
     private JLabel warningLabel;
 
-    private InputValidator inputValidator;
     private boolean confirmed = false;
     private boolean isReadOnly = false;
-    private boolean pciEnabled;
-
-    // STIG minimum values
-    private static int STIG_ATTEMPTS = 5;
-    private static int STIG_LOCKOUT = 20;
-    private static int STIG_EXPIRY = 15;
-    private static int STIG_INACTIVITY = 35;
-
-    // PCI-DSS minimum values
-    private static int PCI_ATTEMPTS = 6;
-    private static int PCI_LOCKOUT = 30;
-    private static int PCI_EXPIRY = 15;
-    private static int PCI_INACTIVITY = 90;
+    private IdentityAdmin.AccountMinimums accountMinimums;
 
     public AdminUserAccountPropertiesDialog(Window owner,  boolean isReadOnly) {
         super(owner, DIALOG_TITLE, AdminUserAccountPropertiesDialog.DEFAULT_MODALITY_TYPE);
@@ -80,15 +68,15 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         setContentPane(contentPane);
         getRootPane().setDefaultButton(okButton);
 
-        pciEnabled = Registry.getDefault().getAdminLogin().getPropertyPCIDSSEnabled();
-        inputValidator = new InputValidator(this, DIALOG_TITLE);
+        accountMinimums = Registry.getDefault().getIdentityAdmin().getAccountMinimums();
+        final InputValidator inputValidator = new InputValidator( this, DIALOG_TITLE );
 
-        inputValidator.attachToButton(okButton, new ActionListener() {
+        inputValidator.attachToButton( okButton, new ActionListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed( ActionEvent e ) {
                 onOk();
             }
-        });
+        } );
         
         cancelButton.addActionListener(new ActionListener() {
             @Override
@@ -135,15 +123,16 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
     }
 
     private void updateRequirementWarning() {
-        boolean STIG = !pciEnabled;
-        boolean noWarning;
-        noWarning = ((Integer)invalidAttemptsSpinner.getValue() <= (STIG?STIG_ATTEMPTS : PCI_ATTEMPTS));
-        noWarning = noWarning && ((Integer)minLockoutSpinner.getValue() <= (STIG?STIG_LOCKOUT : PCI_LOCKOUT));
-        noWarning = noWarning && ((Integer)expirySpinner.getValue() <= (STIG?STIG_EXPIRY: PCI_EXPIRY));
-        noWarning = noWarning && ((Integer)inactivitySpinner.getValue() <= (STIG?STIG_INACTIVITY : PCI_INACTIVITY));
+        boolean noWarning = true;
 
+        if ( accountMinimums != null ) {
+            noWarning = ((Integer)invalidAttemptsSpinner.getValue() <= accountMinimums.getAttempts());
+            noWarning = noWarning && ((Integer)minLockoutSpinner.getValue() >= accountMinimums.getLockout());
+            noWarning = noWarning && ((Integer)expirySpinner.getValue() <= accountMinimums.getExpiry());
+            noWarning = noWarning && ((Integer)inactivitySpinner.getValue() <= accountMinimums.getInactivity());
+        }
 
-        warningLabel.setText(noWarning? null: (STIG? getResourceString("below.stig.warning"):getResourceString("below.pcidss.warning")));
+        warningLabel.setText(noWarning? null: MessageFormat.format( getResourceString( "below.warning" ), accountMinimums.getName() ));
     }
 
     /**

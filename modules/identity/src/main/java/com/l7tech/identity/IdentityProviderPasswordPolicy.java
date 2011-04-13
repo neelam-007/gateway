@@ -51,6 +51,34 @@ public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
         setOid(oid);
     }
 
+    public IdentityProviderPasswordPolicy( final boolean forcePasswordChange,
+                                           final boolean noRepeatingCharacters,
+                                           final int minPasswordLength,
+                                           final int maxPasswordLength,
+                                           final int minUpperCharacters,
+                                           final int minLowerCharacters,
+                                           final int minNumberCharacters,
+                                           final int minSymbolCharacters,
+                                           final int minNonNumberCharacters,
+                                           final int minCharacterDifference,
+                                           final int passwordRepeatFrequency,
+                                           final int passwordExpiryDays,
+                                           final boolean passwordChangeDaily ) {
+        if (forcePasswordChange) setProperty( FORCE_PWD_CHANGE, forcePasswordChange );
+        if (forcePasswordChange) setProperty( NO_REPEAT_CHARS, noRepeatingCharacters );
+        if (minPasswordLength>0) setProperty( MIN_PASSWORD_LENGTH, minPasswordLength );
+        if (maxPasswordLength>0) setProperty( MAX_PASSWORD_LENGTH, maxPasswordLength );
+        if (minUpperCharacters>0) setProperty( UPPER_MIN, minUpperCharacters );
+        if (minLowerCharacters>0) setProperty( LOWER_MIN, minLowerCharacters );
+        if (minNumberCharacters>0) setProperty( NUMBER_MIN, minNumberCharacters );
+        if (minSymbolCharacters>0) setProperty( SYMBOL_MIN, minSymbolCharacters );
+        if (minNonNumberCharacters>0) setProperty( NON_NUMERIC_MIN, minNonNumberCharacters );
+        if (minCharacterDifference>0) setProperty( CHARACTER_DIFF_MIN, minCharacterDifference );
+        if (passwordRepeatFrequency>0) setProperty( REPEAT_FREQUENCY, passwordRepeatFrequency );
+        if (passwordExpiryDays>0) setProperty( PASSWORD_EXPIRY, passwordExpiryDays );
+        if (passwordChangeDaily) setProperty( ALLOWABLE_CHANGES, passwordChangeDaily );
+    }
+
     @Column(name="internal_identity_provider_oid")
     public Long getInternalIdentityProviderOid() {
         return internalIdentityProviderOid;
@@ -167,7 +195,60 @@ public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
         desc.append("</ul> </body></html>");
         return desc.toString();
     }
-}
 
-// STIG defaults:
-//<?xml version="1.0" encoding="UTF-8"?><java version="1.6.0_21" class="java.beans.XMLDecoder"> <object class="java.util.TreeMap">  <void method="put">   <string>allowableChangesPerDay</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>charDiffMinimum</string>   <int>4</int>  </void>  <void method="put">   <string>forcePasswordChangeNewUser</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>lowerMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>maxPasswordLength</string>   <int>32</int>  </void>  <void method="put">   <string>minPasswordLength</string>   <int>8</int>  </void>  <void method="put">   <string>noRepeatingCharacters</string>   <boolean>true</boolean>  </void>  <void method="put">   <string>numberMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>passwordExpiry</string>   <int>90</int>  </void>  <void method="put">   <string>repeatFrequency</string>   <int>10</int>  </void>  <void method="put">   <string>symbolMinimum</string>   <int>1</int>  </void>  <void method="put">   <string>upperMinimum</string>   <int>1</int>  </void> </object></java>
+    /**
+     * Check that this policy is as "strong" as or stronger than the given policy
+     *
+     * <p>Note that this does not really test the strength of the policy, merely
+     * that the values in this policy are equal than or greater to the values in
+     * the given policy (or vice versa, depending on the property). It seems
+     * likely that a policy with a requirement for many characters from the same
+     * class would actually be weaker.</p>
+     *
+     * @param otherPolicy The policy to test against
+     * @return True if the strength is equal or greater
+     */
+    public boolean hasStrengthOf( final IdentityProviderPasswordPolicy otherPolicy ) {
+        return
+            hasStrengthOf( ALLOWABLE_CHANGES, otherPolicy ) &&
+            hasStrengthOf( CHARACTER_DIFF_MIN, otherPolicy ) &&
+            hasStrengthOf( FORCE_PWD_CHANGE, otherPolicy ) &&
+            hasStrengthOf( LOWER_MIN, otherPolicy ) &&
+            hasStrengthOf( MAX_PASSWORD_LENGTH, otherPolicy ) &&
+            hasStrengthOf( MIN_PASSWORD_LENGTH, otherPolicy ) &&
+            hasStrengthOf( NO_REPEAT_CHARS, otherPolicy ) &&
+            hasStrengthOf( NON_NUMERIC_MIN, otherPolicy ) &&
+            hasStrengthOf( NUMBER_MIN, otherPolicy ) &&
+            hasStrengthOf( PASSWORD_EXPIRY, otherPolicy, true ) &&
+            hasStrengthOf( REPEAT_FREQUENCY, otherPolicy ) &&
+            hasStrengthOf( SYMBOL_MIN, otherPolicy ) &&
+            hasStrengthOf( UPPER_MIN, otherPolicy );
+    }
+
+    private boolean hasStrengthOf( final String propertyName,
+                                   final IdentityProviderPasswordPolicy otherPolicy ) {
+        return hasStrengthOf( propertyName, otherPolicy, false );
+    }
+
+    private boolean hasStrengthOf( final String propertyName,
+                                   final IdentityProviderPasswordPolicy otherPolicy,
+                                   final boolean invert ) {
+        boolean stronger = false;
+
+        final Object value = getPropertyValue( propertyName );
+        final Object otherValue = otherPolicy.getPropertyValue( propertyName );
+
+        if ( value instanceof Boolean && otherValue instanceof Boolean ) {
+            stronger = invert ?
+                 (Boolean)otherValue || !(Boolean)value:
+                !(Boolean)otherValue || (Boolean)value;
+        } else if ( value instanceof Integer && otherValue instanceof Integer ) {
+            stronger = invert ?
+                    (Integer)value <= (Integer)otherValue:
+                    (Integer)value >= (Integer)otherValue;
+        }
+
+        return otherValue == null || stronger;
+    }
+
+}

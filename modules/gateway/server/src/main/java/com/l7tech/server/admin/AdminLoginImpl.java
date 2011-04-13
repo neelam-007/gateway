@@ -53,6 +53,7 @@ public class AdminLoginImpl
         extends ApplicationObjectSupport
         implements AdminLogin, InitializingBean
 {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(AdminLoginImpl.class.getName());
     
     private AdminSessionManager sessionManager;
@@ -187,11 +188,6 @@ public class AdminLoginImpl
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw buildAccessControlException("Authentication failed", e);
         } 
-    }
-
-    @Override
-    public boolean getPropertyPCIDSSEnabled() {
-        return serverConfig.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED, false);
     }
 
     @Override

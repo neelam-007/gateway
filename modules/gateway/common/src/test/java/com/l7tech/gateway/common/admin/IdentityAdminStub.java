@@ -294,6 +294,16 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
+    public AccountMinimums getAccountMinimums() {
+        return null;
+    }
+
+    @Override
+    public Map<String, IdentityProviderPasswordPolicy> getPasswordPolicyMinimums() {
+        return null;
+    }
+
+    @Override
     public String updatePasswordPolicy(long providerId, IdentityProviderPasswordPolicy policy) throws SaveException, UpdateException, ObjectNotFoundException {
         return null; // TODO ?
     }

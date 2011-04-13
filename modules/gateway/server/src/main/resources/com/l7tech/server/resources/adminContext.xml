@@ -222,12 +222,40 @@
 
     <!-- identity admin servant -->
     <bean id="identityAdmin" class="com.l7tech.server.identity.IdentityAdminImpl">
-        <constructor-arg ref="roleManager"/>
-        <constructor-arg ref="passwordPolicyManger"/>
-        <constructor-arg ref="passwordEnforcerManager"/>
-        <constructor-arg ref="defaultKey"/>
-        <constructor-arg ref="logonService"/>
-        <constructor-arg ref="passwordHasher"/>
+        <constructor-arg index="0" ref="roleManager"/>
+        <constructor-arg index="1" ref="passwordPolicyManger"/>
+        <constructor-arg index="2" ref="passwordEnforcerManager"/>
+        <constructor-arg index="3" ref="defaultKey"/>
+        <constructor-arg index="4" ref="logonService"/>
+        <constructor-arg index="5" ref="passwordHasher"/>
+        <constructor-arg index="6">
+            <list>
+                <bean id="stigPolicyPair" class="com.l7tech.util.Pair">
+                    <constructor-arg index="0">
+                        <bean class="com.l7tech.gateway.common.admin.IdentityAdmin$AccountMinimums">
+                            <constructor-arg index="0" value="STIG"/>
+                            <constructor-arg index="1" value="5"/>
+                            <constructor-arg index="2" value="20"/>
+                            <constructor-arg index="3" value="15"/>
+                            <constructor-arg index="4" value="35"/>
+                        </bean>
+                    </constructor-arg>
+                    <constructor-arg index="1" ref="stigPasswordPolicy"/>
+                </bean>
+                <bean id="pcidssPolicyPair" class="com.l7tech.util.Pair">
+                    <constructor-arg index="0">
+                        <bean class="com.l7tech.gateway.common.admin.IdentityAdmin$AccountMinimums">
+                            <constructor-arg index="0" value="PCI-DSS"/>
+                            <constructor-arg index="1" value="6"/>
+                            <constructor-arg index="2" value="30"/>
+                            <constructor-arg index="3" value="15"/>
+                            <constructor-arg index="4" value="90"/>
+                        </bean>
+                    </constructor-arg>
+                    <constructor-arg index="1" ref="pcidssPasswordPolicy"/>
+                </bean>
+            </list>
+        </constructor-arg>
         <property name="identityProviderConfigManager" ref="identityProviderConfigManager"/>
         <property name="clientCertManager" ref="clientCertManager"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
