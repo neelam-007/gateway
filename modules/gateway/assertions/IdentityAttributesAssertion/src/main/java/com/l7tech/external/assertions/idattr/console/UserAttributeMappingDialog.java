@@ -203,4 +203,18 @@ public class UserAttributeMappingDialog extends JDialog {
     public boolean isOk() {
         return ok;
     }
+
+    public void pack() {
+        super.pack();
+
+        // ensure width is wider than dialog title
+        if(this.getTitle() != null) {
+            FontMetrics fm = getFontMetrics(this.getFont());
+            // +100 to allow for icon and x close button
+            int titleWidth = fm.stringWidth(this.getTitle()) + 100;
+            if (titleWidth > this.getWidth()) {
+                this.setSize(new Dimension(titleWidth, this.getHeight()));
+            }
+        }
+    }
 }
