@@ -117,7 +117,7 @@ public class AuditRecordManagerImpl
             ScrollableResults results = query.scroll();
             while( results.next() ) {
                 AuditRecord record = (AuditRecord) results.get(0);
-                if (isAuditDetailSearchingPassed(criteria, record)) {
+                if (verifyRecordByAuditDetailsSearchCriteria(criteria, record)) {
                     result.add( transform.call(record) );
                 }
                 session.evict(record);
@@ -130,7 +130,13 @@ public class AuditRecordManagerImpl
         }
     }
 
-    private boolean isAuditDetailSearchingPassed(final AuditSearchCriteria criteria, final AuditRecord record) {
+    /**
+     * Verify if the audit record matches the given audit details search criteria.
+     * @param criteria: the whole search criteria
+     * @param record: the audit record to be verified
+     * @return true if the audit record matches the audit details search criteria.
+     */
+    private boolean verifyRecordByAuditDetailsSearchCriteria(final AuditSearchCriteria criteria, final AuditRecord record) {
         final boolean searchingMsgIdEnabled = criteria.messageId != null;
         final boolean searchingParamValueEnabled = criteria.paramValue != null && !criteria.paramValue.trim().isEmpty();
 

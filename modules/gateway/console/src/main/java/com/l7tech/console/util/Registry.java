@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.admin.*;
+import com.l7tech.gateway.common.entity.EntityAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
@@ -112,6 +113,12 @@ public abstract class Registry {
      * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     abstract public JdbcAdmin getJdbcConnectionAdmin();
+
+    /**
+     * @return the session factory and the persistence event interceptor
+     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
+     */
+    abstract public EntityAdmin getEntityAdmin();
 
     /**
     * @return the Ftp Admin. Never null.
@@ -273,6 +280,11 @@ public abstract class Registry {
 
         @Override
         public JdbcAdmin getJdbcConnectionAdmin() {
+            return null;
+        }
+
+        @Override
+        public EntityAdmin getEntityAdmin() {
             return null;
         }
 

@@ -1,5 +1,6 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.gateway.common.entity.EntityAdmin;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.io.PortRanges;
 import com.l7tech.console.TrustedCertAdminStub;
@@ -109,6 +110,11 @@ public class RegistryStub extends Registry {
 
     @Override
     public JdbcAdmin getJdbcConnectionAdmin() {
+        return null;
+    }
+
+    @Override
+    public EntityAdmin getEntityAdmin() {
         return null;
     }
 

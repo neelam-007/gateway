@@ -1,10 +1,7 @@
 package com.l7tech.objectmodel;
 
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 
 /**
  * Enum of all entity types known to the RBAC system.
@@ -123,24 +120,6 @@ public enum EntityType implements Comparable<EntityType> {
     }
 
     public static final NameComparator NAME_COMPARATOR = new NameComparator();
-
-    /**
-     * Get all entity type names
-     *
-     * @param sorted: if it is true, then sort the list of returned names.
-     * @return a list of entity types
-     */
-    public static List<String> getAllNames(boolean sorted) {
-        List<String> names = new ArrayList<String>(values().length);
-        for (EntityType type: values()) {
-            names.add(type.getName());
-        }
-
-        if (sorted) {
-            Collections.sort(names);
-        }
-        return names;
-    }
 
     private static class NameComparator implements Comparator<EntityType> {
         @Override

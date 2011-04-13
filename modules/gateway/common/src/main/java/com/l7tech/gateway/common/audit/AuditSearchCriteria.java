@@ -290,7 +290,7 @@ public final class AuditSearchCriteria implements Serializable {
         public Builder() {
         }
 
-        public Builder(LogRequest logRequest){
+        public Builder(LogRequest logRequest) {
             fromTime(logRequest.getStartMsgDate());
             toTime(logRequest.getEndMsgDate());
             fromLevel(logRequest.getLogLevel());
@@ -304,6 +304,7 @@ public final class AuditSearchCriteria implements Serializable {
             userIdOrDn(logRequest.getUserIdOrDn());
             messageId(logRequest.getMessageId());
             paramValue(logRequest.getParamValue());
+            entityClassName(logRequest.getEntityClassName());
             entityId(logRequest.getEntityId());
         }
 
@@ -428,8 +429,8 @@ public final class AuditSearchCriteria implements Serializable {
             return this;
         }
 
-        public Builder entityClass(String value) {
-            entityClassName = value; // Valid Card Not Supported, since the entity class is got from the drop-down list in the audit search pane.
+        public Builder entityClassName(String value) {
+            entityClassName = value; // Valid Card Not Supported, since the entity class name is derived from the drop-down list in the audit search pane.
             return this;
         }
 

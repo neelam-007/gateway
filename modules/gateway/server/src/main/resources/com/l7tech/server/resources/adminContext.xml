@@ -361,6 +361,12 @@
         <constructor-arg ref="serverConfig"/>
     </bean>
 
+    <!-- entity admin servant -->
+    <bean id="entityAdmin" class="com.l7tech.server.entity.EntityAdminImpl">
+        <constructor-arg ref="sessionFactory"/>
+        <constructor-arg ref="persistenceEventInterceptor"/>
+    </bean>
+
     <!-- FTP admin servant -->
     <bean id="ftpAdmin" class="com.l7tech.server.transport.ftp.FtpAdminImpl">
         <constructor-arg ref="routingTrustManager"/>

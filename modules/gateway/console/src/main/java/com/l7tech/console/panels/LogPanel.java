@@ -4,6 +4,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.cluster.*;
+import com.l7tech.gateway.common.entity.EntityAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedOther;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.objectmodel.EntityType;
@@ -35,6 +36,7 @@ import org.w3c.dom.Node;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.Component;
@@ -102,6 +104,7 @@ public class LogPanel extends JPanel {
 
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
     private SsmPreferences preferences = TopComponents.getInstance().getPreferences();
+    private TreeMap<String, String> entitiesMap; // Map an entity type name to an entity class name
 
     private LogPanelControlPanel controlPanel = new LogPanelControlPanel();
     private int[] tableColumnWidths = new int[20];
@@ -208,12 +211,12 @@ public class LogPanel extends JPanel {
     private String message = "";
 
     /**
-     * AuditType
+     * AuditType: Admin Auidt, System Audit, and Message Audit
      */
     private AuditType auditType;
 
     /**
-     * node name
+     * node name (not node id)
      * can contain any number of wildcard '*' characters (although it may not be that useful)
      */
     private String node;
@@ -224,12 +227,23 @@ public class LogPanel extends JPanel {
      */
     private String requestId;
 
+    // User login
     private String userName;
+
+    // User ID or User DN
     private String userIdOrDn;
-    private Integer messageId; // null = any
+
+    // Message ID (same as Audit Code)
+    private Integer messageId;
+
+    // The value of an audit detail parameter
     private String paramValue;
-    private String entityTypeName = EntityType.ANY.getName();
-    private Long entityId; // null = any
+
+    // Entity Type Name (the short name of the entity class)
+    private String entityTypeName;
+
+    // Entity ID
+    private Long entityId;
 
     public enum LogLevelOption {
         ALL("All", Level.ALL), INFO("Info", Level.INFO), WARNING("Warning", Level.WARNING), SEVERE("Severe", Level.SEVERE);
@@ -392,9 +406,34 @@ public class LogPanel extends JPanel {
         controlPanel.levelComboBox.setSelectedItem(LogLevelOption.WARNING.toString());
         controlPanel.auditTypeComboBox.setModel(new DefaultComboBoxModel(AuditType.values()));
         controlPanel.auditTypeComboBox.setSelectedItem(AuditType.ALL.toString());
-        controlPanel.entityTypeComboBox.setModel(new DefaultComboBoxModel(EntityType.getAllNames(true).toArray()));
-        controlPanel.entityTypeComboBox.insertItemAt("<none>", 1);
-        controlPanel.entityTypeComboBox.setSelectedItem(EntityType.ANY.getName());
+
+        controlPanel.entityTypeComboBox.setModel(new DefaultComboBoxModel(getAllEntities().keySet().toArray()));
+        controlPanel.entityTypeComboBox.setRenderer(new BasicComboBoxRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                if (isSelected) {
+                    setBackground(list.getSelectionBackground());
+                    setForeground(list.getSelectionForeground());
+
+                    if (index >= 0) {
+                        String tooltips;
+                        if (index <=1) {
+                            tooltips = index == 0? "Any entity types" : "Entity type is not specified.";
+                        } else {
+                            String entityType = (String) getAllEntities().keySet().toArray()[index];
+                            tooltips = getAllEntities().get(entityType); // tooltips will be set to the corresponding entity class name.
+                        }
+                        list.setToolTipText(tooltips);
+                    }
+                } else {
+                    setBackground(list.getBackground());
+                    setForeground(list.getForeground());
+                }
+                setFont(list.getFont());
+                setText(value.toString());
+                return this;
+            }
+        });
 
         controlPanel.auditTypeComboBox.addItemListener(new RunOnChangeListener(new Runnable() {
             @Override
@@ -496,6 +535,48 @@ public class LogPanel extends JPanel {
         });
 
         applyPreferences();
+    }
+
+    /**
+     * Get all entities with the following information, entity type names and corresponding entity class names.
+     * @return a sorted map containing the information of all entities.
+     */
+    private TreeMap<String, String> getAllEntities() {
+        if (entitiesMap == null) {
+            entitiesMap = new TreeMap<String, String>();
+
+            EntityAdmin entityAdmin = Registry.getDefault().getEntityAdmin();
+            if (entityAdmin != null) {
+                String lastWord;
+                for (String entityClassName: entityAdmin.getAllEntityClassNames(false)) {
+                    lastWord = getShortName(entityClassName);
+                    if (lastWord != null && !lastWord.trim().isEmpty()) {
+                        entitiesMap.put(lastWord, entityClassName);
+                    }
+                }
+            }
+
+            // Add two special cases
+            entitiesMap.put("<any>", null);      // For searching any entity types
+            entitiesMap.put("<none>", "<none>"); // For searching entity types specified as "<none>"
+        }
+        return entitiesMap;
+    }
+
+    /**
+     * Get the short name in the long entity class name.
+     * For example, "PublishedService" is the one returned by this method from the class name, "com.l7tech.gateway.common.service.PublishedService".
+     * 
+     * @param entityClassName: the name of the entity class
+     * @return: the short name of the entity class name.
+     */
+    private String getShortName(String entityClassName) {
+        if (entityClassName == null) return null;
+
+        final int dotIdx = entityClassName.lastIndexOf('.');
+        if (dotIdx < 0) return entityClassName;
+
+        return entityClassName.substring(dotIdx + 1);
     }
 
     private void enableOrDisableComponents() {
@@ -730,7 +811,7 @@ public class LogPanel extends JPanel {
             if (entityTypeProperty != null) {
                 entityTypeName = entityTypeProperty;
             } else {
-                entityTypeName = EntityType.ANY.getName();
+                entityTypeName = getAllEntities().keySet().toArray(new String[]{})[0];  // get the first item from the entity type list
             }
 
             final String entityIdProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_ID);
@@ -1990,7 +2071,7 @@ public class LogPanel extends JPanel {
                 userIdOrDn(userIdOrDn).
                 messageId(messageId).
                 paramValue(paramValue).
-                entityTypeName(entityTypeName).
+                entityClassName(getAllEntities().get(entityTypeName)).
                 entityId(entityId).
                 build();
 
@@ -2027,7 +2108,7 @@ public class LogPanel extends JPanel {
                 userIdOrDn(userIdOrDn).
                 messageId(messageId).
                 paramValue(paramValue).
-                entityTypeName(entityTypeName).
+                entityClassName(getAllEntities().get(entityTypeName)).
                 entityId(entityId).
                 build();
 

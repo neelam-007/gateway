@@ -21,6 +21,7 @@
                 <ref bean="resourceAdmin"/>
                 <ref bean="jmsAdmin"/>
                 <ref bean="jdbcAdmin"/>
+                <ref bean="entityAdmin"/>
                 <ref bean="ftpAdmin"/>
                 <ref bean="trustedCertAdmin"/>
                 <ref bean="customAssertionsRegistrar"/>
@@ -71,6 +72,11 @@
     <bean id="jdbcAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/JdbcAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.jdbc.JdbcAdmin"/>
+    </bean>
+
+    <bean id="entityAdmin" parent="invokerCommon">
+        <property name="serviceUrl" value="https://securespangateway/ssg/manager/EntityAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.entity.EntityAdmin"/>
     </bean>
 
     <bean id="ftpAdmin" parent="invokerCommon">

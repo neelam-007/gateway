@@ -95,6 +95,14 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         return !(entity instanceof PersistentEntity) || ignoredClassNames.contains(entity.getClass().getName());
     }
 
+    public Set<String> getIgnoredClassNames() {
+        return ignoredClassNames;
+    }
+
+    public Set<String> getNoAuditClassNames() {
+        return noAuditClassNames;
+    }
+
     private AdminEvent setsys(Object entity, AdminEvent event) {
         if (AuditContextUtils.isSystem() || noAuditClassNames.contains(entity.getClass().getName())) {
             event.setAuditIgnore(true);
@@ -291,5 +299,4 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     public String onPrepareStatement(String sql) {
         return sql;
     }
-
 }

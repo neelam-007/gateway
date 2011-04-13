@@ -1,7 +1,6 @@
 package com.l7tech.gateway.common.cluster;
 
 import com.l7tech.gateway.common.audit.AuditType;
-import com.l7tech.objectmodel.EntityType;
 
 import java.util.Date;
 import java.util.logging.Level;
@@ -30,7 +29,7 @@ public final class LogRequest {
     private final String userIdOrDn;
     private final Integer messageId; // null = any
     private final String paramValue;
-    private final String entityTypeName;
+    private final String entityClassName; // null = any
     private final Long entityId; // null = any
 
     private int retrievedLogCount;
@@ -50,7 +49,7 @@ public final class LogRequest {
         this.userIdOrDn = lr.getUserIdOrDn();
         this.messageId = lr.getMessageId();
         this.paramValue = lr.getParamValue();
-        this.entityTypeName = lr.getEntityTypeName();
+        this.entityClassName = lr.getEntityClassName();
         this.entityId = lr.getEntityId();
     }
 
@@ -69,7 +68,7 @@ public final class LogRequest {
         userIdOrDn = builder.userIdOrDn;
         messageId = builder.messageId;
         paramValue = builder.paramValue;
-        entityTypeName = builder.entityTypeName;
+        entityClassName = builder.entityClassName;
         entityId = builder.entityId;
         retrievedLogCount = 0;
     }
@@ -89,7 +88,7 @@ public final class LogRequest {
         private String userIdOrDn;
         private Integer messageId; // null = any
         private String paramValue;
-        private String entityTypeName = EntityType.ANY.getName();
+        private String entityClassName; // null = any
         private Long entityId; // null = any
 
         public Builder(){
@@ -164,8 +163,8 @@ public final class LogRequest {
             return this;
         }
 
-        public Builder entityTypeName(String value) {
-            entityTypeName = value;
+        public Builder entityClassName(String value) {
+            entityClassName = value;
             return this;
         }
 
@@ -297,8 +296,8 @@ public final class LogRequest {
         return entityId;
     }
 
-    public String getEntityTypeName() {
-        return entityTypeName;
+    public String getEntityClassName() {
+        return entityClassName;
     }
 
     public Integer getMessageId() {

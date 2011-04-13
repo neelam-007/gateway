@@ -68,6 +68,11 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.jdbc.JdbcAdmin"/>
     </bean>
 
+    <bean name="/EntityAdmin" parent="httpInvokerParent">
+        <property name="service" ref="entityAdmin"/>
+        <property name="serviceInterface" value="com.l7tech.gateway.common.entity.EntityAdmin"/>
+    </bean>
+
     <bean name="/TrustedCertAdmin" parent="httpInvokerParent">
         <property name="service" ref="trustedCertAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.security.TrustedCertAdmin"/>

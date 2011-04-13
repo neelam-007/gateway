@@ -2,6 +2,7 @@ package com.l7tech.gateway.common.admin;
 
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.entity.EntityAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -51,6 +52,12 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     JdbcAdmin getJdbcConnectionAdmin() throws SecurityException;
+
+    /**
+     * @return the session factory and the persistence event interceptor
+     * @throws SecurityException on security error accessing the interface
+     */
+    EntityAdmin getEntityAdmin() throws SecurityException;
 
     /**
      * @return the FTP manager
