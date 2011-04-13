@@ -202,6 +202,76 @@ LDAP only testing:
 
 
 
+========================================================================================
+Server side configurations:
+
+=======================
+Configure ldap server
+-----------------------
+
+mkdir /var/lib/ldap/example.com
+chown ldap:ldap /var/lib/ldap/example.com
+slappasswd
+ - will result in: {SSHA}s/f0298UKdHxuuofGqjDCDLAm9nq7fhB
+
+ useradd -g users ldapuser
+passwd ldapuser
+
+vim /etc/openldap/slapd.conf
+The below lines should exist:
+
+database        bdb
+suffix          "dc=example,dc=com"
+rootdn          "cn=Manager,dc=example,dc=com"
+rootpw          {SSHA}v4qLq/qy01w9my60LLX9BvfNUrRhOjQZ
+directory       /var/lib/ldap/example.com
+
+
+wget http://www.padl.com/download/MigrationTools.tgz
+tar -xvzf MigrationTools.tgz 
+mkdir -p /usr/share/openldap/migration/ 
+cd MigrationTools*
+cp -rv * /usr/share/openldap/migration/
+
+sed -i 's/padl/example/' /usr/share/openldap/migration/migrate_common.ph
+
+cp /etc/openldap/DB_CONFIG.example /var/lib/ldap/example.com/DB_CONFIG
+
+/etc/init.d/ldap stop
+/usr/share/openldap/migration/migrate_all_offline.sh
+An error like "Key/data pair already exists" can be ignored...
+
+chown -R ldap:ldap /var/lib/ldap/example.com
+/etc/init.d/ldap start
+
+ldapsearch -x -h localhost -b 'uid=ldapuser,ou=People,dc=example,dc=com'
+
+Should give something like this:
+
+# ldapuser, People, example.com
+dn: uid=ldapuser,ou=People,dc=example,dc=com
+uid: ldapuser
+cn: ldapuser
+objectClass: account
+objectClass: posixAccount
+objectClass: top
+objectClass: shadowAccount
+shadowLastChange: 15055
+shadowMin: 0
+shadowMax: 99999
+shadowWarning: 7
+loginShell: /bin/bash
+gidNumber: 100
+homeDirectory: /home/ldapuser
+uidNumber: 1001
+userPassword:: e0NSWVBUfWYvVjJ0RmdqM2ZNcC4=
+
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 2
+# numEntries: 1
 
 
 
@@ -209,8 +279,7 @@ LDAP only testing:
 
 
 
-Server side info:
-
+Some details of Radius <-> LDAP communication:
 
 PAP:
 - client authenticates itself by sending a user name and an (optionally encrypted) password
