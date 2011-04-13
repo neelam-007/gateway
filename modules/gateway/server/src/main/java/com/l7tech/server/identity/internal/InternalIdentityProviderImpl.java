@@ -7,7 +7,6 @@ import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.common.password.PasswordHashingException;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalGroup;
@@ -159,12 +158,8 @@ public class InternalIdentityProviderImpl
                     }
                 } catch (IncorrectPasswordException e) {
                     //fall through ok - expected when password is incorrect
-                } catch (PasswordHashingException e) {
-                    if(logger.isLoggable(Level.FINE)){
-                        logger.log(Level.FINE, "Password hashing exception for user login '" + login+"'. Details: " + ExceptionUtils.getMessage(e));
-                    }
-                    //fall through ok
                 }
+                
                 if(!userAuthenticated){
                     if(logger.isLoggable(Level.INFO)){
                         logger.info("Incorrect password for login " + login);

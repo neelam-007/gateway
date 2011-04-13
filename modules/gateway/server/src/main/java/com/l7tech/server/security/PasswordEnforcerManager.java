@@ -282,10 +282,8 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
                     }
 
                 } catch (IncorrectPasswordException e) {
-                    //good expected
-                } catch (PasswordHashingException e) {
-                    //good expected
-                }
+                    //good expected, fall through
+                } 
 
                 if (!isReusedTooSoon) {
                     //for backwards compatibility, check against old hashing scheme
