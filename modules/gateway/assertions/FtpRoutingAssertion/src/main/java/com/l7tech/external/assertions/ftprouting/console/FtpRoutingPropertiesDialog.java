@@ -4,8 +4,10 @@
 
 package com.l7tech.external.assertions.ftprouting.console;
 
-import com.l7tech.console.panels.*;
-import com.l7tech.console.policy.SsmPolicyVariableUtils;
+import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.panels.CancelableOperationDialog;
+import com.l7tech.console.panels.PrivateKeysComboBox;
+import com.l7tech.console.panels.RoutingDialogUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
@@ -20,20 +22,20 @@ import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.EventListenerList;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 
 /**
@@ -248,40 +250,32 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     }
 
     private void populateReqMsgSrcComboBox(FtpRoutingAssertion assertion) {
-        MessageTargetableSupport currentMessageSource = assertion.getRequestTarget();
-        TargetMessageType sourceTarget = currentMessageSource != null ? currentMessageSource.getTarget() : null;
-        String contextVariableSourceTarget = sourceTarget == TargetMessageType.OTHER ? currentMessageSource.getOtherTargetMessageVariable() : null;
+        MessageTargetableSupport msgSource = assertion.getRequestTarget();
+        TargetMessageType msgSourceType = msgSource != null ? msgSource.getTarget() : null;
 
-
-        if (sourceTarget == TargetMessageType.REQUEST)
+        if (msgSourceType == TargetMessageType.REQUEST)
             messageSource.setSelectedIndex(0);
-        else if (sourceTarget == TargetMessageType.RESPONSE)
+        else if (msgSourceType == TargetMessageType.RESPONSE)
             messageSource.setSelectedIndex(1);
-
-        final Map<String, VariableMetadata> predecessorVariables = getPredecessorVariables(assertion);
-
-        final SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
-        for (String variableName : predecessorVariableNames) {
-            if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
-                MessageTargetableSupport item = new MessageTargetableSupport(variableName);
-                messageSource.addItem(item);
-                if ( variableName.equals(contextVariableSourceTarget) ) {
-                    messageSource.setSelectedItem(item);
+        else {
+            String msgSourceVariable = msgSourceType == TargetMessageType.OTHER ? msgSource.getOtherTargetMessageVariable() : null;
+            if (msgSourceVariable != null) {
+                boolean msgSourceFound = false;
+                for (int i=2; i < messageSource.getItemCount(); i++) {
+                    MessageTargetableSupport messageSourceItem = (MessageTargetableSupport) messageSource.getItemAt(i);
+                    if (msgSourceVariable.equals(messageSourceItem.getOtherTargetMessageVariable())) {
+                        msgSourceFound = true;
+                        messageSource.setSelectedIndex(i);
+                        break;
+                    }
+                }
+                if (!msgSourceFound) {
+                    MessageTargetableSupport notFoundMsgSource = new MessageTargetableSupport(msgSourceVariable);
+                    messageSource.addItem(notFoundMsgSource);
+                    messageSource.setSelectedItem(notFoundMsgSource);
                 }
             }
         }
-
-        if (contextVariableSourceTarget != null && ! predecessorVariableNames.contains(contextVariableSourceTarget)) {
-            MessageTargetableSupport current = new MessageTargetableSupport(contextVariableSourceTarget);
-            messageSource.addItem(current);
-            messageSource.setSelectedItem(current);
-        }
-    }
-
-    private Map<String, VariableMetadata> getPredecessorVariables(FtpRoutingAssertion assertion) {
-        return  (assertion.getParent() != null) ? SsmPolicyVariableUtils.getVariablesSetByPredecessors( assertion ) :
-                (getPreviousAssertion() != null)? SsmPolicyVariableUtils.getVariablesSetByPredecessorsAndSelf( getPreviousAssertion() ) :
-                Collections.<String, VariableMetadata>emptyMap();
     }
 
     private void modelToView(FtpRoutingAssertion assertion) {
