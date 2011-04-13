@@ -942,6 +942,12 @@ public class ServerVariables {
      * <p/>
      * If a VariableNameSyntaxtException occurs, or if a variable reference other than a secure password reference
      * is detected, this method will audit a warning and return the original string unchanged.
+     * <p/>
+     * This method will only expand secure password references that are enabled for use via context variables.
+     * <p/>
+     * This method may be used from server policy assertions that need to prepare a password at assertion compile time
+     * (before the first PolicyEnforcementContext is available), but only as a last resort if there is no reasonable
+     * alternative.
      *
      * @param audit auditor to use for logging.  Required.
      * @param template the template to examine.  If null, this method will always return null.  May contain variable
@@ -982,6 +988,11 @@ public class ServerVariables {
                     audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Password-only context variable expression referred to a nonexistent secure password alias; assuming literal password"); // avoid logging possible password material
                     return template;
                 }
+                if (!secpass.isUsageFromVariable()) {
+                    audit.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Password-only context variable expression referred to a secure password alias that does not enable use via context variable; assuming literal password"); // avoid logging possible password material
+                    return template;
+                }
+
                 char[] plaintext = getPlaintextPassword(secpass);
                 String plain;
                 if (plaintext == null) {
@@ -1013,6 +1024,10 @@ public class ServerVariables {
 
     /**
      * Utility method to recognize a password that is actually a single ${secpass.*.plaintext} reference.
+     * <p/>
+     * Note: This method works <b>even if</b> the referenced secure password is not enabled for use via context variable references.
+     * <p/>
+     * This method should never be used from a server policy assertion.
      *
      * @param audit auditor to use for logging.  Required.
      * @param passwordOrSecPass a string to examine.  If null or empty or does not strictly match the format of a single ${secpass.*.plaintext} reference then this method will return the original argument unchanged.

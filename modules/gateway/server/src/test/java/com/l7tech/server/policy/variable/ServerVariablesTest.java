@@ -790,10 +790,11 @@ public class ServerVariablesTest {
 
 
         SecurePasswordManager spm = new SecurePasswordManagerStub(
-                new SecurePassword("test1"){{ setOid(1); setEncodedPassword("TEST-PASSWORD1"); } },
-                new SecurePassword("test2"){{ setOid(2); setEncodedPassword("TEST-PASSWORD2"); } },
-                new SecurePassword("emptypass"){{ setOid(3); setEncodedPassword(""); } },
-                new SecurePassword("nullpass"){{ setOid(4); setEncodedPassword(null); } }
+                new SecurePassword("test1"){{ setOid(1); setEncodedPassword("TEST-PASSWORD1"); setUsageFromVariable(true);} },
+                new SecurePassword("test2"){{ setOid(2); setEncodedPassword("TEST-PASSWORD2"); setUsageFromVariable(true);} },
+                new SecurePassword("emptypass"){{ setOid(3); setEncodedPassword(""); setUsageFromVariable(true);} },
+                new SecurePassword("nullpass"){{ setOid(4); setEncodedPassword(null); setUsageFromVariable(true);} },
+                new SecurePassword("nocontext"){{ setOid(5); setEncodedPassword("TEST-PASSWORD3"); setUsageFromVariable(false); } }
         );
         ServerVariables.setSecurePasswordManager(spm);
 
@@ -805,6 +806,7 @@ public class ServerVariablesTest {
         assertEquals("template referencing things other than secure password plaintext shall expand to itself", "${secpass.test1.alias}", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.test1.alias}"));
         assertEquals("template referencing nonexistent secure password plaintext shall expand to itself", "${secpass.qwerasdf.plaintext}", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.qwerasdf.plaintext}"));
         assertEquals("template references valid secure pass plaintext shall expand to the plaintext", "test-password1", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.test1.plaintext}"));
+        assertEquals("template referencing secure password that disallows use via context variable shall expand to itself", "${secpass.nocontext.plaintext}", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.nocontext.plaintext}"));
         assertEquals("template using an array deref 0 shall work normally", "test-password1", ServerVariables.expandPasswordOnlyVariable(audit, "${secpass.test1.plaintext[0]}"));
         assertEquals("template references to empty password expands to empty", "BEFOREAFTER", ServerVariables.expandPasswordOnlyVariable(audit, "BEFORE${secpass.emptypass.plaintext}AFTER"));
         assertEquals("template references to null password expands to empty", "BEFOREAFTER", ServerVariables.expandPasswordOnlyVariable(audit, "BEFORE${secpass.nullpass.plaintext}AFTER"));
@@ -820,10 +822,11 @@ public class ServerVariablesTest {
 
 
         SecurePasswordManager spm = new SecurePasswordManagerStub(
-                new SecurePassword("test1"){{ setOid(1); setEncodedPassword("TEST-PASSWORD1"); } },
-                new SecurePassword("test2"){{ setOid(2); setEncodedPassword("TEST-PASSWORD2"); } },
-                new SecurePassword("emptypass"){{ setOid(3); setEncodedPassword(""); } },
-                new SecurePassword("nullpass"){{ setOid(4); setEncodedPassword(null); } }
+                new SecurePassword("test1"){{ setOid(1); setEncodedPassword("TEST-PASSWORD1"); setUsageFromVariable(true);} },
+                new SecurePassword("test2"){{ setOid(2); setEncodedPassword("TEST-PASSWORD2"); setUsageFromVariable(true);} },
+                new SecurePassword("emptypass"){{ setOid(3); setEncodedPassword(""); setUsageFromVariable(true);} },
+                new SecurePassword("nullpass"){{ setOid(4); setEncodedPassword(null); setUsageFromVariable(true);} },
+                new SecurePassword("nocontext"){{ setOid(5); setEncodedPassword("TEST-PASSWORD3"); setUsageFromVariable(false); } }
         );
         ServerVariables.setSecurePasswordManager(spm);
 
@@ -835,6 +838,7 @@ public class ServerVariablesTest {
         assertEquals("template referencing things other than secure password plaintext shall expand to itself", "${secpass.test1.alias}", ServerVariables.expandSinglePasswordOnlyVariable(audit, "${secpass.test1.alias}"));
         assertEquals("template referencing nonexistent secure password plaintext shall expand to itself", "${secpass.qwerasdf.plaintext}", ServerVariables.expandSinglePasswordOnlyVariable(audit, "${secpass.qwerasdf.plaintext}"));
         assertEquals("template references valid secure pass plaintext shall expand to the plaintext", "test-password1", ServerVariables.expandSinglePasswordOnlyVariable(audit, "${secpass.test1.plaintext}"));
+        assertEquals("template referencing secure password that disallows use via context variable shall still be honored", "test-password3", ServerVariables.expandSinglePasswordOnlyVariable(audit, "${secpass.nocontext.plaintext}"));
         assertEquals("template using an array deref is not recognized or supported", "${secpass.test1.plaintext[0]}", ServerVariables.expandSinglePasswordOnlyVariable(audit, "${secpass.test1.plaintext[0]}"));
         assertEquals("template references with any leading text is not recognized", "BEFORE${secpass.emptypass.plaintext}", ServerVariables.expandSinglePasswordOnlyVariable(audit, "BEFORE${secpass.emptypass.plaintext}"));
         assertEquals("template references with any trailing text is not recognized", "${secpass.emptypass.plaintext}AFTER", ServerVariables.expandSinglePasswordOnlyVariable(audit, "${secpass.emptypass.plaintext}AFTER"));
