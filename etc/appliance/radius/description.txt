@@ -216,6 +216,7 @@ slappasswd
 
  useradd -g users ldapuser
 passwd ldapuser
+* this user will be migrated to ldap a few steps later.
 
 vim /etc/openldap/slapd.conf
 The below lines should exist:
@@ -237,12 +238,42 @@ sed -i 's/padl/example/' /usr/share/openldap/migration/migrate_common.ph
 
 cp /etc/openldap/DB_CONFIG.example /var/lib/ldap/example.com/DB_CONFIG
 
+# make sure ldap is stopped
 /etc/init.d/ldap stop
-/usr/share/openldap/migration/migrate_all_offline.sh
-An error like "Key/data pair already exists" can be ignored...
+cd /usr/share/openldap/migration/
+./migrate_all_offline.sh
+
+(An error like "Key/data pair already exists" can be ignored...)
 
 chown -R ldap:ldap /var/lib/ldap/example.com
 /etc/init.d/ldap start
+
+Just a quick test to make sure ldap server is working:
+
+ldapsearch -x -b 'dc=example,dc=com' '(objectclass=*)'
+
+Should output a lot of info about LDAP structure...
+
+
+Now we can add the ldapuser user to ldap:
+
+grep ldapuser /etc/passwd > /tmp/changeldappasswd.tmp
+/usr/share/openldap/migration/migrate_passwd.pl /tmp/changeldappasswd.tmp /tmp/changeldappasswd.ldif.tmp
+cat /tmp/changeldappasswd.ldif.tmp | sed s/padl/example/ /tmp/changeldappasswd.ldif
+ldapadd -x -D "cn=Manager,dc=example,dc=com" -W -f /tmp/changeldappasswd.ldif
+* enter the root ldap password here
+* if successful a message similar to this should be received:
+
+adding new entry "uid=ldapuser,ou=People,dc=example,dc=com"
+
+# we can now remove all temporary files:
+rm -f /tmp/changeldappasswd.*
+
+
+
+
+
+# Now the next command should be able to find the ldapuser in ldap and output some details about it:
 
 ldapsearch -x -h localhost -b 'uid=ldapuser,ou=People,dc=example,dc=com'
 
@@ -273,12 +304,31 @@ result: 0 Success
 # numResponses: 2
 # numEntries: 1
 
+# at this point we can configure the SSG appliance accordint to the ldap server
+# and make the following tests:
+
+ldapsearch -x -h LDAP_SRV_IP -b 'uid=ldapuser,ou=People,dc=example,dc=com'
+* this should output the same information as it did when ran on the LDAP server
+
+# verify that we have no ldapuser on the SSG appliance:
+cat /etc/passwd | grep ldapuser
+
+# we have to create the /home/ldapuser directory as this will be the home dir for the ldapuser
+# (as you can see in the output of the ldap query)
+mkdir /home/ldapuser
+chmod 750 /home/ldapuser
+
+# try to use the ldapuser on the SSG appliance even if there is no such local user:
+chown ldap:ldap /home/ldapuser
+* we should have no error in this case as the system is now capable to interogate ldap
+in order to find the user the above command is trying to use.
 
 
 
 
 
 
+===============================================
 Some details of Radius <-> LDAP communication:
 
 PAP:
