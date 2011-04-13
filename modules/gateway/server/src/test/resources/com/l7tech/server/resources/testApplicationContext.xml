@@ -292,9 +292,6 @@
 
     <bean id="jmsPropertyMapper" class="com.l7tech.server.transport.jms.JmsPropertyMapper">
         <constructor-arg ref="trustedCertManager"/>
-        <constructor-arg>
-            <bean class="com.l7tech.server.security.keystore.SsgKeyStoreManagerStub"/>
-        </constructor-arg>
         <constructor-arg ref="defaultKey"/>
     </bean>
 
