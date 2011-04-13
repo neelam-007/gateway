@@ -133,7 +133,6 @@ public final class Sha512Crypt {
      *                    See {@link #generateSalt(java.security.SecureRandom, int)} for an easy way to generate a correctly-formatted salt string.
      * @return The Sha512 Unix Crypt hash text for the keyStr.  Never null.
      */
-
     public static String crypt(MessageDigest ctx, MessageDigest alt_ctx, byte[] key, String saltStr) {
         if (ctx == null)
             throw new NullPointerException("Two SHA-512 contexts must be provided (missing ctx)");
@@ -145,9 +144,9 @@ public final class Sha512Crypt {
             throw new NullPointerException("A salt string is required.");
         if (ctx == alt_ctx)
             throw new IllegalArgumentException("ctx and alt_ctx must be different SHA-512 contexts.");
-        if (!"SHA-512".equals(ctx.getAlgorithm()))
+        if (!isSha512(ctx))
             throw new IllegalArgumentException("ctx is not MessageDigest.SHA-512");
-        if (!"SHA-512".equals(alt_ctx.getAlgorithm()))
+        if (!isSha512(alt_ctx))
             throw new IllegalArgumentException("alt_ctx is not MessageDigest.SHA-512");
 
         byte[] alt_result;
@@ -428,5 +427,10 @@ public final class Sha512Crypt {
         }
 
         return saltStr;
+    }
+
+    private static boolean isSha512(MessageDigest md) {
+        String alg = md.getAlgorithm();
+        return "SHA-512".equalsIgnoreCase(alg) || "SHA512".equalsIgnoreCase(alg);
     }
 }
