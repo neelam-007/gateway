@@ -34,18 +34,18 @@ public class UserRoleAssignmentsPanel extends JPanel {
     private JLabel statusTextLabel;
     private boolean canUpdate;
     private static final String genericLabel = "{0} is assigned to the following roles:";
-     static Logger log = Logger.getLogger(UserRoleAssignmentsPanel.class.getName());
+    static Logger log = Logger.getLogger(UserRoleAssignmentsPanel.class.getName());
 
     private User user;
 
-    public UserRoleAssignmentsPanel(User whichUser,boolean canUpdate) throws FindException {
+    public UserRoleAssignmentsPanel(User whichUser, boolean canUpdate) throws FindException {
         this.user = whichUser;
         this.canUpdate = canUpdate;
         rolesLabel.setText(MessageFormat.format(genericLabel, user.getName()));
 
         Vector<String> assignmentsModel = new Vector<String>();
         for (Role role : getAssignedRolesForUser()) {
-            assignmentsModel.add(role.getName());    
+            assignmentsModel.add(role.getName());
         }
         rolesList.setListData(assignmentsModel);
         setLayout(new BorderLayout());
@@ -69,32 +69,44 @@ public class UserRoleAssignmentsPanel extends JPanel {
         });
     }
 
+    public void enableDisableState(boolean isUserEnabledAndNotExpired) {
+        if (statusTextLabel.isVisible()) {
+            statusLabel.setEnabled(isUserEnabledAndNotExpired);
+            statusTextLabel.setEnabled(isUserEnabledAndNotExpired);
+            statusButton.setEnabled(isUserEnabledAndNotExpired);
+        }
+    }
+
+
     private void populateStatus() throws FindException {
-        if(user instanceof LdapUser ||
-           user instanceof InternalUser){
+        if (user instanceof LdapUser ||
+                user instanceof InternalUser) {
 
             LogonInfo.State userState = Registry.getDefault().getIdentityAdmin().getLogonState(user);
-            if(userState == null){
-                statusTextLabel.setVisible(false);
-                statusLabel.setVisible(false);
-                statusButton.setVisible(false);
-                return;
+            if (userState == null) {
+                userState = LogonInfo.State.ACTIVE;
             }
 
             statusLabel.setText(getStateString(userState));
 
-            statusButton.setVisible(canUpdate && userState!= LogonInfo.State.ACTIVE);
-            statusLabel.setEnabled(userState!= LogonInfo.State.ACTIVE);
-            statusTextLabel.setEnabled(userState!= LogonInfo.State.ACTIVE);
+            statusButton.setVisible(canUpdate && userState != LogonInfo.State.ACTIVE);
+
+            boolean isUserEnabledAndNotExpired = true;
+            if (user instanceof InternalUser) {
+                isUserEnabledAndNotExpired = ((InternalUser) user).isEnabled();
+                long expiry = ((InternalUser) user).getExpiration();
+
+                isUserEnabledAndNotExpired = isUserEnabledAndNotExpired && (expiry < 0 || expiry > System.currentTimeMillis());
+            }
+            enableDisableState(isUserEnabledAndNotExpired);
 
             String statusButtonText = null;
-            if(userState == LogonInfo.State.INACTIVE)
-                statusButtonText =  "Activate";
-            else if(userState == LogonInfo.State.EXCEED_ATTEMPT)
+            if (userState == LogonInfo.State.INACTIVE)
+                statusButtonText = "Activate";
+            else if (userState == LogonInfo.State.EXCEED_ATTEMPT)
                 statusButtonText = "Unlock";
             statusButton.setText(statusButtonText);
-        }
-        else {
+        } else {
             statusTextLabel.setVisible(false);
             statusLabel.setVisible(false);
             statusButton.setVisible(false);
@@ -102,8 +114,8 @@ public class UserRoleAssignmentsPanel extends JPanel {
 
     }
 
-    public String getStateString(LogonInfo.State state){
-        switch(state){
+    public String getStateString(LogonInfo.State state) {
+        switch (state) {
             case ACTIVE:
                 return "Active";
             case INACTIVE:
@@ -114,6 +126,7 @@ public class UserRoleAssignmentsPanel extends JPanel {
                 return null;
         }
     }
+
     private Collection<Role> getAssignedRolesForUser() throws FindException {
         RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
         return rbacAdmin.findRolesForUser(user);
