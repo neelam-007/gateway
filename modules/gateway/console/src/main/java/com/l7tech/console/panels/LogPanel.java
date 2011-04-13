@@ -1429,10 +1429,11 @@ public class LogPanel extends JPanel {
     /**
      * Return MsgTable property value
      *
-     * @return JTable
+     * @return JTable. The model used is guaranteed to be an instance of AuditLogTableSorterModel
      */
     public JTable getMsgTable() {
         if (msgTable == null) {
+            //create the table with an AuditLogTableSorterModel model
             msgTable = new JTable(getFilteredLogTableSorter(), getLogColumnModel());
             msgTable.setShowHorizontalLines(false);
             msgTable.setShowVerticalLines(false);
@@ -1668,27 +1669,25 @@ public class LogPanel extends JPanel {
 
         if (row == -1) return null;
 
-        final TableModel model = getMsgTable().getModel();
-        if (model instanceof AuditLogTableSorterModel) {
-            final LogMessage logHeader = ((AuditLogTableSorterModel) model).getLogMessageAtRow(row);
+        final AuditLogTableSorterModel model = (AuditLogTableSorterModel) getMsgTable().getModel();
+        final LogMessage logHeader = model.getLogMessageAtRow(row);
 
-            final boolean isRequest = getRequestXmlPanel() == getMsgDetailsPane().getSelectedComponent();
-            final boolean isResponse = getResponseXmlPanel() == getMsgDetailsPane().getSelectedComponent();
+        final boolean isRequest = getRequestXmlPanel() == getMsgDetailsPane().getSelectedComponent();
+        final boolean isResponse = getResponseXmlPanel() == getMsgDetailsPane().getSelectedComponent();
 
-            //either the request or response tab is active when button is pressed.
-            if(!isRequest && !isResponse) return null;
+        //either the request or response tab is active when button is pressed.
+        if(!isRequest && !isResponse) return null;
 
-            final AuditAdmin auditAdmin = Registry.getDefault().getAuditAdmin();
-            final String output;
-            try {
-                output = auditAdmin.invokeAuditViewerPolicyForMessage(logHeader.getMsgNumber(), isRequest);
-            } catch (FindException e) {
-                return ExceptionUtils.getMessage(e);
-            }
-            return output;
+        final AuditAdmin auditAdmin = Registry.getDefault().getAuditAdmin();
+        try {
+            return auditAdmin.invokeAuditViewerPolicyForMessage(logHeader.getMsgNumber(), isRequest);
+        } catch (FindException e) {
+            return ExceptionUtils.getMessage(e);
+        } catch (AuditViewerPolicyNotAvailableException e) {
+            invokeRequestAVPolicyButton.setEnabled(enableInvokeButton());
+            invokeResponseAVPolicyButton.setEnabled(enableInvokeButton());
+            return ExceptionUtils.getMessage(e) + ". Reopen the audit viewer if the policy is recreated or enabled.";
         }
-
-        return null;
     }
 
     private JCheckBox getResponseReformatCheckbox() {

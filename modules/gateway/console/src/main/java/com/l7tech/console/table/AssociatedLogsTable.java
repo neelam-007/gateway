@@ -4,6 +4,7 @@ import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.audit.AssociatedLog;
 import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.audit.AuditViewerPolicyNotAvailableException;
 import com.l7tech.gateway.common.security.rbac.AttemptedOther;
 import com.l7tech.gateway.common.security.rbac.OtherOperationName;
 import com.l7tech.gui.util.JTableColumnResizeMouseListener;
@@ -44,7 +45,7 @@ public class AssociatedLogsTable extends JTable {
     private Icon downArrowIcon = new ArrowIcon(1);
 
     private DefaultTableColumnModel columnModel;
-    private final boolean enableAuditViewerButton;
+    private boolean enableAuditViewerButton;
 
 //    int width = DEFAULT_COLUMN_WIDTHS[4] - 45;//45 ~ approx size of button
 
@@ -190,7 +191,7 @@ public class AssociatedLogsTable extends JTable {
     /**
      * create the table model with log fields
      *
-     * @return DefaultTableModel
+     * @return AssociatedLogsTableSorter model
      */
     private AssociatedLogsTableSorter getAssociatedLogsTableModel() {
         if (associatedLogsTableModel != null) {
@@ -284,11 +285,11 @@ public class AssociatedLogsTable extends JTable {
         JScrollPane sp = new JScrollPane(textArea);
         panel.add(sp, BorderLayout.CENTER);
 
-        JButton requestAVPolicyButton = getInvokeRequestAVPolicyButton(textArea);
-        if(requestAVPolicyButton != null){
+        JButton aVPolicyButton = getInvokeAVPolicyButton(textArea);
+        if(aVPolicyButton != null){
             final JPanel holderSouthPanel = new JPanel();
             holderSouthPanel.setLayout(new BoxLayout(holderSouthPanel, BoxLayout.X_AXIS));
-            holderSouthPanel.add(requestAVPolicyButton);
+            holderSouthPanel.add(aVPolicyButton);
             panel.add(holderSouthPanel, BorderLayout.SOUTH);
         }
 
@@ -301,7 +302,7 @@ public class AssociatedLogsTable extends JTable {
         return dialog;
     }
 
-    private JButton getInvokeRequestAVPolicyButton(final JTextArea detailTextArea){
+    private JButton getInvokeAVPolicyButton(final JTextArea detailTextArea){
         if(Registry.getDefault().isAdminContextPresent()){
             final JButton invokeAVButton = new JButton("Invoke Audit Viewer Policy");
 
@@ -309,15 +310,13 @@ public class AssociatedLogsTable extends JTable {
             //only create an enabled button for supported audit detail message ids.
             final int row = getSelectedRow();
             if(row != -1){
-                final TableModel model = getModel();
-                if(model instanceof AssociatedLogsTableSorter) {
-                    final Object value = ((AssociatedLogsTableSorter) model).getData(row);
-                    if(value instanceof AssociatedLog){
-                        AssociatedLog associatedLog = (AssociatedLog) value;
-                        final int auditDetailId = associatedLog.getMessageId();
-                        if(AuditAdmin.USER_DETAIL_MESSAGES.contains(auditDetailId)){
-                            canEnable = enableAuditViewerButton;
-                        }
+                final AssociatedLogsTableSorter model = (AssociatedLogsTableSorter) getModel();
+                final Object value = model.getData(row);
+                if(value instanceof AssociatedLog){
+                    AssociatedLog associatedLog = (AssociatedLog) value;
+                    final int auditDetailId = associatedLog.getMessageId();
+                    if(AuditAdmin.USER_DETAIL_MESSAGES.contains(auditDetailId)){
+                        canEnable = enableAuditViewerButton;
                     }
                 }
             }
@@ -329,19 +328,17 @@ public class AssociatedLogsTable extends JTable {
                     final int row = getSelectedRow();
                     if(row == -1) return;
 
-                    final TableModel model = getModel();
-                    if(model instanceof AssociatedLogsTableSorter) {
-                        final Object value = ((AssociatedLogsTableSorter) model).getData(row);
-                        if(value instanceof AssociatedLog){
-                            AssociatedLog associatedLog = (AssociatedLog) value;
-                            String output = getAVPolicyOutput(associatedLog.getAuditRecordId(), associatedLog.getOrdinal());
-                            if (output != null) {
-                                detailTextArea.setText(output);
-                            } else {
-                                detailTextArea.setText("Error processing " + PolicyType.TAG_AUDIT_VIEWER+" policy.");
-                            }
-                            detailTextArea.setCaretPosition(0);
+                    final AssociatedLogsTableSorter model = (AssociatedLogsTableSorter) getModel();
+                    final Object value = model.getData(row);
+                    if(value instanceof AssociatedLog){
+                        AssociatedLog associatedLog = (AssociatedLog) value;
+                        String output = getAVPolicyOutput(associatedLog.getAuditRecordId(), associatedLog.getOrdinal());
+                        if (output != null) {
+                            detailTextArea.setText(output);
+                        } else {
+                            detailTextArea.setText("Error processing " + PolicyType.TAG_AUDIT_VIEWER+" policy.");
                         }
+                        detailTextArea.setCaretPosition(0);
                     }
                 }
             });
@@ -353,13 +350,14 @@ public class AssociatedLogsTable extends JTable {
 
     private String getAVPolicyOutput(final long auditRecordId, long ordinal){
         final AuditAdmin auditAdmin = Registry.getDefault().getAuditAdmin();
-        final String output;
         try {
-            output = auditAdmin.invokeAuditViewerPolicyForDetail(auditRecordId, ordinal);
+            return auditAdmin.invokeAuditViewerPolicyForDetail(auditRecordId, ordinal);
         } catch (FindException e) {
             return ExceptionUtils.getMessage(e);
+        } catch (AuditViewerPolicyNotAvailableException e) {
+            enableAuditViewerButton = false;
+            return ExceptionUtils.getMessage(e) + ". Reopen the audit viewer if the policy is recreated or enabled.";
         }
-        return output;
     }
     
     private boolean enableInvokeButton(){

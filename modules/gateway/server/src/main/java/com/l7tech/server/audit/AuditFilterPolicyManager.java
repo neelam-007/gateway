@@ -117,13 +117,15 @@ public class AuditFilterPolicyManager {
      * @return String output from the audit viewer policy. Null if the audit viewer policy did not return
      *         {@link com.l7tech.policy.assertion.AssertionStatus#NONE}.
      * @throws AuditViewerPolicyException any problem parsing the messageXml or executing the audit viewer policy.
+     * @throws AuditViewerPolicyNotAvailableException if the audit viewer policy is not available.
      */
     public String evaluateAuditViewerPolicy(final String messageXml,
-                                            final Boolean isRequest) throws AuditViewerPolicyException {
+                                            final Boolean isRequest)
+            throws AuditViewerPolicyException, AuditViewerPolicyNotAvailableException {
         final Set<String> guids = policyCache.getPoliciesByTypeAndTag(PolicyType.INTERNAL, PolicyType.TAG_AUDIT_VIEWER);
 
         if (guids.isEmpty() || guids.iterator().next() == null) {
-            return null;
+            throw new AuditViewerPolicyNotAvailableException("Audit viewer policy is not available");
         }
 
         final Message message;

@@ -451,7 +451,8 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     }
 
     @Override
-    public String invokeAuditViewerPolicyForMessage(long auditRecordId, final boolean isRequest) throws FindException {
+    public String invokeAuditViewerPolicyForMessage(long auditRecordId, final boolean isRequest)
+            throws FindException, AuditViewerPolicyNotAvailableException {
 
         final List<Pair<Level, String>> auditMessages = new ArrayList<Pair<Level, String>>();
         try {
@@ -491,12 +492,18 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
             } catch (AuditFilterPolicyManager.AuditViewerPolicyException e) {
                 final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
                 //noinspection ThrowableResultOfMethodCallIgnored
-                logger.log(Level.WARNING, params, ExceptionUtils.getDebugException(e));
+                logger.log(Level.FINE, params, ExceptionUtils.getDebugException(e));
                 addInvokeAuditViewerAuditMsg(auditMessages, params);
+            } catch (AuditViewerPolicyNotAvailableException e) {
+                final String params = ExceptionUtils.getMessage(e);
+                //noinspection ThrowableResultOfMethodCallIgnored
+                logger.log(Level.FINE, params, ExceptionUtils.getDebugException(e));
+                addInvokeAuditViewerAuditMsg(auditMessages, params);
+                throw e;
             } catch (Exception e) {
                 final String params = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
                 //noinspection ThrowableResultOfMethodCallIgnored
-                logger.log(Level.WARNING, params, ExceptionUtils.getDebugException(e));
+                logger.log(Level.FINE, params, ExceptionUtils.getDebugException(e));
                 addInvokeAuditViewerAuditMsg(auditMessages, params);
             }
 
@@ -507,7 +514,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     }
 
     @Override
-    public String invokeAuditViewerPolicyForDetail(long auditRecordId, long ordinal) throws FindException {
+    public String invokeAuditViewerPolicyForDetail(long auditRecordId, long ordinal) throws FindException, AuditViewerPolicyNotAvailableException {
 
         if(ordinal < 0) throw new IllegalArgumentException("ordinal must be >= 0");
 
@@ -551,10 +558,16 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
                                 return auditFilterPolicyManager.evaluateAuditViewerPolicy(detailParams[0], null);
                             }
                         });
+                    } catch (AuditViewerPolicyNotAvailableException e){
+                        final String params = ExceptionUtils.getMessage(e);
+                        //noinspection ThrowableResultOfMethodCallIgnored
+                        logger.log(Level.FINE, params, ExceptionUtils.getDebugException(e));
+                        addInvokeAuditViewerAuditMsg(auditMessages, params);
+                        throw e;
                     } catch (Exception e) {
                         final String msg = "Exception processing audit viewer policy: " + ExceptionUtils.getMessage(e);
                         //noinspection ThrowableResultOfMethodCallIgnored
-                        logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                        logger.log(Level.FINE, msg, ExceptionUtils.getDebugException(e));
                         addInvokeAuditViewerAuditMsg(auditMessages, msg, Level.WARNING);
                     }
                 }
