@@ -217,8 +217,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                         checkPerms(authdUser);
                         logger.info("Authenticated on " + provider.getConfig().getName());
 
-                        //Ensure password not expired, ignore password expire checking if have certificate
-                        if (passwordEnforcerManager.isPasswordExpired(authdUser) && !provider.hasClientCert(creds.getLogin())) {
+                        //Ensure password not expired, ignore password expire if using cert to login
+                        if (passwordEnforcerManager.isPasswordExpired(authdUser) && (creds.getClientCert() == null)) {
                             IdentityProviderPasswordPolicy policy = passwordPolicyManager.findByInternalIdentityProviderOid(provider.getConfig().getOid());
 
                             throw new CredentialExpiredException("Password expired." + policy.getDescription());
