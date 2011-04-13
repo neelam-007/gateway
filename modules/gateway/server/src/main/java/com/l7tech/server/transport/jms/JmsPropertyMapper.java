@@ -1,15 +1,13 @@
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
-import com.l7tech.util.HexUtils;
-import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.security.keystore.SsgKeyFinder;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,14 +37,11 @@ public class JmsPropertyMapper {
      * Create a new JmsPropertyMapper.
      *
      * @param trustedCertManager    the source for trusted certificates
-     * @param ssgKeyStoreManager    the source for client certificates
      * @param defaultKey         the source for SSG SSL certificate
      */
     public JmsPropertyMapper(TrustedCertManager trustedCertManager,
-                             SsgKeyStoreManager ssgKeyStoreManager,
                              DefaultKey defaultKey) {
         this.trustedCertManager = trustedCertManager;
-        this.ssgKeyStoreManager = ssgKeyStoreManager;
         this.defaultKey = defaultKey;
         this.random = new Random(System.currentTimeMillis());
     }
@@ -106,15 +101,15 @@ public class JmsPropertyMapper {
                     modified = true;
                 }
             }
-        }
-        catch(KeyStoreException kse) {
-            logger.log(Level.WARNING, "Error processing key store.", kse);
+        } catch (KeyStoreException kse) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            logger.log(Level.WARNING, "Error processing key store.: " + ExceptionUtils.getMessage(kse), ExceptionUtils.getDebugException(kse));
         }
 
         if (logger.isLoggable(Level.FINE)) {
             StringBuffer propBuffer = new StringBuffer(512);
 
-            for (Map.Entry<Object, Object> property : (Set<Map.Entry<Object, Object>>) properties.entrySet()) {
+            for (Map.Entry<Object, Object> property : properties.entrySet()) {
                 Object key = property.getKey();
                 Object value = property.getValue();
                 
@@ -136,7 +131,6 @@ public class JmsPropertyMapper {
     private static final Logger logger = Logger.getLogger(JmsPropertyMapper.class.getName());
 
     private final TrustedCertManager trustedCertManager;
-    private final SsgKeyStoreManager ssgKeyStoreManager;
     private final DefaultKey defaultKey;
     private final Random random;
 
@@ -177,7 +171,7 @@ public class JmsPropertyMapper {
      * @return The List of trusted X509Certificates.
      */
     private List buildTrustedList() {
-        Vector trustedCertList = new Vector(); // TIBCO requires vector
+        Vector<X509Certificate> trustedCertList = new Vector<X509Certificate>(); // TIBCO requires vector
 
         try {
             Collection<TrustedCert> trustedCerts = trustedCertManager.findAll();
@@ -208,31 +202,26 @@ public class JmsPropertyMapper {
         KeyStoreInfo keyStoreInfo = keyStoreInfos.get(whichKey);
         if (keyStoreInfo == null) {
             try {
-                X509Certificate[] certChain = null;
-                PrivateKey privateKey = null;
-                String alias = null;
-                if (ssgKeystoreId == -1 || ssgKeyAlias == null) {
-                    // version 3.7 format - Defaults to SSG SSL private key and cert.
-                    SsgKeyEntry dk = defaultKey.getSslInfo();
-                    certChain = dk.getCertificateChain();
-                    privateKey = dk.getPrivateKey();
-                    alias = (String) properties.get(JmsConnection.PROP_KEYSTORE_ALIAS);
-                    if (alias == null) alias = "jms";
-                } else {
-                    // version 4.0 format - Retrieves specified private key and cert from SSG key store.
-                    final SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(ssgKeystoreId);
-                    final SsgKeyEntry keyEntry = keyFinder.getCertificateChain(ssgKeyAlias);
-                    certChain = keyEntry.getCertificateChain();
-                    privateKey = keyEntry.getPrivateKey();
-                    alias = (String) properties.get(JmsConnection.PROP_KEYSTORE_ALIAS);
-                    if (alias == null) alias = ssgKeyAlias;
+                X509Certificate[] certChain;
+                PrivateKey privateKey;
+                String alias;
+                SsgKeyEntry keyEntry = defaultKey.lookupKeyByKeyAlias(ssgKeyAlias, ssgKeystoreId);
+                certChain = keyEntry.getCertificateChain();
+                privateKey = keyEntry.getPrivateKey();
+
+                if (!"PKCS#8".equals(privateKey.getFormat())) {
+                    logger.warning("Private key encoding is not PKCS#8 -- possible hardware keystore?  Use of this key with JMS provider is unlikely to work as expected");
                 }
+
+                alias = (String) properties.get(JmsConnection.PROP_KEYSTORE_ALIAS);
+                if (alias == null) alias = ssgKeyAlias;
+                if (alias == null) alias = "jms";
 
                 // Creates new keystore and populates it.
                 final String password = buildPassword();
                 final KeyStore keyStore = KeyStore.getInstance("PKCS12");
                 keyStore.load(null, null);
-                keyStore.setKeyEntry(ssgKeyAlias, privateKey, password.toCharArray(), certChain);
+                keyStore.setKeyEntry(alias, privateKey, password.toCharArray(), certChain);
 
                 // Saves to a KeyStoreInfo object.
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -242,15 +231,15 @@ public class JmsPropertyMapper {
                 keyStoreInfo.keystore = keyStore;
                 keyStoreInfo.password = password;
             } catch (IOException e) {
-                throw new KeyStoreException("Error creating keystore", e);
+                throw new KeyStoreException("Error creating keystore: " + ExceptionUtils.getMessage(e), e);
             } catch (FindException e) {
-                throw new KeyStoreException("Error creating keystore", e);
+                throw new KeyStoreException("Error creating keystore: " + ExceptionUtils.getMessage(e), e);
             } catch (NoSuchAlgorithmException e) {
-                throw new KeyStoreException("Error creating keystore", e);
+                throw new KeyStoreException("Error creating keystore: " + ExceptionUtils.getMessage(e), e);
             } catch (CertificateException e) {
-                throw new KeyStoreException("Error creating keystore", e);
+                throw new KeyStoreException("Error creating keystore: " + ExceptionUtils.getMessage(e), e);
             } catch (UnrecoverableKeyException e) {
-                throw new KeyStoreException("Error creating keystore", e);
+                throw new KeyStoreException("Error creating keystore: " + ExceptionUtils.getMessage(e), e);
             } 
 
             keyStoreInfos.put(whichKey, keyStoreInfo);

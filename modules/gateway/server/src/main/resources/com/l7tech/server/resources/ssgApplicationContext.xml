@@ -948,7 +948,6 @@
     <!-- jms property resolver -->
     <bean id="jmsPropertyMapper" class="com.l7tech.server.transport.jms.JmsPropertyMapper">
         <constructor-arg ref="trustedCertManager"/>
-        <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="defaultKey"/>
     </bean>
     <bean id="jmsResourceManager" class="com.l7tech.server.transport.jms2.JmsResourceManager">
@@ -1056,17 +1055,13 @@
     </bean>
 
     <!-- keystore root cert and ssl config  -->
-    <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl" depends-on="keyUsageChecker">
+    <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl" depends-on="keyUsageChecker ssgKeyStoreManager">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="clusterPropertyManager"/>
         <constructor-arg index="2" ref="ssgKeyStoreManager"/>
         <constructor-arg index="3" ref="transactionManager"/>
     </bean>
     <bean id="keystoreMutatorSwitch" class="com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore$StartupListener"/>
-
-    <bean id="keyAccessFilter" class="com.l7tech.server.GatewayKeyAccessFilter">
-        <property name="defaultKey" ref="defaultKey"/>
-    </bean>
 
     <!-- TODO sslKeyEntry, sslKeystoreCertificate, and sslKeyManagers should be removed so the default SSL key can be changed without a restart -->
     <bean id="sslKeyEntry" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
@@ -1481,6 +1476,10 @@
         </constructor-arg>
 	    <constructor-arg ref="dbPasswordEncryption"/>
         <property name="keyAccessFilter" ref="keyAccessFilter"/>
+    </bean>
+
+    <bean id="keyAccessFilter" class="com.l7tech.server.GatewayKeyAccessFilter">
+        <property name="defaultKey" ref="defaultKey"/>
     </bean>
 
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">

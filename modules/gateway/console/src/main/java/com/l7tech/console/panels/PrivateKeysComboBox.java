@@ -226,19 +226,41 @@ public class PrivateKeysComboBox extends JComboBox {
         return _includeRestrictedAccessKeys;
     }
 
+    /**
+     * Change inclusion of restricted-access private keys (eg, audit viewer key).
+     * <p/>Remember to call {@link #repopulate()} after changing this setting.
+     *
+     * @param includeRestrictedAccessKeys true to include restricted access keys in the list, false to leave them out.
+     */
     public void setIncludeRestrictedAccessKeys(boolean includeRestrictedAccessKeys) {
-        if (this._includeRestrictedAccessKeys != includeRestrictedAccessKeys) {
-            this._includeRestrictedAccessKeys = includeRestrictedAccessKeys;
-        }
+        this._includeRestrictedAccessKeys = includeRestrictedAccessKeys;
     }
 
     public boolean isIncludeDefaultSslKey() {
         return _includeDefaultSslKey;
     }
 
+    /**
+     * Change inclusion of default SSL key setting.
+     * <p/>Remember to call {@link #repopulate()} after changing this setting.
+     *
+     * @param incDef true to include a special entry just for the default SSL key, that binds to it with a null alias and keystore ID of -1.
+     */
     public void setIncludeDefaultSslKey(boolean incDef) {
-        if (this._includeDefaultSslKey != incDef) {
-            this._includeDefaultSslKey = incDef;
-        }
+        this._includeDefaultSslKey = incDef;
+    }
+
+    public boolean isIncludeHardwareKeystore() {
+        return _includeHardwareKeystore;
+    }
+
+    /**
+     * Change hardware keystore setting.
+     * <p/>Remember to call {@link #repopulate()} after changing this setting.
+     *
+     * @param incHardware true to include hardware keystore keys in the list; false to omit them.
+     */
+    public void setIncludeHardwareKeystore(boolean incHardware) {
+        this._includeHardwareKeystore = incHardware;
     }
 }
