@@ -177,7 +177,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             getHibernateTemplate().delete(pgroup);
             postDelete( pgroup );
         } catch (ObjectModelException e) {
-            throw new DeleteException(e.toString(), e);
+            throw new DeleteException(e.getMessage(), e);
         } catch (HibernateException e) {
             throw new DeleteException(e.toString(), e);
         }
@@ -195,6 +195,9 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
     @SuppressWarnings({"UnusedDeclaration"})
     protected void preUpdate(GT group) throws FindException, UpdateException { }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    protected void postUpdate(GT group) throws UpdateException { }
 
     protected abstract GT cast(Group group);
 
@@ -357,6 +360,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
 
             originalGroup.copyFrom(imp);
             getHibernateTemplate().update(originalGroup);
+            postUpdate(originalGroup);
         } catch (FindException e) {
             throw new UpdateException("Update called on group that does not already exist", e);
         } catch (DataAccessException se) {
@@ -570,11 +574,6 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             throw new UpdateException(he.toString(), he);
         }
 
-        try {
-            postDelete( null );
-        } catch ( DeleteException de ) {
-            throw new UpdateException( ExceptionUtils.getMessage(de), de );
-        }
     }
 
     @Override
@@ -669,11 +668,6 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
             throw new UpdateException(he.toString(), he);
         }
 
-        try {
-            postDelete( null );
-        } catch ( DeleteException de ) {
-            throw new UpdateException( ExceptionUtils.getMessage(de), de );
-        }
     }
 
     @Override

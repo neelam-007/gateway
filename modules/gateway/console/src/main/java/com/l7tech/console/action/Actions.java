@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.console.logging.ErrorManager;
@@ -122,7 +123,7 @@ public class Actions {
                     result.call(true);
                     return;
                 } catch (ObjectModelException ome) {
-                    log.log(Level.SEVERE, "Error deleting group", ome);
+                    log.log(Level.SEVERE, "Error deleting group", ExceptionUtils.getDebugException(ome));
                     // Error deleting realm - display error msg
                     String msg;
                     DeleteException de = ExceptionUtils.getCauseIfCausedBy(ome, DeleteException.class);

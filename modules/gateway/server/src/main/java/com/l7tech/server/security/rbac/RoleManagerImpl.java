@@ -6,6 +6,7 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.objectmodel.*;
@@ -125,6 +126,31 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                 Criteria groupQuery = session.createCriteria(RoleAssignment.class);
                 groupQuery.add(Restrictions.in("identityId", groupNames));
                 groupQuery.add(Restrictions.eq("providerId", user.getProviderId()));
+                groupQuery.add(Restrictions.eq("entityType", EntityType.GROUP.getName()));
+                List gList = groupQuery.list();
+
+                for (Object aGList : gList) {
+                    RoleAssignment ra = (RoleAssignment) aGList;
+                    roles.add(ra.getRole());
+                }
+
+                return roles;
+            }
+        });
+    }
+
+    private Collection<Role> getAssignedGroup(final Group group) throws FindException {
+
+        //noinspection unchecked
+        return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            @Override
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                Set<Role> roles = new HashSet<Role>();
+
+                // get roles from groups
+                Criteria groupQuery = session.createCriteria(RoleAssignment.class);
+                groupQuery.add(Restrictions.eq("identityId", group.getId()));
+                groupQuery.add(Restrictions.eq("providerId", group.getProviderId()));
                 groupQuery.add(Restrictions.eq("entityType", EntityType.GROUP.getName()));
                 List gList = groupQuery.list();
 
@@ -328,6 +354,24 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         } catch (UpdateException ue) {
             logger.log(Level.INFO, "Failed to update role for assigned roles deletion");
             throw new DeleteException("Failed to delete role assignment for user '" + user.getLogin() +"'", ue.getCause());
+        }
+    }
+
+    @Override
+    @SuppressWarnings({ "ThrowInsideCatchBlockWhichIgnoresCaughtException" })
+    public void deleteRoleAssignmentsForGroup(final Group group) throws DeleteException {
+        try {
+            Collection<Role> roles = getAssignedGroup(group);
+            for (Role role : roles) {
+                role.removeAssignedGroup(group);
+                update(role);
+            }
+        } catch (FindException fe) {
+            logger.log(Level.INFO, "Failed to find assigned roles for group '" + group.getName() + "' for provider " + group.getProviderId());
+            throw new DeleteException("Failed to delete role assignment for group '" + group.getName() +"'", fe.getCause());
+        } catch (UpdateException ue) {
+            logger.log(Level.INFO, "Failed to update role for assigned roles deletion");
+            throw new DeleteException("Failed to delete role assignment for group '" + group.getName() +"'", ue.getCause());
         }
     }
 

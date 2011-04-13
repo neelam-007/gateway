@@ -315,6 +315,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             originalUser.copyFrom(imp);
             // update from existing user
             getHibernateTemplate().update(originalUser);
+            postUpdate(originalUser);
         } catch (DataAccessException se) {
             logger.log(Level.SEVERE, null, se);
             throw new UpdateException(se.toString(), se);
@@ -387,6 +388,9 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     @SuppressWarnings({"UnusedDeclaration"})
     protected void postDelete( UT user ) throws DeleteException {
     }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    protected void postUpdate(UT user) throws UpdateException { }
 
     protected void revokeCert(UT originalUser) throws ObjectNotFoundException {
         if ( clientCertManager != null ) {

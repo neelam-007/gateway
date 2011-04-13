@@ -20,6 +20,7 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -797,7 +798,7 @@ public class GenericUserPanel extends UserPanel {
             msg.append("There was an error updating ");
             msg.append("User ").append(userHeader.getName()).append(".\n");
             JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
-            log.log(Level.SEVERE, "Error updating User: " + e.toString(), e);
+            log.log(Level.SEVERE, "Error updating User: " + e.toString(), ExceptionUtils.getDebugException(e));
             result = false;
         }
         return result;

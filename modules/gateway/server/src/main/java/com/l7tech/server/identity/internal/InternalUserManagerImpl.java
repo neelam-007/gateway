@@ -183,6 +183,15 @@ public class InternalUserManagerImpl
     }
 
     @Override
+    protected void postUpdate(InternalUser user) throws UpdateException {
+        try {
+            roleManager.validateRoleAssignments();
+        } catch ( UpdateException ue ) {
+            throw new UpdateException( ExceptionUtils.getMessage(ue), ue );
+        }
+    }
+
+    @Override
     protected String getNameFieldname() {
         return "login";
     }

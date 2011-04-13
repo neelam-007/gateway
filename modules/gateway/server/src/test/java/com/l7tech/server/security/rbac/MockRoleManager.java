@@ -3,6 +3,7 @@ package com.l7tech.server.security.rbac;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
@@ -107,6 +108,19 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
                 if (EntityType.USER.name().equals(ass.getEntityType()) &&
                         ass.getProviderId() == user.getProviderId() &&
                         ass.getIdentityId().equals(user.getId()))
+                    it.remove();
+            }
+        }
+    }
+
+    @Override
+    public void deleteRoleAssignmentsForGroup(Group group) throws DeleteException {
+        for (Role role : entities.values()) {
+            for (Iterator<RoleAssignment> it = role.getRoleAssignments().iterator(); it.hasNext();) {
+                final RoleAssignment ass = it.next();
+                if (EntityType.GROUP.name().equals(ass.getEntityType()) &&
+                        ass.getProviderId() == group.getProviderId() &&
+                        ass.getIdentityId().equals(group.getId()))
                     it.remove();
             }
         }

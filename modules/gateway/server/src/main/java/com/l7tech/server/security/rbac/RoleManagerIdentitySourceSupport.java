@@ -2,6 +2,7 @@ package com.l7tech.server.security.rbac;
 
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
+import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.EntityType;
@@ -49,7 +50,6 @@ public abstract class RoleManagerIdentitySourceSupport implements RoleManagerIde
                 InternalIdentityProvider internalProvider = (InternalIdentityProvider) provider;
                 InternalUserManager userManager = internalProvider.getUserManager();
                 InternalGroupManager groupManager = internalProvider.getGroupManager();
-                long expiryMinTime = System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1); // good for an hour at least
 
                 Role adminRole = roleManager.findByTag( Role.Tag.ADMIN );
                 if ( adminRole != null ) {
@@ -60,7 +60,7 @@ public abstract class RoleManagerIdentitySourceSupport implements RoleManagerIde
                         if ( assignment.getProviderId()==internalProvider.getConfig().getOid() ) {
                             if ( EntityType.USER.getName().equals(assignment.getEntityType()) ) {
                                 InternalUser user = userManager.findByPrimaryKey( assignment.getIdentityId() );
-                                if ( user != null && user.isEnabled() && (user.getExpiration()<0 || user.getExpiration() < expiryMinTime )) {
+                                if ( user != null && user.isEnabled() && (user.getExpiration()<0)) {
                                     found = true;
                                     break;
                                 } else {
@@ -75,12 +75,15 @@ public abstract class RoleManagerIdentitySourceSupport implements RoleManagerIde
                         for ( RoleAssignment assignment : adminRole.getRoleAssignments() ) {
                             if ( assignment.getProviderId()==internalProvider.getConfig().getOid() ) {
                                 if ( EntityType.GROUP.getName().equals(assignment.getEntityType()) ) {
+                                    InternalGroup group = groupManager.findByPrimaryKey(assignment.getIdentityId());
+                                    if(!group.isEnabled())
+                                        continue;
                                     Set<IdentityHeader> users = groupManager.getUserHeaders( assignment.getIdentityId() );
                                     for ( IdentityHeader userHeader : users ) {
                                         if ( checkedUserOids.contains( userHeader.getStrId() ) ) continue;
 
                                         InternalUser user = userManager.findByPrimaryKey( userHeader.getStrId() );
-                                        if ( user != null && user.isEnabled() &&(user.getExpiration()<0 || user.getExpiration() < expiryMinTime)) {
+                                        if ( user != null && user.isEnabled() &&(user.getExpiration()<0 )) {
                                             found = true;
                                             break;
                                         } else {
@@ -93,7 +96,7 @@ public abstract class RoleManagerIdentitySourceSupport implements RoleManagerIde
                     }
 
                     if ( !found ) {
-                        throw new UpdateException( "At least one internal user must be assigned to the administrative role (can be via group assignment)." );
+                        throw new UpdateException( "At least one internal user with no expiration must be assigned to the administrative role (can be via group assignment)." );
                     }
                 }
             }

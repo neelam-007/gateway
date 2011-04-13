@@ -4,6 +4,7 @@
 package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
@@ -18,7 +19,7 @@ import java.util.regex.Pattern;
  * TODO de-implement RbacServices when it becomes tractable
  */
 public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServices {
-    public static final String ADMIN_REQUIRED = "At least one User must always be assigned to the Administrator role";
+    public static final String ADMIN_REQUIRED = "At least one enabled User with no expiry must always be assigned to the Administrator role";
 
     @Transactional(readOnly=true)
     Collection<Role> getAssignedRoles(User user) throws FindException;
@@ -78,4 +79,13 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
      * @throws DeleteException
      */
     void deleteRoleAssignmentsForUser(final User user) throws DeleteException;
+
+
+    /**
+     * Deletes the role assignments for the group.
+     *
+     * @param group  The group whose role assignments will be deleted.
+     * @throws DeleteException
+     */
+    void deleteRoleAssignmentsForGroup(final Group group) throws DeleteException;
 }

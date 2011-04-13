@@ -6,6 +6,7 @@ package com.l7tech.gateway.common.security.rbac;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
@@ -158,6 +159,21 @@ public class Role extends NamedEntityImp implements Comparable<Role> {
             RoleAssignment roleAssignment = i.next();
             if (roleAssignment.getIdentityId().equals(user.getId()) && roleAssignment.getProviderId() == user.getProviderId()
                     && roleAssignment.getEntityType().equals(EntityType.USER.getName())) {
+                i.remove();
+            }
+        }
+    }
+
+     /**
+     * Removes an {@link RoleAssignment} that was assigned by the provided {@link Group} to this Role.
+     *
+     * @param group  The user that will be used to remove the user's assignment roles.
+     */
+    public void removeAssignedGroup(Group group) {
+        for (Iterator<RoleAssignment> i = roleAssignments.iterator(); i.hasNext();) {
+            RoleAssignment roleAssignment = i.next();
+            if (roleAssignment.getIdentityId().equals(group.getId()) && roleAssignment.getProviderId() == group.getProviderId()
+                    && roleAssignment.getEntityType().equals(EntityType.GROUP.getName())) {
                 i.remove();
             }
         }
