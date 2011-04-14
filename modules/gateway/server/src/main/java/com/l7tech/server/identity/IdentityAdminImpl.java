@@ -69,7 +69,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private final LogonService logonServ;
     private LogonInfoManager logonManager;
     private final PasswordHasher passwordHasher;
-    private final Collection<Pair<AccountMinimums,IdentityProviderPasswordPolicy>> policyMinimums;
+    private final Collection<Pair<AccountMinimums, IdentityProviderPasswordPolicy>> policyMinimums;
 
     @Inject
     private TrustedEsmUserManager trustedEsmUserManager;
@@ -85,7 +85,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                              final DefaultKey defaultKey,
                              final LogonService logonServ,
                              final PasswordHasher passwordHasher,
-                             final Collection<Pair<AccountMinimums,IdentityProviderPasswordPolicy>> policyMinimums ) {
+                             final Collection<Pair<AccountMinimums, IdentityProviderPasswordPolicy>> policyMinimums) {
         if (roleManager == null) throw new IllegalArgumentException("roleManager is required");
 
         this.roleManager = roleManager;
@@ -120,7 +120,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
      */
     @Override
     public EntityHeader[] findAllIdentityProviderConfig() throws FindException {
-            Collection<EntityHeader> res = getIdProvCfgMan().findAllHeaders();
+        Collection<EntityHeader> res = getIdProvCfgMan().findAllHeaders();
         return res.toArray(new EntityHeader[res.size()]);
     }
 
@@ -129,13 +129,13 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
      */
     @Override
     public IdentityProviderConfig findIdentityProviderConfigByID(long oid)
-      throws FindException {
-            return getIdProvCfgMan().findByPrimaryKey(oid);
+            throws FindException {
+        return getIdProvCfgMan().findByPrimaryKey(oid);
     }
 
     @Override
     public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig)
-      throws SaveException, UpdateException {
+            throws SaveException, UpdateException {
         try {
             long oid;
             if (identityProviderConfig.getOid() != IdentityProviderConfig.DEFAULT_OID) {
@@ -243,21 +243,21 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     @Override
     public EntityHeaderSet<IdentityHeader> findAllUsers(long identityProviderConfigId) throws FindException {
-            UserManager<?> userManager = retrieveUserManager(identityProviderConfigId);
-            return userManager.findAllHeaders();
+        UserManager<?> userManager = retrieveUserManager(identityProviderConfigId);
+        return userManager.findAllHeaders();
     }
 
     @Override
     public EntityHeaderSet<IdentityHeader> searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
-      throws FindException {
-            IdentityProvider<?,?,?,?> provider = identityProviderFactory.getProvider(identityProviderConfigId);
-            if (provider == null) throw new FindException("IdentityProvider could not be found");
-            return provider.search(types, pattern);
+            throws FindException {
+        IdentityProvider<?, ?, ?, ?> provider = identityProviderFactory.getProvider(identityProviderConfigId);
+        if (provider == null) throw new FindException("IdentityProvider could not be found");
+        return provider.search(types, pattern);
     }
 
     @Override
     public User findUserByID(long identityProviderConfigId, String userId)
-                           throws FindException {
+            throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
         if (provider == null) {
             logger.warning("Identity Provider #" + identityProviderConfigId + " does not exist");
@@ -282,7 +282,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     @Override
     public void deleteUser(long cfgid, String userId)
-      throws DeleteException, ObjectNotFoundException {
+            throws DeleteException, ObjectNotFoundException {
         try {
             UserManager userManager = retrieveUserManager(cfgid);
             if (userManager == null) throw new DeleteException("Cannot retrieve the UserManager");
@@ -324,20 +324,20 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             UserManager userManager = provider.getUserManager();
             if (user instanceof UserBean) user = userManager.reify((UserBean) user);
 
-            if(user instanceof InternalUser) {
-                InternalUser internalUser = (InternalUser)user;
-                if(!isSave){
+            if (user instanceof InternalUser) {
+                InternalUser internalUser = (InternalUser) user;
+                if (!isSave) {
                     //ensure password has not changed
                     final InternalUser originalUser = (InternalUser) userManager.findByPrimaryKey(internalUser.getId());
-                    if(!originalUser.getHashedPassword().equals(internalUser.getHashedPassword())){
+                    if (!originalUser.getHashedPassword().equals(internalUser.getHashedPassword())) {
                         throw new UpdateException("Cannot modify existing users password using this api.");
                     }
                     final String origDigest = originalUser.getHttpDigest();
-                    if(origDigest == null && internalUser.getHttpDigest() != null){
+                    if (origDigest == null && internalUser.getHttpDigest() != null) {
                         throw new UpdateException("Cannot modify existing users digest using this api.");
                     }
-                    if(origDigest != null && !origDigest.equals(internalUser.getHttpDigest())){
-                        throw new UpdateException("Cannot modify existing users digest using this api.");    
+                    if (origDigest != null && !origDigest.equals(internalUser.getHttpDigest())) {
+                        throw new UpdateException("Cannot modify existing users digest using this api.");
                     }
                 } else {
                     //validate password
@@ -347,7 +347,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                     InternalUserManager internalManager = (InternalUserManager) userManager;
                     final InternalUserPasswordManager passwordManager = internalManager.getUserPasswordManager();
                     final boolean updateRequired = passwordManager.configureUserPasswordHashes(internalUser, clearTextPassword);
-                    assert(updateRequired);
+                    assert (updateRequired);
                 }
             }
 
@@ -379,11 +379,11 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
         IdentityProvider provider = identityProviderFactory.getProvider(user.getProviderId());
         if (provider == null) throw new FindException("IdentityProvider could not be found");
-        if(!(provider instanceof InternalIdentityProvider)){
+        if (!(provider instanceof InternalIdentityProvider)) {
             throw new UpdateException("Cannot change non internal users password.");
         }
 
-        if(newClearTextPassword == null || newClearTextPassword.trim().isEmpty()){
+        if (newClearTextPassword == null || newClearTextPassword.trim().isEmpty()) {
             //this is a client error
             throw new InvalidPasswordException("newClearTextPassword must be supplied.");
         }
@@ -400,7 +400,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         //check if users password is the same
         final String hashedPassword = disconnectedUser.getHashedPassword();
 
-        if(passwordHasher.isVerifierRecognized(hashedPassword)){
+        if (passwordHasher.isVerifierRecognized(hashedPassword)) {
             try {
                 passwordHasher.verifyPassword(newClearTextPassword.getBytes(Charsets.UTF8), hashedPassword);
                 //same error string that used to be shown in PasswordDialog
@@ -413,20 +413,20 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         passwordEnforcerManager.isPasswordPolicyCompliant(newClearTextPassword);
         final InternalUserPasswordManager passwordManager = userManager.getUserPasswordManager();
         final boolean updateUser = passwordManager.configureUserPasswordHashes(disconnectedUser, newClearTextPassword);
-        if(!updateUser){
+        if (!updateUser) {
             throw new IllegalStateException("Users should require update.");
         }
         passwordEnforcerManager.setUserPasswordPolicyAttributes(disconnectedUser, true);
         logger.info("Updated password for Internal User " + disconnectedUser.getLogin() + " [" + disconnectedUser.getOid() + "]");
-        //todo [Donal] - may not be an admin user, could check first
-        logonServ.resetLogonFailCount(disconnectedUser);
+        // activate user
+        activateUser(disconnectedUser);
 
         userManager.update(disconnectedUser);
     }
 
     @Override
     public EntityHeaderSet<IdentityHeader> findAllGroups(long cfgid) throws FindException {
-            return retrieveGroupManager(cfgid).findAllHeaders();
+        return retrieveGroupManager(cfgid).findAllHeaders();
     }
 
     @Override
@@ -455,7 +455,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     @Override
     public void deleteGroup(long cfgid, String groupId)
-      throws DeleteException, ObjectNotFoundException {
+            throws DeleteException, ObjectNotFoundException {
         try {
             GroupManager groupManager = retrieveGroupManager(cfgid);
             Group grp = groupManager.findByPrimaryKey(groupId);
@@ -469,7 +469,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     @Override
     public String saveGroup(long identityProviderConfigId, Group group, Set<IdentityHeader> userHeaders)
-      throws SaveException, UpdateException, ObjectNotFoundException {
+            throws SaveException, UpdateException, ObjectNotFoundException {
         boolean isSave = true;
         try {
             String id = group.getId();
@@ -523,7 +523,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
                 // must change the password now
                 UserManager userManager = provider.getUserManager();
-                InternalUser dbuser = (InternalUser)userManager.findByLogin(iuser.getLogin());
+                InternalUser dbuser = (InternalUser) userManager.findByLogin(iuser.getLogin());
                 // maybe a new password is already provided?
                 String newPasswd;
                 if (!dbuser.getHashedPassword().equals(iuser.getHashedPassword())) {
@@ -557,7 +557,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             List<ClientCertManager.CertInfo> infos = clientCertManager.findAll();
             for (ClientCertManager.CertInfo info : infos) {
                 logger.log(Level.FINE, "Revoking certificate for user ''{0}'' [{1}/{2}].",
-                        new String[]{info.getLogin(),Long.toString(info.getProviderId()),info.getUserId()});
+                        new String[]{info.getLogin(), Long.toString(info.getProviderId()), info.getUserId()});
 
                 UserBean userBean = new UserBean();
                 userBean.setProviderId(info.getProviderId());
@@ -566,10 +566,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                 if (clientCertManager.revokeUserCertIfIssuerMatches(userBean, caSubject)) {
                     revocationCount++;
                     logger.log(Level.INFO, "Revoked certificate for user ''{0}'' [{1}/{2}].",
-                            new String[]{info.getLogin(),Long.toString(info.getProviderId()),info.getUserId()});
+                            new String[]{info.getLogin(), Long.toString(info.getProviderId()), info.getUserId()});
                 } else {
                     logger.log(Level.INFO, "Certificate not revoked for user ''{0}'' [{1}/{2}].",
-                            new String[]{info.getLogin(),Long.toString(info.getProviderId()),info.getUserId()});
+                            new String[]{info.getLogin(), Long.toString(info.getProviderId()), info.getUserId()});
                 }
             }
 
@@ -591,23 +591,23 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     @Override
     public IdentityProviderPasswordPolicy getPasswordPolicyForIdentityProvider(long providerId) throws FindException {
-        return passwordPolicyManger.findByInternalIdentityProviderOid(providerId);  
+        return passwordPolicyManger.findByInternalIdentityProviderOid(providerId);
     }
 
     @Override
     public AccountMinimums getAccountMinimums() {
-        final String policyName = config.getBooleanProperty( ServerConfig.PARAM_PCIDSS_ENABLED, false ) ?
+        final String policyName = config.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED, false) ?
                 "PCI-DSS" :
                 "STIG";
 
-        final Pair<AccountMinimums,IdentityProviderPasswordPolicy> minimums = Functions.grepFirst(
+        final Pair<AccountMinimums, IdentityProviderPasswordPolicy> minimums = Functions.grepFirst(
                 policyMinimums,
                 new Functions.Unary<Boolean, Pair<AccountMinimums, IdentityProviderPasswordPolicy>>() {
                     @Override
-                    public Boolean call( final Pair<AccountMinimums, IdentityProviderPasswordPolicy> accountMinimumsIdentityProviderPasswordPolicyPair ) {
-                        return policyName.equals( accountMinimumsIdentityProviderPasswordPolicyPair.left.getName() );
+                    public Boolean call(final Pair<AccountMinimums, IdentityProviderPasswordPolicy> accountMinimumsIdentityProviderPasswordPolicyPair) {
+                        return policyName.equals(accountMinimumsIdentityProviderPasswordPolicyPair.left.getName());
                     }
-                } );
+                });
 
         return minimums == null ? null : minimums.left;
     }
@@ -616,55 +616,55 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     public Map<String, IdentityProviderPasswordPolicy> getPasswordPolicyMinimums() {
         return Functions.reduce(
                 policyMinimums,
-                new HashMap<String,IdentityProviderPasswordPolicy>(),
-                new Functions.Binary<Map<String,IdentityProviderPasswordPolicy>,Map<String,IdentityProviderPasswordPolicy>,Pair<AccountMinimums,IdentityProviderPasswordPolicy>>(){
+                new HashMap<String, IdentityProviderPasswordPolicy>(),
+                new Functions.Binary<Map<String, IdentityProviderPasswordPolicy>, Map<String, IdentityProviderPasswordPolicy>, Pair<AccountMinimums, IdentityProviderPasswordPolicy>>() {
                     @Override
                     public Map<String, IdentityProviderPasswordPolicy> call(
                             final Map<String, IdentityProviderPasswordPolicy> passwordPolicyMap,
-                            final Pair<AccountMinimums, IdentityProviderPasswordPolicy> minimumsPair ) {
-                        passwordPolicyMap.put( minimumsPair.left.getName(), minimumsPair.right );
+                            final Pair<AccountMinimums, IdentityProviderPasswordPolicy> minimumsPair) {
+                        passwordPolicyMap.put(minimumsPair.left.getName(), minimumsPair.right);
                         return passwordPolicyMap;
                     }
                 });
     }
 
     @Override
-    public String getPasswordPolicyDescriptionForIdentityProvider() throws FindException{
+    public String getPasswordPolicyDescriptionForIdentityProvider() throws FindException {
         User user = JaasUtils.getCurrentUser();
-        if(user == null)
+        if (user == null)
             return null;
-        if(user instanceof InternalUser)
+        if (user instanceof InternalUser)
             return passwordPolicyManger.findByInternalIdentityProviderOid(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID).getDescription();
         return null;
     }
 
     @Override
     public String updatePasswordPolicy(long providerId, IdentityProviderPasswordPolicy policy) throws SaveException, UpdateException, ObjectNotFoundException {
-        if(providerId != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID){
-            throw new SaveException("Cannot update password policy for identity provider [" + providerId+"].");
+        if (providerId != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) {
+            throw new SaveException("Cannot update password policy for identity provider [" + providerId + "].");
         }
 
         policy.setInternalIdentityProviderOid(providerId);
         passwordPolicyManger.update(policy);
-        return  policy.getOidAsLong().toString();
+        return policy.getOidAsLong().toString();
     }
 
-    @Override                                         
-    public void forceAdminUsersResetPassword( final long identityProviderConfigId ) throws ObjectModelException {
-        final IdentityProvider provider = identityProviderFactory.getProvider( identityProviderConfigId );
-        if ( provider instanceof InternalIdentityProvider ) {
+    @Override
+    public void forceAdminUsersResetPassword(final long identityProviderConfigId) throws ObjectModelException {
+        final IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
+        if (provider instanceof InternalIdentityProvider) {
             final InternalIdentityProvider internalProvider = (InternalIdentityProvider) provider;
             final InternalUserManager internalUserManager = internalProvider.getUserManager();
             final Collection<IdentityHeader> headers = internalUserManager.findAllHeaders();
-            for( final IdentityHeader header : headers ){
-                final InternalUser user = internalUserManager.findByPrimaryKey( header.getStrId() );
-                if ( isAdministrativeUser( user ) ){
-                    user.setChangePassword( true );
-                    internalUserManager.update( user, null );
+            for (final IdentityHeader header : headers) {
+                final InternalUser user = internalUserManager.findByPrimaryKey(header.getStrId());
+                if (isAdministrativeUser(user)) {
+                    user.setChangePassword(true);
+                    internalUserManager.update(user, null);
                 }
             }
 
-            applicationEventPublisher.publishEvent( new AdministrativePasswordsResetEvent( this, internalProvider.getConfig().getName() ) );
+            applicationEventPublisher.publishEvent(new AdministrativePasswordsResetEvent(this, internalProvider.getConfig().getName()));
         }
     }
 
@@ -672,37 +672,40 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     public void activateUser(User user) throws FindException, UpdateException {
         try {
             LogonInfo info = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), false);
-            info.setLastActivity(System.currentTimeMillis());
-            info.resetFailCount(System.currentTimeMillis());
-            info.setState(LogonInfo.State.ACTIVE);
-            logonManager.update(info);
+            // if user has logged in before
+            if (info != null && info.getLastAttempted() > 0) {
+                info.setLastActivity(System.currentTimeMillis());
+                info.resetFailCount(System.currentTimeMillis());
+                info.setState(LogonInfo.State.ACTIVE);
+                logonManager.update(info);
+            }
 
         } catch (FindException e) {
-            throw new FindException( "No logon info for '" + user.getLogin() + "'", e);
+            throw new FindException("No logon info for '" + user.getLogin() + "'", e);
         } catch (UpdateException e) {
-            throw new UpdateException( "No logon info for '" + user.getLogin() + "'", e);
+            throw new UpdateException("No logon info for '" + user.getLogin() + "'", e);
         }
     }
 
     @Override
-    public LogonInfo.State getLogonState(User user) throws FindException{
-    try {
+    public LogonInfo.State getLogonState(User user) throws FindException {
+        try {
             LogonInfo info = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), false);
-            if(info != null)
+            if (info != null)
                 return info.getState();
             return null;
         } catch (FindException e) {
-            throw new FindException( "No logon info for '" + user.getLogin() + "'", e);
+            throw new FindException("No logon info for '" + user.getLogin() + "'", e);
         }
     }
 
-            
+
     /**
      * Determines if the user has roles.
      *
-     * @return  TRUE if has roles, otherwise FALSE
+     * @return TRUE if has roles, otherwise FALSE
      */
-    private boolean isAdministrativeUser( final User user ) throws FindException {
+    private boolean isAdministrativeUser(final User user) throws FindException {
         final Collection<Role> roles = roleManager.getAssignedRolesSkippingUserAccountValidation(user);
         return roles != null && !roles.isEmpty();
     }
@@ -715,7 +718,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
     @Override
     public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig)
-      throws InvalidIdProviderCfgException {
+            throws InvalidIdProviderCfgException {
         try {
             identityProviderFactory.test(identityProviderConfig);
         } catch (InvalidIdProviderCfgException e) {
@@ -761,8 +764,8 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         this.identityProviderFactory = identityProviderFactory;
     }
 
-    public void setLogonInfoManager (LogonInfoManager logonManager){
-       this.logonManager = logonManager;
+    public void setLogonInfoManager(LogonInfoManager logonManager) {
+        this.logonManager = logonManager;
     }
 
     public void initDao() throws Exception {
@@ -803,7 +806,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         return provider.getUserManager();
     }
 
-    private GroupManager<?,?> retrieveGroupManager(long cfgid) throws FindException {
+    private GroupManager<?, ?> retrieveGroupManager(long cfgid) throws FindException {
         IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
 
         if (provider == null)

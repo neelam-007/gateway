@@ -672,6 +672,8 @@ public class GenericUserPanel extends UserPanel {
                                 InternalUser iu = (InternalUser) user;
                                 DialogDisplayer.display(new PasswordDialog(TopComponents.getInstance().getTopParent(), userPanel,
                                         iu, passwordChangeListener, CHANGE_PASSWORD_LABEL));
+                                rolesPanel.reloadUserLogonState();
+                                enableDisableComponents();
                             } else {
                                 throw new IllegalStateException("Password can only be changed for Internal users");
                             }

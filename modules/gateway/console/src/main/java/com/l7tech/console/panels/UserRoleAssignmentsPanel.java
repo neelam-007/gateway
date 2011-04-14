@@ -9,6 +9,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -130,5 +131,14 @@ public class UserRoleAssignmentsPanel extends JPanel {
     private Collection<Role> getAssignedRolesForUser() throws FindException {
         RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
         return rbacAdmin.findRolesForUser(user);
+    }
+
+    public void reloadUserLogonState() {
+        try {
+            populateStatus();
+        } catch (FindException e) {
+            log.log(Level.SEVERE, "Error loading user logon state", e);
+            e.printStackTrace();
+        }
     }
 }
