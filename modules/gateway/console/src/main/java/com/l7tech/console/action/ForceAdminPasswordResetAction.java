@@ -26,7 +26,7 @@ import java.util.EventListener;
 import java.util.logging.Level;
 
 /**
- * The <code>ForceAdminPasswordResetAction</code> forces all admin users in the
+ * The <code>ForceAdminPasswordResetAction</code> forces all administrative users in the
  * identity provider to reset password
  *
  * @author wlui
@@ -44,7 +44,7 @@ public class ForceAdminPasswordResetAction extends NodeAction {
      */
     @Override
     public String getName() {
-        return "Force Administrator Password Reset";
+        return "Force Administrative Passwords Reset";
     }
 
     /**
@@ -60,7 +60,7 @@ public class ForceAdminPasswordResetAction extends NodeAction {
      */
     @Override
     protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif"; 
+        return "com/l7tech/console/resources/Properties16.gif";
     }
 
     @Override
@@ -70,6 +70,7 @@ public class ForceAdminPasswordResetAction extends NodeAction {
         }
         return canAttemptOperation(attemptedForcePasswordChange);
     }
+
     /**
      * Actually perform the action.
      * This is the method which should be called programmatically.
@@ -80,12 +81,12 @@ public class ForceAdminPasswordResetAction extends NodeAction {
     @Override
     protected void performAction() {
 
-        EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
+        EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
         Frame f = TopComponents.getInstance().getTopParent();
-        int result =JOptionPane.showConfirmDialog(
-            f, "Are you sure you want to force all administrative users in the identity provider to reset their passwords ", getName(), JOptionPane.YES_NO_OPTION);
+        int result = JOptionPane.showConfirmDialog(
+                f, "Are you sure you want to force all administrative users in the identity provider to reset their passwords ", getName(), JOptionPane.YES_NO_OPTION);
 
-        if (result == JOptionPane.YES_OPTION){
+        if (result == JOptionPane.YES_OPTION) {
             if (header.getOid() != -1L) {
                 final long oid = header.getOid();
                 try {
@@ -108,6 +109,7 @@ public class ForceAdminPasswordResetAction extends NodeAction {
             ((EntityListener) listener).entityRemoved(event);
         }
     }
+
     /**
      * add the EntityListener
      *
