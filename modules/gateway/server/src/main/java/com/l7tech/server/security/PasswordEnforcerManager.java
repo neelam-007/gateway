@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 /**
  * This manager provides implementation that will enforce conditions that has to do with password.  For example,
  * one of the conditions we need to enforce is that the password is compilable to Security Technical Implementation Guidelines (STIG).
- *
+ * <p/>
  * User: dlee
  * Date: Jun 18, 2008
  */
@@ -54,12 +54,12 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
     private final IdentityProviderPasswordPolicy stigPasswordPolicy;
     private final IdentityProviderPasswordPolicy pcidssPasswordPolicy;
 
-    public PasswordEnforcerManager( final Config config,
-                                    final IdentityProviderPasswordPolicyManager passwordPolicyManager,
-                                    final RoleManager roleManager,
-                                    final PasswordHasher passwordHasher,
-                                    final IdentityProviderPasswordPolicy stigPasswordPolicy,
-                                    final IdentityProviderPasswordPolicy pcidssPasswordPolicy ) {
+    public PasswordEnforcerManager(final Config config,
+                                   final IdentityProviderPasswordPolicyManager passwordPolicyManager,
+                                   final RoleManager roleManager,
+                                   final PasswordHasher passwordHasher,
+                                   final IdentityProviderPasswordPolicy stigPasswordPolicy,
+                                   final IdentityProviderPasswordPolicy pcidssPasswordPolicy) {
         this.passwordPolicyManager = passwordPolicyManager;
         this.config = config;
         this.roleManager = roleManager;
@@ -69,22 +69,22 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
     }
 
     @Override
-    public void setApplicationContext( final ApplicationContext applicationContext ) throws BeansException {
-        if(this.applicationContext!=null) throw new IllegalStateException("applicationContext already initialized!");
-        
+    public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
+        if (this.applicationContext != null) throw new IllegalStateException("applicationContext already initialized!");
+
         this.applicationContext = applicationContext;
         internalIdpPasswordPolicy = getInternalIdpPasswordPolicy();
     }
 
     @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
-        if(applicationEvent instanceof ReadyForMessages){
-            auditPasswordPolicyMinimums(!config.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED,false), internalIdpPasswordPolicy);
-        } else if(applicationEvent instanceof EntityInvalidationEvent){
+        if (applicationEvent instanceof ReadyForMessages) {
+            auditPasswordPolicyMinimums(!config.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED, false), internalIdpPasswordPolicy);
+        } else if (applicationEvent instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent eie = (EntityInvalidationEvent) applicationEvent;
-            if(IdentityProviderPasswordPolicy.class.equals(eie.getEntityClass())){
+            if (IdentityProviderPasswordPolicy.class.equals(eie.getEntityClass())) {
                 internalIdpPasswordPolicy = getInternalIdpPasswordPolicy();
-                auditPasswordPolicyMinimums(!config.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED,false), internalIdpPasswordPolicy);
+                auditPasswordPolicyMinimums(!config.getBooleanProperty(ServerConfig.PARAM_PCIDSS_ENABLED, false), internalIdpPasswordPolicy);
             }
         }
     }
@@ -93,33 +93,33 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         String propertyName = evt.getPropertyName();
         String newValue = (String) evt.getNewValue();
 
-        if ( propertyName != null && ServerConfig.PARAM_PCIDSS_ENABLED.equals(propertyName)){
+        if (propertyName != null && ServerConfig.PARAM_PCIDSS_ENABLED.equals(propertyName)) {
             boolean newVal = Boolean.valueOf(newValue);
             auditPasswordPolicyMinimums(!newVal, internalIdpPasswordPolicy);
         }
     }
 
-    private void auditPasswordPolicyMinimums( final boolean isSTIG,
-                                              final IdentityProviderPasswordPolicy passwordPolicy ) {
+    private void auditPasswordPolicyMinimums(final boolean isSTIG,
+                                             final IdentityProviderPasswordPolicy passwordPolicy) {
         final IdentityProviderPasswordPolicy policy = isSTIG ?
                 stigPasswordPolicy :
                 pcidssPasswordPolicy;
 
-        if ( !passwordPolicy.hasStrengthOf( policy ) ) {
+        if (!passwordPolicy.hasStrengthOf(policy)) {
             // log audit message
             final String msg = MessageFormat.format("Password requirements are below {0} minimum for {1}", isSTIG ? "STIG" : "PCI-DSS", "Internal Identity Provider");
             applicationContext.publishEvent(
-                new SystemEvent(this,
-                    Component.GW_PASSWD_POLICY_MGR,
-                    null,
-                    Level.WARNING,
-                    msg) {
+                    new SystemEvent(this,
+                            Component.GW_PASSWD_POLICY_MGR,
+                            null,
+                            Level.WARNING,
+                            msg) {
 
-                    @Override
-                    public String getAction() {
-                        return "Password Policy Validation";
+                        @Override
+                        public String getAction() {
+                            return "Password Policy Validation";
+                        }
                     }
-                }
             );
         }
     }
@@ -148,32 +148,33 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         }
     }
 
-    public void isPasswordPolicyCompliant(final String newPassword) throws InvalidPasswordException{
+    public void isPasswordPolicyCompliant(final String newPassword) throws InvalidPasswordException {
         validatePasswordString(newPassword);
     }
-                                                                                                    
+
     /**
      * Validates that the password meets the required characters in the password policy
+     * <p/>
+     * - meets the min. length size
+     * - meets the min upper case letter
+     * - meets the min lower case letter
+     * - meets the min numerical value
+     * - meets the min special character
+     * - meets the min non-numeric character
+     * - checks for consecutively repeating characters
      *
-     *  - meets the min. length size
-     *  - meets the min upper case letter
-     *  - meets the min lower case letter
-     *  - meets the min numerical value
-     *  - meets the min special character
-     *  - meets the min non-numeric character
-     *  - checks for consecutively repeating characters
-     * @param newPassword   the new password
+     * @param newPassword the new password
      * @throws InvalidPasswordException
      */
     private void validatePasswordString(final String newPassword) throws InvalidPasswordException {
 
-        if ( newPassword.length() < internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH))
+        if (newPassword.length() < internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH))
             throw new InvalidPasswordException(MessageFormat.format("Password must be at least {0} characters in length",
                     internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH)), internalIdpPasswordPolicy.getDescription());
 
-        int maxLength =  internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.MAX_PASSWORD_LENGTH);
-        if( ( maxLength>0 && newPassword.length() > maxLength))
-            throw new InvalidPasswordException(MessageFormat.format("Password must be less then or equal to {0} characters in length", maxLength), internalIdpPasswordPolicy.getDescription());
+        int maxLength = internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.MAX_PASSWORD_LENGTH);
+        if ((maxLength > 0 && newPassword.length() > maxLength))
+            throw new InvalidPasswordException(MessageFormat.format("Password must be less than or equal to {0} characters in length", maxLength), internalIdpPasswordPolicy.getDescription());
 
         //you could use one regular expression to do the work
         final char[] pass = newPassword.toCharArray();
@@ -183,43 +184,43 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         int specialCharacterCount = 0;
         boolean hasRepeatChar = false;
         char prevChar = '0';
-        for (int i=0; i < newPassword.length(); i++) {
-            if ( Character.isUpperCase(pass[i]) ) upperCount++;
-            if ( Character.isLowerCase(pass[i]) ) lowerCount++;
-            if ( Character.isDigit(pass[i]) ) digitCount++;
-            if ( !Character.isLetterOrDigit(pass[i]) && !Character.isWhitespace(pass[i])) specialCharacterCount++;
+        for (int i = 0; i < newPassword.length(); i++) {
+            if (Character.isUpperCase(pass[i])) upperCount++;
+            if (Character.isLowerCase(pass[i])) lowerCount++;
+            if (Character.isDigit(pass[i])) digitCount++;
+            if (!Character.isLetterOrDigit(pass[i]) && !Character.isWhitespace(pass[i])) specialCharacterCount++;
 
             //check for consecutive repeating characters
-            if ( i != 0 && pass[i] == prevChar ) hasRepeatChar = true;
+            if (i != 0 && pass[i] == prevChar) hasRepeatChar = true;
             prevChar = pass[i];
         }
 
-        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN) > upperCount )
+        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN) > upperCount)
             throw new InvalidPasswordException(
                     MessageFormat.format("Password must contain at least {0} upper case characters",
-                                         internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN)), internalIdpPasswordPolicy.getDescription());
+                            internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN)), internalIdpPasswordPolicy.getDescription());
 
-        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN) > lowerCount )
+        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN) > lowerCount)
             throw new InvalidPasswordException(
                     MessageFormat.format("Password must contain at least {0} lower case characters",
-                                         internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN)), internalIdpPasswordPolicy.getDescription());
+                            internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN)), internalIdpPasswordPolicy.getDescription());
 
-        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN) > digitCount )
+        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN) > digitCount)
             throw new InvalidPasswordException(
                     MessageFormat.format("Password must contain at least {0} numbers",
-                                         internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN)), internalIdpPasswordPolicy.getDescription());
+                            internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN)), internalIdpPasswordPolicy.getDescription());
 
-        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN) > specialCharacterCount )
+        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN) > specialCharacterCount)
             throw new InvalidPasswordException(
                     MessageFormat.format("Password must contain at least {0} special characters",
-                                         internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN)), internalIdpPasswordPolicy.getDescription());
+                            internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN)), internalIdpPasswordPolicy.getDescription());
 
-        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN) > (upperCount+lowerCount+specialCharacterCount) )
+        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN) > (upperCount + lowerCount + specialCharacterCount))
             throw new InvalidPasswordException(
                     MessageFormat.format("Password must contain at least {0} non-numeric characters",
-                                         internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN)), internalIdpPasswordPolicy.getDescription());
+                            internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN)), internalIdpPasswordPolicy.getDescription());
 
-        if ( internalIdpPasswordPolicy.getBooleanProperty(IdentityProviderPasswordPolicy.NO_REPEAT_CHARS) && hasRepeatChar )
+        if (internalIdpPasswordPolicy.getBooleanProperty(IdentityProviderPasswordPolicy.NO_REPEAT_CHARS) && hasRepeatChar)
             throw new InvalidPasswordException("Password contains consecutive repeating characters", internalIdpPasswordPolicy.getDescription());
     }
 
@@ -229,30 +230,30 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
      * @throws InvalidPasswordException
      */
     private void validatePasswordIsDifferent(final String newPassword, final String currentUnHashedPassword) throws InvalidPasswordException {
-        if(newPassword.equals(currentUnHashedPassword)){
+        if (newPassword.equals(currentUnHashedPassword)) {
             throw new InvalidPasswordException("New password is the same as the users current password.");
         }
 
         HashSet<String> oldChars = new HashSet<String>();
-        for (int i=0; i<currentUnHashedPassword.length(); i++)
-            oldChars.add(currentUnHashedPassword.substring(i,i+1));
+        for (int i = 0; i < currentUnHashedPassword.length(); i++)
+            oldChars.add(currentUnHashedPassword.substring(i, i + 1));
 
         int minCharDiff = internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.CHARACTER_DIFF_MIN);
-        if(minCharDiff<0) return;
+        if (minCharDiff < 0) return;
         int differCount = 0;
-        for (int i=0; i<newPassword.length(); i++)
-            if (! oldChars.contains(newPassword.substring(i,i+1)) && (++differCount >= minCharDiff))
+        for (int i = 0; i < newPassword.length(); i++)
+            if (!oldChars.contains(newPassword.substring(i, i + 1)) && (++differCount >= minCharDiff))
                 return;
 
         throw new InvalidPasswordException(
-                    MessageFormat.format("New password must differ from previous password by at least {0} characters.",minCharDiff),internalIdpPasswordPolicy.getDescription());
+                MessageFormat.format("New password must differ from previous password by at least {0} characters.", minCharDiff), internalIdpPasswordPolicy.getDescription());
     }
 
     /**
      * This method will validate that the new password meets all of the following:
-     *  - new password not resued within x-number of password changes
+     * - new password not resued within x-number of password changes
      *
-     * @param user  The user
+     * @param user        The user
      * @param newPassword
      * @throws InvalidPasswordException
      */
@@ -262,20 +263,20 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         List<PasswordChangeRecord> changes = ((InternalUser) user).getPasswordChangesHistory();
         PasswordChangeRecord change;
         int repeatFrequency = internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.REPEAT_FREQUENCY);
-        if(repeatFrequency < 0) return;
+        if (repeatFrequency < 0) return;
 
         ListIterator iter = changes.listIterator(Math.max(0, changes.size() - repeatFrequency + 1));
         final byte[] newPasswordBytes = newPassword.getBytes(Charsets.UTF8);
         while (iter.hasNext()) {
             change = (PasswordChangeRecord) iter.next();
 
-            if(change != null){//should never be null
+            if (change != null) {//should never be null
 
                 final String prevHash = change.getPrevHashedPassword();
 
                 boolean isReusedTooSoon = false;
                 try {
-                    if(passwordHasher.isVerifierRecognized(prevHash)){
+                    if (passwordHasher.isVerifierRecognized(prevHash)) {
                         passwordHasher.verifyPassword(newPasswordBytes, prevHash);
                         //if it's verifies then this password has been used recently, reject
                         isReusedTooSoon = true;
@@ -283,7 +284,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
 
                 } catch (IncorrectPasswordException e) {
                     //good expected, fall through
-                } 
+                }
 
                 if (!isReusedTooSoon) {
                     //for backwards compatibility, check against old hashing scheme
@@ -305,12 +306,12 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
     /**
      * Validate to see if the password can be changed based on the allowable password changes timeframe.
      *
-     * @param user  The user
+     * @param user The user
      * @throws InvalidPasswordException
      */
     public void validatePasswordChangesAllowable(final User user) throws InvalidPasswordException {
         boolean allowableChanges = internalIdpPasswordPolicy.getBooleanProperty(IdentityProviderPasswordPolicy.ALLOWABLE_CHANGES);
-        if(!allowableChanges)
+        if (!allowableChanges)
             return;
 
         long now = System.currentTimeMillis();
@@ -320,38 +321,39 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
 
         //compare if allowable to change password
         Calendar lastChange = Calendar.getInstance();
-        if ( user instanceof InternalUser ){
+        if (user instanceof InternalUser) {
             InternalUser internalUser = (InternalUser) user;
 
             if (hasAdminRole(internalUser) || internalUser.isChangePassword()) return;
 
             List<PasswordChangeRecord> changeHistory = internalUser.getPasswordChangesHistory();
             if (changeHistory != null) {
-                PasswordChangeRecord lastChangeRecord = changeHistory.get(changeHistory.size()-1);
+                PasswordChangeRecord lastChangeRecord = changeHistory.get(changeHistory.size() - 1);
                 long lastChangedMillis = lastChangeRecord.getLastChanged();
                 lastChange.setTimeInMillis(lastChangedMillis);
 
                 if (lastChange.after(xDaysAgo)) {
                     long nextChangeMinutes = 24 * 60 - (now - lastChangedMillis) / (1000 * 60);
                     throw new InvalidPasswordException(MessageFormat.format("Password cannot be changed more than once every 24 hours. Please retry in {0} minutes",
-                            (nextChangeMinutes >= 60 ? nextChangeMinutes / 60 + " hours and " : "") + nextChangeMinutes % 60 ),internalIdpPasswordPolicy.getDescription()) ;
+                            (nextChangeMinutes >= 60 ? nextChangeMinutes / 60 + " hours and " : "") + nextChangeMinutes % 60), internalIdpPasswordPolicy.getDescription());
                 }
             }
         }
     }
 
-    public void setUserPasswordPolicyAttributes(final InternalUser user, boolean isNewOrReset){
+    public void setUserPasswordPolicyAttributes(final InternalUser user, boolean isNewOrReset) {
         user.setPasswordExpiry(getExpiryPasswordDate(System.currentTimeMillis()));
-        if(isNewOrReset){
+        if (isNewOrReset) {
             // force password change
             boolean force = internalIdpPasswordPolicy.getBooleanProperty(IdentityProviderPasswordPolicy.FORCE_PWD_CHANGE);
             user.setChangePassword(force);
         }
     }
-          /**
+
+    /**
      * Determines if the user has administrative roles.
      *
-     * @return  TRUE if has admin role, otherwise FALSE
+     * @return TRUE if has admin role, otherwise FALSE
      */
     public boolean hasAdminRole(InternalUser internalUser) {
         try {
@@ -364,7 +366,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
                 }
             }
             return false;
-        } catch(FindException e) {
+        } catch (FindException e) {
             return false;
         }
     }
@@ -372,15 +374,15 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
     /**
      * Get the STIG compilance expiry password time.
      *
-     * @param time  The time that the password is being changed at so it can be used
-     *              to create the expiry date
-     * @return  The long format of the expiry date, -1 if password expiry is not set
+     * @param time The time that the password is being changed at so it can be used
+     *             to create the expiry date
+     * @return The long format of the expiry date, -1 if password expiry is not set
      */
     private long getExpiryPasswordDate(final long time) {
         try {
-            int expiry  = (Integer)internalIdpPasswordPolicy.getPropertyValue(IdentityProviderPasswordPolicy.PASSWORD_EXPIRY);
+            int expiry = (Integer) internalIdpPasswordPolicy.getPropertyValue(IdentityProviderPasswordPolicy.PASSWORD_EXPIRY);
             return expiry < 0 ? -1 : calcExpiryDate(time, expiry);
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
             // no property
             return -1;
         }
@@ -390,16 +392,16 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
      * Verifies if the user's password has expired based on the number of days that the password
      * suppose to expire.
      *
-     * @param user  The internal user instance
-     * @return  TRUE if the password has expired, otherwise FALSE.
+     * @param user The internal user instance
+     * @return TRUE if the password has expired, otherwise FALSE.
      */
-    public boolean isPasswordExpired( final User user ){
-        if (user instanceof InternalUser){
+    public boolean isPasswordExpired(final User user) {
+        if (user instanceof InternalUser) {
             final InternalUser internalUser = (InternalUser) user;
 
             //if change password is set, then it means we are forced to change the password (ie password was expired)
             if (internalUser.isChangePassword()) return true;
-            if (internalUser.getPasswordExpiry() < 0 ) return false;
+            if (internalUser.getPasswordExpiry() < 0) return false;
 
             Calendar expireDate = Calendar.getInstance();
             expireDate.setTimeInMillis(internalUser.getPasswordExpiry());
@@ -407,7 +409,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
             Calendar currentDate = Calendar.getInstance();
             currentDate.setTimeInMillis(System.currentTimeMillis());
 
-            if ( currentDate.after(expireDate) ) return true;
+            if (currentDate.after(expireDate)) return true;
 
         }
         return false;
@@ -416,9 +418,9 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
     /**
      * Utility to calculate the next expiry date based on the number of days to expire.
      *
-     * @param time  The time that will be used to calculate the expiry date
+     * @param time      The time that will be used to calculate the expiry date
      * @param numOfDays The number of days to expiry date
-     * @return  The long format of the expiry date                                              
+     * @return The long format of the expiry date
      */
     private static long calcExpiryDate(final long time, int numOfDays) {
         Calendar cal = Calendar.getInstance();
@@ -428,7 +430,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         return cal.getTimeInMillis();
     }
 
-    private IdentityProviderPasswordPolicy getInternalIdpPasswordPolicy(){
+    private IdentityProviderPasswordPolicy getInternalIdpPasswordPolicy() {
         IdentityProviderPasswordPolicy passwordPolicy = null;
         final String msg = "Could not find password policy for internal identity provider.";
         try {
@@ -438,7 +440,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
             logger.log(Level.WARNING, msg);
         }
 
-        if(passwordPolicy == null){
+        if (passwordPolicy == null) {
             throw new IllegalStateException(msg);
         }
 
