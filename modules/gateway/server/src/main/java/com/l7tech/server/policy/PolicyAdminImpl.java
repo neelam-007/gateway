@@ -545,6 +545,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
     public void clearActivePolicyVersion(long policyOid) throws FindException, UpdateException {
         Policy policy = policyManager.findByPrimaryKey(policyOid);
         if (policy == null) throw new FindException("No Policy found with policyOid=" + policyOid);
+        if (isAuditSinkPolicy(policy)) throw new UpdateException("Not allowed to clear active version for the audit sink policy");
 
         policy.disable();
         policyManager.update(policy);
@@ -648,6 +649,10 @@ public class PolicyAdminImpl implements PolicyAdmin {
         }
 
         return false;
+    }
+
+    private boolean isAuditSinkPolicy(Policy policy) {
+        return policy != null && PolicyType.INTERNAL.equals(policy.getType()) && "audit-sink".equals(policy.getInternalTag());
     }
 
     private static final String AMF_COMMENT_FRAGMENT =

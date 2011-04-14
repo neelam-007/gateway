@@ -17,6 +17,8 @@ import static com.l7tech.gui.util.TableUtil.column;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
@@ -211,6 +213,21 @@ public class PolicyRevisionsDialog extends JDialog {
         if (info == null)
             return;
 
+        // If the policy is Audit Sink Policy, an error dialog pops up and shows it is not allowed to clear active for the audit sink policy.
+        try {
+            Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyOid);
+            if (isAuditSinkPolicy(policy)) {
+                showErrorMessage(
+                    "Unable to Clear Active Version",
+                    "It is not allowed to disable the audit sink policy via Clear Active.",
+                    null
+                );
+                return;
+            }
+        } catch (FindException e) {
+            showErrorMessage("Unable to Clear Active Version", "Unable to find the policy (OID: " + policyOid + ")", e);
+        }
+
         DialogDisplayer.showConfirmDialog(this,
                                           "This will disable this policy.  Continue anyway?",
                                           "Clear Active Version",
@@ -245,6 +262,12 @@ public class PolicyRevisionsDialog extends JDialog {
                 }
             }
         });
+    }
+
+    private boolean isAuditSinkPolicy(Policy policy) {
+        return policy != null &&
+            PolicyType.INTERNAL.equals(policy.getType()) &&
+            AuditSinkGlobalPropertiesDialog.INTERNAL_TAG_AUDIT_SINK.equals(policy.getInternalTag());
     }
 
     private void doSetComment() {
