@@ -7,8 +7,10 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 import com.whirlycott.cache.Cache;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,6 +28,7 @@ class GroupCache {
 
     private final AtomicInteger cacheMaxTime = new AtomicInteger();
     private final AtomicInteger cacheMaxGroups = new AtomicInteger();
+    private final Map<Long,Long> providerInvalidation = new ConcurrentHashMap<Long,Long>();
     private final Cache cache;
     
     GroupCache( final String name, final int cacheMaxSize, final int cacheMaxTime, final int cacheMaxGroups ){
@@ -38,13 +41,16 @@ class GroupCache {
     /*
     * Look up the user in the cache and return it's Set<Principal> representing its
     * entire group membership
+    *
     * @param u the User we want the set of Set<Principal> for
     * @param ip the IdentityProvider the user belongs to. This can be used to validate the user if required
     * @param skipAccountValidation <code>true</code> to skip checking for whether the user account has expired or been disabled
     * @return Set<Group> null if the user has no group membership, otherwise a Group for
     * each group the user is a member of
     * */
-    public Set<IdentityHeader> getCachedValidatedGroups(User u, IdentityProvider ip, boolean skipAccountValidation) throws ValidationException {
+    public Set<IdentityHeader> getCachedValidatedGroups( final User u,
+                                                         final IdentityProvider ip,
+                                                         final boolean skipAccountValidation ) throws ValidationException {
 
         final long providerOid = ip.getConfig().getOid();
         final CacheKey ckey = new CacheKey(providerOid, u.getId());
@@ -55,6 +61,15 @@ class GroupCache {
         }
 
         return getAndCacheNewResult(u, ckey, ip, skipAccountValidation);
+    }
+
+    /**
+     * Invalidate any cached data for the given provider.
+     *
+     * @param providerOid The provider identifier
+     */
+    public void invalidate( final long providerOid ) {
+        providerInvalidation.put( providerOid, System.currentTimeMillis() );
     }
 
     void setCacheMaxTime( final int cacheMaxTime ) {
@@ -71,7 +86,7 @@ class GroupCache {
 
         CacheEntry groups = null;
 
-        Object cachedObj = cache.retrieve(ckey);
+        final Object cachedObj = cache.retrieve(ckey);
         if( cachedObj != null && cachedObj instanceof CacheEntry ){
             groups = (CacheEntry) cachedObj;
         }
@@ -80,8 +95,9 @@ class GroupCache {
             return null;
         }
 
-        long cacheAddedTime = groups.getTimestamp();
-        if ( cacheAddedTime + maxAge > System.currentTimeMillis() ) {
+        final long cacheAddedTime = groups.getTimestamp();
+        final Long invalidationTime = providerInvalidation.get( ckey.providerOid );
+        if ( (cacheAddedTime + (long)maxAge > System.currentTimeMillis()) && (invalidationTime==null || invalidationTime < cacheAddedTime) ) {
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE, "Cache hit for user {0} from IdP \"{1}\"", new String[] {login, idp.getConfig().getName()});
             return (Set<IdentityHeader>) groups.getCachedObject();

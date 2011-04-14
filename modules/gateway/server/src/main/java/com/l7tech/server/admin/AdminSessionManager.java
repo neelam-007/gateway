@@ -16,6 +16,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.event.GroupMembershipEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -102,8 +103,11 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             if (eie.getEntityClass() == IdentityProviderConfig.class) {
                 setupAdminProviders();
             }
-        }
-        if (event instanceof ReadyForMessages){
+        } else if ( event instanceof GroupMembershipEvent ) {
+            final GroupMembershipEvent groupMembershipEvent = (GroupMembershipEvent) event;
+            final Group group = groupMembershipEvent.getEntity();
+            groupCache.invalidate( group.getProviderId() );
+        } else if (event instanceof ReadyForMessages){
             // check for inactive users once a day
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
