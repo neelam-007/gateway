@@ -184,19 +184,6 @@ Using putty: test1@10.4.7.130 and pass1:
 
 
 
-============================
-LDAP only testing:
-----------------------------
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -254,24 +241,26 @@ ldapsearch -x -b 'dc=example,dc=com' '(objectclass=*)'
 
 Should output a lot of info about LDAP structure...
 
+End of LDAP server configuration.
+---------------------------------------------------------------------------------
 
-Now we can add the ldapuser user to ldap:
+====================================
+Testing ldap_only Authentication
+------------------------------------
+
+Now we can add the ldapuser user (for testing) to ldap database:
 
 grep ldapuser /etc/passwd > /tmp/changeldappasswd.tmp
 /usr/share/openldap/migration/migrate_passwd.pl /tmp/changeldappasswd.tmp /tmp/changeldappasswd.ldif.tmp
 cat /tmp/changeldappasswd.ldif.tmp | sed s/padl/example/ /tmp/changeldappasswd.ldif
 ldapadd -x -D "cn=Manager,dc=example,dc=com" -W -f /tmp/changeldappasswd.ldif
-* enter the root ldap password here
+# enter the root ldap password here
 * if successful a message similar to this should be received:
 
 adding new entry "uid=ldapuser,ou=People,dc=example,dc=com"
 
 # we can now remove all temporary files:
 rm -f /tmp/changeldappasswd.*
-
-
-
-
 
 # Now the next command should be able to find the ldapuser in ldap and output some details about it:
 
@@ -304,28 +293,70 @@ result: 0 Success
 # numResponses: 2
 # numEntries: 1
 
-# at this point we can configure the SSG appliance accordint to the ldap server
-# and make the following tests:
+# At this point we can configure the SSG appliance to use LDAP for authentication.
+# Chose ldap_only as configuration type and give the appropriate IP address for the LDAP server.
 
-ldapsearch -x -h LDAP_SRV_IP -b 'uid=ldapuser,ou=People,dc=example,dc=com'
-* this should output the same information as it did when ran on the LDAP server
-
-# verify that we have no ldapuser on the SSG appliance:
-cat /etc/passwd | grep ldapuser
-
-# we have to create the /home/ldapuser directory as this will be the home dir for the ldapuser
+# We have to create the /home/ldapuser directory as this will be the home dir for the ldapuser
 # (as you can see in the output of the ldap query)
 mkdir /home/ldapuser
 chmod 750 /home/ldapuser
 
+# The folowing tests can now be run:
+(make sure there are no firewall rules droping packets on tcp/389 socket)
+
+ldapsearch -x -h LDAP_SRV_IP -b 'uid=ldapuser,ou=People,dc=example,dc=com'
+* this should output details similar to those above (when the command was issued on the LDAP server)
+
+# verify that we have no ldapuser on the SSG appliance:
+cat /etc/passwd | grep ldapuser
+
+Test 1:
 # try to use the ldapuser on the SSG appliance even if there is no such local user:
 chown ldap:ldap /home/ldapuser
 * we should have no error in this case as the system is now capable to interogate ldap
 in order to find the user the above command is trying to use.
 
+Test 2:
+SSH authentication on SSG appliance as ldapuser (which is not a local user):
+
+login as: ldapuser
+ldapuser@10.7.48.109's password:
+Last login: Fri Apr  8 13:14:20 2011 from adic-pc.l7tech.local
+grep: /opt/SecureSpan/Controller/etc/host.properties: Permission denied
+-bash-3.2$
+
+End of ldap_only authentication testing.
+-----------------------------------------------------------------------------
 
 
 
+
+
+
+
+
+
+
+Possible problems:
+
+1. UID overlapping between ldap server and clients
+
+UID for the ldapuser on the ldap server can be identical with an UID of another user on the
+SSG appliance; this will lead to apperently wierd behaviour of commands like chown which will
+not give an error but will apply the local UID to the target:
+Example:
+ldapuser on ldap server has UID 502
+ssgconfig user on SSG appliance has UID 502
+chown ldapuser /home/ldapuser
+will work but:
+ls -l /home/ldapuser will return:
+......
+drwx------ 2 ssgconfig users     4096 Apr  6 16:25 ldapuser
+......
+
+which is normal but most likely not wanted.
+
+2. ???
 
 
 ===============================================
