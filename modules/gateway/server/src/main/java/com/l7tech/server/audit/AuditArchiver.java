@@ -3,13 +3,12 @@ package com.l7tech.server.audit;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.ServerConfig;
 import static com.l7tech.server.ServerConfig.*;
 import com.l7tech.server.cluster.ClusterLock;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.AuditArchiverEvent;
+import com.l7tech.util.Config;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
@@ -35,27 +34,25 @@ import java.util.logging.Logger;
  *
  * @author jbufu
  */
-public class AuditArchiver implements InitializingBean, ApplicationContextAware, PropertyChangeListener {
+public class AuditArchiver implements ApplicationContextAware, PropertyChangeListener {
 
     private static final Logger logger = Logger.getLogger(AuditArchiver.class.getName());
 
-
-    // Filled in by Spring
-    private final ServerConfig serverConfig;
+    private final Config config;
     private final ClusterPropertyManager clusterPropertyManager;
-    private PlatformTransactionManager transactionManager;
-    private AuditRecordManager recordManager;
+    private final PlatformTransactionManager transactionManager;
+    private final AuditRecordManager recordManager;
+    private final Auditor auditor;
 
     private int shutdownThreshold;
     private int startThreshold;
     private int stopThreshold;
     private int batchSize;
     private static final int MAX_BATCH_SIZE = 10000;
-    public static final int MYSQL_STATS_UPDATE_SLEEP_WAIT = 15000; // milliseconds
+    public static final long MYSQL_STATS_UPDATE_SLEEP_WAIT = 15000L; // milliseconds
 
     private Timer timer;
     private Lock lock;
-    private Auditor auditor;
     private ApplicationContext applicationContext;
 
     private long staleTimeout;
@@ -64,9 +61,13 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
 
     private ArchiveReceiver archiveReceiver;
 
-    public AuditArchiver(ServerConfig serverConfig, ClusterPropertyManager cpm,
-                         PlatformTransactionManager tm, AuditRecordManager arm, ArchiveReceiver ar) throws FindException {
-        if (serverConfig == null)
+    public AuditArchiver( final Config config,
+                          final ClusterPropertyManager cpm,
+                          final PlatformTransactionManager tm,
+                          final AuditRecordManager arm,
+                          final ArchiveReceiver ar,
+                          final Auditor.AuditorFactory auditorFactory ) throws FindException {
+        if (config == null)
             throw new NullPointerException("ServerConfig parameter must not be null.");
         if (cpm == null)
             throw new NullPointerException("ClusterPropertyManager parameter must not be null.");
@@ -75,13 +76,14 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
         if (ar == null)
             throw new NullPointerException("ArchiveReceiver parameter must not be null.");
 
-        this.serverConfig = serverConfig;
+        this.config = config;
         this.clusterPropertyManager = cpm;
         this.transactionManager = tm;
         this.recordManager = arm;
         this.archiveReceiver = ar;
+        this.auditor = auditorFactory.newInstance(this, logger);
 
-        this.staleTimeout = this.serverConfig.getLongProperty(PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT, 120);
+        this.staleTimeout = this.config.getLongProperty(PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT, 120L);
         lock = getNewLock();
 
         timer = new Timer(true);
@@ -90,11 +92,6 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
     private Lock getNewLock() {
         // makes sure the same cluster property is used for each new lock
         return new ClusterLock(clusterPropertyManager, transactionManager, PARAM_AUDIT_ARCHIVER_IN_PROGRESS, staleTimeout);
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        this.auditor = new Auditor(this, getApplicationContext(), logger);
     }
 
     private void onApplicationEvent( final ApplicationEvent event ) {
@@ -113,10 +110,10 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
         if (timerTask != null)
             timerTask.cancel();
 
-        if ( timerPeriod > 0 ) {
-            logger.info("(Re)Scheduling Audit Archiver timer for " + timerPeriod / 1000 + " seconds.");
+        if ( timerPeriod > 0L ) {
+            logger.info("(Re)Scheduling Audit Archiver timer for " + timerPeriod / 1000L + " seconds.");
             timerTask = new AuditArchiverTimerTask();
-            timer.schedule(timerTask, 0, timerPeriod);
+            timer.schedule(timerTask, 0L, timerPeriod);
         } else {
             logger.info("Audit Archiver timer disabled.");
         }
@@ -125,21 +122,21 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
     private void reloadConfig() {
         logger.info("Reloading configuration.");
 
-        shutdownThreshold = serverConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 90);
-        startThreshold = serverConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_START_THRESHOLD, 75);
-        stopThreshold = serverConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 50);
-        batchSize = serverConfig.getIntProperty(PARAM_AUDIT_ARCHIVER_BATCH_SIZE, 100);
+        shutdownThreshold = config.getIntProperty(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 90);
+        startThreshold = config.getIntProperty(PARAM_AUDIT_ARCHIVER_START_THRESHOLD, 75);
+        stopThreshold = config.getIntProperty(PARAM_AUDIT_ARCHIVER_STOP_THRESHOLD, 50);
+        batchSize = config.getIntProperty( PARAM_AUDIT_ARCHIVER_BATCH_SIZE, 100 );
 
-        long newStaleTimeout = serverConfig.getLongProperty(PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT, 120);
+        long newStaleTimeout = config.getLongProperty(PARAM_AUDIT_ARCHIVER_STALE_TIMEOUT, 120L);
         if (newStaleTimeout != staleTimeout) {
             logger.info("Setting new cluster lock stale timeout: " + newStaleTimeout + " minutes.");
             staleTimeout = newStaleTimeout;
             lock = getNewLock();
         }
 
-        long newPeriod = serverConfig.getLongProperty(PARAM_AUDIT_ARCHIVER_TIMER_PERIOD, 10) * 1000;//todo incorrect default based on serverconfig.properties should be 600 - 10 minutes
-        if ( newPeriod < 0 ) {
-            newPeriod = 0;
+        long newPeriod = config.getLongProperty(PARAM_AUDIT_ARCHIVER_TIMER_PERIOD, 600L) * 1000L;
+        if ( newPeriod < 0L ) {
+            newPeriod = 0L;
         }
         if (timer != null && newPeriod != timerPeriod) {
             timerPeriod = newPeriod;
@@ -159,7 +156,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
     private void trigger() {
         logger.info("Starting Audit Archiver check.");
 
-        if (currentUsageCheck(0) < startThreshold) {
+        if (currentUsageCheck(0L) < startThreshold) {
             logger.info("Below start_archive threshold, not starting archiver thread.");
             return;
         }
@@ -223,15 +220,15 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
         try {
             long max = recordManager.getMaxTableSpace();
 
-            if (max == -1) {
+            if (max == -1L) {
                 auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_ERROR, "Max innodb tablespace size not defined.");
                 stopTimer();
 
-            } else if (max > 0) {
+            } else if (max > 0L) {
                 usage = (int) (100L * recordManager.getCurrentUsage() / max);
                 adjustedUsage = (int) (100L * (recordManager.getCurrentUsage() - adjustment) / max);
 
-                if (adjustment > 0)
+                if (adjustment > 0L)
                     logger.info("Projected database space usage is " + adjustedUsage + "%");
                 else
                     logger.info("Current database space usage is " + usage + "%");
@@ -242,7 +239,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
                 else
                     ssgRestart();
 
-                return adjustment > 0 ? adjustedUsage : usage;
+                return adjustment > 0L ? adjustedUsage : usage;
             } else {
                 throw new FindException("Invalid value defined for max innodb tablespace: " + max);
             }
@@ -269,7 +266,7 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
         while (true) { // loop until the unadjusted (zipBytesArchived==0) usage check drops below the stop threshold
             long initialStartOid = Long.MIN_VALUE;
             long maxOidArchived = Long.MIN_VALUE;
-            long zipBytesArchived = 0;
+            long zipBytesArchived = 0L;
 
             while (stopThreshold <= (currentUsageCheck(zipBytesArchived))) {
                 // get starting point
@@ -281,11 +278,11 @@ public class AuditArchiver implements InitializingBean, ApplicationContextAware,
                     break;
                 }
                 if (initialStartOid == Long.MIN_VALUE) initialStartOid = startOid;
-                if (startOid == -1) {
+                if (startOid == -1L) {
                     auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_ERROR, "Error getting lowest audit record object id.");
                     break;
                 }
-                long endOid = startOid + (batchSize > MAX_BATCH_SIZE ? MAX_BATCH_SIZE : batchSize);
+                long endOid = startOid + (long)(batchSize > MAX_BATCH_SIZE ? MAX_BATCH_SIZE : batchSize);
 
                 // archive
                 try {

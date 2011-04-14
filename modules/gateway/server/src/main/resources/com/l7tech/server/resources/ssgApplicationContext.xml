@@ -1047,11 +1047,12 @@
 
     <!-- server side audit archiver -->
     <bean id="auditArchiver" class="com.l7tech.server.audit.AuditArchiver">
-      <constructor-arg ref="serverConfig"/>
-      <constructor-arg ref="clusterPropertyManager"/>
-      <constructor-arg ref="transactionManager"/>
-      <constructor-arg ref="auditRecordManager"/>
-      <constructor-arg ref="auditArchiveReceiver"/>
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+        <constructor-arg index="2" ref="transactionManager"/>
+        <constructor-arg index="3" ref="auditRecordManager"/>
+        <constructor-arg index="4" ref="auditArchiveReceiver"/>
+        <constructor-arg index="5" ref="auditorFactory"/>
     </bean>
 
     <bean id="auditArchiveReceiver" class="com.l7tech.server.audit.FtpArchiveReceiver">

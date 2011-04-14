@@ -7,13 +7,14 @@ import com.l7tech.gateway.common.Component;
  *
  * @author jbufu
  */
-public class AuditArchiverEvent extends SystemEvent {
+public class AuditArchiverEvent extends SystemEvent implements RoutineSystemEvent {
     //- PUBLIC
 
     public AuditArchiverEvent( Object source ) {
         super(source, Component.GATEWAY);
     }
 
+    @Override
     public String getAction() {
         return NAME;
     }
