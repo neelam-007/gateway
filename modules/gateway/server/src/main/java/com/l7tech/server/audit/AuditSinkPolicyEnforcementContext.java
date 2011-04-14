@@ -1,6 +1,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.message.Message;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.HasOriginalContext;
@@ -40,6 +41,22 @@ public class AuditSinkPolicyEnforcementContext extends PolicyEnforcementContextW
     @Override
     public Object getOriginalContextVariable(String name) throws NoSuchVariableException {
         return originalContext == null ? null : originalContext.getVariable(name);
+    }
+
+    public String getAuditedRequest() {
+        if (auditRecord instanceof MessageSummaryAuditRecord) {
+            MessageSummaryAuditRecord record = (MessageSummaryAuditRecord) auditRecord;
+            return record.getRequestXml();
+        }
+        return null;
+    }
+
+    public String getAuditedResponse() {
+        if (auditRecord instanceof MessageSummaryAuditRecord) {
+            MessageSummaryAuditRecord record = (MessageSummaryAuditRecord) auditRecord;
+            return record.getResponseXml();
+        }
+        return null;
     }
 
     /** @return the original PolicyEnforcementContext if we are handling a message processing audit event, or null. */

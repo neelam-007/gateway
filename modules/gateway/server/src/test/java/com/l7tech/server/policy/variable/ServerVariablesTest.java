@@ -65,13 +65,15 @@ public class ServerVariablesTest {
     private static final LogOnlyAuditor auditor = new LogOnlyAuditor(logger);
     private static final String REQUEST_BODY = "<myrequest/>";
     private static final String RESPONSE_BODY = "<myresponse/>";
-    private static final String JSON_MESSAGE = "{\"result\":\"success\"}";    
+    private static final String JSON_MESSAGE = "{\"result\":\"success\"}";
+    private static final String AUDITED_REQUEST_XML = "<auditRecordRequestXml/>";
+    private static final String AUDITED_RESPONSE_XML = "<auditRecordResponseXml/>";
 
     /*
-    * testServiceNameContextVariable creates a PolicyEncofcementContext and gives it a
-    * PublishedService. The static ServerVariabes(String, PolicyEncorcementContext) is used
-    * to retrieve the value of service.name which should equal the name of the service created.
-    * */
+   * testServiceNameContextVariable creates a PolicyEncofcementContext and gives it a
+   * PublishedService. The static ServerVariabes(String, PolicyEncorcementContext) is used
+   * to retrieve the value of service.name which should equal the name of the service created.
+   * */
     @Test
     public void testServiceNameContextVariable() throws Exception{
         PolicyEnforcementContext pec = context();
@@ -599,13 +601,15 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.responseContentLength}", String.valueOf(RESPONSE_BODY.getBytes().length));
         expandAndCheck(c, "${audit.request.mainpart}", REQUEST_BODY);
         expandAndCheck(c, "${audit.response.mainpart}", RESPONSE_BODY);
+        expandAndCheck(c, "${audit.filteredrequest}", AUDITED_REQUEST_XML);
+        expandAndCheck(c, "${audit.filteredresponse}", AUDITED_RESPONSE_XML);
         expandAndCheck(c, "${audit.request.originalmainpart}", "");
         expandAndCheck(c, "${audit.response.originalmainpart}", "");
         expandAndCheck(c, "${audit.var.request.mainpart}", REQUEST_BODY);
         expandAndCheck(c, "${audit.var.response.mainpart}", RESPONSE_BODY);
         expandAndCheck(c, "${audit.var.request.size}", String.valueOf(REQUEST_BODY.getBytes().length));
-        expandAndCheck(c, "${audit.requestSavedFlag}", "false");
-        expandAndCheck(c, "${audit.responseSavedFlag}", "false");
+        expandAndCheck(c, "${audit.requestSavedFlag}", "true");
+        expandAndCheck(c, "${audit.responseSavedFlag}", "true");
         expandAndCheck(c, "${audit.routingLatency}", "232");
         expandAndCheck(c, "${audit.serviceOid}", "8859");
         expandAndCheck(c, "${audit.status}", "0");
@@ -631,8 +635,8 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${audit.var.request.size}", String.valueOf(newreq.getBytes().length));
         expandAndCheck(c, "${audit.request.originalmainpart}", REQUEST_BODY);
         expandAndCheck(c, "${audit.response.originalmainpart}", RESPONSE_BODY);
-        expandAndCheck(c, "${audit.requestSavedFlag}", "false");
-        expandAndCheck(c, "${audit.responseSavedFlag}", "false");
+        expandAndCheck(c, "${audit.requestSavedFlag}", "true");
+        expandAndCheck(c, "${audit.responseSavedFlag}", "true");
         expandAndCheck(c, "${audit.routingLatency}", "232");
         expandAndCheck(c, "${audit.serviceOid}", "8859");
         expandAndCheck(c, "${audit.status}", "0");
@@ -902,7 +906,7 @@ public class ServerVariablesTest {
 
     @SuppressWarnings({"deprecation"})
     AuditRecord auditRecord() {
-        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "req4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, 8859, "ACMEWarehouse",
+        AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "req4545", AssertionStatus.NONE, "3.2.1.1", AUDITED_REQUEST_XML, 4833, AUDITED_RESPONSE_XML, 9483, 200, 232, 8859, "ACMEWarehouse",
                 "listProducts", true, SecurityTokenType.HTTP_BASIC, -2, "alice", "41123", 49585);
         //noinspection deprecation
         auditRecord.setOid(9777L);

@@ -524,9 +524,11 @@ public class ServerVariables {
         }),
 
         new Variable("audit", new AuditContextGetter("audit")),
-        new Variable("audit.request", new AuditOriginalMessageGetter("audit.request", false)),
+        new Variable("audit.request", new AuditOriginalMessageGetter("audit.request", false, false)),
         new Variable("audit.requestContentLength", new AuditOriginalMessageSizeGetter(false)),
-        new Variable("audit.response", new AuditOriginalMessageGetter("audit.response", true)),
+        new Variable("audit.response", new AuditOriginalMessageGetter("audit.response", true, false)),
+        new Variable("audit.filteredrequest", new AuditOriginalMessageGetter("audit.filteredrequest", false, true)),
+        new Variable("audit.filteredresponse", new AuditOriginalMessageGetter("audit.filteredresponse", true, true)),
         new Variable("audit.responseContentLength", new AuditOriginalMessageSizeGetter(true)),
         new Variable("audit.var", new AuditOriginalContextVariableGetter("audit.var")),
         new Variable("audit.policyExecutionAttempted", new AbstractAuditGetter() {
@@ -848,17 +850,23 @@ public class ServerVariables {
 
     private static class AuditOriginalMessageGetter extends AbstractSelectingAuditGetter {
         private final boolean targetsResponse;
+        private final boolean targetsAuditedMessage;
 
-        private AuditOriginalMessageGetter(String baseName, boolean targetsResponse) {
+        private AuditOriginalMessageGetter(String baseName, boolean targetsResponse, boolean targetsAuditedMessage) {
             super(baseName);
             this.targetsResponse = targetsResponse;
+            this.targetsAuditedMessage = targetsAuditedMessage;
         }
 
         @Override
         protected Object getBaseObject(PolicyEnforcementContext context) {
             if (context instanceof AuditSinkPolicyEnforcementContext) {
                 AuditSinkPolicyEnforcementContext auditpec = (AuditSinkPolicyEnforcementContext) context;
-                return targetsResponse ? auditpec.getOriginalResponse() : auditpec.getOriginalRequest();
+                if (targetsAuditedMessage) {
+                    return targetsResponse ? auditpec.getAuditedResponse() : auditpec.getAuditedRequest();
+                } else {
+                    return targetsResponse ? auditpec.getOriginalResponse() : auditpec.getOriginalRequest();
+                }
             }
             return null;
         }
