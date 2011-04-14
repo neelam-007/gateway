@@ -23,7 +23,7 @@
 
 source $1
 
-# Define variables that will not be taken from the radius_ldap.config file:
+# Define variables that will not be taken from the sourced configuration file:
 
 LDAP_CONF_FILE1="/etc/openldap/ldap.conf"
 LDAP_CONF_FILE2="/etc/ldap.conf"
