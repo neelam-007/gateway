@@ -82,7 +82,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected WspReader wspReader;
     protected IdentityProviderFactory identityProviderFactory;
     private LicenseManager licenseManager;
-    private PasswordHasher passwordHasher;//todo this can likely be removed if / when this class is updated to user AdminSessionManager
+    protected PasswordHasher passwordHasher;//todo this can likely be removed if / when this class is updated to user AdminSessionManager
 
     @Override
     public void init(ServletConfig config) throws ServletException {

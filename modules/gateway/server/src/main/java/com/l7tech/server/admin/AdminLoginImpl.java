@@ -31,7 +31,6 @@ import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.Charsets;
-import com.l7tech.util.Pair;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -44,6 +43,7 @@ import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
@@ -58,6 +58,7 @@ public class AdminLoginImpl
     
     private AdminSessionManager sessionManager;
 
+    private final SecureRandom secureRandom;
     private final DefaultKey defaultKey;
     private final SsgKeyStoreManager ssgKeyStoreManager;
     private IdentityProviderConfigManager identityProviderConfigManager;
@@ -65,10 +66,11 @@ public class AdminLoginImpl
     private PasswordHasher passwordHasher;
     private ServerConfig serverConfig;
 
-    public AdminLoginImpl(DefaultKey defaultKey, SsgKeyStoreManager ssgKeyStoreManager, PasswordHasher passwordHasher) {
+    public AdminLoginImpl(DefaultKey defaultKey, SsgKeyStoreManager ssgKeyStoreManager, PasswordHasher passwordHasher, SecureRandom secureRandom) {
         this.defaultKey = defaultKey;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
         this.passwordHasher = passwordHasher;
+        this.secureRandom = secureRandom;
     }
 
     @Override
@@ -222,8 +224,10 @@ public class AdminLoginImpl
     }
 
     @Override
-    public Pair<byte[], byte[]> getServerCertificateVerificationInfo(final String username, byte[] clientSalt) throws AccessControlException {
+    public ServerCertificateVerificationInfo getServerCertificateVerificationInfo(final String username, byte[] clientNonce) throws AccessControlException {
         try {
+            byte[] serverNonce = new byte[20];
+            secureRandom.nextBytes(serverNonce);
             byte[] passwordSalt = null;
             byte[] verifierSharedSecret = null;
 
@@ -251,13 +255,14 @@ public class AdminLoginImpl
                 passwordSalt = passwordHasher.extractSaltFromVerifier(passwordHasher.hashPassword(verifierSharedSecret));
             }
 
-            if (clientSalt == null) {
+            if (clientNonce == null) {
                 // Invalid call, but we'll generate a bogus client salt to prevent an NPE and return a bogus verifier hash instead
-                clientSalt = new byte[] {(byte) 66, (byte) 33, (byte) 11, (byte) 44};
+                clientNonce = new byte[] {(byte) 66, (byte) 33, (byte) 11, (byte) 44};
             }
 
             X509Certificate certificate = getCurrentConnectorCertificate();
-            return new Pair<byte[], byte[]>(passwordSalt, CertUtils.getVerifierBytes(verifierSharedSecret, clientSalt, certificate));
+            final byte[] checkHash = CertUtils.getVerifierBytes(verifierSharedSecret, clientNonce, serverNonce, certificate.getEncoded());
+            return new ServerCertificateVerificationInfo("L7VF-6.0", serverNonce, passwordSalt, checkHash);
 
         } catch (InvalidIdProviderCfgException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);

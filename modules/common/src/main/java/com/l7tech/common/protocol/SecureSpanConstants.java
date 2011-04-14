@@ -367,9 +367,11 @@ public class SecureSpanConstants {
         public static final String ORIGINAL_URL = "L7-Original-URL";
 
         /**
+         * <b>Note: Obsolete as of SecureSpan 6.0</b>
+         *
          * Contains a hash value used for checking certificate validity.  These headers are provided in the
          * response from the SSG's certificate discovery server (PolicyServlet) so that the client
-         * (ie, the Bridge or Manager) can decide whether it trusts the certificate being downloaded.
+         * (ie, the XVC) can decide whether it trusts the certificate being downloaded.
          *
          * <p>This is only the prefix of the full header name that will appear in the respone -- the full header
          * name for each cert check will be this prefix followed by the numeric ID of an authentication provider that
@@ -401,10 +403,44 @@ public class SecureSpanConstants {
          *
          * <h3>Usages:<ul>
          * <li>Zero or more headers with this prefix are returned by the certificate discovery servlet to the
-         * Bridge along with every download of the Gateway cluster's CA certificate.
+         * XVC along with every download of the Gateway cluster's SSL certificate.
          * </ul>
          */
-        public static final String CERT_CHECK_PREFIX = "L7-Cert-Check-";
+        public static final String LEGACY_CERT_CHECK_PREFIX = "L7-Cert-Check-";
+
+        /**
+         * New for SecureSpan 6.0.
+         *
+         * Contains a hash value used for checking certificate validity.  These headers are provided in the response
+         * from the SSG's certificate discovery server (PolicyServlet) so that the client
+         * (ie, the XVC) can decide whether it trusts the certificate being downloaded.
+         *
+         * <p>The full header name for each check2 header is this prefix followed by the decimal numeric ID of an identity
+         * provider that contined a matching username.  This numeric value may be negative, in which case the header
+         * name will contain a doubled dash, eg "L7-Cert-Check2--1:".
+         *
+         * <p>The header value will be in the form "SERVERNONCEHEX; CHECKHEX; SALTHEX" where SERVERNONCEHEX is a hex
+         * encoded random byte array chosen by the server, CHECKHEX is the hex encoded SHA-512 hash
+         * value computed as described below, and SALTHEX is the hex encoded bytes of the matching user's encoded password
+         * hash salt (ie, hexdump("$6$hUk9FPX2boJCzryM")).
+         *
+         * <p>
+         * The CHECKHEX is computed as SHA512(PRIV, SHA512(PRIV, CS, SS, CERT)) where:
+         *   PRIV is the complete SHA512Crypt hashed password string for this user (including salt and "$6$" prefix, converted to bytes using UTF-8);
+         *   CS is a client-chosen random nonce (delivered from the client to the server in the "nonce" URL parameter);
+         *   SS is a server-chosen random nonce (delivered from the server to the client in the SERVERNONCEHEX value); and
+         *   CERT is the encoded certificate bytes.
+         *
+         * <p>If a check2 header cannot be generated for this user on this Gateway (perhaps because the Gateway does not have
+         * the user's hashed password available in SHA512Crypt format, or because server certificate discovery is disabled) the
+         * Gateway will return a check2 header with the string "NOPASS" in place of CHECKHEX.
+         *
+         * <h3>Usages:<ul>
+         * <li>Zero or more headers with this prefix are returned by the certificate discovery servlet to the
+         * XVC along with every download of the Gateway cluster's SSL certificate.
+         * </ul>
+         */
+        public static final String CERT_CHECK2_PREFIX = "L7-Cert-Check2-";
 
         /**
          * Sent by the client to the password service. This contains the Base-64 encoded value of the new password.

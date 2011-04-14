@@ -58,7 +58,7 @@ public class CertificateDownloaderTest {
                                                              new URL("http://fish:8080"),
                                                              "mike",
                                                              "asdfasdf".toCharArray()){
-            protected String getNonce() {
+            protected String getClientNonce() {
                 return "3151956493247494442";
             }
         };

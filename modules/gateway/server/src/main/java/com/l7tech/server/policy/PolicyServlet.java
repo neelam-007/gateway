@@ -1,37 +1,38 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.policy.Policy;
+import com.l7tech.common.http.CertificateCheck2Info;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.http.CertificateCheckInfo;
-import com.l7tech.message.HttpServletRequestKnob;
-import com.l7tech.message.HttpServletResponseKnob;
-import com.l7tech.message.Message;
+import com.l7tech.common.http.Pre60CertificateCheckInfo;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.message.HttpServletRequestKnob;
+import com.l7tech.message.HttpServletResponseKnob;
+import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.server.*;
+import com.l7tech.server.AuthenticatableHttpServlet;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.system.PolicyServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -41,7 +42,8 @@ import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.SoapFaultManager;
-import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.util.*;
+import com.l7tech.xml.SoapFaultLevel;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -53,9 +55,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.*;
-import java.util.logging.Level;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.logging.Level;
 
 
 /**
@@ -79,12 +86,15 @@ import java.security.cert.CertificateException;
  */
 public class PolicyServlet extends AuthenticatableHttpServlet {
 
+    private static final String DUMMY_ID_PROVIDER_OID = Long.toString(Long.MAX_VALUE); // Dummy ID provider OID for NOPASS headers
+
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
     private byte[] serverCertificate;
     private ServerConfig serverConfig;
     private PolicyPathBuilder policyPathBuilder;
     private PolicyCache policyCache;
+    private SecureRandom secureRandom;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -99,6 +109,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             PolicyPathBuilderFactory pathBuilderFactory = (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory");
             policyPathBuilder = pathBuilderFactory.makePathBuilder();
             policyCache = applicationContext.getBean( "policyCache", PolicyCache.class );
+            secureRandom = getBean("secureRandom", SecureRandom.class);
         } catch (BeansException be) {
             throw new ServletException(be);
         }catch (IOException e) {
@@ -425,12 +436,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         boolean certificateDiscoveryEnabled = Boolean.valueOf(
             ServerConfig.getInstance().getProperty(ServerConfig.PARAM_CERTIFICATE_DISCOVERY_ENABLED));
         if (certificateDiscoveryEnabled && username != null && nonce != null) {
-            Collection<CertificateCheckInfo> checks = findCheckInfos(username, pemEncodedServerCertificate, nonce);
-            for (CertificateCheckInfo info : checks) {
-                if (info != null) {
-                    HttpHeader header = info.asHttpHeader();
-                    response.addHeader(header.getName(), header.getFullValue());
-                }
+            Collection<HttpHeader> checkInfoHeaders = findCheckInfoHeaders(username, pemEncodedServerCertificate, nonce);
+            for (HttpHeader header : checkInfoHeaders) {
+                response.addHeader(header.getName(), header.getFullValue());
             }
         }
 
@@ -451,39 +459,70 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     /**
      * Given a username, find all matching users in every registered ID provider
-     * and return the corresponding {@link com.l7tech.common.http.CertificateCheckInfo} instance.
+     * and return the corresponding {@link com.l7tech.common.http.Pre60CertificateCheckInfo} instance.
      *
-     * @param username The username to use
-     * @return A collection of {@link CertificateCheckInfo} instances.
+     * @param username The username to use to look up the hashed password.  Required.
+     * @param certBytes  encoded certificate bytes that the client will be verifying.   Required.
+     * @param clientNonce  the nonce value provided by the client.  Required.
+     * @return A collection of HTTP headers to add to the response, where each header is a check or check2 header.  May be empty.
      * @throws com.l7tech.objectmodel.FindException
      *          if the ID Provider list could not be determined.
      */
-    private Collection<CertificateCheckInfo> findCheckInfos(String username, byte[] certBytes, String nonce) throws FindException {
-        ArrayList<CertificateCheckInfo> checkInfos = new ArrayList<CertificateCheckInfo>();
+    private Collection<HttpHeader> findCheckInfoHeaders(String username, byte[] certBytes, String clientNonce) throws FindException {
+        List<HttpHeader> ret = new ArrayList<HttpHeader>();
         final String trimmedUsername = username.trim();
+        final byte[] clientNonceBytes = clientNonce.getBytes(Charsets.UTF8);
 
+        boolean sawUncheckableUser = false;
         Collection<IdentityProvider> idps = identityProviderFactory.findAllIdentityProviders();
         for (IdentityProvider provider : idps) {
             try {
                 User user = provider.getUserManager().findByLogin(trimmedUsername);
                 if (user != null) {
-                    String password = user instanceof InternalUser ? ((InternalUser)user).getHashedPassword() : null;
-                    String oid = Long.toString(provider.getConfig().getOid());
-                    String realm = provider.getAuthRealm();
-                    checkInfos.add(new CertificateCheckInfo(certBytes, trimmedUsername, password, nonce, oid, realm));
+                    boolean addedHeader = false;
+                    String hashedPassword = user instanceof InternalUser ? ((InternalUser)user).getHashedPassword() : null;
+                    if (hashedPassword != null && passwordHasher.isVerifierRecognized(hashedPassword)) {
+                        final byte[] userSaltBytes = passwordHasher.extractSaltFromVerifier(hashedPassword);
+                        if (userSaltBytes != null) {
+                            String userSaltHex = HexUtils.hexDump(userSaltBytes);
+                            String oid = Long.toString(provider.getConfig().getOid());
+
+                            byte[] serverNonceBytes = new byte[16];
+                            secureRandom.nextBytes(serverNonceBytes);
+                            String serverNonceHex = HexUtils.hexDump(serverNonceBytes);
+
+                            byte[] checkHashBytes = CertUtils.getVerifierBytes(hashedPassword.getBytes(Charsets.UTF8), clientNonceBytes, serverNonceBytes, certBytes);
+                            String checkHashHex = HexUtils.hexDump(checkHashBytes);
+
+                            ret.add(new CertificateCheck2Info(oid, serverNonceHex, checkHashHex, userSaltHex).asHttpHeader());
+                            addedHeader = true;
+                        }
+                    }
+                    if (!addedHeader) {
+                        sawUncheckableUser = true;
+                    }
                 }
             } catch (FindException e) {
                 // Log it and continue
-                logger.log(Level.WARNING, null, e);
+                //noinspection ThrowableResultOfMethodCallIgnored
+                logger.log(Level.WARNING, "Unable to to retrieve user information: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            } catch (NoSuchAlgorithmException e) {
+                //noinspection ThrowableResultOfMethodCallIgnored
+                logger.log(Level.WARNING, "Unable to to compute cert verifier: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
         // we smelt something (maybe netegrity?)
         CustomAssertionsRegistrar car = (CustomAssertionsRegistrar)getApplicationContext().getBean("customAssertionRegistrar");
-        if (car != null && !car.getAssertions(Category.ACCESS_CONTROL).isEmpty()) {
-            checkInfos.add(new CertificateCheckInfo(Long.toString(Long.MAX_VALUE), SecureSpanConstants.NOPASS, null));
+        if (sawUncheckableUser || car != null && !car.getAssertions(Category.ACCESS_CONTROL).isEmpty()) {
+            ret.add(new CertificateCheck2Info(DUMMY_ID_PROVIDER_OID, "", SecureSpanConstants.NOPASS, "").asHttpHeader());
         }
 
-        return checkInfos;
+        if (!ret.isEmpty()) {
+            // Add backward compat NOPASS for older XVCs
+            ret.add(new Pre60CertificateCheckInfo(DUMMY_ID_PROVIDER_OID, SecureSpanConstants.NOPASS, "dummy").asHttpHeader());
+        }
+
+        return ret;
     }
 
     private void sendAuthChallenge(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {

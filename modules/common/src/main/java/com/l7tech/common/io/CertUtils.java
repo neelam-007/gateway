@@ -1417,7 +1417,7 @@ public class CertUtils {
      * @param cipherSuiteName The name such as "TLS_RSA_EXPORT_WITH_RC4_40_MD5"
      * @return The key exchange algorithm such as "RSA_EXPORT"
      * @throws IllegalArgumentException if the cipher suite name is invalid
-     * @see javax.net.ssl.X509TrustManager#checkServerTrusted
+     * @see javax.net.ssl.X509TrustManager#checkServerTrusted(java.security.cert.X509Certificate[], String)
      */
     public static String extractAuthType(final String cipherSuiteName)  {
         Pattern pattern = Pattern.compile("(?:SSL|TLS)_(.*?)_WITH_.*");
@@ -1745,20 +1745,25 @@ public class CertUtils {
     }
 
     /**
-     * Returns SHA512(p, SHA512(p, c, s)) where p is a verifier shared secret byte array, c is the encoded certificate bytes, and s is a client-chosen random salt.
+     * Returns SHA512(PRIV, SHA512(PRIV, CS, SS, CERT)) where:
+     *   PRIV is a verifier shared secret byte array;
+     *   CS is a client-chosen random salt;
+     *   SS is a server-chosen random salt; and
+     *   CERT is the encoded certificate bytes.
      *
      * @param verifierSharedSecret a secret byte array that will be used to check a certificate.  Must be nonempty.  Required.
-     * @param clientSalt random bytes chosen by the client and given to the server.  Must be nonempty.  Required.
-     * @param serverCertificate  certificate whose verifier to compute.  Required.
+     * @param clientNonce random bytes chosen by the client and given to the server.  Must be nonempty.  Required.
+     * @param serverNonce random bytes chosen by the server and given to the client.  Must be nonempty.  Required.
+     * @param serverCertificateBytes  encoded bytes of certificate whose verifier to compute.  Required.
      * @return the verifier bytes for this certificate.  Never null.
      * @throws NoSuchAlgorithmException if a required algorithm is unavailable.
-     * @throws CertificateEncodingException if the encoded form of the certificate could not be produced.
      */
-    public static byte[] getVerifierBytes(byte[] verifierSharedSecret, byte[] clientSalt, X509Certificate serverCertificate) throws NoSuchAlgorithmException, CertificateEncodingException {
+    public static byte[] getVerifierBytes(byte[] verifierSharedSecret, byte[] clientNonce, byte[] serverNonce, byte[] serverCertificateBytes) throws NoSuchAlgorithmException {
         MessageDigest inner = MessageDigest.getInstance("SHA-512");
         inner.update(verifierSharedSecret);
-        inner.update(serverCertificate.getEncoded());
-        inner.update(verifierSharedSecret);
+        inner.update(clientNonce);
+        inner.update(serverNonce);
+        inner.update(serverCertificateBytes);
 
         MessageDigest outer = MessageDigest.getInstance("SHA-512");
         outer.update(verifierSharedSecret);

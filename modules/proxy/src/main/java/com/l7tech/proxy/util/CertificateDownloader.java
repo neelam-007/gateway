@@ -11,6 +11,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.IOException;
 import java.net.URL;
@@ -20,7 +21,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -29,6 +29,7 @@ import java.util.logging.Logger;
  */
 public class CertificateDownloader {
     private static final Logger logger = Logger.getLogger(CertificateDownloader.class.getName());
+    private static final boolean ENABLE_PRE60 = SyspropUtil.getBoolean("com.l7tech.proxy.util.enablePre60CertDisco", true);
 
     private final SimpleHttpClient httpClient;
     private final URL ssgUrl;
@@ -36,7 +37,8 @@ public class CertificateDownloader {
     private final char[] password;
 
     private byte[] certBytes = null;
-    private List checks = Collections.EMPTY_LIST;
+    private List<Pre60CertificateCheckInfo> pre60CheckInfos = Collections.emptyList();
+    private List<CertificateCheck2Info> check2Infos = Collections.emptyList();
     private String nonce = "";
     private boolean sawNoPass = false;
     private static final SecureRandom rand = new SecureRandom();
@@ -69,7 +71,7 @@ public class CertificateDownloader {
         if (ssgUrl == null)
             throw new IllegalStateException("No Gateway url is set");
         certBytes = null;
-        nonce = getNonce();
+        nonce = getClientNonce();
         String uri = SecureSpanConstants.CERT_PATH + "?" + "getcert=1&nonce=" + nonce;
         if (username != null)
             uri += "&username=" + URLEncoder.encode(username, "UTF-8");
@@ -91,19 +93,37 @@ public class CertificateDownloader {
 
         HttpHeaders headerHolder = result.getHeaders();
         HttpHeader[] headers = headerHolder.toArray();
-        this.checks = new ArrayList();
 
-        sawNoPass = false;
-        for (int i = 0; i < headers.length; i++) {
-            CertificateCheckInfo checkInfo = CertificateCheckInfo.parseHttpHeader(headers[i]);
-            if (checkInfo != null) {
-                if (checkInfo.isNoPass()) {
-                    sawNoPass = true;
+        this.pre60CheckInfos = new ArrayList<Pre60CertificateCheckInfo>();
+        boolean sawPre60NoPass = false;
+        if (ENABLE_PRE60) for (HttpHeader header : headers) {
+            Pre60CertificateCheckInfo pre60CheckInfo = Pre60CertificateCheckInfo.parseHttpHeader(header);
+            if (pre60CheckInfo != null) {
+                if (pre60CheckInfo.isNoPass()) {
+                    sawPre60NoPass = true;
                 } else {
-                    checks.add(checkInfo);
+                    this.pre60CheckInfos.add(pre60CheckInfo);
                 }
             }
         }
+
+        this.check2Infos = new ArrayList<CertificateCheck2Info>();
+        boolean sawAnyCheck2Header = false;
+        boolean sawCheck2NoPass = false;
+        for (HttpHeader header : headers) {
+            CertificateCheck2Info check2Info = CertificateCheck2Info.parseHttpHeader(header);
+            if (check2Info != null) {
+                sawAnyCheck2Header = true;
+                if (check2Info.isNoPass()) {
+                    sawCheck2NoPass = true;
+                } else {
+                    this.check2Infos.add(check2Info);
+                }
+            }
+        }
+
+        this.sawNoPass = sawAnyCheck2Header ? sawCheck2NoPass : sawPre60NoPass;
+
         return cert;
     }
 
@@ -119,9 +139,14 @@ public class CertificateDownloader {
     public boolean isValidCert() {
         if (certBytes == null) throw new IllegalStateException();
 
-        for (Iterator i = checks.iterator(); i.hasNext();) {
-            CertificateCheckInfo certificateCheckInfo = (CertificateCheckInfo) i.next();
-            if (certificateCheckInfo.checkCert(certBytes, username, password, nonce))
+        byte[] nonceBytes = nonce.getBytes(Charsets.UTF8);
+        for (CertificateCheck2Info check2Info : check2Infos) {
+            if (check2Info.checkCert(certBytes, password, nonceBytes))
+                return true;
+        }
+
+        for (Pre60CertificateCheckInfo pre60CheckInfo : pre60CheckInfos) {
+            if (pre60CheckInfo.checkCert(certBytes, username, password, nonce))
                 return true;
         }
 
@@ -139,13 +164,13 @@ public class CertificateDownloader {
     public boolean isUncheckablePassword() {
         if (certBytes == null) throw new IllegalStateException();
 
-        return sawNoPass || password == null || checks.size() < 1;
+        return sawNoPass || password == null || (pre60CheckInfos.size() < 1 && check2Infos.size() < 1);
     }
 
     /**
-     * Get the next nonce value.
+     * @return the next nonce value.  Never null.
      */
-    protected String getNonce() {        
+    protected String getClientNonce() {
         return String.valueOf(Math.abs(rand.nextLong()));
     }
 }

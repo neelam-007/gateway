@@ -416,16 +416,17 @@ public class SecurityProviderImpl extends SecurityProvider
      */
     private void validateServer(PasswordAuthentication credentials, X509Certificate serverCertificate, AdminLogin adminLogin, String host)
       throws SecurityException {
-        byte[] clientSalt = new byte[20];
-        new SecureRandom().nextBytes(clientSalt);
-        Pair<byte[], byte[]> v = adminLogin.getServerCertificateVerificationInfo(credentials.getUserName(), clientSalt);
-        String hashSaltString = new String(v.left, Charsets.UTF8);
-        byte[] serverVerifierBytes = v.right;
+        byte[] clientNonce = new byte[20];
+        new SecureRandom().nextBytes(clientNonce);
+        AdminLogin.ServerCertificateVerificationInfo v = adminLogin.getServerCertificateVerificationInfo(credentials.getUserName(), clientNonce);
+        String hashSaltString = new String(v.userSalt, Charsets.UTF8);
+        byte[] serverVerifierBytes = v.checkHash;
+        byte[] serverNonce = v.serverNonce;
 
         try {
             String password = new String(credentials.getPassword());
             String hashedPassword = Sha512Crypt.crypt(MessageDigest.getInstance("SHA-512"), MessageDigest.getInstance("SHA-512"), password.getBytes(Charsets.UTF8), hashSaltString);
-            byte[] clientVerifierBytes = CertUtils.getVerifierBytes(hashedPassword.getBytes(Charsets.UTF8), clientSalt, serverCertificate);
+            byte[] clientVerifierBytes = CertUtils.getVerifierBytes(hashedPassword.getBytes(Charsets.UTF8), clientNonce, serverNonce, serverCertificate.getEncoded());
 
             if (!Arrays.equals(clientVerifierBytes, serverVerifierBytes)) {
                 logger.warning("Unable to verify the server certificate at (could mean invalid password entered) " + host);

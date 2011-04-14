@@ -8,9 +8,9 @@ package com.l7tech.gateway.common.admin;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.util.Pair;
 
 import javax.security.auth.login.LoginException;
+import java.io.Serializable;
 import java.security.AccessControlException;
 
 /**
@@ -29,6 +29,23 @@ import java.security.AccessControlException;
 @Administrative
 public interface AdminLogin {
     /**
+     * Return value from {@link AdminLogin#getServerCertificateVerificationInfo(String, byte[])}.
+     */
+    public static class ServerCertificateVerificationInfo implements Serializable {
+        public final String verifierFormat;
+        public final byte[] serverNonce;
+        public final byte[] userSalt;
+        public final byte[] checkHash;
+
+        public ServerCertificateVerificationInfo(String verifierFormat, byte[] serverNonce, byte[] userSalt, byte[] checkHash) {
+            this.verifierFormat = verifierFormat;
+            this.serverNonce = serverNonce;
+            this.userSalt = userSalt;
+            this.checkHash = checkHash;
+        }
+    }
+
+    /**
      * Method that returns the SHA-512 hash over admin certificate and the admin
      * password.
      * This then provides a way for the admin to validate the server certificate
@@ -36,13 +53,13 @@ public interface AdminLogin {
      * for example or out of bound.
      *
      * @param username The name of the admin user.  Must be a user for whom the password is available.  Required.
-     * @param clientSalt random bytes from client to add to hash.  Required.
+     * @param clientNonce random bytes from client to add to hash.  Required.
      * @return a Pair< SALT, CHECKHASH > where SALT is the salt value for the user's hashed password and CHECKHASH is the server certificate check hash bytes.
      * @throws AccessControlException on access denied, if the user is not of
      *         any admin role
      */
     @Administrative(authenticated =false, licensed=false)
-    Pair<byte[], byte[]> getServerCertificateVerificationInfo(String username, byte[] clientSalt)
+    ServerCertificateVerificationInfo getServerCertificateVerificationInfo(String username, byte[] clientNonce)
             throws AccessControlException;
 
     /**
