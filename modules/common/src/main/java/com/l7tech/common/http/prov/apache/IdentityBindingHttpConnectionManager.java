@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class IdentityBindingHttpConnectionManager extends CachingHttpConnectionManager {
+public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConnectionManager {
 
     //- PUBLIC
 
