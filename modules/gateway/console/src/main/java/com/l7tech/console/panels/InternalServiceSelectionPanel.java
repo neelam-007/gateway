@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  *
  * User: Mike
  */
-public class InternalServiceSelectionPanel extends WizardStepPanel {
+public class InternalServiceSelectionPanel extends WizardStepPanel<PublishInternalServiceWizard.ServiceTemplateHolder> {
     private static final Logger logger = Logger.getLogger(InternalServiceSelectionPanel.class.getName());
 
     private JComboBox servicesChooser;
@@ -36,7 +36,7 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
         this(null,true);
     }
 
-    public InternalServiceSelectionPanel(WizardStepPanel next, boolean readOnly) {
+    public InternalServiceSelectionPanel(WizardStepPanel<PublishInternalServiceWizard.ServiceTemplateHolder> next, boolean readOnly) {
         super(next, readOnly);
         initComponents();
     }
@@ -120,8 +120,8 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
     }
 
     @Override
-    public void readSettings(Object settings) throws IllegalArgumentException {
-        updateView((PublishInternalServiceWizard.ServiceTemplateHolder)settings);
+    public void readSettings(PublishInternalServiceWizard.ServiceTemplateHolder settings) throws IllegalArgumentException {
+        updateView(settings);
     }
 
     private void updateView(PublishInternalServiceWizard.ServiceTemplateHolder serviceTemplateHolder) {
@@ -158,8 +158,8 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
     }
 
     @Override
-    public void storeSettings(Object settings) throws IllegalArgumentException {
-        updateModel((PublishInternalServiceWizard.ServiceTemplateHolder)settings);
+    public void storeSettings(PublishInternalServiceWizard.ServiceTemplateHolder settings) throws IllegalArgumentException {
+        updateModel(settings);
     }
 
     private void updateModel(PublishInternalServiceWizard.ServiceTemplateHolder serviceTemplateHolder) {

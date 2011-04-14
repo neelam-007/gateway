@@ -52,15 +52,20 @@ public class Wizard<ST> extends JDialog {
      * Creates new wizard
      */
     public Wizard(Frame parent, WizardStepPanel<ST> panel) {
-        this((Window) parent, panel);
+        this(parent, panel, null);
     }
 
     public Wizard(Dialog parent, WizardStepPanel<ST> panel) {
-        this((Window) parent, panel);
+        this(parent, panel, null);
     }
 
     public Wizard(Window parent, WizardStepPanel<ST> panel) {
+        this(parent, panel, null);
+    }
+
+    public Wizard(Window parent, WizardStepPanel<ST> panel, ST input) {
         super(parent, JDialog.DEFAULT_MODALITY_TYPE);
+        this.wizardInput = input;
         initialize(panel);
     }
 
@@ -284,7 +289,6 @@ public class Wizard<ST> extends JDialog {
             }
         }
 
-        // have to run this later since input will not be available yet ..
         Runnable wizardInputInit = new Runnable() {
             @Override
             public void run() {
@@ -295,7 +299,12 @@ public class Wizard<ST> extends JDialog {
                 }
             }
         };
-        SwingUtilities.invokeLater(wizardInputInit);
+        if ( wizardInput != null ) {
+            wizardInputInit.run();
+        } else {
+            // have to run this later since input is not available yet ..
+            SwingUtilities.invokeLater(wizardInputInit);
+        }
     }
 
     /**

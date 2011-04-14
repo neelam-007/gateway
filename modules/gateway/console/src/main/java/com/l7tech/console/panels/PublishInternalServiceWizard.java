@@ -28,10 +28,8 @@ import java.util.logging.Logger;
 /*
     User: megery
  */
-public class PublishInternalServiceWizard extends Wizard {
+public class PublishInternalServiceWizard extends Wizard<PublishInternalServiceWizard.ServiceTemplateHolder> {
     private static final Logger logger = Logger.getLogger(PublishInternalServiceWizard.class.getName());
-
-    private ServiceTemplateHolder templateHolder;
 
     private EventListenerList localListenerList = new EventListenerList();
 
@@ -39,14 +37,9 @@ public class PublishInternalServiceWizard extends Wizard {
         return new PublishInternalServiceWizard(parent, getSteps());
     }
 
-    private PublishInternalServiceWizard(Frame parent, WizardStepPanel panel) {
-        super(parent, panel);
-
+    private PublishInternalServiceWizard(Frame parent, WizardStepPanel<PublishInternalServiceWizard.ServiceTemplateHolder> panel) {
+        super(parent, panel, buildServiceTemplateHolder());
         setTitle("Publish Internal Service Wizard");
-        ServiceAdmin svcManager = Registry.getDefault().getServiceManager();
-        Set<ServiceTemplate> templates = svcManager.findAllTemplates();
-        templateHolder = new ServiceTemplateHolder(templates);
-        wizardInput = templateHolder;
 
         addWizardListener(new WizardAdapter() {
             @Override
@@ -66,9 +59,15 @@ public class PublishInternalServiceWizard extends Wizard {
         });
     }
 
+    private static ServiceTemplateHolder buildServiceTemplateHolder() {
+        ServiceAdmin svcManager = Registry.getDefault().getServiceManager();
+        Set<ServiceTemplate> templates = svcManager.findAllTemplates();
+        return new ServiceTemplateHolder(templates);
+    }
+
     private void completeTask(PublishedService service) throws MalformedURLException {
 
-        ServiceTemplate toSave = templateHolder.getSelectedTemplate();
+        ServiceTemplate toSave = wizardInput.getSelectedTemplate();
         if (toSave == null) return;
 
         if (service == null) {
@@ -109,7 +108,7 @@ public class PublishInternalServiceWizard extends Wizard {
         });
     }
 
-    public static WizardStepPanel getSteps() {
+    public static WizardStepPanel<PublishInternalServiceWizard.ServiceTemplateHolder> getSteps() {
         return new InternalServiceSelectionPanel();
     }
 
