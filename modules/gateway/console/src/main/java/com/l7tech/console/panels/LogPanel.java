@@ -1669,18 +1669,12 @@ public class LogPanel extends JPanel {
                             getRequestXmlTextArea().setText(output);
                             unformattedRequestXml.setLength(0);
                             unformattedRequestXml.append(output);
-                            SwingUtilities.invokeLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    doReformat(getRequestXmlTextArea(), getRequestReformatCheckbox().isSelected(), unformattedRequestXml);
-                                }
-                            });
+                            doReformat(getRequestXmlTextArea(), getRequestReformatCheckbox().isSelected(), unformattedRequestXml);
                         } else {
                             final String msg = "Error processing " + PolicyType.TAG_AUDIT_VIEWER + " policy.";
                             getRequestXmlTextArea().setText(msg);
                             unformattedRequestXml.setLength(0);
                             unformattedRequestXml.append(msg);
-
                         }
                         getRequestXmlTextArea().setCaretPosition(0);
                     }
@@ -1741,13 +1735,7 @@ public class LogPanel extends JPanel {
                             getResponseXmlTextArea().setText(output);
                             unformattedResponseXml.setLength(0);
                             unformattedResponseXml.append(output);
-                            SwingUtilities.invokeLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    doReformat(getResponseXmlTextArea(), getResponseReformatCheckbox().isSelected(), unformattedResponseXml);
-                                }
-                            });
-
+                            doReformat(getResponseXmlTextArea(), getResponseReformatCheckbox().isSelected(), unformattedResponseXml);
                         } else {
                             final String msg = "Error processing " + PolicyType.TAG_AUDIT_VIEWER + " policy.";
                             getResponseXmlTextArea().setText(msg);
