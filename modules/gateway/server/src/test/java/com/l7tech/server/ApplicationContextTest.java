@@ -75,7 +75,6 @@ public class ApplicationContextTest  {
     /**
      * Ensure that bean references are valid (constructor args and properties)
      */
-    @Ignore("Temporarily disabled due to possibly-spurious failure")
     @SuppressWarnings({"unchecked"})
     @Test
     public void testApplicationContextReferences() {
