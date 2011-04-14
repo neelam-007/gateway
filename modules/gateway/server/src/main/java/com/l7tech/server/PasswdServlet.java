@@ -20,6 +20,7 @@ import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -53,7 +54,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
 
         WebApplicationContext appcontext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
         this.passwordEnforcerManager = appcontext.getBean("passwordEnforcerManager", PasswordEnforcerManager.class);
-        this.passwordHasher = appcontext.getBean("passwordHasher", PasswordHasher.class); 
+        this.passwordHasher = appcontext.getBean("passwordHasher", PasswordHasher.class);
     }
 
     protected String getFeature() {
@@ -97,12 +98,12 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         for (AuthenticationResult result : results) {
             User u = result.getUser();
             try {
-                IdentityProviderFactory ipf = (IdentityProviderFactory)getApplicationContext().getBean("identityProviderFactory");
+                IdentityProviderFactory ipf = (IdentityProviderFactory) getApplicationContext().getBean("identityProviderFactory");
                 IdentityProvider provider = ipf.getProvider(u.getProviderId());
 
                 if (provider.getConfig().getTypeVal() == IdentityProviderType.INTERNAL.toVal()) {
-                    internalUser = (InternalUser)u;
-                    internalProvider = (InternalIdentityProvider)provider;
+                    internalUser = (InternalUser) u;
+                    internalProvider = (InternalIdentityProvider) provider;
                     break;
                 }
             } catch (FindException e) {
@@ -113,8 +114,8 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         if (internalUser == null) {
             logger.warning("Subject of request is not internal user, returning 403.");
             sendBackError(res, HttpServletResponse.SC_FORBIDDEN, "Only users belonging to " +
-              "the internal identity provider " +
-              "are authorized to change their password");
+                    "the internal identity provider " +
+                    "are authorized to change their password");
             return;
         }
         // get the new password
@@ -123,7 +124,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         String oldpasswd = new String(creds.getCredentials());
         if (newpasswd == null || newpasswd.length() < 1) {
             logger.warning("The request did not include a new password in header " +
-                           SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD + ", returning 400.");
+                    SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD + ", returning 400.");
             sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, "Missing or empty new password.");
             return;
         }
@@ -137,7 +138,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             newInternalUser.setVersion(internalUser.getVersion());
             final String newPasswordHashed = passwordHasher.hashPassword(newpasswd.getBytes(Charsets.UTF8));
             passwordEnforcerManager.isPasswordPolicyCompliant(newInternalUser, newpasswd, oldpasswd);
-            passwordEnforcerManager.setUserPasswordPolicyAttributes(newInternalUser,false);
+            passwordEnforcerManager.setUserPasswordPolicyAttributes(newInternalUser, false);
 
             newInternalUser.addPasswordChange(newPasswordHashed);//todo [Donal] this needs to use admin session manager
 
@@ -154,15 +155,12 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         } catch (FindException e) {
             logger.log(Level.WARNING, "could not complete operation, returning 500", e);
             sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-        } catch (InvalidPasswordException e) {
-            logger.log(Level.WARNING, "could not complete operation, returning 500", e);
-            sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unable to change password"); // not passing error back
         } catch (UpdateException e) {
             logger.log(Level.WARNING, "could not complete operation, returning 500", e);
             sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-//        } catch (InvalidPasswordException e) {
-//            logger.log(Level.SEVERE, "password was not valid", ExceptionUtils.getDebugException(e));
-//            sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        } catch (InvalidPasswordException e) {
+            logger.log(Level.SEVERE, "password was not valid", ExceptionUtils.getDebugException(e));
+            sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, "Unable to change password");  // not passing error back
         }
     }
 
