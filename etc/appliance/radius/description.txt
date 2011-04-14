@@ -47,11 +47,93 @@ CONFIGURE:
 #                    and Nameservice switch libraries for authentication
 #                    or name service resolution; installed by nss_ldap package
 # - /etc/openldap/ldap.conf - part of/installed by OpenLDAP package; it is
-#                             be sufficient to querry a LDAP server
+#                             be sufficient to querry a LDAP server with
+#                             ldapsearch command made available by this package
 #
-# We will configure both of them although authconfig-tui would only modify
-# the /etc/ldap.conf file
+# We will configure both of them (although authconfig-tui would only modify
+# the /etc/ldap.conf file) in order to be able to make tests in cli using the
+# ldapsearch command.
 
+TEST:
+In order to test this configuration we need an LDAP server (see Server side configuration)
+
+Asuming we have a properly configured LDAP server:
+
+1. Add the "ldapuser" user for testing to ldap database:
+
+grep ldapuser /etc/passwd > /tmp/changeldappasswd.tmp
+/usr/share/openldap/migration/migrate_passwd.pl /tmp/changeldappasswd.tmp /tmp/changeldappasswd.ldif.tmp
+cat /tmp/changeldappasswd.ldif.tmp | sed s/padl/example/ /tmp/changeldappasswd.ldif
+rm -f /tmp/changeldappasswd.*
+ldapadd -x -D "cn=Manager,dc=example,dc=com" -W -f /tmp/changeldappasswd.ldif
+(enter the root ldap password here)
+* if successful, a message similar to this should be received:
+adding new entry "uid=ldapuser,ou=People,dc=example,dc=com"
+
+2. Test ldap server on localhost:
+
+ldapsearch -x -h localhost -b 'uid=ldapuser,ou=People,dc=example,dc=com'
+
+Should give something like this:
+
+# ldapuser, People, example.com
+dn: uid=ldapuser,ou=People,dc=example,dc=com
+uid: ldapuser
+cn: ldapuser
+objectClass: account
+objectClass: posixAccount
+objectClass: top
+objectClass: shadowAccount
+shadowLastChange: 15055
+shadowMin: 0
+shadowMax: 99999
+shadowWarning: 7
+loginShell: /bin/bash
+gidNumber: 100
+homeDirectory: /home/ldapuser
+uidNumber: 1001
+userPassword:: e0NSWVBUfWYvVjJ0RmdqM2ZNcC4=
+
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 2
+# numEntries: 1
+
+3. Create the /home/ldapuser directory as this will be the home dir for the ldapuser
+mkdir /home/ldapuser
+chmod 750 /home/ldapuser
+
+4. Run the following tests:
+* make sure there are no firewall rules droping packets on tcp/389 socket
+* make sure that we have no ldapuser on the SSG appliance: cat /etc/passwd | grep ldapuser
+
+Test 1:
+ldapsearch -x -h LDAP_SRV_IP -b 'uid=ldapuser,ou=People,dc=example,dc=com'
+
+This should output details similar to those above (when the command was issued on the LDAP server itself)
+
+Test 2:
+# try to use the ldapuser on the SSG appliance as if it is a local user:
+chown ldap:ldap /home/ldapuser
+There should be no errors in this case as the system is now capable to interogate ldap
+in order to find the user to execute the chown command.
+
+Test 3:
+Use putty or any other ssh client to atempt loggin in the SSG appliance as ldapuser:
+
+login as: ldapuser
+ldapuser@10.7.48.109's password:
+Last login: Fri Apr  8 13:14:20 2011 from adic-pc.l7tech.local
+grep: /opt/SecureSpan/Controller/etc/host.properties: Permission denied
+-bash-3.2$
+
+As shown, the authentication was successful even if, again, there is no local "ldapuser" user.
+
+------
+End of ldap_only authentication testing.
+-------------------------------------------------------------------
 ===================================================================
 
 
@@ -61,6 +143,7 @@ CONFIGURE:
 SSH/Console access via Radius Auth only:
 -------------------------------------------------------------------
 
+A simple sketch of how this works is presented below:
 ssh client
   > SSHD:
     /etc/ssh/sshd_config: usePAM=yes
@@ -75,10 +158,14 @@ ssh client
     - file (/etc/passwd and /etc/raddb/users)
   v
   SSHD
+  > allow/deny authentication
 
-
-Implementation:
-
+There is no "radius client" in the usual sense used to communicate with
+Radius server. In order to make ssh authentication with Radius we need
+to configure SSHD to use PAM and them use PAM Radius module to interogate
+Radius server. The configuration of PAM Radius modules is made in the
+pam_radius.conf file (provided by pam_radius package).
+  
 INSTALL: 
 	- libtool-ltdl-1.5.22-7.el5_4.x86_64.rpm
 	- freeradius2-2.1.7-7.el5.x86_64.rpm
@@ -94,51 +181,24 @@ CONFIGURE:
 		RADIUS_SRV	secret	3
 
 The users from radius server should exist on the machine that is accessed via SSH
-but they can have no password set - this is how you actually test that radius
+but they may have no password set - this is how you actually test that radius
 is supplying the password to sshd to give you access.... if they have a local
 password set the configuration will allows falling back to local auth if Radius
 server fails for any reason
 
-===================================================================
+TEST:
+I should mention that radius only authentication provides a very basic and not secure
+way to create a centralized authentication service.
 
-
-
-
-
-===================================================================
-SSH/Console access via Radius + LDAP Auth:
--------------------------------------------------------------------
-
-????
-
-
-http://blog.sgicc.com/?p=284
-
-
-
-
-
-
-http://sarek/mediawiki/index.php?title=Command_Line_Radius_Support
-
-
-
-===================================================================
-
-
-
-TESTING
-
-=============================
-Radius_only tesing:
------------------------------
-
-Radius server should be installed and default configuration used:
+The Radius server should be configured like this:
 - insert as first line the next line to /etc/raddb/users:
 test1     Cleartext-Password := "pass1"
 - stop radius: /etc/init.d/radiusd stop
+- make sure there is no test1 local user on the SSG appliance with: cat /etc/passwd | grep test1
+
+Test 1:
 - start radius in debug, foreground mode: /usr/sbin/radiusd -X
-- use another consoile on the same machine to test with the following command:
+- use another console on the same machine to test with the following command:
 
 radtest test1 pass1 localhost 0 testing123
 
@@ -150,21 +210,19 @@ Sending Access-Request of id 120 to 127.0.0.1 port 1812
         NAS-Port = 0
 rad_recv: Access-Accept packet from host 127.0.0.1 port 1812, id=120, length=20
 
-
-Providing we have configure the radius server to accept the SSG appliance as client:
-/etc/raddb/clients.conf should contain:
-
+Test 2:
+- make Radius server accept the SSG appliance as client:
+vim /etc/raddb/clients.conf
+add:
 client 10.7.48.109 {
         secret = qwer1234
 }
 
-Where "10.7.48.109" is the IP of the SSG appliance
-
-We can test the radius cleint/server configuration the SSG appliance:
+* where "10.7.48.109" is the IP of the SSG appliance.
 
 radtest test1 pass1 10.7.48.130 0 qwer1234
 
-should end up in something similar to:
+- should output something similar to:
 
 Sending Access-Request of id 244 to 10.7.48.130 port 1812
         User-Name = "test1"
@@ -174,15 +232,12 @@ Sending Access-Request of id 244 to 10.7.48.130 port 1812
 rad_recv: Access-Accept packet from host 10.7.48.130 port 1812, id=244, length=20
 
 
-- and we can see that there is no test1 local user on the SSG appliance with:
-
-cat /etc/passwd | grep test1
-
+Test 3:
 SSH login with user test1:
 
-Using putty: test1@10.4.7.130 and pass1:
+Using putty: test1@10.4.7.130 and "pass1":
 
-
+???? - de completat aici dupa testare
 
 
 
@@ -244,93 +299,24 @@ Should output a lot of info about LDAP structure...
 End of LDAP server configuration.
 ---------------------------------------------------------------------------------
 
-====================================
-Testing ldap_only Authentication
-------------------------------------
 
-Now we can add the ldapuser user (for testing) to ldap database:
 
-grep ldapuser /etc/passwd > /tmp/changeldappasswd.tmp
-/usr/share/openldap/migration/migrate_passwd.pl /tmp/changeldappasswd.tmp /tmp/changeldappasswd.ldif.tmp
-cat /tmp/changeldappasswd.ldif.tmp | sed s/padl/example/ /tmp/changeldappasswd.ldif
-ldapadd -x -D "cn=Manager,dc=example,dc=com" -W -f /tmp/changeldappasswd.ldif
-# enter the root ldap password here
-* if successful a message similar to this should be received:
-
-adding new entry "uid=ldapuser,ou=People,dc=example,dc=com"
-
-# we can now remove all temporary files:
-rm -f /tmp/changeldappasswd.*
-
-# Now the next command should be able to find the ldapuser in ldap and output some details about it:
-
-ldapsearch -x -h localhost -b 'uid=ldapuser,ou=People,dc=example,dc=com'
-
-Should give something like this:
-
-# ldapuser, People, example.com
-dn: uid=ldapuser,ou=People,dc=example,dc=com
-uid: ldapuser
-cn: ldapuser
-objectClass: account
-objectClass: posixAccount
-objectClass: top
-objectClass: shadowAccount
-shadowLastChange: 15055
-shadowMin: 0
-shadowMax: 99999
-shadowWarning: 7
-loginShell: /bin/bash
-gidNumber: 100
-homeDirectory: /home/ldapuser
-uidNumber: 1001
-userPassword:: e0NSWVBUfWYvVjJ0RmdqM2ZNcC4=
-
-# search result
-search: 2
-result: 0 Success
-
-# numResponses: 2
-# numEntries: 1
-
-# At this point we can configure the SSG appliance to use LDAP for authentication.
-# Chose ldap_only as configuration type and give the appropriate IP address for the LDAP server.
-
-# We have to create the /home/ldapuser directory as this will be the home dir for the ldapuser
-# (as you can see in the output of the ldap query)
-mkdir /home/ldapuser
-chmod 750 /home/ldapuser
-
-# The folowing tests can now be run:
-(make sure there are no firewall rules droping packets on tcp/389 socket)
-
-ldapsearch -x -h LDAP_SRV_IP -b 'uid=ldapuser,ou=People,dc=example,dc=com'
-* this should output details similar to those above (when the command was issued on the LDAP server)
-
-# verify that we have no ldapuser on the SSG appliance:
-cat /etc/passwd | grep ldapuser
-
-Test 1:
-# try to use the ldapuser on the SSG appliance even if there is no such local user:
-chown ldap:ldap /home/ldapuser
-* we should have no error in this case as the system is now capable to interogate ldap
-in order to find the user the above command is trying to use.
-
-Test 2:
-SSH authentication on SSG appliance as ldapuser (which is not a local user):
-
-login as: ldapuser
-ldapuser@10.7.48.109's password:
-Last login: Fri Apr  8 13:14:20 2011 from adic-pc.l7tech.local
-grep: /opt/SecureSpan/Controller/etc/host.properties: Permission denied
--bash-3.2$
-
-End of ldap_only authentication testing.
------------------------------------------------------------------------------
+===================================================================
 
 
 
 
+
+===================================================================
+SSH/Console access via Radius + LDAP Auth:
+-------------------------------------------------------------------
+
+Still some problems....
+Next idea:
+http://blog.sgicc.com/?p=284
+
+
+===================================================================
 
 
 
@@ -347,16 +333,16 @@ not give an error but will apply the local UID to the target:
 Example:
 ldapuser on ldap server has UID 502
 ssgconfig user on SSG appliance has UID 502
-chown ldapuser /home/ldapuser
-will work but:
-ls -l /home/ldapuser will return:
+chown ldapuser /home/ldapuser (on SSG appliance) will work but:
+ls -l /home/ldapuser (on SSG appliance) will return:
 ......
 drwx------ 2 ssgconfig users     4096 Apr  6 16:25 ldapuser
 ......
 
 which is normal but most likely not wanted.
 
-2. ???
+2. ???? daca mai apare ceva bag aici
+
 
 
 ===============================================
@@ -385,5 +371,3 @@ CHAP:
 - is not vulnerable to traffic sniffing and/or brute force attacks
 - it requires the client to authenticate itself at startup time
 - sends challenges at regular intervals to make sure the client hasn't been replaced by an intruder
-
-
