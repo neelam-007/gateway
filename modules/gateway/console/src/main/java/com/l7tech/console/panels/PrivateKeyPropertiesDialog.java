@@ -746,6 +746,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         }
         String confirmationDialogMessage =
             "<html><center>This will delete this key and cannot be undone. " +
+                    (subject.isAuditViewerKey() ? "Encrypted audit records will no longer be viewable. " : "") +
                     "The change will not fully take effect until all cluster nodes have been restarted.</center><p>" +
                 "<center>Really delete the private key " + alias + " (" + subjectDn + ")?</center></html>";
 
