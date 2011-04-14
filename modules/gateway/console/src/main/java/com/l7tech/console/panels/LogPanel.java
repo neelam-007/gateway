@@ -137,7 +137,15 @@ public class LogPanel extends JPanel {
     private JScrollPane responseXmlScrollPane;
     private JCheckBox responseReformatCheckbox;
     private JTextArea responseXmlTextArea;
+    /**
+     * Contents of either the audit records request xml or the output of the audit viewer policy for the request.
+     * Updated for each audit record viewed.
+     */
     private final StringBuffer unformattedRequestXml;
+    /**
+     * Contents of either the audit records response xml or the output of the audit viewer policy for the response.
+     * Updated for each audit record viewed.
+     */
     private final StringBuffer unformattedResponseXml;
     private JSplitPane logSplitPane;
     private JSplitPane selectionSplitPane;
@@ -1659,8 +1667,20 @@ public class LogPanel extends JPanel {
                         String output = getAVPolicyOutput();
                         if(output != null){
                             getRequestXmlTextArea().setText(output);
+                            unformattedRequestXml.setLength(0);
+                            unformattedRequestXml.append(output);
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    doReformat(getRequestXmlTextArea(), getRequestReformatCheckbox().isSelected(), unformattedRequestXml);
+                                }
+                            });
                         } else {
-                            getRequestXmlTextArea().setText("Error processing " + PolicyType.TAG_AUDIT_VIEWER + " policy.");
+                            final String msg = "Error processing " + PolicyType.TAG_AUDIT_VIEWER + " policy.";
+                            getRequestXmlTextArea().setText(msg);
+                            unformattedRequestXml.setLength(0);
+                            unformattedRequestXml.append(msg);
+
                         }
                         getRequestXmlTextArea().setCaretPosition(0);
                     }
@@ -1719,8 +1739,20 @@ public class LogPanel extends JPanel {
                         String output = getAVPolicyOutput();
                         if(output != null){
                             getResponseXmlTextArea().setText(output);
+                            unformattedResponseXml.setLength(0);
+                            unformattedResponseXml.append(output);
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    doReformat(getResponseXmlTextArea(), getResponseReformatCheckbox().isSelected(), unformattedResponseXml);
+                                }
+                            });
+
                         } else {
-                            getResponseXmlTextArea().setText("Error processing " + PolicyType.TAG_AUDIT_VIEWER + " policy.");
+                            final String msg = "Error processing " + PolicyType.TAG_AUDIT_VIEWER + " policy.";
+                            getResponseXmlTextArea().setText(msg);
+                            unformattedResponseXml.setLength(0);
+                            unformattedResponseXml.append(msg);
                         }
                         getRequestXmlTextArea().setCaretPosition(0);
                     }
@@ -1785,16 +1817,23 @@ public class LogPanel extends JPanel {
         return responseReformatCheckbox;
     }
 
-    private void doReformat(JTextArea textArea, boolean format, StringBuffer textBuffer) {
-        String text = textArea.getText();
+    /**
+     * Updates the contents of textArea with the contents of unformattedTextBuffer, when the unformattedTextBuffer
+     * contains text and the textArea is enabled. The contents of unformattedTextBuffer are formatted prior to updating
+     * the textArea if format is true.
+     * @param textArea text area to update
+     * @param format true if contents of text area should be formatted
+     * @param unformattedTextBuffer original unformatted audit contents. May be direct from audit viewer or the output
+     * of the audit viewer policy.
+     */
+    private void doReformat(JTextArea textArea, boolean format, StringBuffer unformattedTextBuffer) {
+        final String text = unformattedTextBuffer.toString();
         if (textArea.isEnabled() && textArea.isShowing() &&
                 text != null && text.length() > 0) {
             if (format) {
-                textBuffer.setLength(0);
-                textBuffer.append(text);
-                textArea.setText(reformat(textBuffer.toString()));
+                textArea.setText(reformat(unformattedTextBuffer.toString()));
             } else {
-                textArea.setText(textBuffer.toString());
+                textArea.setText(unformattedTextBuffer.toString());
             }
             textArea.getCaret().setDot(0);
         }
