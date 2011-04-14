@@ -33,8 +33,8 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
     public StaleCheckingHttpConnectionManager() {
         staleCleanupCountPerHost = DEFAULT_STALE_CLEANUP_COUNT;
         staleCleanupMaxHosts = DEFAULT_MAX_HOSTS;
-        seenHostConfigurations = new CopyOnWriteArraySet();
-        cleanupTimer.schedule(new CleanupTimerTask(this), 5000, 5000);
+        seenHostConfigurations = new CopyOnWriteArraySet<HostConfiguration>();
+        cleanupTimer.schedule(new CleanupTimerTask(this), 5000L, 5000L);
     }
 
     /**
@@ -120,11 +120,13 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
     /**
      *
      */
+    @Override
     public HttpConnection getConnection(HostConfiguration hostConfiguration) {
         seenHostConfiguration(hostConfiguration);
         return super.getConnection(hostConfiguration);
     }
 
+    @Override
     public HttpConnection getConnectionWithTimeout(HostConfiguration hostConfiguration, long timeout) throws ConnectionPoolTimeoutException {
         seenHostConfiguration(hostConfiguration);
         return super.getConnectionWithTimeout(hostConfiguration, timeout);
@@ -143,26 +145,22 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
         // reading. Perhaps the content-length was not correct and they flushed at
         // the wrong time, etc.
         //
-        for (Iterator hcIter=seenHostConfigurations.iterator(); hcIter.hasNext(); ) {
-            HostConfiguration hostConfiguration = (HostConfiguration) hcIter.next();
+        for ( final HostConfiguration hostConfiguration : seenHostConfigurations ) {
             try {
-                for (int c=0; c<staleCleanupCountPerHost; c++) {
-                    HttpConnection connection = null;
-                    connection = super.getConnectionWithTimeout(hostConfiguration, 10);
+                for ( int c = 0; c < staleCleanupCountPerHost; c++ ) {
+                    HttpConnection connection = super.getConnectionWithTimeout( hostConfiguration, 10L );
                     try {
                         connection.closeIfStale();
-                    } catch(IOException ioe) {
-                        if (logger.isLoggable(Level.FINER)) {
-                            logger.log(Level.FINER, "Error when stale checking connection '"+ExceptionUtils.getMessage(ioe)+"'.",
-                                    ExceptionUtils.getDebugException(ioe));
+                    } catch ( IOException ioe ) {
+                        if ( logger.isLoggable( Level.FINER ) ) {
+                            logger.log( Level.FINER, "Error when stale checking connection '" + ExceptionUtils.getMessage( ioe ) + "'.",
+                                    ExceptionUtils.getDebugException( ioe ) );
                         }
-                    }
-                    finally {
-                        if (connection != null) connection.releaseConnection();
+                    } finally {
+                        if ( connection != null ) connection.releaseConnection();
                     }
                 }
-            }
-            catch(ConnectionPoolTimeoutException cpte) {
+            } catch ( ConnectionPoolTimeoutException cpte ) {
                 // timeout
             }
         }
@@ -183,7 +181,7 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
         ShutdownExceptionHandler.addShutdownHandler(cleanupTimer);
     }
 
-    private Set seenHostConfigurations; // this set must have an insertion order iterator
+    private Set<HostConfiguration> seenHostConfigurations; // this set must have an insertion order iterator
     private int staleCleanupCountPerHost;
     private int staleCleanupMaxHosts;
 
@@ -196,11 +194,11 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
         if (seenHostsSize > maxHosts) {
             // loggit
             if (logger.isLoggable(Level.FINER)) {
-                logger.log(Level.FINER, "Pruning host set, maximum is {0}.", Integer.valueOf(maxHosts));
+                logger.log(Level.FINER, "Pruning host set, maximum is {0}.", maxHosts);
             }
 
             // seenHostConfigurations must have insertion order iterator
-            List hostList = new ArrayList(seenHostConfigurations);
+            List<HostConfiguration> hostList = new ArrayList<HostConfiguration>(seenHostConfigurations);
 
             // recheck size with non-shared copy
             if (hostList.size() > maxHosts) {
@@ -214,25 +212,29 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
      *
      */
     private static class CleanupTimerTask extends TimerTask {
-        private final WeakReference managerRef;
+        private final WeakReference<StaleCheckingHttpConnectionManager> managerRef;
 
         CleanupTimerTask(final StaleCheckingHttpConnectionManager manager) {
-            managerRef = new WeakReference(manager);
+            managerRef = new WeakReference<StaleCheckingHttpConnectionManager>(manager);
         }
 
+        @Override
         public void run() {
-            StaleCheckingHttpConnectionManager manager =
-                    (StaleCheckingHttpConnectionManager) managerRef.get();
+            try {
+                StaleCheckingHttpConnectionManager manager = managerRef.get();
 
-            if (manager == null) {
-                if(logger.isLoggable(Level.FINE)) {
-                    logger.fine("Cancelled timer task for GC'd connection manager.");
+                if (manager == null) {
+                    if(logger.isLoggable(Level.FINE)) {
+                        logger.fine("Cancelled timer task for GC'd connection manager.");
+                    }
+                    cancel();
                 }
-                cancel();
-            }
-            else {
-                // Do any cleanup
-                manager.doCleanup();
+                else {
+                    // Do any cleanup
+                    manager.doCleanup();
+                }
+            } catch ( RuntimeException e ) {
+                logger.log( Level.WARNING, "Unexpected error in connection cleanup: " + ExceptionUtils.getMessage( e ), e );
             }
         }
     }
