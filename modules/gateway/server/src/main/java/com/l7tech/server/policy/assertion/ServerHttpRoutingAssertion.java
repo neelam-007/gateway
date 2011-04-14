@@ -110,8 +110,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 try {
                     url = new URL(assertion.getProtectedServiceUrl());
                 } catch (MalformedURLException murle) {
-                    logger.log(Level.WARNING, "Invalid protected service URL.", murle);
-                }
+                    logger.log(Level.WARNING, "Invalid protected service URL: " + murle.getMessage(), ExceptionUtils.getDebugException(murle));
+               }
                 protectedServiceUrl = url;
             }
         } else {
