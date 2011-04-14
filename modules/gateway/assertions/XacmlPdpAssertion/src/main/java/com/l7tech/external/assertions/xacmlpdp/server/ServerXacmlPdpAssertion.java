@@ -260,7 +260,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
 
             ByteArrayInputStream bais = new ByteArrayInputStream(messageBytes);
 
-            ContentTypeHeader cth = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
+            ContentTypeHeader cth = ContentTypeHeader.XML_DEFAULT;
             Message message;
             if(assertion.getOutputMessageTarget() == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
                 message = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getOutputMessageVariableName()), false );

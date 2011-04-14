@@ -68,6 +68,26 @@ public class MimeHeader implements HttpHeader {
      *
      */
     protected MimeHeader(String name, String value, Map<String, String> params) {
+        this( name, value, params, null );
+    }
+
+    /**
+     * Create a new MimeHeader with the specified name, main value, and parameters.
+     *
+     * @param name   the name of the header, preferably in canonical form, not including the colon, ie "Content-Type".
+     *               must not be empty or null.
+     * @param value  the mainValue, ie "text/xml", not including any params that have already been parsed out into params.
+     *               May be empty, but must not be null.
+     * @param params the parameters, ie {charset=>"utf-8"}.  May be empty or null.
+     *               Caller must not modify this map after giving it to this constructor.
+     *               Caller is responsible for ensuring that, if a map is provided, lookups in the map are case-insensitive.
+     * @param header The full value for the header
+     *
+     */
+    protected MimeHeader( final String name,
+                          final String value,
+                          final Map<String, String> params,
+                          final String header ) {
         if (name == null || value == null)
             throw new IllegalArgumentException("name and value must not be null");
         if (name.length() < 1)
@@ -75,6 +95,7 @@ public class MimeHeader implements HttpHeader {
         this.name = name;
         this.mainValue = value;
         this.params = params == null ? Collections.<String, String>emptyMap() : Collections.unmodifiableMap(params);
+        this.fullValue = header;
     }
 
     /**
@@ -242,12 +263,16 @@ public class MimeHeader implements HttpHeader {
      * @throws java.io.IOException if there is an IOException while writing to the stream
      */
     void writeFullValue(OutputStream os) throws IOException {
-        os.write(getMainValue().getBytes(ENCODING));
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            String name = entry.getKey();
-            String value = entry.getValue();
-            os.write(SEMICOLON);
-            writeParam(os, name, value);
+        if ( fullValue != null ) {
+            os.write( fullValue.getBytes(ENCODING) );
+        } else {
+            os.write(getMainValue().getBytes(ENCODING));
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                String name = entry.getKey();
+                String value = entry.getValue();
+                os.write(SEMICOLON);
+                writeParam(os, name, value);
+            }
         }
     }
 

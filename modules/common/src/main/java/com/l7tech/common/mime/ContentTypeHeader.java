@@ -26,6 +26,9 @@ public class ContentTypeHeader extends MimeHeader {
     public static final String PROP_STRICT_CHARSET = "com.l7tech.common.mime.strictCharset";
     public static final boolean STRICT_CHARSET = SyspropUtil.getBoolean(PROP_STRICT_CHARSET, false);
 
+    public static final String PROP_PRESERVE_FORMAT = "com.l7tech.common.mime.preserveFormat";
+    public static final boolean PRESERVE_FORMAT = SyspropUtil.getBoolean(PROP_PRESERVE_FORMAT, true);
+
     public static final ContentTypeHeader OCTET_STREAM_DEFAULT; // application/octet-stream
     public static final ContentTypeHeader TEXT_DEFAULT; // text/plain; charset=UTF-8
     public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
@@ -46,14 +49,14 @@ public class ContentTypeHeader extends MimeHeader {
 
     static {
         try {
-            OCTET_STREAM_DEFAULT = parseValue("application/octet-stream");
+            OCTET_STREAM_DEFAULT = parseValue("application/octet-stream", false);
             OCTET_STREAM_DEFAULT.getEncoding();
-            TEXT_DEFAULT = parseValue("text/plain; charset=UTF-8");
-            XML_DEFAULT = parseValue("text/xml; charset=UTF-8");
+            TEXT_DEFAULT = parseValue("text/plain; charset=UTF-8", false);
+            XML_DEFAULT = parseValue("text/xml; charset=UTF-8", false);
             XML_DEFAULT.getEncoding();
-            SOAP_1_2_DEFAULT = parseValue("application/soap+xml; charset=UTF-8");
-            APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded");
-            APPLICATION_JSON = parseValue("application/json; charset=UTF-8");
+            SOAP_1_2_DEFAULT = parseValue("application/soap+xml; charset=UTF-8", false);
+            APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded", false);
+            APPLICATION_JSON = parseValue("application/json; charset=UTF-8", false);
         } catch (Throwable e) {
             throw new Error(e);
         }
@@ -74,13 +77,14 @@ public class ContentTypeHeader extends MimeHeader {
      * @param params the parameters, ie {charset=>"utf-8"}.  must not be null.
      *               Caller must not modify this map after giving it to this constructor.
      *               Caller is responsible for ensuring that lookups in the map are case-insensitive.
+     * @param header the full header value, a null value means the header will be reconstructed.
      * @throws IllegalArgumentException if type is multipart, but boundary param is missing or empty; or,
      *                                  if type is multipart, but the subtype is other than "related"
      * @throws NullPointerException if type, subtype or param is null
      * @throws java.io.IOException if an attempt is made to create a multipart type with a missing or invalid boundary
      */
-    private ContentTypeHeader(String type, String subtype, Map<String, String> params) throws IOException {
-        super(MimeUtil.CONTENT_TYPE, type + "/" + subtype, params);
+    private ContentTypeHeader(String type, String subtype, Map<String, String> params, String header) throws IOException {
+        super(MimeUtil.CONTENT_TYPE, type + "/" + subtype, params, header);
         this.type = type.toLowerCase();
         this.subtype = subtype.toLowerCase();
 
@@ -121,9 +125,24 @@ public class ContentTypeHeader extends MimeHeader {
      * @throws java.io.IOException  if the specified header value was missing, empty, or syntactically invalid
      */
     public static ContentTypeHeader parseValue(String contentTypeHeaderValue) throws IOException {
+        return parseValue( contentTypeHeaderValue, PRESERVE_FORMAT );
+    }
+
+    /**
+     * Parse a MIME Content-Type: header, not including the header name and colon.
+     * Example: <code>parseValue("text/html; charset=\"UTF-8\"")</code>
+     *
+     * @param contentTypeHeaderValue the header value to parse
+     * @param preserveFormat True to preserve the formatting of the header
+     * @return a ContentTypeHeader instance.  Never null.
+     * @throws java.io.IOException  if the specified header value was missing, empty, or syntactically invalid
+     */
+    public static ContentTypeHeader parseValue( String contentTypeHeaderValue,
+                                                final boolean preserveFormat ) throws IOException {
         if (contentTypeHeaderValue == null || contentTypeHeaderValue.length() < 1)
             throw new IOException("MIME Content-Type header missing or empty");
 
+        final String originalValue = contentTypeHeaderValue;
         if (contentTypeHeaderValue.endsWith(";")) {
             contentTypeHeaderValue = contentTypeHeaderValue.substring(0, contentTypeHeaderValue.length()-1);    
         }
@@ -216,7 +235,7 @@ public class ContentTypeHeader extends MimeHeader {
                 params.put(name, value.toString());
             }
 
-            return new ContentTypeHeader(type, subtype, params);
+            return new ContentTypeHeader(type, subtype, params, preserveFormat?originalValue:null);
         } catch (ParseException e) {
             throw new CausedIOException("Unable to parse MIME header", e);
         }
