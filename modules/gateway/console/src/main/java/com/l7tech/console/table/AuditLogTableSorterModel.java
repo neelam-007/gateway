@@ -532,6 +532,9 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
 
         try {            
             // create a worker thread to retrieve the cluster info
+            //Record current row before model is potentially modified
+            //row is based on audit record identity and not position number
+            final String msgNumSelected = logPane.getSelectedMsgNumber();
             final ClusterLogWorker infoWorker = new ClusterLogWorker(
                     clusterStatusAdmin,
                     auditAdmin,
@@ -557,8 +560,6 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                             addLogs(newLogs);
 
                             if (updated) {
-
-                                String msgNumSelected = logPane.getSelectedMsgNumber();
 
                                 // filter the logs
                                 if(logType == GenericLogAdmin.TYPE_LOG){

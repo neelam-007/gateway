@@ -2179,7 +2179,7 @@ public class LogPanel extends JPanel {
     }
 
     /**
-     * Set the row of the log table which is currenlty selected by the user for viewing the details of the log message.
+     * Set the row of the log table which is currently selected by the user for viewing the details of the log message.
      *
      * @param msgNumber The message number of the log being selected.
      */
