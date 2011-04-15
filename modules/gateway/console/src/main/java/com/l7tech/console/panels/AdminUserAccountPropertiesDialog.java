@@ -29,9 +29,9 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
 
     private static final String DIALOG_TITLE = resources.getString("title");
 
-    private static final String PARAM_LOGIN_ATTEMPTS= "logon.maxAllowableAttempts";
+    private static final String PARAM_LOGIN_ATTEMPTS = "logon.maxAllowableAttempts";
     private static final String PARAM_LOCKOUT = "logon.lockoutTime";
-    private static final String PARAM_EXPIRY = "logon.sessionExpiry";  
+    private static final String PARAM_EXPIRY = "logon.sessionExpiry";
     private static final String PARAM_INACTIVITY = "logon.inactivityPeriod";
 
     private ClusterProperty invalidAttemptProperty;
@@ -52,13 +52,13 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
     private boolean isReadOnly = false;
     private IdentityAdmin.AccountMinimums accountMinimums;
 
-    public AdminUserAccountPropertiesDialog(Window owner,  boolean isReadOnly) {
+    public AdminUserAccountPropertiesDialog(Window owner, boolean isReadOnly) {
         super(owner, DIALOG_TITLE, AdminUserAccountPropertiesDialog.DEFAULT_MODALITY_TYPE);
         this.isReadOnly = isReadOnly;
         initialize();
     }
 
-    public AdminUserAccountPropertiesDialog(Frame owner,  boolean isReadOnly) {
+    public AdminUserAccountPropertiesDialog(Frame owner, boolean isReadOnly) {
         super(owner, DIALOG_TITLE, AdminUserAccountPropertiesDialog.DEFAULT_MODALITY_TYPE);
         this.isReadOnly = isReadOnly;
         initialize();
@@ -69,15 +69,15 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         getRootPane().setDefaultButton(okButton);
 
         accountMinimums = Registry.getDefault().getIdentityAdmin().getAccountMinimums();
-        final InputValidator inputValidator = new InputValidator( this, DIALOG_TITLE );
+        final InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
 
-        inputValidator.attachToButton( okButton, new ActionListener() {
+        inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
-            public void actionPerformed( ActionEvent e ) {
+            public void actionPerformed(ActionEvent e) {
                 onOk();
             }
-        } );
-        
+        });
+
         cancelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -86,18 +86,18 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         });
 
 
-        ((SpinnerNumberModel)invalidAttemptsSpinner.getModel()).setMinimum(1);
-        ((SpinnerNumberModel)invalidAttemptsSpinner.getModel()).setMaximum(20);
-        ((SpinnerNumberModel)minLockoutSpinner.getModel()).setMinimum(1);
-        ((SpinnerNumberModel)minLockoutSpinner.getModel()).setMaximum(1440); // 1 day
-        ((SpinnerNumberModel)expirySpinner.getModel()).setMinimum(0);
-        ((SpinnerNumberModel)expirySpinner.getModel()).setMaximum(60);
-        ((SpinnerNumberModel)inactivitySpinner.getModel()).setMinimum(0);
-        ((SpinnerNumberModel)inactivitySpinner.getModel()).setMaximum(365);
+        ((SpinnerNumberModel) invalidAttemptsSpinner.getModel()).setMinimum(1);
+        ((SpinnerNumberModel) invalidAttemptsSpinner.getModel()).setMaximum(20);
+        ((SpinnerNumberModel) minLockoutSpinner.getModel()).setMinimum(1);
+        ((SpinnerNumberModel) minLockoutSpinner.getModel()).setMaximum(1440); // 1 day
+        ((SpinnerNumberModel) expirySpinner.getModel()).setMinimum(1);
+        ((SpinnerNumberModel) expirySpinner.getModel()).setMaximum(1440); // 1 day
+        ((SpinnerNumberModel) inactivitySpinner.getModel()).setMinimum(0);
+        ((SpinnerNumberModel) inactivitySpinner.getModel()).setMaximum(365);
 
-         RunOnChangeListener requirementsListener = new RunOnChangeListener(new Runnable(){
+        RunOnChangeListener requirementsListener = new RunOnChangeListener(new Runnable() {
             @Override
-            public void run(){
+            public void run() {
                 updateRequirementWarning();
             }
         });
@@ -111,12 +111,12 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
 
         modelToView();
-        okButton.setEnabled(!isReadOnly);           
+        okButton.setEnabled(!isReadOnly);
     }
 
-    private String getResourceString(String key){
+    private String getResourceString(String key) {
         final String value = resources.getString(key);
-        if(value.endsWith(":")){
+        if (value.endsWith(":")) {
             return value.substring(0, value.lastIndexOf(":"));
         }
         return value;
@@ -125,32 +125,32 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
     private void updateRequirementWarning() {
         boolean noWarning = true;
 
-        if ( accountMinimums != null ) {
-            noWarning = ((Integer)invalidAttemptsSpinner.getValue() <= accountMinimums.getAttempts());
-            noWarning = noWarning && ((Integer)minLockoutSpinner.getValue() >= accountMinimums.getLockout());
-            noWarning = noWarning && ((Integer)expirySpinner.getValue() <= accountMinimums.getExpiry());
-            noWarning = noWarning && ((Integer)inactivitySpinner.getValue() <= accountMinimums.getInactivity());
+        if (accountMinimums != null) {
+            noWarning = ((Integer) invalidAttemptsSpinner.getValue() <= accountMinimums.getAttempts());
+            noWarning = noWarning && ((Integer) minLockoutSpinner.getValue() >= accountMinimums.getLockout());
+            noWarning = noWarning && ((Integer) expirySpinner.getValue() <= accountMinimums.getExpiry());
+            noWarning = noWarning && ((Integer) inactivitySpinner.getValue() <= accountMinimums.getInactivity());
         }
 
-        warningLabel.setText(noWarning? null: MessageFormat.format( getResourceString( "below.warning" ), accountMinimums.getName() ));
+        warningLabel.setText(noWarning ? null : MessageFormat.format(getResourceString("below.warning"), accountMinimums.getName()));
     }
 
     /**
      * Configure the GUI control states with information gathered from the userAccountPolicy instance.
      */
     private void modelToView() {
-        Collection<ClusterPropertyDescriptor>  descriptors = getClusterAdmin().getAllPropertyDescriptors();
+        Collection<ClusterPropertyDescriptor> descriptors = getClusterAdmin().getAllPropertyDescriptors();
 
-        invalidAttemptProperty = getClusterProp(PARAM_LOGIN_ATTEMPTS,descriptors);
+        invalidAttemptProperty = getClusterProp(PARAM_LOGIN_ATTEMPTS, descriptors);
         invalidAttemptsSpinner.setValue(Integer.parseInt(invalidAttemptProperty.getValue()));
 
-        minLockoutProperty = getClusterProp(PARAM_LOCKOUT,descriptors);
-        minLockoutSpinner.setValue(Integer.parseInt(minLockoutProperty.getValue())/60);
+        minLockoutProperty = getClusterProp(PARAM_LOCKOUT, descriptors);
+        minLockoutSpinner.setValue(Integer.parseInt(minLockoutProperty.getValue()) / 60);
 
-        expiryProperty = getClusterProp(PARAM_EXPIRY,descriptors);
+        expiryProperty = getClusterProp(PARAM_EXPIRY, descriptors);
         expirySpinner.setValue(Integer.parseInt(expiryProperty.getValue()));
 
-        inactivityProperty = getClusterProp(PARAM_INACTIVITY,descriptors);
+        inactivityProperty = getClusterProp(PARAM_INACTIVITY, descriptors);
         inactivitySpinner.setValue(Integer.parseInt(inactivityProperty.getValue()));
     }
 
@@ -158,11 +158,11 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
      * Configure the cluster properties to the GUI control values
      * Assumes caller has already checked view state against the inputValidator.
      */
-    private void viewToModel() {         
-        setClusterProp(invalidAttemptProperty,(Integer)invalidAttemptsSpinner.getValue());
-        setClusterProp(minLockoutProperty,(Integer)minLockoutSpinner.getValue()*60);
-        setClusterProp(expiryProperty,(Integer)expirySpinner.getValue());
-        setClusterProp(inactivityProperty,(Integer)inactivitySpinner.getValue());
+    private void viewToModel() {
+        setClusterProp(invalidAttemptProperty, (Integer) invalidAttemptsSpinner.getValue());
+        setClusterProp(minLockoutProperty, (Integer) minLockoutSpinner.getValue() * 60);
+        setClusterProp(expiryProperty, (Integer) expirySpinner.getValue());
+        setClusterProp(inactivityProperty, (Integer) inactivitySpinner.getValue());
     }
 
     @Override
@@ -177,13 +177,15 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         dispose();
     }
 
-    /** @return true if the dialog has been dismissed with the ok button */
+    /**
+     * @return true if the dialog has been dismissed with the ok button
+     */
     public boolean isConfirmed() {
         return confirmed;
     }
 
     private void setClusterProp(ClusterProperty prop, Integer value) {
-        if(prop.getValue().equals(value.toString()))
+        if (prop.getValue().equals(value.toString()))
             return;
         try {
             prop.setValue(value.toString());
@@ -197,12 +199,12 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         }
     }
 
-    private ClusterProperty getClusterProp(String name, Collection<ClusterPropertyDescriptor> descriptors){
+    private ClusterProperty getClusterProp(String name, Collection<ClusterPropertyDescriptor> descriptors) {
         try {
             ClusterProperty prop = getClusterAdmin().findPropertyByName(name);
-            if(prop==null){
-                String value = findDefaultValue(descriptors,name);
-                prop = new ClusterProperty(name,value);
+            if (prop == null) {
+                String value = findDefaultValue(descriptors, name);
+                prop = new ClusterProperty(name, value);
             }
             return prop;
         } catch (FindException e) {
@@ -211,16 +213,16 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         }
     }
 
-    private String findDefaultValue( Collection<ClusterPropertyDescriptor> descriptors, String name){
-        for(ClusterPropertyDescriptor desc : descriptors){
-            if(desc.getName().equals(name))
+    private String findDefaultValue(Collection<ClusterPropertyDescriptor> descriptors, String name) {
+        for (ClusterPropertyDescriptor desc : descriptors) {
+            if (desc.getName().equals(name))
                 return desc.getDefaultValue();
         }
-        logger.log(Level.SEVERE, "Exception getting default value for property :"+name);
+        logger.log(Level.SEVERE, "Exception getting default value for property :" + name);
         return null;
     }
 
-    private ClusterStatusAdmin getClusterAdmin(){
+    private ClusterStatusAdmin getClusterAdmin() {
         return Registry.getDefault().getClusterStatusAdmin();
     }
 
