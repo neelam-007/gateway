@@ -99,8 +99,8 @@ public class IdentityProviderNode extends EntityHeaderNode<EntityHeader> {
 
         if (config.type() != null && config.type() == IdentityProviderType.INTERNAL) {
 
-            list.add(new ForceAdminPasswordResetAction(this));
-            list.add(new IdentityProviderManagePasswordPolicyAction(this));
+            list.add(new ForceAdminPasswordResetAction());
+            list.add(new IdentityProviderManagePasswordPolicyAction());
         }
 
         return list.toArray(new Action[list.size()]);

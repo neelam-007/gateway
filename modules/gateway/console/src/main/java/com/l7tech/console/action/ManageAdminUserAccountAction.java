@@ -17,7 +17,7 @@ import java.util.EnumSet;
 */
 public class ManageAdminUserAccountAction extends SecureAction {
     public ManageAdminUserAccountAction() {
-        super(new AttemptedAnyOperation(EntityType.CLUSTER_PROPERTY), "service:Admin");
+        super(null, "service:Admin");
     }
 
     @Override

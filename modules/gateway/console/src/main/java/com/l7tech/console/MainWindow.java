@@ -115,6 +115,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenu viewMenu = null;
     private JMenu helpMenu = null;
     private JMenu newProviderSubMenu = null;
+    private JMenu manageAdminUsersSubMenu = null;
     private JMenu filterServiceAndPolicyTreeMenu = null;
     private JMenu sortServiceAndPolicyTreeMenu = null;
     private JMenu customGlobalActionsMenu = null;
@@ -137,7 +138,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem manageGlobalResourcesMenuItem = null;
     private JMenuItem manageClusterPropertiesMenuItem = null;
     private JMenuItem manageRolesMenuItem = null;
-    private JMenuItem manageAdminUserAccountMenuItem = null;
     private JMenuItem manageServiceResolutionMenuItem = null;
     private JMenuItem dashboardMenuItem;
     private JMenuItem manageClusterLicensesMenuItem = null;
@@ -282,6 +282,9 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     /**
      * add the ConnectionListener
+     *
+     * The listener is stored as a weak reference, to ensure it's not auto removed a reference must be kept
+     * somewhere else.
      *
      * @param listener the ConnectionListener
      */
@@ -957,6 +960,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getNewProviderSubMenu());
             menu.add(getNewInternalUserAction());
             menu.add(getNewInternalGroupAction());
+            menu.add(getManageAdminUsersSubMenu());                 
             menu.add(getFindIdentityAction());
 
             menu.addSeparator();
@@ -979,7 +983,6 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageJmsEndpointsMenuItem());
             menu.add(getManageKerberosMenuItem());
             menu.add(getManageRolesMenuItem());
-            menu.add(getManageAdminUserAccountMenuItem());
             menu.add(getManageAuditAlertOptionsMenuItem());
             menu.add(getManageLogSinksAction());
             menu.add(getManageEmailListenersAction());
@@ -1025,6 +1028,28 @@ public class MainWindow extends JFrame implements SheetHolder {
             newProviderSubMenu.add(getNewFederatedIdentityProviderAction());
         }
         return newProviderSubMenu;
+    }
+
+    private JMenu getManageAdminUsersSubMenu() {
+        if (manageAdminUsersSubMenu == null) {
+            manageAdminUsersSubMenu = new JMenu();
+
+            manageAdminUsersSubMenu.setText("Manage Account Policies");
+            manageAdminUsersSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/ManageUserAccounts16.png")));
+
+            final SecureAction mangeAdminUsers = new ManageAdminUserAccountAction();
+            disableUntilLogin(mangeAdminUsers);
+            manageAdminUsersSubMenu.add(mangeAdminUsers);
+
+            final SecureAction forceResetAction = new ForceAdminPasswordResetAction();
+            disableUntilLogin(forceResetAction);
+            manageAdminUsersSubMenu.add(forceResetAction);
+            
+            final SecureAction managePasswdPolicyAction = new IdentityProviderManagePasswordPolicyAction();
+            disableUntilLogin(managePasswdPolicyAction);
+            manageAdminUsersSubMenu.add(managePasswdPolicyAction);
+        }
+        return manageAdminUsersSubMenu;
     }
 
     /**
@@ -3283,15 +3308,6 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         return manageRolesMenuItem;
     }
-    public JMenuItem getManageAdminUserAccountMenuItem() {
-
-        if (manageAdminUserAccountMenuItem == null)
-            manageAdminUserAccountMenuItem = new JMenuItem(getManageAdminUserAccountAction());
-
-        return manageAdminUserAccountMenuItem;
-    }
-
-
 
     public JMenuItem getManageServiceResolutionMenuItem() {
         if (manageServiceResolutionMenuItem == null) {
@@ -3309,17 +3325,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
         return manageRolesAction;
     }
-
-
-    private Action getManageAdminUserAccountAction() {
-        if (manageAdminUserAccountAction == null) {
-            manageAdminUserAccountAction = new ManageAdminUserAccountAction();
-            disableUntilLogin(manageAdminUserAccountAction);
-        }
-        return manageAdminUserAccountAction;
-    }
-
-
 
     private Action getManageServiceResolutionAction() {
         if (manageServiceResolutionAction == null) {
@@ -3813,20 +3818,23 @@ public class MainWindow extends JFrame implements SheetHolder {
             }
         } else {
             final Component[] components = menu.getMenuComponents();
+            //allow all sub components to be asked whether they have an enabled component or not.
+            boolean foundEnabledSubComponent = false;
             for (Component component : components) {
                 if (component instanceof JMenu) {
                     if (isMenuItemActive((JMenu) component)) {
-                        return true;
+                        foundEnabledSubComponent = true;
                     }
                 } else if (component instanceof JMenuItem) { //a menu item
                     if (((JMenuItem) component).getAction() != null) {
-                        return ((JMenuItem) component).getAction().isEnabled();
-                    } else {
-                        return false;
+                        final boolean isEnabled = ((JMenuItem) component).getAction().isEnabled();
+                        if(isEnabled){
+                            foundEnabledSubComponent = true;
+                        }
                     }
                 }
             }
-            return false;
+            return foundEnabledSubComponent;
         }
     }
 

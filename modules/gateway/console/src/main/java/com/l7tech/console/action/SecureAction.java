@@ -207,9 +207,9 @@ public abstract class SecureAction extends BaseAction implements LogonListener, 
 
     /**
      * Test whether the current subject is authorized to perform the action
-     * If the current subject is not set <code>false</code> is returnced
+     * If the current subject is not set <code>false</code> is returned
      *
-     * @return true if the current subject is authorized, false otheriwse
+     * @return true if the current subject is authorized, false otherwise
      */
     public boolean isAuthorized() {
         return attemptedOperation == null || canAttemptOperation(attemptedOperation);

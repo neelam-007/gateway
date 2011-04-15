@@ -1,14 +1,13 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.IdProviderPasswordPolicyDialog;
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.IdentityProviderNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderPasswordPolicy;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
@@ -25,11 +24,11 @@ import java.util.logging.Level;
  *
  * @author wlui
  */
-public class IdentityProviderManagePasswordPolicyAction extends NodeAction {
-    private AttemptedUpdate attemptedUpdatePasswordPolicy;
-
-    public IdentityProviderManagePasswordPolicyAction(IdentityProviderNode nodeIdentity) {
-        super(nodeIdentity, LIC_AUTH_ASSERTIONS, null);
+public class IdentityProviderManagePasswordPolicyAction extends SecureAction {
+    public IdentityProviderManagePasswordPolicyAction() {
+        super(new AttemptedUpdate(
+                EntityType.PASSWORD_POLICY, new IdentityProviderPasswordPolicy(
+                        IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID)), LIC_AUTH_ASSERTIONS);
     }
 
     /**
@@ -53,16 +52,9 @@ public class IdentityProviderManagePasswordPolicyAction extends NodeAction {
      */
     @Override
     protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif"; 
+        return "com/l7tech/console/resources/policy16.gif"; 
     }
 
-    @Override
-    public boolean isAuthorized() {
-        if (attemptedUpdatePasswordPolicy == null) {
-            attemptedUpdatePasswordPolicy = new AttemptedUpdate(EntityType.PASSWORD_POLICY, new IdentityProviderPasswordPolicy(-2L));
-        }
-        return canAttemptOperation(attemptedUpdatePasswordPolicy);
-    }
     /**
      * Actually perform the action.
      * This is the method which should be called programmatically.
@@ -73,44 +65,39 @@ public class IdentityProviderManagePasswordPolicyAction extends NodeAction {
     @Override
     protected void performAction() {
 
-        EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
         final IdentityProviderPasswordPolicy passwordPolicy;
         Frame f = TopComponents.getInstance().getTopParent();
-        if (header.getOid() != -1L) {
-            final long oid = header.getOid();
-            try {
-                passwordPolicy =
-                  getIdentityAdmin().getPasswordPolicyForIdentityProvider(oid);
-            } catch (FindException e) {
-                logger.log(Level.WARNING, "Failed to find password policy: " + ExceptionUtils.getMessage(e), e);
-                DialogDisplayer.showMessageDialog(f, "Failed to find password policy: " + ExceptionUtils.getMessage(e), "Find Failed", JOptionPane.ERROR_MESSAGE, null);
-                return;
-            }
-            final IdentityAdmin.AccountMinimums accountMinimums = getIdentityAdmin().getAccountMinimums();
-            final Map<String,IdentityProviderPasswordPolicy> policyMinimums = getIdentityAdmin().getPasswordPolicyMinimums();
-            final IdProviderPasswordPolicyDialog dlg = new IdProviderPasswordPolicyDialog(
-                    f,
-                    passwordPolicy,
-                    accountMinimums==null?null:accountMinimums.getName(),
-                    policyMinimums==null?Collections.<String, IdentityProviderPasswordPolicy>emptyMap():policyMinimums,
-                    false);
-            dlg.pack();
-            Utilities.centerOnScreen(dlg);
-            DialogDisplayer.display(dlg, new Runnable() {
-               @Override
-               public void run() {
-                   if (dlg.isConfirmed()) {
-                       try {
-                           getIdentityAdmin().updatePasswordPolicy(oid, passwordPolicy);
-                       } catch (ObjectModelException e) {
-                           logger.log(Level.WARNING, "Failed to save password policy: " + ExceptionUtils.getMessage(e), e);
-                           DialogDisplayer.showMessageDialog(dlg, "Failed to save password policy: " + ExceptionUtils.getMessage(e), "Save Failed", JOptionPane.ERROR_MESSAGE, null);
-                       }
+        try {
+            passwordPolicy =
+              getIdentityAdmin().getPasswordPolicyForIdentityProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Failed to find password policy: " + ExceptionUtils.getMessage(e), e);
+            DialogDisplayer.showMessageDialog(f, "Failed to find password policy: " + ExceptionUtils.getMessage(e), "Find Failed", JOptionPane.ERROR_MESSAGE, null);
+            return;
+        }
+        final IdentityAdmin.AccountMinimums accountMinimums = getIdentityAdmin().getAccountMinimums();
+        final Map<String,IdentityProviderPasswordPolicy> policyMinimums = getIdentityAdmin().getPasswordPolicyMinimums();
+        final IdProviderPasswordPolicyDialog dlg = new IdProviderPasswordPolicyDialog(
+                f,
+                passwordPolicy,
+                accountMinimums==null?null:accountMinimums.getName(),
+                policyMinimums==null?Collections.<String, IdentityProviderPasswordPolicy>emptyMap():policyMinimums,
+                false);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+           @Override
+           public void run() {
+               if (dlg.isConfirmed()) {
+                   try {
+                       getIdentityAdmin().updatePasswordPolicy(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, passwordPolicy);
+                   } catch (ObjectModelException e) {
+                       logger.log(Level.WARNING, "Failed to save password policy: " + ExceptionUtils.getMessage(e), e);
+                       DialogDisplayer.showMessageDialog(dlg, "Failed to save password policy: " + ExceptionUtils.getMessage(e), "Save Failed", JOptionPane.ERROR_MESSAGE, null);
                    }
                }
-            });
-
-        }
+           }
+        });
     }
 
     private IdentityAdmin getIdentityAdmin() {
