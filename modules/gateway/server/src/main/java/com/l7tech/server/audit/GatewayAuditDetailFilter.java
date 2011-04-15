@@ -1,7 +1,9 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.util.Pair;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
@@ -11,7 +13,7 @@ import java.util.logging.Level;
 /**
  * Determine if a given AuditDetailMessage should be ignored.
  *
- * <p>Some audit detail messagess will never be used depending on how the
+ * <p>Some audit detail messages will never be used depending on how the
  * audit thresholds are set. This filter allows us to avoid expensive event
  * publishing if we know that the information will definitely not be used.</p>
  *
@@ -37,10 +39,13 @@ public class GatewayAuditDetailFilter implements PropertyChangeListener, AuditDe
         // Ignore MessageProcessingMessages if these will not be recorded to the DB
         // Don't ignore assertion audits, since these can be returned in detailed
         // SOAP Faults if so configured.
+        final int minLevel = this.detailThreshold.get();
         if ( message.getId() >= MIN_VALUE &&
              message.getId() <= MAX_VALUE &&
-             message.getLevel().intValue() < this.detailThreshold.get() )  {
-            auditable = false;           
+             message.getLevel().intValue() < minLevel)  {
+            //check if the level has been modified
+            final Pair<Boolean,AuditDetailMessage> pair = MessagesUtil.getAuditDetailMessageByIdWithFilter(message.getId());
+            auditable = pair.left && pair.right != null && pair.right.getLevel().intValue() >= minLevel;
         }
 
         return auditable;

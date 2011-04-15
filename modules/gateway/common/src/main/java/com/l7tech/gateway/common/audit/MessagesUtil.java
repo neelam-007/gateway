@@ -23,8 +23,8 @@ public class MessagesUtil {
      * @param id message id
      * @return a Pair of Boolean and AuditDetailMessage. If the boolean is true, the the message exists in static
      * configuration. If false, then the requester asked for a message id which does not exist on the system. If true
-     * and the AuditDetailMessage is null, then it was filtered. Otherwise the retunred AuditDetailMessage may or may
-     * not contain a Level which was modified by the filter. 
+     * and the AuditDetailMessage is null, then it was filtered to NEVER. Otherwise the returned AuditDetailMessage may
+     * or may not contain a Level which was modified by the filter. 
      */
     public static Pair<Boolean, AuditDetailMessage> getAuditDetailMessageByIdWithFilter(int id) {
         AuditDetailMessage message = Messages.getAuditDetailMessageById(id);
