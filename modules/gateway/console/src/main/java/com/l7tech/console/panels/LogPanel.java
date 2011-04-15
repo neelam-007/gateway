@@ -3,30 +3,30 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.gateway.common.cluster.*;
-import com.l7tech.gateway.common.entity.EntityAdmin;
-import com.l7tech.gateway.common.security.rbac.AttemptedOther;
-import com.l7tech.gateway.common.security.rbac.OtherOperationName;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.util.*;
-
-import static com.l7tech.gateway.common.Component.fromId;
-import com.l7tech.gateway.common.audit.*;
-import com.l7tech.gui.NumberField;
-import com.l7tech.gui.util.*;
-import com.l7tech.gui.widgets.ContextMenuTextArea;
-import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.AuditLogTableSorterModel;
 import com.l7tech.console.util.*;
 import com.l7tech.console.util.jcalendar.TimeRangePicker;
+import com.l7tech.gateway.common.audit.*;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.cluster.LogRequest;
+import com.l7tech.gateway.common.entity.EntityAdmin;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
-import com.l7tech.console.util.AuditLogMessage;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.gateway.common.security.rbac.AttemptedOther;
+import com.l7tech.gateway.common.security.rbac.OtherOperationName;
+import com.l7tech.gui.NumberField;
+import com.l7tech.gui.util.*;
+import com.l7tech.gui.widgets.ContextMenuTextArea;
+import com.l7tech.gui.widgets.SquigglyTextField;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.util.*;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Document;
@@ -39,9 +39,9 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import javax.swing.table.*;
 import java.awt.*;
-import java.awt.Component;
 import java.awt.event.*;
 import java.io.*;
+import java.lang.ref.SoftReference;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -51,7 +51,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import java.lang.ref.SoftReference;
+
+import static com.l7tech.gateway.common.Component.fromId;
 
 /**
  * A panel for displaying either logs or audit events.
@@ -1217,6 +1218,7 @@ public class LogPanel extends JPanel {
             // populate the associated logs
             Iterator associatedLogsItr = arec.getDetails().iterator();
 
+            getMsgDetailsPane().setEnabledAt(1, associatedLogsItr.hasNext());
             List<AssociatedLog> associatedLogs = new ArrayList<AssociatedLog>();
             while (associatedLogsItr.hasNext()) {
                 AuditDetail ad = (AuditDetail) associatedLogsItr.next();
