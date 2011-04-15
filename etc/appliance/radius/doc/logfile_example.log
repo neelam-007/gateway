@@ -1,0 +1,44 @@
+Mon Apr 11 15:44:35 2011: Log file created.
+Mon Apr 11 15:44:35 2011: Success - Configuration of /etc/openldap/ldap.conf completed.
+Mon Apr 11 15:44:35 2011: Info - /etc/ldap.conf_orig_20110411_154435 created.
+Mon Apr 11 15:44:35 2011: Success - Configuration of /etc/ldap.conf completed.
+Mon Apr 11 15:44:35 2011: Info - /etc/nsswitch.conf_orig_20110411_154435 created.
+Mon Apr 11 15:44:35 2011: Success - Configuration of /etc/nsswitch.conf completed.
+Mon Apr 11 15:44:35 2011: Info - SSHD is configured to use PAM.
+Mon Apr 11 15:44:35 2011: Info - /etc/pamd/sshd_orig_20110411_154435 backup file created.
+Mon Apr 11 15:44:35 2011: Success - Configuration of /etc/pam.d/sshd completed.
+Mon Apr 11 15:44:35 2011: Info - /etc/pam_radius.conf_orig_20110411_154435 backup file created.
+Mon Apr 11 15:44:35 2011: Success - Configuration of /etc/pam_radius.conf completed.
+Tue Apr 12 15:15:40 2011: Info - /etc/openldap/ldap.conf_orig_20110412_151540 created.
+Tue Apr 12 15:15:40 2011: Success - Configuration of /etc/openldap/ldap.conf completed.
+Tue Apr 12 15:15:40 2011: Info - /etc/ldap.conf_orig_20110412_151540 created.
+Tue Apr 12 15:15:40 2011: Success - Configuration of /etc/ldap.conf completed.
+Tue Apr 12 15:15:40 2011: Info - /etc/nsswitch.conf_orig_20110412_151540 created.
+Tue Apr 12 15:15:40 2011: Success - Configuration of /etc/nsswitch.conf completed.
+Tue Apr 12 15:15:40 2011: Info - SSHD is configured to use PAM.
+Tue Apr 12 15:15:40 2011: Info - /etc/pamd/sshd_orig_20110412_151540 backup file created.
+Tue Apr 12 15:15:40 2011: Success - Configuration of /etc/pam.d/sshd completed.
+Tue Apr 12 15:15:40 2011: Info - /etc/pam_radius.conf_orig_20110412_151540 backup file created.
+Tue Apr 12 15:15:40 2011: Success - Configuration of /etc/pam_radius.conf completed.
+Tue Apr 12 15:16:05 2011: Info - /etc/openldap/ldap.conf_orig_20110412_151605 created.
+Tue Apr 12 15:16:05 2011: Success - Configuration of /etc/openldap/ldap.conf completed.
+Tue Apr 12 15:16:05 2011: Info - /etc/ldap.conf_orig_20110412_151605 created.
+Tue Apr 12 15:16:05 2011: Success - Configuration of /etc/ldap.conf completed.
+Tue Apr 12 15:16:05 2011: Info - /etc/nsswitch.conf_orig_20110412_151605 created.
+Tue Apr 12 15:16:05 2011: Success - Configuration of /etc/nsswitch.conf completed.
+Tue Apr 12 15:27:02 2011: Info - SSHD is configured to use PAM.
+Tue Apr 12 15:27:02 2011: Info - /etc/pamd/sshd_orig_20110412_152702 backup file created.
+Tue Apr 12 15:27:02 2011: Success - Configuration of /etc/pam.d/sshd completed.
+Tue Apr 12 15:27:02 2011: Info - /etc/pam_radius.conf_orig_20110412_152702 backup file created.
+Tue Apr 12 15:27:03 2011: Success - Configuration of /etc/pam_radius.conf completed.
+Tue Apr 12 15:53:33 2011: Info - SSHD is configured to use PAM.
+Tue Apr 12 15:53:33 2011: Info - /etc/pamd/sshd_orig_20110412_155333 backup file created.
+Tue Apr 12 15:53:33 2011: Success - Configuration of /etc/pam.d/sshd completed.
+Tue Apr 12 15:53:33 2011: Info - /etc/pam_radius.conf_orig_20110412_155333 backup file created.
+Tue Apr 12 15:53:33 2011: Success - Configuration of /etc/pam_radius.conf completed.
+Wed Apr 13 16:15:22 2011: Info - /etc/openldap/ldap.conf_orig_20110413_161522 created.
+Wed Apr 13 16:15:22 2011: Success - Configuration of /etc/openldap/ldap.conf completed.
+Wed Apr 13 16:15:22 2011: Info - /etc/ldap.conf_orig_20110413_161522 created.
+Wed Apr 13 16:15:22 2011: Success - Configuration of /etc/ldap.conf completed.
+Wed Apr 13 16:15:22 2011: Info - /etc/nsswitch.conf_orig_20110413_161522 created.
+Wed Apr 13 16:15:22 2011: Success - Configuration of /etc/nsswitch.conf completed.
