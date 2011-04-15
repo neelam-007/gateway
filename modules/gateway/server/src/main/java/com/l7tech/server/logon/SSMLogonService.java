@@ -33,7 +33,7 @@ import org.springframework.dao.CannotAcquireLockException;
 
 /**
  * The logon service manager that will control the login activites that takes place in the SSM component.
- *
+ * <p/>
  * User: dlee
  * Date: Jun 27, 2008
  */
@@ -42,9 +42,10 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
     //- PUBLIC
 
     public SSMLogonService(PlatformTransactionManager transactionManager, LogonInfoManager logonManager, ServerConfig serverConfig) {
-        if ( transactionManager == null ) throw new IllegalArgumentException("PlateformTransactionManager cannot be null.");
-        if ( logonManager == null ) throw new IllegalArgumentException("LogonInfoManager cannot be null.");
-        if ( serverConfig == null ) throw new IllegalArgumentException("ServerConfig cannot be null.");
+        if (transactionManager == null)
+            throw new IllegalArgumentException("PlateformTransactionManager cannot be null.");
+        if (logonManager == null) throw new IllegalArgumentException("LogonInfoManager cannot be null.");
+        if (serverConfig == null) throw new IllegalArgumentException("ServerConfig cannot be null.");
 
         this.transactionManager = transactionManager;
         this.logonManager = logonManager;
@@ -93,7 +94,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         String propertyName = evt.getPropertyName();
         String newValue = (String) evt.getNewValue();
 
-        if ( propertyName != null && propertyName.equals(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW) ){
+        if (propertyName != null && propertyName.equals(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW)) {
             try {
                 int newVal = Integer.valueOf(newValue);
                 if (newVal <= 0) throw new NumberFormatException();
@@ -138,12 +139,11 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
     public void hookPreLoginCheck(final User user) throws AuthenticationException {
         try {
 
-            if(user instanceof InternalUser){
-                if(!((InternalUser)user).isEnabled()){
+            if (user instanceof InternalUser) {
+                if (!((InternalUser) user).isEnabled()) {
                     auditor.logAndAudit(SystemMessages.AUTH_USER_DISABLED, user.getLogin());
                     String msg = "Credentials login matches an internal user " + user.getLogin() + ", but access is denied because user is disabled.";
                     logger.info(msg);
-                    doUpdateLogonState(user,LogonInfo.State.INACTIVE);
                     throw new UserDisabledException(msg);
                 }
             }
@@ -160,17 +160,18 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
 
             if (logonInfo == null) throw new FindException("No entry for '" + user.getLogin() + "'");
 
-            switch(logonInfo.getState()){
+            switch (logonInfo.getState()) {
                 case ACTIVE:
                     break; //
                 case INACTIVE: {
                     String msg = "Access is denied because of inactivity";
                     logger.info(msg);
-                    throw new FailInactivityPeriodExceededException(msg);  }
+                    throw new FailInactivityPeriodExceededException(msg);
+                }
             }
 
             //verify if has reached login attempts
-            if (logonInfo.getState()== LogonInfo.State.EXCEED_ATTEMPT || logonInfo.getFailCount() >= this.maxLoginAttempts) {
+            if (logonInfo.getState() == LogonInfo.State.EXCEED_ATTEMPT || logonInfo.getFailCount() >= this.maxLoginAttempts) {
                 //if the retry was not after the locked time, then we still lock the account.  Otherwise,
                 //the user is good to go for retry and we'll reset the fail count
                 Calendar cal = Calendar.getInstance();
@@ -182,11 +183,10 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                     String msg = "Credentials login matches an internal user " + user.getLogin() + ", but access is denied because of number of failed attempts.";
                     logger.info(msg);
                     doUpdateLogonAttempt(user, null);
-                    doUpdateLogonState(user,LogonInfo.State.EXCEED_ATTEMPT);
+                    doUpdateLogonState(user, LogonInfo.State.EXCEED_ATTEMPT);
                     throw new FailAttemptsExceededException(msg);
-                }
-                else{
-                    doUpdateLogonState(user,LogonInfo.State.ACTIVE);
+                } else {
+                    doUpdateLogonState(user, LogonInfo.State.ACTIVE);
                 }
             }
 
@@ -194,12 +194,12 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
             Calendar inactivityCal = Calendar.getInstance();
             inactivityCal.setTimeInMillis(logonInfo.getLastActivity());
             inactivityCal.add(Calendar.HOUR, this.maxInactivityPeriod * 24);
-            if (this.maxInactivityPeriod !=0 && logonInfo.getLastActivity() > 0 && inactivityCal.getTimeInMillis() <= now) {
-                long daysAgo = (now - logonInfo.getLastActivity() ) / 1000 / 60 / 60 / 24;
+            if (this.maxInactivityPeriod != 0 && logonInfo.getLastActivity() > 0 && inactivityCal.getTimeInMillis() <= now) {
+                long daysAgo = (now - logonInfo.getLastActivity()) / 1000 / 60 / 60 / 24;
                 auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_INACTIVITY, user.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
                 String msg = "Credentials login matches an internal user " + user.getLogin() + ", but access is denied because of account inactivity.";
                 logger.info(msg);
-                doUpdateLogonState(user,LogonInfo.State.INACTIVE);
+                doUpdateLogonState(user, LogonInfo.State.INACTIVE);
                 throw new FailInactivityPeriodExceededException(msg);
             }
             doUpdateLastActivity(user);
@@ -233,32 +233,31 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
     }
 
     @Override
-    public void updateInactivityInfo(){
+    public void updateInactivityInfo() {
         try {
             final long now = System.currentTimeMillis();
 
             Calendar inactivityCal = Calendar.getInstance();
             Collection<LogonInfo> logonInfos = logonManager.findAll();
 
-            for (LogonInfo logonInfo: logonInfos){
-                if(logonInfo.getState()!=LogonInfo.State.ACTIVE)
+            for (LogonInfo logonInfo : logonInfos) {
+                if (logonInfo.getState() != LogonInfo.State.ACTIVE)
                     continue;
                 inactivityCal.setTimeInMillis(now);
                 inactivityCal.setTimeInMillis(logonInfo.getLastActivity());
                 inactivityCal.add(Calendar.HOUR, this.maxInactivityPeriod * 24);
-                if (this.maxInactivityPeriod !=0 &&
-                        logonInfo.getLastActivity()>0 &&
-                        inactivityCal.getTimeInMillis() <= now)
-                {
+                if (this.maxInactivityPeriod != 0 &&
+                        logonInfo.getLastActivity() > 0 &&
+                        inactivityCal.getTimeInMillis() <= now) {
                     long daysAgo = (now - logonInfo.getLastActivity()) / 1000 / 60 / 60 / 24;
                     auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_INACTIVITY, logonInfo.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
-                    String msg = MessageFormat.format(SystemMessages.AUTH_USER_EXCEED_INACTIVITY.getMessage(),logonInfo.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
+                    String msg = MessageFormat.format(SystemMessages.AUTH_USER_EXCEED_INACTIVITY.getMessage(), logonInfo.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
                     logger.info(msg);
                     logonInfo.setState(LogonInfo.State.INACTIVE);
                     try {
                         logonManager.update(logonInfo);
                     } catch (UpdateException e) {
-                        logger.log(Level.WARNING, "Failed to update inactivity for '"+logonInfo.getLogin()+"'", ExceptionUtils.getDebugException(e));
+                        logger.log(Level.WARNING, "Failed to update inactivity for '" + logonInfo.getLogin() + "'", ExceptionUtils.getDebugException(e));
 
                     }
                 }
@@ -284,7 +283,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
     private static final int DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW = 5;
     private static final int DEFAULT_MAX_INACTIVITY_PERIOD = 35;
 
-    private void doUpdateLogonState(final User user,final LogonInfo.State logonState){
+    private void doUpdateLogonState(final User user, final LogonInfo.State logonState) {
         doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
             @Override
             public void call(final LogonInfo logonInfo) {
@@ -293,33 +292,32 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         });
     }
 
-    private void doUpdateLastActivity(final User user){
-        doLogonInfoUpdate( user, new Functions.UnaryVoid<LogonInfo>(){
+    private void doUpdateLastActivity(final User user) {
+        doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
             @Override
-            public void call( final LogonInfo logonInfo ) {
+            public void call(final LogonInfo logonInfo) {
                 final long now = System.currentTimeMillis();
                 logonInfo.setLastActivity(now);
                 logonInfo.setState(LogonInfo.State.ACTIVE);
             }
-        } );
+        });
     }
-
 
 
     private void doResetLogonAttempt(final User user) {
-        doLogonInfoUpdate( user, new Functions.UnaryVoid<LogonInfo>(){
+        doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
             @Override
-            public void call( final LogonInfo logonInfo ) {
+            public void call(final LogonInfo logonInfo) {
                 final long now = System.currentTimeMillis();
                 logonInfo.resetFailCount(now);
             }
-        } );
+        });
     }
 
     private void doUpdateLogonAttempt(final User user, final AuthenticationResult ar) {
-        doLogonInfoUpdate( user, new Functions.UnaryVoid<LogonInfo>(){
+        doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
             @Override
-            public void call( final LogonInfo logonInfo ) {
+            public void call(final LogonInfo logonInfo) {
                 //if the authentication result is NULL then the fail logon failed.
                 final long now = System.currentTimeMillis();
                 if (ar != null) {
@@ -328,10 +326,10 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                     logonInfo.failLogonAttempt(now);
                 }
             }
-        } );
+        });
     }
 
-    private void doLogonInfoUpdate( final User user, final Functions.UnaryVoid<LogonInfo> callback ) {
+    private void doLogonInfoUpdate(final User user, final Functions.UnaryVoid<LogonInfo> callback) {
         //based on the user id and the provider id, we'll update the logon information.
         //We'll need to execute the transaction at system level because we won't have
         //an admin account
@@ -363,7 +361,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                                     newRecord = true;
                                 }
 
-                                callback.call( logonInfo );
+                                callback.call(logonInfo);
 
                                 //update it or save it depending on whether the record existed
                                 if (newRecord) {
@@ -373,7 +371,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                                 }
                             } catch (Exception e) {
                                 transactionStatus.setRollbackOnly();
-                                if ( ExceptionUtils.causedBy( e, CannotAcquireLockException.class ) ) {
+                                if (ExceptionUtils.causedBy(e, CannotAcquireLockException.class)) {
                                     logger.log(Level.WARNING, "Failed to update logon attempt for '" + name + "', could not acquire lock.", ExceptionUtils.getDebugException(e));
                                 } else {
                                     logger.log(Level.WARNING, "Failed to update logon attempt for '" + name + "'", e);

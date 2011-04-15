@@ -51,7 +51,7 @@ import java.util.logging.Logger;
 
 /**
  * This class handles authentication and tracking for admin sessions.
- *
+ * <p/>
  * <p>The cookie is used to look up the username that authenticated with it.  Anyone who can steal a cookie can
  * resume an admin session as that user; thus, the cookies must be sent over SSL, never written to disk by
  * either client or server, and not kept longer than necessary.</p>
@@ -60,11 +60,11 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     //- PUBLIC
 
-    public AdminSessionManager( final Config config,
-                                final LogonService logonService,
-                                final Timer timer,
-                                final PasswordHasher passwordHasher) {
-        this.config = validated( config );
+    public AdminSessionManager(final Config config,
+                               final LogonService logonService,
+                               final Timer timer,
+                               final PasswordHasher passwordHasher) {
+        this.config = validated(config);
         this.logonService = logonService;
         this.timer = timer;
         this.passwordHasher = passwordHasher;
@@ -73,11 +73,11 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         int cacheMaxTime = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
         int cacheMaxGroups = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_PRINCIPAL_GROUPS, 50);
 
-        this.groupCache = new GroupCache( "PrincipalCache_unified", cacheSize, cacheMaxTime, cacheMaxGroups );
-        this.sessionExpiryMillis.set( loadExpiryMillis() );
+        this.groupCache = new GroupCache("PrincipalCache_unified", cacheSize, cacheMaxTime, cacheMaxGroups);
+        this.sessionExpiryMillis.set(loadExpiryMillis());
     }
 
-    public void setRoleManager( final RoleManager roleManager ) {
+    public void setRoleManager(final RoleManager roleManager) {
         this.roleManager = roleManager;
     }
 
@@ -89,7 +89,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         this.passwordEnforcerManager = passwordEnforcerManager;
     }
 
-    public void setPasswordPolicyManager(final IdentityProviderPasswordPolicyManager passwordPolicyManager){
+    public void setPasswordPolicyManager(final IdentityProviderPasswordPolicyManager passwordPolicyManager) {
         this.passwordPolicyManager = passwordPolicyManager;
     }
 
@@ -97,41 +97,41 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * Reloads IdentityProviders on change.
      */
     @Override
-    public void onApplicationEvent( final ApplicationEvent event ) {
+    public void onApplicationEvent(final ApplicationEvent event) {
         if (event instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
             if (eie.getEntityClass() == IdentityProviderConfig.class) {
                 setupAdminProviders();
             }
-        } else if ( event instanceof GroupMembershipEvent ) {
+        } else if (event instanceof GroupMembershipEvent) {
             final GroupMembershipEvent groupMembershipEvent = (GroupMembershipEvent) event;
             final Group group = groupMembershipEvent.getEntity();
-            groupCache.invalidate( group.getProviderId() );
-        } else if (event instanceof ReadyForMessages){
+            groupCache.invalidate(group.getProviderId());
+        } else if (event instanceof ReadyForMessages) {
             // check for inactive users once a day
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
                     logonService.updateInactivityInfo();
                 }
-            }, 1L , TimeUnit.HOURS.toMillis(24L) );
+            }, 1L, TimeUnit.HOURS.toMillis(24L));
         }
     }
 
     @Override
-    public void propertyChange( final PropertyChangeEvent event ) {
+    public void propertyChange(final PropertyChangeEvent event) {
         final String propertyName = event.getPropertyName();
 
-        if ( propertyName != null && propertyName.equals("principalSessionCacheMaxTime") ) {
-            int cacheMaxTime = config.getIntProperty( ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000 );
-            logger.config("Updating principal session cache max time '"+cacheMaxTime+"'.");
-            groupCache.setCacheMaxTime( cacheMaxTime );
+        if (propertyName != null && propertyName.equals("principalSessionCacheMaxTime")) {
+            int cacheMaxTime = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
+            logger.config("Updating principal session cache max time '" + cacheMaxTime + "'.");
+            groupCache.setCacheMaxTime(cacheMaxTime);
         }
 
-        if ( propertyName != null && propertyName.equals(ServerConfig.PARAM_SESSION_EXPIRY) ){
+        if (propertyName != null && propertyName.equals(ServerConfig.PARAM_SESSION_EXPIRY)) {
             long expiryMillis = loadExpiryMillis();
-            logger.config("Updating session inactivity period '"+expiryMillis+"'.");
-            this.sessionExpiryMillis.set( expiryMillis );
+            logger.config("Updating session inactivity period '" + expiryMillis + "'.");
+            this.sessionExpiryMillis.set(expiryMillis);
         }
     }
 
@@ -139,28 +139,28 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * Authorize an administrative user against admin enabled identity providers.
      *
      * @param providerId The users identity provider
-     * @param userId The users id
+     * @param userId     The users id
      * @return The user or null if not authenticated.
      * @throws ObjectModelException If an error occurs during authorization.
      */
-    public User authorize( final long providerId,
-                           final String userId ) throws ObjectModelException {
+    public User authorize(final long providerId,
+                          final String userId) throws ObjectModelException {
         Set<IdentityProvider> providers = getAdminIdentityProviders();
         User user = null;
 
-        for ( IdentityProvider provider : providers ) {
-            if ( provider.getConfig().getOid() == providerId ) {
+        for (IdentityProvider provider : providers) {
+            if (provider.getConfig().getOid() == providerId) {
                 try {
-                    User authdUser = provider.getUserManager().findByPrimaryKey( userId );
-                    if ( authdUser != null ) {
+                    User authdUser = provider.getUserManager().findByPrimaryKey(userId);
+                    if (authdUser != null) {
                         //Validate the user , now authenticated so that we know all of their group roles
                         checkPerms(authdUser);
                         logger.fine("Authorized on " + provider.getConfig().getName());
 
                         user = authdUser;
                     }
-                } catch ( AuthenticationException ae ) {
-                    logger.warning("Authorization failed for user '"+userId+"', due to '"+ExceptionUtils.getMessage(ae)+"'.");
+                } catch (AuthenticationException ae) {
+                    logger.warning("Authorization failed for user '" + userId + "', due to '" + ExceptionUtils.getMessage(ae) + "'.");
                 }
 
                 break;
@@ -177,7 +177,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @return The user or null if not authenticated.
      * @throws ObjectModelException If an error occurs during authentication.
      */
-    public User authenticate( final LoginCredentials creds ) throws ObjectModelException, LoginException, FailAttemptsExceededException, FailInactivityPeriodExceededException {
+    public User authenticate(final LoginCredentials creds) throws ObjectModelException, LoginException, FailAttemptsExceededException, FailInactivityPeriodExceededException, UserDisabledException {
         // Try internal first (internal accounts with the same credentials should hide externals)
         Set<IdentityProvider> providers = getAdminIdentityProviders();
         AuthenticationResult authResult = null;
@@ -185,7 +185,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
         final CredentialFormat credentialFormat = creds.getFormat();
         boolean formatOkForAdminAccess = credentialFormat == CredentialFormat.CLEARTEXT || credentialFormat == CredentialFormat.CLIENTCERT;
-        if(!formatOkForAdminAccess) throw new LoginException("Unsupported credential format for admin access: " + credentialFormat);
+        if (!formatOkForAdminAccess)
+            throw new LoginException("Unsupported credential format for admin access: " + credentialFormat);
 
         boolean needsClientCert = false;
         User providerFoundUser = null;  //temp provider container to know which provider first failed to authenticate
@@ -208,15 +209,15 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
                 User currentUser = null;
                 try {
-                    currentUser = ((AuthenticatingIdentityProvider)provider).findUserByCredential( creds );
-                    if ( currentUser == null ) {
+                    currentUser = ((AuthenticatingIdentityProvider) provider).findUserByCredential(creds);
+                    if (currentUser == null) {
                         continue;
                     }
 
-                    logonService.hookPreLoginCheck( currentUser );
-                    authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds, true);
+                    logonService.hookPreLoginCheck(currentUser);
+                    authResult = ((AuthenticatingIdentityProvider) provider).authenticate(creds, true);
                     User authdUser = authResult == null ? null : authResult.getUser();
-                    if ( authdUser != null ) {
+                    if (authdUser != null) {
                         //Validate the user , now authenticated so that we know all of their group roles
                         checkPerms(authdUser);
                         logger.info("Authenticated on " + provider.getConfig().getName());
@@ -231,10 +232,10 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                         user = authdUser;
                         break;
                     }
-                } catch ( BadCredentialsException bce ) {
+                } catch (BadCredentialsException bce) {
                     //we have found our first username with bad credentials, so we'll update the logon attempt
                     //on this particular one and not on preceeding ones
-                    if ( providerFoundUser == null  ) {
+                    if (providerFoundUser == null) {
                         providerFoundUser = currentUser;
                     }
                 }
@@ -246,16 +247,19 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                 if (ExceptionUtils.causedBy(e, FailInactivityPeriodExceededException.class)) {
                     throw new FailInactivityPeriodExceededException(e.getMessage());
                 }
+                if (ExceptionUtils.causedBy(e, UserDisabledException.class)) {
+                    throw new UserDisabledException(e.getMessage());
+                }
             }
         }
 
         if (user != null) {
-            logonService.updateLogonAttempt( user, authResult );
+            logonService.updateLogonAttempt(user, authResult);
         } else {
             //if we have failed to authenticate this user from all provider, we'll need to update failed logon attempt
             //for the first provider that found user with the same username
             if (providerFoundUser != null) {
-                logonService.updateLogonAttempt( providerFoundUser, null );
+                logonService.updateLogonAttempt(providerFoundUser, null);
             }
             if (needsClientCert) {
                 throw new LoginRequireClientCertificateException();
@@ -269,17 +273,17 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * Change password for the given user.  This is just another method to assist in changing the password by supplying
      * a username instead of the user object. The String username should be the user requesting the change. This will
      * result in all password rules being applied and a password history update for the user.
-     *  
-     * @param username  The username
-     * @param password  The password for the user
-     * @param newPassword   The new password for the user
-     * @return  TRUE if the password was changed, false if user could not be authenticated.
-     * @throws ObjectModelException problem updating user
-     * @throws IllegalStateException if user is not internal 
+     *
+     * @param username    The username
+     * @param password    The password for the user
+     * @param newPassword The new password for the user
+     * @return TRUE if the password was changed, false if user could not be authenticated.
+     * @throws ObjectModelException  problem updating user
+     * @throws IllegalStateException if user is not internal
      */
-    public boolean changePassword( final String username,
-                                   final String password,
-                                   final String newPassword ) throws LoginException, ObjectModelException {
+    public boolean changePassword(final String username,
+                                  final String password,
+                                  final String newPassword) throws LoginException, ObjectModelException {
         //try the internal first (internal accounts with the same credentials should hide externals)
         Set<IdentityProvider> providers = getAdminIdentityProviders();
 
@@ -289,19 +293,19 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             user = provider.getUserManager().findByLogin(username);
             if (user != null) {
                 try {
-                    if ( provider.hasClientCert( username ) ) {
+                    if (provider.hasClientCert(username)) {
                         throw new LoginException("Password change not permitted due to issued certificate.");
                     }
                     break;
                 } catch (AuthenticationException e) {
-                    logger.log( Level.WARNING, "Error processing user for password change.", e );
+                    logger.log(Level.WARNING, "Error processing user for password change.", e);
                     user = null;
                 }
             }
         }
 
         //if failed to find the user from all providers, cannot change the password
-        if(user == null) return false;
+        if (user == null) return false;
 
         //proceed to change the password
         return changePassword(user, password, newPassword);
@@ -310,16 +314,16 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     /**
      * Change password for the given administrative user.
      *
-     * @param user The user
-     * @param password The password for the user
+     * @param user        The user
+     * @param password    The password for the user
      * @param newPassword The new password for the user\
      * @return true if the password was changed
      * @throws InvalidPasswordException if the new password violate the password policy
-     * @throws ObjectModelException if a DB error occurred
+     * @throws ObjectModelException     if a DB error occurred
      */
-    public boolean changePassword( final User user,
-                                   final String password,
-                                   final String newPassword ) throws ObjectModelException {
+    public boolean changePassword(final User user,
+                                  final String password,
+                                  final String newPassword) throws ObjectModelException {
         boolean passwordUpdated = false;
 
         // Try internal first (internal accounts with the same credentials should hide externals)
@@ -327,20 +331,20 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
         IdentityProvider identityProvider = null;
         for (IdentityProvider provider : providers) {
-            if ( provider.getConfig().getOid() == user.getProviderId() ) {
+            if (provider.getConfig().getOid() == user.getProviderId()) {
                 identityProvider = provider;
                 break;
             }
         }
 
-        if ( identityProvider != null ) {
+        if (identityProvider != null) {
             LoginCredentials creds = LoginCredentials.makeLoginCredentials(
-                    new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, user.getLogin(), password.toCharArray()) , null);
+                    new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, user.getLogin(), password.toCharArray()), null);
             try {
-                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)identityProvider).authenticate(creds, true);
+                AuthenticationResult authResult = ((AuthenticatingIdentityProvider) identityProvider).authenticate(creds, true);
                 User authenticatedUser = authResult == null ? null : authResult.getUser();
 
-                if ( authenticatedUser instanceof InternalUser ) {
+                if (authenticatedUser instanceof InternalUser) {
                     final InternalUser disconnectedUser = new InternalUser();
                     {   //limit scope
                         InternalUser internalUser = (InternalUser) authenticatedUser;
@@ -350,13 +354,13 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                     checkPerms(disconnectedUser);
 
                     passwordEnforcerManager.isPasswordPolicyCompliant(disconnectedUser, newPassword, password);
-                    passwordEnforcerManager.setUserPasswordPolicyAttributes(disconnectedUser,false);
+                    passwordEnforcerManager.setUserPasswordPolicyAttributes(disconnectedUser, false);
 
-                    InternalUserManager userManager = ((InternalIdentityProvider)identityProvider).getUserManager();
+                    InternalUserManager userManager = ((InternalIdentityProvider) identityProvider).getUserManager();
                     final InternalUserPasswordManager passwordManager = userManager.getUserPasswordManager();
                     final String oldPassword = disconnectedUser.getHashedPassword();
                     final boolean updated = passwordManager.configureUserPasswordHashes(disconnectedUser, newPassword);
-                    if(!updated){
+                    if (!updated) {
                         throw new IllegalStateException("User should have been updated");
                     }
                     disconnectedUser.addPasswordChange(oldPassword);
@@ -366,24 +370,24 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                     throw new IllegalStateException("Cannot change password for user.");
                 }
             } catch (AuthenticationException ae) {
-                logger.info("Authentication for password change failed on " + identityProvider.getConfig().getName() + ": " + ExceptionUtils.getMessage(ae));                    
+                logger.info("Authentication for password change failed on " + identityProvider.getConfig().getName() + ": " + ExceptionUtils.getMessage(ae));
             }
         }
 
         return passwordUpdated;
     }
-    
+
     /**
      * Record a successful authentication for the specified login and return a cookie that can be used
      * to resume the session from now on.
      *
-     * @param authenticatedUser  the principal that was successfully authenticated.  Must not be null.
-     * @param sessionInfo the additional session info such as port number, etc.
+     * @param authenticatedUser the principal that was successfully authenticated.  Must not be null.
+     * @param sessionInfo       the additional session info such as port number, etc.
      * @return a cookie string that can be used with {@link #resumeSession} later to recover the principal.  Never null or empty.
      *         Always contains at least 16 bytes of entropy.
      */
-    public synchronized String createSession( final User authenticatedUser,
-                                              final Object sessionInfo ) {
+    public synchronized String createSession(final User authenticatedUser,
+                                             final Object sessionInfo) {
         if (authenticatedUser == null) throw new NullPointerException();
 
         byte[] bytes = new byte[20];
@@ -398,12 +402,13 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     /**
      * Retrieve the additional session info for a previously-authenticated user.
+     *
      * @param session the session ID that was originally returned from {@link #createSession}.  Must not be null or empty.
      * @return the additional session info.  Return null if not found the given session.
      */
-    public synchronized Object getSessionInfo( final String session ) {
+    public synchronized Object getSessionInfo(final String session) {
         if (session == null) throw new NullPointerException();
-        SessionHolder holder = (SessionHolder)sessionMap.get(session);
+        SessionHolder holder = (SessionHolder) sessionMap.get(session);
         if (holder == null) return null;
         return holder.getSessionInfo();
     }
@@ -411,21 +416,21 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     /**
      * Attempt to resume a session for a previously-authenticated user.
      *
-     * @param session  the session ID that was originally returned from {@link #createSession}.  Must not be null or empty.
+     * @param session the session ID that was originally returned from {@link #createSession}.  Must not be null or empty.
      * @return the user associated with this session ID, or null if the session doesn't exist or has expired.
      * @throws AuthenticationException if the session is no longer authorized
-     * @throws ObjectModelException if information required to perform session validation cannot be accessed
+     * @throws ObjectModelException    if information required to perform session validation cannot be accessed
      */
-    public synchronized User resumeSession( final String session ) throws AuthenticationException, ObjectModelException {
+    public synchronized User resumeSession(final String session) throws AuthenticationException, ObjectModelException {
         if (session == null) throw new NullPointerException();
-        SessionHolder holder = (SessionHolder)sessionMap.get(session);
+        SessionHolder holder = (SessionHolder) sessionMap.get(session);
         if (holder == null) {
             logger.log(Level.WARNING, "Admin session/cookie not found: {0}.", logger.isLoggable(Level.FINER) ? session : "<not shown>");
             return null;
         }
 
         User user = holder.getUser();
-        checkPerms( user );
+        checkPerms(user);
 
         return user;
     }
@@ -436,35 +441,35 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @param session The session identifier
      */
     @SuppressWarnings({"unchecked"})
-    public synchronized void destroySession( final String session ) {
-        sessionMap.remove( session );
+    public synchronized void destroySession(final String session) {
+        sessionMap.remove(session);
     }
 
     /**
      * Check if the given session is expired.
-     *
+     * <p/>
      * <p>If the session is not expired the last activity for the session is
      * optionally updated</p>
      *
-     * @param session The session identifier to check.
+     * @param session        The session identifier to check.
      * @param updateActivity True to update the last activity for the session.
      * @return True if the session is expired or not found.
      */
-    public boolean isExpired( final String session,
-                              final boolean updateActivity ) {
+    public boolean isExpired(final String session,
+                             final boolean updateActivity) {
         boolean expired = true;
 
-        final SessionHolder holder = session==null ? null : (SessionHolder)sessionMap.get(session);
-        if ( holder != null ) {
-            if ( (System.currentTimeMillis() - holder.getLastUsed()) <= sessionExpiryMillis.get() ) {
+        final SessionHolder holder = session == null ? null : (SessionHolder) sessionMap.get(session);
+        if (holder != null) {
+            if ((System.currentTimeMillis() - holder.getLastUsed()) <= sessionExpiryMillis.get()) {
                 expired = false;
 
-                if ( updateActivity ) {
+                if (updateActivity) {
                     holder.onUsed();
                 }
             } else {
-                logger.info( "Expiring administrative session for user '"+holder.getUser().getName()+"'." );
-                sessionMap.remove( session );
+                logger.info("Expiring administrative session for user '" + holder.getUser().getName() + "'.");
+                sessionMap.remove(session);
             }
         }
 
@@ -473,13 +478,13 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     /**
      * Look up our internal cache for the supplied User.
-     *
+     * <p/>
      * <p>If our cache is old the user is revalidated and so is all of it's associated
      * group headers.</p>
      */
     @Override
-    public Set<IdentityHeader> getGroups( final User u,
-                                          final boolean skipAccountValidation ) throws FindException {
+    public Set<IdentityHeader> getGroups(final User u,
+                                         final boolean skipAccountValidation) throws FindException {
         Long pId = u.getProviderId();
 
         // Try internal first (internal accounts with the same credentials should hide externals)
@@ -487,18 +492,18 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
         //find the identity provider
         Set<IdentityHeader> pSet = new HashSet<IdentityHeader>();
-        for(IdentityProvider iP : providers){
-            if(iP.getConfig().getOid() == pId){
+        for (IdentityProvider iP : providers) {
+            if (iP.getConfig().getOid() == pId) {
                 //Get the group memberhsip from the group cache.
                 try {
-                    Set<IdentityHeader> groupPrincipals = this.groupCache.getCachedValidatedGroups(u,iP, skipAccountValidation);
-                    if(groupPrincipals != null){
+                    Set<IdentityHeader> groupPrincipals = this.groupCache.getCachedValidatedGroups(u, iP, skipAccountValidation);
+                    if (groupPrincipals != null) {
                         pSet.addAll(groupPrincipals);
                     }
                     //any other cache's we have for Principals we want to associate with a users subject
                     //add them here...
-                } catch ( ValidationException ve ) {
-                    throw new FindException( "User validation failed.", ve );
+                } catch (ValidationException ve) {
+                    throw new FindException("User validation failed.", ve);
                 }
 
                 return pSet;
@@ -511,10 +516,10 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     //- PROTECTED
 
     @Override
-    protected Set<IdentityProvider> getAdminIdentityProviders(){
+    protected Set<IdentityProvider> getAdminIdentityProviders() {
         Set<IdentityProvider> providers;
-        synchronized( providerSync ) {
-            if ( adminProviders == null ) {
+        synchronized (providerSync) {
+            if (adminProviders == null) {
                 setupAdminProviders();
             }
             providers = adminProviders;
@@ -531,8 +536,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private static final long DEFAULT_MAX_INACTIVITY_TIME = TimeUnit.DAYS.toMillis(1L); // close after 24 hours of inactivity
     private static final long DEFAULT_SESSION_CLEANUP_INTERVAL = TimeUnit.MINUTES.toMillis(1L); // check every minute for stale sessions
 
-    private static final long MAX_INACTIVITY_TIME = SyspropUtil.getLong( "com.l7tech.server.admin.sessionExpiryAge", DEFAULT_MAX_INACTIVITY_TIME );
-    private static final long SESSION_CLEANUP_INTERVAL = SyspropUtil.getLong( "com.l7tech.server.admin.sessionCleanupInterval", DEFAULT_SESSION_CLEANUP_INTERVAL );
+    private static final long MAX_INACTIVITY_TIME = SyspropUtil.getLong("com.l7tech.server.admin.sessionExpiryAge", DEFAULT_MAX_INACTIVITY_TIME);
+    private static final long SESSION_CLEANUP_INTERVAL = SyspropUtil.getLong("com.l7tech.server.admin.sessionCleanupInterval", DEFAULT_SESSION_CLEANUP_INTERVAL);
 
     // spring components
     private final Config config;
@@ -555,7 +560,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private final AtomicLong sessionExpiryMillis = new AtomicLong();
 
     private long loadExpiryMillis() {
-        return config.getTimeUnitProperty( ServerConfig.PARAM_SESSION_EXPIRY, DEFAULT_GATEWAY_SESSION_EXPIRY );
+        return config.getTimeUnitProperty(ServerConfig.PARAM_SESSION_EXPIRY, DEFAULT_GATEWAY_SESSION_EXPIRY);
     }
 
     {
@@ -565,25 +570,26 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                 synchronized (AdminSessionManager.this) {
                     final Collection values = sessionMap.values();
                     final long now = System.currentTimeMillis();
-                    for ( final Iterator i = values.iterator(); i.hasNext(); ) {
-                        final SessionHolder holder = (SessionHolder)i.next();
+                    for (final Iterator i = values.iterator(); i.hasNext();) {
+                        final SessionHolder holder = (SessionHolder) i.next();
                         final long age = now - holder.getLastUsed();
-                        if ( age > sessionExpiryMillis.get() ) {
+                        if (age > sessionExpiryMillis.get()) {
                             if (logger.isLoggable(Level.INFO))
-                                logger.log(Level.INFO, "Expiring administrative session for user '"+holder.getUser().getName()+"'.");
+                                logger.log(Level.INFO, "Expiring administrative session for user '" + holder.getUser().getName() + "'.");
                             i.remove();
                         }
                     }
                 }
             }
-        }, SESSION_CLEANUP_INTERVAL * 4L, SESSION_CLEANUP_INTERVAL );
+        }, SESSION_CLEANUP_INTERVAL * 4L, SESSION_CLEANUP_INTERVAL);
     }
 
-    private void checkPerms( final User user ) throws AuthenticationException, FindException {
+    private void checkPerms(final User user) throws AuthenticationException, FindException {
         boolean hasPermission = false;
         // TODO is holding any CRUD permission sufficient?
         Collection<Role> roles = roleManager.getAssignedRoles(user);
-        roles: for (Role role : roles) {
+        roles:
+        for (Role role : roles) {
             for (Permission perm : role.getPermissions()) {
                 if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
                     hasPermission = true;
@@ -592,9 +598,9 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             }
         }
 
-        if ( !hasPermission ) {
-            throw new AuthenticationException( user.getName() +
-                    " does not have privilege to access administrative services" );
+        if (!hasPermission) {
+            throw new AuthenticationException(user.getName() +
+                    " does not have privilege to access administrative services");
         }
     }
 
@@ -611,7 +617,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                 }
             }
 
-            synchronized(providerSync) {
+            synchronized (providerSync) {
                 this.adminProviders = Collections.unmodifiableSet(adminProviders);
             }
         } catch (Exception e) {
@@ -619,10 +625,10 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         }
     }
 
-    private Config validated( final Config config ) {
-        final ValidatedConfig validatedConfig = new ValidatedConfig( config, logger );
-        validatedConfig.setMinimumValue( ServerConfig.PARAM_SESSION_EXPIRY, TimeUnit.MINUTES.toMillis( 1L ) );
-        validatedConfig.setMaximumValue( ServerConfig.PARAM_SESSION_EXPIRY, MAX_INACTIVITY_TIME );
+    private Config validated(final Config config) {
+        final ValidatedConfig validatedConfig = new ValidatedConfig(config, logger);
+        validatedConfig.setMinimumValue(ServerConfig.PARAM_SESSION_EXPIRY, TimeUnit.MINUTES.toMillis(1L));
+        validatedConfig.setMaximumValue(ServerConfig.PARAM_SESSION_EXPIRY, MAX_INACTIVITY_TIME);
         return validatedConfig;
     }
 
@@ -652,9 +658,9 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         private final Object sessionInfo;
         private volatile long lastUsed;
 
-        private SessionHolder( final User user,
-                               final String cookie,
-                               final Object sessionInfo ) {
+        private SessionHolder(final User user,
+                              final String cookie,
+                              final Object sessionInfo) {
             this.user = user;
             this.cookie = cookie;
             this.lastUsed = System.currentTimeMillis();
@@ -679,6 +685,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
         /**
          * Get the session info, which contains port number, etc.
+         *
          * @return an object of the class {@link com.l7tech.server.admin.ManagerAppletFilter.AdditionalSessionInfo}
          */
         public Object getSessionInfo() {

@@ -51,11 +51,10 @@ import java.util.logging.Logger;
 
 public class AdminLoginImpl
         extends ApplicationObjectSupport
-        implements AdminLogin, InitializingBean
-{
-    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
+        implements AdminLogin, InitializingBean {
+    @SuppressWarnings({"FieldNameHidesFieldInSuperclass"})
     private static final Logger logger = Logger.getLogger(AdminLoginImpl.class.getName());
-    
+
     private AdminSessionManager sessionManager;
 
     private final SecureRandom secureRandom;
@@ -74,9 +73,8 @@ public class AdminLoginImpl
     }
 
     @Override
-    public AdminLoginResult login( final String username, final String password )
-            throws AccessControlException, LoginException
-    {
+    public AdminLoginResult login(final String username, final String password)
+            throws AccessControlException, LoginException {
         if (username == null || password == null) {
             throw new AccessControlException("Username and password are both required");
         }
@@ -84,16 +82,16 @@ public class AdminLoginImpl
 
         try {
             LoginCredentials creds;
-            if ( !username.equalsIgnoreCase("") ) {
+            if (!username.equalsIgnoreCase("")) {
                 creds = LoginCredentials.makeLoginCredentials(
-                            new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, username, password.toCharArray()), null);
+                        new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, username, password.toCharArray()), null);
             } else {
                 X509Certificate cert = RemoteUtils.getClientCertificate();
-                if ( cert == null ) {
+                if (cert == null) {
                     throw new AccessControlException("Username and password or certificate is required.");
                 }
 
-                creds = LoginCredentials.makeLoginCredentials( new HttpClientCertToken(cert), null);
+                creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(cert), null);
                 login = creds.getLogin();
             }
 
@@ -107,18 +105,22 @@ public class AdminLoginImpl
 
             User user;
             try {
-                user = sessionManager.authenticate( creds );
-            } catch(LoginRequireClientCertificateException e) {
+                user = sessionManager.authenticate(creds);
+            } catch (LoginRequireClientCertificateException e) {
                 getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + login + "'"));
                 throw e;
             } catch (FailAttemptsExceededException faee) {
                 //reached to the max number of failed attempts, we'll need to lock the account.
                 getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + login + "'"));
                 throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded max. failed logon attempts.");
-            }  catch (FailInactivityPeriodExceededException faee) {
+            } catch (FailInactivityPeriodExceededException faee) {
                 //reached to the max inactivity period, we'll need to lock the account.
                 getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + login + "'"));
                 throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded inactivity period.");
+            } catch (UserDisabledException e1) {
+                //user is disabled, treat it as if user could not be authenticated
+                getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + login + "'"));
+                throw new FailedLoginException("'" + creds.getLogin() + "'" + " is disabled.");
             }
 
             if (user == null) {
@@ -147,7 +149,7 @@ public class AdminLoginImpl
     }
 
     @Override
-    public AdminLoginResult loginWithPasswordUpdate( final String username, final String oldPassword, final String newPassword )
+    public AdminLoginResult loginWithPasswordUpdate(final String username, final String oldPassword, final String newPassword)
             throws AccessControlException, LoginException, InvalidPasswordException {
 
         //attempt to change the password
@@ -157,8 +159,8 @@ public class AdminLoginImpl
             }
         } catch (ObjectModelException ome) {
             //generally this is caused where new password is not password policy compliant
-            if(ome instanceof InvalidPasswordException)
-                throw new InvalidPasswordException(ome.getMessage(), ((InvalidPasswordException)ome).getPasswordPolicyDescription());
+            if (ome instanceof InvalidPasswordException)
+                throw new InvalidPasswordException(ome.getMessage(), ((InvalidPasswordException) ome).getPasswordPolicyDescription());
             else
                 throw new InvalidPasswordException(ome.getMessage());
         }
@@ -166,7 +168,6 @@ public class AdminLoginImpl
         //password change was successful, proceed to login
         return login(username, newPassword);
     }
-
 
 
     @Override
@@ -180,16 +181,16 @@ public class AdminLoginImpl
             if (remoteUser == null)
                 throw new AccessControlException("Authentication error, no user.");
 
-            if ( !sessionManager.changePassword( remoteUser, currentPassword, newPassword ) ) {
+            if (!sessionManager.changePassword(remoteUser, currentPassword, newPassword)) {
                 throw new FailedLoginException("'" + remoteUser.getLogin() + "'" + " could not be authenticated");
             }
         } catch (InvalidPasswordException ipe) {
             logger.log(Level.WARNING, ipe.getMessage());
-            throw new IllegalArgumentException(ipe.getMessage());    
+            throw new IllegalArgumentException(ipe.getMessage());
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw buildAccessControlException("Authentication failed", e);
-        } 
+        }
     }
 
     @Override
@@ -197,11 +198,11 @@ public class AdminLoginImpl
         User user = null;
         try {
             user = sessionManager.resumeSession(sessionId);
-        } catch ( ObjectModelException fe ) {
-            logger.log(Level.WARNING,  "Error resuming session.", fe );
+        } catch (ObjectModelException fe) {
+            logger.log(Level.WARNING, "Error resuming session.", fe);
         }
 
-        if ( user == null ) {
+        if (user == null) {
             throw new AuthenticationException("Authentication failed");
         }
 
@@ -212,7 +213,7 @@ public class AdminLoginImpl
     public void logout() {
         User user = JaasUtils.getCurrentUser();
         getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGOFF));
-        sessionManager.destroySession( AdminLoginHelper.getSessionId() );
+        sessionManager.destroySession(AdminLoginHelper.getSessionId());
     }
 
     @Override
@@ -231,7 +232,7 @@ public class AdminLoginImpl
             byte[] passwordSalt = null;
             byte[] verifierSharedSecret = null;
 
-            if ( username != null && serverConfig.getBooleanProperty( "admin.certificateDiscoveryEnabled", true ) ) {
+            if (username != null && serverConfig.getBooleanProperty("admin.certificateDiscoveryEnabled", true)) {
                 try {
                     InternalUser user = getInternalIdentityProvider().getUserManager().findByLogin(username);
                     if (user != null) {
@@ -250,14 +251,14 @@ public class AdminLoginImpl
             // If we don't known the password use a value that will fail but will
             // always give the same value for the name. This may help prevent discovery of
             // admin account usernames
-            if ( verifierSharedSecret == null ) {
+            if (verifierSharedSecret == null) {
                 verifierSharedSecret = (username + AdminLogin.class.hashCode()).getBytes(Charsets.UTF8);
                 passwordSalt = passwordHasher.extractSaltFromVerifier(passwordHasher.hashPassword(verifierSharedSecret));
             }
 
             if (clientNonce == null) {
                 // Invalid call, but we'll generate a bogus client salt to prevent an NPE and return a bogus verifier hash instead
-                clientNonce = new byte[] {(byte) 66, (byte) 33, (byte) 11, (byte) 44};
+                clientNonce = new byte[]{(byte) 66, (byte) 33, (byte) 11, (byte) 44};
             }
 
             X509Certificate certificate = getCurrentConnectorCertificate();
@@ -288,9 +289,9 @@ public class AdminLoginImpl
         }
     }
 
-    @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
-    private AccessControlException buildAccessControlException( final String message, final Throwable cause ) {
-        return (AccessControlException)new AccessControlException(message).initCause(cause);
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+    private AccessControlException buildAccessControlException(final String message, final Throwable cause) {
+        return (AccessControlException) new AccessControlException(message).initCause(cause);
     }
 
     private X509Certificate getDefaultSslCertificate() throws IOException {
@@ -330,7 +331,7 @@ public class AdminLoginImpl
 
     private InternalIdentityProvider getInternalIdentityProvider() throws ObjectModelException, InvalidIdProviderCfgException {
         IdentityProvider provider = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-        if ( !(provider instanceof InternalIdentityProvider) ) {
+        if (!(provider instanceof InternalIdentityProvider)) {
             throw new IllegalStateException("Could not find the internal identity provider!");
         }
         return (InternalIdentityProvider) provider;
@@ -352,7 +353,7 @@ public class AdminLoginImpl
     }
 
     private String getLogonWarningBanner() {
-        String prop = serverConfig.getProperty( ServerConfig.PARAM_LOGON_WARNING_BANNER );
+        String prop = serverConfig.getProperty(ServerConfig.PARAM_LOGON_WARNING_BANNER);
 
         // If the banner prop value just contains whitespace, then set the prop as null.
         if (prop != null && prop.trim().isEmpty()) prop = null;

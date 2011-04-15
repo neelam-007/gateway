@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.identity.FailAttemptsExceededException;
 import com.l7tech.identity.FailInactivityPeriodExceededException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserDisabledException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.http.HttpClientCertToken;
@@ -35,13 +36,13 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
 
     //- PUBLIC
 
-    public AdminLoginHelper( final AdminSessionManager sessionManager,
-                             final Config config ) {
+    public AdminLoginHelper(final AdminSessionManager sessionManager,
+                            final Config config) {
         this.sessionManager = sessionManager;
         this.config = config;
     }
 
-    public AdminLoginResult login( final X509Certificate cert ) throws AccessControlException, LoginException {
+    public AdminLoginResult login(final X509Certificate cert) throws AccessControlException, LoginException {
 
         //the implementation of this method will be very similar to the one that uses the username/password as
         //login credentials, except that we'll use the client certificate as the login credentials instead
@@ -51,14 +52,14 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
         LoginCredentials creds = null;
         try {
             //make certificate login credentials
-            creds = LoginCredentials.makeLoginCredentials( new HttpClientCertToken(cert), null);
-            User user = sessionManager.authenticate( creds );
+            creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(cert), null);
+            User user = sessionManager.authenticate(creds);
 
             boolean remoteLogin = true;
 
             try {
                 remoteIp = RemoteUtils.getClientHost();
-            } catch ( ServerNotActiveException snae) {
+            } catch (ServerNotActiveException snae) {
                 remoteLogin = false;
             }
 
@@ -81,16 +82,19 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
             }
 
             return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion(), getLogonWarningBanner());
-        } catch ( ObjectModelException e) {
-            logger.log( Level.WARNING, "Authentication provider error", e);
+        } catch (ObjectModelException e) {
+            logger.log(Level.WARNING, "Authentication provider error", e);
             throw buildAccessControlException("Authentication failed", e);
-        } catch ( FailAttemptsExceededException faee) {
+        } catch (FailAttemptsExceededException faee) {
             //shouldn't happen for certificates
             getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + creds.getLogin() + "'"));
             throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded max. failed logon attempts.");
-        } catch ( FailInactivityPeriodExceededException fipee) {
+        } catch (FailInactivityPeriodExceededException fipee) {
             getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + creds.getLogin() + "'"));
             throw new AccountLockedException("'" + creds.getLogin() + "'" + " exceeded inactivity period.");
+        } catch (UserDisabledException e) {
+            getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + creds.getLogin() + "'"));
+            throw new FailedLoginException("'" + creds.getLogin() + "'" + " is disabled.");
         }
     }
 
@@ -102,7 +106,7 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
      * @return The session identifier or null
      */
     static String getSessionId() {
-        return getSessionId( JaasUtils.getCurrentSubject() );
+        return getSessionId(JaasUtils.getCurrentSubject());
     }
 
     /**
@@ -111,14 +115,14 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
      * @param subject The subject to check (optional)
      * @return The session identifier or null.
      */
-    static String getSessionId( final Subject subject ) {
+    static String getSessionId(final Subject subject) {
         String sessionId = null;
 
-        if ( subject != null ) {
-            final Set<String> credentials = subject.getPublicCredentials( String.class );
-            if ( credentials.size() == 1 ) {
+        if (subject != null) {
+            final Set<String> credentials = subject.getPublicCredentials(String.class);
+            if (credentials.size() == 1) {
                 final String perhapsSessionId = credentials.iterator().next();
-                if ( perhapsSessionId != null && !perhapsSessionId.isEmpty() ) {
+                if (perhapsSessionId != null && !perhapsSessionId.isEmpty()) {
                     sessionId = perhapsSessionId;
                 }
             }
@@ -129,18 +133,18 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger( AdminLoginHelper.class.getName() );
+    private static final Logger logger = Logger.getLogger(AdminLoginHelper.class.getName());
 
     private final AdminSessionManager sessionManager;
     private final Config config;
 
-    @SuppressWarnings({ "ThrowableInstanceNeverThrown" })
-    private AccessControlException buildAccessControlException( final String message, final Throwable cause ) {
-        return (AccessControlException)new AccessControlException(message).initCause(cause);
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+    private AccessControlException buildAccessControlException(final String message, final Throwable cause) {
+        return (AccessControlException) new AccessControlException(message).initCause(cause);
     }
 
     private String getLogonWarningBanner() {
-        String prop = config.getProperty( ServerConfig.PARAM_LOGON_WARNING_BANNER, null );
+        String prop = config.getProperty(ServerConfig.PARAM_LOGON_WARNING_BANNER, null);
 
         // If the banner prop value just contains whitespace, then set the prop as null.
         if (prop != null && prop.trim().isEmpty()) prop = null;
