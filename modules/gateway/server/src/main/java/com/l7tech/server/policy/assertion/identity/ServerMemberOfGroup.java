@@ -6,6 +6,7 @@ package com.l7tech.server.policy.assertion.identity;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -18,19 +19,20 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> {
-    public ServerMemberOfGroup( MemberOfGroup data, ApplicationContext applicationContext ) {
-        super( data, applicationContext);
+    public ServerMemberOfGroup(MemberOfGroup data, ApplicationContext applicationContext) {
+        super(data, applicationContext);
     }
 
     /**
      * Attempts to resolve a <code>Group</code> from the <code>groupOid</code> and
      * <code>groupName</code> properties, in that order.
-     *
+     * <p/>
      * <p>This will cache the Group information for a short time.</p>
      *
-     * @throws com.l7tech.objectmodel.FindException If an error occurs loading the group
+     * @throws com.l7tech.objectmodel.FindException
+     *          If an error occurs loading the group
      */
-    @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     protected Group getGroup() throws FindException, ObjectNotFoundException {
         Group group = null;
         CachedGroup cg = cachedGroup.get();
@@ -44,7 +46,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
                 group = gman.findByPrimaryKey(assertion.getGroupId());
             } else {
                 String groupName = assertion.getGroupName();
-                if ( groupName != null) {
+                if (groupName != null) {
                     group = gman.findByName(groupName);
                 }
             }
@@ -60,7 +62,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
      * is a member of the <code>Group</code> with which this assertion was initialized.
      */
     @Override
-    @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
+    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     public AssertionStatus checkUser(AuthenticationResult authResult) {
         GroupManager gman;
         try {
@@ -81,10 +83,17 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
                 return AssertionStatus.UNAUTHORIZED;
             }
 
+            if (targetGroup instanceof InternalGroup) {
+                if (!((InternalGroup) targetGroup).isEnabled()) {
+                    auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_GROUP_DISALBED, targetGroup.getName());
+                    return AssertionStatus.UNAUTHORIZED;
+                }
+            }
+
             Boolean wasMember = authResult.getCachedGroupMembership(targetGroup);
             if (wasMember == null) {
                 if (authResult.getUser() != null &&
-                    authResult.getUser().getProviderId() == assertion.getIdentityProviderOid()) {
+                        authResult.getUser().getProviderId() == assertion.getIdentityProviderOid()) {
                     // Cache miss
                     if (gman.isMember(authResult.getUser(), targetGroup)) {
                         authResult.setCachedGroupMembership(targetGroup, true);
@@ -121,8 +130,8 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
         boolean stale = true;
         long timenow = System.currentTimeMillis();
 
-        if ( timestamp + MAX_CACHED_GROUP_AGE > timenow ) {
-            stale = false;  
+        if (timestamp + MAX_CACHED_GROUP_AGE > timenow) {
+            stale = false;
         }
 
         return stale;
