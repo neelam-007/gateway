@@ -446,13 +446,7 @@ public class LogPanel extends JPanel {
         controlPanel.auditTypeComboBox.addItemListener(new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
-                AuditType selected = (AuditType) controlPanel.auditTypeComboBox.getSelectedItem();
-                boolean enabled = AuditType.ALL.equals(selected) || AuditType.ADMIN.equals(selected);
-                controlPanel.entitySearchingPane.setEnabled(enabled);
-                controlPanel.entityTypeLabel.setEnabled(enabled);
-                controlPanel.entityTypeComboBox.setEnabled(enabled);
-                controlPanel.entityIdLabel.setEnabled(enabled);
-                controlPanel.entityIdTextField.setEnabled(enabled);
+                enableOrDisableComponents();
             }
         }));
 
@@ -594,6 +588,23 @@ public class LogPanel extends JPanel {
             controlPanel.minutesTextField.setEnabled(controlPanel.durationButton.isSelected());
             controlPanel.autoRefreshCheckBox.setEnabled(controlPanel.durationButton.isSelected());
             controlPanel.timeRangePicker.setEnabled(controlPanel.timeRangeButton.isSelected());
+
+            /**
+             * Enable or disable search fields such as Request ID, Entity Type, and Entity ID, depending on Audit Type is chosen.
+             * If Audit Type is System Audit, then Request ID search field will be enabled and entity search fields will be disabled.
+             * If Audit Type is Admin Audit, then Request ID search field will be disable and entity search fields will be enabled.
+             */
+            final AuditType selected = (AuditType) controlPanel.auditTypeComboBox.getSelectedItem();
+            final boolean adminAuditSearchEnabled = AuditType.ALL.equals(selected) || AuditType.ADMIN.equals(selected);
+            final boolean messageAuditSearchEnabled = AuditType.ALL.equals(selected) || AuditType.MESSAGE.equals(selected);
+
+            controlPanel.entityTypeLabel.setEnabled(adminAuditSearchEnabled);
+            controlPanel.entityTypeComboBox.setEnabled(adminAuditSearchEnabled);
+            controlPanel.entityIdLabel.setEnabled(adminAuditSearchEnabled);
+            controlPanel.entityIdTextField.setEnabled(adminAuditSearchEnabled);
+
+            controlPanel.requestIdLabel.setEnabled(messageAuditSearchEnabled);
+            controlPanel.requestIdTextField.setEnabled(messageAuditSearchEnabled);
         }
     }
 
@@ -631,7 +642,10 @@ public class LogPanel extends JPanel {
         message = controlPanel.messageTextField.getText();
         auditType = (AuditType) controlPanel.auditTypeComboBox.getSelectedItem();
         node = controlPanel.nodeTextField.getText();
-        requestId = controlPanel.requestIdTextField.getText();
+
+        // Special case: if the Request ID search field is disabled, this means the search criterion is not applied.
+        requestId = controlPanel.requestIdTextField.isEnabled()? controlPanel.requestIdTextField.getText() : null;
+
         userName = controlPanel.userNameTextField.getText();
         userIdOrDn = controlPanel.userIdOrDnTextField.getText();
 
@@ -646,17 +660,23 @@ public class LogPanel extends JPanel {
             messageId = Integer.MIN_VALUE; // This case presents  Invalid Message Id
         }
         paramValue = controlPanel.paramValueTextField.getText();
-        entityTypeName = (String) controlPanel.entityTypeComboBox.getSelectedItem();
 
-        try {
-            String entityIdTxt = controlPanel.entityIdTextField.getText();
-            if (entityIdTxt == null || entityIdTxt.trim().isEmpty()) {
-                entityId = null;
-            } else {
-                entityId = Long.parseLong(entityIdTxt);
+        //Special case: if the entity search fields (Entity Type and Entity ID) are disabled, this means the entity search criteria are not applied. 
+        entityTypeName = controlPanel.entityTypeComboBox.isEnabled()? (String) controlPanel.entityTypeComboBox.getSelectedItem() : "";
+
+        if (controlPanel.entityIdTextField.isEnabled()) {
+            try {
+                String entityIdTxt = controlPanel.entityIdTextField.getText();
+                if (entityIdTxt == null || entityIdTxt.trim().isEmpty()) {
+                    entityId = null;
+                } else {
+                    entityId = Long.parseLong(entityIdTxt);
+                }
+            } catch (NumberFormatException e) {
+                entityId = Long.MIN_VALUE; // This case presents Invalid Entity Id.
             }
-        } catch (NumberFormatException e) {
-            entityId = Long.MIN_VALUE; // This case presents Invalid Entity Id.
+        } else {
+            entityId = null;
         }
     }
 
@@ -866,7 +886,12 @@ public class LogPanel extends JPanel {
             preferences.putProperty(SsmPreferences.AUDIT_WINDOW_MESSAGE, message);
             preferences.putProperty(SsmPreferences.AUDIT_WINDOW_AUDIT_TYPE, auditType.toString().toUpperCase());
             preferences.putProperty(SsmPreferences.AUDIT_WINDOW_NODE, node);
-            preferences.putProperty(SsmPreferences.AUDIT_WINDOW_REQUEST_ID, requestId);
+
+            if (requestId != null) {
+                preferences.putProperty(SsmPreferences.AUDIT_WINDOW_REQUEST_ID, requestId);
+            } else {
+                preferences.remove(SsmPreferences.AUDIT_WINDOW_REQUEST_ID);
+            }
 
             if (userName != null) {
                 preferences.putProperty(SsmPreferences.AUDIT_WINDOW_USER_NAME, userName);
@@ -2626,6 +2651,7 @@ public class LogPanel extends JPanel {
         private TimeRangePicker timeRangePicker;
         private JTextField serviceTextField;
         private JTextField messageTextField;
+        private JLabel requestIdLabel;
         private JTextField requestIdTextField;
         private SquigglyTextField nodeTextField;
         private JTextField threadIdTextField;

@@ -92,6 +92,15 @@ public class AuditRecordManagerImpl
 
     private <T> List<T> find( final AuditSearchCriteria criteria, final Functions.Unary<T,AuditRecord> transform ) throws FindException {
         if (criteria == null) throw new IllegalArgumentException("Criteria must not be null");
+
+        int maxRecords = criteria.maxRecords;
+        if (maxRecords <= 0) maxRecords = 4096;
+        List<T> result = new ArrayList<T>(maxRecords);
+
+        // If search criteria contain conflicts (for example, Request ID and Entity ID are specified in "criteria"),
+        // then no search results will be returned.
+        if (hasConflictSearchCriteria(criteria)) return result;
+
         Session session = null;
         try {
             Class findClass = criteria.recordClass;
@@ -102,8 +111,7 @@ public class AuditRecordManagerImpl
             session = getSession();
 
             Criteria query = session.createCriteria(findClass);
-            int maxRecords = criteria.maxRecords;
-            if (maxRecords <= 0) maxRecords = 4096;
+
             query.setMaxResults(maxRecords);
 
             for ( Criterion criterion : asCriterion( criteria ) ) {
@@ -112,8 +120,6 @@ public class AuditRecordManagerImpl
 
             query.addOrder(Order.desc(PROP_TIME));
 
-            //noinspection unchecked
-            List<T> result = new ArrayList<T>(maxRecords);
             ScrollableResults results = query.scroll();
             while( results.next() ) {
                 AuditRecord record = (AuditRecord) results.get(0);
@@ -128,6 +134,19 @@ public class AuditRecordManagerImpl
         } finally {
             releaseSession(session);
         }
+    }
+
+    /**
+     * Check if search criteria have conflict.  The "conflict" means that Request ID and Entity Search Parameters can exist at the same time in the search criteria.
+     * @param criteria: the search criteria.
+     * @return true if the search criteria include Request ID and Entity Search Parameters.
+     */
+    private boolean hasConflictSearchCriteria(final AuditSearchCriteria criteria) {
+        final boolean requestIdEnabled = criteria.requestId != null && !criteria.requestId.trim().isEmpty();
+        final boolean entityClassEnabled = criteria.entityClassName != null && !criteria.entityClassName.trim().isEmpty();
+        final boolean entityIdEnabled = criteria.entityId != null;
+
+        return requestIdEnabled && (entityClassEnabled || entityIdEnabled);
     }
 
     /**
