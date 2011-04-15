@@ -79,7 +79,7 @@ ALTER TABLE internal_group ADD COLUMN enabled boolean DEFAULT TRUE;
 --
 -- manage admin accounts config role
 --
-INSERT INTO rbac_role VALUES (-1250,0,'Manage Administrative Accounts Configuration', null,null,null, 'Users assigned to the {0} role have the ability edit administrative accounts configurations.');
+INSERT INTO rbac_role VALUES (-1250,0,'Manage Administrative Accounts Configuration', null,null,null, 'Users assigned to the {0} role have the ability to create/read/update cluster properties applicable to administrative accounts configurations.');
 INSERT INTO rbac_permission VALUES (-1251,0,-1250,'READ',NULL,'CLUSTER_PROPERTY');
 INSERT INTO rbac_predicate VALUES (-1252,0,-1251);
 INSERT INTO rbac_predicate_attribute VALUES (-1252,'name','logon.maxAllowableAttempts');
