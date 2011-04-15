@@ -299,6 +299,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             }
         } catch (SAXException e) {
             throw new CausedIOException(e);
+        } catch (AddressingProcessingException e) {
+            throw e;
         } catch (Exception e) {
             throw new CausedIOException(e);
         }
@@ -322,8 +324,13 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     /**
      * Get the ElementCursor for the message
      */
-    private ElementCursor getElementCursor(final Message msg) throws IOException {
+    private ElementCursor getElementCursor(final Message msg) throws IOException, AddressingProcessingException {
         try {
+            if ( !msg.isSoap() ) {
+                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP);
+                throw new AddressingProcessingException("Message is not SOAP", AssertionStatus.NOT_APPLICABLE);
+            }
+
             if ( isElementsVariableUsed() ) { // then we need a DOM cursor
                 return new DomElementCursor( msg.getXmlKnob().getDocumentReadOnly() );
             } else {

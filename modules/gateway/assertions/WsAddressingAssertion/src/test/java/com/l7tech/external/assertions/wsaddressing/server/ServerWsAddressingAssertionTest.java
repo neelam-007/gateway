@@ -2,9 +2,13 @@ package com.l7tech.external.assertions.wsaddressing.server;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
+import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Functions;
 import com.l7tech.util.MockConfig;
@@ -202,6 +206,25 @@ public class ServerWsAddressingAssertionTest {
         Assert.assertEquals("ReplyTo", "l", varMap.get("PreFix.replyto"));
         Assert.assertEquals("From", "i", varMap.get("PreFix.from"));
         Assert.assertEquals("Namespace", ADDRESSING_NAMESPACE, varMap.get("PreFix.namespace"));
+    }
+
+    /**
+     * Should not fail with an IOException for non-soap, status should be NOT_APPLICABLE
+     */
+    @Test
+    @BugNumber(10246)
+    public void testNonSoap() throws Exception {
+        doTestNonSoap( new WsAddressingAssertion() );
+        final WsAddressingAssertion wsaa = new WsAddressingAssertion();
+        wsaa.setRequireSignature( true );
+        doTestNonSoap( wsaa );
+    }
+
+    private void doTestNonSoap( final WsAddressingAssertion wsaa ) throws Exception {
+        final ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+        final AssertionStatus status = swsaa.checkRequest( context );
+        Assert.assertEquals( "Status", AssertionStatus.NOT_APPLICABLE, status );
     }
 
     @Test
