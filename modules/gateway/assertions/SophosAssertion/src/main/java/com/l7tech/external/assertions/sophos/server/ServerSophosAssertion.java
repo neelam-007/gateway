@@ -90,13 +90,34 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
         }
     }
 
-    private Pair<String, String> getClusterProperties() {
-        String connectTimeout = clusterPropertyCache.getPropertyValue(SophosAssertion.CPROP_SOPHOS_SOCKET_CONNECT_TIMEOUT);
-        String readTimeout = clusterPropertyCache.getPropertyValue(SophosAssertion.CPROP_SOPHOS_SOCKET_READ_TIMEOUT);
-        connectTimeout = connectTimeout == null? SophosAssertion.DEFAULT_TIMEOUT : connectTimeout;
-        readTimeout = readTimeout == null? SophosAssertion.DEFAULT_TIMEOUT : readTimeout;
+    private Pair<Integer, Integer> getClusterProperties() {
+        String connectTimeoutStr = clusterPropertyCache.getPropertyValue(SophosAssertion.CPROP_SOPHOS_SOCKET_CONNECT_TIMEOUT);
+        String readTimeoutStr = clusterPropertyCache.getPropertyValue(SophosAssertion.CPROP_SOPHOS_SOCKET_READ_TIMEOUT);
+        int connectTimeout;
+        try{
+            if (connectTimeoutStr == null){
+                connectTimeout = Integer.parseInt(SophosAssertion.DEFAULT_TIMEOUT);
+            } else{
+                connectTimeout = Integer.parseInt(connectTimeoutStr);
+            }
+            connectTimeout = connectTimeout > -1 ? connectTimeout : Integer.parseInt(SophosAssertion.DEFAULT_TIMEOUT);
+        }catch (NumberFormatException ne){
+            connectTimeout = Integer.parseInt(SophosAssertion.DEFAULT_TIMEOUT);
+        }
 
-        return new Pair<String, String>(connectTimeout, readTimeout);
+        int readTimeout;
+        try{
+            if (readTimeoutStr == null){
+                readTimeout = Integer.parseInt(SophosAssertion.DEFAULT_TIMEOUT);
+            } else{
+                readTimeout = Integer.parseInt(readTimeoutStr);
+            }
+            readTimeout = readTimeout > -1 ? readTimeout : Integer.parseInt(SophosAssertion.DEFAULT_TIMEOUT);
+        }catch (NumberFormatException ne){
+            readTimeout = Integer.parseInt(SophosAssertion.DEFAULT_TIMEOUT);
+        }
+
+        return new Pair<Integer, Integer>(connectTimeout, readTimeout);
     }
 
     public AssertionStatus doCheckRequest(PolicyEnforcementContext context,
@@ -124,9 +145,9 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
                         port = 0;
                         // do nothing
                     }
-                    Pair<String, String> connectAndReadTimeouts = getClusterProperties();
-                    int connectTimeout = Integer.parseInt(connectAndReadTimeouts.left);
-                    int readTimeout = Integer.parseInt(connectAndReadTimeouts.right);
+                    Pair<Integer, Integer> connectAndReadTimeouts = getClusterProperties();
+                    int connectTimeout = connectAndReadTimeouts.left.intValue();
+                    int readTimeout = connectAndReadTimeouts.right.intValue();
 
                     try {
                         client = new SsspClient(host, port);
