@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.server.security.keystore.KeyAccessFilter;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.util.concurrent.Callable;
@@ -36,9 +37,13 @@ public class GatewayKeyAccessFilter implements KeyAccessFilter, InitializingBean
         }
 
         boolean restricted = false;
-        String avAlias = defaultKey.getAuditViewerAlias();
-        if (avAlias != null && avAlias.equalsIgnoreCase(keyEntry.getAlias())) {
-                restricted = true;
+        Pair<Long, String> avInfo = defaultKey.getAuditViewerAlias();
+        if (avInfo != null) {
+            long kid = avInfo.left;
+            String avAlias = avInfo.right;
+            if (avAlias != null && avAlias.equalsIgnoreCase(keyEntry.getAlias()) && (kid == -1 || kid == keyEntry.getKeystoreId())) {
+                    restricted = true;
+            }
         }
         return restricted;
     }

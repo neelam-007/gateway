@@ -242,6 +242,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private AuditAlertsNotificationPanel auditAlertBar;
     private AuditAlertChecker auditAlertChecker;
     private X509Certificate serverSslCert;
+    private DefaultAliasTracker defaultAliasTracker;
     private RootNode rootNode;
     private String serviceUrl = null;
     public final static String FILTER_STATUS_NONE = "Filter: None";
@@ -3778,6 +3779,13 @@ public class MainWindow extends JFrame implements SheetHolder {
             }
         }
         return new X509Certificate[] { serverSslCert };
+    }
+
+    public DefaultAliasTracker getDefaultAliasTracker() {
+        if (defaultAliasTracker == null) {
+            defaultAliasTracker = ssmApplication.getApplicationContext().getBean("defaultAliasTracker", DefaultAliasTracker.class);
+        }
+        return defaultAliasTracker;
     }
 
     public Action getPublishInternalServiceAction() {

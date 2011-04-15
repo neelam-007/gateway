@@ -383,6 +383,7 @@
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="securePasswordManager"/>
+        <constructor-arg ref="clusterPropertyManager"/>
     </bean>
 
     <bean id="transportAdmin" class="com.l7tech.server.transport.TransportAdminImpl">

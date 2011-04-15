@@ -137,6 +137,25 @@ INSERT INTO `rbac_predicate_attribute` VALUES
     (-1118,'name','keyStore.auditViewer.alias');
 
 --
+-- Manage private keys role gains ability to manage the default audit signing key
+--
+INSERT INTO `rbac_permission` VALUES
+    (-1119,0,-1100,'UPDATE',NULL,'CLUSTER_PROPERTY'),
+    (-1120,0,-1100,'DELETE',NULL,'CLUSTER_PROPERTY'),
+    (-1121,0,-1100,'CREATE',NULL,'CLUSTER_PROPERTY'),
+    (-1122,0,-1100,'READ',NULL,'CLUSTER_PROPERTY');
+INSERT INTO `rbac_predicate` VALUES
+    (-1119,0,-1119),
+    (-1120,0,-1120),
+    (-1121,0,-1121),
+    (-1122,0,-1122);
+INSERT INTO `rbac_predicate_attribute` VALUES
+    (-1119,'name','keyStore.auditSigning.alias'),
+    (-1120,'name','keyStore.auditSigning.alias'),
+    (-1121,'name','keyStore.auditSigning.alias'),
+    (-1122,'name','keyStore.auditSigning.alias');
+
+--
 -- Password storage changes
 --
 

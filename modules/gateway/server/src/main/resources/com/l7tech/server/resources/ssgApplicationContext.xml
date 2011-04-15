@@ -291,6 +291,7 @@
                                 <value>keyStoreDefaultSslKey</value>
                                 <value>keyStoreDefaultCaKey</value>
                                 <value>keyStoreAuditViewerKey</value>
+                                <value>keyStoreAuditSigningKey</value>
                                 <value>keyStoreSearchForAlias</value>
                             </list>
                         </entry>
@@ -1090,7 +1091,7 @@
     </bean>
 
     <!-- keystore root cert and ssl config  -->
-    <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl" depends-on="keyUsageChecker ssgKeyStoreManager">
+    <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl" depends-on="keyUsageChecker ssgKeyStoreManager clusterPropertyCache">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="clusterPropertyManager"/>
         <constructor-arg index="2" ref="ssgKeyStoreManager"/>

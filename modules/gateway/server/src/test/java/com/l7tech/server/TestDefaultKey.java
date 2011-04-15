@@ -65,8 +65,8 @@ public class TestDefaultKey extends DefaultKeyImpl {
     }
 
     @Override
-    public String getAuditViewerAlias() {
-        return auditViewerInfo == null ? null : auditViewerInfo.getAlias();
+    public Pair<Long, String> getAuditViewerAlias() {
+        return auditViewerInfo == null ? null : new Pair<Long, String>(auditViewerInfo.getKeystoreId(), auditViewerInfo.getAlias());
     }
 
     public void setCaInfo(SsgKeyEntry caInfo) {

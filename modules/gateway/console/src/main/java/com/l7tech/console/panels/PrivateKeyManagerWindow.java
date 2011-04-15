@@ -9,6 +9,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.MultipleAliasesException;
+import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -663,7 +664,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             for (KeystoreFileEntityHeader keystore : getTrustedCertAdmin().findAllKeystores(true)) {
                 if (mutableKeystore == null && !keystore.isReadonly()) mutableKeystore = keystore;
                 for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getOid(), true)) {
-                    final KeyTableRow row = new KeyTableRow(keystore, entry, isDefaultSslCert(entry), isDefaultCaCert(entry), isAuditViewerCert(entry));
+                    final KeyTableRow row = new KeyTableRow(keystore, entry, defaultAliasTracker.getSpecialKeyTypes(entry));
                     if (row.isMultiRoleKey())
                         hasAtLeastOneMultiRoleKey = true;
                     keyList.add(row);
@@ -788,39 +789,27 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
     }
 
-
-    public boolean isDefaultSslCert(SsgKeyEntry entry) {
-        String alias = entry.getAlias();
-        return alias != null && alias.equalsIgnoreCase(defaultAliasTracker.getDefaultSslAlias());
-    }
-
-    public boolean isDefaultCaCert(SsgKeyEntry entry) {
-        String alias = entry.getAlias();
-        return alias != null && alias.equalsIgnoreCase(defaultAliasTracker.getDefaultCaAlias());
-    }
-
-    public boolean isAuditViewerCert(SsgKeyEntry entry) {
-        String alias = entry.getAlias();
-        return alias != null && alias.equalsIgnoreCase(defaultAliasTracker.getDefaultAuditViewerAlias());
-    }
-
     /** Represents a row in the Manage Private Keys table. */
     public static class KeyTableRow {
         private final KeystoreFileEntityHeader keystoreInfo;
+        private final boolean certCaCapable;
+        private final EnumSet<SpecialKeyType> specialKeyTypeDesignations;
+        private final boolean hasRestrictedAccessDesignation;
         private SsgKeyEntry keyEntry;
         private String keyType = null;
-        private boolean defaultSsl;
-        private boolean defaultCa;
-        private boolean auditViewerKey;
-        private boolean certCaCapable;
 
-        public KeyTableRow(KeystoreFileEntityHeader keystoreInfo, SsgKeyEntry keyEntry, boolean defaultSsl, boolean defaultCa, boolean auditViewerKey) {
+        public KeyTableRow(KeystoreFileEntityHeader keystoreInfo, SsgKeyEntry keyEntry, EnumSet<SpecialKeyType> specialKeyTypeDesignations) {
             this.keystoreInfo = keystoreInfo;
             this.keyEntry = keyEntry;
-            this.defaultSsl = defaultSsl;
-            this.defaultCa = defaultCa;
-            this.auditViewerKey = auditViewerKey;
             this.certCaCapable = keyEntry != null && CertUtils.isCertCaCapable(keyEntry.getCertificate());
+            this.specialKeyTypeDesignations = specialKeyTypeDesignations;
+
+            boolean restricted = false;
+            for (SpecialKeyType type : specialKeyTypeDesignations) {
+                if (type.isRestrictedAccess())
+                    restricted = true;
+            }
+            this.hasRestrictedAccessDesignation = restricted;
         }
 
         public KeystoreFileEntityHeader getKeystore() {
@@ -879,16 +868,12 @@ public class PrivateKeyManagerWindow extends JDialog {
             return cert == null ? new Date(0) : cert.getNotAfter();
         }
 
-        public boolean isDefaultSsl() {
-            return defaultSsl;
+        public EnumSet<SpecialKeyType> getSpecialKeyTypeDesignations() {
+            return specialKeyTypeDesignations;
         }
 
-        public boolean isDefaultCa() {
-            return defaultCa;
-        }
-
-        public boolean isAuditViewerKey() {
-            return auditViewerKey;
+        public boolean isRestrictedAccessDesignation() {
+            return hasRestrictedAccessDesignation;
         }
 
         public boolean isCertCaCapable() {
@@ -899,22 +884,48 @@ public class PrivateKeyManagerWindow extends JDialog {
          * @return true if this key has more than one special purpose role designated
          */
         public boolean isMultiRoleKey() {
-            int num = 0;
-            if (defaultSsl) num++;
-            if (defaultCa) num++;
-            if (auditViewerKey) num++;
-            return num > 1;
+            return specialKeyTypeDesignations.size() > 1;
+        }
+
+        public boolean isDesignatedAs(SpecialKeyType type) {
+            return specialKeyTypeDesignations.contains(type);
         }
     }
 
-    private static class KeyTable extends JTable {
-        private static final String RESDIR = MainWindow.RESOURCE_PATH;
-        private static final String PATH_SSL = RESDIR + "/cert_flag_ssl_16.png";
-        private static final String PATH_CA = RESDIR + "/cert_flag_ca_16.png";
-        private static final String PATH_AUDITVIEWER = RESDIR + "/cert_flag_auditviewer_16.png";
-        private static final String PATH_CERT_SSL = RESDIR + "/cert_ssl_16.gif";
-        private static final String PATH_CERT_CA = RESDIR + "/cert_ca_16.gif";
+    private static final String RESDIR = MainWindow.RESOURCE_PATH;
+    private static final String PATH_SSL = RESDIR + "/cert_flag_ssl_16.png";
+    private static final String PATH_CA = RESDIR + "/cert_flag_ca_16.png";
+    private static final String PATH_AUDITVIEWER = RESDIR + "/cert_flag_auditviewer_16.png";
+    private static final String PATH_AUDITSIGNING = RESDIR + "/cert_flag_auditsigning_16.png";
+    private static final String PATH_CERT_SSL = RESDIR + "/cert_ssl_16.gif";
+    private static final String PATH_CERT_CA = RESDIR + "/cert_ca_16.gif";
 
+    private static Map<SpecialKeyType, Icon> iconsByKeyType = new HashMap<SpecialKeyType, Icon>();
+    static {
+        iconsByKeyType.put(SpecialKeyType.SSL, ImageCache.getInstance().getIconAsIcon(PATH_SSL));
+        iconsByKeyType.put(SpecialKeyType.CA, ImageCache.getInstance().getIconAsIcon(PATH_CA));
+        iconsByKeyType.put(SpecialKeyType.AUDIT_VIEWER, ImageCache.getInstance().getIconAsIcon(PATH_AUDITVIEWER));
+        iconsByKeyType.put(SpecialKeyType.AUDIT_SIGNING, ImageCache.getInstance().getIconAsIcon(PATH_AUDITSIGNING));
+    }
+
+    public static Icon getIconForSpecialKeyType(SpecialKeyType type) {
+        return iconsByKeyType.get(type);
+    }
+
+    private static Map<SpecialKeyType, String> labelByKeyType = new HashMap<SpecialKeyType, String>();
+    static {
+        for (SpecialKeyType type : SpecialKeyType.values()) {
+            String label = resources.getString("specialKeyType." + type.name() + ".label");
+            labelByKeyType.put(type, label);
+        }
+    }
+
+    public static String getLabelForSpecialKeyType(SpecialKeyType type) {
+        return labelByKeyType.get(type);
+    }
+
+
+    private static class KeyTable extends JTable {
         private final KeyTableModel model = new KeyTableModel();
 
         public KeyTable() {
@@ -928,7 +939,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 col.setMinWidth(model.getColumnMinWidth(i));
                 col.setPreferredWidth(model.getColumnPrefWidth(i));
                 col.setMaxWidth(model.getColumnMaxWidth(i));
-                if (model.isColumnImage(i)) col.setCellRenderer(new JTable().getDefaultRenderer(ImageIcon.class));
+                if (model.isConColumn(i)) col.setCellRenderer(new JTable().getDefaultRenderer(Icon.class));
             }
             setRowHeight(19);
             Utilities.setRowSorter(this, model, new int[]{1,2}, new boolean[]{true, true},
@@ -967,7 +978,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 final int prefWidth;
                 final int maxWidth;
                 final Class columnClass;
-                boolean isImage;
+                boolean isIcon;
 
                 protected Col(String name, int minWidth, int prefWidth, int maxWidth) {
                     this( name, minWidth, prefWidth, maxWidth, String.class );
@@ -991,7 +1002,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                                     ? ImageCache.getInstance().getIconAsIcon(PATH_CERT_CA)
                                     : ImageCache.getInstance().getIconAsIcon(PATH_CERT_SSL);
                         }
-                        { isImage = true; }
+                        { isIcon = true; }
                     },
 
                     new Col("Alias", 60, 90, 300) {
@@ -1032,17 +1043,17 @@ public class PrivateKeyManagerWindow extends JDialog {
                     new Col(" ", 19, 19, 19, Object.class) {
                         @Override
                         Object getValueForRow(KeyTableRow row) {
-                            final ImageIcon sslIcon = ImageCache.getInstance().getIconAsIcon(PATH_SSL);
-                            final List<ImageIcon> icons = new ArrayList<ImageIcon>();
-                            if (row.isDefaultSsl())
-                                icons.add(sslIcon);
-                            if (row.isDefaultCa())
-                                icons.add(ImageCache.getInstance().getIconAsIcon(PATH_CA));
-                            if (row.isAuditViewerKey())
-                                icons.add(ImageCache.getInstance().getIconAsIcon(PATH_AUDITVIEWER));
+                            final List<Icon> icons = new ArrayList<Icon>();
+                            for (SpecialKeyType type : row.getSpecialKeyTypeDesignations()) {
+                                Icon icon = getIconForSpecialKeyType(type);
+                                if (icon != null)
+                                    icons.add(icon);
+                            }
                             final int numIcons = icons.size();
 
                             return numIcons < 1 ? "" : new Icon() {
+                                final Icon firstIcon = icons.iterator().next();
+
                                 @Override
                                 public void paintIcon(Component c, Graphics g, int x, int y) {
                                     int toDisp = (iconFlipCount.get() / TICKS_PER_ICON_REPAINT) % numIcons;
@@ -1053,16 +1064,16 @@ public class PrivateKeyManagerWindow extends JDialog {
 
                                 @Override
                                 public int getIconWidth() {
-                                    return sslIcon.getIconWidth();
+                                    return firstIcon.getIconWidth();
                                 }
 
                                 @Override
                                 public int getIconHeight() {
-                                    return sslIcon.getIconHeight();
+                                    return firstIcon.getIconHeight();
                                 }
                             };
                         }
-                        { isImage = true; }
+                        { isIcon = true; }
                     },
             };
 
@@ -1088,8 +1099,8 @@ public class PrivateKeyManagerWindow extends JDialog {
                 return columns[column].name;
             }
 
-            public boolean isColumnImage(int column) {
-                return columns[column].isImage;
+            public boolean isConColumn(int column) {
+                return columns[column].isIcon;
             }
 
             public void setData(List<KeyTableRow> rows) {

@@ -167,6 +167,10 @@ public class TopComponents {
         return getMainWindow().getServerSslCertChain();
     }
 
+    public DefaultAliasTracker getDefaultAliasTracker() {
+        return getMainWindow().getDefaultAliasTracker();
+    }
+
     /**
      * Get a bean from the application context.
      *

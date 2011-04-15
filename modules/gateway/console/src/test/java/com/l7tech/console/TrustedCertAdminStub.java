@@ -3,6 +3,7 @@ package com.l7tech.console;
 import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.gateway.common.security.MultipleAliasesException;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -152,6 +153,11 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     @Override
     public boolean isDefaultKeyMutable(SpecialKeyType keyType) {
         return false;
+    }
+
+    @Override
+    public void setDefaultKey(SpecialKeyType keyType, long keystoreId, String alias) {
+        // not currently implemented in stub
     }
 
     @Override

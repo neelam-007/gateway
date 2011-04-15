@@ -648,7 +648,7 @@ public class DialogDisplayer {
      * when it isn't the very last statement in a method that returns void back to the Swing event pump,
      * is <b>almost certainly a bug</b>.
      *
-     * @see JOptionPane#showOptionDialog
+     * @see JOptionPane#showOptionDialog(java.awt.Component, Object, String, int, int, javax.swing.Icon, Object[], Object)
      * @param parent    parent component.  required
      * @param mess      message to display.  required
      * @param title     title for the dialog.  required
@@ -738,7 +738,26 @@ public class DialogDisplayer {
         Utilities.centerOnParentWindow(safeConfirmationDialog);
 
         // Display the safe-confirmation dialog
-        display(safeConfirmationDialog);
+        SheetHolder holder = getSheetHolderAncestor(safeConfirmationDialog.getParent());
+        if (holder != null) {
+            if (mustShowNative(safeConfirmationDialog, holder)) {
+                displayNatively(safeConfirmationDialog, null);
+                return;
+            }
+            final Sheet sheet = new Sheet(safeConfirmationDialog, null);
+            // Ugly hack (until fixed properly) to work around horizontal truncation of hacked JOptionPane's guts when displayed as sheet
+            Dimension s = sheet.getSize();
+            if (s.getWidth() > 0)
+                s = new Dimension((int)s.getWidth() + 25, (int) s.getHeight());
+            if (s.getHeight() > 0)
+                s = new Dimension((int)s.getWidth(), (int)s.getHeight() + 16);
+            sheet.setPreferredSize(s);
+            sheet.pack();
+            holder.showSheet(sheet);
+            return;
+        }
+
+        displayNatively(safeConfirmationDialog, null);
     }
 
     /**

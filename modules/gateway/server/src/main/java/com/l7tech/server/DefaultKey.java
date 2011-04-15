@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Pair;
 
 import javax.net.ssl.KeyManager;
 import java.io.IOException;
@@ -32,6 +33,13 @@ public interface DefaultKey {
     SsgKeyEntry getCaInfo();
 
     /**
+     * Get the Gateway default audit signing key and cert chain, if one is set, otherwise null.
+     *
+     * @return SignerInfo for the designated audit signing key, or null if one is not currently configured.
+     */
+    SsgKeyEntry getAuditSigningInfo();
+
+    /**
      * Get the Gateway audit viewer decryption key and cert chain, if one is set, otherwise null.
      * <p/>
      * <b>Note:</b> This differs from {@link #getSslInfo()} in that this method may return null.
@@ -41,11 +49,12 @@ public interface DefaultKey {
     SsgKeyEntry getAuditViewerInfo();
 
     /**
-     * Get just the alias of the audit viewer decryption key, if one is set, otherwise null.
+     * Get just the keystore ID and alias of the audit viewer decryption key, if one is set, otherwise null.
      *
-     * @return the audit viewer key alias, or null if not set.
+     * @return the audit viewer keystore oid and alias, or null if not set.  The keystore oid may be returned as -1
+     * if it is configured as a wildcard match the actual matching key entry has not been loaded yet.
      */
-    String getAuditViewerAlias();
+    Pair<Long, String> getAuditViewerAlias();
 
     /**
      * Get an array containing a single KeyManager implementation which will always present the current

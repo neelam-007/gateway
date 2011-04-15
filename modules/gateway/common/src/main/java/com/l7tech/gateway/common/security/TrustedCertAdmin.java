@@ -384,20 +384,6 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws ObjectNotFoundException, FindException, KeyStoreException, UnrecoverableKeyException;
 
 
-    /** Describes a type of specially-marked key that can be located by {@link TrustedCertAdmin#findDefaultKey(com.l7tech.gateway.common.security.TrustedCertAdmin.SpecialKeyType)}. */
-    public static enum SpecialKeyType {
-        /** Represents a key marked as the default SSL key. */
-        SSL,
-
-        /** Represents a key marked as the default CA key. */
-        CA,
-
-        /** Represents a key marked as the default audit viewer/decryption key. */
-        AUDIT_VIEWER;
-
-        private static final long serialVersionUID = 932856867393187255L;
-    }
-
     /**
      * Look up the current default SSL or CA key.
      *
@@ -418,6 +404,18 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
     boolean isDefaultKeyMutable(SpecialKeyType keyType);
+
+    /**
+     * Change an assigned default key.
+     *
+     * @param keyType the key type to change.  Required.
+     * @param keystoreId the ID of the key store of the private key to be use for the specified role. Required.  Must be a real keystore ID and not a wildcard (-1).
+     * @param alias      the alias of the key entry to export.  Required.  A key with this alias must exist in the specified keystore.
+     * @throws com.l7tech.objectmodel.UpdateException if the default key could not be changed.
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
+    void setDefaultKey(SpecialKeyType keyType, long keystoreId, String alias) throws UpdateException;
 
     /**
      * Retrieves all {@link SecurePassword} entity headers from the database.

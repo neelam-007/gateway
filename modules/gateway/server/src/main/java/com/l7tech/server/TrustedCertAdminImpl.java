@@ -11,8 +11,10 @@ import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.MultipleAliasesException;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -25,6 +27,7 @@ import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.Created;
@@ -72,6 +75,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     private final LicenseManager licenseManager;
     private final SsgKeyStoreManager ssgKeyStoreManager;
     private final SecurePasswordManager securePasswordManager;
+    private final ClusterPropertyManager clusterPropertyManager;
     private ApplicationEventPublisher applicationEventPublisher;
 
     public TrustedCertAdminImpl(TrustedCertManager trustedCertManager,
@@ -79,7 +83,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
                                 DefaultKey defaultKey,
                                 LicenseManager licenseManager,
                                 SsgKeyStoreManager ssgKeyStoreManager,
-                                SecurePasswordManager securePasswordManager)
+                                SecurePasswordManager securePasswordManager,
+                                ClusterPropertyManager clusterPropertyManager)
     {
         super(120 * 60);
         this.trustedCertManager = trustedCertManager;
@@ -102,6 +107,9 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         this.securePasswordManager = securePasswordManager;
         if (securePasswordManager == null)
             throw new IllegalArgumentException("securePasswordManager is required");
+        this.clusterPropertyManager = clusterPropertyManager;
+        if (clusterPropertyManager == null)
+            throw new IllegalArgumentException("clusterPropertyManager is required");
     }
 
     private void checkLicenseHeavy() {
@@ -673,6 +681,9 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             case AUDIT_VIEWER:
                 return defaultKey.getAuditViewerInfo();
 
+            case AUDIT_SIGNING:
+                return defaultKey.getAuditSigningInfo();
+
             default:
                 throw new IllegalArgumentException("No such keyType: " + keyType);
         }
@@ -691,8 +702,64 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             case AUDIT_VIEWER:
                 return "unset".equals(SyspropUtil.getString("com.l7tech.server.keyStore.auditViewer.alias", "unset"));
 
+            case AUDIT_SIGNING:
+                return "unset".equals(SyspropUtil.getString("com.l7tech.server.keyStore.auditSigning.alias", "unset"));
+
             default:
                 return false;
+        }
+    }
+
+    @Override
+    public void setDefaultKey(SpecialKeyType keyType, long keystoreId, String alias) throws UpdateException {
+        if (keyType == null)
+            throw new NullPointerException("A keyType must be specified");
+        if (keystoreId == -1)
+            throw new IllegalArgumentException("A specific keystore ID must be specified.");
+        if (!isDefaultKeyMutable(keyType))
+            throw new IllegalArgumentException("The " + keyType + " private key cannot be changed on this system.");
+
+        final String clusterPropertyName;
+        switch (keyType) {
+            case SSL:
+                clusterPropertyName = "keyStore.defaultSsl.alias";
+                break;
+
+            case CA:
+                clusterPropertyName = "keyStore.defaultCa.alias";
+                break;
+
+            case AUDIT_VIEWER:
+                clusterPropertyName = "keyStore.auditViewer.alias";
+                break;
+
+            case AUDIT_SIGNING:
+                clusterPropertyName = "keyStore.auditSigning.alias";
+                break;
+
+            default:
+                throw new IllegalArgumentException("No such keyType: " + keyType);
+        }
+
+
+        try {
+            SsgKeyEntry entry = ssgKeyStoreManager.lookupKeyByKeyAlias(alias, keystoreId);
+            String propValue = entry.getKeystoreId() + ":" + entry.getAlias();
+
+            ClusterProperty prop = clusterPropertyManager.findByUniqueName(clusterPropertyName);
+            if (prop == null) {
+                prop = new ClusterProperty(clusterPropertyName, propValue);
+                clusterPropertyManager.save(prop);
+            } else {
+                prop.setValue(propValue);
+                clusterPropertyManager.update(prop);
+            }
+        } catch (FindException e) {
+            throw new UpdateException(e);
+        } catch (SaveException e) {
+            throw new UpdateException(e);
+        } catch (KeyStoreException e) {
+            throw new UpdateException(e);
         }
     }
 

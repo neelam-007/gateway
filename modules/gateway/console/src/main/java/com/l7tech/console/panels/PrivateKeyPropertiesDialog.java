@@ -5,10 +5,10 @@ import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.util.ClusterPropertyCrud;
 import com.l7tech.console.util.DefaultAliasTracker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.SpecialKeyType;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -41,17 +41,18 @@ import java.security.GeneralSecurityException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.console.panels.PrivateKeyPropertiesDialog.SpecialKeyTypeRequirement.*;
 
 /**
  *
  */
 public class PrivateKeyPropertiesDialog extends JDialog {
     private static final String PROP_ALLOW_EC_FOR_DEFAULT_SSL = "com.l7tech.allowEcKeyForDefaultSsl";
+    private static final boolean ALLOW_EC_FOR_DEFAULT_SSL = SyspropUtil.getBoolean(PROP_ALLOW_EC_FOR_DEFAULT_SSL, false);
 
     private JList certList;
     private JButton destroyPrivateKeyButton;
@@ -64,33 +65,73 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private JTextField aliasField;
     private JTextField typeField;
     private JButton markAsSpecialPurposeButton;
-    private JLabel defaultSslLabel;
-    private JLabel defaultCaLabel;
-    private JLabel auditDecryptionLabel;
     private JLabel caCapableLabel;
     private JButton exportKeyButton;
+    private JPanel specialKeyTypeLabelsPanel;
     private PrivateKeyManagerWindow.KeyTableRow subject;
 
-    private Action makeDefaultSslAction = new AbstractAction("Make Default SSL Key") {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            makeDefaultSsl();
-        }
-    };
+    static enum SpecialKeyTypeRequirement {
+        showFinalConfirmation,
+        requireNotToBeAuditViewerKey,
+        requireNotToHaveAnyOtherSpecialKeyType,
+        requireCaCapableCert,
+        requireTlsCapableCertIfRsa,
+        requireRsaForEncryption,
+        disallowEcc,
+        warnOnAssignmentIfAuditViewerAlreadyExists
+    }
 
-    private Action makeDefaultCaAction = new AbstractAction("Make Default CA Key") {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            makeDefaultCa();
-        }
-    };
+    private static Map<SpecialKeyType, EnumSet<SpecialKeyTypeRequirement>> requirementsByType = new LinkedHashMap<SpecialKeyType, EnumSet<SpecialKeyTypeRequirement>>();
+    static {
+        requirementsByType.put(SpecialKeyType.SSL, EnumSet.of(
+                showFinalConfirmation,
+                requireNotToBeAuditViewerKey,
+                requireTlsCapableCertIfRsa,
+                disallowEcc
+        ));
 
-    private Action makeAuditViewerKeyAction = new AbstractAction("Make Audit Viewer Key") {
+        requirementsByType.put(SpecialKeyType.CA, EnumSet.of(
+                showFinalConfirmation,
+                requireNotToBeAuditViewerKey,
+                requireCaCapableCert
+        ));
+
+        requirementsByType.put(SpecialKeyType.AUDIT_SIGNING, EnumSet.of(
+                showFinalConfirmation,
+                requireNotToBeAuditViewerKey
+        ));
+
+        requirementsByType.put(SpecialKeyType.AUDIT_VIEWER, EnumSet.of(
+                showFinalConfirmation,
+                requireNotToHaveAnyOtherSpecialKeyType,
+                warnOnAssignmentIfAuditViewerAlreadyExists
+        ));
+    }
+
+    private class MakeSpecialKeyTypeAction extends AbstractAction {
+        final SpecialKeyType type;
+        final EnumSet<SpecialKeyTypeRequirement> requirements;
+
+        private MakeSpecialKeyTypeAction(SpecialKeyType type, EnumSet<SpecialKeyTypeRequirement> requirements) {
+            super("Make " + PrivateKeyManagerWindow.getLabelForSpecialKeyType(type), PrivateKeyManagerWindow.getIconForSpecialKeyType(type));
+            this.type = type;
+            this.requirements = requirements;
+        }
+
         @Override
         public void actionPerformed(ActionEvent e) {
-            makeAuditViewerKey();
+            makeSpecialKeyType(type, requirements);
         }
-    };
+    }
+
+    private Map<SpecialKeyType, MakeSpecialKeyTypeAction> makeSpecialKeyTypeActions = new LinkedHashMap<SpecialKeyType, MakeSpecialKeyTypeAction>();
+    {
+        for (Map.Entry<SpecialKeyType, EnumSet<SpecialKeyTypeRequirement>> entry : requirementsByType.entrySet()) {
+            SpecialKeyType type = entry.getKey();
+            EnumSet<SpecialKeyTypeRequirement> reqs = entry.getValue();
+            makeSpecialKeyTypeActions.put(type, new MakeSpecialKeyTypeAction(type, reqs));
+        }
+    }
 
     private Logger logger = Logger.getLogger(PrivateKeyPropertiesDialog.class.getName());
     private boolean deleted = false;
@@ -183,15 +224,38 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         typeField.setText(subject.getKeyType());
         populateList();
 
-        defaultSslLabel.setVisible(subject.isDefaultSsl());
-        defaultCaLabel.setVisible(subject.isDefaultCa());
-        auditDecryptionLabel.setVisible(subject.isAuditViewerKey());
         caCapableLabel.setVisible(isCertChainCaCapable(subject));
 
-        makeDefaultCaAction.setEnabled(!subject.isDefaultCa() && defaultAliasTracker.isDefaultCaKeyMutable());
-        makeDefaultSslAction.setEnabled(!subject.isDefaultSsl() && defaultAliasTracker.isDefaultSslKeyMutable());
-        makeAuditViewerKeyAction.setEnabled(!subject.isAuditViewerKey() && defaultAliasTracker.isDefaultAuditViewerMutable());
-        markAsSpecialPurposeButton.setEnabled(makeDefaultCaAction.isEnabled() || makeDefaultSslAction.isEnabled() || makeAuditViewerKeyAction.isEnabled());
+        specialKeyTypeLabelsPanel.setLayout(new BoxLayout(specialKeyTypeLabelsPanel, BoxLayout.Y_AXIS));
+        boolean atLeastOneActionEnabled = false;
+        boolean atLeastOneLabelAdded = false;
+        for (SpecialKeyType type : SpecialKeyType.values()) {
+            if (subject.isDesignatedAs(type)) {
+                String name = PrivateKeyManagerWindow.getLabelForSpecialKeyType(type);
+                if (name != null) {
+                    JLabel label = new JLabel("This is the " + name + ".");
+                    label.setIcon(PrivateKeyManagerWindow.getIconForSpecialKeyType(type));
+                    if (atLeastOneLabelAdded)
+                        specialKeyTypeLabelsPanel.add(Box.createVerticalStrut(6));
+                    specialKeyTypeLabelsPanel.add(label);
+                    atLeastOneLabelAdded = true;
+                }
+            }
+
+            MakeSpecialKeyTypeAction action = makeSpecialKeyTypeActions.get(type);
+            boolean enable = true;
+            if (subject.isDesignatedAs(type))
+                enable = false;
+            if (!defaultAliasTracker.isSpecialKeyMutable(type))
+                enable = false;
+
+            action.setEnabled(enable);
+            if (enable) {
+                atLeastOneActionEnabled = true;
+            }
+        }
+
+        markAsSpecialPurposeButton.setEnabled(atLeastOneActionEnabled);
         if (!markAsSpecialPurposeButton.isEnabled())
             markAsSpecialPurposeButton.setToolTipText("Special-purpose key roles cannot be changed.");
 
@@ -234,9 +298,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     private void markAsSpecialPurpose() {
         JPopupMenu pop = new JPopupMenu();
-        pop.add(new JMenuItem(makeDefaultSslAction));
-        pop.add(new JMenuItem(makeDefaultCaAction));
-        pop.add(new JMenuItem(makeAuditViewerKeyAction));
+        for (MakeSpecialKeyTypeAction action : makeSpecialKeyTypeActions.values()) {
+            pop.add(action);
+        }
         pop.show(markAsSpecialPurposeButton, 0, 0);
     }
 
@@ -315,14 +379,31 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         return Registry.getDefault().getTrustedCertManager();
     }
 
-    private void makeDefaultSsl() {
-        if (subject.isAuditViewerKey()) {
-            showAlreadyDesignatedForAuditViewingMessage();
+    private void makeSpecialKeyType(final SpecialKeyType type, final EnumSet<SpecialKeyTypeRequirement> requirements) {
+        if (requirements.contains(requireNotToBeAuditViewerKey) && subject.isDesignatedAs(SpecialKeyType.AUDIT_VIEWER)) {
+            DialogDisplayer.showMessageDialog(
+                    markAsSpecialPurposeButton,
+                    "This key is already designated as the audit viewer private key.\n\n" +
+                            "The Gateway is unable to permit the audit viewer key to be used for any other purpose.\n",
+                    "Key Already Designated For Audit Viewing",
+                    JOptionPane.WARNING_MESSAGE,
+                    null);
             return;
         }
 
-        // Check for RSA cert that disallows keyEncipherment key usage, since this can lock you out of the SSM.  (Bug #6908)
-        if (subject.getKeyType().toUpperCase().startsWith("RSA") && !isCertChainSslCapable(subject)) {
+        if (requirements.contains(requireNotToHaveAnyOtherSpecialKeyType) && subject.getSpecialKeyTypeDesignations().size() > 0) {
+            DialogDisplayer.showMessageDialog(
+                    markAsSpecialPurposeButton,
+                    "This key is already designated for another special purpose and cannot be used as the audit viewer key.\n\n" +
+                    "The Gateway is unable to permit the audit viewer key to be used for any other purpose.\n",
+                    "Key Already Designated For Conflicting Special Purpose",
+                    JOptionPane.WARNING_MESSAGE,
+                    null);
+            return;
+        }
+
+        final boolean isRsa = subject.getKeyType().toUpperCase().startsWith("RSA");
+        if (requirements.contains(requireTlsCapableCertIfRsa) && isRsa && !isCertChainSslCapable(subject)) {
             DialogDisplayer.showMessageDialog(
                     markAsSpecialPurposeButton,
                     "This key's certificate chain has a key usage disallowing use as an SSL server cert.\n" +
@@ -333,32 +414,125 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     null);
             return;
         }
-        // Check for EC cert, since this can lock you out of the SSM.  (Bug #7563)
-        if (subject.getKeyType().toUpperCase().startsWith("EC") && !SyspropUtil.getBoolean(PROP_ALLOW_EC_FOR_DEFAULT_SSL, false)) {
-            DialogDisplayer.showConfirmDialog(
-                    markAsSpecialPurposeButton,
-                    "This is an elliptic curve private key.\n\n" +
+
+        final boolean isEcc = subject.getKeyType().toUpperCase().startsWith("EC");
+        if (requirements.contains(disallowEcc) && isEcc) {
+            final String title = "Unsuitable Default SSL Key";
+            final String mess = "This is an elliptic curve private key.\n\n" +
                     "Many SSL clients -- including the Gateway's browser-based admin applet when run\n" +
                     "with a standard Java install, and many web browsers -- will be unable to connect\n" +
-                    "to an SSL server that uses this key as its SSL server certificate.\n\n" +
-                    "Are you sure you wish the cluster to use this as the default SSL private key?",
-                    "Unsuitable Default SSL Key",
+                    "to an SSL server that uses this key as its SSL server certificate.";
+
+            if (ALLOW_EC_FOR_DEFAULT_SSL) {
+                DialogDisplayer.showConfirmDialog(markAsSpecialPurposeButton,
+                        mess + "\n\nAre you sure you wish the cluster to use this as the default SSL private key?",
+                        title,
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE,
+                        new DialogDisplayer.OptionListener() {
+                            @Override
+                            public void reportResult(int option) {
+                                if (option == JOptionPane.OK_OPTION)
+                                    makeSpecialKeyType(type, satisfiedRequirements(requirements, disallowEcc));
+                            }
+                        });
+            } else {
+                DialogDisplayer.showMessageDialog(markAsSpecialPurposeButton, mess, title, JOptionPane.WARNING_MESSAGE, null);
+            }
+            return;
+        }
+
+        if (requirements.contains(requireCaCapableCert) && !isCertChainCaCapable(subject)) {
+            DialogDisplayer.showConfirmDialog(
+                    markAsSpecialPurposeButton,
+                    "This certificate chain does not specifically enable use as a CA cert.\n" +
+                    "Some software will reject client certificates signed by this key." +
+                    "\n\nAre you sure you want the cluster to use this as the default CA private key?",
+                    "Unsuitable CA Certificate",
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE,
                     new DialogDisplayer.OptionListener() {
                         @Override
                         public void reportResult(int option) {
-                            if (option == JOptionPane.OK_OPTION)
-                                doMakeDefaultSsl();
+                            if (option == JOptionPane.YES_OPTION)
+                                makeSpecialKeyType(type, satisfiedRequirements(requirements, requireCaCapableCert));
                         }
                     });
             return;
         }
-        doMakeDefaultSsl();
+
+        if (requirements.contains(requireRsaForEncryption) && !isRsa) {
+            DialogDisplayer.showConfirmDialog(
+                    markAsSpecialPurposeButton,
+                    "This private key is an elliptic curve key.\n" +
+                    "The Gateway currently cannot use elliptic curve keys for message-level decryption.\n" +
+                    "An audit viewer policy will not be able to use this key to decrypt encrypted audit messages.\n" +
+                    "\nAre you sure you want the cluster to use this as the default audit viewer private key?",
+                    "Unsuitable Audit Viewer Certificate",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    new DialogDisplayer.OptionListener() {
+                        @Override
+                        public void reportResult(int option) {
+                            if (option == JOptionPane.YES_OPTION)
+                                makeSpecialKeyType(type, satisfiedRequirements(requirements, requireRsaForEncryption));
+                        }
+                    });
+            return;
+        }
+
+        String what = PrivateKeyManagerWindow.getLabelForSpecialKeyType(type);
+        if (requirements.contains(showFinalConfirmation)) {
+            final String extraWarningText;
+            if (requirements.contains(warnOnAssignmentIfAuditViewerAlreadyExists) && defaultAliasTracker.getSpecialKey(SpecialKeyType.AUDIT_VIEWER) != null) {
+                extraWarningText = "<p>The current Audit Viewer Key will become available for use elsewhere in the Gateway.<br>" +
+                        "Delete the existing key to ensure it cannot be used to decrypt any audits encrypted for it.<br>" +
+                        "The new Audit Viewer key will no longer be available for any other usage in the Gateway.<br>" +
+                        "Ensure this will not break any existing policies or configuration before continuing.<br>";
+            } else {
+                extraWarningText = "";
+            }
+
+            DialogDisplayer.showSafeConfirmDialog(
+                    TopComponents.getInstance().getTopParent(),
+                    "<html>Are you sure you wish to change the cluster " + what + "?<br>" +
+                            extraWarningText +
+                            "<p><br></p>All cluster nodes will need to be restarted before the change will fully take effect.",
+                    "Confirm New Cluster " + what + " Key",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    new DialogDisplayer.OptionListener() {
+                        @Override
+                        public void reportResult(int option) {
+                            if (option == JOptionPane.YES_OPTION)
+                                makeSpecialKeyType(type, satisfiedRequirements(requirements, showFinalConfirmation, warnOnAssignmentIfAuditViewerAlreadyExists));
+                        }
+                    }
+            );
+            return;
+        }
+
+        try {
+            defaultAliasTracker.assignSpecialKeyRole(subject.getKeyEntry(), type);
+        } catch (Exception e) {
+            showErrorMessage("Update Failed", "Failed to change default " + what + " key: " + ExceptionUtils.getMessage(e), e);
+            return;
+        }
+
+        DialogDisplayer.showMessageDialog(this,
+                "The " + what + " key has been changed.\n\nThe change will not fully take effect until all cluster nodes have been restarted.",
+                "Default " + what + " Key Updated",
+                JOptionPane.INFORMATION_MESSAGE, null);
+        defaultKeyChanged = true;
+        close();
     }
 
-    private void doMakeDefaultSsl() {
-        confirmPutClusterProperty("Default SSL", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_SSL, subject, null);
+    private EnumSet<SpecialKeyTypeRequirement> satisfiedRequirements(EnumSet<SpecialKeyTypeRequirement> requirements, SpecialKeyTypeRequirement... satisfied) {
+        EnumSet<SpecialKeyTypeRequirement> ret = requirements.clone();
+        for (SpecialKeyTypeRequirement requirement : satisfied) {
+            ret.remove(requirement);
+        }
+        return ret;
     }
 
     private KeyUsagePolicy makeRsaSslServerKeyUsagePolicy() {
@@ -376,128 +550,6 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             //noinspection ThrowableResultOfMethodCallIgnored
             logger.log(Level.WARNING, "Unable to parse certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return false;
-        }
-    }
-
-    private void makeDefaultCa() {
-        if (subject.isAuditViewerKey()) {
-            showAlreadyDesignatedForAuditViewingMessage();
-            return;
-        }
-
-        if (!isCertChainCaCapable(subject)) {
-            DialogDisplayer.showConfirmDialog(
-                    markAsSpecialPurposeButton,
-                    "This certificate chain does not specifically enable use as a CA cert.\n" +
-                    "Some software will reject client certificates signed by this key." +
-                    "\n\nAre you sure you want the cluster to use this as the default CA private key?",
-                    "Unsuitable CA Certificate",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE,
-                    new DialogDisplayer.OptionListener() {
-                        @Override
-                        public void reportResult(int option) {
-                            if (option == JOptionPane.YES_OPTION)
-                                doMakeDefaultCa();
-                        }
-                    });
-            return;
-        }
-        doMakeDefaultCa();
-    }
-
-    private void showAlreadyDesignatedForAuditViewingMessage() {
-        DialogDisplayer.showMessageDialog(
-                markAsSpecialPurposeButton,
-                "This key is already designated as the audit viewer private key.\n\n" +
-                        "The Gateway is unable to permit the audit viewer key to be used for any other purpose.\n",
-                "Key Already Designated For Audit Viewing",
-                JOptionPane.WARNING_MESSAGE,
-                null);
-    }
-
-    private void doMakeDefaultCa() {
-        confirmPutClusterProperty("Default CA", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_CA, subject, null);
-    }
-
-    private void makeAuditViewerKey() {
-        if (subject.isDefaultSsl() || subject.isDefaultCa()) {
-            DialogDisplayer.showMessageDialog(
-                    markAsSpecialPurposeButton,
-                    "This key is already designated for another special purpose and cannot be used as the audit viewer key.\n\n" +
-                    "The Gateway is unable to permit the audit viewer key to be used for any other purpose.\n",
-                    "Key Already Designated For Conflicting Special Purpose",
-                    JOptionPane.WARNING_MESSAGE,
-                    null);
-            return;
-        }
-
-        if (!"RSA".equalsIgnoreCase(subject.getCertificate().getPublicKey().getAlgorithm())) {
-            DialogDisplayer.showConfirmDialog(
-                    markAsSpecialPurposeButton,
-                    "This private key is an elliptic curve key.\n" +
-                    "The Gateway currently cannot use elliptic curve keys for message-level decryption.\n" +
-                    "An audit viewer policy will not be able to use this key to decrypt encrypted audit messages.\n" +
-                    "\nAre you sure you want the cluster to use this as the default audit viewer private key?",
-                    "Unsuitable Audit Viewer Certificate",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE,
-                    new DialogDisplayer.OptionListener() {
-                        @Override
-                        public void reportResult(int option) {
-                            if (option == JOptionPane.YES_OPTION)
-                                doMakeAuditViewerKey();
-                        }
-                    });
-            return;
-        }
-        doMakeAuditViewerKey();
-    }
-
-    private void doMakeAuditViewerKey() {
-        confirmPutClusterProperty("Audit Viewer", DefaultAliasTracker.CLUSTER_PROP_AUDIT_VIEWER, subject,
-                "The current Audit Viewer Key will become available for use elsewhere in the Gateway.\n" +
-                "Delete the existing key to ensure it cannot be used to decrypt any audits encrypted for it.\n" +
-                "\nThe new Audit Viewer key will no longer be available for any other usage in the Gateway.\n" +
-                "Ensure this will not break any existing policies or configuration before continuing.\n\n");
-    }
-
-    private void confirmPutClusterProperty(final String what, final String clusterProp, final PrivateKeyManagerWindow.KeyTableRow subject, String extraParagraph) {
-        if (extraParagraph == null)
-            extraParagraph = "";
-        DialogDisplayer.showSafeConfirmDialog(
-                markAsSpecialPurposeButton,
-                "Are you sure you wish to change the cluster " + what + " private key?\n\n" +
-                        extraParagraph +
-                        "All cluster nodes will need to be restarted before the change will fully take effect.",
-                "Confirm New Cluster " + what + " Key",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE,
-                new DialogDisplayer.OptionListener() {
-                    @Override
-                    public void reportResult(int option) {
-                        if (option == JOptionPane.YES_OPTION)
-                            doPutClusterProperty(what, clusterProp, subject);
-                    }
-                }
-        );
-    }
-
-    private void doPutClusterProperty(String what, String clusterProp, PrivateKeyManagerWindow.KeyTableRow subject) {
-        String value = subject.getKeyEntry().getKeystoreId() + ":" + subject.getAlias();
-        String failmess = "Failed to change default " + what + " key: ";
-        try {
-            ClusterPropertyCrud.putClusterProperty(clusterProp, value);            
-            defaultAliasTracker.invalidate();
-
-            DialogDisplayer.showMessageDialog(this,
-                    "The " + what + " key has been changed.\n\nThe change will not fully take effect until all cluster nodes have been restarted.",
-                    "Default " + what + " Key Updated",
-                    JOptionPane.INFORMATION_MESSAGE, null);
-            defaultKeyChanged = true;
-            close();
-        } catch (ObjectModelException e) {
-            showErrorMessage("Update Failed", failmess + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -744,9 +796,11 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         if (subjectDn.length() > 50) {
             subjectDn = subjectDn.substring(0,42) + "...";
         }
+
+        boolean isAuditViewer = subject.isDesignatedAs(SpecialKeyType.AUDIT_VIEWER);
         String confirmationDialogMessage =
             "<html><center>This will delete this key and cannot be undone. " +
-                    (subject.isAuditViewerKey() ? "Encrypted audit records will no longer be viewable. " : "") +
+                    (isAuditViewer ? "Encrypted audit records will no longer be viewable. " : "") +
                     "The change will not fully take effect until all cluster nodes have been restarted.</center><p>" +
                 "<center>Really delete the private key " + alias + " (" + subjectDn + ")?</center></html>";
 

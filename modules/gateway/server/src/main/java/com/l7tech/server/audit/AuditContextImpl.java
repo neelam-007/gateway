@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.audit.*;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -28,15 +29,15 @@ import java.util.logging.Logger;
  * are likely to be reused for many different messages through time on the same thread,
  * so users must always call {@link #flush()} when finished processing each message.
  * <p>
- * Call {@link #setCurrentRecord} to attach a single {@link AuditRecord} describing the SSG's current
- * operation to the context, and {@link AuditContext#addDetail} to add zero or more {@link AuditDetail} records.
+ * Call {@link #setCurrentRecord(com.l7tech.gateway.common.audit.AuditRecord)} to attach a single {@link AuditRecord} describing the SSG's current
+ * operation to the context, and {@link AuditContext#addDetail(com.l7tech.gateway.common.audit.AuditDetail, Object)} to add zero or more {@link AuditDetail} records.
  * <p>
  * {@link MessageSummaryAuditRecord}s, {@link AdminAuditRecord}s and {@link AuditDetail}s that are
  * added to the context will only be persisted to the database later, when {@link #flush} is called,
  * if their level meets or exceeds the corresponding threshold.  {@link SystemAuditRecord}s have no
  * minimum threshold; they are always persisted.
  *
- * @see ServerConfig#getProperty
+ * @see ServerConfig#getProperty(String)
  * @see ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD
  * @see ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD
 
@@ -50,6 +51,8 @@ public class AuditContextImpl implements AuditContext {
      * @param serverConfig   required
      * @param auditRecordManager   required
      * @param auditPolicyEvaluator  may be null
+     * @param auditFilterPolicyManager may be null
+     * @param nodeId should not be null
      */
     public AuditContextImpl(ServerConfig serverConfig,
                             AuditRecordManager auditRecordManager,
@@ -404,7 +407,10 @@ public class AuditContextImpl implements AuditContext {
 
     void signRecord(AuditRecord signatureSubject) {
         try {
-            PrivateKey pk = keystore.getSslInfo().getPrivate();
+            SignerInfo signerInfo = keystore.getAuditSigningInfo();
+            if (signerInfo == null) signerInfo = keystore.getSslInfo();
+
+            PrivateKey pk = signerInfo.getPrivate();
             new AuditRecordSigner(pk).signAuditRecord(signatureSubject);
         } catch (Exception e) {
             logger.log(Level.WARNING, "ERROR GENERATING AUDIT SIGNATURE: " + ExceptionUtils.getMessage(e), e);
@@ -536,7 +542,7 @@ public class AuditContextImpl implements AuditContext {
         return currentSignAuditSetting;
     }
 
-    /**
+    /*
      * Get the Level for the given name/value.
      *
      * Level.parse is synchronized so this is better for common level names.

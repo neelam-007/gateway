@@ -55,6 +55,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private final AtomicReference<SsgKeyEntry> cachedSslInfo = new AtomicReference<SsgKeyEntry>();
     private final AtomicReference<SsgKeyEntry> cachedCaInfo = new AtomicReference<SsgKeyEntry>();
     private final AtomicReference<SsgKeyEntry> cachedAuditViewerInfo = new AtomicReference<SsgKeyEntry>();
+    private final AtomicReference<SsgKeyEntry> cachedAuditSigningInfo = new AtomicReference<SsgKeyEntry>();
     private static final String SC_PROP_SSL_KEY = ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY;
 
     public DefaultKeyImpl( final ServerConfig serverConfig,
@@ -242,6 +243,17 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     }
 
     @Override
+    public SsgKeyEntry getAuditSigningInfo() {
+        try {
+            return getCachedEntry(cachedAuditSigningInfo, ServerConfig.PARAM_KEYSTORE_AUDIT_SIGNING_KEY, false);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to look up audit signing key: " + ExceptionUtils.getMessage(e), e);
+        } catch (ObjectNotFoundException e) {
+            throw new RuntimeException("Unable to look up audit signing key: " + ExceptionUtils.getMessage(e), e);
+        }
+    }
+
+    @Override
     public SsgKeyEntry getAuditViewerInfo() {
         try {
             return getCachedEntry(cachedAuditViewerInfo, ServerConfig.PARAM_KEYSTORE_AUDIT_VIEWER_KEY, false);
@@ -253,14 +265,13 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     }
 
     @Override
-    public String getAuditViewerAlias() {
+    public Pair<Long, String> getAuditViewerAlias() {
         SsgKeyEntry info = cachedAuditViewerInfo.get();
         if (info != null)
-            return info.getAlias();
+            return new Pair<Long, String>(info.getKeystoreId(), info.getAlias());
 
         try {
-            Pair<Long, String> idAndAlias = getKeyStoreOidAndAlias(ServerConfig.PARAM_KEYSTORE_AUDIT_VIEWER_KEY);
-            return idAndAlias == null ? null : idAndAlias.right;
+            return getKeyStoreOidAndAlias(ServerConfig.PARAM_KEYSTORE_AUDIT_VIEWER_KEY);
         } catch (IOException e) {
             throw new RuntimeException("Unable to look up audit viewer key alias: " + ExceptionUtils.getMessage(e), e);
         }
@@ -292,6 +303,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         cachedSslInfo.set(null);
         cachedCaInfo.set(null);
         cachedAuditViewerInfo.set(null);
+        cachedAuditSigningInfo.set(null);
     }
 
     private SsgKeyEntry getCachedEntry(AtomicReference<SsgKeyEntry> cache, String propertyName, boolean required) throws IOException, ObjectNotFoundException {
