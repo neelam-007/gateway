@@ -20,21 +20,25 @@ import com.l7tech.objectmodel.EntityType;
  */
 public class ManageClusterPropertiesAction extends SecureAction {
     public ManageClusterPropertiesAction() {
-        super(new AttemptedAnyOperation(EntityType.CLUSTER_PROPERTY));
+        super(new AttemptedAnyOperation(EntityType.CLUSTER_PROPERTY), "service:Admin");
     }
 
+    @Override
     public String getName() {
         return "Manage Cluster-Wide Properties";
     }
 
+    @Override
     public String getDescription() {
         return "View/Edit Gateways Cluster Properties.";
     }
 
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
+    @Override
     protected void performAction() {
         ClusterPropertyDialog dlg = new ClusterPropertyDialog(TopComponents.getInstance().getTopParent());
         dlg.pack();

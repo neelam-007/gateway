@@ -22,7 +22,7 @@ public class ManageResolutionConfigurationAction extends SecureAction {
     }
 
     public ManageResolutionConfigurationAction( final Window parent ) {
-        super(new AttemptedAnyOperation( EntityType.RESOLUTION_CONFIGURATION) );
+        super(new AttemptedAnyOperation( EntityType.RESOLUTION_CONFIGURATION), "service:Admin");
         this.parent = parent==null ? TopComponents.getInstance().getTopParent() : parent;
         putValue( Action.MNEMONIC_KEY, KeyEvent.VK_S );
     }
