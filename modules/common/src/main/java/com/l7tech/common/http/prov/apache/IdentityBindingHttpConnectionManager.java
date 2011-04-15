@@ -1,5 +1,7 @@
 package com.l7tech.common.http.prov.apache;
 
+import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 import org.apache.commons.httpclient.ConnectionPoolTimeoutException;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpConnection;
@@ -23,9 +25,6 @@ import java.util.logging.Logger;
  *
  * <p>This connection manager is not intended for use connecting to a large number of different
  * hosts.</p>
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConnectionManager {
 
@@ -39,8 +38,8 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         bindingTimeout = DEFAULT_BINDING_TIMEOUT;
         bindingMaxAge = DEFAULT_BINDING_MAX_AGE;
         lock = new ReentrantReadWriteLock();
-        connectionsById = new HashMap();
-        info = new ThreadLocal();
+        connectionsById = new HashMap<Object,HttpConnectionInfo>();
+        info = new ThreadLocal<ThreadLocalInfo>();
     }
 
     /**
@@ -64,7 +63,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
      *
      * @param bindingTimeout The timeout to use.
      */
-    public void setBindingTimeout(int bindingTimeout) {
+    public void setBindingTimeout( int bindingTimeout) {
         if(bindingTimeout < MIN_BINDING_TIMEOUT) {
             logger.warning("Invalid binding timeout '"+bindingTimeout+"' using '"+MIN_BINDING_TIMEOUT+"' milliseconds.");
             bindingTimeout = MIN_BINDING_TIMEOUT;
@@ -117,7 +116,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
      * @return The identity of the current user (may be null).
      */
     public Object getId() {
-        ThreadLocalInfo tli = getInfo();
+        final ThreadLocalInfo tli = getInfo();
         return tli==null ?  null : tli.getId();
     }
 
@@ -126,22 +125,26 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
      *
      * @param identity The identity of the current user.
      */
-    public void setId(Object identity) {
-        setInfo(identity);
+    public void setId( final Object identity ) {
+        if ( BINDING_ENABLED ) {
+            setInfo(identity);
+        }
     }
 
     /**
      * Bind the current connection.
      */
     public void bind() {
-        ThreadLocalInfo tli = getInfo();
+        if ( BINDING_ENABLED ) {
+            ThreadLocalInfo tli = getInfo();
 
-        if (tli == null) {
-            logger.warning("Attempt to bind with no id set"); // using fake id!
-            tli = setInfo(new Object());
+            if (tli == null) {
+                logger.warning("Attempt to bind with no id set"); // using fake id!
+                tli = setInfo(new Object());
+            }
+
+            tli.bind();
         }
-
-        tli.bind();
     }
 
     /**
@@ -150,9 +153,12 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
      * @param hostConfiguration The connection descriptor.
      * @return the HttpConnection.
      */
-    public HttpConnection getConnection(HostConfiguration hostConfiguration) {
+    @Override
+    public HttpConnection getConnection( final HostConfiguration hostConfiguration ) {
+        if ( !BINDING_ENABLED ) return super.getConnection(hostConfiguration);
+
         HttpConnection httpConnection = null;
-        ThreadLocalInfo tli = getInfo();
+        final ThreadLocalInfo tli = getInfo();
         if (tli != null) {
             httpConnection = getBoundHttpConnection(tli.getId(), hostConfiguration);
             if (httpConnection != null) tli.bound();
@@ -167,9 +173,13 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         return httpConnection;
     }
 
-    public HttpConnection getConnectionWithTimeout(HostConfiguration hostConfiguration, long timeout) throws ConnectionPoolTimeoutException {
+    @Override
+    public HttpConnection getConnectionWithTimeout( final HostConfiguration hostConfiguration,
+                                                    final long timeout ) throws ConnectionPoolTimeoutException {
+        if ( !BINDING_ENABLED ) return super.getConnectionWithTimeout(hostConfiguration, timeout);
+
         HttpConnection httpConnection = null;
-        ThreadLocalInfo tli = getInfo();
+        final ThreadLocalInfo tli = getInfo();
         if (tli != null) {
             httpConnection = getBoundHttpConnection(tli.getId(), hostConfiguration, timeout);
             if (httpConnection != null) tli.bound();
@@ -184,8 +194,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         return httpConnection;
     }
 
-    public void releaseConnection(HttpConnection conn) {
-        super.releaseConnection(unwrapit(conn));
+    @Override
+    public void releaseConnection( final HttpConnection conn ) {
+        super.releaseConnection( BINDING_ENABLED ? unwrapit(conn) : conn );
     }
 
     //- PROTECTED
@@ -193,38 +204,37 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
     /**
      * Periodic cleanup task (releases stale bound connections).
      */
+    @Override
     protected void doCleanup() {
         // grab a copy of the MAP
-        long timeNow = 0;
-        Map connectionInfo = null;
+        long timeNow = 0L;
+        Map<Object,HttpConnectionInfo> connectionInfo = null;
         boolean gotLock = false;
         while (!gotLock) {
             try {
                 lock.writeLock().lock();
                 gotLock = true;
                 timeNow = System.currentTimeMillis();
-                connectionInfo = new HashMap(connectionsById);
+                connectionInfo = new HashMap<Object,HttpConnectionInfo>(connectionsById);
             }
             finally {
                 if (gotLock) lock.writeLock().unlock();
             }
         }
 
-        List identitiesForRemoval = new ArrayList();
-        if (connectionInfo != null) {
-            for(Iterator iterator = connectionInfo.entrySet().iterator(); iterator.hasNext(); ) {
-                Map.Entry entry = (Map.Entry) iterator.next();
-                Object identifier = entry.getKey();
-                HttpConnectionInfo httpConnectionInfo = (HttpConnectionInfo) entry.getValue();
+        final List<Pair<Object,HttpConnectionInfo>> identitiesForRemoval = new ArrayList<Pair<Object,HttpConnectionInfo>>();
+        for ( final Map.Entry<Object,HttpConnectionInfo> entry : connectionInfo.entrySet() ) {
+            final Object identifier = entry.getKey();
+            final HttpConnectionInfo httpConnectionInfo = entry.getValue();
 
-                if (!isValid(httpConnectionInfo, timeNow)) {
-                    if (httpConnectionInfo.isInUse()) {
-                        if(logger.isLoggable(Level.FINE)) {
-                            logger.fine("Not releasing in use connection identity '"+identifier+"'.");
+            synchronized ( httpConnectionInfo.syncLock ) {
+                if ( !isValid( httpConnectionInfo, timeNow ) ) {
+                    if ( httpConnectionInfo.isInUse() ) {
+                        if ( logger.isLoggable( Level.FINE ) ) {
+                            logger.fine( "Not releasing in use connection identity '" + identifier + "'." );
                         }
-                    }
-                    else {
-                        identitiesForRemoval.add(identifier);
+                    } else {
+                        identitiesForRemoval.add( new Pair<Object,HttpConnectionInfo>(identifier,httpConnectionInfo) );
                         httpConnectionInfo.dispose();
                     }
                 }
@@ -236,7 +246,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             try {
                 lock.writeLock().lock();
                 gotLock = true;
-                connectionsById.keySet().removeAll(identitiesForRemoval);
+                connectionsById.entrySet().removeAll(identitiesForRemoval);
             }
             finally {
                 if (gotLock) lock.writeLock().unlock();
@@ -255,6 +265,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(IdentityBindingHttpConnectionManager.class.getName());
+
+    private static final boolean BINDING_ENABLED = SyspropUtil.getBoolean( "com.l7tech.common.http.prov.apache.identityBindingEnabled", true );
+
     private static final int DEFAULT_BINDING_MAX_AGE = 120000;
     private static final int MIN_BINDING_MAX_AGE = 100;
     private static final int MAX_BINDING_MAX_AGE = 900000;
@@ -265,8 +278,8 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
     private int bindingTimeout;
     private int bindingMaxAge;
     private ReadWriteLock lock;
-    private Map connectionsById;
-    private ThreadLocal info;
+    private Map<Object,HttpConnectionInfo> connectionsById;
+    private ThreadLocal<ThreadLocalInfo> info;
 
     /**
      * Get the HttpConnection bound to the given identity.
@@ -277,9 +290,10 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
      * @param hostConfiguration The host configuration to match
      * @return The HttpConnection or null
      */
-    private HttpConnection getBoundHttpConnection(Object identity, HostConfiguration hostConfiguration) {
+    private HttpConnection getBoundHttpConnection( final Object identity,
+                                                   final HostConfiguration hostConfiguration ) {
         try {
-            return getBoundHttpConnection(identity, hostConfiguration, 0);
+            return getBoundHttpConnection(identity, hostConfiguration, 0L);
         }
         catch(ConnectionPoolTimeoutException he) { // cant happen with 0 timeout
             logger.log(Level.WARNING, "Unexpected timeout looking for bound connection", he);
@@ -297,34 +311,34 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
      * @param timeout           The maximum time to wait in milliseconds
      * @return The HttpConnection or null
      */
-    private HttpConnection getBoundHttpConnection(Object identity, HostConfiguration hostConfiguration, long timeout) throws ConnectionPoolTimeoutException {
+    private HttpConnection getBoundHttpConnection( final Object identity,
+                                                   final HostConfiguration hostConfiguration,
+                                                   final long timeout ) throws ConnectionPoolTimeoutException {
         HttpConnection httpConnection = null;
         HttpConnectionInfo hci = null;
 
         boolean gotLock = false;
         while (!gotLock) {
             try {
-                if (timeout == 0) lock.readLock().lock();
+                if (timeout == 0L) lock.readLock().lock();
                 else if(!lock.readLock().tryLock(timeout, TimeUnit.MILLISECONDS)) {
                     throw new ConnectionPoolTimeoutException("Timeout acquiring lock.");
                 }
                 gotLock = true;
-                hci = (HttpConnectionInfo) connectionsById.get(identity);
+                hci = connectionsById.get(identity);
                 if (hci != null) {
-                    if(isValid(hci)) {
-                        httpConnection = hci.getHttpConnection();
-                        if (httpConnection != null) {
-                            httpConnection = new HttpConnectionWrapper(httpConnection, hci);
+                    synchronized ( hci.syncLock ) {
+                        if( hostConfiguration != null && isValid(hci) && !hci.isDisposed() && hci.httpConnection.isOpen() ) {
+                            httpConnection = hci.getHttpConnection();
+                            if (httpConnection != null) {
+                                httpConnection = new HttpConnectionWrapper(httpConnection, hci);
+                            }
+                            else {
+                                logger.fine("Valid bound connection for identity '"+identity+"' is null?.");
+                            }
+                        } else {
+                            hci.dispose();
                         }
-                        else {
-                            logger.info("Valid bound connection for identity '"+identity+"' is null?.");
-                        }
-                    }
-                    else {
-                        if(logger.isLoggable(Level.FINE)) {
-                            logger.fine("Disposing invalid bound connection for identity '"+identity+"'.");
-                        }
-                        hci.dispose();
                     }
                 }
                 else {
@@ -341,9 +355,9 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
         }
 
-        if (httpConnection != null) {
+        if ( hci != null && httpConnection != null ) {
             HostConfiguration connectionHostConfiguration = buildHostConfiguration(httpConnection);
-            if (hostConfiguration==null || !connectionHostConfiguration.equals(hostConfiguration)) {
+            if ( !connectionHostConfiguration.equals(hostConfiguration) ) {
                 // Then release the connection and fall back to getting a new one from the pool
                 HttpConnection connectionForClosing = httpConnection;
                 httpConnection = null;
@@ -354,9 +368,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
 
                 connectionForClosing.close(); // Close it since the connection must not be reused
                 releaseConnection(connectionForClosing);
-                 if (hci != null) {
-                     hci.dispose();
-                 }
+                hci.dispose();
             }
             else {
                 if (logger.isLoggable(Level.FINE)) {
@@ -368,7 +380,8 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         return httpConnection;
     }
 
-    private boolean setBoundHttpConnection(Object identity, HttpConnection httpConnection) {
+    private boolean setBoundHttpConnection( final Object identity,
+                                            final HttpConnection httpConnection ) {
         boolean bound = false;
         boolean gotLock = false;
         try {
@@ -379,22 +392,24 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
             }
 
             HttpConnectionInfo previouslyBoundHttpConnectionInfo =
-                    (HttpConnectionInfo) connectionsById.put(identity, new HttpConnectionInfo(httpConnection));
+                    connectionsById.put(identity, new HttpConnectionInfo(httpConnection));
 
             bound = true;
             if(previouslyBoundHttpConnectionInfo!=null) {
                 if (logger.isLoggable(Level.FINE)) {
                     logger.fine("Releasing replaced bound HTTP connection for identity '"+identity+"'.");
                 }
-                previouslyBoundHttpConnectionInfo.dispose();
+                synchronized ( previouslyBoundHttpConnectionInfo.syncLock ) {
+                    previouslyBoundHttpConnectionInfo.dispose();
+                }
             }
         }
         finally {
             if (gotLock) lock.writeLock().unlock();
-        }
 
-        if (!bound) {
-            httpConnection.close(); // close to ensure connection is not re-used
+            if (!bound) {
+                httpConnection.close(); // close to ensure connection is not re-used
+            }
         }
 
         return bound;
@@ -406,7 +421,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
      * @param httpConnection The HttpConnection that describes the HostConfiguration
      * @return a newly constructed HostConfiguration that matches the given HttpConnection
      */
-    private HostConfiguration buildHostConfiguration(HttpConnection httpConnection) {
+    private HostConfiguration buildHostConfiguration( final HttpConnection httpConnection ) {
 
         HostConfiguration hostConfiguration = new HostConfiguration();
 
@@ -430,11 +445,11 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
     }
 
     private ThreadLocalInfo getInfo() {
-        return (ThreadLocalInfo) info.get();
+        return info.get();
     }
 
-    private ThreadLocalInfo setInfo(Object identity) {
-        ThreadLocalInfo newInfo = (ThreadLocalInfo) info.get();
+    private ThreadLocalInfo setInfo( final Object identity ) {
+        ThreadLocalInfo newInfo = info.get();
         if (identity == null) {
             newInfo = null;
         }
@@ -448,22 +463,25 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         return newInfo;
     }
 
-    private boolean isValid(HttpConnectionInfo httpConnectionInfo) {
+    private boolean isValid( final HttpConnectionInfo httpConnectionInfo ) {
         return isValid(httpConnectionInfo, System.currentTimeMillis());
     }
 
-    private boolean isValid(HttpConnectionInfo httpConnectionInfo, long atTime) {
+    private boolean isValid( final HttpConnectionInfo httpConnectionInfo,
+                             final long atTime ) {
         boolean valid = true;
 
-        if ((httpConnectionInfo.getAllocationTime()+bindingMaxAge<atTime) ||
-            (httpConnectionInfo.getLastUsageTime()+bindingTimeout<atTime)) {
-            valid = false;
+        synchronized ( httpConnectionInfo.syncLock ) {
+            if ((httpConnectionInfo.getAllocationTime()+((long)bindingMaxAge)<atTime) ||
+                (httpConnectionInfo.getLastUsageTime()+((long)bindingTimeout)<atTime)) {
+                valid = false;
+            }
         }
 
         return valid;
     }
 
-    private HttpConnection unwrapit(HttpConnection httpConnection) {
+    private HttpConnection unwrapit( HttpConnection httpConnection ) {
         while (httpConnection instanceof HttpConnectionWrapper && 
             ((HttpConnectionWrapper)httpConnection).getConnectionListener() instanceof HttpConnectionInfo) {
             httpConnection = ((HttpConnectionWrapper)httpConnection).getWrappedConnection();
@@ -476,17 +494,19 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
      * Holder for HttpConnection data
      */
     private final class HttpConnectionInfo implements HttpConnectionWrapper.ConnectionListener {
-        private final Object lock = new Object();
+        private final Object syncLock = new Object();
         private final long allocationTime;
         private long lastUsageTime;
         private HttpConnection httpConnection;
         private boolean inUse;
+        private boolean disposed;
 
-        public HttpConnectionInfo(HttpConnection httpConnection) {
+        private HttpConnectionInfo( final HttpConnection httpConnection ) {
             this.allocationTime = System.currentTimeMillis();
             this.lastUsageTime = this.allocationTime;
             this.httpConnection = httpConnection;
             this.inUse = false;
+            this.disposed = false;
         }
 
         public long getAllocationTime() {
@@ -498,18 +518,23 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         }
 
         public HttpConnection getHttpConnection() {
-            synchronized(lock) {
-                return httpConnection;
-            }
+            return httpConnection;
         }
 
         public boolean isInUse() {
             return inUse;
         }
 
+        public boolean isDisposed() {
+            return disposed;
+        }
+
+        @Override
         public void wrap() {
-            this.inUse = true;
-            this.lastUsageTime = System.currentTimeMillis();
+            synchronized ( syncLock ) {
+                this.inUse = true;
+                this.lastUsageTime = System.currentTimeMillis();
+            }
         }
 
         /**
@@ -517,42 +542,47 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
          *
          * <p>Note that if the id is set this will NOT release the underlying connection.</p>
          */
+        @Override
         public boolean release() {
-            if (logger.isLoggable(Level.FINER)) {
-                logger.log(Level.FINER, "Releasing connection.");
-            }
+            synchronized ( syncLock ) {
+                final ThreadLocalInfo tli = getInfo();
+                final HttpConnection httpConnection = getHttpConnection();
+                final Object identity = tli!=null ? tli.getId() : null;
 
-            ThreadLocalInfo tli = getInfo();
-            HttpConnection httpConnection = getHttpConnection();
-            Object identity = tli!=null ? tli.getId() : null;
-            boolean bound = false;
-            if (identity != null && tli.hasBindingStatus() && httpConnection != null && httpConnection.isOpen()) {
-                if (tli.bindingRequested()) {
-                    bound = setBoundHttpConnection(identity, httpConnection);
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.log(Level.FINEST, "Releasing connection for " + identity);
                 }
-                else {
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("Connection is bound, retaining.");
+
+                boolean bound = false;
+                if (identity != null && tli.hasBindingStatus() && httpConnection != null && httpConnection.isOpen()) {
+                    if (tli.bindingRequested()) {
+                        bound = setBoundHttpConnection(identity, httpConnection);
                     }
-                    bound = true;
+                    else {
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.fine("Connection is bound, retaining " + identity);
+                        }
+                        bound = true;
+                    }
                 }
-            }
 
-            this.inUse = false;
-            return !bound; // release underlying connection?
+                this.inUse = false;
+                return !bound;
+            }
         }
 
         public void dispose() {
-            HttpConnection disposeMe = null;
-            synchronized(lock) {
-                disposeMe = httpConnection;
+            if ( !disposed ) {
+                HttpConnection disposeMe = httpConnection;
                 httpConnection = null;
+                inUse = false;
+                disposed = true;
+
+                if (disposeMe != null) {
+                    disposeMe.close();
+                    disposeMe.releaseConnection();
+                }
             }
-            if (disposeMe != null) {
-                disposeMe.close();
-                disposeMe.releaseConnection();
-            }
-            this.inUse = false;
         }
     }
 
@@ -563,7 +593,7 @@ public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConne
         private final Object id;
         private Boolean bind;
 
-        public ThreadLocalInfo(Object id) {
+        private ThreadLocalInfo( final Object id ) {
             this.id = id;
         }
 
