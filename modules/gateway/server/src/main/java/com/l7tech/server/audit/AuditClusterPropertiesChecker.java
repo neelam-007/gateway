@@ -208,18 +208,23 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
         return propValue == null || Boolean.parseBoolean(propValue); // If this prop does not exist, it is equivalent to set "true".
     }
 
+    /**
+     * Get the level of Admin Audit Threshold by converting a level name to a level object.
+     * @param levelName: the name of a Level
+     * @return a Level object corresponding to the level name
+     */
     private Level getAdminAuditThresholdByName(String levelName) {
         Level level = null;
         if (levelName != null) {
             try {
                 level = Level.parse(levelName);
-            } catch(IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 logger.warning("Invalid admin threshold value '" + levelName + "'. Will use default " +
-                    Level.WARNING.getName() + " instead.");
+                    AuditContext.DEFAULT_ADMIN_THRESHOLD.getName() + " instead.");
             }
         }
         if (level == null) {
-            level = Level.WARNING;
+            level = AuditContext.DEFAULT_ADMIN_THRESHOLD;
         }
         return level;
     }

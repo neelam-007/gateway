@@ -494,13 +494,13 @@ public class AuditContextImpl implements AuditContext {
             if (msgLevel != null) {
                 try {
                     output = getLevel(msgLevel);
-                } catch(IllegalArgumentException e) {
+                } catch (IllegalArgumentException e) {
                     logger.warning("Invalid admin threshold value '" + msgLevel + "'. Will use default " +
-                                   DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
+                                   DEFAULT_ADMIN_THRESHOLD.getName() + " instead.");
                 }
             }
             if (output == null) {
-                output = DEFAULT_MESSAGE_THRESHOLD;
+                output = DEFAULT_ADMIN_THRESHOLD;
             }
             currentAdminThreshold = output;
         }
