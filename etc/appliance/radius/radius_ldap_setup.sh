@@ -3,7 +3,7 @@
 ############################################
 ##        SSG VirualAppliance 5.4.1       ##
 ##      Radius and/or LDAP integration    ##
-##   Version:  1.0                        ##
+##   Version:  1.1                        ##
 ##   Date: 2011-04-13                     ##
 ############################################
 
@@ -20,8 +20,6 @@
 # The SSG Virtual Appliance 5.4.1 64bit system has the following packages already installed:
 # openldap-2.3.43-12.el5_6.7.x86_64.rpm
 # nss_ldap-253-37.el5.rpm
-
-source $1
 
 # Define variables that will not be taken from the sourced configuration file:
 
@@ -228,9 +226,21 @@ fi
 # end of "doConfigure" function
 }
 
+doRollback () {
+echo "Rolling back...."
+
+}
+
 # END of functions section
 
 # script BODY
+
+CFG_FILE=$(basename $1)
+if [ "X$CFG_FILE" == "Xradius_ldap_setup.conf" ]; then
+        source $1
+else
+        toLog "ERROR - The argument provided was not correct; \"radius_ldap_setup.conf\" filename expected!"
+fi
 
 case "$CFG_TYPE" in
         ldap_only)
@@ -245,7 +255,9 @@ case "$CFG_TYPE" in
                 doConfigure ldap
                 doConfigure radius
                 ;;
-
+		file)
+				doRollback
+				;;
         *)
                 toLog "ERROR - Not a valid configuration type!"
                 exit 1;
