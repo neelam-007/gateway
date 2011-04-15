@@ -4,6 +4,7 @@ import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gui.util.Utilities;
@@ -70,6 +71,10 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
     private void initGui() {
         privateKeyComboBox.selectDefaultSsl();
+        privateKeyComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
+        privateKeyComboBox.setMinimumSize( new Dimension( 100, privateKeyComboBox.getPreferredSize().height  ) );
+        privateKeyComboBox.setPreferredSize( new Dimension( 100, privateKeyComboBox.getPreferredSize().height ) );
+
         providerNameTextField.addKeyListener(keyListener);
 
         DefaultComboBoxModel urlListModel = new DefaultComboBoxModel();
