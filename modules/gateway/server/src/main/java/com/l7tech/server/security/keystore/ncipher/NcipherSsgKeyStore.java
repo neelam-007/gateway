@@ -14,10 +14,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -39,15 +36,38 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     private final String name;
     private final KeystoreFileManager kem;
     private KeyStore keystore;
-    private String keystoreMetadata; // Bytes produced by calling store() on the nCipher keystore.  Seems to be a 40 byte hex string identifying the keystore instance within the security world.
+    private NcipherKeyStoreData keystoreData;
     private int keystoreVersion = -1;
     private long lastLoaded = 0;
+    private boolean checkForDeletedFilesOnNextStoreToDisk = false;
 
     public NcipherSsgKeyStore(long id, String name, KeystoreFileManager kem, KeyAccessFilter keyAccessFilter) throws KeyStoreException {
         super(keyAccessFilter);
         this.id = id;
         this.name = name;
         this.kem = kem;
+    }
+
+    @Override
+    public Future<Boolean> deletePrivateKeyEntry(Runnable transactionCallback, final String keyAlias) throws KeyStoreException {
+        return mutateKeystore(transactionCallback, new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws KeyStoreException {
+                keyStore().deleteEntry(keyAlias);
+                checkForDeletedFilesOnNextStoreToDisk = true;
+                return Boolean.TRUE;
+            }
+        });
+    }
+
+    private Set<String> listAllRelevantKeyFiles(String keystoreId) throws IOException, KeyStoreException {
+        return NcipherKeyStoreData.createFromLocalDisk(keystoreId, NcipherSsgKeyStore.KMDATA_LOCAL_DIR).fileset.keySet();
+    }
+
+    private static Set<String> findDeletedFiles(Set<String> filesBeforeDelete, Set<String> filesAfterDelete) {
+        Set<String> deletedFiles = new LinkedHashSet<String>(filesBeforeDelete);
+        deletedFiles.removeAll(filesAfterDelete);
+        return deletedFiles;
     }
 
     @Override
@@ -85,8 +105,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
 
                 if (bytes != null && bytes.length >= 1) {
                     // Load existing keystore data.
-                    Pair<String, KeyStore> ks = bytesToKeyStore(bytes);
-                    this.keystoreMetadata = ks.left;
+                    Pair<NcipherKeyStoreData, KeyStore> ks = bytesToKeyStore(bytes);
                     this.keystore = ks.right;
                 } else {
                     // No existing keystore data present -- will need to create a new one.
@@ -96,16 +115,17 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
                         public void call(KeystoreFile keystoreFile) {
                             try {
                                 byte[] bytes = keystoreFile.getDatabytes();
-                                final Pair<String, KeyStore> ks;
+                                final Pair<NcipherKeyStoreData, KeyStore> ks;
                                 if (bytes == null || bytes.length < 1) {
                                     ks = createNewKeyStore();
                                 } else {
                                     ks = bytesToKeyStore(bytes);
                                 }
-                                keystoreMetadata = ks.left;
+
+                                keystoreData = ks.left;
                                 keystore = ks.right;
-                                keystoreFile.setProperty(KF_PROP_INITIAL_KEYSTORE_ID, keystoreMetadata);
-                                keystoreFile.setDatabytes(keyStoreToBytes(keystoreMetadata, keystore));
+                                keystoreFile.setProperty(KF_PROP_INITIAL_KEYSTORE_ID, keystoreData.keystoreMetadata);
+                                keystoreFile.setDatabytes(keyStoreToBytes(keystoreData, keystore));
                             } catch (KeyStoreException e) {
                                 throw new RuntimeException(e);
                             }
@@ -136,12 +156,12 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
                                 if (transactionCallback != null)
                                     transactionCallback.run();
                                 try {
-                                    Pair<String, KeyStore> ks = bytesToKeyStore(keystoreFile.getDatabytes());
-                                    keystoreMetadata = ks.left;
+                                    Pair<NcipherKeyStoreData, KeyStore> ks = bytesToKeyStore(keystoreFile.getDatabytes());
+                                    keystoreData = ks.left;
                                     keystore = ks.right;
                                     lastLoaded = System.currentTimeMillis();
                                     out[0] = mutator.call();
-                                    keystoreFile.setDatabytes(keyStoreToBytes(keystoreMetadata, keystore));
+                                    keystoreFile.setDatabytes(keyStoreToBytes(keystoreData, keystore));
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
@@ -158,19 +178,19 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         }));
     }
 
-    private synchronized Pair<String, KeyStore> bytesToKeyStore(byte[] bytes) throws KeyStoreException {
+    private synchronized Pair<NcipherKeyStoreData, KeyStore> bytesToKeyStore(byte[] bytes) throws KeyStoreException {
         logger.info("Merging nCipher keystore data from database to local disk");
         try {
             NcipherKeyStoreData ksd = NcipherKeyStoreData.createFromBytes(bytes);
             Set<String> written = ksd.saveFilesetToLocalDisk(KMDATA_LOCAL_DIR);
 
             // TODO Defer commit and KeyStore.load() until commit phase of enclosing transaction
-            NcipherKeyStoreData.commitWrittenFiles(KMDATA_LOCAL_DIR, written);
+            ksd.commitWrittenFiles(KMDATA_LOCAL_DIR, written);
 
             KeyStore keystore = JceProvider.getInstance().getKeyStore(KEYSTORE_TYPE);
             keystore.load(new ByteArrayInputStream(ksd.keystoreMetadata.getBytes(Charsets.UTF8)), null);
             lastLoaded = System.currentTimeMillis();
-            return new Pair<String, KeyStore>(ksd.keystoreMetadata, keystore);
+            return new Pair<NcipherKeyStoreData, KeyStore>(ksd, keystore);
 
         } catch (IOException e) {
             throw new KeyStoreException("Unable to sync nCipher keystore data from database to disk: " + ExceptionUtils.getMessage(e), e);
@@ -181,30 +201,20 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         }
     }
 
-    private synchronized Pair<String, KeyStore> createNewKeyStore() throws KeyStoreException {
+    private synchronized Pair<NcipherKeyStoreData, KeyStore> createNewKeyStore() throws KeyStoreException {
         // Check for files on disk from a preexisting key_jcecsp_* keystore, before creating a new empty one
-        Pair<String, KeyStore> ret = createNewKeyStoreFromExistingLocalFiles();
+        Pair<NcipherKeyStoreData, KeyStore> ret = createNewKeyStoreFromExistingLocalFiles();
         return ret != null ? ret : createNewKeyStoreEmpty();
     }
 
-    private Pair<String, KeyStore> createNewKeyStoreFromExistingLocalFiles() throws KeyStoreException {
-        Pair<String, KeyStore> ret = null;
-
+    private Pair<NcipherKeyStoreData, KeyStore> createNewKeyStoreFromExistingLocalFiles() throws KeyStoreException {
         List<String> identifiersToTry = new ArrayList<String>();
+        identifiersToTry = checkForConfiguredInitialKeystoreIdentifiers(identifiersToTry);
+        return tryLoadLocalIdentifiers(identifiersToTry);
+    }
 
-        try {
-            // Check if we have a property telling us what ID to use
-            KeystoreFile keystoreFile = kem.findByPrimaryKey(getOid());
-            String keystoreId = keystoreFile.getProperty(KF_PROP_INITIAL_KEYSTORE_ID);
-            if (keystoreId != null && keystoreId.trim().length() > 0)
-                identifiersToTry.add(keystoreId);
-        } catch (FindException e) {
-            throw new KeyStoreException("Unable to look up initial keystore ID: " + ExceptionUtils.getMessage(e), e);
-        }
-
-        if (identifiersToTry.isEmpty())
-            identifiersToTry = NcipherKeyStoreData.readKeystoreIdentifiersFromLocalDisk(KMDATA_LOCAL_DIR);
-
+    private static Pair<NcipherKeyStoreData, KeyStore> tryLoadLocalIdentifiers(List<String> identifiersToTry) throws KeyStoreException {
+        Pair<NcipherKeyStoreData, KeyStore> ret = null;
         String lastMessage = null;
         Throwable lastException = null;
 
@@ -212,9 +222,13 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         for (String keystoreId : identifiersToTry) {
             try {
                 logger.info("Attempting to load from nCipher security world a preexisting keystore with ID " + keystoreId);
-                ret = loadKeystoreByKeystoreId(keystoreId);
-                if (ret != null)
-                    break; // found one
+                KeyStore ks = loadKeystoreByKeystoreId(keystoreId);
+                if (ks != null) {
+                    // found one
+                    NcipherKeyStoreData ksd = NcipherKeyStoreData.createFromLocalDisk(keystoreId, KMDATA_LOCAL_DIR);
+                    ret = new Pair<NcipherKeyStoreData, KeyStore>(ksd, ks);
+                    break;
+                }
             } catch (Exception e) {
                 lastMessage = "Unable to load preexisting nCipher keystore with ID " + keystoreId + ": " + ExceptionUtils.getMessage(e);
                 logger.log(Level.WARNING, lastMessage, e);
@@ -228,8 +242,24 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         return ret;
     }
 
-    private static Pair<String, KeyStore> loadKeystoreByKeystoreId(String keystoreId) throws KeyStoreException {
-        Pair<String, KeyStore> ret = null;
+    private List<String> checkForConfiguredInitialKeystoreIdentifiers(List<String> identifiersToTry) throws KeyStoreException {
+        try {
+            // Check if we have a property telling us what ID to use
+            KeystoreFile keystoreFile = kem.findByPrimaryKey(getOid());
+            String keystoreId = keystoreFile.getProperty(KF_PROP_INITIAL_KEYSTORE_ID);
+            if (keystoreId != null && keystoreId.trim().length() > 0)
+                identifiersToTry.add(keystoreId);
+        } catch (FindException e) {
+            throw new KeyStoreException("Unable to look up initial keystore ID: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        if (identifiersToTry.isEmpty())
+            identifiersToTry = NcipherKeyStoreData.readKeystoreIdentifiersFromLocalDisk(KMDATA_LOCAL_DIR);
+        return identifiersToTry;
+    }
+
+    private static KeyStore loadKeystoreByKeystoreId(String keystoreId) throws KeyStoreException {
+        KeyStore ret = null;
         KeyStore keystore = JceProvider.getInstance().getKeyStore(KEYSTORE_TYPE);
         PoolByteArrayOutputStream os = null;
         try {
@@ -239,7 +269,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
             while (aliases.hasMoreElements()) {
                 String alias = aliases.nextElement();
                 if (keystore.isKeyEntry(alias)) {
-                    ret = new Pair<String, KeyStore>(keystoreId, keystore);
+                    ret = keystore;
                     break;
                 }
             }
@@ -255,7 +285,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         return ret;
     }
 
-    private static Pair<String, KeyStore> createNewKeyStoreEmpty() throws KeyStoreException {
+    private static Pair<NcipherKeyStoreData, KeyStore> createNewKeyStoreEmpty() throws KeyStoreException {
         logger.info("Creating new keystore within nCipher security world");
         KeyStore keystore = JceProvider.getInstance().getKeyStore(KEYSTORE_TYPE);
         PoolByteArrayOutputStream os = null;
@@ -267,7 +297,8 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
             keystore.store(os, null);
             String keystoreMetadata = os.toString(Charsets.UTF8);
 
-            return new Pair<String, KeyStore>(keystoreMetadata, keystore);
+            NcipherKeyStoreData ksd = NcipherKeyStoreData.createFromLocalDisk(keystoreMetadata, KMDATA_LOCAL_DIR);
+            return new Pair<NcipherKeyStoreData, KeyStore>(ksd, keystore);
         } catch (IOException e) {
             throw new KeyStoreException(e);
         } catch (NoSuchAlgorithmException e) {
@@ -279,18 +310,30 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         }
     }
 
-    private synchronized byte[] keyStoreToBytes(String keystoreMetadata, KeyStore keyStore) throws KeyStoreException {
+    private synchronized byte[] keyStoreToBytes(NcipherKeyStoreData ksd, KeyStore keyStore) throws KeyStoreException {
         logger.info("Merging nCipher keystore data from local disk to database");
         PoolByteArrayOutputStream os = null;
         try {
-            // Now initialize the keystore and record its identifier
+            final String keystoreId = ksd.keystoreMetadata;
+            boolean recordDeletes = checkForDeletedFilesOnNextStoreToDisk;
+            checkForDeletedFilesOnNextStoreToDisk = false;
+
+            Set<String> filesBeforeStore = recordDeletes ? listAllRelevantKeyFiles(keystoreId) : Collections.<String>emptySet();
+
             os = new PoolByteArrayOutputStream();
             keyStore.store(os, null);
             String savedMetadata = os.toString(Charsets.UTF8);
-            if (!keystoreMetadata.equals(savedMetadata))
-                throw new KeyStoreException("Saved keystore metadata does not match existing metadata of:" + keystoreMetadata);
+            if (!keystoreId.equals(savedMetadata))
+                throw new KeyStoreException("Saved keystore metadata does not match existing metadata of:" + keystoreId);
 
-            NcipherKeyStoreData ksd = NcipherKeyStoreData.createFromLocalDisk(keystoreMetadata, KMDATA_LOCAL_DIR);
+            Set<String> filesAfterStore = recordDeletes ? listAllRelevantKeyFiles(keystoreId) : Collections.<String>emptySet();
+            Set<String> deletedFiles = findDeletedFiles(filesBeforeStore, filesAfterStore);
+            ksd.addDeletedFiles(deletedFiles);
+            for (String deletedFile : deletedFiles) {
+                logger.info("Marking nCipher key file as to be deleted cluster-wide: " + deletedFile);
+            }
+
+            ksd.loadFilesetFromLocalDisk(KMDATA_LOCAL_DIR);
             return ksd.toBytes();
 
         } catch (IOException e) {

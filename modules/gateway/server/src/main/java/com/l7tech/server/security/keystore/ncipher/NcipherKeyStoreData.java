@@ -1,9 +1,6 @@
 package com.l7tech.server.security.keystore.ncipher;
 
-import com.l7tech.util.PoolByteArrayOutputStream;
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 
 import java.io.*;
 import java.security.KeyStoreException;
@@ -22,15 +19,19 @@ class NcipherKeyStoreData implements Serializable {
     private static final Logger logger = Logger.getLogger(NcipherKeyStoreData.class.getName());
     private static final long serialVersionUID = -1890805696377529829L;
 
+    private static final int MAX_DELETED_FILENAMES_TO_TRACK = SyspropUtil.getInteger("com.l7tech.keystore.ncipher.maxDeletedFilenames", 5000);
+
     private static final Pattern PAT_ALPHANUM = Pattern.compile("^[a-zA-Z0-9]+$");
-    private static final Pattern PAT_ALPHANUM_WITH_DASH_AND_UNDERSCORE = Pattern.compile("^[a-zA-Z0-9\\_\\-]+$");
+    private static final Pattern PAT_ALPHANUM_WITH_DASH_AND_UNDERSCORE = Pattern.compile("^[a-zA-Z0-9_\\-]+$");
     private static final String APP_PREFIX_KEY_JCECSP = "key_jcecsp_"; // The nCipher Java KeyStore uses "key_jcecsp" as its application name for key blob storage purposes
 
     String keystoreMetadata;
     Map<String, byte[]> fileset = new HashMap<String,byte[]>();
+    Set<String> deletedFilenames;
 
-    private NcipherKeyStoreData(String keystoreMetadata) {
+    private NcipherKeyStoreData(String keystoreMetadata, Set<String> deletedFilenames) {
         this.keystoreMetadata = keystoreMetadata;
+        this.deletedFilenames = new LinkedHashSet<String>(deletedFilenames);
     }
 
     /**
@@ -90,6 +91,9 @@ class NcipherKeyStoreData implements Serializable {
 
     /**
      * Read an NcipherKeyStoreData instance from the local disk, assuming the specified keystoreIdentifier.
+     * <p/>
+     * This method should only be used to create a new NcipherKeyStoreData instance, when there is not already
+     * a NcipherKeyStoreData in the database.
      *
      * @param keystoreIdentifier the keystore identifier.  Required.
      * @param kmdataLocalDir  the directory to load from, ie "/opt/nfast/kmdata/local".  Required.  Must be readable by the current process.
@@ -98,7 +102,7 @@ class NcipherKeyStoreData implements Serializable {
      * @throws KeyStoreException if an invalid filename is found on disk with our application prefix.
      */
     static NcipherKeyStoreData createFromLocalDisk(String keystoreIdentifier, File kmdataLocalDir) throws IOException, KeyStoreException {
-        final NcipherKeyStoreData nksd = new NcipherKeyStoreData(keystoreIdentifier);
+        final NcipherKeyStoreData nksd = new NcipherKeyStoreData(keystoreIdentifier, Collections.<String>emptySet());
         nksd.loadFilesetFromLocalDisk(kmdataLocalDir);
         return nksd;
     }
@@ -183,14 +187,6 @@ class NcipherKeyStoreData implements Serializable {
     }
 
     /**
-     * Clear any files in the current fileset.  This does not affect files on disk.
-     */
-    void clearFileset() {
-        if (fileset != null)
-            fileset.clear();
-    }
-
-    /**
      * Load the fileset from the local disk.  This information will be merged with any current fileset.
      *
      * @param kmdataLocalDir  the directory to load from, ie "/opt/nfast/kmdata/local".  Required.  Must be readable by the current process.
@@ -210,11 +206,26 @@ class NcipherKeyStoreData implements Serializable {
         for (File file : files) {
             final String name = file.getName();
             validateName(name, "Unable to load nCipher keystore fileset from local disk: fileset contains invalid filename: ");
+            if (deletedFilenames != null && deletedFilenames.contains(name)) // Ignore files already marked as deleted
+                continue;
             byte[] bytes = IOUtils.slurpFile(file);
             if (fileset.containsKey(name))
                 throw new KeyStoreException("Unable to load nCipher keystore fileset from local disk: fileset contains duplicate filename: " + name);
             fileset.put(name, bytes);
         }
+    }
+
+    /**
+     * Note that some files have been explicitly deleted, and so should not be recreated by any cluster node.
+     *
+     * @param moreDeleted filenames that have been explicitly deleted.  Required.
+     */
+    void addDeletedFiles(Set<String> moreDeleted) {
+        if (moreDeleted == null)
+            throw new NullPointerException("moreDeleted must be provided");
+        if (deletedFilenames == null)
+            deletedFilenames = new LinkedHashSet<String>();
+        deletedFilenames.addAll(moreDeleted);
     }
 
     /**
@@ -227,7 +238,7 @@ class NcipherKeyStoreData implements Serializable {
      * overwriting existing files).
      * <p/>
      * If it looks like a future commit will succeed, this method will return a set of written files than must later be passed to either
-     * {@link #commitWrittenFiles} to commit the changes, or to {@link #rollbackWrittenFiles} to roll back the changes.
+     * {@link #commitWrittenFiles(java.io.File, java.util.Set)} to commit the changes, or to {@link #rollbackWrittenFiles(java.io.File, java.util.Set)} to roll back the changes.
      * <p/>
      * If the initial writing fails for any reason, or if it looks like a future commit would fail, this method immediate rolls back any changed
      * files and throws an exception rather than returning.
@@ -235,7 +246,8 @@ class NcipherKeyStoreData implements Serializable {
      * @param kmdataLocalDir  the directory to save to, ie "/opt/nfast/kmdata/local".  Required. Must be writable by the current process.
      * @throws IOException  if there is a problem writing a file.  While this method will try to avoid this, it is possible that files have been partially written.
      * @throws KeyStoreException  if the current instance is not valid.  In this case, no files have yet been written to disk.
-     * @return the set of written files, which can then be committed or rolled back by passing them to either {@link #commitWrittenFiles} or {@link #rollbackWrittenFiles}.
+     * @return the set of written files, which can then be committed or rolled back by passing them to either {@link #commitWrittenFiles(java.io.File, java.util.Set)} or
+     * {@link #rollbackWrittenFiles(java.io.File, java.util.Set)}.
      */
     Set<String> saveFilesetToLocalDisk(File kmdataLocalDir) throws IOException, KeyStoreException {
         validate();
@@ -266,6 +278,11 @@ class NcipherKeyStoreData implements Serializable {
             // First write all files
             for (Map.Entry<String, byte[]> entry : fileset.entrySet()) {
                 String name = entry.getKey();
+                if (deletedFilenames != null && deletedFilenames.contains(name)) {
+                    // Avoid writing out key blob that is known to have been deleted.  Commit phase will take care of actually deleting it.
+                    continue;
+                }
+
                 byte[] bytes = entry.getValue();
 
                 File newFile = new File(kmdataLocalDir, "_new_" + name);
@@ -291,14 +308,14 @@ class NcipherKeyStoreData implements Serializable {
     }
 
     /**
-     * Commit written files from an earlier successful call to {@link #saveFilesetToLocalDisk}.
+     * Commit written files from an earlier successful call to {@link #saveFilesetToLocalDisk(java.io.File)}.
      *
      * @param kmdataLocalDir  the directory to save to, ie "/opt/nfast/kmdata/local".  Required. Must be writable by the current process.
      * @param written the set of written files.  Required.  If empty, this method will succeed, but will take no action.
      * @throws IOException if the commit fails.  In this unfortunate case some files may have already been overwritten.
-     *                     Caller may choose to leave any not-yet-committed "_new_" files as they are, or may call {@link #rollbackWrittenFiles} to clean them up.
+     *                     Caller may choose to leave any not-yet-committed "_new_" files as they are, or may call {@link #rollbackWrittenFiles(java.io.File, java.util.Set)} to clean them up.
      */
-    static void commitWrittenFiles(File kmdataLocalDir, Set<String> written) throws IOException {
+    void commitWrittenFiles(File kmdataLocalDir, Set<String> written) throws IOException {
         // Then commit all files that were written
         Iterator<String> it = written.iterator();
         while (it.hasNext()) {
@@ -316,12 +333,28 @@ class NcipherKeyStoreData implements Serializable {
             }
         }
 
+        if (deletedFilenames != null) for (String name : deletedFilenames) {
+            File file = new File(kmdataLocalDir, name);
+            if (file.exists()) {
+                boolean result = file.delete();
+                if (!result) {
+                    logger.warning("Failed to delete file " + file);
+                }
+            }
+        }
+
         if (!written.isEmpty())
             throw new IOException("Not all files in the fileset could be renamed into place (permission problem?)");
+
+        Iterator<String> fit = deletedFilenames.iterator();
+        while (fit.hasNext() && deletedFilenames.size() > MAX_DELETED_FILENAMES_TO_TRACK) {
+            fit.next();
+            fit.remove();
+        }
     }
 
     /**
-     * Roll back written files from an earlier successful call to {@link #saveFilesetToLocalDisk}.  This method always succeeds.
+     * Roll back written files from an earlier successful call to {@link #saveFilesetToLocalDisk(java.io.File)}.  This method always succeeds.
      *
      * @param kmdataLocalDir  the directory to save to, ie "/opt/nfast/kmdata/local".  Required. Must be writable by the current process.
      * @param written the set of written files.  Required.
