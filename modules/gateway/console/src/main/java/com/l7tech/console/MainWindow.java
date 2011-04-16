@@ -35,6 +35,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.SyspropUtil;
@@ -3145,12 +3146,19 @@ public class MainWindow extends JFrame implements SheetHolder {
                     (now - lastRemoteActivityTime) > PING_INTERVAL && lastActivityTime > lastRemoteActivityTime ) {
             // If the user is interacting with the Manager then ping the Gateway periodically
             // to keep the remote session alive if there are no other remote calls.
-            try {
-                Registry.getDefault().getAdminLogin().ping();
-                updateRemoteLastActivityTime(); // should also get updated by pinging
-            } catch ( IllegalStateException ise ) {
-                // admin context not available
-            }
+            //
+            // This is in the background so it does not block the swing thread if slow.
+            Background.scheduleOneShot( new TimerTask(){
+                @Override
+                public void run() {
+                    try {
+                        Registry.getDefault().getAdminLogin().ping();
+                        updateRemoteLastActivityTime(); // should also get updated by pinging
+                    } catch ( IllegalStateException ise ) {
+                        // admin context not available
+                    }
+                }
+            }, 1L );
         }
     }
 

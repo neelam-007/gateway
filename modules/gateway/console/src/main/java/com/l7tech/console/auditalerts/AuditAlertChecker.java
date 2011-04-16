@@ -3,15 +3,15 @@ package com.l7tech.console.auditalerts;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.console.logging.ErrorManager;
 
-import javax.swing.Timer;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.*;
+import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.remoting.RemoteAccessException;
+
+import javax.swing.*;
 
 /**
  * User: megery
@@ -22,56 +22,20 @@ public class AuditAlertChecker {
 
     //- PUBLIC
 
-    public AuditAlertChecker(AuditAlertConfigBean configBean) {
+    public AuditAlertChecker( final AuditAlertConfigBean configBean ) {
         this.configBean = configBean;
         auditWatchers = new ArrayList<AuditWatcher>();        
     }
 
-    public void setAuditAdmin(AuditAdmin auditAdmin) {
+    public void setAuditAdmin( final AuditAdmin auditAdmin ) {
         this.auditAdmin = auditAdmin;
 
         // reset for new gateway
         lastAcknowledged = null;
     }
 
-    public void addWatcher(AuditWatcher watcher) {
+    public void addWatcher( final AuditWatcher watcher ) {
         auditWatchers.add(watcher);
-    }
-
-    public void checkForNewAlerts() {
-        logger.fine("Checking for new Audits");
-        try {
-            AuditAdmin admin = auditAdmin;
-            if (admin == null)
-                return;
-
-            if (lastAcknowledged == null) {
-                lastAcknowledged = admin.getLastAcknowledgedAuditDate();
-
-                if (lastAcknowledged == null) {
-                    lastAcknowledged = new Date(0);
-                }
-            }
-
-            //check if there are new audits to grab
-            long alertTime = admin.hasNewAudits(lastAcknowledged, configBean.getAuditAlertLevel());
-            if ( alertTime > 0 ) {
-                for (AuditWatcher auditWatcher : auditWatchers) {
-                    auditWatcher.alertsAvailable(alertTime!=0, alertTime);
-                }
-            }
-
-            if (alertTime!=0) {
-                stopTimer();
-            } else {
-                startTimer();
-            }
-        } catch (RemoteAccessException e) {
-            // bzilla #3741, we may no longer be connected
-            logger.log(Level.WARNING, "Cannot connect to Gateway to check for audit alerts.", ExceptionUtils.getDebugException(e));
-            //bug 9648 - allow handler chain to correctly manage this remote exception
-            throw e;
-        }
     }
 
     public void start() {
@@ -96,7 +60,6 @@ public class AuditAlertChecker {
         reset();
     }
 
-
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(AuditAlertChecker.class.getName());
@@ -105,62 +68,106 @@ public class AuditAlertChecker {
     private final List<AuditWatcher> auditWatchers;
     private AuditAdmin auditAdmin;
     private Timer timer;
+    private TimerTask timerTask;
     private Date lastAcknowledged;
 
     private Timer getTimer() {
         if (timer == null) {
-            timer = new Timer(getDelay(),
-                new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        try {
-                            if (configBean.isEnabled())
-                                checkForNewAlerts();
-                        } catch(Exception exception) {
-                            ErrorManager.getDefault().notify(Level.WARNING, exception, "Error checking audit alerts.");
-                        }
-                    }
-            });
-            timer.setInitialDelay(1000);
+            timer = new Timer("Audit Alert Timer", true);
         }
         return timer;
     }
 
     private void startTimer() {
-        Timer timer = getTimer();
-
-        if (!timer.isRunning()) {
-            logger.fine("Starting Audit Alert Timer (check interval = " + timer.getDelay() + ")");
-            timer.start();
+        if ( timerTask == null ) {
+            logger.fine("Starting Audit Alert Timer (check interval = " + getDelay() + ")");
+            rescheduleTask();
         }
     }
 
     private void stopTimer() {
-        Timer timer = getTimer();
-
-        if (timer.isRunning()) {
+        if ( timerTask != null ) {
             logger.fine("Stopping Audit Alert Timer");
-            timer.stop();
+            timerTask.cancel();
+            timerTask = null;
         }
     }
 
-    private void reset() {
-        logger.fine("Audit alert options changed.");
+    /**
+     * Stop any current task and schedule a new one.
+     */
+    private void rescheduleTask() {
+        final Timer timer = getTimer();
+
         stopTimer();
 
-        logger.fine("setting audit alert timer to " + String.valueOf(configBean.getAuditCheckInterval()));
-        Timer timer = getTimer();
-        int delay = getDelay();
-        timer.setInitialDelay(delay);
-        timer.setDelay(delay);
+        timerTask = new TimerTask(){
+            @Override
+            public void run() {
+                try {
+                    if ( configBean.isEnabled() ) {
+                        checkForNewAlerts();
+                    }
+                } catch ( final Exception exception ) {
+                    ErrorManager.getDefault().notify(Level.WARNING, exception, "Error checking audit alerts.");
+                }
+            }
+        };
 
-        if (configBean.isEnabled())
-            startTimer();
-        else
-            logger.fine("Audit alerts disabled");
+        timer.schedule( timerTask, 1000L, getDelay() );
     }
 
-    private int getDelay() {
-        return configBean.getAuditCheckInterval() * 1000;
+    private void reset() {
+        logger.fine( "Audit alert options changed." );
+        logger.fine("setting audit alert timer to " + String.valueOf(configBean.getAuditCheckInterval()));
+
+        if ( configBean.isEnabled() ) {
+            rescheduleTask();
+        } else {
+            logger.fine("Audit alerts disabled");
+        }
+    }
+
+    private long getDelay() {
+        return (long)configBean.getAuditCheckInterval() * 1000L;
+    }
+
+    private void checkForNewAlerts() {
+        logger.fine("Checking for new Audits");
+        try {
+            final AuditAdmin admin = auditAdmin;
+            if ( admin == null )
+                return;
+
+            if ( lastAcknowledged == null ) {
+                lastAcknowledged = admin.getLastAcknowledgedAuditDate();
+
+                if ( lastAcknowledged == null ) {
+                    lastAcknowledged = new Date(0L);
+                }
+            }
+
+            //check if there are new audits to grab
+            final long alertTime = admin.hasNewAudits(lastAcknowledged, configBean.getAuditAlertLevel());
+            if ( alertTime > 0L ) {
+                SwingUtilities.invokeLater( new Runnable(){
+                    @Override
+                    public void run() {
+                        for ( final AuditWatcher auditWatcher : auditWatchers ) {
+                            auditWatcher.alertsAvailable(alertTime!=0L, alertTime);
+                        }
+                    }
+                } );
+            }
+
+            if ( alertTime != 0L ) {
+                stopTimer();
+            }
+        } catch (RemoteAccessException e) {
+            // bzilla #3741, we may no longer be connected
+            logger.log(Level.WARNING, "Cannot connect to Gateway to check for audit alerts.", ExceptionUtils.getDebugException(e));
+            //bug 9648 - allow handler chain to correctly manage this remote exception
+            throw e;
+        }
     }
 }
