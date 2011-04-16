@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.sophos.SophosAssertion;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.InetAddressUtil;
 
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
@@ -86,6 +87,8 @@ public class SophosAssertionPropertiesPanel extends AssertionPropertiesOkCancelS
 
                 String hostPort = (String)ipPortList.getSelectedValue();
                 String host = hostPort.substring(0, hostPort.lastIndexOf(':'));
+                host = removeBracketsForIpV6(host);
+
                 String portStr = hostPort.substring(hostPort.lastIndexOf(':') + 1);
                 //int port = Integer.parseInt(hostPort.substring(hostPort.lastIndexOf(':') + 1));
 
@@ -103,7 +106,11 @@ public class SophosAssertionPropertiesPanel extends AssertionPropertiesOkCancelS
 
                 dlg.setVisible(true);
                 if(dlg.isConfirmed()) {
-                   ipPortListModel.setElementAt(dlg.getHost() + ":" + dlg.getPort(), ipPortList.getSelectedIndex());
+                    String newHost = dlg.getHost();
+                    if (InetAddressUtil.isValidIpv6Address(newHost)){
+                        newHost = wrapInBracketsForIpV6(newHost);
+                    }
+                   ipPortListModel.setElementAt(newHost + ":" + dlg.getPort(), ipPortList.getSelectedIndex());
                 }
             }
         });
@@ -126,7 +133,11 @@ public class SophosAssertionPropertiesPanel extends AssertionPropertiesOkCancelS
 
                 dlg.setVisible(true);
                 if(dlg.isConfirmed()) {
-                    ipPortListModel.addElement(dlg.getHost() + ":" + dlg.getPort());
+                    String newHost = dlg.getHost();
+                    if (InetAddressUtil.isValidIpv6Address(newHost)){
+                        newHost = wrapInBracketsForIpV6(newHost);
+                    }
+                    ipPortListModel.addElement(newHost + ":" + dlg.getPort());
                 }
             }
         });
@@ -195,5 +206,20 @@ public class SophosAssertionPropertiesPanel extends AssertionPropertiesOkCancelS
         boolean enableAny = !isReadOnly() && ipPortList.getModel().getSize() > 0;
         getOkButton().setEnabled( enableAny );
 
+    }
+
+    private String removeBracketsForIpV6(String host) {
+        if (host.charAt(0) == '['){
+            host = host.replace('[', ' ').trim();
+            host = host.replace(']', ' ').trim();
+        }
+        return host;
+    }
+
+    private String wrapInBracketsForIpV6(String host) {
+        if (host.charAt(0) == '['){
+            return host;
+        }
+        return "["+host+"]";
     }
 }
