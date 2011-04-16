@@ -626,9 +626,11 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
             return DigitalSignatureUIState.NONE;
         }
 
-        // get the cert of the ssg we're connected to
-        SsgKeyEntry entry = TopComponents.getInstance().getDefaultAliasTracker().getSpecialKey(SpecialKeyType.AUDIT_SIGNING);
-        X509Certificate cert = entry == null ? null : entry.getCertificate();
+        // get the audit signing key's cert.  If no audit signing key designated, use default SSL key's cert instead
+        final SsgKeyEntry entry = TopComponents.getInstance().getDefaultAliasTracker().getSpecialKey(SpecialKeyType.AUDIT_SIGNING);
+        X509Certificate cert = entry == null
+                ? TopComponents.getInstance().getSsgCert()[0]
+                : entry.getCertificate();
         if (cert == null) return DigitalSignatureUIState.INVALID;
         try {
             boolean result = new AuditRecordVerifier(cert).verifySignatureOfDigest(signatureToVerify, digestValue);
