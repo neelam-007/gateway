@@ -9,6 +9,31 @@ configured in the centralized authentication server (LDAP, Radius or Radius+LDAP
 
 This should work for console and SSH access.
 
+The configuration file:
+- there is an example of configuration file in the SVN repository under etc/appliance/radius directory
+- it should be named radius_ldap_setup.conf (if other name will be used the script will exit with error.)
+- it can be placed anywhere in the system and can have any permissions/ownership (there are no check on this)
+- it will be the only parameter for the script
+
+The script:
+- expects to be run with one parameter that should be the configuration file (full path and filename)
+
+The packages required:
+- for LDAP auth only:
+openldap-clients-2.3.43-12.el5_6.7.x86_64.rpm
+
+- for RADIUS auth only:
+libtool-ltdl-1.5.22-7.el5_4.x86_64.rpm
+freeradius2-2.1.7-7.el5.x86_64.rpm
+freeradius2-utils-2.1.7-7.el5.x86_64.rpm
+pam_radius-1.3.17-2.el5.x86_64.rpm (this was downloaded from
+ftp://ftp.muug.mb.ca/mirror/fedora/epel/5/x86_64/pam_radius-1.3.17-2.el5.x86_64.rpm as there is no such package
+in the CentOS repos)
+
+- for LDAP and RADIUS auth:
+All of the above.... apparently obvious but there was a chance that some additional packages would be required
+to make some kind of binding between LDAP and Radius - however it is not the case.
+
 ===================================================================
 SSH/Console access via LDAP Auth only:
 -------------------------------------------------------------------
