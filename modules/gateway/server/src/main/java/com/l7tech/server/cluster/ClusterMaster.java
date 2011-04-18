@@ -1,7 +1,7 @@
 package com.l7tech.server.cluster;
 
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
-import org.springframework.jdbc.core.simple.ParameterizedRowMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.TransactionException;
@@ -74,11 +74,10 @@ public class ClusterMaster {
         public void run() {
             final boolean wasMaster = isMaster.get();
             final TransactionTemplate template = new TransactionTemplate( transactionManager );
-            template.setTimeout( 10 );
             try {
-                Boolean statusOnCommit = (Boolean) template.execute( new TransactionCallback(){
+                Boolean statusOnCommit = template.execute( new TransactionCallback<Boolean>(){
                     @Override
-                    public Object doInTransaction( final TransactionStatus transactionStatus ) {
+                    public Boolean doInTransaction( final TransactionStatus transactionStatus ) {
                         Boolean statusOnCommit = null;
 
                         final String configuredMasterNodeId = config.getProperty( "clusterMasterNode", null );
@@ -136,7 +135,7 @@ public class ClusterMaster {
         }
 
         public MasterInfo getMasterInfo() {
-            return jdbcTemplate.queryForObject( "SELECT nodeid, touched_time, version from cluster_master", new ParameterizedRowMapper<MasterInfo>(){
+            return jdbcTemplate.queryForObject( "SELECT nodeid, touched_time, version from cluster_master", new RowMapper<MasterInfo>(){
                 @Override
                 public MasterInfo mapRow( final ResultSet resultSet, final int i ) throws SQLException {
                     String nodeId = resultSet.getString( 1 );
