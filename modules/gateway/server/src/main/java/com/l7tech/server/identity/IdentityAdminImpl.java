@@ -15,6 +15,7 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.TrustedEsmUserManager;
+import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.AdministrativePasswordsResetEvent;
 import com.l7tech.server.event.admin.AuditRevokeAllUserCertificates;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
@@ -674,10 +675,20 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             LogonInfo info = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), false);
             // if user has logged in before
             if (info != null && info.getLastAttempted() > 0) {
+                String action = null;
                 info.setLastActivity(System.currentTimeMillis());
                 info.resetFailCount(System.currentTimeMillis());
+                if (info.getState().equals(LogonInfo.State.INACTIVE))
+                    action = "activated";
+                else if (info.getState().equals(LogonInfo.State.EXCEED_ATTEMPT))
+                    action = "unlocked";
                 info.setState(LogonInfo.State.ACTIVE);
                 logonManager.update(info);
+                if (action != null) {
+                    String msg = "User '" + user.getLogin() + "' is " + action;
+                    applicationEventPublisher.publishEvent(new AdminEvent(this, msg, Level.WARNING) {
+                    });
+                }
             }
 
         } catch (FindException e) {
