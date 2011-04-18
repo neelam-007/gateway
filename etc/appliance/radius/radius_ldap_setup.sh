@@ -29,6 +29,10 @@ LDAP_NSS_FILE="/etc/nsswitch.conf"
 PAM_RADIUS_CONF_FILE="/etc/pam_radius.conf"
 BK_TIME=$(date +"%Y%m%d_%H%M%S")
 LOG_FILE="/opt/SecureSpan/Appliance/config/radius_ldap_setup.log"
+CFG_FILE=$(basename $1)
+OWNER_CFG_FILE="root"
+PERM_CFG_FILE="600"
+
 
 # END of variable definition section
 
@@ -38,9 +42,9 @@ toLog () {
 local DATE=$(which date)
 if [ "X$?" == "X0" ]; then
         LOG_TIME=$(date "+"%a" "%b" "%e" "%H:%M:%S" "%Y"")
-        # we make no verification that the above syntax is working properly
-        # in case there will be changes in the coreutils package that brings
-        # the date binary
+	# we make no verification that the above syntax is working properly
+	# in case there will be changes in the coreutils package that brings
+	# the date binary
 else
         echo -e "ERROR - The 'date' command does not appear to be available."
 fi
@@ -105,7 +109,7 @@ if [ "X$1" == "Xldap" ]; then
         if [ "X$RETVAL" == "X1" ]; then
                 # the file does not exits so we should exit with error
                 exit 1;
-                else
+		else
                 # determine if this file is already configured
                 CHECK2=$(cat $LDAP_CONF_FILE2 | grep -i "^uri ldap://" | wc -l)
                 if [ "X$CHECK2" != "X0" ]; then
@@ -116,7 +120,7 @@ if [ "X$1" == "Xldap" ]; then
                         toLog "Info - "$LDAP_CONF_FILE2"_orig_"$BK_TIME" created."
                         # commenting out the default directive
                         sed -i 's/^host 127.0.0.1/###host 127.0.0.1/' $LDAP_CONF_FILE2
-						                        # replacing the default active directive with a commented one
+                        # replacing the default active directive with a commented one
                         sed -i 's/^base dc=example,dc=com/###base dc=example,dc=com/' $LDAP_CONF_FILE2
                         # adding the custom line: match the above modified line, referencing the match string
                         # and the rest of the characters up to the end of line and replace them with themselves
@@ -193,10 +197,10 @@ elif [ "X$1" == "Xradius" ]; then
                         toLog "Info - /etc/pam.d/sshd_orig_$BK_TIME backup file created."
                         sed -i "s/\(.*requisite.*$\)/auth\tsufficient\tpam_radius_auth.so conf=\/etc\/pam_radius.conf retry=2 localifdown\n\1/" /etc/pam.d/sshd
                         toLog "Success - Configuration of /etc/pam.d/sshd completed."
-                        # adding the line for pam_radius with 'sufficient' ensures that
-                        # SSHD will allow logins if radius server fails; also, the 'retry=2' and
-                        # 'localifdown' option makes sure that after 2 retries the auth process
-                        # will fall back to local authentication
+                	# adding the line for pam_radius with 'sufficient' ensures that
+			# SSHD will allow logins if radius server fails; also, the 'retry=2' and 
+			# 'localifdown' option makes sure that after 2 retries the auth process
+			# will fall back to local authentication
                 fi
         fi
 
@@ -226,18 +230,18 @@ elif [ "X$1" == "Xfile" ]; then
                 # the file does not exits so we should exit with error
                 exit 1;
         else
-                # check if radius is an available authentication method for ssh service:
-                CMD=$(grep "radius" /etc/pam.d/sshd | cut -c 1)
-                if [ "X$CMD" != "X#" ]; then
-                        # it is available so disable it:
-                        cp -a /etc/pam.d/sshd /etc/pam.d/sshd_"$BK_TIME"
-                        toLog "Info - /etc/pam.d/sshd_$BK_TIME backup file created. This was not the original file!"
-                        sed -i "s/\(^.*pam_radius_auth.so.*$\)/###\1/" /etc/pam.d/sshd
-                        toLog "Success - Reconfiguration of /etc/pam.d/sshd completed."
-                else
-                        # it is not available so just put this info in the log file:
-                        toLog "Warning - The /etc/pam.d/sshd file does not have Radius as active authentication service."
-                fi
+		# check if radius is an available authentication method for ssh service:
+		CMD=$(grep "radius" /etc/pam.d/sshd | cut -c 1)
+		if [ "X$CMD" != "X#" ]; then
+			# it is available so disable it:
+			cp -a /etc/pam.d/sshd /etc/pam.d/sshd_"$BK_TIME"
+			toLog "Info - /etc/pam.d/sshd_$BK_TIME backup file created. This was not the original file!"
+			sed -i "s/\(^.*pam_radius_auth.so.*$\)/###\1/" /etc/pam.d/sshd
+			toLog "Success - Reconfiguration of /etc/pam.d/sshd completed."
+		else
+			# it is not available so just put this info in the log file:
+			toLog "Warning - The /etc/pam.d/sshd file does not have Radius as active authentication service."
+		fi
         fi
 
         checkFile_exists $LDAP_NSS_FILE
@@ -245,19 +249,19 @@ elif [ "X$1" == "Xfile" ]; then
                 # the file does not exits so we should exit with error
                 exit 1;
         else
-                # check if ldap is an available authentication method for this system:
+		# check if ldap is an available authentication method for this system:
                 CMD=$(grep "ldap" $LDAP_NSS_FILE)
                 if [ "X$?" == "X0" ]; then
-                        # it is available so disable it:
+			# it is available so disable it:
                         cp -a $LDAP_NSS_FILE $LDAP_NSS_FILE"_"$BK_TIME
                         toLog "Info - $LDAP_NSS_FILE"_"$BK_TIME backup file created. This was not the original file!"
-                        # delete all lines that has ldap word:
+			# delete all lines that has ldap word:
                         sed -i "s/\(^.*ldap.*$\)/\1/" $LDAP_NSS_FILE
-                        # take the previously commented lines (with three # signs) and uncomment them:
-                        sed -i "s/^###\(.*$\)/\1/" $LDAP_NSS_FILE
+			# take the previously commented lines (with three # signs) and uncomment them:
+			sed -i "s/^###\(.*$\)/\1/" $LDAP_NSS_FILE
                         toLog "Success - Reconfiguration of $LDAP_NSS_FILE file completed."
                 else
-                        # it is not available so just put this info in the log file:
+			# it is not available so just put this info in the log file:
                         toLog "Warning - The $LDAP_NSS_FILE file does not have LDAP as active authentication file!"
                 fi
         fi
@@ -270,21 +274,38 @@ fi
 # end of "doConfigure" function
 }
 
-doRollback () {
+doRollback () { 
 echo "Rolling back...."
 # restore all origianl files
-#
+#  
 }
 
 # END of functions section
 
 # script BODY
 
-CFG_FILE=$(basename $1)
-if [ "X$CFG_FILE" == "Xradius_ldap_setup.conf" ]; then
-        source $1
+if [ $# -ne 1 ]; then 
+	toLog "ERROR - Only one argument expected, but more than one received! Exiting..."
+	exit 1
 else
-        toLog "ERROR - The argument provided was not correct; \"radius_ldap_setup.conf\" filename expected!"
+	if [ "X$(stat -c %U $1)" != "X$OWNER_CFG_FILE" ]; then
+		toLog "ERROR - $1 file is not owned by $OWNER_CFG_FILE! Exiting..."
+		exit 1
+	fi
+	if [ "X$(stat -c %a $1)" != "X$PERM_CFG_FILE" ]; then
+		toLog "ERROR - $1 file does not have $PERM_CFG_FILE permissions! Exiting..."
+		exit 1
+	fi
+        if [ "X$(file -b $1)" != "XASCII text" ]; then
+                toLog "ERROR - $1 file is not a text file! Exiting..."
+                exit 1
+        fi
+	if [ "X$CFG_FILE" != "Xradius_ldap_setup.conf" ]; then
+		toLog "ERROR - The argument provided was not correct; \"radius_ldap_setup.conf\" filename expected! Exiting..."
+		exit 1
+	fi
+	# if this point was reached all above conditions were passed so we can source the configuration file:
+	source $1
 fi
 
 
@@ -302,13 +323,13 @@ case "$CFG_TYPE" in
                 doConfigure radius
                 ;;
 
-        file)
-                doConfigure file
-                ;;
+	file)
+		doConfigure file
+		;;
 
-        rollback)
-                doRollback
-                ;;
+	rollback)
+		doRollback
+		;;
 
         *)
                 toLog "ERROR - Not a valid configuration type!"
