@@ -83,26 +83,36 @@ confirmAction() {
     return ${confirmed}
 }
 
-doNetworkConfiguration() {
+doSystemConfiguration() {
     isMenuValid="n"
     while [ "$isMenuValid" != "y" ]
     do
         clear
-            echo "This menu allows you to configure networking on this appliance"
+            echo "This menu allows you to configure system settings on this appliance"
             echo "What would you like to do?"
             echo ""
-            echo " 1) Configure networking"
+            echo " 1) Configure networking and system time settings"
             echo " 2) Display current network configuration"
+            echo " 3) Configure keyboard layout"
+            echo " 4) Configure authentication method"
             echo " X) Exit menu"
             echo ""
             echo -n "Please make a selection: "
             read choice
             case $choice in
                 1) clear
-                   (${SYSWIZARD})
+                   (${SYSWIZARD} -systemConfig)
                    clear;;
                 2) clear
                    (${SYSWIZARD} -printConfig)
+                   confirmedMessage ""
+                   clear;;
+                3) clear
+                   (${SYSWIZARD} -keyboardConfig)
+                   confirmedMessage ""
+                   clear;;
+                4) clear
+                   (${SYSWIZARD} -authConfig)
                    confirmedMessage ""
                    clear;;
                 x|X)
@@ -919,7 +929,7 @@ do
         echo "This user account allows you to configure the appliance"
         echo "What would you like to do?"
         echo ""
-        echo " 1) Configure networking"
+        echo " 1) Configure system settings"
         echo " 2) Display Layer 7 Gateway configuration menu"
         echo " 3) Use a privileged shell (root)"
         echo " 4) Change the Master Passphrase"
@@ -944,7 +954,7 @@ do
 
         case $choice in
                 1) 	clear;
-                    doNetworkConfiguration
+                    doSystemConfiguration
                     clear;;
                 2)  clear;
                     doConfiguration

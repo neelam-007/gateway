@@ -105,6 +105,7 @@ sed -i -e "s/^\(jvmarch=\).*$/\1i386/" %{buildroot}/opt/SecureSpan/Gateway/runti
 # this script does not need to be executable
 %dir %attr(0755,root,root) /opt/SecureSpan/Appliance/config
 %attr(0644,root,root) /opt/SecureSpan/Appliance/config/ssg_sys_config.pl
+%attr(0644,root,root) /opt/SecureSpan/Appliance/config/authconfig/radius_ldap_setup.sh
 %attr(0755,root,root) /opt/SecureSpan/Appliance/config/*.sh
 %defattr(0644,layer7,layer7,0775)
 %dir /opt/SecureSpan/Appliance/config/logs 

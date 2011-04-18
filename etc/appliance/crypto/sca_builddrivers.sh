@@ -40,7 +40,7 @@ do_clean() {
 }
 
 #
-# Make the Tarari drivers
+# Make the SCA drivers
 #
 do_make() {
 	patch_makefile
