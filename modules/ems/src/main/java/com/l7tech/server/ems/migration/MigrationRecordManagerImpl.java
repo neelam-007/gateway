@@ -67,7 +67,8 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     }
 
     @Override
-    public MigrationRecord create( final String label,
+    public MigrationRecord create( final User user,
+                                   final String label,
                                    final byte[] data,
                                    final Functions.TernaryThrows<Pair<SsgCluster,SsgCluster>,String,String,String,SaveException> clusterCallback ) throws SaveException {
 
@@ -87,6 +88,11 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
         record.setSourceCluster( clusterPair.left );
         record.setTargetCluster( clusterPair.right );
         record.calculateSize();
+
+        if ( record.getSourceCluster().isOffline() ) {
+            record.setProvider( user.getProviderId() );
+            record.setUserId( user.getId() );
+        }
 
         long oid = super.save(record);
         record.setOid( oid );

@@ -86,7 +86,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         Form form = new Form(componentId);
 
         Date now = new Date();
-        Date last7thDay = new Date(now.getTime() - TimeUnit.DAYS.toMillis(7));
+        Date last7thDay = new Date(now.getTime() - TimeUnit.DAYS.toMillis(7L));
         dateStartModel = new Model<Date>(last7thDay);
         dateEndModel = new Model<Date>(now);
         
@@ -281,7 +281,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         YuiAjaxButton uploadArchiveButton = new YuiAjaxButton("uploadArchiveButton") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
-                PolicyMigrationUploadPanel policyMigrationUploadPanel = new PolicyMigrationUploadPanel( YuiDialog.getContentId() ){
+                PolicyMigrationUploadPanel policyMigrationUploadPanel = new PolicyMigrationUploadPanel( YuiDialog.getContentId(), getUserModel() ){
                     @Override
                     @SuppressWarnings({"UnusedDeclaration"})
                     protected void onSubmit(final AjaxRequestTarget target) {
@@ -364,7 +364,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         columns.add(new PropertyColumn<String>(new StringResourceModel("migration.column.size", this, null), "size"));
 
         Date start = startOfDay(dateStartModel.getObject());
-        Date end = new Date(startOfDay(dateEndModel.getObject()).getTime() + TimeUnit.DAYS.toMillis(1));
+        Date end = new Date(startOfDay(dateEndModel.getObject()).getTime() + TimeUnit.DAYS.toMillis(1L));
 
         return new YuiDataTable("migrationTable", columns, "timeCreated", false, new MigrationDataProvider(start, end, "timeCreated", false), hidden, "id", true, selectionComponents) {
             @Override
@@ -494,7 +494,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         }
 
         public String getSize() {
-            return migration==null ? null : SizeUnit.format(migration.getSize());
+            return migration==null ? null : SizeUnit.format((long)migration.getSize());
         }
 
         public String getSummary() {

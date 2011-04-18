@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ems.enterprise.EnterpriseFolder;
@@ -15,6 +16,7 @@ import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.model.CompoundPropertyModel;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.util.lang.Bytes;
 import javax.inject.Inject;
@@ -57,7 +59,7 @@ public class PolicyMigrationUploadPanel extends Panel {
     @Inject
     private MigrationRecordManager migrationRecordManager;
 
-    public PolicyMigrationUploadPanel( final String id ) {
+    public PolicyMigrationUploadPanel( final String id, final IModel<User> userModel ) {
         super( id );
 
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
@@ -98,7 +100,7 @@ public class PolicyMigrationUploadPanel extends Panel {
                             for(SsgCluster cluster : validClusters) {
                                 clusters.put(cluster.getGuid(), cluster);
                             }
-                            migrationRecordManager.create( model.getLabel(), data, getClusterCallback( clusters ));
+                            migrationRecordManager.create( userModel.getObject(), model.getLabel(), data, getClusterCallback( clusters ));
                             success = true;
                         } else {
                             logger.fine("Archive not present in uploaded zip!");
@@ -132,7 +134,7 @@ public class PolicyMigrationUploadPanel extends Panel {
             }
         };
 
-        archiveForm.setMaxSize( Bytes.bytes(MAX_ARCHIVE_FILE_UPLOAD_BYTES) );
+        archiveForm.setMaxSize( Bytes.bytes((long)MAX_ARCHIVE_FILE_UPLOAD_BYTES) );
         archiveForm.setOutputMarkupId( true );
         archiveForm.add( feedback.setOutputMarkupId(true) );
         archiveForm.add( label );

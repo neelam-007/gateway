@@ -52,11 +52,12 @@ public interface MigrationRecordManager extends EntityManager<MigrationRecord, E
     /**
      * Creates / restores a migration record from a byte array representation.
      *
+     * @param user The user for the migration (used with offline migrations)
      * @param label An optional new label name to be given to the new record; if not null or empty, it overwrites the label in the data payload.
      * @param data  The serialized migration record.
      * @param clusterCallback Callback to create or validate the source/destination cluster
      */
-    MigrationRecord create(String label, byte[] data, Functions.TernaryThrows<Pair<SsgCluster,SsgCluster>,String,String,String,SaveException> clusterCallback) throws SaveException;
+    MigrationRecord create( User user, String label, byte[] data, Functions.TernaryThrows<Pair<SsgCluster,SsgCluster>,String,String,String,SaveException> clusterCallback) throws SaveException;
 
     /**
      * Find how many migration records are dated between "start" and "end".

@@ -13,7 +13,6 @@ import com.l7tech.util.Pair;
 
 import java.util.Date;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Collections;
 
 /**
@@ -24,7 +23,7 @@ import java.util.Collections;
 public class MockMigrationRecordManager extends EntityManagerStub<MigrationRecord, EntityHeader> implements MigrationRecordManager {
 
     @Override
-    public MigrationRecord create( final String label, final byte[] data, final Functions.TernaryThrows<Pair<SsgCluster, SsgCluster>, String, String, String, SaveException> clusterCallback ) throws SaveException {
+    public MigrationRecord create( final User user, final String label, final byte[] data, final Functions.TernaryThrows<Pair<SsgCluster, SsgCluster>, String, String, String, SaveException> clusterCallback ) throws SaveException {
         return null;
     }
 
