@@ -446,7 +446,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         TreePath pathToTarget = path;
         AssertionTreeNode insertAfter = null;
-        int targetIndex = path.getPathCount()==1 ? targetTreeNode.getChildCount() : 0;
+        int targetIndex = 0;
+        if (path.getPathCount()==1 || targetTreeNode.getAllowsChildren()) {
+            targetIndex = targetTreeNode.getChildCount();
+        }
         while ( targetTreeNode != null ) {
             if (targetTreeNode.getAllowsChildren() && (pathToTarget.getParentPath()==null || isModelExpanded(pathToTarget) || (isModelExpanded(pathToTarget.getParentPath()) && targetTreeNode.getChildCount()==0)) && acceptsAll(targetTreeNode,toDrop)) {
                 if ( insertAfter != null ) {
