@@ -167,6 +167,9 @@ ALTER TABLE internal_user ADD COLUMN password VARCHAR(256) NOT NULL DEFAULT '' A
 ALTER TABLE password_history MODIFY COLUMN prev_password VARCHAR(256) NOT NULL;
 ALTER TABLE password_history DROP COLUMN order_id;
 
+-- Make formerly implicit default CA alias explicit on upgrade, since explicit default alias is removed for new 6.0.0 installations (10267)
+INSERT IGNORE INTO cluster_properties (objectid, version, propkey, propvalue) VALUES (-0600000, 1, 'keyStore.defaultCa.alias', '-1:CA');
+
 --
 --
 -- Reenable FK at very end of script

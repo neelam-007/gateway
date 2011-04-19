@@ -337,7 +337,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
 
     private Pair<Long, String> getKeyStoreOidAndAlias(String propertyName) throws IOException {
         String propVal = serverConfig.getPropertyUncached(propertyName);
-        if (propVal == null || propVal.length() < 1)
+        if (propVal == null || propVal.trim().length() < 1)
             return null;
 
         Matcher matcher = KEYSTORE_ID_AND_ALIAS_PATTERN.matcher(propVal);

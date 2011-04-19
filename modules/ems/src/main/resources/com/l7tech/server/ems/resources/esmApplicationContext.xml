@@ -181,6 +181,8 @@
                             <list>
                                 <value>keyStoreDefaultSslKey</value>
                                 <value>keyStoreDefaultCaKey</value>
+                                <value>keyStoreAuditViewerKey</value>
+                                <value>keyStoreAuditSigningKey</value>
                                 <value>keyStoreSearchForAlias</value>
                             </list>
                         </entry>
