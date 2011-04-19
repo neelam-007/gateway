@@ -5,16 +5,23 @@
 package com.l7tech.server.transport.ftp;
 
 import com.l7tech.gateway.common.transport.ftp.*;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.policy.variable.ServerVariables;
+import com.l7tech.util.ExceptionUtils;
 
-import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.X509TrustManager;
+import java.util.logging.Logger;
 
 /**
  * @author rmak
  * @since SecureSpan 4.0
  */
 public class FtpAdminImpl implements FtpAdmin {
+    private static final Logger logger = Logger.getLogger(FtpAdminImpl.class.getName());
+
     private final X509TrustManager _x509TrustManager;
     private final HostnameVerifier _hostnameVerifier;
     private final DefaultKey _keyFinder;
@@ -63,6 +70,12 @@ public class FtpAdminImpl implements FtpAdmin {
 
         config.setSecurity(!isFtps ? FtpSecurity.FTP_UNSECURED :
                                       isExplicit ? FtpSecurity.FTPS_EXPLICIT : FtpSecurity.FTPS_IMPLICIT);
+        try {
+            password = ServerVariables.expandPasswordOnlyVariable(new LogOnlyAuditor(logger), password);
+        } catch (FindException e) {
+            final String msg = "Unable to look up secure password reference: " + ExceptionUtils.getMessage(e);
+            throw (FtpTestException)new FtpTestException(msg, msg).initCause(e);
+        }
         config.setPort(port).setUser(userName).setPass(password).setDirectory(directory).setTimeout(timeout);
 
         X509TrustManager trustManager = null;
