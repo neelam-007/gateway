@@ -520,8 +520,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         }
 
         DialogDisplayer.showMessageDialog(this,
-                "The " + what + " key has been changed.\n\nThe change will not fully take effect until all cluster nodes have been restarted.",
-                "Default " + what + " Key Updated",
+                "The " + what + " has been changed.\n\nThe change will not fully take effect until all cluster nodes have been restarted.",
+                "Default " + what + " Updated",
                 JOptionPane.INFORMATION_MESSAGE, null);
         defaultKeyChanged = true;
         close();
