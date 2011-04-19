@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.Config;
@@ -53,7 +54,8 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
         try {
             //make certificate login credentials
             creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(cert), null);
-            User user = sessionManager.authenticate(creds);
+            final AuthenticationResult authResult = sessionManager.authenticate(creds);
+            final User user = (authResult != null)? authResult.getUser(): null;
 
             boolean remoteLogin = true;
 

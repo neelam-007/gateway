@@ -170,7 +170,7 @@ public class WSMFServlet extends AuthenticatableHttpServlet {
 
             AuthenticationResult[] results;
             try {
-                results = authenticateRequestBasic(req);
+                results = authenticateRequestBasic(req, true);
                 if (results.length > 0) {
                     final User user = results[0].getUser();
                     if (!roleManager.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.CLUSTER_INFO)) {

@@ -74,7 +74,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     @Override
     @Transactional(readOnly=true)
     public boolean userCanGenCert(User user, Certificate existingCert) throws FindException {
-        if (user == null) throw new IllegalArgumentException("can't call this with null");
+        if (user == null) throw new IllegalArgumentException("User cannot be null");
         logger.finest("userCanGenCert for " + getName(user));
         CertEntryRow userData = getFromTable(user);
         // if this user has no data at all, then he is allowed to generate a cert

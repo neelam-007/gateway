@@ -177,7 +177,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @return The user or null if not authenticated.
      * @throws ObjectModelException If an error occurs during authentication.
      */
-    public User authenticate(final LoginCredentials creds) throws ObjectModelException, LoginException, FailAttemptsExceededException, FailInactivityPeriodExceededException, UserDisabledException {
+    public AuthenticationResult authenticate(final LoginCredentials creds) throws ObjectModelException, LoginException, FailAttemptsExceededException, FailInactivityPeriodExceededException, UserDisabledException {
         // Try internal first (internal accounts with the same credentials should hide externals)
         Set<IdentityProvider> providers = getAdminIdentityProviders();
         AuthenticationResult authResult = null;
@@ -266,7 +266,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             }
         }
 
-        return user;
+        return authResult;
     }
 
     /**
@@ -513,6 +513,23 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         return Collections.emptySet();
     }
 
+    public boolean isAdministrativeUser(final User user) throws FindException {
+        boolean hasPermission = false;
+        // TODO is holding any CRUD permission sufficient?
+        Collection<Role> roles = roleManager.getAssignedRoles(user);
+        roles:
+        for (Role role : roles) {
+            for (Permission perm : role.getPermissions()) {
+                if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
+                    hasPermission = true;
+                    break roles;
+                }
+            }
+        }
+
+        return hasPermission;
+    }
+
     //- PROTECTED
 
     @Override
@@ -585,19 +602,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     }
 
     private void checkPerms(final User user) throws AuthenticationException, FindException {
-        boolean hasPermission = false;
-        // TODO is holding any CRUD permission sufficient?
-        Collection<Role> roles = roleManager.getAssignedRoles(user);
-        roles:
-        for (Role role : roles) {
-            for (Permission perm : role.getPermissions()) {
-                if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
-                    hasPermission = true;
-                    break roles;
-                }
-            }
-        }
-
+        boolean hasPermission = isAdministrativeUser(user);
         if (!hasPermission) {
             throw new AuthenticationException(user.getName() +
                     " does not have privilege to access administrative services");

@@ -24,6 +24,7 @@ import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -105,7 +106,8 @@ public class AdminLoginImpl
 
             User user;
             try {
-                user = sessionManager.authenticate(creds);
+                final AuthenticationResult authResult = sessionManager.authenticate(creds);
+                user = (authResult != null)? authResult.getUser(): null;
             } catch (LoginRequireClientCertificateException e) {
                 getApplicationContext().publishEvent(new FailedAdminLoginEvent(this, remoteIp, "Failed admin login for login '" + login + "'"));
                 throw e;

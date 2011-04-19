@@ -206,7 +206,6 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
             }
             doUpdateLastActivity(user);
 
-
         } catch (FindException fe) {
             //if we can't find this user then we'll just ignore it and we'll carry on and it'll get updated later
             //this find exception could occur because of backwards compatibility

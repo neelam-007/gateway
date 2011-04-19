@@ -104,7 +104,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
 
         AuthenticationResult[] results;
         try {
-            results = authenticateRequestBasic(request);
+            results = authenticateRequestBasic(request, true);
         } catch (BadCredentialsException e) {
             logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_BAD_CREDENTIALS, ExceptionUtils.getDebugException(e));
             respondError(response, HttpServletResponse.SC_FORBIDDEN, "Bad credentials");

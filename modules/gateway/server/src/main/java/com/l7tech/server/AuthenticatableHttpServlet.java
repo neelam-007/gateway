@@ -21,6 +21,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.IncludeAssertionDereferenceTranslator;
 import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
@@ -82,7 +83,8 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected WspReader wspReader;
     protected IdentityProviderFactory identityProviderFactory;
     private LicenseManager licenseManager;
-    protected PasswordHasher passwordHasher;//todo this can likely be removed if / when this class is updated to user AdminSessionManager
+    protected PasswordHasher passwordHasher;
+    private AdminSessionManager adminSessionManager;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -101,6 +103,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         policyManager = getBean("policyManager", PolicyManager.class);
         wspReader = getBean("wspReader", WspReader.class);
         passwordHasher = getBean("passwordHasher", PasswordHasher.class);
+        adminSessionManager = getBean("adminSessionManager", AdminSessionManager.class);
     }
 
     protected Object getBean(String name) throws ServletException {
@@ -164,10 +167,20 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected AuthenticationResult[] authenticateRequestBasic(HttpServletRequest req)
             throws BadCredentialsException, MissingCredentialsException, IssuedCertNotPresentedException, LicenseException, ListenerException {
 
+        return authenticateRequestBasic(req, false);
+    }
+
+    /**
+     *
+     * @param requiresAdminUser If true, then an admin user is expected. When true authentication is delegated to the
+     * AdminSessionManager.
+     */
+    protected AuthenticationResult[] authenticateRequestBasic(HttpServletRequest req, boolean requiresAdminUser)
+            throws BadCredentialsException, MissingCredentialsException, IssuedCertNotPresentedException, LicenseException, ListenerException {
         licenseManager.requireFeature(getFeature());
 
         try {
-            AhsAuthResult ahsResult = authenticateRequestAgainstAllIdProviders(req);
+            AhsAuthResult ahsResult = authenticateRequestAgainstAllIdProviders(req, requiresAdminUser);
             AuthenticationResult[] results = ahsResult.getAuthResults();
             if (results == null || results.length < 1) {
                 String msg = "Creds do not authenticate against any registered id provider.";
@@ -224,7 +237,9 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * @return a list of auth results.
      * @noinspection UnnecessaryLabelOnContinueStatement
      */
-    private AhsAuthResult authenticateRequestAgainstAllIdProviders(HttpServletRequest req) throws FindException, IssuedCertNotPresentedException {
+    private AhsAuthResult authenticateRequestAgainstAllIdProviders(final HttpServletRequest req,
+                                                                   final boolean requiresAdminUser)
+            throws FindException, IssuedCertNotPresentedException {
         Collection<AuthenticationResult> authResults = new ArrayList<AuthenticationResult>();
         Collection<IdentityProvider> providers = identityProviderFactory.findAllIdentityProviders();
         LoginCredentials creds = findCredentialsBasic(req);
@@ -240,18 +255,29 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
         boolean userAuthenticatedButDidNotPresentHisCert = false;
 
-        nextIdentityProvider:
         for (IdentityProvider provider : providers) {
             try {
-                final AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
-                if (authResult == null) continue nextIdentityProvider;
-                User u = authResult.getUser();
+                AuthenticationResult authResult;
+                if(requiresAdminUser){
+                    authResult = adminSessionManager.authenticate(creds);
+                } else {
+                    authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
+                }
+
+                if (authResult == null && !requiresAdminUser) {
+                    continue;//try the next identity provider
+                } else if (authResult == null){
+                    //authenticating using the admin session manager tries all applicable identity providers.
+                    break;
+                }
+                
+                final User u = authResult.getUser();
                 logger.fine("Authentication success for user " + creds.getLogin() +
                         " on identity provider: " + provider.getConfig().getName());
 
                 // if this request comes through SSL, and the authenticated client possess a valid
                 // client cert, then we enforce that he USES the client cert as part of the SSL
-                // handshake (this is to prevent dictionnary attacks against accounts that possess
+                // handshake (this is to prevent dictionary attacks against accounts that possess
                 // a valid client cert)
 
                 if (!req.isSecure()) {
@@ -280,7 +306,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                             dbCertX509 = (X509Certificate) dbCert;
                         } else {
                             logger.warning("Client cert in database is not X.509");
-                            continue nextIdentityProvider;
+                            continue;
                         }
                         if ( CertUtils.certsAreEqual(requestCert, dbCertX509)) {
                             logger.finest("Valid client cert presented as part of request.");
@@ -300,6 +326,10 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             } catch (Exception e) {
                 logger.fine("Authentication failed for user " + creds.getLogin() +
                         " on identity provider: " + provider.getConfig().getName());
+            }
+            if(requiresAdminUser){
+                //don't loop for admin users, as admin session manager has already searched all applicable providers.
+                break;
             }
         }
         
@@ -337,7 +367,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * If no custom assertion is found throws <code>BadCredentialsException</code>.
      * <p/>
      * Custom identity authentication assertions may not provide user management API (list users etc.) therefore
-     * we just do this check and delegate. This is how Netegrity Siteminder works for exmaple.
+     * we just do this check and delegate. This is how Netegrity Siteminder works for example.
      *
      * @param req     the servlet request
      * @param service the published service
@@ -362,7 +392,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         // Try to authenticate against identity providers
         final boolean sawCreds;
         try {
-            AhsAuthResult ahsResult = authenticateRequestAgainstAllIdProviders(req);
+            AhsAuthResult ahsResult = authenticateRequestAgainstAllIdProviders(req, false);
             sawCreds = ahsResult.isSawCredentials();
             AuthenticationResult[] results = ahsResult.getAuthResults();
             if (results != null && results.length > 0) {
@@ -370,7 +400,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             }
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Error getting users.", e);
-            return new AuthenticationResult[0]; // cannot conitinue here ...
+            return new AuthenticationResult[0]; // cannot continue here ...
         }
 
         // Try to authenticate custom assertions (through TAM etc)
@@ -390,7 +420,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                         user.setProviderId(Long.MAX_VALUE);
                         user.setLogin(creds.getLogin());
                         final String passwordHashed = passwordHasher.hashPassword(new String(creds.getCredentials()).getBytes(Charsets.UTF8));
-                        //todo [Donal] test
+                        //todo there does not appear to be a need for setting the hashed password. Only client of this logic is WsdlProxyServlet.
                         user.setHashedPassword(passwordHashed);
                         return new AuthenticationResult[] { new AuthenticationResult(user, creds.getSecurityTokens()) };
                     }
@@ -501,7 +531,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
     /**
      * Decides whether a policy should be downloadable without providing credentials. This will return true if the
-     * service described by this policy could be consumed anonymouly.
+     * service described by this policy could be consumed anonymously.
      */
     protected boolean policyAllowAnonymous(Policy policy) throws IOException {
         // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion

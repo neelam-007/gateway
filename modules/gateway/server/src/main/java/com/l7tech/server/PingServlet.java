@@ -166,7 +166,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
 
                 boolean authenticated = false;
                 try {
-                    final AuthenticationResult[] results = authenticateRequestBasic(request);
+                    final AuthenticationResult[] results = authenticateRequestBasic(request, true);
                     if (results.length > 0) {
                         final User user = results[0].getUser();
                         authenticated = _roleManager.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.CLUSTER_INFO);
@@ -266,7 +266,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
 
         AuthenticationResult[] results;
         try {
-            results = authenticateRequestBasic(request);
+            results = authenticateRequestBasic(request, true);
         } catch (BadCredentialsException e) {
             return false;
         } catch (MissingCredentialsException e) {
