@@ -31,7 +31,6 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import javax.inject.Inject;
-import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
 import org.apache.wicket.util.value.ValueMap;
@@ -520,7 +519,7 @@ public class PolicyMapping extends EsmStandardWebPage {
 
             User user = null;
             if ( !securityManager.hasPermission( new AttemptedReadAll( EntityType.ESM_MIGRATION_RECORD ) ) ) {
-                user = securityManager.getLoginInfo( ((WebRequest) RequestCycle.get().getRequest()).getHttpServletRequest().getSession(true) ).getUser();
+                user = getUser();
             }
             this.user = user;
 

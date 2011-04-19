@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
@@ -910,7 +911,14 @@ public class PolicyMigration extends EsmStandardWebPage {
         List<PreviousMigrationModel> previousMigrations = new ArrayList<PreviousMigrationModel>();
 
         try {
-            Collection<MigrationRecord> records = migrationRecordManager.findNamedMigrations( getUser(), 100, null, null );
+            final User user;
+            if ( !securityManager.hasPermission( new AttemptedReadAll( EntityType.ESM_MIGRATION_RECORD ) ) ) {
+                user = getUser();
+            } else {
+                user = null;
+            }
+
+            Collection<MigrationRecord> records = migrationRecordManager.findNamedMigrations( user, 100, null, null );
             if ( records != null ) {
                 for ( MigrationRecord record : records ) {
                     previousMigrations.add( new PreviousMigrationModel( record.getOid(), record.getName() ) );

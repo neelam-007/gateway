@@ -13,7 +13,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.server.ems.ui.NavigationPage;
-import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.identity.User;
@@ -31,8 +30,6 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import javax.inject.Inject;
-import org.apache.wicket.RequestCycle;
-import org.apache.wicket.protocol.http.WebRequest;
 
 import java.io.Serializable;
 import java.util.*;
@@ -100,7 +97,7 @@ public class Audits extends EsmStandardWebPage {
 
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
         Date now = new Date();
-        Date last7thDay = new Date(now.getTime() - TimeUnit.DAYS.toMillis(7));
+        Date last7thDay = new Date(now.getTime() - TimeUnit.DAYS.toMillis(7L));
 
         final DataProviderOptions options = new DataProviderOptions( values[0], last7thDay, now);
         final WebMarkupContainer tableContainer = new WebMarkupContainer("audittable.container");
@@ -186,9 +183,6 @@ public class Audits extends EsmStandardWebPage {
     @Inject
     private AuditRecordManager auditRecordManager;
 
-    @Inject
-    private EsmSecurityManager securityManager;
-
     private Date startOfDay( final Date date ) {
         Calendar calendar = Calendar.getInstance();
         if ( getSession().getTimeZoneId() != null ) {
@@ -273,7 +267,7 @@ public class Audits extends EsmStandardWebPage {
         }
 
         public Date getEndTime() {
-            return new Date(startOfDay(auditend).getTime() + TimeUnit.DAYS.toMillis(1));            
+            return new Date(startOfDay(auditend).getTime() + TimeUnit.DAYS.toMillis(1L));
         }
     }
 
@@ -308,7 +302,7 @@ public class Audits extends EsmStandardWebPage {
         public AuditDataProvider( final DataProviderOptions options,  final String sort, final boolean asc ) {
             User user = null;
             if ( !securityManager.hasPermission( new AttemptedReadAll( EntityType.AUDIT_RECORD ) ) ) {
-                user = securityManager.getLoginInfo( ((WebRequest)RequestCycle.get().getRequest()).getHttpServletRequest().getSession(true) ).getUser();
+                user = getUser();
             }
             this.user = user;
 
@@ -325,8 +319,8 @@ public class Audits extends EsmStandardWebPage {
             return new AuditSearchCriteria.Builder().fromTime(options.getStartTime()).
                     toTime(options.getEndTime()).
                     recordClass(getClassForType(options.getAudittype())).
-                    startMessageNumber(-1).
-                    endMessageNumber(-1).
+                    startMessageNumber(-1L).
+                    endMessageNumber(-1L).
                     maxRecords(-1).
                     user(user)
                     .build();
