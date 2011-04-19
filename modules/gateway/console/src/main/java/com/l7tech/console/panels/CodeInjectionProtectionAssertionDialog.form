@@ -95,7 +95,7 @@
               <actionCommand value="Request body"/>
               <margin top="2" left="23" bottom="2" right="23"/>
               <selected value="true"/>
-              <text value="body"/>
+              <text value="Body"/>
             </properties>
           </component>
           <component id="c5c3b" class="javax.swing.JRadioButton" binding="_responseRadioButton">
@@ -104,8 +104,8 @@
             </constraints>
             <properties>
               <actionCommand value="Response body"/>
-              <label value="Response (body)"/>
-              <text value="Response (body)"/>
+              <label value="Response (Body)"/>
+              <text value="Response (Body)"/>
             </properties>
           </component>
           <component id="b6046" class="javax.swing.JRadioButton" binding="_contextVariableRadioButton" default-binding="true">

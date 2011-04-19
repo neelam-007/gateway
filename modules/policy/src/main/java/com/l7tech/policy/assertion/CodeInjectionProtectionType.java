@@ -53,21 +53,21 @@ public class CodeInjectionProtectionType implements Serializable {
     // Warning: Never change wspName; in order to maintain backward compatibility.
     public static final CodeInjectionProtectionType HTML_JAVASCRIPT = new CodeInjectionProtectionType(
             "htmlJavaScriptInjection",
-            "HTML/JavaScript injection (Cross Site Scripting)",
+            "HTML/JavaScript Injection (Cross Site Scripting)",
             "Block messages which contain HTML tags that can be used to inject code (including <applet>, <body>, <embed>, <frame>, <frameset>, <html>, <iframe>, <ilayer>, <img>, <layer>, <link>, <meta>, <object>, <script>, <style>).",
             Pattern.compile("<\\s*(?:applet|body|embed|frame|frameset|html|iframe|ilayer|img|layer|link|meta|object|script|style)\\b", Pattern.CASE_INSENSITIVE),
             true,
             true);
     public static final CodeInjectionProtectionType PHP_EVAL_INJECTION = new CodeInjectionProtectionType(
             "phpEvalInjection",
-            "PHP eval injection",
+            "PHP eval Injection",
             "Block messages which contain metacharacters that can be used to inject PHP code into a PHP eval statement. These metacharacters are ';\"\\.",
             Pattern.compile("[';\"\\\\]"),
             true,
             false);
     public static final CodeInjectionProtectionType SHELL_INJECTION = new CodeInjectionProtectionType(
             "shellInjection",
-            "Shell injection",
+            "Shell Injection",
             "Block messages which contain metacharacters that can be used to inject shell script into a system call statement.  These metacharacters are `;|&>\\.",
             Pattern.compile("[`;|&>\\\\]"),
             true,
