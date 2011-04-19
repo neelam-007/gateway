@@ -200,14 +200,14 @@ public class InternalUser extends PersistentUser {
     /**
      * Record a password change for a user. Does not modify users current hashed password.
      *
-     * @param newPasswordHash HASHED version of the users new password.
+     * @param oldPasswordHash HASHED version of the users previous password.
      */
-    public void addPasswordChange(String newPasswordHash) {
+    public void addPasswordChange(String oldPasswordHash) {
         if(hashedPassword == null) throw new IllegalStateException("Cannot set password history before user has a hashed password.");
-        if(hashedPassword.equals(newPasswordHash)) throw new IllegalArgumentException("Cannot add a password change record for users current password.");
+        if(hashedPassword.equals(oldPasswordHash)) throw new IllegalArgumentException("Cannot add a password change record for users current password.");
 
-        PasswordChangeRecord passChangeRecord = new PasswordChangeRecord(
-                this, System.currentTimeMillis(), getHashedPassword());
+        final PasswordChangeRecord passChangeRecord = new PasswordChangeRecord(
+                this, System.currentTimeMillis(), oldPasswordHash);
         this.passwordChangesHistory.add(passChangeRecord);
         this.changePassword = false;
     }
