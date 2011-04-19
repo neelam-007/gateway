@@ -383,10 +383,10 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         "    coalesce(sum(completed),0),\n" +
         "    IF(min(coalesce(back_min, 2147483647))=2147483647,NULL,min(coalesce(back_min, 2147483647))),\n" +
         "    IF(max(coalesce(back_max, -1))=-1,NULL,max(coalesce(back_max, -1))),\n" +
-        "    coalesce(sum(back_sum),0),\n" +
+        "    IF(coalesce(sum(back_sum),0)>2147483647,2147483647,coalesce(sum(back_sum),0)),\n" +
         "    IF(min(coalesce(front_min, 2147483647))=2147483647,NULL,min(coalesce(front_min, 2147483647))),\n" +
-        "    IF(max(coalesce(front_max, -1))=-1,NULL,max(coalesce(front_max, -1)))," +
-        "    coalesce(sum(front_sum),0)\n" +
+        "    IF(max(coalesce(front_max, -1))=-1,NULL,max(coalesce(front_max, -1))),\n" +
+        "    IF(coalesce(sum(front_sum),0)>2147483647,2147483647,coalesce(sum(front_sum),0))\n" +
         "FROM service_metrics WHERE\n" +
         "    nodeid=? AND\n" +
         "    published_service_oid=? AND\n" +
@@ -425,10 +425,10 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         "    coalesce(sum(completed),0),\n" +
         "    IF(min(coalesce(back_min, 2147483647))=2147483647,NULL,min(coalesce(back_min, 2147483647))),\n" +
         "    IF(max(coalesce(back_max, -1))=-1,NULL,max(coalesce(back_max, -1))),\n" +
-        "    coalesce(sum(back_sum),0),\n" +
+        "    IF(coalesce(sum(back_sum),0)>2147483647,2147483647,coalesce(sum(back_sum),0)),\n" +
         "    IF(min(coalesce(front_min, 2147483647))=2147483647,NULL,min(coalesce(front_min, 2147483647))),\n" +
         "    IF(max(coalesce(front_max, -1))=-1,NULL,max(coalesce(front_max, -1))),\n" +
-        "    coalesce(sum(front_sum),0)\n" +
+        "    IF(coalesce(sum(front_sum),0)>2147483647,2147483647,coalesce(sum(front_sum),0))\n" +
         "FROM service_metrics_details WHERE service_metrics_oid IN\n" +
         "(\n" +
         "    SELECT objectid FROM service_metrics WHERE\n" +

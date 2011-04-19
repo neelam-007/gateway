@@ -172,27 +172,27 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         context.routingStarted();
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
-        Map<String, Object> vars = context.getVariableMap(varNames, auditor);
-        if (passwordUsesVariables) {
-            String expandedPass = ExpandVariables.process(assertion.getPassword(), vars, auditor);
-            final char[] password = expandedPass.toCharArray();
-            final char[] oldCachedPass;
-            final SsgRuntime ssgRuntime = ssg.getRuntime();
-            synchronized (ssg) {
-                oldCachedPass = ssgRuntime.getCachedPassword();
-                if (oldCachedPass == null) {
-                    ssgRuntime.setCachedPassword(password);
-                } else if(!Arrays.equals(oldCachedPass, password)) {
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                            "NOTE: Bridge Routing password has been changed");
-                    ssgRuntime.setCachedPassword(password);
-                }
-            }
-        }
-
         Throwable thrown = null;
         URL url = null;
-        try {
+        try { // routing finished try/finally
+            Map<String, Object> vars = context.getVariableMap(varNames, auditor);
+            if (passwordUsesVariables) {
+                String expandedPass = ExpandVariables.process(assertion.getPassword(), vars, auditor);
+                final char[] password = expandedPass.toCharArray();
+                final char[] oldCachedPass;
+                final SsgRuntime ssgRuntime = ssg.getRuntime();
+                synchronized (ssg) {
+                    oldCachedPass = ssgRuntime.getCachedPassword();
+                    if (oldCachedPass == null) {
+                        ssgRuntime.setCachedPassword(password);
+                    } else if(!Arrays.equals(oldCachedPass, password)) {
+                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                                "NOTE: Bridge Routing password has been changed");
+                        ssgRuntime.setCachedPassword(password);
+                    }
+                }
+            }
+
             if (messageProcessor == null || ssg == null) {
                 auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_BAD_CONFIG);
                 return AssertionStatus.FAILED;

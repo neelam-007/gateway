@@ -52,7 +52,7 @@ import static com.l7tech.server.ServerConfig.PARAM_JMS_MESSAGE_MAX_BYTES;
 public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRoutingAssertion> {
     private static final Logger logger = Logger.getLogger(ServerJmsRoutingAssertion.class.getName());
     private static final int MAX_OOPSES = 5;
-    private static final long RETRY_DELAY = 1000;
+    private static final long RETRY_DELAY = 1000L;
 
     private final ApplicationContext spring;
     private final Auditor auditor;
@@ -241,8 +241,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             auditException( "Caught unexpected Throwable in outbound JMS request processing", t );
             if (cfg!=null) jmsResourceManager.invalidate(cfg);
             return AssertionStatus.SERVER_ERROR;
-        } finally {
-            if (context.getRoutingEndTime() == 0) context.routingFinished();
         }
     }
 
@@ -313,6 +311,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         public void doWork( final Connection connection,
                             final Session jmsSession,
                             final JmsResourceManager.JndiContextProvider jndiContextProvider ) {
+            boolean routingStarted = false;
+            boolean routingFinished = false;
             try {
                 final Message jmsOutboundRequest = makeRequest(context, jmsSession, jndiContextProvider, cfg);
 
@@ -349,9 +349,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                     final JmsDeliveryMode deliveryMode = assertion.getRequestDeliveryMode();
                     final Integer priority = expandVariableAsInt( assertion.getRequestPriority(), "priority", 0, 9, variables );
-                    final Long timeToLive = expandVariableAsLong( assertion.getRequestTimeToLive(), "time to live", 0, Long.MAX_VALUE, variables );
+                    final Long timeToLive = expandVariableAsLong( assertion.getRequestTimeToLive(), "time to live", 0L, Long.MAX_VALUE, variables );
 
                     context.routingStarted();
+                    routingStarted = true;
 
                     if ( logger.isLoggable( Level.FINE ))
                         logger.fine("Sending JMS outbound message");
@@ -371,6 +372,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                 if ( !processReply ) {
                     context.routingFinished();
+                    routingFinished = true;
                     auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE_EXPECTED);
                     context.setRoutingStatus( RoutingStatus.ROUTED );
                 } else {
@@ -401,7 +403,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         jmsConsumer = JmsUtil.createMessageConsumer( jmsSession, jmsInboundDestination, selector );
 
                         auditor.logAndAudit(AssertionMessages.JMS_ROUTING_GETTING_RESPONSE);
-                        jmsResponse = jmsConsumer.receive( timeout );
+                        jmsResponse = jmsConsumer.receive( (long)timeout );
 
                         if ( jmsResponse != null && !(jmsInboundDestination instanceof TemporaryQueue))
                             jmsResponse.acknowledge();
@@ -411,6 +413,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     }
 
                     context.routingFinished();
+                    routingFinished = true;
                     if ( jmsResponse == null ) {
                         auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE, String.valueOf(timeout));
                         throw new AssertionStatusException(AssertionStatus.FAILED);
@@ -425,8 +428,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     }
 
                     long maxBytes;
-                    if (assertion.getResponseSize() <0){
-                        maxBytes = serverConfig.getLongProperty(PARAM_JMS_MESSAGE_MAX_BYTES, 2621440);
+                    if (assertion.getResponseSize() <0L){
+                        maxBytes = serverConfig.getLongProperty(PARAM_JMS_MESSAGE_MAX_BYTES, 2621440L);
                     }
                     else{
                         maxBytes = assertion.getResponseSize();
@@ -468,7 +471,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         }
                         @Override
                         public long getServiceOid() {
-                            return 0;
+                            return 0L;
                         }
                     });
 
@@ -496,6 +499,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             } finally {
                 if ( closeDestinationIfTemporaryQueue( jmsInboundDestinationHolder[0] ) ) {
                     jmsInboundDestinationHolder[0] = null;
+                }
+                if ( routingStarted && !routingFinished ) {
+                    context.routingFinished();
                 }
             }
         }
@@ -584,7 +590,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     private boolean isValidRequest( final com.l7tech.message.Message message ) throws IOException {
         boolean valid = true;
 
-        long maxSize = serverConfig.getLongPropertyCached( "ioJmsMessageMaxBytes", 5242880, 30000L );
+        long maxSize = serverConfig.getLongPropertyCached( "ioJmsMessageMaxBytes", 5242880L, 30000L );
         final MimeKnob mk = message.getKnob(MimeKnob.class);
 
         if (mk == null) {
@@ -593,7 +599,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             return false;
         }
 
-        if ( maxSize > 0 && mk.getContentLength() > maxSize ) {
+        if ( maxSize > 0L && mk.getContentLength() > maxSize ) {
             auditor.logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_TOO_LARGE);
             valid = false;
         }
