@@ -3156,6 +3156,8 @@ public class MainWindow extends JFrame implements SheetHolder {
                         updateRemoteLastActivityTime(); // should also get updated by pinging
                     } catch ( IllegalStateException ise ) {
                         // admin context not available
+                    } catch ( Exception e ) {
+                        ErrorManager.getDefault().notify( Level.INFO, e, ErrorManager.DEFAULT_ERROR_MESSAGE );
                     }
                 }
             }, 1L );
