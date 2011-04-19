@@ -2125,7 +2125,7 @@ public class LogPanel extends JPanel {
                 userIdOrDn(userIdOrDn).
                 messageId(messageId).
                 paramValue(paramValue).
-                entityClassName(getAllEntities().get(entityTypeName)).
+                entityClassName(entityTypeName == null? null : getAllEntities().get(entityTypeName)).
                 entityId(entityId).
                 build();
 
@@ -2162,7 +2162,7 @@ public class LogPanel extends JPanel {
                 userIdOrDn(userIdOrDn).
                 messageId(messageId).
                 paramValue(paramValue).
-                entityClassName(getAllEntities().get(entityTypeName)).
+                entityClassName(entityTypeName == null? null : getAllEntities().get(entityTypeName)).
                 entityId(entityId).
                 build();
 
