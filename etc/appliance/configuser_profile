@@ -924,7 +924,7 @@ isPatchListMenuValid="n"
 while [ "$isPatchListMenuValid" != "y" ]
 do
     clear
-        echo "Welcome to the Layer 7 Gateway"
+        echo "Welcome to the $(cat /etc/issue | head -1)"
         echo
         echo "This user account allows you to configure the appliance"
         echo "What would you like to do?"
