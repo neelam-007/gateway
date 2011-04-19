@@ -498,7 +498,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     "<html>Are you sure you wish to change the cluster " + what + "?<br>" +
                             extraWarningText +
                             "<p><br></p>All cluster nodes will need to be restarted before the change will fully take effect.",
-                    "Confirm New Cluster " + what + " Key",
+                    "Confirm New Cluster " + what,
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE,
                     new DialogDisplayer.OptionListener() {
