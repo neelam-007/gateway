@@ -924,7 +924,9 @@ isPatchListMenuValid="n"
 while [ "$isPatchListMenuValid" != "y" ]
 do
     clear
-        echo "Welcome to the $(cat /etc/issue | head -1)"
+        echo "Welcome to the SecureSpan Gateway"
+		echo "$(cat /etc/issue | head -1 | cut -d" " -f4 | sed 's/^v/ Version /')"
+		echo "$(rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}_%{ARCH}\n' | grep ssg | sed "s/^/  - /")"
         echo
         echo "This user account allows you to configure the appliance"
         echo "What would you like to do?"
