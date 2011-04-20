@@ -39,7 +39,6 @@ import org.apache.commons.collections.map.LRUMap;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import javax.security.auth.login.CredentialExpiredException;
 import javax.security.auth.login.LoginException;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -226,7 +225,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                         if (passwordEnforcerManager.isPasswordExpired(authdUser) && (creds.getClientCert() == null)) {
                             IdentityProviderPasswordPolicy policy = passwordPolicyManager.findByInternalIdentityProviderOid(provider.getConfig().getOid());
 
-                            throw new CredentialExpiredException("Password expired." + policy.getDescription());
+
+                            throw new CredentialExpiredPasswordDetailsException("Password expired.", policy.getDescription());
                         }
 
                         user = authdUser;

@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.CredentialExpiredPasswordDetailsException;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -21,7 +21,6 @@ import com.l7tech.objectmodel.InvalidPasswordException;
 
 import javax.security.auth.login.LoginException;
 import javax.security.auth.login.AccountLockedException;
-import javax.security.auth.login.CredentialExpiredException;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -153,14 +152,14 @@ public class LogonDialog extends JDialog {
 
         JLayeredPane layeredPane = getLayeredPane();
         layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
-          .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "close-it");
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "close-it");
         layeredPane.getActionMap().put("close-it",
-                                       new AbstractAction() {
-                                           @Override
-                                           public void actionPerformed(ActionEvent evt) {
-                                               windowAction(CMD_CANCEL);
-                                           }
-                                       });
+                new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent evt) {
+                        windowAction(CMD_CANCEL);
+                    }
+                });
 
         constraints = new GridBagConstraints();
 
@@ -206,12 +205,12 @@ public class LogonDialog extends JDialog {
         userNameLabel = new JLabel();
         userNameLabel.setToolTipText(resources.getString("userNameTextField.tooltip"));
         userNameTextField.setDocument(new FilterDocument(200,
-                                                         new FilterDocument.Filter() {
-                                                             @Override
-                                                             public boolean accept(String str) {
-                                                                 return str != null;
-                                                             }
-                                                         }));
+                new FilterDocument.Filter() {
+                    @Override
+                    public boolean accept(String str) {
+                        return str != null;
+                    }
+                }));
 
         DocumentListener inputValidDocumentListener = new DocumentListener() {
             @Override
@@ -269,13 +268,13 @@ public class LogonDialog extends JDialog {
         preferences = TopComponents.getInstance().getPreferences();
         final String lastID;
         final boolean lastIDWasCert;
-        if ( preferences.rememberLoginId() ) {
+        if (preferences.rememberLoginId()) {
             lastID = preferences.getString(SsmPreferences.LAST_LOGIN_ID);
-            lastIDWasCert = "certificate".equals( preferences.getString(SsmPreferences.LAST_LOGIN_TYPE) );
+            lastIDWasCert = "certificate".equals(preferences.getString(SsmPreferences.LAST_LOGIN_TYPE));
 
-            if ( !lastIDWasCert )
+            if (!lastIDWasCert)
                 userNameTextField.setText(lastID);
-            if ( lastID != null ) {
+            if (lastID != null) {
                 focusComponent = lastIDWasCert ?
                         loginButton :
                         passwordField;
@@ -331,7 +330,7 @@ public class LogonDialog extends JDialog {
         constraints.gridy = 4;
         constraints.gridwidth = 2;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(15,0,0,0);
+        constraints.insets = new Insets(15, 0, 0, 0);
         contents.add(useCert, constraints);
 
         ButtonGroup selection = new ButtonGroup();
@@ -361,9 +360,9 @@ public class LogonDialog extends JDialog {
         constraints.insets = new Insets(2, 15, 0, 10);
         constraints.fill = GridBagConstraints.HORIZONTAL;
         contents.add(certSelection, constraints);
-        if (lastID!=null && lastIDWasCert && certSelection.getModel().getSize() > 0) {
+        if (lastID != null && lastIDWasCert && certSelection.getModel().getSize() > 0) {
             certSelection.setSelectedItem(lastID);
-            if ( !lastID.equals( certSelection.getSelectedItem() ) ) {
+            if (!lastID.equals(certSelection.getSelectedItem())) {
                 certSelection.setSelectedIndex(0);
             }
         }
@@ -418,7 +417,7 @@ public class LogonDialog extends JDialog {
         renderer.setPreferredSize(new Dimension(200, 130));
         serverComboBox.setEditable(true);
         BasicComboBoxEditor basicComboBoxEditor = new BasicComboBoxEditor();
-        JTextField jtf = (JTextField)basicComboBoxEditor.getEditorComponent();
+        JTextField jtf = (JTextField) basicComboBoxEditor.getEditorComponent();
         jtf.getDocument().addDocumentListener(inputValidDocumentListener);
         serverComboBox.setEditor(basicComboBoxEditor);
         serverComboBox.setToolTipText(resources.getString("serverField.tooltip"));
@@ -432,13 +431,13 @@ public class LogonDialog extends JDialog {
 
         serverUrlHistory = preferences.getHistory(SsmPreferences.SERVICE_URL);
         String sMaxSize = preferences.getString(SsmPreferences.NUM_SSG_HOSTS_HISTORY, "5");
-        if(sMaxSize != null && !sMaxSize.equals("")){
-            try{
+        if (sMaxSize != null && !sMaxSize.equals("")) {
+            try {
                 serverUrlHistory.setMaxSize((new Integer(sMaxSize)));
-            }catch(NumberFormatException nfe){
+            } catch (NumberFormatException nfe) {
                 //Swallow - incorrectly set property
                 //don't need to set, it's has an internal default value
-                log.log( Level.FINE, "Ignoring invalid url history size ''{0}''.", sMaxSize);
+                log.log(Level.FINE, "Ignoring invalid url history size ''{0}''.", sMaxSize);
             }
         }
 
@@ -466,18 +465,18 @@ public class LogonDialog extends JDialog {
         constraints.insets = new Insets(10, 0, 10, 10);
         contents.add(buttonPanel, constraints);
 
-        this.addComponentListener( new ComponentAdapter(){
+        this.addComponentListener(new ComponentAdapter() {
             @Override
-            public void componentShown( ComponentEvent e ) {
-                if ( focusComponent != null ) {
+            public void componentShown(ComponentEvent e) {
+                if (focusComponent != null) {
                     focusComponent.requestFocus();
-                    if ( focusComponent instanceof JTextField ) {
-                        ((JTextField)focusComponent).selectAll();    
+                    if (focusComponent instanceof JTextField) {
+                        ((JTextField) focusComponent).selectAll();
                     }
                     focusComponent = null;
                 }
             }
-        } );
+        });
 
         updateEnabledState();
         loginButton.setEnabled(isInputValid());
@@ -496,7 +495,7 @@ public class LogonDialog extends JDialog {
         certLabel.setEnabled(!isCredentials);
         certSelection.setEnabled(!isCredentials);
         manageCertBtn.setEnabled(!isCredentials);
-        if ( !!isCredentials )
+        if (!!isCredentials)
             populateCertificateChoices();
 
         loginButton.setEnabled(isInputValid());
@@ -507,7 +506,7 @@ public class LogonDialog extends JDialog {
     * Factored out code to build up Server host list as will get updated while user is interacting
     * with the log on component
     * */
-    private void updateServerUrlHistory(){
+    private void updateServerUrlHistory() {
         Object[] urls = serverUrlHistory.getEntries();
         serverComboBox.removeAllItems();
         for (int i = 0; i < urls.length; i++) {
@@ -525,11 +524,13 @@ public class LogonDialog extends JDialog {
             }
         }
     }
+
     /**
      * Creates the panel of buttons that goes along the bottom
      * of the dialog
      * <p/>
      * Sets the variable loginButton
+     *
      * @return the new button panel
      */
     private JPanel createButtonPanel() {
@@ -592,15 +593,15 @@ public class LogonDialog extends JDialog {
                     doLogon(null, null);
                 }
             });
-        } else if (actionCommand.equals(CMD_MANAGE_CERT) ){
+        } else if (actionCommand.equals(CMD_MANAGE_CERT)) {
             UserIdentificationRequestDialog certManager = new UserIdentificationRequestDialog(certsHash);
             Utilities.centerOnScreen(certManager);
-            DialogDisplayer.display(certManager, new Runnable(){
+            DialogDisplayer.display(certManager, new Runnable() {
                 @Override
                 public void run() {
                     populateCertificateChoices();
                     loginButton.setEnabled(certSelection.getItemCount() > 0 &&
-                        (serverComboBox.getSelectedItem() != null && !((String)serverComboBox.getSelectedItem()).equalsIgnoreCase("")));
+                            (serverComboBox.getSelectedItem() != null && !((String) serverComboBox.getSelectedItem()).equalsIgnoreCase("")));
                 }
             });
         }
@@ -616,7 +617,7 @@ public class LogonDialog extends JDialog {
             String[] items = new String[certs.size()];
             certSelection.removeAllItems(); //clear any old ones
             certsHash.clear();
-            int i=0;
+            int i = 0;
             for (X509Certificate cert : certs) {
                 certsHash.put(cert.getSubjectDN().getName(), cert);
                 items[i++] = cert.getSubjectDN().getName();
@@ -624,8 +625,8 @@ public class LogonDialog extends JDialog {
             }
 
             Arrays.sort(items);
-            for ( String item : items ) {
-                certSelection.addItem( item );
+            for (String item : items) {
+                certSelection.addItem(item);
             }
 
         } catch (Exception e) {
@@ -639,7 +640,7 @@ public class LogonDialog extends JDialog {
      * If both the parameters are set to NULL, then it proceeds as a normal logon.  If both fields are not NULL, then
      * it will treat as a change password and logon process.
      *
-     * @param newPassword   The new password that should be changed for the login user
+     * @param newPassword The new password that should be changed for the login user
      * @param authCreds   The credentials to be used for changing the password and logon
      */
     private void doLogon(final String newPassword, final PasswordAuthentication authCreds) {
@@ -647,7 +648,7 @@ public class LogonDialog extends JDialog {
         final Container parentContainer = getParent();
         // service URL
         String selectedHost = (String) serverComboBox.getSelectedItem();
-        if(selectedHost!=null) selectedHost = selectedHost.trim();
+        if (selectedHost != null) selectedHost = selectedHost.trim();
         final String sHost = selectedHost;
 
         focusComponent = useCert.isSelected() ? certSelection : passwordField;
@@ -662,84 +663,83 @@ public class LogonDialog extends JDialog {
             // fla change: remember this url even if the login wont be successful (requirement #729)
             serverUrlHistory.add(sHost);
 
-            progressDialog = buildLogonInProgressDialog((Frame)getOwner(), sHost);
+            progressDialog = buildLogonInProgressDialog((Frame) getOwner(), sHost);
             final LogonInProgressDialog progressDialog1 = progressDialog;
             final SwingWorker sw =
-              new SwingWorker() {
-                  private Throwable memoException = null;
+                    new SwingWorker() {
+                        private Throwable memoException = null;
 
-                  @Override
-                  public Object construct() {
-                      try {
-                          AuthenticationProvider authProv = securityProvider.getAuthenticationProvider();
-                          //need to set the selected certificate if the user has selected to use client-cert login
-                          if (useCert.isSelected()) {
-                              String selected = (String) certSelection.getSelectedItem();
-                              setSelectedCertificateByDn(selected);
-                              authenticationCredentials = new PasswordAuthentication("", "".toCharArray());
-                          } else {
-                              setSelectedCertificateByDn(""); //clear selected certificate                             
-                          }
+                        @Override
+                        public Object construct() {
+                            try {
+                                AuthenticationProvider authProv = securityProvider.getAuthenticationProvider();
+                                //need to set the selected certificate if the user has selected to use client-cert login
+                                if (useCert.isSelected()) {
+                                    String selected = (String) certSelection.getSelectedItem();
+                                    setSelectedCertificateByDn(selected);
+                                    authenticationCredentials = new PasswordAuthentication("", "".toCharArray());
+                                } else {
+                                    setSelectedCertificateByDn(""); //clear selected certificate
+                                }
 
-                          //determine which approach to logon based on the parameters
-                          if (newPassword == null && authCreds == null) {
-                              //normal logon process
-                              authProv.login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost), null);
-                          } else {
-                              //require to change the password and logon
-                              authProv.login(authCreds, sHost, !acceptedInvalidHosts.contains(sHost), newPassword);
-                          }
-                      } catch (Throwable e) {
-                          if (!progressDialog1.isCancelled()) {
-                              memoException = e;
-                          }
-                      }
-                      finally {
-                          if (progressDialog1.isCancelled()) {
-                              // if cancelled, clear the interrupted status so disposal runs cleanly
-                              Thread.interrupted();
-                          }
-                          progressDialog1.dispose();
-                      }
-                      if (memoException == null && !progressDialog1.isCancelled()) {
-                          return Boolean.TRUE;
-                      }
-                      return null;
-                  }
+                                //determine which approach to logon based on the parameters
+                                if (newPassword == null && authCreds == null) {
+                                    //normal logon process
+                                    authProv.login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost), null);
+                                } else {
+                                    //require to change the password and logon
+                                    authProv.login(authCreds, sHost, !acceptedInvalidHosts.contains(sHost), newPassword);
+                                }
+                            } catch (Throwable e) {
+                                if (!progressDialog1.isCancelled()) {
+                                    memoException = e;
+                                }
+                            } finally {
+                                if (progressDialog1.isCancelled()) {
+                                    // if cancelled, clear the interrupted status so disposal runs cleanly
+                                    Thread.interrupted();
+                                }
+                                progressDialog1.dispose();
+                            }
+                            if (memoException == null && !progressDialog1.isCancelled()) {
+                                return Boolean.TRUE;
+                            }
+                            return null;
+                        }
 
-                  @Override
-                  public void finished() {
-                      boolean showLogin = true;
-                      if (memoException != null) {
-                          showLogin = !handleLogonThrowable(memoException, sHost);
-                      }
-                      try {
-                          preferences.store();
-                      } catch (IOException e) {
-                          log.log(Level.WARNING, "error saving properties", e);
-                      }
-                      if (get() != null) {
-                          dispose();
-                          preferences.updateSystemProperties();
-                          if (logonListener != null) {
-                              if (useCert.isSelected()){
-                                  String selected = (String) certSelection.getSelectedItem();
-                                  logonListener.onAuthSuccess(certsHash.get(selected).getSubjectDN().getName(), true);
-                              } else {
-                                  logonListener.onAuthSuccess(authenticationCredentials.getUserName(), false);
-                              }
-                          }
-                      } else {
-                          if (!progressDialog1.isCancelled()) {
-                              if (logonListener != null) {
-                                  logonListener.onAuthFailure();
-                              }
+                        @Override
+                        public void finished() {
+                            boolean showLogin = true;
+                            if (memoException != null) {
+                                showLogin = !handleLogonThrowable(memoException, sHost);
+                            }
+                            try {
+                                preferences.store();
+                            } catch (IOException e) {
+                                log.log(Level.WARNING, "error saving properties", e);
+                            }
+                            if (get() != null) {
+                                dispose();
+                                preferences.updateSystemProperties();
+                                if (logonListener != null) {
+                                    if (useCert.isSelected()) {
+                                        String selected = (String) certSelection.getSelectedItem();
+                                        logonListener.onAuthSuccess(certsHash.get(selected).getSubjectDN().getName(), true);
+                                    } else {
+                                        logonListener.onAuthSuccess(authenticationCredentials.getUserName(), false);
+                                    }
+                                }
+                            } else {
+                                if (!progressDialog1.isCancelled()) {
+                                    if (logonListener != null) {
+                                        logonListener.onAuthFailure();
+                                    }
 
-                              setVisible(showLogin);
-                          }
-                      }
-                  }
-              };
+                                    setVisible(showLogin);
+                                }
+                            }
+                        }
+                    };
 
             sw.start();
             progressDialog.setSwingWorker(sw);
@@ -764,8 +764,8 @@ public class LogonDialog extends JDialog {
     /**
      * Parses through the list of certificate's dn and compares the DN provided by the parameter.  If a match is found
      * it will set that certificate into the SSM preferences.
-     * 
-     * @param dn    The DN that will be used for comparison against list of certificates.
+     *
+     * @param dn The DN that will be used for comparison against list of certificates.
      * @throws KeyStoreException
      * @throws NoSuchAlgorithmException
      * @throws IOException
@@ -778,8 +778,8 @@ public class LogonDialog extends JDialog {
     /**
      * invoke logon dialog
      *
-     * @param frame  parent frame for the logon dialog
-     * @param listener  listener to invoke with the result
+     * @param frame    parent frame for the logon dialog
+     * @param listener listener to invoke with the result
      */
     public static void logon(Frame frame, LogonListener listener) {
         final LogonDialog dialog = new LogonDialog(frame);
@@ -801,30 +801,30 @@ public class LogonDialog extends JDialog {
     private void showInvalidCredentialsMessage() {
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         JOptionPane.
-          showMessageDialog(parentFrame,
-                             useCert.isSelected() ?
-                               resources.getString("logon.invalid.certificate") :
-                               resources.getString("logon.invalid.credentials"),
-                            "Warning",
-                            JOptionPane.WARNING_MESSAGE);
+                showMessageDialog(parentFrame,
+                        useCert.isSelected() ?
+                                resources.getString("logon.invalid.certificate") :
+                                resources.getString("logon.invalid.credentials"),
+                        "Warning",
+                        JOptionPane.WARNING_MESSAGE);
     }
 
     private void showRequireClientCertificateMessage() {
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         JOptionPane.
-          showMessageDialog(parentFrame,
-                            resources.getString("login.require.client.cert"),
-                            "Warning",
-                            JOptionPane.WARNING_MESSAGE);
+                showMessageDialog(parentFrame,
+                        resources.getString("login.require.client.cert"),
+                        "Warning",
+                        JOptionPane.WARNING_MESSAGE);
     }
 
     private void showLockAccountMessage(AccountLockedException ex) {
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         JOptionPane.
-          showMessageDialog(parentFrame,
-                            ex.getMessage(),
-                            "Warning",
-                            JOptionPane.WARNING_MESSAGE);
+                showMessageDialog(parentFrame,
+                        ex.getMessage(),
+                        "Warning",
+                        JOptionPane.WARNING_MESSAGE);
     }
 
     private static SecurityProvider getCredentialManager() {
@@ -839,12 +839,16 @@ public class LogonDialog extends JDialog {
         remoteSoftwareVersion = rv;
     }
 
-    /** @return the remote protocol version, ie "". */
+    /**
+     * @return the remote protocol version, ie "".
+     */
     public static String getLastRemoteProtocolVersion() {
         return remoteProtocolVersion;
     }
 
-    /** @return the remote software version, ie "4.0", or null if this is a logoff event. */
+    /**
+     * @return the remote software version, ie "4.0", or null if this is a logoff event.
+     */
     public static String getLastRemoteSoftwareVersion() {
         return remoteSoftwareVersion;
     }
@@ -855,7 +859,7 @@ public class LogonDialog extends JDialog {
         private volatile boolean cancelled = false;
 
         LogonInProgressDialog(Frame owner, String url)
-          throws HeadlessException {
+                throws HeadlessException {
             super(owner, true);
             setTitle("Logon in progress");
             setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -921,7 +925,7 @@ public class LogonDialog extends JDialog {
 
         if (serverComboBox == null) return false;
 
-        JTextField editor = (JTextField)serverComboBox.getEditor().getEditorComponent();
+        JTextField editor = (JTextField) serverComboBox.getEditor().getEditorComponent();
         String surl = editor.getText();
         if (surl == null || "".equals(surl)) {
             log.finest("Empty server name, returning false");
@@ -933,8 +937,8 @@ public class LogonDialog extends JDialog {
     /**
      * handle the logon throwable. Unwrap the exception
      *
-     * @param e  the throwable to handle
-     * @param host  the host we were trying to connect to
+     * @param e    the throwable to handle
+     * @param host the host we were trying to connect to
      * @return true if this error is handled and the login dialog should not be displayed
      */
     private boolean handleLogonThrowable(Throwable e, String host) {
@@ -942,38 +946,34 @@ public class LogonDialog extends JDialog {
 
         Throwable cause = ExceptionUtils.unnestToRoot(e);
         if (cause instanceof VersionException) {
-            VersionException versionex = (VersionException)cause;
+            VersionException versionex = (VersionException) cause;
             log.log(Level.WARNING, "logon()", e);
             String msg;
             if (versionex.getExpectedVersion() != null &&
-                versionex.getExpectedVersion().equals(BuildInfo.getProductVersion())) {
+                    versionex.getExpectedVersion().equals(BuildInfo.getProductVersion())) {
                 msg = MessageFormat.format(resources.getString("logon.version.mismatch3"),
-                                           "'" + versionex.getReceivedVersion() + "'",
-                                           "'" + versionex.getExpectedVersion() + "'",
-                                           BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
-            }
-            else if (versionex.getExpectedVersion() != null && versionex.getReceivedVersion() != null) {
+                        "'" + versionex.getReceivedVersion() + "'",
+                        "'" + versionex.getExpectedVersion() + "'",
+                        BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
+            } else if (versionex.getExpectedVersion() != null && versionex.getReceivedVersion() != null) {
                 msg = MessageFormat.format(resources.getString("logon.version.mismatch2"),
-                                           "'" + versionex.getReceivedVersion() + "'",
-                                           "'" + versionex.getExpectedVersion() + "'",
-                                           BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
+                        "'" + versionex.getReceivedVersion() + "'",
+                        "'" + versionex.getExpectedVersion() + "'",
+                        BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
             } else {
                 msg = MessageFormat.format(resources.getString("logon.version.mismatch"),
-                                           BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
+                        BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
             }
             JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.ERROR_MESSAGE);
-        }
-        else if (cause instanceof ConnectException ||
-          cause instanceof UnknownHostException) {
-            log.log(Level.WARNING, "Could not connect, '"+cause.getMessage()+"'");
+        } else if (cause instanceof ConnectException ||
+                cause instanceof UnknownHostException) {
+            log.log(Level.WARNING, "Could not connect, '" + cause.getMessage() + "'");
             String msg = MessageFormat.format(resources.getString("logon.connect.error"), host);
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
-        }
-        else if (cause instanceof AccountLockedException) {
-            log.log(Level.WARNING, "Lock account,"+cause.getMessage());
-            showLockAccountMessage((AccountLockedException)cause);
-        }
-        else if (cause instanceof InvalidPasswordException) {
+        } else if (cause instanceof AccountLockedException) {
+            log.log(Level.WARNING, "Lock account," + cause.getMessage());
+            showLockAccountMessage((AccountLockedException) cause);
+        } else if (cause instanceof InvalidPasswordException) {
             //problems with the new password (most likely not password policy compliant), re-ask the user to enter a better password
             ChangePasswordDialog changePasswordDialog = new ChangePasswordDialog(this, cause.getMessage(), userNameTextField.getText(), false);
             changePasswordDialog.setPasswordPolicyDescription(((InvalidPasswordException) cause).getPasswordPolicyDescription());
@@ -986,18 +986,16 @@ public class LogonDialog extends JDialog {
                 changePasswordDialog.dispose();
                 doLogon(newPassword, newPasswordAuth);  //try logon again
             }
-        }
-        else if (cause instanceof LoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException) {
+        } else if (cause instanceof LoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException) {
             log.log(Level.WARNING, "Could not connect, authentication error.");
             if (cause instanceof LoginRequireClientCertificateException) {
                 showRequireClientCertificateMessage();
-            } else if (ExceptionUtils.causedBy(cause, CredentialExpiredException.class)) {
+            } else if (ExceptionUtils.causedBy(cause, CredentialExpiredPasswordDetailsException.class)) {
                 //the credential was expired, we'll need to provide them a way to enter their new password
                 ChangePasswordDialog changePasswordDialog =
                         new ChangePasswordDialog(this, "Password expired, please change your password.", userNameTextField.getText(), false);
-                String desc = cause.getMessage();
-                desc = desc.substring(desc.indexOf("<html>"));
-                changePasswordDialog.setPasswordPolicyDescription(desc);
+                CredentialExpiredPasswordDetailsException ex = ExceptionUtils.getCauseIfCausedBy(cause, CredentialExpiredPasswordDetailsException.class);
+                changePasswordDialog.setPasswordPolicyDescription(ex.getPasswordPolicyDescription());
                 changePasswordDialog.setVisible(true);
                 if (changePasswordDialog.wasOk()) {
                     handled = true;
@@ -1010,49 +1008,45 @@ public class LogonDialog extends JDialog {
             } else {
                 showInvalidCredentialsMessage();
             }
-        }
-        else if (ExceptionUtils.causedBy(cause, MalformedURLException.class) || ExceptionUtils.causedBy(cause, NumberFormatException.class)) {
+        } else if (ExceptionUtils.causedBy(cause, MalformedURLException.class) || ExceptionUtils.causedBy(cause, NumberFormatException.class)) {
             String msg = resources.getString("logon.invalid.service.url");
             JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.WARNING_MESSAGE);
-        }
-        else if (cause instanceof IOException) {
+        } else if (cause instanceof IOException) {
             log.log(Level.WARNING, "Could not connect to admin service server", e);
             String msg = MessageFormat.format(resources.getString("service.unavailable.error"), host);
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
-        }
-        else if (cause instanceof InvalidHostNameException) {
+        } else if (cause instanceof InvalidHostNameException) {
             InvalidHostNameException ihne = (InvalidHostNameException) cause;
             String msg = MessageFormat.format(resources.getString("logon.hostname.mismatch"),
-                                              ihne.getExpectedHost(), ihne.getActualHost());
+                    ihne.getExpectedHost(), ihne.getActualHost());
             int option = JOptionPane.showOptionDialog(parentFrame, msg, "Warning", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
-            if ( option == JOptionPane.OK_OPTION ) {
+            if (option == JOptionPane.OK_OPTION) {
                 acceptedInvalidHosts.add(ihne.getExpectedHost());
-                doLogon( null, null );
+                doLogon(null, null);
             }
-        }
-        else if (cause instanceof InvalidHostCertificateException) {
-            X509Certificate cert = ((InvalidHostCertificateException)cause).getCertificate();
-            TrustCertificateDialog dialog = new TrustCertificateDialog((JFrame)TopComponents.getInstance().getTopParent(),
-                                                                       cert,
-                                                                       resources.getString("logon.ssg.untrustedCert.title"),
-                                                                       resources.getString("logon.ssg.untrustedCert.question"));
+        } else if (cause instanceof InvalidHostCertificateException) {
+            X509Certificate cert = ((InvalidHostCertificateException) cause).getCertificate();
+            TrustCertificateDialog dialog = new TrustCertificateDialog((JFrame) TopComponents.getInstance().getTopParent(),
+                    cert,
+                    resources.getString("logon.ssg.untrustedCert.title"),
+                    resources.getString("logon.ssg.untrustedCert.question"));
             handled = true;
             dialog.setVisible(true);
-            if( dialog.isTrusted() ) {
+            if (dialog.isTrusted()) {
                 // import new certificate to trust store
                 boolean imported = false;
                 try {
-                    TopComponents.getInstance().getPreferences().importSsgCert( cert, cert.getSubjectDN().getName() );
+                    TopComponents.getInstance().getPreferences().importSsgCert(cert, cert.getSubjectDN().getName());
                     SecurityProvider securityProvider = getCredentialManager();
-                    securityProvider.getAuthenticationProvider().acceptServerCertificate( cert );
+                    securityProvider.getAuthenticationProvider().acceptServerCertificate(cert);
                     imported = true;
-                } catch(Exception ex) {
+                } catch (Exception ex) {
                     log.log(Level.WARNING, "Error importing new certifiate.", ex);
                 }
 
-                if ( imported ) {
+                if (imported) {
                     // try again
-                    SwingUtilities.invokeLater(new Runnable(){
+                    SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
                             doLogon(null, null);
@@ -1060,8 +1054,7 @@ public class LogonDialog extends JDialog {
                     });
                 }
             }
-        }
-        else {
+        } else {
             ErrorManager.getDefault().notify(Level.WARNING, e, MessageFormat.format(resources.getString("logon.connect.error"), host));
         }
 
@@ -1076,7 +1069,7 @@ public class LogonDialog extends JDialog {
         /**
          * invoked on successful authentication
          *
-         * @param id the id of the authenticated user
+         * @param id              the id of the authenticated user
          * @param usedCertificate true if an X.509 certificate was used
          */
         void onAuthSuccess(String id, boolean usedCertificate);
