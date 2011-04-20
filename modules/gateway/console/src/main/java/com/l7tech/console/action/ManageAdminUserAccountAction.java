@@ -13,8 +13,8 @@ import javax.swing.*;
 import java.util.EnumSet;
 
 /**
-* @author: wlui
-*/
+ * @author: wlui
+ */
 public class ManageAdminUserAccountAction extends SecureAction {
     public ManageAdminUserAccountAction() {
         super(null, "service:Admin");
@@ -32,7 +32,7 @@ public class ManageAdminUserAccountAction extends SecureAction {
 
     @Override
     protected String iconResource() {
-        return "com/l7tech/console/resources/Properties16.gif";
+        return "com/l7tech/console/resources/policy16.gif";
     }
 
     @Override
@@ -45,12 +45,12 @@ public class ManageAdminUserAccountAction extends SecureAction {
 
     @Override
     public boolean isAuthorized() {
-        if(!super.isAuthorized()) return false;
+        if (!super.isAuthorized()) return false;
 
-        AttemptedOperation op = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.maxAllowableAttempts",""));
-        AttemptedOperation op1 = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.lockoutTime",""));
-        AttemptedOperation op2 = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.sessionExpiry",""));
-        AttemptedOperation op3 = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.inactivityPeriod",""));
+        AttemptedOperation op = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.maxAllowableAttempts", ""));
+        AttemptedOperation op1 = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.lockoutTime", ""));
+        AttemptedOperation op2 = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.sessionExpiry", ""));
+        AttemptedOperation op3 = new AttemptedUpdate(EntityType.CLUSTER_PROPERTY, new ClusterProperty("logon.inactivityPeriod", ""));
         boolean can = canAttemptOperation(op);
         can = can && canAttemptOperation(op1);
         can = can && canAttemptOperation(op2);

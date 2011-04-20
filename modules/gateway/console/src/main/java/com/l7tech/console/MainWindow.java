@@ -87,7 +87,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     public static final String CONNECTION_PREFIX = " [connected to node: ";
 
-    private static final long PING_INTERVAL = SyspropUtil.getLong( "com.l7tech.console.sessionPingInterval", 50000L );
+    private static final long PING_INTERVAL = SyspropUtil.getLong("com.l7tech.console.sessionPingInterval", 50000L);
 
     /**
      * the resource bundle name
@@ -259,12 +259,13 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     /**
      * MainWindow constructor comment.
-     * @param app  the application bean
+     *
+     * @param app the application bean
      */
     public MainWindow(SsmApplication app) {
         super(TITLE);
         ssmApplication = app;
-        this.preferences = (SsmPreferences)app.getApplicationContext().getBean("preferences");
+        this.preferences = (SsmPreferences) app.getApplicationContext().getBean("preferences");
         if (preferences == null) throw new IllegalStateException("Internal error: no preferences bean");
         initialize();
     }
@@ -272,9 +273,9 @@ public class MainWindow extends JFrame implements SheetHolder {
     @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
-        if(visible) {
+        if (visible) {
             toFront();
-            if(maximizeOnStart) {
+            if (maximizeOnStart) {
                 setExtendedState(MAXIMIZED_BOTH);
                 resetSplitLocations();
             }
@@ -283,7 +284,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     /**
      * add the ConnectionListener
-     *
+     * <p/>
      * The listener is stored as a weak reference, to ensure it's not auto removed a reference must be kept
      * somewhere else.
      *
@@ -349,7 +350,9 @@ public class MainWindow extends JFrame implements SheetHolder {
         return disconnected;
     }
 
-    /** @return the SsmApplication for which this MainWindow was created. */
+    /**
+     * @return the SsmApplication for which this MainWindow was created.
+     */
     public SsmApplication getSsmApplication() {
         return ssmApplication;
     }
@@ -584,7 +587,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
         return validateMenuItem;
     }
-    
+
     private JMenuItem getShowAssertionCommentsMenuItem() {
         if (showAstnCommentsMenuItem == null) {
             showAstnCommentsMenuItem = new JMenuItem();
@@ -642,7 +645,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     public JMenu getFilterServiceAndPolicyTreeMenu() {
-        if (filterServiceAndPolicyTreeMenu == null ){
+        if (filterServiceAndPolicyTreeMenu == null) {
             filterServiceAndPolicyTreeMenu = new JMenu("Filter Service and Policy Tree");
         }
         return filterServiceAndPolicyTreeMenu;
@@ -655,31 +658,33 @@ public class MainWindow extends JFrame implements SheetHolder {
         return sortServiceAndPolicyTreeMenu;
     }
 
-    /** @return the preferences bean. never null. */
+    /**
+     * @return the preferences bean. never null.
+     */
     public SsmPreferences getPreferences() {
         return preferences;
     }
 
     /**
      * Show an InformationDialog centered on the parent window.
-     *
+     * <p/>
      * On windows if an InformationDialog is shown as a result of a key press e.g. F3, and the key is held down,
      * this can result in many dialogs being created, which then persist as the focusLost listeners are not invoked
      * as each new dialog is shown. As a result this method ensures that only a single InformationDialog is showing
      * at a time. While a dialog is showing, any further dialogs are ignored.
-     *
+     * <p/>
      * Only access from the swing thread, if not an IllegalStateException will be thrown
      *
      * @param iDialog InformationDialog to show
      */
     public static void showInformationDialog(final InformationDialog iDialog,
-                                             final Runnable continuation) throws IllegalStateException{
+                                             final Runnable continuation) throws IllegalStateException {
 
-        if(!SwingUtilities.isEventDispatchThread()){
+        if (!SwingUtilities.isEventDispatchThread()) {
             throw new IllegalStateException("Cannot invoke showInformationDialog if caller is not on the event dispatching thread");
         }
 
-        if(infoDialogShowing) {
+        if (infoDialogShowing) {
             return;
         }
         infoDialogShowing = true;
@@ -779,7 +784,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getShiftF3MenuItem());
 
             menu.add(getMigrateNamespacesMenuItem());
-            
+
             editMenu = menu;
         }
         return editMenu;
@@ -801,32 +806,32 @@ public class MainWindow extends JFrame implements SheetHolder {
         return new JMenuItem(getGlobalFindAction());
     }
 
-    private static Action getGlobalGoToAction(){
-        if(goToAction == null){
+    private static Action getGlobalGoToAction() {
+        if (goToAction == null) {
             goToAction = new ProxyAction(L7_GO_TO, KeyEvent.VK_G, KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.CTRL_MASK));
             goToAction.putValue(Action.NAME, resapplication.getString("Goto_MenuItem_text"));
         }
         return goToAction;
     }
 
-    private static Action getGlobalFindAction(){
-        if(findAction == null){
+    private static Action getGlobalFindAction() {
+        if (findAction == null) {
             findAction = new ProxyAction(L7_FIND, KeyEvent.VK_F, KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_MASK));
             findAction.putValue(Action.NAME, resapplication.getString("Find_MenuItem_text"));
         }
         return findAction;
     }
 
-    private static Action getGlobalF3Action(){
-        if(f3Action == null){
+    private static Action getGlobalF3Action() {
+        if (f3Action == null) {
             f3Action = new ProxyAction(L7_F3, KeyEvent.VK_N, KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
             f3Action.putValue(Action.NAME, resapplication.getString("F3_MenuItem_text"));
         }
         return f3Action;
     }
 
-    private static Action getGlobalShiftF3Action(){
-        if(shiftF3Action == null){
+    private static Action getGlobalShiftF3Action() {
+        if (shiftF3Action == null) {
             shiftF3Action = new ProxyAction(L7_SHIFT_F3, KeyEvent.VK_V, KeyStroke.getKeyStroke(KeyEvent.VK_F3, KeyEvent.SHIFT_MASK));
             shiftF3Action.putValue(Action.NAME, resapplication.getString("Shift_F3_MenuItem_text"));
         }
@@ -844,10 +849,9 @@ public class MainWindow extends JFrame implements SheetHolder {
     /**
      * Proxy Action allows for an Action to configure a menu item in a global menu like the Edit menu, but allows
      * the actual implementation of the Action to be specified by the Component on which it applies.
-     *
+     * <p/>
      * When the ProxyAction fires it will look up the component with focus, and if it contains an action with the name
      * of the 'actionCommand' property, it will be invoked.
-     *
      */
     private static class ProxyAction extends AbstractAction {
         private final String actionCommand;
@@ -877,8 +881,8 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                     if (a != null) {
                         a.actionPerformed(new ActionEvent(focusOwner,
-                                                          ActionEvent.ACTION_PERFORMED,
-                                                          actionCommand));
+                                ActionEvent.ACTION_PERFORMED,
+                                actionCommand));
                     }
                     return null;
                 }
@@ -888,14 +892,14 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     /**
      * Called when the component with focus changes
-     *
+     * <p/>
      * Many components are configured via their associated Action e.g. enabled state, text
      * Any such Action whose state is determined by the component with focus should be updated in this method.
-     *
+     * <p/>
      * Manage the state of actions responsible for goto Ctrl + G, Ctrl + F,  Next search result F3 and previous search
      * result Shift + F3 (search not implemented yet)
      */
-    private static void updateActionsDependentOnFocusedComponent(){
+    private static void updateActionsDependentOnFocusedComponent() {
         boolean enableGoTo = false;
         boolean enableFind = false;
         boolean enableF3 = false;
@@ -921,21 +925,21 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
     }
 
-    private static Action findActionInComponentOrParent(final JComponent comp, final String actionCommand){
+    private static Action findActionInComponentOrParent(final JComponent comp, final String actionCommand) {
 
         final ActionMap actionMap = comp.getActionMap();
         Action a = actionMap.get(actionCommand);
 
-        if(a == null){
+        if (a == null) {
             //search through it's parents
             Container parent = comp.getParent();
-            while(parent != null){
-                if(!(parent instanceof JComponent)){
+            while (parent != null) {
+                if (!(parent instanceof JComponent)) {
                     break;
                 }
                 JComponent jParent = (JComponent) parent;
                 Action parentAction = jParent.getActionMap().get(actionCommand);
-                if(parentAction != null){
+                if (parentAction != null) {
                     a = parentAction;
                     break;
                 }
@@ -961,7 +965,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getNewProviderSubMenu());
             menu.add(getNewInternalUserAction());
             menu.add(getNewInternalGroupAction());
-            menu.add(getManageAdminUsersSubMenu());                 
+            menu.add(getManageAdminUsersSubMenu());
             menu.add(getFindIdentityAction());
 
             menu.addSeparator();
@@ -992,6 +996,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageUDDIRegistriesAction());
             menu.add(getManageHttpConfigurationAction());
             menu.add(getManageServiceResolutionMenuItem());
+            menu.add(getManageAdminUserAccountAction());
 
             menu.add(getCustomGlobalActionsMenu());
 
@@ -1038,19 +1043,26 @@ public class MainWindow extends JFrame implements SheetHolder {
             manageAdminUsersSubMenu.setText("Manage Account Policies");
             manageAdminUsersSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/ManageUserAccounts16.png")));
 
-            final SecureAction mangeAdminUsers = new ManageAdminUserAccountAction();
-            disableUntilLogin(mangeAdminUsers);
-            manageAdminUsersSubMenu.add(mangeAdminUsers);
 
             final SecureAction forceResetAction = new ForceAdminPasswordResetAction();
             disableUntilLogin(forceResetAction);
             manageAdminUsersSubMenu.add(forceResetAction);
-            
+
             final SecureAction managePasswdPolicyAction = new IdentityProviderManagePasswordPolicyAction();
             disableUntilLogin(managePasswdPolicyAction);
             manageAdminUsersSubMenu.add(managePasswdPolicyAction);
         }
         return manageAdminUsersSubMenu;
+    }
+
+    private Action getManageAdminUserAccountAction() {
+        if (manageAdminUserAccountAction != null)
+            return manageAdminUserAccountAction;
+
+        manageAdminUserAccountAction = new ManageAdminUserAccountAction();
+        disableUntilLogin(manageAdminUserAccountAction);
+        return manageAdminUserAccountAction;
+
     }
 
     /**
@@ -1174,43 +1186,44 @@ public class MainWindow extends JFrame implements SheetHolder {
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/connect2.gif"));
         String aDesc = resapplication.getString("ConnectMenuItem.desc");
         connectAction =
-            new AbstractAction(atext, icon) {
-              /**
-               * Invoked when an action occurs.
-               *
-               * @param event the event that occured
-               */
-                @Override
-                public void actionPerformed(ActionEvent event) {
-                    SwingUtilities.invokeLater(new Runnable() {
+                new AbstractAction(atext, icon) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event the event that occured
+                     */
                     @Override
-                    public void run() {
-                        if ( isApplet() ) {
-                            AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
-                            if (applet == null) {
-                                log.warning("No applet currently attached");
-                                return;
+                    public void actionPerformed(ActionEvent event) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (isApplet()) {
+                                    AppletMain applet = (AppletMain) TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
+                                    if (applet == null) {
+                                        log.warning("No applet currently attached");
+                                        return;
+                                    }
+                                    String sessionId = applet.getSessionID();
+                                    String host = applet.getHostAndPort();
+                                    if (sessionId == null || host == null) {
+                                        DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                                "Session Error",
+                                                "An error occurred connecting to the Gateway,\n please disconnect and try again.",
+                                                JOptionPane.ERROR_MESSAGE,
+                                                null,
+                                                null);
+                                    } else if (!applet.isValidSessionID(sessionId) ||
+                                            !isValidSessionID(sessionId, host)) {
+                                        applet.invalidateSessionID();
+                                        applet.redirectToServlet();
+                                    }
+                                } else {
+                                    LogonDialog.logon(TopComponents.getInstance().getTopParent(), logonListenr);
+                                }
                             }
-                            String sessionId = applet.getSessionID();
-                            String host = applet.getHostAndPort();
-                            if ( sessionId == null || host == null ) {
-                                DialogDisplayer.showMessageDialog( TopComponents.getInstance().getTopParent(),
-                                        "Session Error",
-                                        "An error occurred connecting to the Gateway,\n please disconnect and try again.",
-                                        JOptionPane.ERROR_MESSAGE,
-                                        null,
-                                        null);
-                            } else if ( !applet.isValidSessionID( sessionId ) ||
-                                        !isValidSessionID( sessionId, host ) ) {
-                                applet.invalidateSessionID();
-                                applet.redirectToServlet();
-                            }
-                        } else {
-                          LogonDialog.logon(TopComponents.getInstance().getTopParent(), logonListenr);
-                      }
-                  }});
-              }
-          };
+                        });
+                    }
+                };
         connectAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return connectAction;
     }
@@ -1220,22 +1233,22 @@ public class MainWindow extends JFrame implements SheetHolder {
      *
      * @return true if the session id is valid.
      */
-    public boolean isValidSessionID( final String sessionId, final String host ) {
+    public boolean isValidSessionID(final String sessionId, final String host) {
         boolean validId = false;
 
         final SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
         final AuthenticationProvider authProv = securityProvider.getAuthenticationProvider();
         try {
-            authProv.login( sessionId, host );
+            authProv.login(sessionId, host);
             validId = true;
-        } catch ( LoginException e ) {
-            log.log( Level.FINE, "Login failed.",  ExceptionUtils.getDebugException(e) );
-        } catch ( VersionException ve ) {
-            log.log( Level.WARNING, "Login failed due to software version mismatch.", ExceptionUtils.getDebugException(ve) );
+        } catch (LoginException e) {
+            log.log(Level.FINE, "Login failed.", ExceptionUtils.getDebugException(e));
+        } catch (VersionException ve) {
+            log.log(Level.WARNING, "Login failed due to software version mismatch.", ExceptionUtils.getDebugException(ve));
         }
 
-        if ( validId ) {
-            logonListenr.onAuthSuccess( sessionId, false );
+        if (validId) {
+            logonListenr.onAuthSuccess(sessionId, false);
         }
 
         return validId;
@@ -1253,33 +1266,33 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         String aDesc = resapplication.getString("DisconnectMenuItem.desc");
         disconnectAction =
-          new AbstractAction(atext, icon) {
-              /**
-               * Invoked when an action occurs.
-               *
-               * @param event the event that occured
-               */
-              @Override
-              public void actionPerformed(ActionEvent event) {
-                  try {
-                      getWorkSpacePanel().clearWorkspace(); // vetoable
+                new AbstractAction(atext, icon) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event the event that occured
+                     */
+                    @Override
+                    public void actionPerformed(ActionEvent event) {
+                        try {
+                            getWorkSpacePanel().clearWorkspace(); // vetoable
 
-                      // Must disable actions first, since doing so may attempt to make admin calls
-                      disconnectFromGateway();
+                            // Must disable actions first, since doing so may attempt to make admin calls
+                            disconnectFromGateway();
 
-                      SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-                      if (securityProvider != null) securityProvider.logoff();
+                            SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
+                            if (securityProvider != null) securityProvider.logoff();
 
-                      if ( isApplet() ) {
-                          AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
-                          if (applet != null)
-                            applet.invalidateSessionID();
-                      }
-                  } catch (ActionVetoException e) {
-                      // action vetoed
-                  }
-              }
-          };
+                            if (isApplet()) {
+                                AppletMain applet = (AppletMain) TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
+                                if (applet != null)
+                                    applet.invalidateSessionID();
+                            }
+                        } catch (ActionVetoException e) {
+                            // action vetoed
+                        }
+                    }
+                };
         disconnectAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return disconnectAction;
     }
@@ -1363,8 +1376,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             public void onLogon(LogonEvent e) {
                 super.onLogon(e);
                 final DefaultMutableTreeNode root =
-                  (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
-                node = (AbstractTreeNode)root;
+                        (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
+                node = (AbstractTreeNode) root;
             }
 
         };
@@ -1382,8 +1395,8 @@ public class MainWindow extends JFrame implements SheetHolder {
             public void onLogon(LogonEvent e) {
                 super.onLogon(e);
                 final DefaultMutableTreeNode root =
-                  (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
-                node = (AbstractTreeNode)root;
+                        (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
+                node = (AbstractTreeNode) root;
             }
         };
         MainWindow.this.addLogonListener(newLDAPProviderAction);
@@ -1403,74 +1416,76 @@ public class MainWindow extends JFrame implements SheetHolder {
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Refresh16.gif"));
 
         refreshAction =
-          new AbstractAction(atext, icon) {
-              // need to hold a reference to the listener here to prevent GC
-              private LogonListener ll = new LogonListener() {
-                  @Override
-                  public void onLogon(LogonEvent e) {
-                      refreshAction.setEnabled(true);
-                  }
-                  @Override
-                  public void onLogoff(LogonEvent e) {
-                      refreshAction.setEnabled(false);
-                  }
-              };
-              {
-                addLogonListener(ll);
-              }
+                new AbstractAction(atext, icon) {
+                    // need to hold a reference to the listener here to prevent GC
+                    private LogonListener ll = new LogonListener() {
+                        @Override
+                        public void onLogon(LogonEvent e) {
+                            refreshAction.setEnabled(true);
+                        }
 
-              @Override
-              public void actionPerformed(ActionEvent event) {
-                  Collection<Refreshable> alreadyRefreshed = new ArrayList<Refreshable>();
-                  // no matter what, if id provider tree exists, always refresh it
-                  if (identityProvidersTree != null) {
-                      identityProvidersTree.refresh(identitiesRootNode);
-                      alreadyRefreshed.add(identityProvidersTree);
-                  }
-                  // no matter what, if policy templates exist, always refresh it
-                  getAssertionPaletteTree().firePropertyChange(PolicyTemplatesFolderNode.REFRESH_POLICY_TEMPLATES, 0, 1);
-                  // no matter what, if service tree exists, always refresh it
-                  if (servicesAndPoliciesTree != null) {
-                      servicesAndPoliciesTree.refresh(rootNode);
-                      alreadyRefreshed.add(servicesAndPoliciesTree);
-                  }
-                  // no matter what, always refresh the policy editor panel if it is showing
-                  final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
-                  final JComponent jc = cw.getComponent();
-                  if (jc != null && jc instanceof PolicyEditorPanel) {
-                      PolicyEditorPanel pep = (PolicyEditorPanel)jc;
-                      if (pep.getPolicyTree() != null) {
-                          alreadyRefreshed.add(pep.getPolicyTree());
-                          pep.getPolicyTree().refresh();
-                          alreadyRefreshed.add(pep.getPolicyTree());
-                      }
-                  }
-                  final KeyboardFocusManager kbm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-                  final Component c = kbm.getFocusOwner();
-                  log.finest("the focus owner is " + (c==null ? "NULL" : c.getClass()));
-                  if (c instanceof Refreshable) {
+                        @Override
+                        public void onLogoff(LogonEvent e) {
+                            refreshAction.setEnabled(false);
+                        }
+                    };
 
-                      try {
-                          Refreshable r = (Refreshable)c;
-                          if (!alreadyRefreshed.contains(r)) {
-                              if (r.canRefresh()) {
-                                  log.finest("Invoke refresh on " + c.getClass());
-                                  r.refresh();
-                              }
-                          }
-                      } finally {
-                          SwingUtilities.invokeLater(new Runnable() {
-                              @Override
-                              public void run() {
-                                  if (kbm.getFocusOwner() != c) {
-                                      c.requestFocusInWindow();
-                                  }
-                              }
-                          });
-                      }
-                  }
-              }
-          };
+                    {
+                        addLogonListener(ll);
+                    }
+
+                    @Override
+                    public void actionPerformed(ActionEvent event) {
+                        Collection<Refreshable> alreadyRefreshed = new ArrayList<Refreshable>();
+                        // no matter what, if id provider tree exists, always refresh it
+                        if (identityProvidersTree != null) {
+                            identityProvidersTree.refresh(identitiesRootNode);
+                            alreadyRefreshed.add(identityProvidersTree);
+                        }
+                        // no matter what, if policy templates exist, always refresh it
+                        getAssertionPaletteTree().firePropertyChange(PolicyTemplatesFolderNode.REFRESH_POLICY_TEMPLATES, 0, 1);
+                        // no matter what, if service tree exists, always refresh it
+                        if (servicesAndPoliciesTree != null) {
+                            servicesAndPoliciesTree.refresh(rootNode);
+                            alreadyRefreshed.add(servicesAndPoliciesTree);
+                        }
+                        // no matter what, always refresh the policy editor panel if it is showing
+                        final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
+                        final JComponent jc = cw.getComponent();
+                        if (jc != null && jc instanceof PolicyEditorPanel) {
+                            PolicyEditorPanel pep = (PolicyEditorPanel) jc;
+                            if (pep.getPolicyTree() != null) {
+                                alreadyRefreshed.add(pep.getPolicyTree());
+                                pep.getPolicyTree().refresh();
+                                alreadyRefreshed.add(pep.getPolicyTree());
+                            }
+                        }
+                        final KeyboardFocusManager kbm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+                        final Component c = kbm.getFocusOwner();
+                        log.finest("the focus owner is " + (c == null ? "NULL" : c.getClass()));
+                        if (c instanceof Refreshable) {
+
+                            try {
+                                Refreshable r = (Refreshable) c;
+                                if (!alreadyRefreshed.contains(r)) {
+                                    if (r.canRefresh()) {
+                                        log.finest("Invoke refresh on " + c.getClass());
+                                        r.refresh();
+                                    }
+                                }
+                            } finally {
+                                SwingUtilities.invokeLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (kbm.getFocusOwner() != c) {
+                                            c.requestFocusInWindow();
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                };
         refreshAction.setEnabled(false);
         refreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return refreshAction;
@@ -1481,7 +1496,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     public void clearFilter() {
-        AlterFilterAction.applyfilter(AlterFilterAction.FilterType.ALL, getFilterStatusLabel());    
+        AlterFilterAction.applyfilter(AlterFilterAction.FilterType.ALL, getFilterStatusLabel());
     }
 
     /**
@@ -1496,27 +1511,27 @@ public class MainWindow extends JFrame implements SheetHolder {
         String aDesc = resapplication.getString("toggle.status.bar.action.desc");
 
         toggleStatusBarAction =
-          new AbstractAction(atext) {
-              /**
-               * Invoked when an action occurs.
-               *
-               * @param event the event that occured
-               * @see Action#removePropertyChangeListener
-               */
-              @Override
-              public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
-                  final boolean selected = item.isSelected();
-                  getStatusBarPane().setVisible(selected);
-                  try {
-                      SsmPreferences p = preferences;
-                      p.seStatusBarVisible(selected);
-                      p.store();
-                  } catch (IOException e) {
-                      // ignore
-                  }
-              }
-          };
+                new AbstractAction(atext) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event the event that occured
+                     * @see Action#removePropertyChangeListener
+                     */
+                    @Override
+                    public void actionPerformed(ActionEvent event) {
+                        JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
+                        final boolean selected = item.isSelected();
+                        getStatusBarPane().setVisible(selected);
+                        try {
+                            SsmPreferences p = preferences;
+                            p.seStatusBarVisible(selected);
+                            p.store();
+                        } catch (IOException e) {
+                            // ignore
+                        }
+                    }
+                };
         toggleStatusBarAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return toggleStatusBarAction;
     }
@@ -1533,32 +1548,32 @@ public class MainWindow extends JFrame implements SheetHolder {
         String aDesc = resapplication.getString("toggle.policy.msg.action.desc");
 
         togglePolicyMessageArea =
-          new AbstractAction(atext) {
-              /**
-               * Invoked when an action occurs.
-               *
-               * @param event the event that occured
-               * @see Action#removePropertyChangeListener
-               */
-              @Override
-              public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
-                  final boolean selected = item.isSelected();
-                  final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
-                  final JComponent c = cw.getComponent();
-                  if (c != null && c instanceof PolicyEditorPanel) {
-                      PolicyEditorPanel pe = (PolicyEditorPanel)c;
-                      pe.setMessageAreaVisible(selected);
-                  }
-                  try {
-                      SsmPreferences p = preferences;
-                      p.setPolicyMessageAreaVisible(selected);
-                      p.store();
-                  } catch (IOException e) {
-                      // ignore
-                  }
-              }
-          };
+                new AbstractAction(atext) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event the event that occured
+                     * @see Action#removePropertyChangeListener
+                     */
+                    @Override
+                    public void actionPerformed(ActionEvent event) {
+                        JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
+                        final boolean selected = item.isSelected();
+                        final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
+                        final JComponent c = cw.getComponent();
+                        if (c != null && c instanceof PolicyEditorPanel) {
+                            PolicyEditorPanel pe = (PolicyEditorPanel) c;
+                            pe.setMessageAreaVisible(selected);
+                        }
+                        try {
+                            SsmPreferences p = preferences;
+                            p.setPolicyMessageAreaVisible(selected);
+                            p.store();
+                        } catch (IOException e) {
+                            // ignore
+                        }
+                    }
+                };
         togglePolicyMessageArea.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return togglePolicyMessageArea;
     }
@@ -1597,20 +1612,21 @@ public class MainWindow extends JFrame implements SheetHolder {
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/preferences.gif"));
         String aDesc = resapplication.getString("PreferencesMenuItem.desc");
         prefsAction =
-          new AbstractAction(atext, icon) {
-              @Override
-              public void actionPerformed(ActionEvent event) {
-                  SwingUtilities.invokeLater(new Runnable() {
-                  @Override
-                  public void run() {
-                      PreferencesDialog dialog = new PreferencesDialog(TopComponents.getInstance().getTopParent(), true, isApplet());
-                      dialog.pack();
-                      Utilities.centerOnScreen(dialog);
-                      dialog.setResizable(false);
-                      DialogDisplayer.display(dialog);
-                  }});
-              }
-          };
+                new AbstractAction(atext, icon) {
+                    @Override
+                    public void actionPerformed(ActionEvent event) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                PreferencesDialog dialog = new PreferencesDialog(TopComponents.getInstance().getTopParent(), true, isApplet());
+                                dialog.pack();
+                                Utilities.centerOnScreen(dialog);
+                                dialog.setResizable(false);
+                                DialogDisplayer.display(dialog);
+                            }
+                        });
+                    }
+                };
         prefsAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return prefsAction;
     }
@@ -1626,14 +1642,14 @@ public class MainWindow extends JFrame implements SheetHolder {
         String atext = resapplication.getString("Delete_MenuItem_text");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Delete16.gif"));
         removeNodeAction =
-          new AbstractAction(atext, icon) {
-              /**
-               * Invoked when an action occurs.
-               */
-              @Override
-              public void actionPerformed(ActionEvent event) {
-              }
-          };
+                new AbstractAction(atext, icon) {
+                    /**
+                     * Invoked when an action occurs.
+                     */
+                    @Override
+                    public void actionPerformed(ActionEvent event) {
+                    }
+                };
         removeNodeAction.putValue(Action.SHORT_DESCRIPTION, atext);
         removeNodeAction.setEnabled(false);
         return removeNodeAction;
@@ -1705,7 +1721,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         panel.setEditable(false);
         panel.setBackground(Color.gray);
 
-        panel.setTransferHandler(new FileDropTransferHandler(new FileDropTransferHandler.FileDropListener(){
+        panel.setTransferHandler(new FileDropTransferHandler(new FileDropTransferHandler.FileDropListener() {
             @Override
             public boolean acceptFiles(File[] files) {
                 boolean accepted = false;
@@ -1720,11 +1736,11 @@ public class MainWindow extends JFrame implements SheetHolder {
             public boolean isDropEnabled() {
                 return true;
             }
-        }, new FilenameFilter(){
+        }, new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
                 boolean accept = false;
-                if(name != null && (name.endsWith(".ssga") || name.endsWith(".ssgl"))) {
+                if (name != null && (name.endsWith(".ssga") || name.endsWith(".ssgl"))) {
                     accept = true;
                 }
                 return accept;
@@ -1740,7 +1756,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      * @return JTree
      */
     private JTree getAssertionPaletteTree() {
-        JTree tree = (JTree)TopComponents.getInstance().getComponent(AssertionsTree.NAME);
+        JTree tree = (JTree) TopComponents.getInstance().getComponent(AssertionsTree.NAME);
         if (tree != null)
             return tree;
         tree = new AssertionsTree();
@@ -1785,7 +1801,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      * @return JTree
      */
     private IdentityProvidersTree getIdentitiesTree() {
-        IdentityProvidersTree tree = (IdentityProvidersTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
+        IdentityProvidersTree tree = (IdentityProvidersTree) TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
         if (tree != null) return tree;
         identityProvidersTree = new IdentityProvidersTree();
         identityProvidersTree.setShowsRootHandles(true);
@@ -1800,7 +1816,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      * @return JTree
      */
     private JTree getServicesAndPoliciesTree() {
-        JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
+        JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
         if (tree != null)
             return tree;
 
@@ -1809,7 +1825,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         servicesAndPoliciesTree.setShowsRootHandles(true);
         servicesAndPoliciesTree.setRootVisible(true);
         TopComponents.getInstance().registerComponent(ServicesAndPoliciesTree.NAME, servicesAndPoliciesTree);
-		servicesAndPoliciesTree.addTreeSelectionListener(new TreeSelectionListener() {
+        servicesAndPoliciesTree.addTreeSelectionListener(new TreeSelectionListener() {
             @Override
             public void valueChanged(TreeSelectionEvent treeSelectionEvent) {
                 boolean enable = servicesAndPoliciesTree.getSmartSelectedNodes().size() == 1;
@@ -1819,7 +1835,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     if (!(pathItem instanceof ServiceNode)) {
                         enable = false;
                     } else {
-                        soap = ((ServiceNode)pathItem).getEntityHeader().isSoap();
+                        soap = ((ServiceNode) pathItem).getEntityHeader().isSoap();
                     }
                 }
                 getEditPolicyMenuItem().setEnabled(enable);
@@ -1828,11 +1844,11 @@ public class MainWindow extends JFrame implements SheetHolder {
                 getDeleteServiceMenuItem().setEnabled(enable);
                 if (enable) {
                     // go get the actions from the node
-                    ServiceNode node = (ServiceNode)(servicesAndPoliciesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent());
+                    ServiceNode node = (ServiceNode) (servicesAndPoliciesTree.getSelectionModel().getSelectionPaths()[0].getLastPathComponent());
                     getEditPolicyMenuItem().setAction(new EditPolicyAction(node));
                     getServicePropertiesMenuItem().setAction(new EditServiceProperties(node));
                     if (soap) getServiceUDDISettingsMenuItem().setAction(new EditServiceUDDISettingsAction(node));
-                    getDeleteServiceMenuItem().setAction((node instanceof ServiceNodeAlias)? new DeleteServiceAliasAction((ServiceNodeAlias)node) : new DeleteServiceAction(node));
+                    getDeleteServiceMenuItem().setAction((node instanceof ServiceNodeAlias) ? new DeleteServiceAliasAction((ServiceNodeAlias) node) : new DeleteServiceAction(node));
                 }
             }
         });
@@ -1844,7 +1860,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
-     * @return  The gateway's name that the manager is connecting to.
+     * @return The gateway's name that the manager is connecting to.
      */
     private String getServiceUrl() {
         String url;
@@ -1907,7 +1923,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             }
         });
         getSearchComboBox().updateSearchableItems(getAllSearchableServiceAndPolicyNodes());
-        
+
         getServicesAndPoliciesTree().setShowsRootHandles(true);
         getServicesAndPoliciesTree().setRootVisible(true);
 
@@ -1915,43 +1931,43 @@ public class MainWindow extends JFrame implements SheetHolder {
         getEditPolicyMenuItem().setEnabled(false);
         getServicePropertiesMenuItem().setEnabled(false);
         getServiceUDDISettingsMenuItem().setEnabled(false);
-        getDeleteServiceMenuItem().setEnabled(false);        
+        getDeleteServiceMenuItem().setEnabled(false);
 
         TreeSelectionListener treeSelectionListener =
-          new TreeSelectionListener() {
-              private final JTree assertionPalette =
-                assertionPaletteTree;
-              private final JTree services = getServicesAndPoliciesTree();
+                new TreeSelectionListener() {
+                    private final JTree assertionPalette =
+                            assertionPaletteTree;
+                    private final JTree services = getServicesAndPoliciesTree();
 
-              @Override
-              public void valueChanged(TreeSelectionEvent e) {
-                  Object o = e.getSource();
-                  if (o == assertionPalette) {
-                      if (!isRemovePath(e)) {
-                          log.finer("Clearing selection services");
-                          services.clearSelection();
-                      }
-                  } else if (o == services) {
-                      if (!isRemovePath(e)) {
-                          log.finer("Clearing selection assertions palette");
-                          assertionPalette.clearSelection();
-                      }
-                  } else {
-                      log.warning("Received unexpected selection path from " + o.getClass());
-                  }
-              }
+                    @Override
+                    public void valueChanged(TreeSelectionEvent e) {
+                        Object o = e.getSource();
+                        if (o == assertionPalette) {
+                            if (!isRemovePath(e)) {
+                                log.finer("Clearing selection services");
+                                services.clearSelection();
+                            }
+                        } else if (o == services) {
+                            if (!isRemovePath(e)) {
+                                log.finer("Clearing selection assertions palette");
+                                assertionPalette.clearSelection();
+                            }
+                        } else {
+                            log.warning("Received unexpected selection path from " + o.getClass());
+                        }
+                    }
 
-              private boolean isRemovePath(TreeSelectionEvent e) {
-                  TreePath[] paths = e.getPaths();
-                  for (int i = 0; i < paths.length; i++) {
-                      if (!e.isAddedPath(i)) {
-                          return true;
-                      }
-                  }
-                  return false;
-              }
+                    private boolean isRemovePath(TreeSelectionEvent e) {
+                        TreePath[] paths = e.getPaths();
+                        for (int i = 0; i < paths.length; i++) {
+                            if (!e.isAddedPath(i)) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
 
-          };
+                };
         getServicesAndPoliciesTree().addTreeSelectionListener(treeSelectionListener);
         assertionPaletteTree.addTreeSelectionListener(treeSelectionListener);
 
@@ -2041,16 +2057,16 @@ public class MainWindow extends JFrame implements SheetHolder {
         return manageSsgConnectorsAction;
     }
 
-    private Action getManageUDDIRegistriesAction(){
-        if(manageUDDIRegistriesAction != null) return manageUDDIRegistriesAction;
+    private Action getManageUDDIRegistriesAction() {
+        if (manageUDDIRegistriesAction != null) return manageUDDIRegistriesAction;
 
         manageUDDIRegistriesAction = new ManageUDDIRegistriesAction();
         disableUntilLogin(manageUDDIRegistriesAction);
         return manageUDDIRegistriesAction;
     }
 
-    private Action getManageHttpConfigurationAction(){
-        if(manageHttpConfigurationAction != null) return manageHttpConfigurationAction;
+    private Action getManageHttpConfigurationAction() {
+        if (manageHttpConfigurationAction != null) return manageHttpConfigurationAction;
 
         manageHttpConfigurationAction = new ManageHttpConfigurationAction();
         disableUntilLogin(manageHttpConfigurationAction);
@@ -2173,11 +2189,11 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private Action getGatewayAuditWindowAction() {
         if (viewGatewayAuditsWindowAction != null) return viewGatewayAuditsWindowAction;
-        viewGatewayAuditsWindowAction = new ViewGatewayAuditsAction(){
+        viewGatewayAuditsWindowAction = new ViewGatewayAuditsAction() {
             @Override
             protected void performAction() {
                 AuditAlertsNotificationPanel auditAlert = getAuditAlertBar();
-                if( auditAlert != null )
+                if (auditAlert != null)
                     auditAlert.auditsViewed();
 
                 super.performAction();
@@ -2209,10 +2225,10 @@ public class MainWindow extends JFrame implements SheetHolder {
         mainSplitPane.add(getMainLeftPanel(), "left");
         mainSplitPane.setDividerSize(4);
         mainSplitPane.setBorder(null);
-        getMainLeftPanel().addComponentListener(new ComponentAdapter(){
+        getMainLeftPanel().addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                preferredHorizontalSplitLocation = mainSplitPane.getDividerLocation() / (double)(mainSplitPane.getWidth() - mainSplitPane.getDividerSize());
+                preferredHorizontalSplitLocation = mainSplitPane.getDividerLocation() / (double) (mainSplitPane.getWidth() - mainSplitPane.getDividerSize());
             }
         });
         addWindowListener(new WindowAdapter() {
@@ -2254,9 +2270,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             statusBarPane.setLayout(new BorderLayout());
             statusBarPane.setDoubleBuffered(true);
             Border border =
-              BorderFactory.
-              createCompoundBorder(getStatusMsgLeft().getBorder(),
-                BorderFactory.createEmptyBorder(2, 2, 2, 2));
+                    BorderFactory.
+                            createCompoundBorder(getStatusMsgLeft().getBorder(),
+                                    BorderFactory.createEmptyBorder(2, 2, 2, 2));
 
             getStatusMsgLeft().setBorder(border);
 
@@ -2314,14 +2330,14 @@ public class MainWindow extends JFrame implements SheetHolder {
     /**
      * Add an action button to a toolbar.
      *
-     * @param tb  the toolbar
-     * @param a   the action
-     * @return  the new button
+     * @param tb the toolbar
+     * @param a  the action
+     * @return the new button
      */
     private JButton tbadd(JToolBar tb, Action a) {
         JButton b = tb.add(a);
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)a.getValue(Action.NAME));
+        b.setText((String) a.getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
         b.setFocusable(false);
@@ -2331,12 +2347,12 @@ public class MainWindow extends JFrame implements SheetHolder {
     /**
      * Add a popup menu button to a toolbar.
      *
-     * @param tb    the toolbar
-     * @param menu  the popup menu
-     * @param iconResource  resource path of icon for menu button
+     * @param tb           the toolbar
+     * @param menu         the popup menu
+     * @param iconResource resource path of icon for menu button
      */
     private void tbadd(JToolBar tb, final JPopupMenu menu, String iconResource) {
-        final JButton[] but = new JButton[] { null };
+        final JButton[] but = new JButton[]{null};
         final Action showAction = new AbstractAction(menu.getLabel()) {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -2396,6 +2412,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageUDDIRegistriesAction());
             menu.add(getManageHttpConfigurationAction());
             menu.add(getManageServiceResolutionMenuItem());
+            menu.add(getManageAdminUserAccountAction());
 
             menu.add(getCustomGlobalActionsMenu());
 
@@ -2437,12 +2454,16 @@ public class MainWindow extends JFrame implements SheetHolder {
         return toolBarPane;
     }
 
-    /** @return true if we are running as an Applet */
+    /**
+     * @return true if we are running as an Applet
+     */
     public boolean isApplet() {
         return ssmApplication.isApplet();
     }
 
-    /** @return true if we are running trusted */
+    /**
+     * @return true if we are running trusted
+     */
     public boolean isTrusted() {
         return ssmApplication.isTrusted();
     }
@@ -2480,9 +2501,9 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private void resetSplitLocations() {
         preferredHorizontalSplitLocation =
-                        setSplitLocation("main.split.divider.location",
-                                preferredHorizontalSplitLocation,
-                                mainSplitPane);
+                setSplitLocation("main.split.divider.location",
+                        preferredHorizontalSplitLocation,
+                        mainSplitPane);
 
         preferredVerticalSplitLocation =
                 setSplitLocation("tree.split.divider.location",
@@ -2497,19 +2518,18 @@ public class MainWindow extends JFrame implements SheetHolder {
         if (s != null) {
             try {
                 double fromFile = Double.parseDouble(s);
-                if(fromFile>=0 && fromFile<=1.0)
+                if (fromFile >= 0 && fromFile <= 1.0)
                     splitLocation = fromFile;
                 else
-                    log.log(Level.WARNING, "Invalid divider location '"+fromFile+"'.");
+                    log.log(Level.WARNING, "Invalid divider location '" + fromFile + "'.");
             } catch (NumberFormatException nfe) {
-                log.log(Level.WARNING, "Unable to parse divider location '"+s+"'.");
+                log.log(Level.WARNING, "Unable to parse divider location '" + s + "'.");
             }
         }
-        if(splitLocation>=0 && splitLocation<=1.0) {
+        if (splitLocation >= 0 && splitLocation <= 1.0) {
             splitPane.setDividerLocation(splitLocation);
-        }
-        else {
-            log.warning("Ignoring invalid divider location '"+splitLocation+"'.");
+        } else {
+            log.warning("Ignoring invalid divider location '" + splitLocation + "'.");
         }
         return splitLocation;
     }
@@ -2581,13 +2601,13 @@ public class MainWindow extends JFrame implements SheetHolder {
         verticalSplitPane.setDividerSize(10);
         verticalSplitPane.setResizeWeight(0.6);
 
-        paletteSections.addComponentListener(new ComponentAdapter(){
+        paletteSections.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                preferredVerticalSplitLocation = verticalSplitPane.getDividerLocation() / (double)(verticalSplitPane.getHeight() - verticalSplitPane.getDividerSize());
+                preferredVerticalSplitLocation = verticalSplitPane.getDividerLocation() / (double) (verticalSplitPane.getHeight() - verticalSplitPane.getDividerSize());
             }
         });
-        addWindowListener(new WindowAdapter(){
+        addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent e) {
                 preferredVerticalSplitLocation =
@@ -2607,11 +2627,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         getFilterStatusLabel().setText(FILTER_STATUS_NONE);
 
         //searching components
-        JPanel searchPanel = new JPanel(new BorderLayout(3,1));
+        JPanel searchPanel = new JPanel(new BorderLayout(3, 1));
         //searchPanel.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
         searchPanel.add(searchLabel, BorderLayout.WEST);
         searchPanel.add(getSearchComboBox(), BorderLayout.CENTER);
-        
+
         servicesAndPoliciesTreePanel.add(searchPanel, BorderLayout.NORTH);
         servicesAndPoliciesTreePanel.add(serviceScroller, BorderLayout.CENTER);
         servicesAndPoliciesTreePanel.add(getFilterStatusLabel(), BorderLayout.SOUTH);
@@ -2619,7 +2639,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         final Action findAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                getSearchComboBox().requestFocusInWindow();                
+                getSearchComboBox().requestFocusInWindow();
             }
         };
 
@@ -2635,14 +2655,14 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
-     * @return  The initialized editable search combo box for service and policy tree panel.
+     * @return The initialized editable search combo box for service and policy tree panel.
      */
     private EditableSearchComboBox<EntityHeaderNode> getSearchComboBox() {
         if (searchComboBox == null) {
             searchComboBox = new EditableSearchComboBox<EntityHeaderNode>(new EditableSearchComboBox.Filter() {
                 @Override
                 public boolean accept(Object obj) {
-                    if(obj == null) return false; //this should not happen
+                    if (obj == null) return false; //this should not happen
 
                     if (!(obj instanceof EntityHeaderNode)) return false;
                     EntityHeaderNode headerNode = (EntityHeaderNode) obj;
@@ -2656,8 +2676,8 @@ public class MainWindow extends JFrame implements SheetHolder {
                     if (obj instanceof ServiceNode) {
                         ServiceNode serviceNode = (ServiceNode) obj;
                         final String routingUri = serviceNode.getEntityHeader().getRoutingUri();
-                        if (routingUri != null){
-                            if(searchText.startsWith("/")){
+                        if (routingUri != null) {
+                            if (searchText.startsWith("/")) {
                                 matches = routingUri.toLowerCase().contains(searchText.substring(1));
                             }
                         }
@@ -2665,15 +2685,16 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                     return matches;
                 }
-            }){};
-            
+            }) {
+            };
+
             searchComboBox.setEnabled(false);
             searchLabel.setEnabled(false);
 
             final Functions.Unary<String, EntityHeaderNode> accessorFunction = new Functions.Unary<String, EntityHeaderNode>() {
                 @Override
                 public String call(EntityHeaderNode abstractTreeNode) {
-                    return  abstractTreeNode.getName();
+                    return abstractTreeNode.getName();
 
                 }
             };
@@ -2705,7 +2726,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             searchComboBox.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                        invokeSelection();
+                    invokeSelection();
                 }
             });
         }
@@ -2738,7 +2759,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
-     * @return  The list of searchable service and policy nodes based on the filtering selection.
+     * @return The list of searchable service and policy nodes based on the filtering selection.
      */
     private List<EntityHeaderNode> getAllSearchableServiceAndPolicyNodes() {
         JTree tree = getServicesAndPoliciesTree();
@@ -2748,8 +2769,8 @@ public class MainWindow extends JFrame implements SheetHolder {
         return (List<EntityHeaderNode>) rootNode.collectSearchableChildren(EntityHeaderNode.class, filter);
     }
 
-    private JLabel getFilterStatusLabel(){
-        if(filterStatusLabel != null){
+    private JLabel getFilterStatusLabel() {
+        if (filterStatusLabel != null) {
             return filterStatusLabel;
         }
         filterStatusLabel = new JLabel();
@@ -2758,7 +2779,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private Component getAssertionDescriptionPane() {
         if (descriptionText == null) {
-            descriptionText= new JTextPane();
+            descriptionText = new JTextPane();
             descriptionText.setContentType("text/html");
             descriptionText.setEditable(false);
             descriptionText.setMaximumSize(new Dimension(descriptionText.getMaximumSize().width, 100));
@@ -2796,17 +2817,17 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private void addComponentToGridBagContainer(JComponent container, JComponent component) {
         GridBagConstraints constraints
-          = new GridBagConstraints(0, // gridx
-            0, // gridy
-            1, // widthx
-            1, // widthy
-            1.0, // weightx
-            1.0, // weigthy
-            GridBagConstraints.NORTH, // anchor
-            GridBagConstraints.BOTH, //fill
-            new Insets(0, 0, 0, 0), // inses
-            0, // padx
-            0); // pady
+                = new GridBagConstraints(0, // gridx
+                0, // gridy
+                1, // widthx
+                1, // widthy
+                1.0, // weightx
+                1.0, // weigthy
+                GridBagConstraints.NORTH, // anchor
+                GridBagConstraints.BOTH, //fill
+                new Insets(0, 0, 0, 0), // inses
+                0, // padx
+                0); // pady
         container.add(component, constraints);
     }
 
@@ -2843,7 +2864,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             if (securityProvider != null) securityProvider.logoff();
         }
 
-        String maximized = Boolean.toString(getExtendedState()==Frame.MAXIMIZED_BOTH);
+        String maximized = Boolean.toString(getExtendedState() == Frame.MAXIMIZED_BOTH);
         this.setVisible(false);
         try {
             SsmPreferences prefs = preferences;
@@ -2865,40 +2886,40 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         // exitMenuItem listener
         getExitMenuItem().
-          addActionListener(new ActionListener() {
-              @Override
-              public void actionPerformed(ActionEvent e) {
-                  exitMenuEventHandler();
-              }
-          });
+                addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        exitMenuEventHandler();
+                    }
+                });
 
         // HelpTopics listener
         getHelpTopicsMenuItem().
-          addActionListener(new ActionListener() {
-              @Override
-              public void actionPerformed(ActionEvent e) {
-                  showHelpTopicsRoot();
-              }
-          });
+                addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        showHelpTopicsRoot();
+                    }
+                });
 
         // look and feel listener
         PropertyChangeListener l =
-          new PropertyChangeListener() {
-              /**
-               * This method gets called when a property is changed.
-               */
-              @Override
-              public void propertyChange(final PropertyChangeEvent evt) {
-                  if ("lookAndFeel".equals(evt.getPropertyName())) {
-                      SwingUtilities.invokeLater(new Runnable() {
-                          @Override
-                          public void run() {
-                              SwingUtilities.updateComponentTreeUI(TopComponents.getInstance().getTopParent());
-                          }
-                      });
-                  }
-              }
-          };
+                new PropertyChangeListener() {
+                    /**
+                     * This method gets called when a property is changed.
+                     */
+                    @Override
+                    public void propertyChange(final PropertyChangeEvent evt) {
+                        if ("lookAndFeel".equals(evt.getPropertyName())) {
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    SwingUtilities.updateComponentTreeUI(TopComponents.getInstance().getTopParent());
+                                }
+                            });
+                        }
+                    }
+                };
         UIManager.addPropertyChangeListener(l);
 
         //focus listener to track the component which currently has focus
@@ -2908,7 +2929,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             public void propertyChange(PropertyChangeEvent evt) {
                 Object fo = evt.getNewValue();
                 if (fo instanceof JComponent) {
-                    focusOwner = (JComponent)fo;
+                    focusOwner = (JComponent) fo;
                     //all logic for when a component is focused should go in the following method and not here
                     updateActionsDependentOnFocusedComponent();
                 }
@@ -2998,7 +3019,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         installCascadingErrorHandler();
         installClosingWindowHandler();
 
-        if(!isApplet()) {
+        if (!isApplet()) {
             installTopMenuRefresh();
         }
     }
@@ -3042,15 +3063,15 @@ public class MainWindow extends JFrame implements SheetHolder {
         try {
             SsmPreferences prefs = preferences;
             Boolean maximized = Boolean.valueOf(prefs.getString("last.window.maximized", "false"));
-            if(maximized) {
+            if (maximized) {
                 maximizeOnStart = true;
             }
             Dimension lastScreenSize = prefs.getLastScreenSize();
             Dimension lastWindowSize = prefs.getLastWindowSize();
             Point lastWindowLocation = prefs.getLastWindowLocation();
             if (lastScreenSize != null &&
-              lastScreenSize.width >= curScreenSize.width &&
-              lastScreenSize.height >= curScreenSize.height) {
+                    lastScreenSize.width >= curScreenSize.width &&
+                    lastScreenSize.height >= curScreenSize.height) {
                 if (lastWindowLocation != null) {
                     this.setLocation(lastWindowLocation);
                     posWasSet = true;
@@ -3070,7 +3091,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         if (!posWasSet) {
             if (curScreenSize.height > 768 &&
-                curScreenSize.width > 1024) {
+                    curScreenSize.width > 1024) {
                 curScreenSize = new Dimension(1024, 768);
             }
             this.setSize(curScreenSize);
@@ -3080,7 +3101,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
 
     // -------------- inactivitiy timeout (close your eyes) -------------------
-    private volatile long inactivityTimeout = TimeUnit.MINUTES.toMillis( 30L ); // AbstractSsmPreferences.DEFAULT_INACTIVITY_TIMEOUT
+    private volatile long inactivityTimeout = TimeUnit.MINUTES.toMillis(30L); // AbstractSsmPreferences.DEFAULT_INACTIVITY_TIMEOUT
     private volatile long lastActivityTime = System.currentTimeMillis();
     private volatile long lastRemoteActivityTime = System.currentTimeMillis();
 
@@ -3090,38 +3111,38 @@ public class MainWindow extends JFrame implements SheetHolder {
         // AWT event listener
         final
         AWTEventListener listener =
-          new AWTEventListener() {
-              @Override
-              public void eventDispatched(AWTEvent e) {
-                  lastActivityTime = System.currentTimeMillis();
-              }
-          };
+                new AWTEventListener() {
+                    @Override
+                    public void eventDispatched(AWTEvent e) {
+                        lastActivityTime = System.currentTimeMillis();
+                    }
+                };
         // all events that should reset the idle timout, omitting events which might fire while dashboard and audits are updating unattended (Bug #4142)
         long mask =
-          AWTEvent.FOCUS_EVENT_MASK |
-          AWTEvent.KEY_EVENT_MASK |
-          AWTEvent.MOUSE_EVENT_MASK |
-          AWTEvent.MOUSE_MOTION_EVENT_MASK |
-          AWTEvent.WINDOW_EVENT_MASK |
-          AWTEvent.ACTION_EVENT_MASK |
-          AWTEvent.INPUT_METHOD_EVENT_MASK;
+                AWTEvent.FOCUS_EVENT_MASK |
+                        AWTEvent.KEY_EVENT_MASK |
+                        AWTEvent.MOUSE_EVENT_MASK |
+                        AWTEvent.MOUSE_MOTION_EVENT_MASK |
+                        AWTEvent.WINDOW_EVENT_MASK |
+                        AWTEvent.ACTION_EVENT_MASK |
+                        AWTEvent.INPUT_METHOD_EVENT_MASK;
 
         // dynamic initializer, register listener
         {
             MainWindow.this.getToolkit().
-                addAWTEventListener(listener, mask);
+                    addAWTEventListener(listener, mask);
         }
     }
 
     private void onInactivityTimerTick() {
-        if ( ssmApplication.isApplet() ) return;
+        if (ssmApplication.isApplet()) return;
 
         final long now = System.currentTimeMillis();
-        if ( inactivityTimeout > 0L &&
-             (now - lastActivityTime) > inactivityTimeout ) { // match
+        if (inactivityTimeout > 0L &&
+                (now - lastActivityTime) > inactivityTimeout) { // match
             inactivityTimer.stop(); // stop timer
             MainWindow.this.getStatusMsgRight().
-              setText("inactivity timeout expired; disconnecting...");
+                    setText("inactivity timeout expired; disconnecting...");
             // make sure it is invoked on event dispatching thread
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
@@ -3134,44 +3155,44 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                         // add a top level dlg that indicates the connection was closed
                         DialogDisplayer.showMessageDialog(MainWindow.this,
-                                                      "The Policy Manager connection has been closed due\n" +
-                                                      "to timeout. Any unsaved work will be lost.",
-                                                      "Connection Timeout", JOptionPane.WARNING_MESSAGE, null);
+                                "The Policy Manager connection has been closed due\n" +
+                                        "to timeout. Any unsaved work will be lost.",
+                                "Connection Timeout", JOptionPane.WARNING_MESSAGE, null);
                     } catch (ActionVetoException e1) {
                         // swallow, cannot happen from here
                     }
                 }
             });
-        } else if ( Registry.getDefault().isAdminContextPresent() &&
-                    (now - lastRemoteActivityTime) > PING_INTERVAL && lastActivityTime > lastRemoteActivityTime ) {
+        } else if (Registry.getDefault().isAdminContextPresent() &&
+                (now - lastRemoteActivityTime) > PING_INTERVAL && lastActivityTime > lastRemoteActivityTime) {
             // If the user is interacting with the Manager then ping the Gateway periodically
             // to keep the remote session alive if there are no other remote calls.
             //
             // This is in the background so it does not block the swing thread if slow.
-            Background.scheduleOneShot( new TimerTask(){
+            Background.scheduleOneShot(new TimerTask() {
                 @Override
                 public void run() {
                     try {
                         Registry.getDefault().getAdminLogin().ping();
                         updateRemoteLastActivityTime(); // should also get updated by pinging
-                    } catch ( IllegalStateException ise ) {
+                    } catch (IllegalStateException ise) {
                         // admin context not available
-                    } catch ( Exception e ) {
-                        ErrorManager.getDefault().notify( Level.INFO, e, ErrorManager.DEFAULT_ERROR_MESSAGE );
+                    } catch (Exception e) {
+                        ErrorManager.getDefault().notify(Level.INFO, e, ErrorManager.DEFAULT_ERROR_MESSAGE);
                     }
                 }
-            }, 1L );
+            }, 1L);
         }
     }
 
     private final Timer inactivityTimer =
-      new Timer( (int)TimeUnit.SECONDS.toMillis( 10L ),
-        new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onInactivityTimerTick();
-            }
-        });
+            new Timer((int) TimeUnit.SECONDS.toMillis(10L),
+                    new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            onInactivityTimerTick();
+                        }
+                    });
 
     public void updateLastActivityTime() {
         lastActivityTime = System.currentTimeMillis();
@@ -3189,13 +3210,13 @@ public class MainWindow extends JFrame implements SheetHolder {
      *
      * @param newTimeout new inactivity timeout
      */
-    public void setInactivitiyTimeout( int newTimeout ) {
-        inactivityTimeout = TimeUnit.MINUTES.toMillis( (long)newTimeout );
+    public void setInactivitiyTimeout(int newTimeout) {
+        inactivityTimeout = TimeUnit.MINUTES.toMillis((long) newTimeout);
         if (!isConnected()) return;
 
-        if ( inactivityTimeout >= 0 ) {
+        if (inactivityTimeout >= 0) {
             log.log(Level.INFO, "Inactivity timeout updated (timeout = " + inactivityTimeout + ")");
-            if ( !inactivityTimer.isRunning() ) inactivityTimer.start();
+            if (!inactivityTimer.isRunning()) inactivityTimer.start();
         } else {
             log.log(Level.WARNING, "Incorrect timeout value " + inactivityTimeout);
             setInactivitiyTimeout(0);
@@ -3214,10 +3235,11 @@ public class MainWindow extends JFrame implements SheetHolder {
     /**
      * Install a handler to close all opened windows when ssg is disconnected.
      */
-    private void installClosingWindowHandler () {
-        closeWindowListener = new LogonListener(){
+    private void installClosingWindowHandler() {
+        closeWindowListener = new LogonListener() {
             @Override
-            public void onLogon(LogonEvent e) {}
+            public void onLogon(LogonEvent e) {
+            }
 
             @Override
             public void onLogoff(LogonEvent e) {
@@ -3225,7 +3247,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             }
         };
 
-       addLogonListener(closeWindowListener);
+        addLogonListener(closeWindowListener);
     }
 
     /**
@@ -3252,14 +3274,14 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     void checkConfiguration() {
         String trustStore = SyspropUtil.getString("javax.net.ssl.trustStore", null);
-        if ( trustStore != null ) {
+        if (trustStore != null) {
             File storeFile = new File(trustStore);
-            if ( !storeFile.exists() ) {
-                if ( storeFile.getParentFile()==null || !storeFile.getParentFile().exists() ) {
-                    DialogDisplayer.showMessageDialog(this, null, "Invalid Trust Store configuration.\n File '"+trustStore+"'.", null);
+            if (!storeFile.exists()) {
+                if (storeFile.getParentFile() == null || !storeFile.getParentFile().exists()) {
+                    DialogDisplayer.showMessageDialog(this, null, "Invalid Trust Store configuration.\n File '" + trustStore + "'.", null);
                 }
-            } else if ( !storeFile.canWrite() ) {
-                log.warning("Trust store file is not writable '"+storeFile.getAbsolutePath()+"'.");
+            } else if (!storeFile.canWrite()) {
+                log.warning("Trust store file is not writable '" + storeFile.getAbsolutePath() + "'.");
             }
         }
     }
@@ -3322,8 +3344,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     public JMenuItem getManageServiceResolutionMenuItem() {
         if (manageServiceResolutionMenuItem == null) {
             manageServiceResolutionMenuItem = new JMenuItem(getManageServiceResolutionAction());
-            manageServiceResolutionMenuItem.setText( "Manage Service Resolution" );
-            manageServiceResolutionMenuItem.setMnemonic( 0 );
+            manageServiceResolutionMenuItem.setText("Manage Service Resolution");
+            manageServiceResolutionMenuItem.setMnemonic(0);
         }
         return manageServiceResolutionMenuItem;
     }
@@ -3384,13 +3406,13 @@ public class MainWindow extends JFrame implements SheetHolder {
         return revokeCertificatesMenuItem;
     }
 
-    public JMenuItem getManageGlobalResourcesMenuItem(){
-        if ( manageGlobalResourcesMenuItem != null ) return manageGlobalResourcesMenuItem;
+    public JMenuItem getManageGlobalResourcesMenuItem() {
+        if (manageGlobalResourcesMenuItem != null) return manageGlobalResourcesMenuItem;
         manageGlobalResourcesMenuItem = new JMenuItem(getManageGlobalResourcesAction());
         return manageGlobalResourcesMenuItem;
     }
 
-    public JMenuItem getManageClusterPropertiesActionMenuItem(){
+    public JMenuItem getManageClusterPropertiesActionMenuItem() {
         if (manageClusterPropertiesMenuItem != null) return manageClusterPropertiesMenuItem;
         manageClusterPropertiesMenuItem = new JMenuItem(getManageClusterPropertiesAction());
         return manageClusterPropertiesMenuItem;
@@ -3439,11 +3461,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         public void licenseChanged(ConsoleLicenseManager licenseManager) {
             JTree tree = getAssertionPaletteTree();
             if (tree == null || tree.getModel() == null) return; // not constructed yet
-            AbstractTreeNode root = (AbstractTreeNode)tree.getModel().getRoot();
+            AbstractTreeNode root = (AbstractTreeNode) tree.getModel().getRoot();
             Utilities.collapseTree(tree);
             root.removeAllChildren();
             root.reloadChildren();
-            ((DefaultTreeModel)(tree.getModel())).nodeStructureChanged(root);
+            ((DefaultTreeModel) (tree.getModel())).nodeStructureChanged(root);
             tree.validate();
             tree.repaint();
         }
@@ -3458,123 +3480,124 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private
     LogonDialog.LogonListener logonListenr =
-      new LogonDialog.LogonListener() {
-          /* invoked on authentication success */
-          @Override
-          public void onAuthSuccess( final String id, final boolean usedCertificate ) {
-              connectionID = id;
-              String statusMessage = connectionID;
-              connectionContext = "";
+            new LogonDialog.LogonListener() {
+                /* invoked on authentication success */
+                @Override
+                public void onAuthSuccess(final String id, final boolean usedCertificate) {
+                    connectionID = id;
+                    String statusMessage = connectionID;
+                    connectionContext = "";
 
-              /* clear cached server cert */
-              serverSslCert = null;
+                    /* clear cached server cert */
+                    serverSslCert = null;
 
-              /* init rmi cl */
-              if (!isApplet())
-                RMIClassLoader.getDefaultProviderInstance();
+                    /* init rmi cl */
+                    if (!isApplet())
+                        RMIClassLoader.getDefaultProviderInstance();
 
-              /* set the preferences */
-              try {
-                  SsmPreferences prefs = preferences;
-                  connectionContext = " @ " + prefs.getString(SsmPreferences.SERVICE_URL);
-                  /**
-                   * At anytime, save the last login id.
-                   * Note: showing the login id at the logon dialog is dependent on if the property, SAVE_LAST_LOGIN_ID
-                   * is true or false.  Also see {@link AbstractSsmPreferences#rememberLoginId}
-                   */
-                  prefs.putProperty(SsmPreferences.LAST_LOGIN_ID, id);
-                  prefs.putProperty(SsmPreferences.LAST_LOGIN_TYPE, usedCertificate ? "certificate" : "password" );
-                  prefs.store();
-              } catch (IOException e) {
-                  log.log(Level.WARNING, "onAuthSuccess()", e);
-              }
+                    /* set the preferences */
+                    try {
+                        SsmPreferences prefs = preferences;
+                        connectionContext = " @ " + prefs.getString(SsmPreferences.SERVICE_URL);
+                        /**
+                         * At anytime, save the last login id.
+                         * Note: showing the login id at the logon dialog is dependent on if the property, SAVE_LAST_LOGIN_ID
+                         * is true or false.  Also see {@link AbstractSsmPreferences#rememberLoginId}
+                         */
+                        prefs.putProperty(SsmPreferences.LAST_LOGIN_ID, id);
+                        prefs.putProperty(SsmPreferences.LAST_LOGIN_TYPE, usedCertificate ? "certificate" : "password");
+                        prefs.store();
+                    } catch (IOException e) {
+                        log.log(Level.WARNING, "onAuthSuccess()", e);
+                    }
 
-              ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
+                    ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
 
-              // Gather and cache the cluster license early, since components like the assertion palette will need it
-              Registry reg = Registry.getDefault();
-              License lic = null;         // if null, license is missing or invalid
-              boolean licInvalid = false; // if true, license is invalid
-              long licenseExpiryWarningPeriod = 0;
-              try {
-                  licenseExpiryWarningPeriod = clusterStatusAdmin.getLicenseExpiryWarningPeriod();
-                  lic = clusterStatusAdmin.getCurrentLicense();
-              } catch ( InvalidLicenseException e1) {
-                  licInvalid = true;
-              } finally {
-                  // Cache it
-                  reg.getLicenseManager().setLicense(lic);
-              }
+                    // Gather and cache the cluster license early, since components like the assertion palette will need it
+                    Registry reg = Registry.getDefault();
+                    License lic = null;         // if null, license is missing or invalid
+                    boolean licInvalid = false; // if true, license is invalid
+                    long licenseExpiryWarningPeriod = 0;
+                    try {
+                        licenseExpiryWarningPeriod = clusterStatusAdmin.getLicenseExpiryWarningPeriod();
+                        lic = clusterStatusAdmin.getCurrentLicense();
+                    } catch (InvalidLicenseException e1) {
+                        licInvalid = true;
+                    } finally {
+                        // Cache it
+                        reg.getLicenseManager().setLicense(lic);
+                    }
 
-              // Gather any modular assertions offered by this gateway early on as well, for the assertion palette
-              try {
-                  TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
-              } catch (RuntimeException e) {
-                  log.log(Level.WARNING, "Unable to update modular assertions: " + ExceptionUtils.getMessage(e) + ".",
-                          ExceptionUtils.getDebugException(e));
-              }
+                    // Gather any modular assertions offered by this gateway early on as well, for the assertion palette
+                    try {
+                        TopComponents.getInstance().getAssertionRegistry().updateModularAssertions();
+                    } catch (RuntimeException e) {
+                        log.log(Level.WARNING, "Unable to update modular assertions: " + ExceptionUtils.getMessage(e) + ".",
+                                ExceptionUtils.getDebugException(e));
+                    }
 
-              String nodeName = "";
-              try {
-                  nodeName = clusterStatusAdmin.getSelfNodeName();
-              } catch (RuntimeException e) {
-                  log.log(Level.WARNING, "Cannot get the node name", e);
-              }
+                    String nodeName = "";
+                    try {
+                        nodeName = clusterStatusAdmin.getSelfNodeName();
+                    } catch (RuntimeException e) {
+                        log.log(Level.WARNING, "Cannot get the node name", e);
+                    }
 
-              if (nodeName == null) {
-                  nodeName = "unknown";
-              }
+                    if (nodeName == null) {
+                        nodeName = "unknown";
+                    }
 
-              statusMessage += connectionContext;
-              statusMessage += getNodeNameMsg(nodeName);
+                    statusMessage += connectionContext;
+                    statusMessage += getNodeNameMsg(nodeName);
 
-              final String message = statusMessage;
-              final int timeout = preferences.getInactivityTimeout();
-              SwingUtilities.invokeLater(new Runnable() {
-                  @Override
-                  public void run() {
-                      getStatusMsgLeft().setText(message);
-                      initalizeWorkspace();
-                      toggleConnectedMenus(true);
-                      homeAction.actionPerformed(null);
-                      MainWindow.this.
-                        setInactivitiyTimeout(timeout);
-                      MainWindow.this.fireConnected();
-                  }
-              });
+                    final String message = statusMessage;
+                    final int timeout = preferences.getInactivityTimeout();
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            getStatusMsgLeft().setText(message);
+                            initalizeWorkspace();
+                            toggleConnectedMenus(true);
+                            homeAction.actionPerformed(null);
+                            MainWindow.this.
+                                    setInactivitiyTimeout(timeout);
+                            MainWindow.this.fireConnected();
+                        }
+                    });
 
-              if (lic == null) {
-                  showLicenseWarning(licInvalid, false, null);
-              } else {
-                  Authorizer auth = Registry.getDefault().getSecurityProvider();
-                  if ( auth.hasPermission(new AttemptedDeleteAll(EntityType.ANY)) ) {
-                      Date expiryDate = lic.getExpiryDate();
-                      if (expiryDate!=null && (expiryDate.getTime()-licenseExpiryWarningPeriod) < System.currentTimeMillis()) {
-                          showLicenseWarning(false, true, expiryDate);
-                      } else {
-                          X509Certificate[] sslCertificates = getServerSslCertChain();
-                          if ( sslCertificates != null && sslCertificates.length > 0 ) {
-                              Date sslExpiryDate = sslCertificates[0].getNotAfter();
-                              if (sslExpiryDate!=null && (sslExpiryDate.getTime()-licenseExpiryWarningPeriod) < System.currentTimeMillis()) {
-                                  showSSLWarning(sslExpiryDate);
-                              }
-                          }
-                      }
-                  }
-              }
+                    if (lic == null) {
+                        showLicenseWarning(licInvalid, false, null);
+                    } else {
+                        Authorizer auth = Registry.getDefault().getSecurityProvider();
+                        if (auth.hasPermission(new AttemptedDeleteAll(EntityType.ANY))) {
+                            Date expiryDate = lic.getExpiryDate();
+                            if (expiryDate != null && (expiryDate.getTime() - licenseExpiryWarningPeriod) < System.currentTimeMillis()) {
+                                showLicenseWarning(false, true, expiryDate);
+                            } else {
+                                X509Certificate[] sslCertificates = getServerSslCertChain();
+                                if (sslCertificates != null && sslCertificates.length > 0) {
+                                    Date sslExpiryDate = sslCertificates[0].getNotAfter();
+                                    if (sslExpiryDate != null && (sslExpiryDate.getTime() - licenseExpiryWarningPeriod) < System.currentTimeMillis()) {
+                                        showSSLWarning(sslExpiryDate);
+                                    }
+                                }
+                            }
+                        }
+                    }
 
-              try {
-                  showWarningBanner();
-              } catch(RuntimeException re) {
-                  log.log(Level.WARNING, "Unable to show warning banner: " + ExceptionUtils.getMessage(re) + ".",
-                          ExceptionUtils.getDebugException(re));
-              }
-          }
+                    try {
+                        showWarningBanner();
+                    } catch (RuntimeException re) {
+                        log.log(Level.WARNING, "Unable to show warning banner: " + ExceptionUtils.getMessage(re) + ".",
+                                ExceptionUtils.getDebugException(re));
+                    }
+                }
 
-          /* invoked on authentication failure */
-          @Override
-          public void onAuthFailure() { }
-      };
+                /* invoked on authentication failure */
+                @Override
+                public void onAuthFailure() {
+                }
+            };
 
     private void showWarningBanner() {
         //determine if the warning banner is configured to be displayed
@@ -3621,11 +3644,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         getMigrateNamespacesMenuItem().setAction(policyPanel.getMigrateNamespacesAction());
     }
 
-    public void fireGlobalAction(final String actionName, final Component source){
-        if(actionName.equals(L7_F3)){
+    public void fireGlobalAction(final String actionName, final Component source) {
+        if (actionName.equals(L7_F3)) {
             f3Action.actionPerformed(new ActionEvent(source, ActionEvent.ACTION_PERFORMED, L7_F3));
-        } else if(actionName.equals(L7_SHIFT_F3)){
-            shiftF3Action.actionPerformed(new ActionEvent(source, ActionEvent.ACTION_PERFORMED, L7_SHIFT_F3));            
+        } else if (actionName.equals(L7_SHIFT_F3)) {
+            shiftF3Action.actionPerformed(new ActionEvent(source, ActionEvent.ACTION_PERFORMED, L7_SHIFT_F3));
         }
     }
 
@@ -3639,7 +3662,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             title = "Gateway License Warning";
             SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z");
             String dateStr = sdf.format(expiry);
-            message = new StringBuffer("The currently installed license for this gateway expires "+dateStr+".");
+            message = new StringBuffer("The currently installed license for this gateway expires " + dateStr + ".");
         } else {
             title = "Gateway Not Licensed";
             message = new StringBuffer("There is no license currently installed for this gateway.");
@@ -3654,7 +3677,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     public void reportResult(int retval) {
                         if (retval == JOptionPane.YES_OPTION) {
                             LicenseDialog dlg = new LicenseDialog(TopComponents.getInstance().getTopParent(),
-                                                                  preferences.getString(SsmPreferences.SERVICE_URL));
+                                    preferences.getString(SsmPreferences.SERVICE_URL));
                             dlg.pack();
                             Utilities.centerOnScreen(dlg);
                             dlg.setModal(true);
@@ -3663,9 +3686,9 @@ public class MainWindow extends JFrame implements SheetHolder {
                     }
                 };
                 DialogDisplayer.showConfirmDialog(TopComponents.getInstance().getTopParent(),
-                                                  message.toString(), title,
-                                                  JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
-                                                  callback);
+                        message.toString(), title,
+                        JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+                        callback);
             }
         });
     }
@@ -3677,7 +3700,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         final StringBuffer message = new StringBuffer();
 
         message.append("The currently installed SSL certificate for this gateway ");
-        if (new Date().before(expiry))  {
+        if (new Date().before(expiry)) {
             message.append("expires ");
         } else {
             message.append("expired ");
@@ -3690,10 +3713,10 @@ public class MainWindow extends JFrame implements SheetHolder {
             @Override
             public void run() {
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                                  message.toString(),
-                                                  title,
-                                                  JOptionPane.OK_OPTION,
-                                                  null);
+                        message.toString(),
+                        title,
+                        JOptionPane.OK_OPTION,
+                        null);
             }
         });
     }
@@ -3716,18 +3739,18 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     public void showNoPrivilegesErrorMessage() {
         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                                      "The requested action could not be performed because the applet is running\n" +
-                                      "in untrusted mode.  If you wish to enable this feature, and are willing to\n" +
-                                      "run the applet in trusted mode, adjust your Java plug-in settings to trust\n" +
-                                      "this signed applet and then reload the page.",
-                                      "Disallowed by browser settings",
-                                      JOptionPane.WARNING_MESSAGE, null);
+                "The requested action could not be performed because the applet is running\n" +
+                        "in untrusted mode.  If you wish to enable this feature, and are willing to\n" +
+                        "run the applet in trusted mode, adjust your Java plug-in settings to trust\n" +
+                        "this signed applet and then reload the page.",
+                "Disallowed by browser settings",
+                JOptionPane.WARNING_MESSAGE, null);
     }
 
     @Override
     public void showSheet(JInternalFrame sheet) {
         if (isApplet()) {
-            AppletMain applet = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
+            AppletMain applet = (AppletMain) TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
             if (applet == null)
                 throw new IllegalStateException("Running as applet but there's no applet");
             DialogDisplayer.showSheet(applet, sheet);
@@ -3736,7 +3759,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         Frame topParent = TopComponents.getInstance().getTopParent();
         if (topParent != this && topParent instanceof RootPaneContainer) {
-            DialogDisplayer.showSheet((RootPaneContainer)topParent, sheet);
+            DialogDisplayer.showSheet((RootPaneContainer) topParent, sheet);
             return;
         }
 
@@ -3793,7 +3816,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 log.log(Level.WARNING, "Unable to look up Gateway SSL cert: " + ExceptionUtils.getMessage(e), e);
             }
         }
-        return new X509Certificate[] { serverSslCert };
+        return new X509Certificate[]{serverSslCert};
     }
 
     public DefaultAliasTracker getDefaultAliasTracker() {
@@ -3816,8 +3839,8 @@ public class MainWindow extends JFrame implements SheetHolder {
      * A recursive method which will parse out the menu to see if it can determine if the menu should be enabled/disabled
      * based on the children of the given menu.
      *
-     * @param menu  the menu to determine to enable/disable
-     * @return  TRUE if menu should be enabled, otherwise FALSE to make menu disabled.
+     * @param menu the menu to determine to enable/disable
+     * @return TRUE if menu should be enabled, otherwise FALSE to make menu disabled.
      */
     private boolean isMenuItemActive(JMenu menu) {
         if (menu.getMenuComponentCount() == 0) {    //no more children
@@ -3838,7 +3861,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                 } else if (component instanceof JMenuItem) { //a menu item
                     if (((JMenuItem) component).getAction() != null) {
                         final boolean isEnabled = ((JMenuItem) component).getAction().isEnabled();
-                        if(isEnabled){
+                        if (isEnabled) {
                             foundEnabledSubComponent = true;
                         }
                     }
@@ -3850,7 +3873,8 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     /**
      * Helper method to enable/disable the menu items for the given root menu.
-     * @param menu  The root of the menu.
+     *
+     * @param menu The root of the menu.
      */
     private void updateTopMenu(JMenu menu) {
         final Component[] components = menu.getMenuComponents();
@@ -3875,7 +3899,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     /**
      * Forces to set the status of the filter and sort menu to the specified status.
      *
-     * @param status    TRUE to enable the filter and sort menu.
+     * @param status TRUE to enable the filter and sort menu.
      */
     private void setFilterAndSortMenuEnabled(boolean status) {
         getFilterServiceAndPolicyTreeMenu().setEnabled(status);
