@@ -173,9 +173,6 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         contextVariableInPassword.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                if (contextVariableInPassword.isSelected()) {
-                    _passwordField.setText("");
-                }
                 _passwordField.enableInputMethods(contextVariableInPassword.isSelected());
                 _passwordField.setEchoChar(contextVariableInPassword.isSelected() ? (char)0 : echoChar);
             }

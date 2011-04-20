@@ -209,9 +209,6 @@ public class EmailAlertPropertiesDialog extends LegacyAssertionPropertyDialog {
         contextVarPasswordCheckBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                if (contextVarPasswordCheckBox.isSelected()) {
-                    authPasswordField.setText("");
-                }
                 authPasswordField.enableInputMethods(contextVarPasswordCheckBox.isSelected());
                 authPasswordField.setEchoChar(contextVarPasswordCheckBox.isSelected() ? (char)0 : echoChar);
             }
