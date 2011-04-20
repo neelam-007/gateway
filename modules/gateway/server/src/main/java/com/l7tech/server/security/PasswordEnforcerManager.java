@@ -327,7 +327,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
             if (hasAdminRole(internalUser) || internalUser.isChangePassword()) return;
 
             List<PasswordChangeRecord> changeHistory = internalUser.getPasswordChangesHistory();
-            if (changeHistory != null) {
+            if (changeHistory != null && changeHistory.size() > 0) {
                 PasswordChangeRecord lastChangeRecord = changeHistory.get(changeHistory.size() - 1);
                 long lastChangedMillis = lastChangeRecord.getLastChanged();
                 lastChange.setTimeInMillis(lastChangedMillis);
