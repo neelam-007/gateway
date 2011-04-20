@@ -114,13 +114,24 @@ public class AssertionMessageTargetSelector extends JDialog {
     private void doValidate() {
         if ( !readonly ) {
             _contextVarName.setEditable(_otherContextVariableRadioButton.isSelected());
-            if ( _otherContextVariableRadioButton.isSelected() &&
-                 ( _contextVarName.getText()==null ||
-                  _contextVarName.getText().trim().length() == 0 ) ) {
-                buttonOK.setEnabled( false );
-            } else {
-                buttonOK.setEnabled( true );
+            boolean isOkEnabled = false;
+            if ( _otherContextVariableRadioButton.isSelected()
+                    && _contextVarName.getText() != null
+                    && _contextVarName.getText().length() > 0) {
+                if (VariablePrefixUtil.hasValidDollarCurlyOpenStart(_contextVarName.getText())
+                        && VariablePrefixUtil.hasValidCurlyCloseEnd(_contextVarName.getText())) {
+
+                    // valid start and end marker exist e.g. ${variableName}, now check between the markers
+                    isOkEnabled = VariablePrefixUtil.fixVariableName(_contextVarName.getText()).length() > 0;
+                } else {
+
+                    // support variable name with no ${} marker e.g. varName
+                    isOkEnabled = !VariablePrefixUtil.hasValidDollarCurlyOpenStart(_contextVarName.getText())
+                            && !VariablePrefixUtil.hasValidCurlyCloseEnd(_contextVarName.getText())
+                            && !VariablePrefixUtil.hasDollarOrCurlyOpen(_contextVarName.getText());
+                }
             }
+            buttonOK.setEnabled(isOkEnabled);
         }
     }
 }
