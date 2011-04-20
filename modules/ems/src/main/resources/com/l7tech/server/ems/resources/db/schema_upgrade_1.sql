@@ -26,3 +26,9 @@ alter table migration alter column target_cluster_oid null;
 alter table internal_user alter column password set data type varchar(256);
 update internal_user set enabled = 1, digest = password;
 update internal_user set password NULL;
+
+--
+-- Drop function so it is recreated with updated signature
+--
+drop function getauditdetails;
+

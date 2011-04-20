@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.server.audit;
 
 import com.ibm.xml.dsig.SignatureStructureException;
@@ -119,7 +113,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     protected void initDao() throws Exception {
         if ( dialect == Dialect.DERBY && initialized.compareAndSet(false, true)) {
             // create function
-            String queryCreateFunc = "CREATE FUNCTION GETAUDITDETAILS (AUDITDETAILID INTEGER) RETURNS VARCHAR(16384) LANGUAGE JAVA PARAMETER STYLE JAVA READS SQL DATA RETURNS NULL ON NULL INPUT EXTERNAL NAME '"+AuditExporterImpl.class.getName()+".getAuditDetails'";
+            String queryCreateFunc = "CREATE FUNCTION GETAUDITDETAILS (AUDITDETAILID BIGINT) RETURNS VARCHAR(16384) LANGUAGE JAVA PARAMETER STYLE JAVA READS SQL DATA RETURNS NULL ON NULL INPUT EXTERNAL NAME '"+AuditExporterImpl.class.getName()+".getAuditDetails'";
 
             Connection conn = null;
             Statement st = null;
