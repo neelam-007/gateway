@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.util.Background;
 import com.l7tech.util.SyspropUtil;
@@ -100,7 +101,11 @@ public abstract class SecureResource extends WebResource {
 
     @Override
     protected void setHeaders( final WebResponse webResponse) {
-        super.setHeaders(webResponse);
+        if (isCacheable()) {
+            super.setHeaders(webResponse);
+        } else { // default cache-control header breaks file downloading in IE when using SSL (bug 10273)
+            webResponse.setHeader( HttpConstants.HEADER_CACHE_CONTROL, "max-age=15; s-maxage=0" );
+        }
 
         String filename = processFilename(getFilename());
         if ( !Strings.isEmpty(filename) ) {
@@ -110,7 +115,7 @@ public abstract class SecureResource extends WebResource {
 
             if ( (resourceParameters!=null && resourceParameters.getDisposition().equals( "attachment" )) ||
                  (resourceParameters==null && "attachment".equals(parameters.getString("disposition")) )) {
-                webResponse.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+                webResponse.setAttachmentHeader( filename );
             } else {
                 // Bug 6123: remove the filename in the below header setting.
                 // In RFC2183, all examples of "inline" do not have "filename"
