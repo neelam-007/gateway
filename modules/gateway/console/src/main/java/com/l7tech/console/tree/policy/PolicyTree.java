@@ -1752,9 +1752,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     AbstractTreeNode[] nodes = (AbstractTreeNode[])t.getTransferData(PolicyTransferable.ASSERTION_DATAFLAVOR);
                     final List<AbstractTreeNode> nodeList = Arrays.asList( nodes );
                     final TreePath path = getSelectionPath();
-                    if ( path != null && path.getPathCount()!=1 ) {
-                        Collections.reverse( nodeList ); // reverse unless inserting at the root
-                    }
                     for( final AbstractTreeNode node : nodeList ) {
                         Assertion clone = (Assertion)node.asAssertion().clone();
                         if(!policyTree.importAssertion(clone)) {
@@ -1805,9 +1802,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     //noinspection unchecked
                     List<Assertion> list = new ArrayList(((CompositeAssertion)ass).getChildren());
                     final TreePath path = getSelectionPath();
-                    if ( path != null && path.getPathCount()!=1 ) {
-                        Collections.reverse(list);  // reverse unless inserting at the root
-                    }
                     for( Assertion assertion : list) {
                         // Clone assertions
                         Assertion child = (Assertion) assertion.clone();
