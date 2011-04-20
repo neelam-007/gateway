@@ -65,7 +65,7 @@ public class IdentityProviderPasswordPolicy extends PersistentEntityImp {
                                            final int passwordExpiryDays,
                                            final boolean passwordChangeDaily ) {
         if (forcePasswordChange) setProperty( FORCE_PWD_CHANGE, forcePasswordChange );
-        if (forcePasswordChange) setProperty( NO_REPEAT_CHARS, noRepeatingCharacters );
+        if (noRepeatingCharacters) setProperty( NO_REPEAT_CHARS, noRepeatingCharacters );
         if (minPasswordLength>0) setProperty( MIN_PASSWORD_LENGTH, minPasswordLength );
         if (maxPasswordLength>0) setProperty( MAX_PASSWORD_LENGTH, maxPasswordLength );
         if (minUpperCharacters>0) setProperty( UPPER_MIN, minUpperCharacters );
