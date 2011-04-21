@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import org.apache.commons.lang.ArrayUtils;
 import org.springframework.context.ApplicationContext;
 
 import javax.swing.*;
@@ -435,23 +436,39 @@ public class PolicyTree extends JTree implements DragSourceListener,
     private Pair<AssertionTreeNode,Integer> getTargetForPath( final TreePath path,
                                                               final AbstractTreeNode toDrop,
                                                               final boolean dropAsFirstContainerChild ) {
-        return getTargetForPath( path,  new AbstractTreeNode[]{toDrop}, dropAsFirstContainerChild );
+        return getTargetForPath( path,  new AbstractTreeNode[]{toDrop}, dropAsFirstContainerChild, true );
     }
 
     private Pair<AssertionTreeNode,Integer> getTargetForPath( final TreePath path,
                                                               final AbstractTreeNode[] toDrop,
                                                               final boolean dropAsFirstContainerChild ) {
+           return getTargetForPath( path,  toDrop, dropAsFirstContainerChild, true );
+    }
+
+    private Pair<AssertionTreeNode,Integer> getTargetForPath( final TreePath path,
+                                                              final AbstractTreeNode toDrop,
+                                                              final boolean dropAsFirstContainerChild,
+                                                              final boolean allowAppendToEndOfChildList ) {
+        return getTargetForPath( path,  new AbstractTreeNode[]{toDrop}, dropAsFirstContainerChild, allowAppendToEndOfChildList );
+    }
+
+    private Pair<AssertionTreeNode,Integer> getTargetForPath( final TreePath path,
+                                                              final AbstractTreeNode[] toDrop,
+                                                              final boolean dropAsFirstContainerChild,
+                                                              final boolean allowAppendToEndOfChildList ) {
         AssertionTreeNode targetTreeNode =
                 ((AssertionTreeNode) path.getLastPathComponent());
 
         TreePath pathToTarget = path;
         AssertionTreeNode insertAfter = null;
         int targetIndex = 0;
-        if (path.getPathCount()==1 || targetTreeNode.getAllowsChildren()) {
+        if (path.getPathCount()==1 || (targetTreeNode.getAllowsChildren() && allowAppendToEndOfChildList)) {
             targetIndex = targetTreeNode.getChildCount();
         }
         while ( targetTreeNode != null ) {
-            if (targetTreeNode.getAllowsChildren() && (pathToTarget.getParentPath()==null || isModelExpanded(pathToTarget) || (isModelExpanded(pathToTarget.getParentPath()) && targetTreeNode.getChildCount()==0)) && acceptsAll(targetTreeNode,toDrop)) {
+            if (targetTreeNode.getAllowsChildren()
+                    && (pathToTarget.getParentPath()==null || isModelExpanded(pathToTarget) || (isModelExpanded(pathToTarget.getParentPath()) && targetTreeNode.getChildCount()==0))
+                    && acceptsAll(targetTreeNode,toDrop)) {
                 if ( insertAfter != null ) {
                     targetIndex = targetTreeNode.getIndex( insertAfter ) + 1;
                 }
@@ -1150,7 +1167,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     } else if ( target == null ) {
                         final boolean dropAsFirstContainerChild = dropAsFirstContainerChild( pt );
                         final AssertionTreeNode an = (AssertionTreeNode) p.getLastPathComponent();
-                        target = getTargetForPath( path, an, dropAsFirstContainerChild );
+                        target = getTargetForPath( path, an, dropAsFirstContainerChild, false );
                     }
                 }
             } else {
@@ -1449,12 +1466,17 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         logPaths( "DROPPING tree path", pathSource );
                         PolicyTreeModel model = (PolicyTreeModel) getModel();
 
+                        // each node is inserted immediately after the drop point
+                        // reversing the node array preserves the original order
+                        ArrayUtils.reverse(pathSource);
+
                         for( final TreePath p : pathSource ) {
                             final AssertionTreeNode an = (AssertionTreeNode) p.getLastPathComponent();
                             Assertion a = (Assertion) an.asAssertion().clone();
                             final AssertionTreeNode assertionTreeNodeCopy = AssertionTreeNodeFactory.asTreeNode(a);
 
-                            final Pair<AssertionTreeNode,Integer> target = getTargetForPath( pathTarget, assertionTreeNodeCopy, dropAsFirstContainerChild );
+                            final Pair<AssertionTreeNode,Integer> target = getTargetForPath(
+                                    pathTarget, assertionTreeNodeCopy, dropAsFirstContainerChild, false );
 
                             if ( target.left != null && target.right > -1 ) {
                                 if (e.getDropAction() == DnDConstants.ACTION_MOVE) {
@@ -1751,7 +1773,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 try {
                     AbstractTreeNode[] nodes = (AbstractTreeNode[])t.getTransferData(PolicyTransferable.ASSERTION_DATAFLAVOR);
                     final List<AbstractTreeNode> nodeList = Arrays.asList( nodes );
+
+                    // if there's a user selection which is not a folder, each node is inserted immediately after the selection
+                    // reversing the node list preserves the original order
                     final TreePath path = getSelectionPath();
+                    if (path != null && path.getPathCount()!=1 && path.getLastPathComponent() != null
+                            && !((TreeNode) path.getLastPathComponent()).getAllowsChildren()) {
+                        Collections.reverse( nodeList );
+                    }
+
                     for( final AbstractTreeNode node : nodeList ) {
                         Assertion clone = (Assertion)node.asAssertion().clone();
                         if(!policyTree.importAssertion(clone)) {
@@ -1801,7 +1831,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 if(ignoreRoot) {
                     //noinspection unchecked
                     List<Assertion> list = new ArrayList(((CompositeAssertion)ass).getChildren());
+
+                    // if there's a user selection which is not a folder, each node is inserted immediately after the selection
+                    // reversing the node list preserves the original order
                     final TreePath path = getSelectionPath();
+                    if (path != null && path.getPathCount()!=1 && path.getLastPathComponent() != null
+                            && !((TreeNode) path.getLastPathComponent()).getAllowsChildren()) {
+                        Collections.reverse( list );
+                    }
+
                     for( Assertion assertion : list) {
                         // Clone assertions
                         Assertion child = (Assertion) assertion.clone();
