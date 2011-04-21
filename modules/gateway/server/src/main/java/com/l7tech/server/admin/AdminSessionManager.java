@@ -63,11 +63,10 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     public AdminSessionManager(final Config config,
                                final LogonService logonService,
                                final Timer timer,
-                               final PasswordHasher passwordHasher, ClusterMaster clusterMaster) {
+                               final ClusterMaster clusterMaster) {
         this.config = validated(config);
         this.logonService = logonService;
         this.timer = timer;
-        this.passwordHasher = passwordHasher;
         this.clusterMaster = clusterMaster;
 
         int cacheSize = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_SIZE, 100);
@@ -399,7 +398,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      *
      * @param authenticatedUser the principal that was successfully authenticated.  Must not be null.
      * @param sessionInfo       the additional session info such as port number, etc.
-     * @return a cookie string that can be used with {@link #resumeSession} later to recover the principal.  Never null or empty.
+     * @return a cookie string that can be used with {@link #resumeSession(String)} later to recover the principal.  Never null or empty.
      *         Always contains at least 16 bytes of entropy.
      */
     public synchronized String createSession(final User authenticatedUser,
@@ -419,7 +418,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     /**
      * Retrieve the additional session info for a previously-authenticated user.
      *
-     * @param session the session ID that was originally returned from {@link #createSession}.  Must not be null or empty.
+     * @param session the session ID that was originally returned from {@link #createSession(User, Object)}.  Must not be null or empty.
      * @return the additional session info.  Return null if not found the given session.
      */
     public synchronized Object getSessionInfo(final String session) {
@@ -432,7 +431,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     /**
      * Attempt to resume a session for a previously-authenticated user.
      *
-     * @param session the session ID that was originally returned from {@link #createSession}.  Must not be null or empty.
+     * @param session the session ID that was originally returned from {@link #createSession(User, Object)}.  Must not be null or empty.
      * @return the user associated with this session ID, or null if the session doesn't exist or has expired.
      * @throws AuthenticationException if the session is no longer authorized
      * @throws ObjectModelException    if information required to perform session validation cannot be accessed
@@ -579,7 +578,6 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private IdentityProviderFactory identityProviderFactory;
     private PasswordEnforcerManager passwordEnforcerManager;
     private IdentityProviderPasswordPolicyManager passwordPolicyManager;
-    private final PasswordHasher passwordHasher; //todo [Donal] remove
     private final ClusterMaster clusterMaster;
 
     //

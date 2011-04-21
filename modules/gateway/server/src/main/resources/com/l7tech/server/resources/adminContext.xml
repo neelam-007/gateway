@@ -81,8 +81,7 @@
                 <constructor-arg value="Adminstrator account maintenance"/>
             </bean>
         </constructor-arg>
-        <constructor-arg index="3" ref="passwordHasher"/>
-        <constructor-arg index="4" ref="clusterMaster"/>
+        <constructor-arg index="3" ref="clusterMaster"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
         <property name="roleManager" ref="roleManager"/>
         <property name="passwordEnforcerManager" ref="passwordEnforcerManager"/>
