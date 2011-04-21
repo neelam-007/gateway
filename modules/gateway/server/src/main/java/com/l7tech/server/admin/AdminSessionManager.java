@@ -36,6 +36,7 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidatedConfig;
+import com.l7tech.util.Functions;
 import org.apache.commons.collections.map.LRUMap;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -87,10 +88,6 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     public void setPasswordEnforcerManager(final PasswordEnforcerManager passwordEnforcerManager) {
         this.passwordEnforcerManager = passwordEnforcerManager;
-    }
-
-    public void setPasswordPolicyManager(final IdentityProviderPasswordPolicyManager passwordPolicyManager) {
-        this.passwordPolicyManager = passwordPolicyManager;
     }
 
     /**
@@ -211,11 +208,12 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                     break;
                 }
 
-                //verify if the client was assigned with a cert already and require to use it.  We only inforce this
+                //verify if the client was assigned with a cert already and require to use it.  We only enforce this
                 //for internal identity provider
                 boolean useCert = config.getBooleanProperty("security.policyManager.forbidPasswordWhenCertPresent", true);
                 if (useCert) {
-                    if (credentialFormat == CredentialFormat.CLEARTEXT && provider.hasClientCert(creds.getLogin())) {
+                    final Boolean certRequirementWaved = certRequirementWavedChecker.call();
+                    if (credentialFormat == CredentialFormat.CLEARTEXT && provider.hasClientCert(creds.getLogin()) && !certRequirementWaved) {
                         needsClientCert = true;
                         throw new BadCredentialsException("User '" + creds.getLogin() + "' did not use certificate as login credentials.");
                     }
@@ -238,10 +236,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
                         //Ensure password not expired, ignore password expire if using cert to login
                         if (passwordEnforcerManager.isPasswordExpired(authdUser) && (creds.getClientCert() == null)) {
-                            IdentityProviderPasswordPolicy policy = passwordPolicyManager.findByInternalIdentityProviderOid(provider.getConfig().getOid());
-
-
-                            throw new CredentialExpiredPasswordDetailsException("Password expired.", policy.getDescription());
+                            throw new CredentialExpiredPasswordDetailsException("Password expired.", passwordEnforcerManager.getPasswordPolicy().getDescription());
                         }
 
                         user = authdUser;
@@ -545,6 +540,14 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         return hasPermission;
     }
 
+    public static void setCertRequirementWavedChecker(Functions.Nullary<Boolean> certReqWavedChecker) {
+        if (certReqWavedChecker != null) {
+            if (certRequirementWavedChecker != null)
+                throw new IllegalStateException("Cert requirement waved checker has already been set.");
+            certRequirementWavedChecker = certReqWavedChecker;
+        }
+    }
+
     //- PROTECTED
 
     @Override
@@ -577,8 +580,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private final Timer timer;
     private IdentityProviderFactory identityProviderFactory;
     private PasswordEnforcerManager passwordEnforcerManager;
-    private IdentityProviderPasswordPolicyManager passwordPolicyManager;
     private final ClusterMaster clusterMaster;
+    private static Functions.Nullary<Boolean> certRequirementWavedChecker;
 
     //
     @SuppressWarnings({"deprecation"})

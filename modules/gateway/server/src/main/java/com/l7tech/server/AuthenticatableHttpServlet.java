@@ -57,6 +57,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,6 +86,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     private LicenseManager licenseManager;
     protected PasswordHasher passwordHasher;
     private AdminSessionManager adminSessionManager;
+    private CertificateRequirementWavedChecker certRequirementWavedChecker;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -104,6 +106,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         wspReader = getBean("wspReader", WspReader.class);
         passwordHasher = getBean("passwordHasher", PasswordHasher.class);
         adminSessionManager = getBean("adminSessionManager", AdminSessionManager.class);
+        certRequirementWavedChecker = getBean("certRequirementWavedChecker", CertificateRequirementWavedChecker.class);
     }
 
     protected Object getBean(String name) throws ServletException {
@@ -242,7 +245,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             throws FindException, IssuedCertNotPresentedException {
         Collection<AuthenticationResult> authResults = new ArrayList<AuthenticationResult>();
         Collection<IdentityProvider> providers = identityProviderFactory.findAllIdentityProviders();
-        LoginCredentials creds = findCredentialsBasic(req);
+        final LoginCredentials creds = findCredentialsBasic(req);
         boolean sawCreds = creds != null;
         if (creds == null) {
             return new AhsAuthResult(sawCreds, new AuthenticationResult[0]);
@@ -257,9 +260,17 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
         for (IdentityProvider provider : providers) {
             try {
-                AuthenticationResult authResult;
+                final AuthenticationResult authResult;
                 if(requiresAdminUser){
-                    authResult = adminSessionManager.authenticate(creds);
+                    //if user is not required to present a cert, tell admin session manager it's ok if missing, otherwise it's required.
+                    authResult  = (checkCertificatePresent)?
+                            adminSessionManager.authenticate(creds):
+                            certRequirementWavedChecker.doWithCertRequirementWaved(new Callable<AuthenticationResult>() {
+                        @Override
+                        public AuthenticationResult call() throws Exception {
+                            return adminSessionManager.authenticate(creds);
+                        }
+                    });
                 } else {
                     authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
                 }

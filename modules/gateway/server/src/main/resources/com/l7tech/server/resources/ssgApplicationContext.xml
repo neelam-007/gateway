@@ -1520,6 +1520,8 @@
         <property name="defaultKey" ref="defaultKey"/>
     </bean>
 
+    <bean id="certRequirementWavedChecker" class="com.l7tech.server.CertificateRequirementWavedChecker" />
+
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="messageProcessor"/>

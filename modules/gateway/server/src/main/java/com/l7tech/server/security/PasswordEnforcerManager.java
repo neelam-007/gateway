@@ -99,6 +99,14 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         }
     }
 
+    /**
+     * Get the current password policy. Don't cache as it may change.
+     * @return password policy. Not null if policy has been set.
+     */
+    public IdentityProviderPasswordPolicy getPasswordPolicy(){
+        return internalIdpPasswordPolicy;
+    }
+
     private void auditPasswordPolicyMinimums(final boolean isSTIG,
                                              final IdentityProviderPasswordPolicy passwordPolicy) {
         final IdentityProviderPasswordPolicy policy = isSTIG ?
@@ -132,7 +140,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
      * @param newPassword             The new password to be checked against
      * @param currentUnHashedPassword The unhased of the current password, used for comparison of the new and old password
      * @throws InvalidPasswordException Thrown when a constraint is not satsified.
-     */         //todo rename to throwIfNotPolicyCompliant
+     */         //todo [Donal] rename to throwIfNotPolicyCompliant
     public void isPasswordPolicyCompliant(final User user,
                                           final String newPassword,
                                           final String currentUnHashedPassword) throws InvalidPasswordException {
@@ -327,7 +335,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
             if (hasAdminRole(internalUser) || internalUser.isChangePassword()) return;
 
             List<PasswordChangeRecord> changeHistory = internalUser.getPasswordChangesHistory();
-            if (changeHistory != null && changeHistory.size() > 0) {
+            if (changeHistory != null && !changeHistory.isEmpty()) {
                 PasswordChangeRecord lastChangeRecord = changeHistory.get(changeHistory.size() - 1);
                 long lastChangedMillis = lastChangeRecord.getLastChanged();
                 lastChange.setTimeInMillis(lastChangedMillis);
