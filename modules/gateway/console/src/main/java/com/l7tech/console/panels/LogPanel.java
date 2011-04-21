@@ -78,7 +78,7 @@ public class LogPanel extends JPanel {
 
     private static final String[] COLUMN_NAMES = {
             "Sig",          // digital signature
-            "Message #",
+            "AuditRecord",  // Audit Record ID
             "Node",
             "Time",
             "Severity",
@@ -1093,6 +1093,9 @@ public class LogPanel extends JPanel {
         msg += nonull(TextUtils.pad("Class", maxWidth) + ": ", lm.getMsgClass());
         msg += nonull(TextUtils.pad("Method", maxWidth) + ": ", lm.getMsgMethod());
         msg += nonull(TextUtils.pad("Message", maxWidth) + ": ", lm.getMsgDetails());
+        if (lm instanceof AuditLogMessage) {
+            msg += nonull(TextUtils.pad("Audit Record ID", maxWidth) + ": ", ((AuditLogMessage) lm).getAuditRecord().getId());
+        }
 
         if ( lm instanceof AuditLogMessage ) {
             AuditRecord arec = ((AuditLogMessage) lm).getAuditRecord();
@@ -1922,7 +1925,7 @@ public class LogPanel extends JPanel {
 
         // Preferred and inital widths.
         tableColumnWidths[LOG_SIGNATURE_COLUMN_INDEX] = 25;
-        tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX] = 20;
+        tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX] = 75;
         tableColumnWidths[LOG_NODE_NAME_COLUMN_INDEX] = 50;
         tableColumnWidths[LOG_TIMESTAMP_COLUMN_INDEX] = 170;
         tableColumnWidths[LOG_THREAD_COLUMN_INDEX] = 60;
@@ -1933,9 +1936,6 @@ public class LogPanel extends JPanel {
         // Add columns according to configuration
         if (isAuditType) { // only audit record has digital signature
             columnModel.addColumn(new TableColumn(LOG_SIGNATURE_COLUMN_INDEX, tableColumnWidths[LOG_SIGNATURE_COLUMN_INDEX]));
-        }
-        String showMsgFlag = resapplication.getString("Show_Message_Number_Column");
-        if ((showMsgFlag != null) && showMsgFlag.equals("true")) {
             columnModel.addColumn(new TableColumn(LOG_MSG_NUMBER_COLUMN_INDEX, tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX]));
         }
         columnModel.addColumn(new TableColumn(LOG_NODE_NAME_COLUMN_INDEX, tableColumnWidths[LOG_NODE_NAME_COLUMN_INDEX]));

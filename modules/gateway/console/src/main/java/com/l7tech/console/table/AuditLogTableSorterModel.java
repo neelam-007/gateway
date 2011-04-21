@@ -313,8 +313,8 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         @Override
         public int compare(Integer a, Integer b) {
 
-            String elementA = "";
-            String elementB = "";
+            Object elementA = null;
+            Object elementB = null;
 
             LogMessage logMsgA = filteredLogCache.get(a);
             LogMessage logMsgB = filteredLogCache.get(b);
@@ -325,8 +325,8 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                     final DigitalSignatureUIState stateB = getUISignatureState(logMsgB);
                     return (ascending ? 1 : -1) * stateA.compareTo(stateB);
                 case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
-                    elementA = Long.toString(logMsgA.getMsgNumber());
-                    elementB = Long.toString(logMsgB.getMsgNumber());
+                    elementA = logMsgA.getMsgNumber();
+                    elementB = logMsgB.getMsgNumber();
                     break;
                 case LogPanel.LOG_NODE_NAME_COLUMN_INDEX:
                     elementA = logMsgA.getNodeName();
@@ -366,8 +366,8 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                     elementB = logMsgB.getServiceName();
                     break;
                 case LogPanel.LOG_THREAD_COLUMN_INDEX:
-                    elementA = Integer.toString(logMsgA.getThreadID());
-                    elementB = Integer.toString(logMsgB.getThreadID());
+                    elementA = logMsgA.getThreadID();
+                    elementB = logMsgB.getThreadID();
                     break;
                 default:
                     logger.warning("Bad Statistics Table Column: " + column);
@@ -375,10 +375,10 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
             }
 
             // Treat empty strains like nulls
-            if (elementA != null && (elementA).length() == 0) {
+            if (elementA != null && (elementA instanceof String) && ((String) elementA).length() == 0) {
                 elementA = null;
             }
-            if (elementB != null && (elementB).length() == 0) {
+            if (elementB != null && (elementB instanceof String) && ((String) elementB).length() == 0) {
                 elementB = null;
             }
 
@@ -391,9 +391,19 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                 return -1;
             } else {
                 if (ascending) {
-                    return (elementA).compareToIgnoreCase(elementB);
+                    if (elementA instanceof Long)
+                        return ((Long)elementA).compareTo((Long)elementB);
+                    else if (elementA instanceof Integer)
+                        return ((Integer)elementA).compareTo((Integer)elementB);
+                    else
+                        return ((String)elementA).compareToIgnoreCase((String) elementB);
                 } else {
-                    return (elementB).compareToIgnoreCase(elementA);
+                    if (elementB instanceof Long)
+                        return ((Long)elementB).compareTo((Long)elementA);
+                    else if (elementB instanceof Integer)
+                        return ((Integer)elementB).compareTo((Integer)elementA);
+                    else
+                        return ((String)elementB).compareToIgnoreCase((String) elementA);
                 }
             }
         }
