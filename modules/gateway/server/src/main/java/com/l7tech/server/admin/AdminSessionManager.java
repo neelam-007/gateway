@@ -181,6 +181,11 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         return user;
     }
 
+    public AuthenticationResult authenticate(final LoginCredentials creds) throws ObjectModelException, LoginException, FailAttemptsExceededException, FailInactivityPeriodExceededException, UserDisabledException {
+        boolean useCert = config.getBooleanProperty("security.policyManager.forbidPasswordWhenCertPresent", true);
+        return authenticate(creds, useCert);
+    }
+
     /**
      * Authenticate an administrative user against admin enabled identity providers.
      *
@@ -188,7 +193,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @return The user or null if not authenticated.
      * @throws ObjectModelException If an error occurs during authentication.
      */
-    public AuthenticationResult authenticate(final LoginCredentials creds) throws ObjectModelException, LoginException, FailAttemptsExceededException, FailInactivityPeriodExceededException, UserDisabledException {
+    public AuthenticationResult authenticate(final LoginCredentials creds, final boolean requireCertIfExists) throws ObjectModelException, LoginException, FailAttemptsExceededException, FailInactivityPeriodExceededException, UserDisabledException {
         // Try internal first (internal accounts with the same credentials should hide externals)
         Set<IdentityProvider> providers = getAdminIdentityProviders();
         AuthenticationResult authResult = null;
@@ -210,10 +215,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
                 //verify if the client was assigned with a cert already and require to use it.  We only enforce this
                 //for internal identity provider
-                boolean useCert = config.getBooleanProperty("security.policyManager.forbidPasswordWhenCertPresent", true);
-                if (useCert) {
-                    final Boolean certRequirementWaved = certRequirementWavedChecker.call();
-                    if (credentialFormat == CredentialFormat.CLEARTEXT && provider.hasClientCert(creds.getLogin()) && !certRequirementWaved) {
+                if (requireCertIfExists) {
+                    if (credentialFormat == CredentialFormat.CLEARTEXT && provider.hasClientCert(creds.getLogin())) {
                         needsClientCert = true;
                         throw new BadCredentialsException("User '" + creds.getLogin() + "' did not use certificate as login credentials.");
                     }

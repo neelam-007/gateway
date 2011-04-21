@@ -29,6 +29,7 @@ public interface AuthenticatingIdentityProvider<UT extends User, GT extends Grou
      *
      * @param pc an identity and a set of credentials.
      * @return an authenticated {@link com.l7tech.identity.User}. May be null if no user matching the specified credentials can be found for this provider.
+     * @throws com.l7tech.identity.AuthenticationException if auth fails for the user - incorrect credentials supplied.
      */
     AuthenticationResult authenticate( LoginCredentials pc ) throws AuthenticationException;
 

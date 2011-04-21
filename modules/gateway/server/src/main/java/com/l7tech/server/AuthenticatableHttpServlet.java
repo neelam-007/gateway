@@ -86,7 +86,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     private LicenseManager licenseManager;
     protected PasswordHasher passwordHasher;
     private AdminSessionManager adminSessionManager;
-    private CertificateRequirementWavedChecker certRequirementWavedChecker;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -106,7 +105,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         wspReader = getBean("wspReader", WspReader.class);
         passwordHasher = getBean("passwordHasher", PasswordHasher.class);
         adminSessionManager = getBean("adminSessionManager", AdminSessionManager.class);
-        certRequirementWavedChecker = getBean("certRequirementWavedChecker", CertificateRequirementWavedChecker.class);
     }
 
     protected Object getBean(String name) throws ServletException {
@@ -246,7 +244,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         Collection<AuthenticationResult> authResults = new ArrayList<AuthenticationResult>();
         Collection<IdentityProvider> providers = identityProviderFactory.findAllIdentityProviders();
         final LoginCredentials creds = findCredentialsBasic(req);
-        boolean sawCreds = creds != null;
+        final boolean sawCreds = creds != null;
         if (creds == null) {
             return new AhsAuthResult(sawCreds, new AuthenticationResult[0]);
         }
@@ -262,15 +260,8 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             try {
                 final AuthenticationResult authResult;
                 if(requiresAdminUser){
-                    //if user is not required to present a cert, tell admin session manager it's ok if missing, otherwise it's required.
-                    authResult  = (checkCertificatePresent)?
-                            adminSessionManager.authenticate(creds):
-                            certRequirementWavedChecker.doWithCertRequirementWaved(new Callable<AuthenticationResult>() {
-                        @Override
-                        public AuthenticationResult call() throws Exception {
-                            return adminSessionManager.authenticate(creds);
-                        }
-                    });
+                    //authenticate with basic creds only. Cert will be checked later in method if it is required and is present.
+                    authResult = adminSessionManager.authenticate(creds, false);
                 } else {
                     authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
                 }
@@ -281,7 +272,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                     //authenticating using the admin session manager tries all applicable identity providers.
                     break;
                 }
-                
+
                 final User u = authResult.getUser();
                 logger.fine("Authentication success for user " + creds.getLogin() +
                         " on identity provider: " + provider.getConfig().getName());

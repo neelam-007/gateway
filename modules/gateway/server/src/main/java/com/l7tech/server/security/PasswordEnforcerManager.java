@@ -403,7 +403,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
      * @param user The internal user instance
      * @return TRUE if the password has expired, otherwise FALSE.
      */
-    public boolean isPasswordExpired(final User user) {
+    public boolean isPasswordExpired(final User user) {//todo [Donal] rename or split - is also checking changePassword property
         if (user instanceof InternalUser) {
             final InternalUser internalUser = (InternalUser) user;
 
