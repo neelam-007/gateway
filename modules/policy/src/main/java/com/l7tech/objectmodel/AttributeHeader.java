@@ -37,9 +37,6 @@ public class AttributeHeader extends NamedEntityImp implements Serializable {
 
     public static final AttributeHeader EMAIL = new AttributeHeader("email", "E-mail Address", STRING, USERS, Builtin.BUILTIN);
     public static final AttributeHeader LOGIN = new AttributeHeader("login", "User Login", STRING, USERS, Builtin.BUILTIN);
-    public static final AttributeHeader CLEARTEXT_PASSWORD = new AttributeHeader("cleartextPassword", "Cleartext Password", STRING, USERS, Builtin.BUILTIN);
-    public static final AttributeHeader L7_DIGEST_PASSWORD = new AttributeHeader("l7DigestPassword", "Layer 7 Digest Password", STRING, USERS, Builtin.BUILTIN);
-    public static final AttributeHeader HASHED_PASSWORD = new AttributeHeader("hashedPassword", "Hashed Password", STRING, USERS, Builtin.BUILTIN);
     public static final AttributeHeader FIRST_NAME = new AttributeHeader("firstName", "First Name", DataType.STRING, USERS, Builtin.BUILTIN);
     public static final AttributeHeader LAST_NAME = new AttributeHeader("lastName", "Last Name", STRING, USERS, Builtin.BUILTIN);
     public static final AttributeHeader DEPARTMENT = new AttributeHeader("department", "Department", STRING, USERS, Builtin.BUILTIN);
