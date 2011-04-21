@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.EntityManagerStub;
+import com.l7tech.util.Pair;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -26,6 +27,11 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
     @Override
     public Collection<Role> getAssignedRolesSkippingUserAccountValidation(User user) throws FindException {
         return getAssignedRoles(user);
+    }
+
+    @Override
+    public Collection<Pair<Long, String>> getExplicitRoleAssignments() throws FindException {
+        return null;
     }
 
     @Override

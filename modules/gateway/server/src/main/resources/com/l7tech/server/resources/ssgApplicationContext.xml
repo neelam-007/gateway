@@ -591,6 +591,8 @@
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="logonManager"/>
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg ref="roleManager"/>
+        <constructor-arg ref="identityProviderFactory"/>
     </bean>
 
     <!-- logon manager handles the persistence of login attempts information to the database layer -->

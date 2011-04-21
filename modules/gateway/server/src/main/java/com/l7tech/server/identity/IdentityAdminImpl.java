@@ -23,7 +23,6 @@ import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.identity.internal.InternalUserPasswordManager;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.logon.LogonInfoManager;
-import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
@@ -67,7 +66,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     private ApplicationEventPublisher applicationEventPublisher;
     private final PasswordEnforcerManager passwordEnforcerManager;
     private final IdentityProviderPasswordPolicyManager passwordPolicyManger;
-    private final LogonService logonServ;
     private LogonInfoManager logonManager;
     private final PasswordHasher passwordHasher;
     private final Collection<Pair<AccountMinimums, IdentityProviderPasswordPolicy>> policyMinimums;
@@ -84,7 +82,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
                              final IdentityProviderPasswordPolicyManager passwordPolicyManger,
                              final PasswordEnforcerManager passwordEnforcerManager,
                              final DefaultKey defaultKey,
-                             final LogonService logonServ,
                              final PasswordHasher passwordHasher,
                              final Collection<Pair<AccountMinimums, IdentityProviderPasswordPolicy>> policyMinimums) {
         if (roleManager == null) throw new IllegalArgumentException("roleManager is required");
@@ -93,7 +90,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         this.defaultKey = defaultKey;
         this.passwordPolicyManger = passwordPolicyManger;
         this.passwordEnforcerManager = passwordEnforcerManager;
-        this.logonServ = logonServ;
         this.passwordHasher = passwordHasher;
         this.policyMinimums = policyMinimums;
     }
@@ -353,10 +349,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             }
 
             if (isSave) {
-                // create logon info
-                LogonInfo info = new LogonInfo(identityProviderConfigId, user.getLogin());
-                logonManager.save(info);
-                logger.info("Logon info created for User: " + user.getLogin() + " [" + id + "]");
                 id = userManager.save(user, groupHeaders);
                 logger.info("Saved User: " + user.getLogin() + " [" + id + "]");
             } else {

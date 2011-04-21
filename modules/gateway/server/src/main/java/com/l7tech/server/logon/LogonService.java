@@ -34,16 +34,12 @@ public interface LogonService {
     public void hookPreLoginCheck(final User user) throws AuthenticationException;
 
     /**
-     * Resets the fail count for this particular user to be zero.  It does not change the last login time where as the
-     * resetLogonAttempt() does.  In addition, this should only be used when there is an administrative account to perform
-     * the transactions.
-     *
-     * @param user  the user who's  fail count will be rest back to zero
-     */
-    public void resetLogonFailCount(User user)  throws FindException, UpdateException;
-
-    /**
      * Updates logon info to reflect inactive users.
      */
     public void updateInactivityInfo();
+
+    /**
+     * Manage LogonInfo entities. Ensure they exist for each admin user assigned to a role explicitly.
+     */
+    public void checkLogonInfos();
 }

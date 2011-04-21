@@ -8,6 +8,7 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.util.Pair;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
@@ -31,6 +32,15 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
      */
     @Transactional(readOnly=true)
     Collection<Role> getAssignedRolesSkippingUserAccountValidation(User user) throws FindException;
+
+    /**
+     * Get the distinct Collection of users who have a direct role assignment.
+     * @return Collection of Pairs. Each pair has the providerId as left, and the user unique id as right. Note for
+     * internal users this is an oid for external users it is a CN.
+     * @throws FindException
+     */
+    @Transactional(readOnly=true)
+    public Collection<Pair<Long, String>> getExplicitRoleAssignments() throws FindException;
 
     /**
      * Find a role by tag.

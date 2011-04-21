@@ -10,7 +10,10 @@ import org.hibernate.annotations.Proxy;
 /**
  * The logon information object stores information about the user that has attempted to log into the system.
  * Such information are the number of failed attempts and the last login attempt was made.  The purpose of this is
- * to be able to track down the user activites upon logins.
+ * to be able to track down the user activities upon logins.
+ *
+ * This entity is only ever created for administrative users. It is possible that if administrative users lose their
+ * permission that LogonInfo entities may exist for users who are no longer administrators.
  *
  * User: dlee
  * Date: Jun 24, 2008
@@ -29,23 +32,28 @@ public class LogonInfo extends PersistentEntityImp {
     private long lastActivity;
     private State state = State.ACTIVE;
 
-
     public LogonInfo() {
         this.failCount = 0;
     }
 
+    /**
+     * Create a new LogonInfo for a user. Once persisted the current time is used for the users last activity. This
+     * allows the users account to be tracked for inactivity from when the LogonInfo is created and persisted.
+     *
+     * @param providerId users provider id
+     * @param login users unique logon
+     */
     public LogonInfo(long providerId, String login) {
         this.providerId = providerId;
         this.login = login;
         this.lastAttempted = -1;
         this.failCount = 0;
-        this.lastActivity = -1;
+        this.lastActivity = System.currentTimeMillis();
     }
 
-    static public  enum State {
+    static public enum State {
         ACTIVE, EXCEED_ATTEMPT, INACTIVE
     }
-
 
     @Column(name="provider_oid")
     public long getProviderId() {
@@ -150,23 +158,12 @@ public class LogonInfo extends PersistentEntityImp {
     }
 
     public void failLogonAttempt(long time) {
-        this.lastAttempted = time;
-        this.failCount++;
-    }
-
-    public void failLogonAttemptWithoutTimestamp() {
-        this.failCount++;
-    }
-
-    public void successfulLogonAttempt(long time ) {
-        this.lastAttempted = time;
-        this.failCount = 0;
+        setLastAttempted(time);
+        setFailCount(getFailCount() + 1);
     }
 
     public void resetFailCount(long time) {
-        this.lastAttempted = time;
-        this.failCount = 0;
+        setLastAttempted(time);
+        setFailCount(0);
     }
-
-
 }

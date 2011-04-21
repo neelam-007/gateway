@@ -1,14 +1,21 @@
 package com.l7tech.server.logon;
 
+import com.l7tech.gateway.common.Component;
 import com.l7tech.identity.LogonInfo;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.internal.InternalIdentityProvider;
+import com.l7tech.server.identity.internal.InternalUserManager;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
@@ -22,6 +29,9 @@ import java.util.logging.Logger;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 
+import com.l7tech.util.Pair;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.TransactionStatus;
@@ -38,10 +48,15 @@ import org.springframework.dao.CannotAcquireLockException;
  * Date: Jun 27, 2008
  */
 public class SSMLogonService implements LogonService, PropertyChangeListener, ApplicationContextAware {
+    private ApplicationContext applicationContext;
 
     //- PUBLIC
 
-    public SSMLogonService(PlatformTransactionManager transactionManager, LogonInfoManager logonManager, ServerConfig serverConfig) {
+    public SSMLogonService(final PlatformTransactionManager transactionManager,
+                           final LogonInfoManager logonManager,
+                           final ServerConfig serverConfig,
+                           final RoleManager roleManager,
+                           final IdentityProviderFactory identityProviderFactory) {
         if (transactionManager == null)
             throw new IllegalArgumentException("PlateformTransactionManager cannot be null.");
         if (logonManager == null) throw new IllegalArgumentException("LogonInfoManager cannot be null.");
@@ -50,7 +65,9 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         this.transactionManager = transactionManager;
         this.logonManager = logonManager;
         this.serverConfig = serverConfig;
-
+        this.roleManager = roleManager;
+        this.identityProviderFactory = identityProviderFactory;
+        
         this.maxLoginAttempts = serverConfig.getIntProperty(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW);
         if (this.maxLoginAttempts <= 0) {
             this.maxLoginAttempts = DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW;
@@ -132,7 +149,8 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.auditor = new Auditor(this, applicationContext, logger);
+        this.applicationContext = applicationContext;
+        this.auditor = new Auditor(this, this.applicationContext, logger);
     }
 
     @Override
@@ -218,23 +236,11 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         doUpdateLogonAttempt(user, ar);
     }
 
-    @Override
-    public void resetLogonFailCount(User user) throws FindException, UpdateException {
-
-        if (user == null) return;
-
-        LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), true);
-        if (logonInfo != null) {
-            logonInfo.setFailCount(0);
-
-            //update
-            logonManager.update(logonInfo);
-        }
-
-    }
-
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @Override
     public void updateInactivityInfo() {
+        String exceptionMsg = null;
+        final String actionName = "Account Inactivity Monitor";
         try {
             final long now = System.currentTimeMillis();
 
@@ -246,25 +252,100 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                     continue;
                 inactivityCal.setTimeInMillis(now);
                 inactivityCal.setTimeInMillis(logonInfo.getLastActivity());
-                inactivityCal.add(Calendar.HOUR, this.maxInactivityPeriod * 24);
-                if (this.maxInactivityPeriod != 0 &&
+                inactivityCal.add(Calendar.HOUR, maxInactivityPeriod * 24);
+                if (maxInactivityPeriod != 0 &&
                         logonInfo.getLastActivity() > 0 &&
                         inactivityCal.getTimeInMillis() <= now) {
-                    long daysAgo = (now - logonInfo.getLastActivity()) / 1000 / 60 / 60 / 24;
-                    auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_INACTIVITY, logonInfo.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
-                    String msg = MessageFormat.format(SystemMessages.AUTH_USER_EXCEED_INACTIVITY.getMessage(), logonInfo.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
-                    logger.info(msg);
-                    logonInfo.setState(LogonInfo.State.INACTIVE);
                     try {
                         logonManager.update(logonInfo);
-                    } catch (UpdateException e) {
-                        logger.log(Level.WARNING, "Failed to update inactivity for '" + logonInfo.getLogin() + "'", ExceptionUtils.getDebugException(e));
+                        long daysAgo = (now - logonInfo.getLastActivity()) / 1000 / 60 / 60 / 24;
+                        String msg = MessageFormat.format(SystemMessages.AUTH_USER_EXCEED_INACTIVITY.getMessage(), logonInfo.getLogin(), Long.toString(daysAgo), Integer.toString(maxInactivityPeriod));
+                        applicationContext.publishEvent(
+                                new SystemEvent(this,
+                                        Component.GW_ACCOUNT_MANAGER,
+                                        null,
+                                        Level.INFO,
+                                        msg) {
 
+                                    @Override
+                                    public String getAction() {
+                                        return actionName;
+                                    }
+                                }
+                        );
+                        logonInfo.setState(LogonInfo.State.INACTIVE);
+                    } catch (UpdateException e) {
+                        exceptionMsg = "Failed to update inactivity for '" + logonInfo.getLogin() + "'. " + ExceptionUtils.getMessage(e);
+                        break;
                     }
                 }
             }
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Failed to update users inactivity", ExceptionUtils.getDebugException(e));
+            exceptionMsg = "Failed to update users inactivity. " + ExceptionUtils.getMessage(e);
+        }
+
+        if(exceptionMsg != null){
+            final String msg = "Account activity monitor failed. " + exceptionMsg;
+            applicationContext.publishEvent(
+                new SystemEvent(this,
+                        Component.GW_ACCOUNT_MANAGER,
+                        null,
+                        Level.INFO,
+                        msg) {
+
+                    @Override
+                    public String getAction() {
+                        return actionName;
+                    }
+                }
+            );
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Override
+    public void checkLogonInfos() {
+        String exceptionMsg = null;
+        try {
+            final Collection<Pair<Long,String>> allPairs = roleManager.getExplicitRoleAssignments();
+            for (Pair<Long,String> pair : allPairs) {
+                long providerId = pair.left;
+                final String login;
+                if(providerId == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID){
+                    final InternalUserManager userManager = getInternalUserManager();
+                    final InternalUser internalUser = userManager.findByPrimaryKey(pair.right);
+                    login = internalUser.getLogin();
+                } else {
+                    login = pair.right;
+                }
+
+                final LogonInfo logonInfo = logonManager.findByCompositeKey(providerId, login, false);
+                if(logonInfo == null){
+                    final LogonInfo newInfo = new LogonInfo(providerId, login);
+                    logonManager.save(newInfo);
+                }
+            }
+        } catch (FindException e) {
+            exceptionMsg = ExceptionUtils.getMessage(e);
+        } catch (SaveException e) {
+            exceptionMsg = ExceptionUtils.getMessage(e);
+        } finally {
+            if(exceptionMsg != null){
+                final String msg = "New administrator account maintenance failed. " + exceptionMsg;
+                applicationContext.publishEvent(
+                    new SystemEvent(this,
+                            Component.GW_ACCOUNT_MANAGER,
+                            null,
+                            Level.INFO,
+                            msg) {
+
+                        @Override
+                        public String getAction() {
+                            return "New Administrator Account Monitor";
+                        }
+                    }
+                );
+            }
         }
     }
 
@@ -275,6 +356,9 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
     private LogonInfoManager logonManager;
     private ServerConfig serverConfig;
     private Auditor auditor;
+    private final RoleManager roleManager;
+    private InternalUserManager internalUserManager;
+    private final IdentityProviderFactory identityProviderFactory;
 
     private int maxLoginAttempts;
     private int maxLockoutTime;
@@ -304,17 +388,6 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         });
     }
 
-
-    private void doResetLogonAttempt(final User user) {
-        doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
-            @Override
-            public void call(final LogonInfo logonInfo) {
-                final long now = System.currentTimeMillis();
-                logonInfo.resetFailCount(now);
-            }
-        });
-    }
-
     private void doUpdateLogonAttempt(final User user, final AuthenticationResult ar) {
         doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
             @Override
@@ -322,7 +395,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                 //if the authentication result is NULL then the fail logon failed.
                 final long now = System.currentTimeMillis();
                 if (ar != null) {
-                    logonInfo.successfulLogonAttempt(now);
+                    logonInfo.resetFailCount(now);
                 } else {
                     logonInfo.failLogonAttempt(now);
                 }
@@ -391,5 +464,17 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
 
     private boolean isDefaultAdminUser(User user) {
         return user instanceof InternalUser && ((InternalUser) user).getOid() == 3;
+    }
+
+    private InternalUserManager getInternalUserManager() throws FindException {
+        if(internalUserManager == null){
+            final InternalIdentityProvider identityProvider =
+                    (InternalIdentityProvider) identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+            if(identityProvider == null){
+                throw new FindException("IdentityProvider could not be found");
+            }
+            internalUserManager = identityProvider.getUserManager();
+        }
+        return internalUserManager;
     }
 }

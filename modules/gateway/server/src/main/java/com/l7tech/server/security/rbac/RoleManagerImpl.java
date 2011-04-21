@@ -15,6 +15,7 @@ import com.l7tech.server.EntityFinder;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -76,6 +77,30 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     @Override
     public Collection<Role> getAssignedRolesSkippingUserAccountValidation(User user) throws FindException {
         return getAssignedRoles0(user, true);
+    }
+
+    @Override
+    public Collection<Pair<Long, String>> getExplicitRoleAssignments(){
+        //noinspection unchecked
+        return (Collection<Pair<Long, String>>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            @Override
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                final List list = session.createQuery("select distinct r.identityId, r.providerId from " +
+                        "com.l7tech.gateway.common.security.rbac.RoleAssignment r where r.entityType = 'User'").list();
+
+                final Collection<Pair<Long, String>> roleAssignedUsers = new ArrayList<Pair<Long, String>>();
+                for (Object o : list) {
+                    if(o instanceof Object[]){
+                        Object [] result = (Object[]) o;
+                        if(result.length != 2) throw new IllegalStateException("Incorrect number of columns found.");
+
+                        final Pair<Long, String> pair = new Pair<Long, String>(Long.valueOf(result[1].toString()), result[0].toString());
+                        roleAssignedUsers.add(pair);
+                    }
+                }
+                return roleAssignedUsers;
+            }
+        });
     }
 
     private Collection<Role> getAssignedRoles0(final User user, final boolean skipAccountValidation) throws FindException {

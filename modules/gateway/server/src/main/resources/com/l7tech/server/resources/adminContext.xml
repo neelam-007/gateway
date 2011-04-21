@@ -78,10 +78,11 @@
         <constructor-arg index="1" ref="logonService"/>
         <constructor-arg index="2">
             <bean class="com.l7tech.server.util.ManagedTimer">
-                <constructor-arg value="Inactive User Checker"/>
+                <constructor-arg value="Adminstrator account maintenance"/>
             </bean>
         </constructor-arg>
         <constructor-arg index="3" ref="passwordHasher"/>
+        <constructor-arg index="4" ref="clusterMaster"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
         <property name="roleManager" ref="roleManager"/>
         <property name="passwordEnforcerManager" ref="passwordEnforcerManager"/>
@@ -227,9 +228,8 @@
         <constructor-arg index="1" ref="passwordPolicyManger"/>
         <constructor-arg index="2" ref="passwordEnforcerManager"/>
         <constructor-arg index="3" ref="defaultKey"/>
-        <constructor-arg index="4" ref="logonService"/>
-        <constructor-arg index="5" ref="passwordHasher"/>
-        <constructor-arg index="6">
+        <constructor-arg index="4" ref="passwordHasher"/>
+        <constructor-arg index="5">
             <list>
                 <bean id="stigPolicyPair" class="com.l7tech.util.Pair">
                     <constructor-arg index="0">

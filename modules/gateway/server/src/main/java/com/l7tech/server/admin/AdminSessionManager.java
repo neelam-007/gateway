@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.GroupMembershipEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
@@ -62,11 +63,12 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     public AdminSessionManager(final Config config,
                                final LogonService logonService,
                                final Timer timer,
-                               final PasswordHasher passwordHasher) {
+                               final PasswordHasher passwordHasher, ClusterMaster clusterMaster) {
         this.config = validated(config);
         this.logonService = logonService;
         this.timer = timer;
         this.passwordHasher = passwordHasher;
+        this.clusterMaster = clusterMaster;
 
         int cacheSize = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_SIZE, 100);
         int cacheMaxTime = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
@@ -111,9 +113,23 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
+                    if(!clusterMaster.isMaster()){
+                        return;
+                    }
                     logonService.updateInactivityInfo();
                 }
             }, 1L, TimeUnit.HOURS.toMillis(24L));
+
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    if(!clusterMaster.isMaster()){
+                        return;
+                    }
+                    logonService.checkLogonInfos();
+                }
+            }, 1L, TimeUnit.HOURS.toMillis(24L));
+
         }
     }
 
@@ -564,6 +580,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private PasswordEnforcerManager passwordEnforcerManager;
     private IdentityProviderPasswordPolicyManager passwordPolicyManager;
     private final PasswordHasher passwordHasher; //todo [Donal] remove
+    private final ClusterMaster clusterMaster;
 
     //
     @SuppressWarnings({"deprecation"})
