@@ -151,7 +151,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         usersLabelPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
         buttonAdd.setText("Add");
         buttonAdd.setHorizontalTextPosition(SwingConstants.RIGHT);
-        buttonAdd.setHorizontalAlignment(SwingConstants.RIGHT);
         buttonAdd.setIcon(IconManager.getInstance().getIconAdd());
 
         buttonAdd.addActionListener(new ActionListener() {
@@ -178,7 +177,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         buttonAddAll.setText("Add All");
         buttonAddAll.setHorizontalTextPosition(SwingConstants.RIGHT);
-        buttonAddAll.setHorizontalAlignment(SwingConstants.RIGHT);
         buttonAddAll.setIcon(IconManager.getInstance().getIconAddAll());
 
         buttonAddAll.addActionListener(new ActionListener() {
@@ -200,7 +198,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         buttonRemove.setText("Remove");
         buttonRemove.setHorizontalTextPosition(SwingConstants.RIGHT);
-        buttonRemove.setHorizontalAlignment(SwingConstants.RIGHT);
         buttonRemove.setIcon(IconManager.getInstance().getIconRemove());
 
         buttonRemove.addActionListener(new ActionListener() {
@@ -227,7 +224,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         buttonRemoveAll.setText("Remove All");
         buttonRemoveAll.setHorizontalTextPosition(SwingConstants.RIGHT);
-        buttonRemoveAll.setHorizontalAlignment(SwingConstants.RIGHT);
         buttonRemoveAll.setIcon(IconManager.getInstance().getIconRemoveAll());
 
         buttonRemoveAll.addActionListener(new ActionListener() {
