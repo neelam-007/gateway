@@ -1,11 +1,13 @@
 package com.l7tech.server.transport.http;
 
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.ShutdownExceptionHandler;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -46,6 +48,7 @@ public class InputTimeoutFilter implements Filter {
      * @param filterConfig the configuration
      * @throws ServletException if the filterConfig is null
      */
+    @Override
     public void init(final FilterConfig filterConfig) throws ServletException {
         if(filterConfig==null) throw new ServletException("null parameter");
 
@@ -53,8 +56,8 @@ public class InputTimeoutFilter implements Filter {
         String configReadTime = filterConfig.getInitParameter(INIT_PROP_SLOW_READ_THRESHOLD);
         String configReadRate = filterConfig.getInitParameter(INIT_PROP_SLOW_READ_THROUGHPUT);
 
-        timeout.set(parseLong(configTimeout, 500, 3600000, DEFAULT_BLOCKED_READ_TIMEOUT, INIT_PROP_TIMEOUT));
-        readTime.set(parseLong(configReadTime, 500, 3600000, DEFAULT_SLOW_READ_TIMEOUT, INIT_PROP_SLOW_READ_THRESHOLD));
+        timeout.set(parseLong(configTimeout, 500L, 3600000L, DEFAULT_BLOCKED_READ_TIMEOUT, INIT_PROP_TIMEOUT));
+        readTime.set(parseLong(configReadTime, 500L, 3600000L, DEFAULT_SLOW_READ_TIMEOUT, INIT_PROP_SLOW_READ_THRESHOLD));
         readRate.set(parseInt(configReadRate, 0, 1000000, DEFAULT_SLOW_READ_LIMIT, INIT_PROP_SLOW_READ_THROUGHPUT));
 
         initPropUpdater();
@@ -71,6 +74,7 @@ public class InputTimeoutFilter implements Filter {
      * @throws IOException if the next filter throws an IOException
      * @throws ServletException if any argument is null or if the next filter throws a ServletException
      */
+    @Override
     public void doFilter( final ServletRequest servletRequest
                         , final ServletResponse servletResponse
                         , final FilterChain filterChain) throws IOException, ServletException {
@@ -79,7 +83,6 @@ public class InputTimeoutFilter implements Filter {
             throw new ServletException("null parameter");
 
         ServletRequest requestForNextFilter = servletRequest;
-        ServletResponse responseForNextFilter = servletResponse;
         TimeoutServletRequest tsr = null;
 
         if(servletRequest instanceof HttpServletRequest) {
@@ -92,7 +95,15 @@ public class InputTimeoutFilter implements Filter {
         }
 
         try {
-            filterChain.doFilter(requestForNextFilter, responseForNextFilter);
+            filterChain.doFilter(requestForNextFilter, servletResponse );
+        }
+        catch ( TimeoutInputStream.TimeoutIOException e ) {
+            if ( !servletResponse.isCommitted() && servletResponse instanceof HttpServletResponse ) {
+                logger.info( "Unhandled request timeout, returning 500 error" );
+                ((HttpServletResponse)servletResponse).sendError( HttpConstants.STATUS_SERVER_ERROR );
+            } else {
+                logger.info( "Unhandled request timeout" );
+            }
         }
         finally {
             if(tsr!=null) {
@@ -105,6 +116,7 @@ public class InputTimeoutFilter implements Filter {
     /**
      * Stop the timeout property update thread.
      */
+    @Override
     public void destroy() {
         shutdownPropUpdater();
     }
@@ -120,8 +132,8 @@ public class InputTimeoutFilter implements Filter {
     private static final String INIT_PROP_SLOW_READ_THROUGHPUT = "slow-read-throughput";
 
     // initialization defaults
-    private static final long DEFAULT_BLOCKED_READ_TIMEOUT = 30000;
-    private static final long DEFAULT_SLOW_READ_TIMEOUT = 30000;
+    private static final long DEFAULT_BLOCKED_READ_TIMEOUT = 30000L;
+    private static final long DEFAULT_SLOW_READ_TIMEOUT = 30000L;
     private static final int DEFAULT_SLOW_READ_LIMIT = 1024; //Bytes per second
 
     // property update shutdown flag;
@@ -186,8 +198,7 @@ public class InputTimeoutFilter implements Filter {
      */
     private long getTimeout(long currentValue) {
         String rawVal = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
-        long scTimeout = parseLong(rawVal, 500, 3600000, currentValue, ServerConfig.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
-        return scTimeout;
+        return parseLong(rawVal, 500L, 3600000L, currentValue, ServerConfig.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
     }
 
     /**
@@ -195,8 +206,7 @@ public class InputTimeoutFilter implements Filter {
      */
     private long getReadTime(long currentValue) {
         String rawVal = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
-        long scReadTimeout = parseLong(rawVal, 500, 3600000, currentValue, ServerConfig.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
-        return scReadTimeout;
+        return parseLong(rawVal, 500L, 3600000L, currentValue, ServerConfig.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
     }
 
     /**
@@ -204,8 +214,7 @@ public class InputTimeoutFilter implements Filter {
      */
     private int getReadRate(int currentValue) {
         String rawVal = ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_IO_FRONT_SLOW_READ_RATE);
-        int scReadRate = parseInt(rawVal, 0, 1000000, currentValue, ServerConfig.PARAM_IO_FRONT_SLOW_READ_RATE);
-        return scReadRate;
+        return parseInt(rawVal, 0, 1000000, currentValue, ServerConfig.PARAM_IO_FRONT_SLOW_READ_RATE);
     }
 
     /**
@@ -220,12 +229,14 @@ public class InputTimeoutFilter implements Filter {
 
             boolean stopped = false;
             try {
-                updateThread.join(3000);
+                updateThread.join(3000L);
                 if (!updateThread.isAlive()) {
                     stopped = true;
                 }
             }
             catch(InterruptedException ie) {
+                logger.info( "Interrupted waiting for update thread shutdown." );
+                Thread.currentThread().interrupt();
             }
 
             if (!stopped)
@@ -258,10 +269,11 @@ public class InputTimeoutFilter implements Filter {
             }
         }
 
+        @Override
         public void run() {
             while(true) {
                 try {
-                    boolean stop = false;
+                    boolean stop;
                     while(true) {
                         synchronized(lock) {
                             stop = !run;
@@ -296,7 +308,7 @@ public class InputTimeoutFilter implements Filter {
                             readRate.set(newReadRate);
                         }
 
-                        Thread.sleep(30000);
+                        Thread.sleep(30000L);
                     }
 
                     if (stop) {
@@ -315,7 +327,7 @@ public class InputTimeoutFilter implements Filter {
 
                 // sleep for a while after any exception
                 try {
-                    if(run) Thread.sleep(60000);
+                    if(run) Thread.sleep(60000L);
                 }
                 catch(InterruptedException ie) {
                     synchronized(lock) {
@@ -348,6 +360,7 @@ public class InputTimeoutFilter implements Filter {
             return tis;
         }
 
+        @Override
         public ServletInputStream getInputStream() throws IOException {
             return tis = new TimeoutInputStream(super.getInputStream(), timeout, readTime, readRate);
         }
@@ -355,6 +368,7 @@ public class InputTimeoutFilter implements Filter {
         /**
          * @deprecated
          */
+        @Override
         @Deprecated
         public boolean isRequestedSessionIdFromUrl() {
             return super.isRequestedSessionIdFromUrl();
@@ -363,6 +377,7 @@ public class InputTimeoutFilter implements Filter {
         /**
          * @deprecated
          */
+        @Override
         @Deprecated
         public String getRealPath(String string) {
             return super.getRealPath(string);
