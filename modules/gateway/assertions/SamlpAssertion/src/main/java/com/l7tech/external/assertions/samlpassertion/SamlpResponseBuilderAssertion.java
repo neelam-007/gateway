@@ -10,9 +10,7 @@ import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
@@ -200,13 +198,9 @@ public class SamlpResponseBuilderAssertion extends MessageTargetableAssertionPri
                 variableTemplates.add( getRecipient() );
         }
 
-        final String[] refVars = Syntax.getReferencedNames(variableTemplates.toArray(new String[variableTemplates.size()]));
-
-        final Set<String> vars = new LinkedHashSet<String>();
-        vars.addAll(Arrays.asList(super.getVariablesUsed()));
-        vars.addAll(Arrays.asList(refVars));
-        
-        return vars.toArray(new String[vars.size()]);
+        // Not including super.getVariablesUsed since we create the message target
+        // if it does not exist
+        return Syntax.getReferencedNames(variableTemplates.toArray(new String[variableTemplates.size()]));
     }
 
     @Override
