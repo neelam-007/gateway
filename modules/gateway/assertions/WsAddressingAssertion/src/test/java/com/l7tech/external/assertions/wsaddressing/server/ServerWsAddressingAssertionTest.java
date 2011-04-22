@@ -248,6 +248,35 @@ public class ServerWsAddressingAssertionTest {
         Assert.assertEquals("Addressing elements", 2, elements.size());
     }
 
+    @Test
+    @BugNumber(10301)
+    public void testWsaOther() throws Exception {
+        // init
+        final String OTHER_NAMESPACE = "http://tempuri.org/my/addressing/namespace";
+        WsAddressingAssertion wsaa = new WsAddressingAssertion();
+        wsaa.setEnableWsAddressing10( false );
+        wsaa.setEnableWsAddressing200408( false );
+        wsaa.setEnableOtherNamespace( OTHER_NAMESPACE );
+        ServerWsAddressingAssertion swsaa = new ServerWsAddressingAssertion(wsaa, new LogOnlyAuditor(logger), new MockConfig(new Properties()));
+
+        // build test signed elements
+        Document testDoc = XmlUtil.stringToDocument(MESSAGE.replace( "http://schemas.xmlsoap.org/ws/2004/08/addressing", OTHER_NAMESPACE ));
+
+        // eval
+        Map<QName,String> properties = new HashMap<QName,String>();
+        List<Element> elements = new ArrayList<Element>();
+        swsaa.populateAddressingFromMessage(new DomElementCursor(testDoc), properties, elements);
+
+        // validate
+        Assert.assertEquals("Addressing:FaultTo", "http://tempuri.org/my/addressing/namespace/role/anonymous1", properties.get(new QName(OTHER_NAMESPACE,"FaultTo")));
+        Assert.assertEquals("Addressing:Action", "http://warehouse.acme.com/ws/listProducts", properties.get(new QName(OTHER_NAMESPACE,"Action")));
+        Assert.assertEquals("Addressing:MessageID", "uuid:6B29FC40-CA47-1067-B31D-00DD010662DA", properties.get(new QName(OTHER_NAMESPACE,"MessageID")));
+        Assert.assertEquals("Addressing:To", "http://fish.l7tech.com:8080/warehouse", properties.get(new QName(OTHER_NAMESPACE,"To")));
+        Assert.assertEquals("Addressing:ReplyTo", "http://tempuri.org/my/addressing/namespace/role/anonymous2", properties.get(new QName(OTHER_NAMESPACE,"ReplyTo")));
+        Assert.assertEquals("Addressing:From", "http://fish.l7tech.com:8080/warehousesender", properties.get(new QName(OTHER_NAMESPACE,"From")));
+        Assert.assertEquals("Addressing elements", 8, elements.size());
+    }
+
     private static final String MESSAGE =
             "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
             "    <soapenv:Header xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\">\n" +

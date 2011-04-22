@@ -268,7 +268,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
 
         if ( otherNamespaceUri != null && otherNamespaceUri.length() > 0) {
             acceptableNamespaces = new String[NS_ADDRESSING.length+1];
-            System.arraycopy(NS_ADDRESSING, 0, this.acceptableNamespaces, 0, NS_ADDRESSING.length);
+            System.arraycopy(NS_ADDRESSING, 0, acceptableNamespaces, 0, NS_ADDRESSING.length);
             acceptableNamespaces[NS_ADDRESSING.length] = otherNamespaceUri;
         } else {
             acceptableNamespaces = NS_ADDRESSING;
