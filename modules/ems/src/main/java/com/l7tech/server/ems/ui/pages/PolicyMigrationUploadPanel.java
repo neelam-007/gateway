@@ -48,6 +48,9 @@ public class PolicyMigrationUploadPanel extends Panel {
     private static final Logger logger = Logger.getLogger(PolicyMigrationUploadPanel.class.getName());
     private static final int MAX_ARCHIVE_FILE_UPLOAD_BYTES = SyspropUtil.getInteger("com.l7tech.ems.migrationFile.maxBytes", 1024 * 1024);
 
+    private static final String RES_KEY_ERROR = "archive-error";
+    private static final String RES_KEY_ENCRYPT = "archive-encrypted";
+
     private String successScript = null;
 
     @Inject
@@ -104,18 +107,22 @@ public class PolicyMigrationUploadPanel extends Panel {
                             success = true;
                         } else {
                             logger.fine("Archive not present in uploaded zip!");
-                            feedback.error( "Error processing archive, please try again." );
+                            feedback.error( getString( RES_KEY_ERROR ) );
+                            feedback.error( getString( RES_KEY_ENCRYPT ) );
                         }
                     } else {
                         logger.fine("Archive not present in upload!");
-                        feedback.error( "Error processing archive, please try again." );
+                        feedback.error( getString( RES_KEY_ERROR ) );
+                        feedback.error( getString( RES_KEY_ENCRYPT ) );
                     }
                 } catch ( ObjectModelException ome ) {
                     logger.log( Level.WARNING, "Error processing migration archive upload: " + ExceptionUtils.getMessage(ome), ExceptionUtils.getDebugException(ome) );
-                    feedback.error( "Error processing archive, please try again." );
+                    feedback.error( getString( RES_KEY_ERROR ) );
+                    feedback.error( getString( RES_KEY_ENCRYPT ) );
                 } catch (IOException ioe) {
                     logger.log( Level.WARNING, "IO error processing migration archive upload '"+ ExceptionUtils.getMessage(ioe)+"'.", ExceptionUtils.getDebugException(ioe) );
-                    feedback.error( "Error processing archive, please try again." );
+                    feedback.error( getString( RES_KEY_ERROR ) );
+                    feedback.error( getString( RES_KEY_ENCRYPT ) );
                 } finally {
                     if (upload != null) upload.closeStreams();
                 }
