@@ -608,6 +608,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 12, 0, 0);
         userAttributePanel.add(nameAttribute, gridBagConstraints);
 
+        loginNameAttribute.setMinimumSize(new java.awt.Dimension(120, 20));
         loginNameAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
         loginNameAttribute.setToolTipText(resources.getString("loginNameAttributeTextField.tooltip"));
 
@@ -627,6 +628,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         userAttributePanel.add(passwordAttributeLabel, gridBagConstraints);
 
+        passwordAttribute.setMinimumSize(new java.awt.Dimension(120, 20));
         passwordAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
         passwordAttribute.setToolTipText(resources.getString("passwordAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -645,6 +647,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         userAttributePanel.add(firstNameAttributeLabel, gridBagConstraints);
 
+        firstNameAttribute.setMinimumSize(new java.awt.Dimension(120, 20));
         firstNameAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
         firstNameAttribute.setToolTipText(resources.getString("firstNameAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -663,6 +666,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         userAttributePanel.add(lastNameAttributeLabel, gridBagConstraints);
 
+        lastNameAttribute.setMinimumSize(new java.awt.Dimension(120, 20));
         lastNameAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
         lastNameAttribute.setToolTipText(resources.getString("lastNameAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -681,6 +685,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         userAttributePanel.add(emailAttributeLabel, gridBagConstraints);
 
+        emailAttribute.setMinimumSize(new java.awt.Dimension(120, 20));
         emailAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
         emailAttribute.setToolTipText(resources.getString("emailAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -699,6 +704,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         userAttributePanel.add(certAttributeLabel, gridBagConstraints);
 
+        certAttribute.setMinimumSize(new java.awt.Dimension(120, 20));
         certAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
         certAttribute.setToolTipText("The name of the LDAP attribute containing the X.509 certificate for this user (optional)");
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -717,6 +723,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         userAttributePanel.add(kerberosAttributeLabel, gridBagConstraints);
 
+        kerberosAttribute.setMinimumSize(new java.awt.Dimension(120, 20));
         kerberosAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
         kerberosAttribute.setToolTipText(resources.getString("kerberosAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -735,6 +742,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         userAttributePanel.add(kerberosEnterpriseAttributeLabel, gridBagConstraints);
 
+        kerberosEnterpriseAttribute.setMinimumSize(new java.awt.Dimension(120, 20));
         kerberosEnterpriseAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
         kerberosEnterpriseAttribute.setToolTipText(resources.getString("kerberosEnterpriseAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
