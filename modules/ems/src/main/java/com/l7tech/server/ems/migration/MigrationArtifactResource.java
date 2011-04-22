@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.PushbackInputStream;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.atomic.AtomicReference;
@@ -144,7 +145,7 @@ public class MigrationArtifactResource extends SecureResource {
             final String id = parameters.getMigrationId();
 
             String label = null;
-            long time = 0;
+            long time = 0L;
             final MigrationRecordManager manager = getMigrationRecordManager();
             if ( manager != null ) {
                 try {
@@ -224,7 +225,7 @@ public class MigrationArtifactResource extends SecureResource {
                                   final String filename,
                                   final long modified,
                                   final String password ) throws IOException {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream( (int)(data.length() * 1.2) );
+        final ByteArrayOutputStream out = new ByteArrayOutputStream( (int)((double)data.length() * 1.2) );
         try {
             PgpUtil.encrypt(
                     new ByteArrayInputStream(data.getBytes( Charsets.UTF8 )),
@@ -242,10 +243,22 @@ public class MigrationArtifactResource extends SecureResource {
 
     public static byte[] decrypt( final InputStream inputStream,
                                   final String password ) throws IOException {
+        final PushbackInputStream pushbackInputStream = new PushbackInputStream( inputStream, 16 );
         final ByteArrayOutputStream out = new ByteArrayOutputStream( 10000 );
         try {
+            byte[] header = new byte[2];
+            int read = pushbackInputStream.read(header);
+            if ( read != 2 ) {
+                throw new IOException( "Error decrypting archive" );
+            }
+            pushbackInputStream.unread( header );
+            if ( header[0] == (int)'P' && header[1] == (int)'K' ) {
+                // This is a PK-Zip file not an encrypted archive
+                throw new IOException( "Error decrypting archive (ZIP file detected)" );
+            }
+
             final PgpUtil.DecryptionMetadata metadata = PgpUtil.decrypt(
-                    inputStream,
+                    pushbackInputStream,
                     out,
                     password.toCharArray() );
 

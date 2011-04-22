@@ -50,6 +50,7 @@ public class PolicyMigrationUploadPanel extends Panel {
 
     private static final String RES_KEY_ERROR = "archive-error";
     private static final String RES_KEY_ENCRYPT = "archive-encrypted";
+    private static final String RES_KEY_ZIP = "archive-zip";
 
     private String successScript = null;
 
@@ -107,22 +108,18 @@ public class PolicyMigrationUploadPanel extends Panel {
                             success = true;
                         } else {
                             logger.fine("Archive not present in uploaded zip!");
-                            feedback.error( getString( RES_KEY_ERROR ) );
-                            feedback.error( getString( RES_KEY_ENCRYPT ) );
+                            errorFeedback( true, false );
                         }
                     } else {
                         logger.fine("Archive not present in upload!");
-                        feedback.error( getString( RES_KEY_ERROR ) );
-                        feedback.error( getString( RES_KEY_ENCRYPT ) );
+                        errorFeedback( true, false );
                     }
                 } catch ( ObjectModelException ome ) {
                     logger.log( Level.WARNING, "Error processing migration archive upload: " + ExceptionUtils.getMessage(ome), ExceptionUtils.getDebugException(ome) );
-                    feedback.error( getString( RES_KEY_ERROR ) );
-                    feedback.error( getString( RES_KEY_ENCRYPT ) );
+                    errorFeedback( true, false );
                 } catch (IOException ioe) {
                     logger.log( Level.WARNING, "IO error processing migration archive upload '"+ ExceptionUtils.getMessage(ioe)+"'.", ExceptionUtils.getDebugException(ioe) );
-                    feedback.error( getString( RES_KEY_ERROR ) );
-                    feedback.error( getString( RES_KEY_ENCRYPT ) );
+                    errorFeedback( true, true );
                 } finally {
                     if (upload != null) upload.closeStreams();
                 }
@@ -138,6 +135,13 @@ public class PolicyMigrationUploadPanel extends Panel {
                 if ( target != null ) {
                     target.addComponent( feedback );
                 }
+            }
+
+            private void errorFeedback( final boolean encrypt,
+                                        final boolean zip ) {
+                feedback.error( getString( RES_KEY_ERROR ) );
+                if (encrypt && model.getPassword()==null) feedback.error( getString( RES_KEY_ENCRYPT ) );
+                if (zip && model.getPassword()!=null) feedback.error( getString( RES_KEY_ZIP ) );
             }
         };
 

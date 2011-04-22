@@ -94,6 +94,9 @@ public class PgpUtil {
             return new DecryptionMetadata( asciiArmour, pbe.isIntegrityProtected(), ld.getFileName(), ld.getModificationTime().getTime() );
         } catch ( PGPException e ) {
             throw new PgpException( ExceptionUtils.getMessage( e ), e );
+        } catch  ( ArrayIndexOutOfBoundsException e ) {
+            // See bug 10325, this can occur when a file is incorrectly treated as Base64
+            throw new PgpException( ExceptionUtils.getMessage( e ), e );
         }
     }
 
@@ -152,7 +155,7 @@ public class PgpUtil {
                     compressionOut,
                     PGPLiteralData.BINARY,
                     filename,
-                    clearData.length,
+                    (long)clearData.length,
                     new Date( fileModified ) );
             literalOut.write( clearData );
             literalOut.close();
@@ -162,7 +165,7 @@ public class PgpUtil {
 
             final byte[] compressedData = compressedOutputStream.toByteArray();
             pgpOut = asciiArmour ? new ArmoredOutputStream( outputStream ) : outputStream;
-            encryptionOut = encryptedDataGenerator.open( pgpOut, compressedData.length );
+            encryptionOut = encryptedDataGenerator.open( pgpOut, (long)compressedData.length );
             encryptionOut.write( compressedData );
         } catch ( PGPException e ) {
             throw new PgpException( ExceptionUtils.getMessage( e ), e );
