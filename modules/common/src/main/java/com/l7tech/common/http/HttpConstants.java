@@ -38,6 +38,7 @@ public final class HttpConstants {
     public static final int STATUS_SEE_OTHER = 303;
     public static final int STATUS_NOT_MODIFIED = 304;
     public static final int STATUS_UNAUTHORIZED = 401;
+    public static final int STATUS_REQUEST_TIMEOUT = 408;
     public static final int STATUS_SERVER_ERROR = 500;
     public static final int STATUS_SERVICE_UNAVAILABLE = 503;
 

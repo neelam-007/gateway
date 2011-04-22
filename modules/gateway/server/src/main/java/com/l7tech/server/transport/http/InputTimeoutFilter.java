@@ -99,8 +99,8 @@ public class InputTimeoutFilter implements Filter {
         }
         catch ( TimeoutInputStream.TimeoutIOException e ) {
             if ( !servletResponse.isCommitted() && servletResponse instanceof HttpServletResponse ) {
-                logger.info( "Unhandled request timeout, returning 500 error" );
-                ((HttpServletResponse)servletResponse).sendError( HttpConstants.STATUS_SERVER_ERROR );
+                logger.info( "Unhandled request timeout, returning timeout error" );
+                ((HttpServletResponse)servletResponse).sendError( HttpConstants.STATUS_REQUEST_TIMEOUT );
             } else {
                 logger.info( "Unhandled request timeout" );
             }
