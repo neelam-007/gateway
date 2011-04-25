@@ -378,7 +378,7 @@ public class LogPanel extends JPanel {
                     double lastSplitLocation = Double.parseDouble(preferences.getString(SPLIT_PROPERTY_NAME));
                     logSplitPane.setDividerLocation(lastSplitLocation);
                 } catch (Exception ex) {
-                    logSplitPane.setDividerLocation(300);
+                    logSplitPane.setDividerLocation(200);
                 }
             }
         });
@@ -1927,10 +1927,10 @@ public class LogPanel extends JPanel {
         tableColumnWidths[LOG_SIGNATURE_COLUMN_INDEX] = 25;
         tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX] = 75;
         tableColumnWidths[LOG_NODE_NAME_COLUMN_INDEX] = 50;
-        tableColumnWidths[LOG_TIMESTAMP_COLUMN_INDEX] = 170;
+        tableColumnWidths[LOG_TIMESTAMP_COLUMN_INDEX] = 140;
         tableColumnWidths[LOG_THREAD_COLUMN_INDEX] = 60;
         tableColumnWidths[LOG_SEVERITY_COLUMN_INDEX] = 60;
-        tableColumnWidths[LOG_SERVICE_COLUMN_INDEX] = 110;
+        tableColumnWidths[LOG_SERVICE_COLUMN_INDEX] = 100;
         tableColumnWidths[LOG_MSG_DETAILS_COLUMN_INDEX] = 500;
 
         // Add columns according to configuration
