@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.FontUtil;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.Charsets;
@@ -120,9 +121,12 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             privateKeyRadioButton.setEnabled(false);
         }
 
+        privateKeysComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
         privateKeysComboBox.setIncludeDefaultSslKey(false);
         privateKeysComboBox.setIncludeRestrictedAccessKeys(true);
         privateKeysComboBox.repopulate();
+
+        trustedCertsComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
         repopulateTrustedCertsComboBox();
 
         // urlConnection as the default
@@ -153,8 +157,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
         private CertComboEntry(TrustedCert cert) {
             this.cert = cert;
-            String n = cert.getCertificate().getSubjectDN().getName();
-            this.name = n == null || n.length() < 50 ? n : (n.substring(0, 48) + "...");
+            this.name = cert.getCertificate().getSubjectDN().getName();
         }
 
         @Override
