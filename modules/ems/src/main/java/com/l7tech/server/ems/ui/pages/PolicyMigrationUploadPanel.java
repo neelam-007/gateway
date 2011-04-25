@@ -81,7 +81,9 @@ public class PolicyMigrationUploadPanel extends Panel {
             @Override
             @SuppressWarnings({"UnusedDeclaration"})
              protected void onError( final AjaxRequestTarget target ) {
-                target.addComponent( feedback );
+                if ( target != null ) {
+                    target.addComponent( feedback );
+                }
             }
 
             @Override
