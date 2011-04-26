@@ -277,6 +277,8 @@
         <property name="auditArchiver" ref="auditArchiver"/>
         <property name="auditFilterPolicyManager" ref="auditFilterPolicyManager"/>
         <property name="keyAccessFilter" ref="keyAccessFilter"/>
+        <property name="persistenceEventInterceptor" ref="persistenceEventInterceptor"/>
+        <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
     <!-- service admin servant -->
@@ -358,12 +360,6 @@
         <constructor-arg ref="jdbcQueryingManager"/>
         <constructor-arg ref="jdbcConnectionPoolManager"/>
         <constructor-arg ref="serverConfig"/>
-    </bean>
-
-    <!-- entity admin servant -->
-    <bean id="entityAdmin" class="com.l7tech.server.entity.EntityAdminImpl">
-        <constructor-arg ref="sessionFactory"/>
-        <constructor-arg ref="persistenceEventInterceptor"/>
     </bean>
 
     <!-- FTP admin servant -->

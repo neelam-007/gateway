@@ -3,10 +3,6 @@ package com.l7tech.gateway.common.audit;
 import com.l7tech.util.OpaqueId;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.AuditSearchCriteria;
-import com.l7tech.gateway.common.audit.AuditAdmin;
-import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 
@@ -129,6 +125,11 @@ public class AuditAdminStub implements AuditAdmin {
 
     @Override
     public String invokeAuditViewerPolicyForDetail(long auditId, long ordinal) {
+        return null;
+    }
+
+    @Override
+    public Collection<String> getAllEntityClassNames() {
         return null;
     }
 }

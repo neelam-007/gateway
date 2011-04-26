@@ -3,7 +3,6 @@ package com.l7tech.console.util.registry;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.LogonEvent;
-import com.l7tech.gateway.common.entity.EntityAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -57,7 +56,6 @@ public final class RegistryImpl extends Registry
     private JmsAdmin jmsAdmin;
     private FtpAdmin ftpAdmin;
     private JdbcAdmin jdbcAdmin;
-    private EntityAdmin entityAdmin;
     private TrustedCertAdmin trustedCertAdmin;
     private ResourceAdmin resourceAdmin;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
@@ -167,18 +165,6 @@ public final class RegistryImpl extends Registry
         }
         jdbcAdmin = adminContext.getJdbcConnectionAdmin();
         return jdbcAdmin;
-    }
-
-    /**
-     * @return the SessionFactory
-     */
-    public synchronized EntityAdmin getEntityAdmin() {
-        checkAdminContext();
-        if (entityAdmin != null) {
-            return entityAdmin;
-        }
-        entityAdmin = adminContext.getEntityAdmin();
-        return entityAdmin;
     }
 
     /**
@@ -412,7 +398,6 @@ public final class RegistryImpl extends Registry
         serviceAdmin = null;
         jmsAdmin = null;
         jdbcAdmin = null;
-        entityAdmin = null;
         ftpAdmin = null;
         trustedCertAdmin = null;
         resourceAdmin = null;

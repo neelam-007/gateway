@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
-import com.l7tech.gateway.common.entity.EntityAdmin;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -68,11 +67,6 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     @Override
     public JdbcAdmin getJdbcConnectionAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(JdbcAdmin.class);
-    }
-
-    @Override
-    public EntityAdmin getEntityAdmin() throws SecurityException {
-        return this.getRemoteInterfaceForEndpoint(EntityAdmin.class);
     }
 
     @Override

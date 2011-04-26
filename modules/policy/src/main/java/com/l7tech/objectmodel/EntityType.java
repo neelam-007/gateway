@@ -151,21 +151,4 @@ public enum EntityType implements Comparable<EntityType> {
         }
         return type;
     }
-
-    /**
-     *  Find the entity type associated with the given type name.
-     *
-     * @param typeName: the name of the entity type to be found
-     * @return the entity type with the name same as typeName.
-     */
-    public static EntityType findTypeByName(String typeName) {
-        if (typeName == null || typeName.trim().isEmpty()) return null;
-
-        for (EntityType type: values()) {
-            if (typeName.equals(type.getName())) {
-                return type;
-            }
-        }
-        return null;
-    }
 }

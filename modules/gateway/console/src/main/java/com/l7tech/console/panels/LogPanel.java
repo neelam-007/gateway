@@ -13,7 +13,6 @@ import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.LogRequest;
-import com.l7tech.gateway.common.entity.EntityAdmin;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
@@ -103,7 +102,6 @@ public class LogPanel extends JPanel {
     private static final long MILLIS_IN_MINUTE = 1000L * 60L;
     private static final long MILLIS_IN_HOUR = MILLIS_IN_MINUTE * 60L;
 
-    private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
     private SsmPreferences preferences = TopComponents.getInstance().getPreferences();
     private TreeMap<String, String> entitiesMap; // Map an entity type name to an entity class name
 
@@ -548,13 +546,13 @@ public class LogPanel extends JPanel {
         if (entitiesMap == null) {
             entitiesMap = new TreeMap<String, String>();
 
-            EntityAdmin entityAdmin = Registry.getDefault().getEntityAdmin();
-            if (entityAdmin != null) {
-                String lastWord;
-                for (String entityClassName: entityAdmin.getAllEntityClassNames(false)) {
-                    lastWord = getShortName(entityClassName);
-                    if (lastWord != null && !lastWord.trim().isEmpty()) {
-                        entitiesMap.put(lastWord, entityClassName);
+            AuditAdmin auditAdmin = Registry.getDefault().getAuditAdmin();
+            if (auditAdmin != null) {
+                String shortName;
+                for (String entityClassName: auditAdmin.getAllEntityClassNames()) {
+                    shortName = getShortName(entityClassName);
+                    if (shortName != null && !shortName.trim().isEmpty()) {
+                        entitiesMap.put(shortName, entityClassName);
                     }
                 }
             }

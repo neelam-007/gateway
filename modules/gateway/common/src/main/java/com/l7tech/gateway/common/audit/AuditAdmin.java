@@ -252,4 +252,11 @@ public interface AuditAdmin extends GenericLogAdmin {
             AssertionMessages.USERDETAIL_FINE.getId(),
             AssertionMessages.USERDETAIL_FINER.getId(),
             AssertionMessages.USERDETAIL_FINEST.getId())));
+
+    /**
+     * Get all entity class names except those ignored or no-audit entities.
+     * @return: the list of entity class names.
+     */
+    @Transactional(readOnly=true)
+    Collection<String> getAllEntityClassNames();    
 }

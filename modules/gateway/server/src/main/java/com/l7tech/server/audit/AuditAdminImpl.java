@@ -11,6 +11,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.GatewayKeyAccessFilter;
+import com.l7tech.server.PersistenceEventInterceptor;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.AdminInfo;
@@ -20,6 +21,9 @@ import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
 import org.apache.commons.collections.map.LRUMap;
+import org.hibernate.EntityMode;
+import org.hibernate.SessionFactory;
+import org.hibernate.metadata.ClassMetadata;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -42,6 +46,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private static final String MAX_AUDIT_DATA_CACHE_SIZE = "com.l7tech.server.audit.maxAuditDataCacheSize";
     private static final int CLEANUP_DELAY = SyspropUtil.getInteger( "com.l7tech.server.audit.auditDataCacheDelay", 120000 );
     private static final long CLEANUP_PERIOD = SyspropUtil.getLong( "com.l7tech.server.audit.auditDataCachePeriod",  60000 );
+    private static final Collection<String> ignoredEntityClassNames = Arrays.asList(new String[] {
+        // If any entity is found as not relevant for auditing, add it into this list.
+        AuditRecord.class.getName(),
+    });
 
     // map of IdentityHeader -> AuditViewData
     private final LRUMap auditedData = new LRUMap(SyspropUtil.getInteger(MAX_AUDIT_DATA_CACHE_SIZE, 100));
@@ -56,6 +64,8 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private ApplicationContext applicationContext;
     private AuditFilterPolicyManager auditFilterPolicyManager;
     private GatewayKeyAccessFilter keyAccessFilter;
+    private PersistenceEventInterceptor persistenceEventInterceptor;
+    private SessionFactory sessionFactory;
     private Auditor auditor;
 
     public AuditAdminImpl() {
@@ -93,6 +103,14 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     public void setAuditArchiver(AuditArchiver auditArchiver) {
         this.auditArchiver = auditArchiver;
+    }
+
+    public void setPersistenceEventInterceptor(PersistenceEventInterceptor persistenceEventInterceptor) {
+        this.persistenceEventInterceptor = persistenceEventInterceptor;
+    }
+
+    public void setSessionFactory(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
     }
 
     @Override
@@ -534,6 +552,31 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         } finally {
             publishInvokeAuditViewerAudits(auditMessages);
         }
+    }
+
+    @Override
+    public Collection<String> getAllEntityClassNames() {
+        Collection<String> entityClassNamesList = new ArrayList<String>();
+        Map<String, ClassMetadata> classMetaDataMap = sessionFactory.getAllClassMetadata();
+
+        final Set<String> ignoredClassNames = persistenceEventInterceptor.getIgnoredClassNames();
+        final Set<String> noAuditClassNames = persistenceEventInterceptor.getNoAuditClassNames();
+
+        Class entityClass;
+        for (String className: classMetaDataMap.keySet()) {
+            entityClass = classMetaDataMap.get(className) == null?
+                null : classMetaDataMap.get(className).getMappedClass(EntityMode.POJO);
+
+            if (!ignoredEntityClassNames.contains(className) &&
+                ignoredClassNames != null && !ignoredClassNames.contains(className) &&
+                noAuditClassNames != null && !noAuditClassNames.contains(className) &&
+                entityClass != null && EntityType.findTypeByEntity(entityClass).isDisplayedInGui()) {
+
+                entityClassNamesList.add(className);
+            }
+        }
+
+        return entityClassNamesList;
     }
 
     private String evaluatePolicy(final String messageXml,
