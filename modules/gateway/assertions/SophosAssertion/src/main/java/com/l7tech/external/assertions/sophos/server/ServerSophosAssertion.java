@@ -141,6 +141,7 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
                         host = host.indexOf("${") > -1 ? getContextVariable(context, host): host;
                         portStr = portStr.indexOf("${") > -1 ? getContextVariable(context, portStr): portStr;
                         port = Integer.parseInt(portStr);
+                        port = isPortValid(port) ? port : 0;
                     }catch (NumberFormatException ne){
                         port = 0;
                         // do nothing
@@ -233,4 +234,8 @@ public class ServerSophosAssertion extends AbstractMessageTargetableServerAssert
 
     }
 
+    private boolean isPortValid(int port) {
+       return port > 0 && port < 65535;
+   }
+    
 }
