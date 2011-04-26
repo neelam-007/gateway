@@ -81,6 +81,11 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                 auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_WRONG_REQUEST_TYPE, "POST");
                 return AssertionStatus.FAILED;
             }
+            if(assertion.getParameterType() == HttpParameterType.GET_AND_POST
+                    && (requestKnob.getMethod() != HttpMethod.GET && requestKnob.getMethod() != HttpMethod.POST)) {
+                auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_WRONG_REQUEST_TYPE, "GET or POST");
+                return AssertionStatus.FAILED;
+            }
             String[] paramValues = requestKnob.getParameterValues(assertion.getParameterName());
             if(paramValues == null || paramValues.length == 0) {
                 auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_NO_PARAMETER);

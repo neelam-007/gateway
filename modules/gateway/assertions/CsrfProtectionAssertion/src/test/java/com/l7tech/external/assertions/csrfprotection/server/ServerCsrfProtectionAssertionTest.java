@@ -168,6 +168,37 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         assertEquals(status, AssertionStatus.FAILED);
     }
 
+    /**
+     * Fail non supported HTTP method (e.g. PUT).
+     * @throws Exception
+     */
+    public void testFailDoubleSubmit6() throws Exception {
+        HashMap<String, String> cookies = new HashMap<String, String>();
+        String sessionID = "1234567890ABCDEF";
+        cookies.put("SESSION_ID", sessionID);
+        HashMap<String, String[]> parameters = new HashMap<String, String[]>();
+        parameters.put("sessionID", new String[] {sessionID});
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext(
+                new URL("http://localhost:8080/test"),
+                cookies,
+                HttpMethod.PUT,  // non supported http method
+                parameters,
+                new String[0]);
+
+        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
+        assertion.setEnableDoubleSubmitCookieChecking(true);
+        assertion.setCookieName("SESSION_ID");
+        assertion.setParameterName("sessionID");
+        assertion.setParameterType(HttpParameterType.GET_AND_POST);
+        assertion.setEnableHttpRefererChecking(false);
+
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(status, AssertionStatus.FAILED);
+    }
+
     public void testSucceedDoubleSubmit1() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
         String sessionID = "1234567890ABCDEF";
