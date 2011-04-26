@@ -201,16 +201,16 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
         ((SpinnerNumberModel) maxPasswordLengthSpinner.getModel()).setMinimum(3);
         maxPasswordLengthSpinner.setValue(3);
         ((SpinnerNumberModel) maxPasswordLengthSpinner.getModel()).setMaximum(128);
-        ((SpinnerNumberModel) repeatFrequencySpinner.getModel()).setMinimum(0);
+        ((SpinnerNumberModel) repeatFrequencySpinner.getModel()).setMinimum(1);
         ((SpinnerNumberModel) repeatFrequencySpinner.getModel()).setMaximum(50);
-        ((SpinnerNumberModel) passwordExpirySpinner.getModel()).setMinimum(0);
+        ((SpinnerNumberModel) passwordExpirySpinner.getModel()).setMinimum(1);
         ((SpinnerNumberModel) passwordExpirySpinner.getModel()).setMaximum(365);
-        ((SpinnerNumberModel) upperCaseSpinner.getModel()).setMinimum(0);
-        ((SpinnerNumberModel) lowerCaseSpinner.getModel()).setMinimum(0);
-        ((SpinnerNumberModel) numberSpinner.getModel()).setMinimum(0);
-        ((SpinnerNumberModel) symbolSpinner.getModel()).setMinimum(0);
-        ((SpinnerNumberModel) nonNumericSpinner.getModel()).setMinimum(0);
-        ((SpinnerNumberModel) charDifferenceSpinner.getModel()).setMinimum(0);
+        ((SpinnerNumberModel) upperCaseSpinner.getModel()).setMinimum(1);
+        ((SpinnerNumberModel) lowerCaseSpinner.getModel()).setMinimum(1);
+        ((SpinnerNumberModel) numberSpinner.getModel()).setMinimum(1);
+        ((SpinnerNumberModel) symbolSpinner.getModel()).setMinimum(1);
+        ((SpinnerNumberModel) nonNumericSpinner.getModel()).setMinimum(1);
+        ((SpinnerNumberModel) charDifferenceSpinner.getModel()).setMinimum(1);
 
         maxPasswordLengthCheckBox.addActionListener(enableDisableListener);
         upperCaseCheckBox.addActionListener(enableDisableListener);
@@ -255,8 +255,14 @@ public class IdProviderPasswordPolicyDialog extends JDialog {
         passwordExpirySpinner.addChangeListener(requirementsListener);
 
 
-        // initialize values to STIG
+        // initialize main values to STIG
         resetToSTIG();
+        upperCaseSpinner.setValue( 1 );
+        lowerCaseSpinner.setValue( 1 );
+        numberSpinner.setValue( 1 );
+        symbolSpinner.setValue( 1 );
+        nonNumericSpinner.setValue( 1 );
+        charDifferenceSpinner.setValue( 1 );
         clearValues();
 
         Utilities.setEscKeyStrokeDisposes(this);
