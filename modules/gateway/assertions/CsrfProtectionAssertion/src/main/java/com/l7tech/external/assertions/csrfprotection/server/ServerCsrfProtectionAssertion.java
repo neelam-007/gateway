@@ -2,14 +2,14 @@ package com.l7tech.external.assertions.csrfprotection.server;
 
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.external.assertions.csrfprotection.CsrfProtectionAssertion;
 import com.l7tech.external.assertions.csrfprotection.HttpParameterType;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.external.assertions.csrfprotection.CsrfProtectionAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
@@ -17,7 +17,6 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -96,6 +95,9 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                 auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_COOKIE_PARAMETER_MISMATCH);
                 return AssertionStatus.FAILED;
             }
+
+            // context variable set to value of cookie (or parameter, at this point both are the same)
+            context.setVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN, cookieValue);
         }
 
         if(assertion.isEnableHttpRefererChecking()) {

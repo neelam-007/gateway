@@ -170,9 +170,10 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
 
     public void testSucceedDoubleSubmit1() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
-        cookies.put("SESSION_ID", "1234567890ABCDEF");
+        String sessionID = "1234567890ABCDEF";
+        cookies.put("SESSION_ID", sessionID);
         HashMap<String, String[]> parameters = new HashMap<String, String[]>();
-        parameters.put("sessionID", new String[] {"1234567890ABCDEF"});
+        parameters.put("sessionID", new String[] {sessionID});
 
         PolicyEnforcementContext context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
@@ -192,13 +193,15 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         assertEquals(status, AssertionStatus.NONE);
+        assertEquals(sessionID, context.getVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN));
     }
 
     public void testSucceedDoubleSubmit2() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
-        cookies.put("SESSION_ID", "1234567890ABCDEF");
+        String sessionID = "1234567890ABCDEF";
+        cookies.put("SESSION_ID", sessionID);
         HashMap<String, String[]> parameters = new HashMap<String, String[]>();
-        parameters.put("sessionID", new String[] {"1234567890ABCDEF"});
+        parameters.put("sessionID", new String[] {sessionID});
 
         PolicyEnforcementContext context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
@@ -218,13 +221,15 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         assertEquals(status, AssertionStatus.NONE);
+        assertEquals(sessionID, context.getVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN));
     }
 
     public void testSucceedDoubleSubmit3() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
-        cookies.put("SESSION_ID", "1234567890ABCDEF");
+        String sessionID = "1234567890ABCDEF";
+        cookies.put("SESSION_ID", sessionID);
         HashMap<String, String[]> parameters = new HashMap<String, String[]>();
-        parameters.put("sessionID", new String[] {"1234567890ABCDEF"});
+        parameters.put("sessionID", new String[] {sessionID});
 
         PolicyEnforcementContext context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
@@ -244,6 +249,7 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         assertEquals(status, AssertionStatus.NONE);
+        assertEquals(sessionID, context.getVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN));
     }
 
     public void testFailRefererCheck1() throws Exception {
@@ -447,6 +453,16 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
                                                                     final HashMap<String, String[]> parameters,
                                                                     final String[] headers)
     {
+        return createPolicyEnforcementContext(url,  cookies, method, parameters, headers, new HashMap<String, Object>());
+    }
+
+    private PolicyEnforcementContext createPolicyEnforcementContext(final URL url,
+                                                                    final HashMap<String, String> cookies,
+                                                                    final HttpMethod method,
+                                                                    final HashMap<String, String[]> parameters,
+                                                                    final String[] headers,
+                                                                    final HashMap<String, Object> contextVariables)
+    {
         final HttpRequestKnob requestKnob = new HttpRequestKnobAdapter() {
             @Override
             public HttpCookie[] getCookies() {
@@ -497,6 +513,16 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
                 message.attachHttpRequestKnob(requestKnob);
 
                 return message;
+            }
+
+            @Override
+            public Object getVariable(String name) {
+                return contextVariables.get(name);
+            }
+
+            @Override
+            public void setVariable(String name, Object value) {
+                contextVariables.put(name, value);
             }
         };
     }

@@ -16,6 +16,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
  * 
  */
 public class CsrfProtectionAssertion extends Assertion implements SetsVariables {
+    public static final String CTX_VAR_NAME_CSRF_VALID_TOKEN = "csrf.valid.token";
+
     protected static final Logger logger = Logger.getLogger(CsrfProtectionAssertion.class.getName());
 
     private boolean enableDoubleSubmitCookieChecking = true;
@@ -30,7 +32,7 @@ public class CsrfProtectionAssertion extends Assertion implements SetsVariables 
     @Override
     public VariableMetadata[] getVariablesSet() {
         if(enableDoubleSubmitCookieChecking) {
-            return new VariableMetadata[] {new VariableMetadata("csrf.valid.token", false, false, null, false)};
+            return new VariableMetadata[] {new VariableMetadata(CTX_VAR_NAME_CSRF_VALID_TOKEN, false, false, null, false)};
         } else {
             return new VariableMetadata[0];
         }
