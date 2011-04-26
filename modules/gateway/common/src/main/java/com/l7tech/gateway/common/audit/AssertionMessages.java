@@ -965,9 +965,9 @@ public class AssertionMessages extends Messages {
 
     public static final M CSRF_PROTECTION_REQUEST_NOT_HTTP = m(9400, Level.WARNING, "The request was not an HTTP request, failing assertion.");
     public static final M CSRF_PROTECTION_MULTIPLE_COOKIE_VALUES = m(9401, Level.WARNING, "Multiple cookie values were detected, failing assertion.");
-    public static final M CSRF_PROTECTION_NO_COOKIE_VALUE = m(9402, Level.WARNING, "No cookie value was detected, failing assertion.");
+    public static final M CSRF_PROTECTION_NO_COOKIE_VALUE = m(9402, Level.WARNING, "The expected cookie value was not found, failing assertion.");
     public static final M CSRF_PROTECTION_WRONG_REQUEST_TYPE = m(9403, Level.WARNING, "Looking for a {0} parameter, but the request was not a {0} request, failing assertion.");
-    public static final M CSRF_PROTECTION_NO_PARAMETER = m(9404, Level.WARNING, "The parameter was not found, failing assertion.");
+    public static final M CSRF_PROTECTION_NO_PARAMETER = m(9404, Level.WARNING, "The expected parameter was not found, failing assertion.");
     public static final M CSRF_PROTECTION_MULTIPLE_PARAMETER_VALUES = m(9405, Level.WARNING, "The parameter had more than one value, failing assertion.");
     public static final M CSRF_PROTECTION_COOKIE_PARAMETER_MISMATCH = m(9406, Level.WARNING, "The parameter did not match the cookie value, failing assertion.");
     public static final M CSRF_PROTECTION_MISSING_REFERER = m(9407, Level.WARNING, "The HTTP-Referer header was not provided but it is required, failing assertion.");
