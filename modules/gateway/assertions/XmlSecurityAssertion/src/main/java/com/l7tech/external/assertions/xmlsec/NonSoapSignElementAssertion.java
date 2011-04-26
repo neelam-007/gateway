@@ -5,11 +5,16 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.validator.ElementSelectingXpathBasedAssertionValidator;
-import com.l7tech.policy.wsp.*;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.xml.xpath.XpathExpression;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 
@@ -42,6 +47,8 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
     private final PrivateKeyableSupport privateKeyableSupport = new PrivateKeyableSupport();
     private SignatureLocation signatureLocation = DEFAULT_SIGNATURE_LOCATION;
     private String customIdAttributeQname = null;
+    private String detachedSignatureVariableName = null;
+    private boolean forceEnvelopedTransform = false;
 
     public NonSoapSignElementAssertion() {
         super(TargetMessageType.RESPONSE, true);
@@ -74,9 +81,40 @@ public class NonSoapSignElementAssertion extends NonSoapSecurityAssertionBase im
         this.customIdAttributeQname = customIdAttributeQname;
     }
 
+    public String getDetachedSignatureVariableName() {
+        return detachedSignatureVariableName;
+    }
+
+    /**
+     * @param detachedSignatureVariableName  name of context variable in which to create a detached signature, or null to create one Signature underneath each signed element.
+     */
+    public void setDetachedSignatureVariableName(String detachedSignatureVariableName) {
+        this.detachedSignatureVariableName = detachedSignatureVariableName;
+    }
+
+    public boolean isForceEnvelopedTransform() {
+        return forceEnvelopedTransform;
+    }
+
+    /**
+     * @param forceEnvelopedTransform true to if the Enveloped transform should be included when creating a detached signature.
+     *                     Ignored if {@link #getDetachedSignatureVariableName()} is null.
+     */
+    public void setForceEnvelopedTransform(boolean forceEnvelopedTransform) {
+        this.forceEnvelopedTransform = forceEnvelopedTransform;
+    }
+
     @Override
     public String getDefaultXpathExpressionString() {
         return "//ElementsToSign";
+    }
+
+    @Override
+    public VariableMetadata[] getVariablesSet() {
+        List<VariableMetadata> vars = new ArrayList<VariableMetadata>(Arrays.asList(super.getVariablesSet()));
+        if (detachedSignatureVariableName != null)
+            vars.add(new VariableMetadata(detachedSignatureVariableName));
+        return vars.toArray(new VariableMetadata[vars.size()]);
     }
 
     @Override

@@ -859,6 +859,9 @@ public class AssertionMessages extends Messages {
     public static final M DOMAINID_IDENTIFIER_MISSING = m(8786, Level.WARNING, "Requestor did not include required identifier: {0}");
 
     public static final M REMOVE_ELEMENT_NOT_XML = m(8800, Level.WARNING, "Message is not XML.");
+    public static final M INSERT_ELEMENT_EXISTING_NOT_FOUND = m(8801, Level.WARNING, "Unable to insert element because no existing element was found");
+    public static final M INSERT_ELEMENT_EXISTING_TOO_MANY = m(8802, Level.WARNING, "Unable to insert element because more than one existing element was found");
+    public static final M INSERT_ELEMENT_BAD_FRAGMENT = m(8803, Level.WARNING, "Unable to insert element because the new element was not a well-formed XML fragment");
 
     public static final M WSSECURITY_NON_SOAP = m(8850, Level.WARNING, "Message is not SOAP.");
     public static final M WSSECURITY_ERROR = m(8851, Level.WARNING, "Unable to decorate {0}: {1}");

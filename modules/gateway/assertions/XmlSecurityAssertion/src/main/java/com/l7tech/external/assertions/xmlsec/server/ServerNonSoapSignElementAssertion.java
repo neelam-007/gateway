@@ -25,7 +25,9 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -38,21 +40,30 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
 
     private static final Random random = new SecureRandom();
     private final FullQName attrname;
+    private final boolean enableImplicitEmptyUriDocRef;
 
     public ServerNonSoapSignElementAssertion(NonSoapSignElementAssertion assertion, BeanFactory beanFactory, ApplicationEventPublisher eventPub) throws InvalidXpathException, ParseException {
         super(assertion, logger, beanFactory, eventPub);
         this.beanFactory = beanFactory;
         String attrNameStr = assertion.getCustomIdAttributeQname();
         this.attrname = attrNameStr == null || attrNameStr.length() < 1 ? null : FullQName.valueOf(attrNameStr);
+        this.enableImplicitEmptyUriDocRef = "".equals(attrNameStr);
     }
 
     @Override
     protected AssertionStatus processAffectedElements(PolicyEnforcementContext context, Message message, Document doc, List<Element> affectedElements) throws Exception {
         SignerInfo signer = ServerAssertionUtils.getSignerInfo(beanFactory, assertion);
 
-        int count = 1;
-        for (Element elementToSign : affectedElements) {
-            count = signElement(count, elementToSign, signer);
+        final String detachedVar = assertion.getDetachedSignatureVariableName();
+        if (detachedVar != null) {
+            HashMap<String, Element> elementsToSignWithIDs = generateIds(affectedElements);
+            Element signature = DsigUtil.createSignature(elementsToSignWithIDs, doc, signer.getCertificate(), signer.getPrivate(), null, null, null, assertion.isForceEnvelopedTransform(), enableImplicitEmptyUriDocRef);
+            context.setVariable(detachedVar, signature);
+        } else {
+            int count = 1;
+            for (Element elementToSign : affectedElements) {
+                count = signElement(count, elementToSign, signer);
+            }
         }
 
         return AssertionStatus.NONE;
@@ -63,7 +74,9 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
         count = p.left;
         String idValue = p.right;
 
-        Element signature = DsigUtil.createEnvelopedSignature(elementToSign, idValue, signer.getCertificate(), signer.getPrivate(), null, null, null);
+        final Map<String, Element> elementsToSignWithIDs = new HashMap<String, Element>();
+        elementsToSignWithIDs.put(idValue, elementToSign);
+        Element signature = DsigUtil.createSignature(elementsToSignWithIDs, elementToSign.getOwnerDocument(), signer.getCertificate(), signer.getPrivate(), null, null, null, true, enableImplicitEmptyUriDocRef);
 
         Node firstChild = elementToSign.getFirstChild();
         if (NonSoapSignElementAssertion.SignatureLocation.FIRST_CHILD.equals(assertion.getSignatureLocation()) && firstChild != null) {
@@ -73,6 +86,20 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
         }
 
         return count;
+    }
+
+    private HashMap<String, Element> generateIds(List<Element> elementsToSign) {
+        int count = 0;
+        HashMap<String, Element> output = new HashMap<String, Element>();
+        for (Element el : elementsToSign) {
+            if (enableImplicitEmptyUriDocRef && el == el.getOwnerDocument().getDocumentElement()) {
+                output.put("", el); // Use empty string reference to implicitly point at document root
+            } else {
+                String id = generateId(count++, el).getValue();
+                output.put(id, el);
+            }
+        }
+        return output;
     }
 
     private Pair<Integer, String> generateId(int count, Element element) {

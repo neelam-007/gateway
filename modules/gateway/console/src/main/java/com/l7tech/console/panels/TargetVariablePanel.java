@@ -92,6 +92,7 @@ public class TargetVariablePanel  extends JPanel {
         add(statusLabel,c);
 
         Utilities.attachDefaultContextMenu(suffixField);
+        Utilities.enableGrayOnDisabled(suffixField);
         clearVariableNameStatus();
         
         TextComponentPauseListenerManager.registerPauseListener(

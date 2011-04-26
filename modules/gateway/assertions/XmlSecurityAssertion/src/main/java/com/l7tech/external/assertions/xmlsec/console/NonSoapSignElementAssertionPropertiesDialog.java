@@ -1,54 +1,77 @@
 package com.l7tech.external.assertions.xmlsec.console;
 
+import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.external.assertions.xmlsec.NonSoapSignElementAssertion;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 public class NonSoapSignElementAssertionPropertiesDialog extends NonSoapSecurityAssertionDialog<NonSoapSignElementAssertion> {
-    // For now, we have nothing to configure except the XPath, so we just let our superclass handle everything
-    @SuppressWarnings({"UnusedDeclaration"})
     private JPanel contentPane;
     private JRadioButton autoIdAttrButton;
     private JRadioButton useSpecificIdAttrButton;
     private JTextField idAttributeNameField;
     private JComboBox signatureLocationComboBox;
+    private JRadioButton rbAddSigToEachTarget;
+    private JRadioButton rbCreateDetached;
+    private JPanel detachedVariablePanel;
+    private TargetVariablePanel detachedVariableField;
+    private JCheckBox envelopedCheckBox;
 
 
     public NonSoapSignElementAssertionPropertiesDialog(Window owner, NonSoapSignElementAssertion assertion) {
         super(owner, assertion);
+        detachedVariableField = new TargetVariablePanel();
         initComponents();
         setData(assertion);
-        getControlsBelowXpath().setLayout(new BorderLayout());
-        getControlsBelowXpath().add(createExtraPanel(), BorderLayout.CENTER);
+        Utilities.setSingleChild(getControlsBelowXpath(), createExtraPanel());
     }
 
     private JPanel createExtraPanel() {
         signatureLocationComboBox.setModel(new DefaultComboBoxModel(NonSoapSignElementAssertion.SignatureLocation.values()));
 
-        ActionListener enableOrDisableListener = new ActionListener() {
+        RunOnChangeListener enableOrDisableListener = new RunOnChangeListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void run() {
                 enableOrDisableComponents();
             }
         };
+
+        Utilities.setSingleChild(detachedVariablePanel, detachedVariableField);
+        detachedVariableField.addChangeListener(enableOrDisableListener);
+        detachedVariableField.setValueWillBeWritten(true);
+        detachedVariableField.setValueWillBeRead(false);
+
         autoIdAttrButton.addActionListener(enableOrDisableListener);
         useSpecificIdAttrButton.addActionListener(enableOrDisableListener);
+        rbCreateDetached.addActionListener(enableOrDisableListener);
+        rbAddSigToEachTarget.addActionListener(enableOrDisableListener);
 
+        idAttributeNameField.setEnabled(true);
         Utilities.enableGrayOnDisabled(idAttributeNameField);
         Utilities.attachDefaultContextMenu(idAttributeNameField);
+
+        detachedVariableField.setEnabled(true);
+        Utilities.enableGrayOnDisabled(detachedVariableField);
+
+        Utilities.enableGrayOnDisabled(signatureLocationComboBox);
+        Utilities.enableGrayOnDisabled(envelopedCheckBox);
 
         return contentPane;
     }
 
     private void enableOrDisableComponents() {
         idAttributeNameField.setEnabled(useSpecificIdAttrButton.isSelected());
+        signatureLocationComboBox.setEnabled(rbAddSigToEachTarget.isSelected());
+        envelopedCheckBox.setEnabled(rbCreateDetached.isSelected());
+        detachedVariableField.setEnabled(rbCreateDetached.isSelected());
     }
 
     private String validQname(String text) throws ValidationException {
+        if ("".equals(text))
+            return text;
         QnameValidator.validateQname(text);
         return text;
     }
@@ -70,6 +93,14 @@ public class NonSoapSignElementAssertionPropertiesDialog extends NonSoapSecurity
 
         signatureLocationComboBox.setSelectedItem(assertion.getSignatureLocation());
 
+        String detachedVar = assertion.getDetachedSignatureVariableName();
+        boolean detached = detachedVar != null;
+        rbAddSigToEachTarget.setSelected(!detached);
+        rbCreateDetached.setSelected(detached);
+        detachedVariableField.setAssertion(assertion, getPreviousAssertion());
+        detachedVariableField.setVariable(detachedVar == null ? "" : detachedVar);
+        envelopedCheckBox.setSelected(assertion.isForceEnvelopedTransform());
+
         enableOrDisableComponents();
     }
 
@@ -80,6 +111,12 @@ public class NonSoapSignElementAssertionPropertiesDialog extends NonSoapSecurity
         String qname = useSpecificIdAttrButton.isSelected() ? validQname(idAttributeNameField.getText()) : null;
         ass.setCustomIdAttributeQname(qname);
         ass.setSignatureLocation((NonSoapSignElementAssertion.SignatureLocation) signatureLocationComboBox.getSelectedItem());
+        final boolean detached = rbCreateDetached.isSelected();
+        final String detachedVar = detachedVariableField.getVariable();
+        if (detached && detachedVar.trim().length() < 1)
+            throw new ValidationException("A variable name must be provided in order to create a detached signature.");
+        ass.setDetachedSignatureVariableName(detached ? detachedVar : null);
+        ass.setForceEnvelopedTransform(envelopedCheckBox.isSelected());
 
         return ass;
     }

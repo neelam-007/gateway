@@ -13,7 +13,10 @@ import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
-import com.l7tech.util.*;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SoapConstants;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -26,7 +29,9 @@ import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.l7tech.security.xml.SupportedDigestMethods.*;
 
@@ -109,23 +114,61 @@ public class DsigUtil {
                                                    String messageDigestAlgorithm)
             throws SignatureException, SignatureStructureException, XSignatureException
     {
-        if (targetElementIdValue == null)
-            throw new IllegalArgumentException("targetElementIdValue is required");
+        final Map<String, Element> elementsToSignWithIDs = new HashMap<String, Element>();
+        elementsToSignWithIDs.put(targetElementIdValue, elementToSign);
+        return createSignature(elementsToSignWithIDs, elementToSign.getOwnerDocument(), senderSigningCert, senderSigningKey, keyInfoChildElement, keyName, messageDigestAlgorithm, true, false);
+    }
+
+    /**
+     * Digitally signs the specified elements and returns a signature element that can be inserted into this document or a different one.
+     *
+     * @param elementsToSignWithIDs  the elements to sign, along with their corresponding reference values.  Required.  May be empty, in which case a signature with no References will be created.
+     * @param document              Document to use as a factory for the new signature element.  Required.
+     * @param senderSigningCert     certificate to sign it with.  will be included inline in keyinfo
+     * @param senderSigningKey      private key to sign it with.
+     * @param keyInfoChildElement   Custom key info child element to use
+     * @param keyName               if specified, KeyInfo will use a keyName instead of an STR or a literal cert.
+     * @param messageDigestAlgorithm the message digest algorithm to use for the signature, or null to use the default behavior, which is:
+     *                               SHA-1 for everything except an EC private key, in which case SHA-256
+     * @param includeEnvelopedTransform  if true, the created signature will include the Enveloped transform, so it can be added as a descendant of one of the signed elements.
+     * @param enableImplicitEmptyUriRef  if true, a Reference to an ID consisting of the empty string will be recognized as a reference to the document root.
+     * @return the new dsig:Signature element, as a standalone element not yet attached into the document.
+     * @throws SignatureException   if there is a problem creating the signature or if the xsdIdAttribute is not found on the Element to sign
+     * @throws SignatureStructureException if there is a problem creating the signature
+     * @throws XSignatureException  if there is a problem creating the signature
+     */
+    public static Element createSignature(final Map<String, Element> elementsToSignWithIDs,
+                                          final Document document,
+                                          X509Certificate senderSigningCert,
+                                          PrivateKey senderSigningKey,
+                                          Element keyInfoChildElement,
+                                          String keyName,
+                                          String messageDigestAlgorithm,
+                                          boolean includeEnvelopedTransform,
+                                          final boolean enableImplicitEmptyUriRef)
+            throws SignatureException, SignatureStructureException, XSignatureException
+    {
+        if (elementsToSignWithIDs == null) throw new NullPointerException("elementsToSignWithIDs must be provided");
+        if (document == null) throw new NullPointerException("document must be provided");
 
         SupportedSignatureMethods signaturemethod = getSignatureMethodForSignerPrivateKey(senderSigningKey, messageDigestAlgorithm, true);
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
-        TemplateGenerator template = new TemplateGenerator(elementToSign.getOwnerDocument(),
+        TemplateGenerator template = new TemplateGenerator(document,
                                                            signaturemethod.getMessageDigestIdentifier(),
                                                            Canonicalizer.EXCLUSIVE,
                                                            signaturemethod.getAlgorithmIdentifier());
         template.setIndentation(false);
         template.setPrefix("ds");
 
-        Reference rootRef = template.createReference("#" + targetElementIdValue);
-        rootRef.addTransform(Transform.ENVELOPED);
-        rootRef.addTransform(Transform.C14N_EXCLUSIVE);
-        template.addReference(rootRef);
+        for (String targetId : elementsToSignWithIDs.keySet()) {
+            final String ref = (targetId == null || "".equals(targetId)) ? "" : "#" + targetId;
+            Reference rootRef = template.createReference(ref);
+            if (includeEnvelopedTransform)
+                rootRef.addTransform(Transform.ENVELOPED);
+            rootRef.addTransform(Transform.C14N_EXCLUSIVE);
+            template.addReference(rootRef);
+        }
 
         // Get the signature element
         Element sigElement = template.getSignatureElement();
@@ -150,7 +193,7 @@ public class DsigUtil {
         sigContext.setIDResolver(new IDResolver() {
             @Override
             public Element resolveID(Document document, String s) {
-                return s.equals(targetElementIdValue) ? elementToSign : null;
+                return ("".equals(s) && enableImplicitEmptyUriRef) ? document.getDocumentElement() : elementsToSignWithIDs.get(s);
             }
         });
         sigContext.setEntityResolver( XmlUtil.getXss4jEntityResolver());

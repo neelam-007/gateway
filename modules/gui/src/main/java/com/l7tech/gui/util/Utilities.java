@@ -1629,4 +1629,20 @@ public class Utilities {
         private final Throwable t;
         private ThrowableHolder(Throwable t) { this.t = t; }
     }
+
+    /**
+     * Configure the specified container to have the specified component as its only child.
+     * <p/>
+     * Any existing content of the container is removed when this method is called.
+     *
+     * @param container the container to configure.  Required.
+     * @param child the new child component.  Required.
+     */
+    public static void setSingleChild(Container container, Component child) {
+        if (child == null) throw new NullPointerException("child component must be provided");
+        if (container == child) throw new IllegalArgumentException("component may not be its own child");
+        container.removeAll();
+        container.setLayout(new BorderLayout());
+        container.add(child, BorderLayout.CENTER);
+    }
 }

@@ -19,12 +19,12 @@ import java.util.regex.Pattern;
  * the XPath expression is expected to select one or more element nodes, but where the variable in question
  * is known not to be of Element type.
  */
-public class ElementSelectingXpathValidator implements AssertionValidator {
+public class ElementSelectingXpathValidator<AT extends XpathBasedAssertion> implements AssertionValidator {
     private static final Pattern varPattern = Pattern.compile("^\\s*\\$[A-Za-z0-9_\\-][A-Za-z0-9_\\-\\.]+\\s*$");
-    private final Assertion assertion;
+    private final AT assertion;
     private final String expectedElementVariable;
 
-    public ElementSelectingXpathValidator(final XpathBasedAssertion assertion) {
+    public ElementSelectingXpathValidator(final AT assertion) {
         this.assertion = assertion;
         this.expectedElementVariable = getSingleTargetVariableName(assertion);
     }

@@ -5,12 +5,16 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Removes an XML element from the target specified through the MessageTargetable interface.
@@ -21,40 +25,113 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 @RequiresXML()
 public class RemoveElement extends MessageTargetableAssertion {
 
+    public static enum ElementLocation {
+        FIRST_CHILD("First Child"),
+        LAST_CHILD("Last Child"),
+        PREVIOUS_SIBLING("Previous Sibling"),
+        NEXT_SIBLING("Next Sibling")
+        ;
+
+        private final String text;
+
+        private ElementLocation(String text) {
+            this.text = text;
+        }
+
+        public String getText() {
+            return text;
+        }
+
+        @Override
+        public String toString() {
+            return text;
+        }
+    }
+
     private String elementFromVariable;
+    private String elementToInsertVariable;
+    private ElementLocation insertedElementLocation;
 
     public RemoveElement() {
         super(true);
     }
 
+    /**
+     * @return name of variable containing existing element within the document, or null if not configured.
+     */
     public String getElementFromVariable() {
         return elementFromVariable;
     }
 
+    /**
+     * @param elementFromVariable name of variable containing existing element within the document.  Should be non-null once assertion is fully configured.
+     */
     public void setElementFromVariable(String elementFromVariable) {
         this.elementFromVariable = elementFromVariable;
     }
 
-    private final static String baseName = "Remove XML Element(s)";
-    
+    /**
+     * @return name of variable containing new element to insert into document, or null if not configured.
+     */
+    public String getElementToInsertVariable() {
+        return elementToInsertVariable;
+    }
+
+    /**
+     * @param elementToInsertVariable name of variable conatining new element to insert into document.  Ignored if {@link #getInsertedElementLocation()} is null.
+     */
+    public void setElementToInsertVariable(String elementToInsertVariable) {
+        this.elementToInsertVariable = elementToInsertVariable;
+    }
+
+    /**
+     * @return location relative to existing element of where to insert new element, or null if removing existing element.
+     */
+    public ElementLocation getInsertedElementLocation() {
+        return insertedElementLocation;
+    }
+
+    /**
+     * @param insertedElementLocation location relative to existing element of where to insert new element, or null if removing existing element.
+     */
+    public void setInsertedElementLocation(ElementLocation insertedElementLocation) {
+        this.insertedElementLocation = insertedElementLocation;
+    }
+
+    private final static String baseName = "Add or Remove XML Element(s)";
+    private final static String baseNameRemove = "Remove XML Element(s)";
+    private final static String baseNameInsert = "Insert XML Element(s)";
+
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RemoveElement>(){
         @Override
         public String getAssertionName( final RemoveElement assertion, final boolean decorate) {
             if(!decorate) return baseName;
-            return AssertionUtils.decorateName(assertion, baseName);
+            final boolean inserting = assertion.getInsertedElementLocation() != null;
+            StringBuilder name = new StringBuilder(AssertionUtils.decorateName(assertion, inserting ? baseNameInsert : baseNameRemove));
+            if (inserting) {
+                name.append(" ").append(assertion.getElementToInsertVariable());
+                name.append(" as ").append(assertion.getInsertedElementLocation());
+                name.append(" of ").append(assertion.getElementFromVariable());
+            } else {
+                name.append(" ").append(assertion.getElementFromVariable());
+            }
+            return name.toString();
         }
     };
 
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        meta.put(AssertionMetadata.SHORT_NAME, baseName);
-        meta.put(AssertionMetadata.DESCRIPTION, "Remove one or more XML elements from a message.");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.RemoveElementPropertiesDialog");
-        meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Remove XML Elements Properties");
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xml" });
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(SHORT_NAME, baseName);
+        meta.put(DESCRIPTION, "Insert or remove one or more XML elements from a message.");
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.RemoveElementPropertiesDialog");
+        meta.put(PROPERTIES_ACTION_NAME, "Insert or Remove XML Elements Properties");
+        meta.put(PALETTE_FOLDERS, new String[] { "xml" });
+        meta.put(POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
+            new Java5EnumTypeMapping(ElementLocation.class, "insertedElementLocation")
+        )));
         return meta;
     }
 
@@ -64,6 +141,8 @@ public class RemoveElement extends MessageTargetableAssertion {
         List<String> vars = new ArrayList<String>(Arrays.asList(super.getVariablesUsed()));
         if (elementFromVariable != null)
             vars.add(elementFromVariable);
+        if (insertedElementLocation != null && elementToInsertVariable != null)
+            vars.add(elementToInsertVariable);
         return vars.toArray(new String[vars.size()]);
     }
 }

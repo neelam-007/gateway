@@ -17,10 +17,7 @@ import com.l7tech.xml.xpath.XpathExpression;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.beans.factory.BeanFactory;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
@@ -55,6 +52,49 @@ public class ServerNonSoapSignElementAssertionTest {
 
         Element sigElement = applySignature(ass, makeRequest(null));
         assertTrue("default signature type is LAST_CHILD", null == sigElement.getNextSibling());
+    }
+
+    @Test
+    @BugNumber(9602)
+    public void testSimpleSignElementDetached() throws Exception {
+        NonSoapSignElementAssertion ass = makeAssertion();
+        ass.setDetachedSignatureVariableName("sig");
+        ass.setXpathExpression(new XpathExpression("/foo/bar/*"));
+        Message request = makeRequest(null);
+        ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory, null);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        Document doc = request.getXmlKnob().getDocumentReadOnly();
+        NodeList sigElements = doc.getElementsByTagNameNS(SoapUtil.DIGSIG_URI, "Signature");
+        assertEquals("Signature elements shall now have been added to the document", 0, sigElements.getLength());
+        Object sig = context.getVariable("sig");
+        assertNotNull("sig var shall have been set", sig);
+        assertTrue(sig instanceof Element);
+    }
+
+    @Test
+    @BugNumber(9602)
+    public void testSignElementDetached_enveloped_withEmptyUriRef() throws Exception {
+        NonSoapSignElementAssertion ass = makeAssertion();
+        ass.setDetachedSignatureVariableName("sig");
+        ass.setXpathExpression(new XpathExpression("/*"));
+        ass.setCustomIdAttributeQname("");
+        Message request = makeRequest(null);
+        ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory, null);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        AssertionStatus result = sass.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, result);
+        Document doc = request.getXmlKnob().getDocumentReadOnly();
+        NodeList sigElements = doc.getElementsByTagNameNS(SoapUtil.DIGSIG_URI, "Signature");
+        assertEquals("Signature elements shall now have been added to the document", 0, sigElements.getLength());
+        Element sig = (Element) context.getVariable("sig");
+        assertNotNull("sig var shall have been set", sig);
+
+        Element signedInfo = XmlUtil.findFirstChildElement(sig);
+        Element reference = XmlUtil.findExactlyOneChildElementByName(signedInfo, SoapUtil.DIGSIG_URI, "Reference");
+        Attr uriAttr = reference.getAttributeNode("URI");
+        assertEquals("", uriAttr.getNodeValue());
     }
 
     @Test
