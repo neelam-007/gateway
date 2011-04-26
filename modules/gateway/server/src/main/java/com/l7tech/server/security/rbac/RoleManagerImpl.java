@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.security.rbac;
 
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -264,7 +261,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         try {
             groupProvider.validateRoleAssignments();
         } catch ( UpdateException ue ) {
-            throw new UpdateException(ADMIN_REQUIRED, ue);            
+            throw new RuleViolationUpdateException(ADMIN_REQUIRED, ue);
         }
     }
 

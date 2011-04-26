@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.identity;
 
 import com.l7tech.identity.PersistentGroup;
@@ -11,6 +8,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.logon.LogonInfoManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.ExceptionUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -317,11 +315,13 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             getHibernateTemplate().update(originalUser);
             postUpdate(originalUser);
         } catch (DataAccessException se) {
-            logger.log(Level.SEVERE, null, se);
-            throw new UpdateException(se.toString(), se);
+            final String message = "Error updating user: " + ExceptionUtils.getMessage( se );
+            logger.log(Level.SEVERE, message, se);
+            throw new UpdateException(message, se);
+        } catch (UpdateException e) {
+            throw e;
         } catch (ObjectModelException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new UpdateException(e.toString(), e);
+            throw new UpdateException("Error updating user: " + ExceptionUtils.getMessage( e ), e);
         }
     }
 

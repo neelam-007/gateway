@@ -36,8 +36,7 @@ import java.beans.PropertyChangeEvent;
 /**
  * GenericUserPanel - edits the <CODE>Generic User/CODE> instances. This includes internal users, LDAP users.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.1
+ * @author Emil Marceta
  */
 public class GenericUserPanel extends UserPanel {
     static Logger log = Logger.getLogger(GenericUserPanel.class.getName());
@@ -671,9 +670,13 @@ public class GenericUserPanel extends UserPanel {
                             if (user instanceof InternalUser) {
                                 InternalUser iu = (InternalUser) user;
                                 DialogDisplayer.display(new PasswordDialog(TopComponents.getInstance().getTopParent(), userPanel,
-                                        iu, passwordChangeListener, CHANGE_PASSWORD_LABEL));
-                                rolesPanel.reloadUserLogonState();
-                                enableDisableComponents();
+                                        iu, passwordChangeListener, CHANGE_PASSWORD_LABEL), new Runnable(){
+                                    @Override
+                                    public void run() {
+                                        rolesPanel.reloadUserLogonState();
+                                        enableDisableComponents();
+                                    }
+                                });
                             } else {
                                 throw new IllegalStateException("Password can only be changed for Internal users");
                             }
@@ -792,13 +795,16 @@ public class GenericUserPanel extends UserPanel {
             // Cleanup
             formModified = false;
         } catch (ObjectNotFoundException e) {
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+            result = false;
+        } catch (RuleViolationUpdateException e) {
+            JOptionPane.showMessageDialog(this, ExceptionUtils.getMessage( e ), "Warning", JOptionPane.WARNING_MESSAGE);
             result = false;
         } catch (Exception e) {  // todo rethrow as runtime and handle with ErrorHandler em
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("User ").append(userHeader.getName()).append(".\n");
-            JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
             log.log(Level.SEVERE, "Error updating User: " + e.toString(), ExceptionUtils.getDebugException(e));
             result = false;
         }

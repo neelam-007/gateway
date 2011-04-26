@@ -24,8 +24,6 @@ import java.util.logging.Logger;
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>
  * Date: Jun 24, 2003<br/>
- *
- * @version $Revision$
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class InternalUserManagerImpl
@@ -184,11 +182,7 @@ public class InternalUserManagerImpl
 
     @Override
     protected void postUpdate(InternalUser user) throws UpdateException {
-        try {
-            roleManager.validateRoleAssignments();
-        } catch ( UpdateException ue ) {
-            throw new UpdateException( ExceptionUtils.getMessage(ue), ue );
-        }
+        roleManager.validateRoleAssignments();
     }
 
     @Override
