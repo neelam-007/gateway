@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
@@ -667,6 +668,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                 failureMessage = "Could not connect to cluster.";
             } else if ( GatewayContext.isConfigurationException( e ) ) {
                 failureMessage = "Could not connect to cluster.";
+            } else if ( ByteLimitInputStream.SIZE_LIMIT_EXCEEDED.equals( ExceptionUtils.getMessage( e ) ) ) {
+                failureMessage = "Request size exceeded Gateway limit.";
             } else {
                 failureMessage = "Unexpected error from cluster.";
                 logger.log( Level.WARNING, "Error during migration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));

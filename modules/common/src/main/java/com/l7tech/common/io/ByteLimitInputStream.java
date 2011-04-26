@@ -16,6 +16,8 @@ import com.l7tech.util.BufferPool;
  * have been read, at which point it will start throwing IOExceptions.
  */
 public class ByteLimitInputStream extends PushbackInputStream {
+    public static final String SIZE_LIMIT_EXCEEDED = "Unable to read stream: the specified maximum data size limit would be exceeded";
+
     private long sizeLimit = 0;
     private long bytesRead = 0;
 
@@ -83,7 +85,7 @@ public class ByteLimitInputStream extends PushbackInputStream {
         bytesRead += got;
         if (sizeLimit > 0 && bytesRead >= sizeLimit) {
             close();
-            throw new DataSizeLimitExceededException("Unable to read stream: the specified maximum data size limit would be exceeded");
+            throw new DataSizeLimitExceededException( SIZE_LIMIT_EXCEEDED );
         }
     }
 
