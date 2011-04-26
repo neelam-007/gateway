@@ -29,7 +29,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
     }
 
     public String getStepLabel() {
-        return "XML Service Information";
+        return "Service Information";
     }
 
     public String getDescription() {
