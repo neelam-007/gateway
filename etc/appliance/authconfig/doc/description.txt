@@ -4,19 +4,39 @@ OS level only user centralized authentication using:
 	- Radius only
 	- Radius with LDAP
 
-This means the SSG system will not have users added but will provide login for users
-configured in the centralized authentication server (LDAP, Radius or Radius+LDAP).
+This means the SSG system will not have users added but will provide login for users configured in the centralized
+authentication server (LDAP, Radius or Radius+LDAP).
 
 This should work for console and SSH access.
 
 The configuration file:
 - there is an example of configuration file in the SVN repository under etc/appliance/radius directory
 - it should be named radius_ldap_setup.conf (if other name will be used the script will exit with error.)
-- it can be placed anywhere in the system and can have any permissions/ownership (there are no check on this)
-- it will be the only parameter for the script
+- it can be placed anywhere in the system
+- it must have layer7 as owner and 600 permission
 
 The script:
-- expects to be run with one parameter that should be the configuration file (full path and filename)
+- expects to be run with two parameters:
+	- if the first one is --configfile the second should be the configuration file (full path and filename)
+	- if the first one is --getcurrentconfig the second one will be the configuration type for which is should
+	retrieve the defaults values for directives in the appropriate configuration files
+
+These are all possible combinations:
+.../authconfig/radius_ldap_setup.sh --configfile /opt/SecureSpan/Appliance/config/configfiles/radius_ldap_setup.conf
+.../authconfig/radius_ldap_setup.sh --getcurrentconfig local
+.../authconfig/radius_ldap_setup.sh --getcurrentconfig ldap_only
+.../authconfig/radius_ldap_setup.sh --getcurrentconfig radius_only
+.../authconfig/radius_ldap_setup.sh --getcurrentconfig radius_and_ldap
+
+- when called to get the default configuration values, the info will be sent to stdout for each file relevant
+to the configuration type chosen, like this:
+????
+
+- when called with the configuration file it will:
+	- make backup files in ./bk_files directory for the configuration files that it is going to modify
+	- change the appropriate files on the system (depending on the configuration type chosen)
+	- delete the configuration file it received as parameter
+
 
 The packages required:
 - for LDAP auth only:
@@ -67,12 +87,12 @@ CONFIGURE:
 		automount: files ldap
 
 # Configuring ldap client
-# there are 2 configuration files (confusing at fisrt):
+# there are 2 configuration files (confusing at first):
 # - /etc/ldap.conf - not part of OpenLDAP; used by LDAP PAM module
 #                    and Nameservice switch libraries for authentication
 #                    or name service resolution; installed by nss_ldap package
 # - /etc/openldap/ldap.conf - part of/installed by OpenLDAP package; it is
-#                             be sufficient to querry a LDAP server with
+#                             be sufficient to query a LDAP server with
 #                             ldapsearch command made available by this package
 #
 # We will configure both of them (although authconfig-tui would only modify
@@ -82,7 +102,7 @@ CONFIGURE:
 TEST:
 In order to test this configuration we need an LDAP server (see Server side configuration)
 
-Asuming we have a properly configured LDAP server:
+Assuming we have a properly configured LDAP server:
 
 1. Add the "ldapuser" user for testing to ldap database:
 
@@ -131,7 +151,7 @@ mkdir /home/ldapuser
 chmod 750 /home/ldapuser
 
 4. Run the following tests:
-* make sure there are no firewall rules droping packets on tcp/389 socket
+* make sure there are no firewall rules dropping packets on tcp/389 socket
 * make sure that we have no ldapuser on the SSG appliance: cat /etc/passwd | grep ldapuser
 
 Test 1:
@@ -142,11 +162,11 @@ This should output details similar to those above (when the command was issued o
 Test 2:
 # try to use the ldapuser on the SSG appliance as if it is a local user:
 chown ldap:ldap /home/ldapuser
-There should be no errors in this case as the system is now capable to interogate ldap
+There should be no errors in this case as the system is now capable to interrogate ldap
 in order to find the user to execute the chown command.
 
 Test 3:
-Use putty or any other ssh client to atempt loggin in the SSG appliance as ldapuser:
+Use putty or any other ssh client to attempt login in the SSG appliance as ldapuser:
 
 login as: ldapuser
 ldapuser@10.7.48.109's password:
@@ -187,7 +207,7 @@ ssh client
 
 There is no "radius client" in the usual sense used to communicate with
 Radius server. In order to make ssh authentication with Radius we need
-to configure SSHD to use PAM and them use PAM Radius module to interogate
+to configure SSHD to use PAM and them use PAM Radius module to interrogate
 Radius server. The configuration of PAM Radius modules is made in the
 pam_radius.conf file (provided by pam_radius package).
   
@@ -227,7 +247,7 @@ Test 1:
 
 radtest test1 pass1 localhost 0 testing123
 
-- we should obntain something similar to:
+- we should obtain something similar to:
 Sending Access-Request of id 120 to 127.0.0.1 port 1812
         User-Name = "test1"
         User-Password = "pass1"
@@ -262,17 +282,8 @@ SSH login with user test1:
 
 Using putty: test1@10.4.7.130 and "pass1":
 
-???? - de completat aici dupa testare
 
-
-
-
-
-
-
-
-
-========================================================================================
+=======================================================================================
 Server side configurations:
 
 =======================
@@ -343,12 +354,12 @@ Still some problems....
 Next idea:
 http://blog.sgicc.com/?p=284
 
+The main problem here is not related to client configuration but to
+communication between Radius server and its LDAP server - it seems
+that radius is not capable of extracting the password for the user
+when an authentication request is beeing sent to it...
 
 ===================================================================
-
-
-
-
 
 
 Possible problems:
@@ -356,7 +367,7 @@ Possible problems:
 1. UID overlapping between ldap server and clients
 
 UID for the ldapuser on the ldap server can be identical with an UID of another user on the
-SSG appliance; this will lead to apperently wierd behaviour of commands like chown which will
+SSG appliance; this will lead to apparently weird behaviour of commands like chown which will
 not give an error but will apply the local UID to the target:
 Example:
 ldapuser on ldap server has UID 502
@@ -369,9 +380,6 @@ drwx------ 2 ssgconfig users     4096 Apr  6 16:25 ldapuser
 
 which is normal but most likely not wanted.
 
-2. ???? daca mai apare ceva bag aici
-
-
 
 ===============================================
 Some details of Radius <-> LDAP communication:
@@ -380,7 +388,7 @@ PAP:
 - client authenticates itself by sending a user name and an (optionally encrypted) password
 to the server, which the server compares to its secrets database.
 - it requires the client to authenticate itself at startup time
-- is vulnerable to traffic snifing and repeated trial and error attacks
+- is vulnerable to traffic sniffing and repeated trial and error attacks
 
 CHAP:
 
