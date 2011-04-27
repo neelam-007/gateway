@@ -181,6 +181,11 @@ public class InternalUserManagerImpl
     }
 
     @Override
+    protected void preUpdate(InternalUser user) throws UpdateException {
+        userPasswordManager.manageHistory(user);
+    }
+
+    @Override
     protected void postUpdate(InternalUser user) throws UpdateException {
         roleManager.validateRoleAssignments();
     }

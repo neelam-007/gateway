@@ -1,7 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.server.identity.internal;
 
 import com.l7tech.common.password.PasswordHasher;
@@ -12,16 +8,20 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.Config;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.MockConfig;
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 /**
  * Provides test coverage for every condition which can cause a true value to return from
  * {@link InternalUserPasswordManager#configureUserPasswordHashes(InternalUser, String)}.
+ *
+ * @author darmstrong
  */
 public class InternalUserPasswordManagerTest {
     private final PasswordHasher passwordHasher = new Sha512CryptPasswordHasher();
@@ -43,15 +43,15 @@ public class InternalUserPasswordManagerTest {
         iUser.setLogin("admin");
 
         //ensure password is set and is a change is reported.
-        Assert.assertNull(iUser.getHashedPassword());
+        assertNull( iUser.getHashedPassword() );
         boolean updateRequired = userPasswordManager.configureUserPasswordHashes(iUser, PASSWORD);
-        Assert.assertTrue("User should need update", updateRequired);
-        Assert.assertNotNull(iUser.getHashedPassword());
+        assertTrue( "User should need update", updateRequired );
+        assertNotNull( iUser.getHashedPassword() );
 
         final String cachedPassword = iUser.getHashedPassword();
         updateRequired = userPasswordManager.configureUserPasswordHashes(iUser, PASSWORD);
-        Assert.assertFalse("User should not need an update", updateRequired);
-        Assert.assertEquals("hashedPassword property should not have been modified", cachedPassword, iUser.getHashedPassword());
+        assertFalse( "User should not need an update", updateRequired );
+        assertEquals( "hashedPassword property should not have been modified", cachedPassword, iUser.getHashedPassword() );
     }
 
     @Test
@@ -64,20 +64,20 @@ public class InternalUserPasswordManagerTest {
 
         final String cachedPassword = iUser.getHashedPassword();
         final String calculatedDigest = HexUtils.encodePasswd("admin", PASSWORD, HexUtils.REALM);
-        Assert.assertNull(iUser.getHttpDigest());
+        assertNull( iUser.getHttpDigest() );
         boolean updateRequired = userPasswordManager.configureUserPasswordHashes(iUser, PASSWORD);
-        Assert.assertTrue("User should need update", updateRequired);
-        Assert.assertEquals("httpDigest property should have been set.", calculatedDigest, iUser.getHttpDigest());
+        assertTrue( "User should need update", updateRequired );
+        assertEquals( "httpDigest property should have been set.", calculatedDigest, iUser.getHttpDigest() );
         //hashedPassword should have have been changed
-        Assert.assertEquals("hashedPassword property should not have been changed.", cachedPassword, iUser.getHashedPassword());        
+        assertEquals( "hashedPassword property should not have been changed.", cachedPassword, iUser.getHashedPassword() );
 
         //changed hashedPassword - should cause change to digest
         iUser.setPasswordChangesHistory(new ArrayList<PasswordChangeRecord>());//avoid NPE as no hibernate in use.
         
         updateRequired = userPasswordManager.configureUserPasswordHashes(iUser, "newpassword");
-        Assert.assertTrue("User should need update", updateRequired);
-        Assert.assertNotSame("hashedPassword property shoud have been changed.", cachedPassword, iUser.getHashedPassword());
-        Assert.assertNotSame("httpDigest should have been changed.", calculatedDigest, iUser.getHttpDigest());
+        assertTrue( "User should need update", updateRequired );
+        assertNotSame( "hashedPassword property shoud have been changed.", cachedPassword, iUser.getHashedPassword() );
+        assertNotSame( "httpDigest should have been changed.", calculatedDigest, iUser.getHttpDigest() );
     }
 
     @Test
@@ -90,8 +90,28 @@ public class InternalUserPasswordManagerTest {
         iUser.setHttpDigest(calculatedDigest);
 
         boolean updateRequired = userPasswordManager.configureUserPasswordHashes(iUser, PASSWORD);
-        Assert.assertTrue("Update required as digest shoud have been cleared.", updateRequired);
-        Assert.assertNull(iUser.getHttpDigest());
-        Assert.assertSame("No change was needed for hashedPassword", calculatedHash, iUser.getHashedPassword());
+        assertTrue( "Update required as digest shoud have been cleared.", updateRequired );
+        assertNull( iUser.getHttpDigest() );
+        assertSame( "No change was needed for hashedPassword", calculatedHash, iUser.getHashedPassword() );
+    }
+
+    @Test
+    public void testPasswordChangesTruncated() {
+        // InternalUserPasswordManagerImpl.manageHistory truncates password
+        // history by modifying the list in place. This test ensures this
+        // approach keeps working
+        final InternalUser user = new InternalUser();
+        user.setPasswordChangesHistory( new ArrayList<PasswordChangeRecord>( Arrays.asList(
+                new PasswordChangeRecord( user, 1L, "ABCD" ),
+                new PasswordChangeRecord( user, 2L, "EFGH"),
+                new PasswordChangeRecord( user, 3L, "IJKL")
+        ) ) );
+        final List<PasswordChangeRecord> passwordChangeList = user.getPasswordChangesHistory();
+        assertNotNull( "password history", passwordChangeList );
+        assertEquals( "password history size", 3L, (long)passwordChangeList.size() );
+        passwordChangeList.remove( 2 );
+        passwordChangeList.remove( 1 );
+        assertEquals( "password history size", 1L, (long)passwordChangeList.size() );
+        assertEquals( "user password history size", 1L, (long)user.getPasswordChangesHistory().size() );
     }
 }

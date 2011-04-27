@@ -312,6 +312,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             // update user
             originalUser.copyFrom(imp);
             // update from existing user
+            preUpdate(originalUser);
             getHibernateTemplate().update(originalUser);
             postUpdate(originalUser);
         } catch (DataAccessException se) {
@@ -360,36 +361,46 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
      *
      * @throws SaveException to veto the save
      */
-    protected void preSave(UT user) throws SaveException {
-    }
+    protected void preSave(UT user) throws SaveException { }
 
     /**
      * Override this method to verify changes to a user before it's updated
      *
      * @throws ObjectModelException to veto the update
      */
-    protected void checkUpdate(UT originalUser, UT updatedUser) throws ObjectModelException {
-    }
+    protected void checkUpdate(UT originalUser, UT updatedUser) throws ObjectModelException { }
 
     /**
      * Override this method to check whether a user can be deleted
      *
      * @throws DeleteException to veto the deletion
      */
-    @SuppressWarnings({"UnusedDeclaration"})
-    protected void preDelete(UT user) throws DeleteException {
-    }
+    protected void preDelete(UT user) throws DeleteException { }
 
     /**
      * Override this method to check whether a user can be deleted
      *
      * @throws DeleteException to veto the deletion
      */
-    @SuppressWarnings({"UnusedDeclaration"})
-    protected void postDelete( UT user ) throws DeleteException {
-    }
+    protected void postDelete( UT user ) throws DeleteException { }
 
-    @SuppressWarnings({"UnusedDeclaration"})
+    /**
+     * Override this method to update the user before it is "persisted".
+     *
+     * @param user The user that will be persisted
+     * @throws UpdateException If an error occurs
+     */
+    protected void preUpdate(UT user) throws UpdateException { }
+
+    /**
+     * Override this method to update the user after it is "persisted".
+     *
+     * NOTE: Any changes you make to the entity will be persisted, but if
+     * changing the entity use of preUpdate is preferred.
+     *
+     * @param user The user that will be persisted
+     * @throws UpdateException If an error occurs
+     */
     protected void postUpdate(UT user) throws UpdateException { }
 
     protected void revokeCert(UT originalUser) throws ObjectNotFoundException {

@@ -1,11 +1,10 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.server.identity.internal;
 
 import com.l7tech.identity.internal.InternalUser;
 
+/**
+ * @author darmstrong
+ */
 public interface InternalUserPasswordManager {
 
     /**
@@ -23,4 +22,11 @@ public interface InternalUserPasswordManager {
      * has been updated. 
      */
     boolean configureUserPasswordHashes(InternalUser internalUser, String clearTextPassword);
+
+    /**
+     * Perform any maintenance on the users password history.
+     *
+     * @param internalUser user to check and update if necessary.
+     */
+    void manageHistory( InternalUser internalUser );
 }

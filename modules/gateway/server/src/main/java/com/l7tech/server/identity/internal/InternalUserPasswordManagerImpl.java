@@ -7,16 +7,22 @@ package com.l7tech.server.identity.internal;
 import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.internal.PasswordChangeRecord;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.Config;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ResolvingComparator;
+import com.l7tech.util.SyspropUtil;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class InternalUserPasswordManagerImpl implements InternalUserPasswordManager{
-    private final PasswordHasher passwordHasher;
-    private final Config config;
+
+    //- PUBLIC
 
     public InternalUserPasswordManagerImpl(Config config, PasswordHasher passwordHasher) {
         this.passwordHasher = passwordHasher;
@@ -82,6 +88,29 @@ public class InternalUserPasswordManagerImpl implements InternalUserPasswordMana
         return userWasUpdated;
     }
 
+    @Override
+    public void manageHistory( final InternalUser internalUser ) {
+        // remove older password history if too large
+        final List<PasswordChangeRecord> passwordChangeList = internalUser.getPasswordChangesHistory();
+        if ( passwordChangeList != null && passwordChangeList.size() > MAX_PASSWORD_HISTORY ) {
+            Collections.sort( passwordChangeList, new ResolvingComparator<PasswordChangeRecord, Long>( new Resolver<PasswordChangeRecord, Long>() {
+                @Override
+                public Long resolve( final PasswordChangeRecord key ) {
+                    return key.getLastChanged();
+                }
+            }, true ) );
+            while ( passwordChangeList.size() > MAX_PASSWORD_HISTORY ) passwordChangeList.remove( passwordChangeList.size()-1 );
+        }
+
+    }
+
     // - PRIVATE
+
+    private static final int MAX_PASSWORD_HISTORY = SyspropUtil.getInteger( "com.l7tech.server.identity.internal.maxPasswordHistory", 50 );
+
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+    private final PasswordHasher passwordHasher;
+    private final Config config;
+
 }
