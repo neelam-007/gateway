@@ -1084,6 +1084,7 @@
     <!-- server side audit exporter -->
     <bean id="auditExporter" class="com.l7tech.server.audit.AuditExporterImpl" scope="prototype">
         <property name="sessionFactory" ref="sessionFactory"/>
+        <property name="config" ref="serverConfig"/>
     </bean>
     <!-- server side audit message factory -->
     <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">

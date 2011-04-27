@@ -6,6 +6,7 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.DsigUtil;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.*;
 import com.l7tech.common.io.XmlUtil;
@@ -69,6 +70,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     private long highestTime;
     private volatile long numExportedSoFar = 0;
     private volatile long approxNumToExport = 1;
+    private Config config;
 
     /**
      * NOTE: This content and order is important for audit signature verification. See AuditRecord#serializeSignableProperties
@@ -101,6 +103,9 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                     "LEFT OUTER JOIN audit_detail ON audit_main.objectid = audit_detail.audit_oid {0}",
             },
     };
+
+    private static final String SET_GROUP_CONCAT_MAX_LEN = "SET SESSION group_concat_max_len = ";
+    private static final String SHOW_GROUP_CONCAT_VARIABLE = "SHOW VARIABLES LIKE 'group_concat_max_len'";
 
     public AuditExporterImpl() {
     }
@@ -260,6 +265,10 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         return approxNumToExport;
     }
 
+    public void setConfig(Config config) {
+        this.config = config;
+    }
+
     /**
      * Get a Session object that can be used to create a DB connection.
      * If a session is returned, caller is responsible for releasing it when they are finished by calling
@@ -332,14 +341,40 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         Statement st = null;
         ResultSet rs = null;
         Session session = null;
+        boolean updatedSessionVariable = false;
+        Integer mysqlGroupConcatMaxLenValue = null;
         try {
             PrintStream out = new PrintStream(zipOut, false, "UTF-8");
 
             session = getSessionForExport();
             conn = getConnectionForExport(session);
             st = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
-            if ( dialect == Dialect.MYSQL )
+            if ( dialect == Dialect.MYSQL ){
                 st.setFetchSize(FETCH_SIZE_ROWS);
+
+                //preserve current setting set on the mysql instance
+                rs = st.executeQuery(SHOW_GROUP_CONCAT_VARIABLE);
+                if(rs == null) throw new SQLException("Unable to get current value for 'group_concat_max_len' with query: " + SHOW_GROUP_CONCAT_VARIABLE);
+                rs.next();
+                mysqlGroupConcatMaxLenValue = rs.getInt("Value");
+                rs.close();
+                rs = null;
+
+                final String propName = ServerConfig.PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN;
+                final String stringProp = config.getProperty(propName, "1048576");//1MB default
+                try {
+                    final int newMaxLen = Integer.parseInt(stringProp);
+                    if (newMaxLen >= 1024 && newMaxLen != mysqlGroupConcatMaxLenValue) {
+                        final String setConcatMaxLenQuery = SET_GROUP_CONCAT_MAX_LEN + newMaxLen;
+                        st.execute(setConcatMaxLenQuery);
+                        updatedSessionVariable = true;
+                    } else {
+                        logger.log(Level.INFO, "Ignored value of '" + propName + "' as value " + newMaxLen + " is < 1024");
+                    }
+                } catch (NumberFormatException e) {
+                    logger.log(Level.WARNING, "Invalid cluster property value for cluster property '" + propName + "': " + stringProp);
+                }
+            }
 
             if (logger.isLoggable(Level.FINE)) logger.fine("countSql = " + countSql);
             rs = st.executeQuery(countSql);
@@ -495,12 +530,19 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
             };
 
         } finally {
-            // clear interrupted status - this is essential to avoid SQL errors
-            Thread.interrupted();
+            try{
+                if (mysqlGroupConcatMaxLenValue != null && updatedSessionVariable) {
+                    final String setConcatMaxLenQuery = SET_GROUP_CONCAT_MAX_LEN + mysqlGroupConcatMaxLenValue;
+                    st.execute(setConcatMaxLenQuery);
+                }
+            } finally {
+                // clear interrupted status - this is essential to avoid SQL errors
+                Thread.interrupted();
 
-            ResourceUtils.closeQuietly(rs);
-            ResourceUtils.closeQuietly(st);
-            releaseSessionForExport(session);
+                ResourceUtils.closeQuietly(rs);
+                ResourceUtils.closeQuietly(st);
+                releaseSessionForExport(session);
+            }
         }
     }
 
