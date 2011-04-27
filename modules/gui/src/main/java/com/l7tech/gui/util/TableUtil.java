@@ -120,34 +120,6 @@ public final class TableUtil {
     }
 
     /**
-     * Attempt to make the given table cell visible.
-     * From http://www.codeguru.com/java/articles/161.shtml
-     */
-    public static void setCellVisible(JTable table, int row, int col) {
-        Container p = table.getParent();
-        if (p instanceof JViewport) {
-            Container gp = p.getParent();
-            if (gp instanceof JScrollPane) {
-                JScrollPane scrollPane = (JScrollPane)gp;
-                // Make sure the table is the main viewport
-                JViewport viewport = scrollPane.getViewport();
-                if (viewport == null || viewport.getView() != table) {
-                    return;
-                }
-
-                Rectangle cellrect = table.getCellRect(row, col, true);
-                Rectangle viewrect = viewport.getViewRect();
-                if (viewrect.contains(cellrect))
-                    return;
-                Rectangle union = viewrect.union(cellrect);
-                int x = (int)(union.getX() + union.getWidth() - viewrect.getWidth());
-                int y = (int)(union.getY() + union.getHeight() - viewrect.getHeight());
-                viewport.setViewPosition(new Point(x, y));
-            }
-        }
-    }
-
-    /**
      * Augments {@link com.l7tech.gui.SimpleColumn} with sizing hints to produce a column
      * descriptor suitable for use with {@link TableUtil#configureTable}.
      */
