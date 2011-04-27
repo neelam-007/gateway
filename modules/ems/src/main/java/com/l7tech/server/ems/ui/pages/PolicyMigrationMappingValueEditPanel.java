@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.server.ems.util.FocusBehaviour;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.markup.html.form.CheckBox;
@@ -37,6 +38,7 @@ public class PolicyMigrationMappingValueEditPanel extends Panel {
         final Label description = new Label( "description", descriptionText );
         final TextField source = new TextField( "source" );
         final RequiredTextField<String> target = new RequiredTextField<String>( "target" );
+        target.add( new FocusBehaviour() );
         final CheckBox applyToAll = new CheckBox( "applyToAll" );
 
         target.add( new PatternValidator( targetPattern ) );
