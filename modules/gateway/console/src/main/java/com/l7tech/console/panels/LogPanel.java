@@ -1083,7 +1083,7 @@ public class LogPanel extends JPanel {
                 new SimpleDateFormat( DATE_FORMAT_ZONE_PATTERN );
         if ( timeZone != null ) sdf.setTimeZone( timeZone );
 
-        final int maxWidth = ((lm instanceof AuditLogMessage) && (((AuditLogMessage) lm).getAuditRecord() instanceof AdminAuditRecord))? 20 : 11; // "Identity Provider ID" width = 20 and "Entity name" width = 11
+        final int maxWidth = ((lm instanceof AuditLogMessage) && (((AuditLogMessage) lm).getAuditRecord() instanceof AdminAuditRecord))? 20 : 15; // "Identity Provider ID" width = 20 and "Audit Record ID" width = 15
         msg += nonull(TextUtils.pad("Node", maxWidth) + ": ", lm.getNodeName());
         msg += nonull(TextUtils.pad("Time", maxWidth) + ": ", sdf.format( lm.getTimestamp() ));
         msg += nonull(TextUtils.pad("Severity", maxWidth) + ": ", lm.getSeverity());
@@ -1105,33 +1105,33 @@ public class LogPanel extends JPanel {
             String respXmlDisplayed = "";
             if (arec instanceof AdminAuditRecord) {
                 AdminAuditRecord aarec = (AdminAuditRecord) arec;
-                msg += "Event Type          : Manager Action" + "\n";
-                msg += "Admin User Name     : " + aarec.getUserName() + "\n";
-                msg += "Admin User ID       : " + aarec.getUserId() + "\n";
-                msg += "Identity Provider ID: " + aarec.getIdentityProviderOid() + "\n"; // "Identity Provider ID" width = 20
-                msg += "Admin IP            : " + arec.getIpAddress() + "\n";
+                msg += TextUtils.pad("Event Type", maxWidth) + ": Manager Action" + "\n";
+                msg += TextUtils.pad("Admin User Name", maxWidth) + ": " + aarec.getUserName() + "\n";
+                msg += TextUtils.pad("Admin User ID", maxWidth) + ": " + aarec.getUserId() + "\n";
+                msg += TextUtils.pad("Identity Provider ID", maxWidth) + ": " + aarec.getIdentityProviderOid() + "\n"; // "Identity Provider ID" width = 20
+                msg += TextUtils.pad("Admin IP", maxWidth) + ": " + arec.getIpAddress() + "\n";
                 msg += "\n";
-                msg += "Action              : " + fixAction(aarec.getAction()) + "\n";
+                msg += TextUtils.pad("Action", maxWidth) + ": " + fixAction(aarec.getAction()) + "\n";
                 if (AdminAuditRecord.ACTION_LOGIN != aarec.getAction() &&
                         AdminAuditRecord.ACTION_OTHER != aarec.getAction()) {
-                    msg += "Entity Name         : " + arec.getName() + "\n";
-                    msg += "Entity ID           : " + aarec.getEntityOid() + "\n";
-                    msg += "Entity Type         : " + fixType(aarec.getEntityClassname()) + "\n";
+                    msg += TextUtils.pad("Entity Name", maxWidth) + ": " + arec.getName() + "\n";
+                    msg += TextUtils.pad("Entity ID", maxWidth) + ": " + aarec.getEntityOid() + "\n";
+                    msg += TextUtils.pad("Entity Type", maxWidth) + ": " + fixType(aarec.getEntityClassname()) + "\n";
                 }
             } else if (arec instanceof MessageSummaryAuditRecord) {
                 MessageSummaryAuditRecord sum = (MessageSummaryAuditRecord) arec;
-                msg += "Event Type : Message Summary" + "\n";
-                msg += "Client IP  : " + arec.getIpAddress() + "\n";
-                msg += "Service    : " + sum.getName() + "\n";
-                msg += "Operation  : " + sum.getOperationName() + "\n";
-                msg += "Rqst Length: " + fixNegative(sum.getRequestContentLength(), "<Not Saved>") + "\n";
-                msg += "Resp Length: " + fixNegative(sum.getResponseContentLength(), "<Not Saved>") + "\n";
-                msg += "Resp Status: " + sum.getResponseHttpStatus() + "\n";
-                msg += "Resp Time  : " + sum.getRoutingLatency() + "ms\n";
-                msg += "User ID    : " + fixUserId(sum.getUserId()) + "\n";
-                msg += "User Name  : " + sum.getUserName() + "\n";
+                msg += TextUtils.pad("Event Type", maxWidth) + ": Message Summary" + "\n";
+                msg += TextUtils.pad("Client IP", maxWidth) + ": " + arec.getIpAddress() + "\n";
+                msg += TextUtils.pad("Service", maxWidth) + ": " + sum.getName() + "\n";
+                msg += TextUtils.pad("Operation", maxWidth) + ": " + sum.getOperationName() + "\n";
+                msg += TextUtils.pad("Rqst Length", maxWidth) + ": " + fixNegative(sum.getRequestContentLength(), "<Not Saved>") + "\n";
+                msg += TextUtils.pad("Resp Length", maxWidth) + ": " + fixNegative(sum.getResponseContentLength(), "<Not Saved>") + "\n";
+                msg += TextUtils.pad("Resp Status", maxWidth) + ": " + sum.getResponseHttpStatus() + "\n";
+                msg += TextUtils.pad("Resp Time", maxWidth) + ": " + sum.getRoutingLatency() + "ms\n";
+                msg += TextUtils.pad("User ID", maxWidth) + ": " + fixUserId(sum.getUserId()) + "\n";
+                msg += TextUtils.pad("User Name", maxWidth) + ": " + sum.getUserName() + "\n";
                 if (sum.getAuthenticationType() != null) {
-                    msg += "Auth Method: " + sum.getAuthenticationType().getName() + "\n";
+                    msg += TextUtils.pad("Auth Method", maxWidth) + ": " + sum.getAuthenticationType().getName() + "\n";
                 }
 
                 MessageContextMapping[] mappings = sum.obtainMessageContextMappings();
@@ -1140,8 +1140,8 @@ public class LogPanel extends JPanel {
                     boolean foundCustomMapping = false;
                     for (MessageContextMapping mapping : mappings) {
                         if (mapping.getMappingType().equals(MessageContextMapping.MappingType.CUSTOM_MAPPING)) {
-                            sb.append("Mapping Key  : ").append(mapping.getKey()).append("\n");
-                            sb.append("Mapping Value: ").append(mapping.getValue()).append("\n");
+                            sb.append(TextUtils.pad("Mapping Key", maxWidth)).append(": ").append(mapping.getKey()).append("\n");
+                            sb.append(TextUtils.pad("Mapping Value", maxWidth)).append(": ").append(mapping.getValue()).append("\n");
                             foundCustomMapping = true;
                         }
                     }
@@ -1164,23 +1164,19 @@ public class LogPanel extends JPanel {
                 SystemAuditRecord sys = (SystemAuditRecord) arec;
                 com.l7tech.gateway.common.Component component = fromId(sys.getComponentId());
                 boolean isClient = component != null && component.isClientComponent();
-                msg += "Event Type : System Message" + "\n";
+                msg += TextUtils.pad("Event Type", maxWidth) + ": System Message" + "\n";
+                msg += TextUtils.pad(isClient? "Client IP" : "Node IP", maxWidth) + ": " + arec.getIpAddress() + "\n";
+                msg += TextUtils.pad("Action", maxWidth) + ": " + sys.getAction() + "\n";
+                msg += TextUtils.pad("Component", maxWidth) + ": " + fixComponent(sys.getComponentId()) + "\n";
                 if (isClient) {
-                    msg += "Client IP  : " + arec.getIpAddress() + "\n";
-                } else {
-                    msg += "Node IP    : " + arec.getIpAddress() + "\n";
+                    msg += TextUtils.pad("User ID", maxWidth) + ": " + fixUserId(arec.getUserId()) + "\n";
+                    msg += TextUtils.pad("User Name", maxWidth) + ": " + arec.getUserName() + "\n";
                 }
-                msg += "Action     : " + sys.getAction() + "\n";
-                msg += "Component  : " + fixComponent(sys.getComponentId()) + "\n";
-                if (isClient) {
-                    msg += "User ID    : " + fixUserId(arec.getUserId()) + "\n";
-                    msg += "User Name  : " + arec.getUserName() + "\n";
-                }
-                msg += "Entity name: " + arec.getName() + "\n"; // "Entity name" width = 11
+                msg += TextUtils.pad("Entity name", maxWidth) + ": " + arec.getName() + "\n";
             } else {
-                msg += "Event Type : Unknown" + "\n";
-                msg += "Entity name: " + arec.getName() + "\n";
-                msg += "IP Address : " + arec.getIpAddress() + "\n";
+                msg += TextUtils.pad("Event Type", maxWidth) + ": Unknown" + "\n";
+                msg += TextUtils.pad("Entity name", maxWidth) + ": " + arec.getName() + "\n";
+                msg += TextUtils.pad("IP Address", maxWidth) + ": " + arec.getIpAddress() + "\n";
             }
 
             unformattedRequestXml.setLength(0);
