@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 public class PasswordGuiUtils {
 
     // Match a context variable name that refers to a secure password's plaintext
-    public static final Pattern SECPASS_VAR_PATTERN = Pattern.compile("^\\$\\{secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext$\\}");
+    public static final Pattern SECPASS_VAR_PATTERN = Pattern.compile("^\\$\\{secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext\\}$");
 
     // Match an expression that consists of a single %{}-enclosed secpsas reference.
     private static final Pattern SINGLE_SECPASS_PATTERN = Pattern.compile("^\\$\\{secpass\\.([a-zA-Z_][a-zA-Z0-9_\\-]*)\\.plaintext\\}$");
