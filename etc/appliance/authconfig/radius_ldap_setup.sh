@@ -288,14 +288,14 @@ if [ $# -ne 1 ]; then
 	toLog "ERROR - Only one argument expected, but more than one received! Exiting..."
 	exit 1
 else
-	if [ "X$(stat -c %U $1)" != "X$OWNER_CFG_FILE" ]; then
-		toLog "ERROR - $1 file is not owned by $OWNER_CFG_FILE! Exiting..."
-		exit 1
-	fi
-	if [ "X$(stat -c %a $1)" != "X$PERM_CFG_FILE" ]; then
-		toLog "ERROR - $1 file does not have $PERM_CFG_FILE permissions! Exiting..."
-		exit 1
-	fi
+	#if [ "X$(stat -c %U $1)" != "X$OWNER_CFG_FILE" ]; then
+	#	toLog "ERROR - $1 file is not owned by $OWNER_CFG_FILE! Exiting..."
+	#	exit 1
+	#fi
+	#if [ "X$(stat -c %a $1)" != "X$PERM_CFG_FILE" ]; then
+	#	toLog "ERROR - $1 file does not have $PERM_CFG_FILE permissions! Exiting..."
+	#	exit 1
+	#fi
         if [ "X$(file -b $1)" != "XASCII text" ]; then
                 toLog "ERROR - $1 file is not a text file! Exiting..."
                 exit 1
