@@ -15,6 +15,8 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.InvalidPasswordException;
+import com.l7tech.util.TextUtils;
 
 /**
  * The <code>ChangePasswordAction</code> changes the administrators password.
@@ -97,7 +99,8 @@ public class ChangePasswordAction extends SecureAction {
     private void changePassword(final Frame owner,
                                 final User user,
                                 final SecurityProvider securityProvider,
-                                final String message, final boolean modifyCancelBehaviour) {
+                                final String message,
+                                final boolean modifyCancelBehaviour) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 final ChangePasswordDialog changePasswordDialog = new ChangePasswordDialog(owner, message, user.getLogin(), false);
@@ -116,8 +119,8 @@ public class ChangePasswordAction extends SecureAction {
                             catch(LoginException le) {
                                 changePassword(owner, user, securityProvider, "Incorrect password.", modifyCancelBehaviour);
                             }
-                            catch(IllegalArgumentException iae) {
-                                changePassword(owner, user, securityProvider, "Invalid password '"+iae.getMessage()+"'.", modifyCancelBehaviour);
+                            catch(InvalidPasswordException iae) {
+                                changePassword(owner, user, securityProvider, formatErrors( iae ), modifyCancelBehaviour);
                             }
                             catch(IllegalStateException iae) {
                                 DialogDisplayer.showMessageDialog(owner, "Error changing password.", iae.getMessage(), null);
@@ -136,5 +139,15 @@ public class ChangePasswordAction extends SecureAction {
                 });
             }
         });
+    }
+
+    public static String formatErrors( final InvalidPasswordException e ) {
+        if ( e.getPasswordErrors().isEmpty() ) {
+            return "Invalid password '"+e.getMessage()+"'.";
+        } else if ( e.getPasswordErrors().size() == 1 ) {
+            return "Invalid password '"+e.getPasswordErrors().iterator().next()+"'.";
+        } else {
+            return "<html>Invalid password:<ul><li>" + TextUtils.join( "</li><li>", e.getPasswordErrors() ) + "</li></ul></html>";
+        }
     }
 }

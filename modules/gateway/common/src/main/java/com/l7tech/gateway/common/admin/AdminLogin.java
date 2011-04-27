@@ -124,12 +124,12 @@ public interface AdminLogin {
      * @param currentPassword The users current password.
      * @param newPassword The new password for the user.
      * @throws LoginException if the current password is not valid
-     * @throws IllegalArgumentException if the newPassword is not acceptable
+     * @throws InvalidPasswordException if the newPassword is not acceptable
      * @throws IllegalStateException if the password cannot be changed for the user
      */
     @Administrative(licensed=false)
     void changePassword(String currentPassword, String newPassword)
-            throws LoginException;
+            throws LoginException, InvalidPasswordException;
 
     /**
      * Can be called periodically to prevent administrative session timeout.

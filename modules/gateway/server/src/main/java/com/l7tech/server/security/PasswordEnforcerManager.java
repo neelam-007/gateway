@@ -3,10 +3,10 @@ package com.l7tech.server.security;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.common.password.IncorrectPasswordException;
-import com.l7tech.common.password.PasswordHashingException;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderPasswordPolicy;
+import static com.l7tech.identity.IdentityProviderPasswordPolicy.*;
 import com.l7tech.identity.IdentityProviderPasswordPolicyManager;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.InternalUser;
@@ -89,6 +89,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         }
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
         String newValue = (String) evt.getNewValue();
@@ -149,7 +150,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
             // check if paasswords are different
 
             validatePasswordChangesAllowable(user);
-            validatePasswordString(newPassword);
+            validatePasswordStringForInternalPolicy( newPassword );
             validatePasswordIsDifferent(newPassword, currentUnHashedPassword);
 
             validateAgainstPrevPasswords(user, newPassword);
@@ -157,7 +158,11 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
     }
 
     public void isPasswordPolicyCompliant(final String newPassword) throws InvalidPasswordException {
-        validatePasswordString(newPassword);
+        validatePasswordStringForInternalPolicy( newPassword );
+    }
+
+    private void validatePasswordStringForInternalPolicy( final String newPassword ) throws InvalidPasswordException {
+        validatePasswordString( newPassword, internalIdpPasswordPolicy );
     }
 
     /**
@@ -172,18 +177,11 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
      * - checks for consecutively repeating characters
      *
      * @param newPassword the new password
-     * @throws InvalidPasswordException
+     * @param policy the policy to validate
+     * @throws InvalidPasswordException If the password does not meet the policy
      */
-    private void validatePasswordString(final String newPassword) throws InvalidPasswordException {
-
-        if (newPassword.length() < internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH))
-            throw new InvalidPasswordException(MessageFormat.format("Password must be at least {0} characters in length",
-                    internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.MIN_PASSWORD_LENGTH)), internalIdpPasswordPolicy.getDescription());
-
-        int maxLength = internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.MAX_PASSWORD_LENGTH);
-        if ((maxLength > 0 && newPassword.length() > maxLength))
-            throw new InvalidPasswordException(MessageFormat.format("Password must be less than or equal to {0} characters in length", maxLength), internalIdpPasswordPolicy.getDescription());
-
+    static void validatePasswordString( final String newPassword,
+                                        final IdentityProviderPasswordPolicy policy ) throws InvalidPasswordException {
         //you could use one regular expression to do the work
         final char[] pass = newPassword.toCharArray();
         int upperCount = 0;
@@ -203,33 +201,49 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
             prevChar = pass[i];
         }
 
-        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN) > upperCount)
-            throw new InvalidPasswordException(
-                    MessageFormat.format("Password must contain at least {0} upper case characters",
-                            internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.UPPER_MIN)), internalIdpPasswordPolicy.getDescription());
+        final List<String> errors = new ArrayList<String>();
 
-        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN) > lowerCount)
-            throw new InvalidPasswordException(
-                    MessageFormat.format("Password must contain at least {0} lower case characters",
-                            internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.LOWER_MIN)), internalIdpPasswordPolicy.getDescription());
+        final int minLength = policy.getIntegerProperty(MIN_PASSWORD_LENGTH);
+        if (newPassword.length() <minLength) {
+            error( errors, "Password must be at least {0} characters in length", minLength);
+        }
 
-        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN) > digitCount)
-            throw new InvalidPasswordException(
-                    MessageFormat.format("Password must contain at least {0} numbers",
-                            internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NUMBER_MIN)), internalIdpPasswordPolicy.getDescription());
+        final int maxLength = policy.getIntegerProperty(MAX_PASSWORD_LENGTH);
+        if ((maxLength > 0 && newPassword.length() > maxLength)) {
+            error( errors, "Password must be less than or equal to {0} characters in length", maxLength );
+        }
 
-        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN) > specialCharacterCount)
-            throw new InvalidPasswordException(
-                    MessageFormat.format("Password must contain at least {0} special characters",
-                            internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.SYMBOL_MIN)), internalIdpPasswordPolicy.getDescription());
+        if (policy.getIntegerProperty(UPPER_MIN) > upperCount) {
+            error( errors, "Password must contain at least {0} upper case characters", policy.getIntegerProperty(UPPER_MIN) );
+        }
 
-        if (internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN) > (upperCount + lowerCount + specialCharacterCount))
-            throw new InvalidPasswordException(
-                    MessageFormat.format("Password must contain at least {0} non-numeric characters",
-                            internalIdpPasswordPolicy.getIntegerProperty(IdentityProviderPasswordPolicy.NON_NUMERIC_MIN)), internalIdpPasswordPolicy.getDescription());
+        if (policy.getIntegerProperty(LOWER_MIN) > lowerCount) {
+            error( errors, "Password must contain at least {0} lower case characters", policy.getIntegerProperty(LOWER_MIN) );
+        }
 
-        if (internalIdpPasswordPolicy.getBooleanProperty(IdentityProviderPasswordPolicy.NO_REPEAT_CHARS) && hasRepeatChar)
-            throw new InvalidPasswordException("Password contains consecutive repeating characters", internalIdpPasswordPolicy.getDescription());
+        if (policy.getIntegerProperty(NUMBER_MIN) > digitCount) {
+            error( errors, "Password must contain at least {0} numbers", policy.getIntegerProperty(NUMBER_MIN) );
+        }
+
+        if (policy.getIntegerProperty(SYMBOL_MIN) > specialCharacterCount) {
+            error( errors, "Password must contain at least {0} special characters", policy.getIntegerProperty(SYMBOL_MIN) );
+        }
+
+        if (policy.getIntegerProperty(NON_NUMERIC_MIN) > (upperCount + lowerCount + specialCharacterCount)) {
+            error( errors, "Password must contain at least {0} non-numeric characters", policy.getIntegerProperty(NON_NUMERIC_MIN) );
+        }
+
+        if (policy.getBooleanProperty(NO_REPEAT_CHARS) && hasRepeatChar) {
+            error( errors, "Password contains consecutive repeating characters" );
+        }
+
+        if ( !errors.isEmpty() ) {
+            throw new InvalidPasswordException( errors.get(0), policy.getDescription(), errors );
+        }
+    }
+
+    private static void error( final Collection<String> errors, final String format, final Object... args ) {
+        errors.add( MessageFormat.format( format, args ) );
     }
 
     /**

@@ -159,12 +159,10 @@ public class AdminLoginImpl
             if (!sessionManager.changePassword(username, oldPassword, newPassword)) {
                 throw new FailedLoginException("'" + username + "'" + " could not be authenticated");
             }
-        } catch (ObjectModelException ome) {
-            //generally this is caused where new password is not password policy compliant
-            if (ome instanceof InvalidPasswordException)
-                throw new InvalidPasswordException(ome.getMessage(), ((InvalidPasswordException) ome).getPasswordPolicyDescription());
-            else
-                throw new InvalidPasswordException(ome.getMessage());
+        } catch (InvalidPasswordException e) {
+            throw e;
+        } catch (ObjectModelException e) {
+            throw buildAccessControlException("Authentication failed", e);
         }
 
         //password change was successful, proceed to login
@@ -173,7 +171,7 @@ public class AdminLoginImpl
 
 
     @Override
-    public void changePassword(final String currentPassword, final String newPassword) throws LoginException {
+    public void changePassword(final String currentPassword, final String newPassword) throws LoginException, InvalidPasswordException {
         if (currentPassword == null || newPassword == null) {
             throw new AccessControlException("currentPassword and newPassword are both required");
         }
@@ -186,9 +184,8 @@ public class AdminLoginImpl
             if (!sessionManager.changePassword(remoteUser, currentPassword, newPassword)) {
                 throw new FailedLoginException("'" + remoteUser.getLogin() + "'" + " could not be authenticated");
             }
-        } catch (InvalidPasswordException ipe) {
-            logger.log(Level.WARNING, ipe.getMessage());
-            throw new IllegalArgumentException(ipe.getMessage());
+        } catch (InvalidPasswordException e) {
+            throw e;
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw buildAccessControlException("Authentication failed", e);

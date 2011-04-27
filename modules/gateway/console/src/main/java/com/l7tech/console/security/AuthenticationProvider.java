@@ -57,10 +57,10 @@ public interface AuthenticationProvider {
      * @param newAuth The credentials to use from now on.
      * @throws LoginException On bad credentials
      * @throws IllegalStateException If the users password cannot be changed.
-     * @throws IllegalArgumentException If the new credentials are not acceptable.
+     * @throws InvalidPasswordException If the new credentials are not acceptable.
      */
-    void changePassword(PasswordAuthentication auth, PasswordAuthentication newAuth) 
-      throws LoginException;
+    void changePassword(PasswordAuthentication auth, PasswordAuthentication newAuth)
+            throws LoginException, InvalidPasswordException;
 
     /**
      * Logoff the session

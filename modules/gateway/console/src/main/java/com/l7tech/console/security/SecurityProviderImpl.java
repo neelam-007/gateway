@@ -250,7 +250,7 @@ public class SecurityProviderImpl extends SecurityProvider
      */
     @Override
     public void changePassword(final PasswordAuthentication auth, final PasswordAuthentication newAuth)
-            throws LoginException {
+            throws LoginException, InvalidPasswordException {
         if ( Registry.getDefault().isAdminContextPresent() ) {
             Registry.getDefault().getAdminLogin().changePassword(new String(auth.getPassword()), new String(newAuth.getPassword()));
         } else {

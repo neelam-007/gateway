@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.action.ChangePasswordAction;
 import com.l7tech.identity.CredentialExpiredPasswordDetailsException;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.gateway.common.VersionException;
@@ -975,7 +976,11 @@ public class LogonDialog extends JDialog {
             showLockAccountMessage((AccountLockedException) cause);
         } else if (cause instanceof InvalidPasswordException) {
             //problems with the new password (most likely not password policy compliant), re-ask the user to enter a better password
-            ChangePasswordDialog changePasswordDialog = new ChangePasswordDialog(this, cause.getMessage(), userNameTextField.getText(), false);
+            ChangePasswordDialog changePasswordDialog = new ChangePasswordDialog(
+                    this,
+                    ChangePasswordAction.formatErrors( (InvalidPasswordException)cause ),
+                    userNameTextField.getText(),
+                    false);
             changePasswordDialog.setPasswordPolicyDescription(((InvalidPasswordException) cause).getPasswordPolicyDescription());
             changePasswordDialog.setVisible(true);
             if (changePasswordDialog.wasOk()) {
