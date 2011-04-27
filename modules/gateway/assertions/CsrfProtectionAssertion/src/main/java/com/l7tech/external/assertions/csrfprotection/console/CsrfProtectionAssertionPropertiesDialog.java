@@ -11,11 +11,8 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 /**
- * Created by IntelliJ IDEA.
  * User: njordan
  * Date: 17-Feb-2011
- * Time: 4:57:27 PM
- * To change this template use File | Settings | File Templates.
  */
 public class CsrfProtectionAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<CsrfProtectionAssertion> {
     private JPanel mainPanel;
@@ -136,33 +133,20 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
 
     @Override
     public void setData(CsrfProtectionAssertion assertion) {
-        if(assertion.isEnableDoubleSubmitCookieChecking()) {
-            enableDoubleSubmitCookieCheckBox.setSelected(true);
-            cookieNameField.setText(assertion.getCookieName() == null ? "" : assertion.getCookieName());
-            httpParameterNameField.setText(assertion.getParameterName() == null ? "" : assertion.getParameterName());
-            httpParameterTypeComboBox.setSelectedItem(assertion.getParameterType());
-        } else {
-            enableDoubleSubmitCookieCheckBox.setSelected(false);
-            cookieNameField.setText("");
-            httpParameterNameField.setText("");
-            httpParameterTypeComboBox.setSelectedItem(HttpParameterType.POST);
-        }
+        enableDoubleSubmitCookieCheckBox.setSelected(assertion.isEnableDoubleSubmitCookieChecking());
+        cookieNameField.setText(assertion.getCookieName() == null ? "" : assertion.getCookieName());
+        httpParameterNameField.setText(assertion.getParameterName() == null ? "" : assertion.getParameterName());
+        httpParameterTypeComboBox.setSelectedItem(assertion.getParameterType() == null ? HttpParameterType.POST : assertion.getParameterType());
+        enableDisableDoubleSubmitCookieControls();
 
-        if(assertion.isEnableHttpRefererChecking()) {
-            enableHttpRefererValidationCheckBox.setSelected(true);
-            allowEmptyValuesCheckBox.setSelected(assertion.isAllowEmptyReferer());
-            validDomainsComboBox.setSelectedIndex(assertion.isOnlyAllowCurrentDomain() ? 0 : 1);
-            validDomainsListModel.removeAllElements();
-
-            for(String trustedDomain : assertion.getTrustedDomains()) {
-                validDomainsListModel.addElement(trustedDomain);
-            }
-        } else {
-            enableHttpRefererValidationCheckBox.setSelected(false);
-            allowEmptyValuesCheckBox.setSelected(false);
-            validDomainsComboBox.setSelectedIndex(0);
-            validDomainsListModel.removeAllElements();
+        enableHttpRefererValidationCheckBox.setSelected(assertion.isEnableHttpRefererChecking());
+        allowEmptyValuesCheckBox.setSelected(assertion.isAllowEmptyReferer());
+        validDomainsComboBox.setSelectedIndex(assertion.isOnlyAllowCurrentDomain() ? 0 : 1);
+        validDomainsListModel.removeAllElements();
+        for(String trustedDomain : assertion.getTrustedDomains()) {
+            validDomainsListModel.addElement(trustedDomain);
         }
+        enableDisableHttpRefererControls();
     }
 
     @Override
@@ -186,37 +170,23 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
         }
 
         assertion.setEnableDoubleSubmitCookieChecking(enableDoubleSubmitCookieCheckBox.isSelected());
-        if(enableDoubleSubmitCookieCheckBox.isSelected()) {
-            assertion.setCookieName(cookieNameField.getText().trim());
-            assertion.setParameterName(httpParameterNameField.getText().trim());
-            assertion.setParameterType((HttpParameterType)httpParameterTypeComboBox.getSelectedItem());
-        } else {
-            assertion.setCookieName(null);
-            assertion.setParameterName(null);
-            assertion.setParameterType(HttpParameterType.POST);
-        }
+        assertion.setCookieName(cookieNameField.getText().trim());
+        assertion.setParameterName(httpParameterNameField.getText().trim());
+        assertion.setParameterType((HttpParameterType)httpParameterTypeComboBox.getSelectedItem());
 
         assertion.setEnableHttpRefererChecking(enableHttpRefererValidationCheckBox.isSelected());
-        if(enableHttpRefererValidationCheckBox.isSelected()) {
-            assertion.setAllowEmptyReferer(allowEmptyValuesCheckBox.isSelected());
-            if(validDomainsComboBox.getSelectedIndex() == 0) {
-                assertion.setOnlyAllowCurrentDomain(true);
-                assertion.setTrustedDomains(new ArrayList<String>());
-            } else {
-                assertion.setOnlyAllowCurrentDomain(false);
-
-                java.util.List<String> domains = new ArrayList<String>(validDomainsListModel.size());
-                for(int i = 0;i < validDomainsListModel.size();i++) {
-                    domains.add((String)validDomainsListModel.getElementAt(i));
-                }
-
-                assertion.setTrustedDomains(domains);
-            }
+        assertion.setAllowEmptyReferer(allowEmptyValuesCheckBox.isSelected());
+        assertion.setOnlyAllowCurrentDomain(validDomainsComboBox.getSelectedIndex() == 0 ? true : false);
+        java.util.List<String> domains;
+        if (validDomainsListModel == null) {
+            domains = new ArrayList<String>();
         } else {
-            assertion.setAllowEmptyReferer(false);
-            assertion.setOnlyAllowCurrentDomain(true);
-            assertion.setTrustedDomains(new ArrayList<String>());
+            domains = new ArrayList<String>(validDomainsListModel.size());
+            for(int i = 0;i < validDomainsListModel.size();i++) {
+                domains.add((String)validDomainsListModel.getElementAt(i));
+            }
         }
+        assertion.setTrustedDomains(domains);
 
         return assertion;
     }
