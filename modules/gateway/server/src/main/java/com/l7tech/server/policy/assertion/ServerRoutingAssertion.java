@@ -128,13 +128,13 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
 
         final XmlKnob requestXml = message.getKnob(XmlKnob.class);
         if (requestXml == null) {
-            logger.finest("skipping this because the message isn't XML");
+            logger.finest("Skipping security header processing, message not XML");
             return;
         }
 
         final SecurityKnob requestSec = message.getKnob(SecurityKnob.class);
         if (requestSec == null || requestSec.getProcessorResult() == null) {
-            logger.finest("skipping this because no security header was processed");
+            logger.finest("Skipping security header processing, no header processed");
             return;
         }
 
