@@ -58,15 +58,24 @@ public class PasswordEnforcerManagerTest {
         assertTrue( "Symbol min policy 1", validPassword( "password!", SYMBOL_MIN, 1 ) );
         assertTrue( "Symbol min policy 4", validPassword( "password!!!!", SYMBOL_MIN, 4 ) );
         assertFalse( "Symbol min policy 1", validPassword( "password", SYMBOL_MIN, 1 ) );
+        assertFalse( "Symbol min policy 1 space", validPassword( " ", SYMBOL_MIN, 1 ) );
         assertFalse( "Symbol min policy 4", validPassword( "password!!!", SYMBOL_MIN, 4 ) );
 
         // NON_NUMERIC_MIN
         assertTrue( "Non numeric min policy 1", validPassword( "password", NON_NUMERIC_MIN, 1 ) );
+        assertTrue( "Non numeric min policy 1 space", validPassword( " ", NON_NUMERIC_MIN, 1 ) );
         assertTrue( "Non numeric min policy 8", validPassword( "password", NON_NUMERIC_MIN, 8 ) );
         assertFalse( "Non numeric min policy 1", validPassword( "12345678", NON_NUMERIC_MIN, 1 ) );
         assertFalse( "Non numeric min policy 9", validPassword( "password", NON_NUMERIC_MIN, 9 ) );
     }
 
+    @Test
+    public void testSupplimentaryCharacters() {
+        // This currently passes but should probably fail, there are only 4
+        // characters (code points) but 8 code units.
+        //
+        assertTrue( "Min length policy 8 sup", validPassword( "\u2070E\u20731\u20779\u20C53", MIN_PASSWORD_LENGTH, 8 ) );
+    }
 
     private boolean validPassword( final String password,
                                    final String property,

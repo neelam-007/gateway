@@ -187,14 +187,16 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
         int upperCount = 0;
         int lowerCount = 0;
         int digitCount = 0;
+        int otherCount = 0;
         int specialCharacterCount = 0;
         boolean hasRepeatChar = false;
         char prevChar = '0';
         for (int i = 0; i < newPassword.length(); i++) {
             if (Character.isUpperCase(pass[i])) upperCount++;
-            if (Character.isLowerCase(pass[i])) lowerCount++;
-            if (Character.isDigit(pass[i])) digitCount++;
-            if (!Character.isLetterOrDigit(pass[i]) && !Character.isWhitespace(pass[i])) specialCharacterCount++;
+            else if (Character.isLowerCase(pass[i])) lowerCount++;
+            else if (Character.isDigit(pass[i])) digitCount++;
+            else if (!Character.isLetterOrDigit(pass[i]) && !Character.isWhitespace(pass[i])) specialCharacterCount++;
+            else otherCount++;
 
             //check for consecutive repeating characters
             if (i != 0 && pass[i] == prevChar) hasRepeatChar = true;
@@ -229,7 +231,7 @@ public class PasswordEnforcerManager implements PropertyChangeListener, Applicat
             error( errors, "Password must contain at least {0} special characters", policy.getIntegerProperty(SYMBOL_MIN) );
         }
 
-        if (policy.getIntegerProperty(NON_NUMERIC_MIN) > (upperCount + lowerCount + specialCharacterCount)) {
+        if (policy.getIntegerProperty(NON_NUMERIC_MIN) > (upperCount + lowerCount + specialCharacterCount + otherCount)) {
             error( errors, "Password must contain at least {0} non-numeric characters", policy.getIntegerProperty(NON_NUMERIC_MIN) );
         }
 
