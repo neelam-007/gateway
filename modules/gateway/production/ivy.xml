@@ -60,7 +60,8 @@
         <dependency name="JSONSchemaAssertion" rev="latest.integration" conf="module"/>
         <dependency name="SimpleRawTransportAssertion" rev="latest.integration" conf="module"/>
         <dependency name="EncodeDecodeAssertion" rev="latest.integration" conf="module"/>
-        
+        <dependency name="CsrfProtectionAssertion" rev="latest.integration" conf="module"/>
+
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
     </dependencies>
