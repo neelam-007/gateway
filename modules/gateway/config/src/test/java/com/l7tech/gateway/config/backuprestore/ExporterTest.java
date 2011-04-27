@@ -41,6 +41,7 @@ public class ExporterTest {
     private File imageFileToCreate;
 
     private static final String OS_FILE_TO_COPY = "osfiletocopy";
+    private String TEST_DEFAULT_VERSION = "5.1.0";
 
     @Before
     public void setUp() throws IOException {
@@ -49,7 +50,7 @@ public class ExporterTest {
         tmpSsgHome = new File(tmpSecureSpanHome, ImportExportUtilities.GATEWAY);
         tmpSsgHome.mkdir();
         imageFileToCreate = new File(ImportExportUtilities.createTmpDirectory(), "image1.zip");
-        System.setProperty("com.l7tech.util.buildVersion", "5.1.0");
+        System.setProperty("com.l7tech.util.buildVersion", TEST_DEFAULT_VERSION);
         System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(false));
     }
 
@@ -848,7 +849,7 @@ public class ExporterTest {
         //pre five o the image name should not be changed
         final Exporter fiveOExporter = new Exporter(tmpSecureSpanHome, System.out);
 
-        final String fiveOUniqueImage = fiveOExporter.getUniqueImageFileName(imageNameNoPath, false);
+        final String fiveOUniqueImage = fiveOExporter.getUniqueImageFileName(imageNameNoPath, false, "atimestamp");
         //confirm no path info added
         Assert.assertNull("No path info should have been added", ImportExportUtilities.getDirPart(fiveOUniqueImage));
         //confirm that the image name has been made unique
@@ -859,7 +860,7 @@ public class ExporterTest {
 
         System.setProperty("com.l7tech.gateway.config.backuprestore.setpostfiveo", Boolean.toString(true));
         final Exporter exporter = new Exporter(tmpSecureSpanHome, System.out);
-        final String uniqueImageNameNoPath = exporter.getUniqueImageFileName(imageNameNoPath, false);
+        final String uniqueImageNameNoPath = exporter.getUniqueImageFileName(imageNameNoPath, false, "atimestamp");
         System.clearProperty("com.l7tech.gateway.config.backuprestore.setpostfiveo");
 
         //Validate the directory part was created correctly
@@ -878,7 +879,7 @@ public class ExporterTest {
 
 
         //validate no file part is added when ftp is being used
-        final String ftpUniqueImageName = exporter.getUniqueImageFileName(imageNameNoPath, true);
+        final String ftpUniqueImageName = exporter.getUniqueImageFileName(imageNameNoPath, true, "atimestamp");
         Assert.assertNull("No dir part should have been created", ImportExportUtilities.getDirPart(ftpUniqueImageName));
 
         //validate that the file name generated ends with the original file name after the unique timestampe was added
@@ -889,7 +890,7 @@ public class ExporterTest {
 
         //validate ftp file name unique generation ok, when the image name has path information
         final String imageNameWithPath = "/home/darmstrong/image.zip";
-        final String uniqueImageNameWithPath = exporter.getUniqueImageFileName(imageNameWithPath, true);
+        final String uniqueImageNameWithPath = exporter.getUniqueImageFileName(imageNameWithPath, true, "atimestamp");
 
         Assert.assertEquals("path part of unique ftp image name should have have been changed",
                 ImportExportUtilities.getDirPart(imageNameWithPath), 

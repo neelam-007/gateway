@@ -230,7 +230,7 @@ public class ImportExportUtilities {
      * Are we running on a pre 5.0 system? If so a BackupRestoreLauncher.FatalException is thrown. This method will
      * return the version of the SSG installed
      * @param gatewayJarFile File representing Gateway.jar, from the local SSG installation
-     * @return an int arrary with the major, minor and subversion values for the installed SSG as indexs 0, 1 and 2
+     * @return an int array with the major, minor and subversion values for the installed SSG as indexes 0, 1 and 2
      * @throws RuntimeException if the SSG installation cannot be found, based on the existence of Gateway.jar. Also
      * thrown if it's not possible to determine the SSG version from the SSG installation
      */
@@ -755,16 +755,19 @@ public class ImportExportUtilities {
         
         final File file = new File(fileName);
         FileOutputStream fos = null;
+        final String errorMessage = "Cannot write to file " + file.getAbsolutePath();
         try {
             final boolean fileCreated = file.createNewFile();
             if(!fileCreated) throw new IOException("Could not create file " + file.getAbsolutePath());
             fos = new FileOutputStream(file);
             fos.write("I can write to this file".getBytes());
             //file exists
+        } catch (IOException e){
+            throw new IOException(errorMessage);
         } finally {
             ResourceUtils.closeQuietly(fos);
             final boolean fileDeleted = file.delete();
-            if(!fileDeleted) throw new IOException("Could not delete file " + file.getAbsolutePath());
+            if(!fileDeleted) throw new IOException(errorMessage);
         }
     }
 

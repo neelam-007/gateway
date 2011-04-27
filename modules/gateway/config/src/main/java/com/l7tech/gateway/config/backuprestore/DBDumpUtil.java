@@ -110,7 +110,7 @@ class DBDumpUtil {
                 backUpTable(tableName, conn, mainOutput, checkForClusterPropTable);
             }
             mainOutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
-            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, ". Done", verbose, stdout);
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, ". Done\n", verbose, stdout, false);
         }finally{
             ResourceUtils.closeQuietly(tableNames);
             ResourceUtils.closeQuietly(conn);
@@ -196,7 +196,7 @@ class DBDumpUtil {
             }
             gzipOutputStream.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
             gzipOutputStream.close();
-            if (stdout != null && verbose) stdout.println(". Done");
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, ". Done\n", verbose, stdout, false);
         }finally{
             ResourceUtils.closeQuietly(tableNames);
             ResourceUtils.closeQuietly(conn);

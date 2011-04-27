@@ -151,7 +151,13 @@ public final class Exporter{
                 SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.checkversion", true);
         if (checkVersion) {
             int[] versionInfo = ImportExportUtilities.throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
-            isPostFiveO = versionInfo[1] > 0;
+            final int majorVersion = versionInfo[0];
+            if(majorVersion == 5){
+                final int minorVersion = versionInfo[1];
+                isPostFiveO = minorVersion > 0;//e.g. 5.1
+            } else {
+                isPostFiveO = majorVersion > 5;
+            }
         } else {
             //we won't have the /opt/SecureSpan/Gateway/Backup folder, set false by default, system prop is for testing
             isPostFiveO = SyspropUtil.getBoolean("com.l7tech.gateway.config.backuprestore.setpostfiveo", false);
@@ -194,9 +200,18 @@ public final class Exporter{
         Backup backup = null;
         try {
             //overwrite the supplied image name with a unique name based on it
-            String pathToUniqueImageFile = getUniqueImageFileName(programFlagsAndValues.get(IMAGE_PATH.getName()), usingFtp);
+            final SimpleDateFormat dateFormat = new SimpleDateFormat(ImportExportUtilities.UNIQUE_TIMESTAMP);
+            final Calendar cal = Calendar.getInstance();
+            final String uniqueStart = dateFormat.format(cal.getTime());
 
+            String pathToUniqueImageFile = getUniqueImageFileName(programFlagsAndValues.get(IMAGE_PATH.getName()), usingFtp, uniqueStart);
             programFlagsAndValues.put(IMAGE_PATH.getName(), pathToUniqueImageFile);
+
+            if (programFlagsAndValues.containsKey(MAPPING_PATH.getName())) {
+                final String uniqueMappingFile = getUniqueImageFileName(programFlagsAndValues.get(MAPPING_PATH.getName()), usingFtp, uniqueStart);
+                programFlagsAndValues.put(MAPPING_PATH.getName(), uniqueMappingFile);
+            }
+
             //We only want to validate the image file when we are not using ftp
             validateFiles(programFlagsAndValues, !usingFtp);
 
@@ -252,26 +267,29 @@ public final class Exporter{
      *
      * If the system property com.l7tech.gateway.config.backuprestore.nomodifyimagename.nouniqueimagename is set
      * to 'true', then this will return the pathToImageFile unmodified 
+     *
      * @param pathToImageFile path and file name to make unique
-     * @param usingFtp if true, then if pathToImageFile has no path part, it won't add the default images folder
+     * @param addDefaultImageFolderIfNeeded if true, then if pathToImageFile has no path part, it won't add the default images folder
+     * @param timestamp String timestamp to add to the file name. Cannot be null
      * @return a unique file name
      */
-    String getUniqueImageFileName(final String pathToImageFile, final boolean usingFtp) {
+    String getUniqueImageFileName(final String pathToImageFile,
+                                  final boolean addDefaultImageFolderIfNeeded,
+                                  final String timestamp) {
 
-        final String imagePathAndName = (isPostFiveO && !usingFtp)?getPostFiveOAbsImagePath(pathToImageFile)
+        if(timestamp == null) throw new NullPointerException("timestamp cannot be null");
+
+        final String imagePathAndName = (isPostFiveO && !addDefaultImageFolderIfNeeded)? getPostFiveOAbsOutputPath(pathToImageFile)
                 :pathToImageFile;
 
         final String ignoreProp = System.getProperty(NO_UNIQUE_IMAGE_SYSTEM_PROP);
         if(ignoreProp != null){
             if(Boolean.valueOf(ignoreProp)) return imagePathAndName;
         }
-        final SimpleDateFormat dateFormat = new SimpleDateFormat(ImportExportUtilities.UNIQUE_TIMESTAMP);
-        final Calendar cal = Calendar.getInstance();
-        final String uniqueStart = dateFormat.format(cal.getTime());
 
         final String dir = ImportExportUtilities.getDirPart(imagePathAndName);
         final String file = ImportExportUtilities.getFilePart(imagePathAndName);
-        return (dir != null) ? dir + File.separator + uniqueStart + "_" + file : uniqueStart + "_" + file;
+        return (dir != null) ? dir + File.separator + timestamp + "_" + file : timestamp + "_" + file;
     }
 
     /**
@@ -283,7 +301,7 @@ public final class Exporter{
      * @param pathToImageFile user supplied image location
      * @return path info to where the image file should be located
      */
-    private String getPostFiveOAbsImagePath(final String pathToImageFile){
+    private String getPostFiveOAbsOutputPath(final String pathToImageFile){
         if(!isPostFiveO) return pathToImageFile;
 
         final String dirPart = ImportExportUtilities.getDirPart(pathToImageFile);

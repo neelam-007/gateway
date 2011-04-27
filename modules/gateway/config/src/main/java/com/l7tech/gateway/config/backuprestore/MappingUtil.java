@@ -213,11 +213,15 @@ class MappingUtil {
         }
 
         final String msg = "Outputting template mapping file at " + outputTemplatePath + " ..";
-        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream);
-        FileOutputStream fos = new FileOutputStream(outputTemplatePath);
-        fos.write(XmlUtil.nodeToFormattedString(outputdoc).getBytes());
-        System.out.println(". Done");
-        fos.close();
+        ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, msg, isVerbose, printStream, false);
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(outputTemplatePath);
+            fos.write(XmlUtil.nodeToFormattedString(outputdoc).getBytes());
+            ImportExportUtilities.logAndPrintMessage(logger, Level.INFO, ". Done\n", isVerbose, printStream, false);
+        } finally {
+            ResourceUtils.closeQuietly(fos);
+        }
     }
 
     /**

@@ -162,10 +162,12 @@ public final class BackupImage {
             if (parts.length < 2)
                 throw new InvalidBackupImageException("Invalid version number '" + version + "' found in version file ");
 
-            if (Integer.parseInt(parts[0]) < 5)
+            final int majorVersion = Integer.parseInt(parts[0]);
+            if (majorVersion < 5)
                 throw new InvalidBackupImageException("Unsupported version found '" + version + "'");
 
-            if (Integer.parseInt(parts[1]) > 0) {
+            final int minorVersion = Integer.parseInt(parts[1]);
+            if ((majorVersion == 5 && minorVersion > 0) || majorVersion > 5) {
                 return ImageVersion.AFTER_FIVE_O;
             } else {
                 return ImageVersion.FIVE_O;
