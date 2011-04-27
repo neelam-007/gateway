@@ -119,18 +119,20 @@ rm -fr %{buildroot}
 grep -q ^gateway: /etc/group || groupadd gateway
 grep -q ^layer7: /etc/group || groupadd layer7
 
-# If user gateway already exists ensure group membership is ok, if it doesn't exist add it
+# nfast may already be present but add it just in case
+grep -q ^nfast: /etc/group || groupadd nfast
+
+# If gateway and layer7 users already exist then ensure their group membership is ok. If they don't exist add them.
 if grep -q ^gateway: /etc/passwd; then
-  usermod -g gateway -G '' gateway
+  usermod -g gateway -a -G 'nfast' gateway
 else
-  useradd -g gateway -G '' gateway
+  useradd -g gateway -G 'nfast' gateway
 fi
 
-# If user layer7 already exists ensure group membership is ok, if it doesn't exist add it
 if grep -q ^layer7: /etc/passwd; then
-  usermod -g layer7 -G 'gateway' layer7
+  usermod -g layer7 -G 'gateway,nfast' layer7
 else
-  useradd -g layer7 -G 'gateway' layer7
+  useradd -g layer7 -G 'gateway,nfast' layer7
 fi
 
 # Chown any files that have been left behind by a previous installation

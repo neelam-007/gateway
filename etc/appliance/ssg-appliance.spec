@@ -128,14 +128,14 @@ grep -q ^ssgconfig: /etc/group || groupadd ssgconfig
 
 # If user gateway already exists ensure group membership is ok, if it doesn't exist add it
 if grep -q ^gateway: /etc/passwd; then
-  usermod -g gateway -G 'pkcs11' gateway
+  usermod -g gateway -a -G 'pkcs11' gateway
 else
   useradd -g gateway -G 'pkcs11' gateway
 fi
 
 # If user layer7 already exists ensure group membership is ok, if it doesn't exist add it
 if grep -q ^layer7: /etc/passwd; then
-  usermod -g layer7 -G 'pkcs11' layer7
+  usermod -g layer7 -a -G 'pkcs11' layer7
 else
   useradd -g layer7 -G 'pkcs11' layer7
 fi
