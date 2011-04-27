@@ -12,6 +12,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -122,7 +123,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
             }
 
             // Empty referer values are valid at this point. If not empty, then validate the value
-            if(referer != null) {
+            if(!StringUtils.isEmpty(referer)) {
                 String domain = null;
                 try {
                     URL url = new URL(requestKnob.getRequestURL(), referer);
