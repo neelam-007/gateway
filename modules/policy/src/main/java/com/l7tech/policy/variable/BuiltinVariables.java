@@ -26,6 +26,9 @@ public class BuiltinVariables {
     public static final String REQUEST_JMS_MSG_ALL_PROP_VALS = "request.jms.allpropertyvalues";
     public static final String RESPONSE_JMS_MSG_ALL_PROP_VALS = "response.jms.allpropertyvalues";
 
+    public static final String SSGNODE_NAME = "ssgnode.name";
+    public static final String SSGNODE_ID = "ssgnode.id";
+
     public static final String PREFIX_GATEWAY_TIME = "gateway.time";
     public static final String PREFIX_REQUEST_TIME = "request.time";
     public static final String PREFIX_SERVICE = "service";
@@ -139,6 +142,8 @@ public class BuiltinVariables {
         new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_NAME, false, false, null, false),
         new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_OID, false, false, null, false),
         new VariableMetadata(PREFIX_SERVICE+"."+SERVICE_SUFFIX_ROUTINGURL, false, false, null, false),
+        new VariableMetadata(SSGNODE_NAME, false, false, null, false),
+        new VariableMetadata(SSGNODE_ID, false, false, null, false),
 
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST, true, false, null, true, DataType.MESSAGE),
         new VariableMetadata(BuiltinVariables.PREFIX_RESPONSE, true, false, null, true, DataType.MESSAGE),

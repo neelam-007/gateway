@@ -6,6 +6,7 @@ package com.l7tech.server.policy.variable;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -19,6 +20,7 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.*;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.security.password.SecurePasswordManager;
@@ -53,6 +55,7 @@ public class ServerVariables {
     private static final Map<String, Variable> varsByPrefix = new HashMap<String, Variable>();
     private static ClusterPropertyCache clusterPropertyCache;
     private static SecurePasswordManager securePasswordManager;
+    private static ClusterInfoManager clusterInfoManager;
 
     static Variable getVariable(String name, PolicyEnforcementContext targetContext) {
         final String lname = name.toLowerCase();
@@ -429,6 +432,22 @@ public class ServerVariables {
             }
         }),
 
+        new Variable(BuiltinVariables.SSGNODE_ID, new Getter() {
+            @Override
+            Object get(String name, PolicyEnforcementContext context) {
+                ClusterNodeInfo inf = clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
+                return inf == null ? null : inf.getNodeIdentifier();
+            }
+        }),
+
+        new Variable(BuiltinVariables.SSGNODE_NAME, new Getter() {
+            @Override
+            Object get(String name, PolicyEnforcementContext context) {
+                ClusterNodeInfo inf = clusterInfoManager == null ? null : clusterInfoManager.getSelfNodeInf();
+                return inf == null ? null : inf.getName();
+            }
+        }),
+
         new Variable(BuiltinVariables.PREFIX_GATEWAY_TIME, new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
@@ -645,6 +664,14 @@ public class ServerVariables {
         if ( clusterPropertyCache == null ) {
             clusterPropertyCache = cache;
         }
+    }
+
+    private static ClusterInfoManager getClusterInfoManager() {
+        return clusterInfoManager;
+    }
+
+    public static void setClusterInfoManager(ClusterInfoManager clusterInfoManager) {
+        ServerVariables.clusterInfoManager = clusterInfoManager;
     }
 
     public static SecurePasswordManager getSecurePasswordManager() {
