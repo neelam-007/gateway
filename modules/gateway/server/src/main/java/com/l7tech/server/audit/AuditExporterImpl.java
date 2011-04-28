@@ -50,6 +50,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     private static final String AUDITDETAILMESSAGEID = "ADMID:";
     private static final String SEPARATOR = "/-/_/-/";
     private static final int FETCH_SIZE_ROWS = Integer.MIN_VALUE;
+    private static final int MIN_GROUP_CONCAT_LENGTH = 1024;
     private static final char DELIM = ':';
     private static final String MD5_ALG = "MD5";
     private static final String SHA1_ALG = "SHA-1";
@@ -266,7 +267,9 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
     }
 
     public void setConfig(Config config) {
-        this.config = config;
+        final ValidatedConfig validatedConfig = new ValidatedConfig(config, logger);
+        this.config = validatedConfig;
+        validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN, MIN_GROUP_CONCAT_LENGTH);
     }
 
     /**
@@ -360,19 +363,11 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
                 rs.close();
                 rs = null;
 
-                final String propName = ServerConfig.PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN;
-                final String stringProp = config.getProperty(propName, "1048576");//1MB default
-                try {
-                    final int newMaxLen = Integer.parseInt(stringProp);
-                    if (newMaxLen >= 1024 && newMaxLen != mysqlGroupConcatMaxLenValue) {
-                        final String setConcatMaxLenQuery = SET_GROUP_CONCAT_MAX_LEN + newMaxLen;
-                        st.execute(setConcatMaxLenQuery);
-                        updatedSessionVariable = true;
-                    } else {
-                        logger.log(Level.INFO, "Ignored value of '" + propName + "' as value " + newMaxLen + " is < 1024");
-                    }
-                } catch (NumberFormatException e) {
-                    logger.log(Level.WARNING, "Invalid cluster property value for cluster property '" + propName + "': " + stringProp);
+                final int newMaxLen = config.getIntProperty(ServerConfig.PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN, 1048576);
+                if (newMaxLen != mysqlGroupConcatMaxLenValue) {
+                    final String setConcatMaxLenQuery = SET_GROUP_CONCAT_MAX_LEN + newMaxLen;
+                    st.execute(setConcatMaxLenQuery);
+                    updatedSessionVariable = true;
                 }
             }
 
