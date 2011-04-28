@@ -78,7 +78,7 @@ public class TarariPlayground {
         int numSec = 0;
         for (i = 0; i < num; i++) {
             docStream.reset();
-            Message request = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, docStream,0);
+            Message request = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, docStream);
             try {
                 if (request.isSoap()) {
                     numSoap++;

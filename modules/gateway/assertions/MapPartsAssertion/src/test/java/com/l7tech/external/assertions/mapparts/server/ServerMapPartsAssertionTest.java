@@ -43,8 +43,7 @@ public class ServerMapPartsAssertionTest extends TestCase {
 
         Message request = new Message(new ByteArrayStashManager(),
                                       ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
-                                      new ByteArrayInputStream(MESS2.getBytes()),
-                                      0);
+                                      new ByteArrayInputStream(MESS2.getBytes()));
         Message response = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         AssertionStatus result = sass.checkRequest(context);

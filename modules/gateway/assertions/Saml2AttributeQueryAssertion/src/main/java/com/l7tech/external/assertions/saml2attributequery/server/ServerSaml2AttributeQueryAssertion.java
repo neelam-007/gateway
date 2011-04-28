@@ -6,7 +6,6 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.UserMappingConfig;
-import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -155,7 +154,7 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
             try {
                 attributeQuery = new Saml2AttributeQuery(root, map);
             } catch(SamlAttributeNotMappedException sanme) {
-                context.getResponse().initialize(createErrorResponse(Saml2AttributeQuery.getQueryId(root), Saml2AttributeQuery.getQueriedAttributes(root)), 0);
+                context.getResponse().initialize(createErrorResponse(Saml2AttributeQuery.getQueryId(root), Saml2AttributeQuery.getQueriedAttributes(root)));
                 context.setRoutingStatus(RoutingStatus.ROUTED);
                 auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_SAML_ATTR_UNKNOWN );
 
@@ -163,7 +162,7 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
             }
 
             if(!verifyAttributePermissions(attributeQuery)) {
-                context.getResponse().initialize(createErrorResponse(Saml2AttributeQuery.getQueryId(root), Saml2AttributeQuery.getQueriedAttributes(root)),0);
+                context.getResponse().initialize(createErrorResponse(Saml2AttributeQuery.getQueryId(root), Saml2AttributeQuery.getQueriedAttributes(root)));
                 context.setRoutingStatus(RoutingStatus.ROUTED);
                 auditor.logAndAudit(AssertionMessages.SAML2_AQ_REQUEST_SAML_ATTR_FORBIDDEN );
             } else {
@@ -181,7 +180,7 @@ public class ServerSaml2AttributeQueryAssertion extends AbstractServerAssertion<
                     conditions.audience = audience;
                 }
 
-                context.getResponse().initialize(createSuccessResponse(attributeQuery, map, values, conditions),0);
+                context.getResponse().initialize(createSuccessResponse(attributeQuery, map, values, conditions));
                 context.setRoutingStatus(RoutingStatus.ROUTED);
                 status = AssertionStatus.NONE;
             }

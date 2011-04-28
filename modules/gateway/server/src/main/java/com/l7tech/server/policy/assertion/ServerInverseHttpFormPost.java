@@ -74,8 +74,7 @@ public class ServerInverseHttpFormPost extends AbstractServerAssertion<InverseHt
 
             request.initialize(stashManagerFactory.createStashManager(),
                         contentType,
-                        new ByteArrayInputStream(baos.toByteArray()),
-                        0);
+                        new ByteArrayInputStream(baos.toByteArray()));
             return AssertionStatus.NONE;
         }
         finally {

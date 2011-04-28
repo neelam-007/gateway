@@ -135,7 +135,7 @@ public class ServerResourceResponseAssertion extends AbstractServerAssertion<Res
     private void sendNotModified( final PolicyEnforcementContext context,
                                final ResourceResponseAssertion.ResourceData resource ) throws IOException {
         final Message response = context.getResponse();
-        response.initialize( ContentTypeHeader.TEXT_DEFAULT, new byte[0],0 );
+        response.initialize( ContentTypeHeader.TEXT_DEFAULT, new byte[0] );
 
         final HttpResponseKnob httpResponseKnob = response.getKnob( HttpResponseKnob.class );
         if ( httpResponseKnob != null ) {
@@ -176,7 +176,7 @@ public class ServerResourceResponseAssertion extends AbstractServerAssertion<Res
 
         // output the wsdl with appropriate headers
         final Message response = context.getResponse();
-        response.initialize( ContentTypeHeader.XML_DEFAULT, XmlUtil.nodeToString( wsdlDoc ).getBytes( ContentTypeHeader.XML_DEFAULT.getEncoding() ),0);
+        response.initialize( ContentTypeHeader.XML_DEFAULT, XmlUtil.nodeToString( wsdlDoc ).getBytes( ContentTypeHeader.XML_DEFAULT.getEncoding() ) );
 
         final HttpResponseKnob httpResponseKnob = response.getKnob( HttpResponseKnob.class );
         if ( httpResponseKnob != null ) {
@@ -188,7 +188,7 @@ public class ServerResourceResponseAssertion extends AbstractServerAssertion<Res
 
     private void send404Response( final PolicyEnforcementContext context ) throws IOException {
         final Message response = context.getResponse();
-        response.initialize( ContentTypeHeader.TEXT_DEFAULT, "Not Found".getBytes( ContentTypeHeader.TEXT_DEFAULT.getEncoding()),0 );
+        response.initialize( ContentTypeHeader.TEXT_DEFAULT, "Not Found".getBytes( ContentTypeHeader.TEXT_DEFAULT.getEncoding() ) );
 
         final HttpResponseKnob httpResponseKnob = response.getKnob( HttpResponseKnob.class );
         if ( httpResponseKnob != null ) {

@@ -65,7 +65,7 @@ public class ServerRequireWssSaml2Test {
         ServerRequireWssSaml sass = new ServerRequireWssSaml2(ass, SamlTestUtil.beanFactory, null);
 
 
-        Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV),0);
+        Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV));
         WssDecoratorImpl dec = new WssDecoratorImpl();
         DecorationRequirements dreq = new DecorationRequirements();
         dreq.setSecurityHeaderReusable(true);
@@ -141,7 +141,7 @@ public class ServerRequireWssSaml2Test {
         ass.setMaxExpiry(maxExpiryTime);
         ServerRequireWssSaml sass = new ServerRequireWssSaml2(ass, SamlTestUtil.beanFactory, null);
 
-        Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV),0);
+        Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV));
         WssDecoratorImpl dec = new WssDecoratorImpl();
         DecorationRequirements dreq = new DecorationRequirements();
         dreq.setSecurityHeaderReusable(true);

@@ -135,7 +135,7 @@ public class ServerProcessRstrSoapResponseTest {
         final ServerProcessRstrSoapResponse serverProcessRstrSoapResponse =
                 new ServerProcessRstrSoapResponse( processRstrSoapResponse, beanFactory );
 
-        final Message request = new Message( XmlUtil.parse(RSTR_MESSAGE_ENC_KEY), 0 );
+        final Message request = new Message( XmlUtil.parse(RSTR_MESSAGE_ENC_KEY) );
         final Message response = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
 
@@ -158,7 +158,7 @@ public class ServerProcessRstrSoapResponseTest {
         final ServerProcessRstrSoapResponse serverProcessRstrSoapResponse =
                 new ServerProcessRstrSoapResponse( processRstrSoapResponse, beanFactory );
 
-        final Message request = new Message( XmlUtil.parse(RSTR_MESSAGE), 0 );
+        final Message request = new Message( XmlUtil.parse(RSTR_MESSAGE) );
         final Message response = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
 
@@ -186,7 +186,7 @@ public class ServerProcessRstrSoapResponseTest {
         final ServerProcessRstrSoapResponse serverProcessRstrSoapResponse =
                 new ServerProcessRstrSoapResponse( processRstrSoapResponse, beanFactory );
 
-        final Message request = new Message( XmlUtil.parse(RSTR_COLLECTION_MESSAGE), 0 );
+        final Message request = new Message( XmlUtil.parse(RSTR_COLLECTION_MESSAGE) );
         final Message response = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
 
@@ -202,7 +202,7 @@ public class ServerProcessRstrSoapResponseTest {
         final ServerProcessRstrSoapResponse serverProcessRstrSoapResponse =
                 new ServerProcessRstrSoapResponse( processRstrSoapResponse, beanFactory );
 
-        final Message request = new Message( XmlUtil.parse(RSTR_MESSAGE), 0 );
+        final Message request = new Message( XmlUtil.parse(RSTR_MESSAGE) );
         final Message response = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
 
@@ -218,7 +218,7 @@ public class ServerProcessRstrSoapResponseTest {
         final ServerProcessRstrSoapResponse serverProcessRstrSoapResponse =
                 new ServerProcessRstrSoapResponse( processRstrSoapResponse, beanFactory );
 
-        final Message request = new Message( XmlUtil.parse(RSTR_MESSAGE), 0 );
+        final Message request = new Message( XmlUtil.parse(RSTR_MESSAGE) );
         final Message response = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response );
 

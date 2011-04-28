@@ -84,7 +84,7 @@ public class WssDecoratorTest {
 
         Context() throws IOException, SAXException {
             message = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-            messageMessage = new Message(message,0);
+            messageMessage = new Message(message);
             soapNs = message.getDocumentElement().getNamespaceURI();
             body = (Element)message.getElementsByTagNameNS(soapNs, SoapUtil.BODY_EL_NAME).item(0);
             assertNotNull(body);
@@ -102,7 +102,7 @@ public class WssDecoratorTest {
         }
 
         Context(Document message) throws IOException, SAXException {
-            this(new Message(message,0));
+            this(new Message(message));
         }
 
         Context(Message messageMessage) throws IOException, SAXException {
@@ -228,7 +228,7 @@ public class WssDecoratorTest {
         WssDecorator decorator = new WssDecoratorImpl();
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
 
-        WssDecorator.DecorationResult results = decorator.decorateMessage(new Message(d.c.message,0), d.req);
+        WssDecorator.DecorationResult results = decorator.decorateMessage(new Message(d.c.message), d.req);
 
         log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
 
@@ -280,7 +280,7 @@ public class WssDecoratorTest {
         DecorationRequirements reqs = new DecorationRequirements();
         reqs.setUsernameTokenCredentials(new UsernameTokenImpl("franco", "blahblah".toCharArray()));
 
-        decorator.decorateMessage(new Message(doc,0), reqs);
+        decorator.decorateMessage(new Message(doc), reqs);
         log.info("Decorated message:" + XmlUtil.nodeToFormattedString(doc));
     }
 
@@ -509,7 +509,7 @@ public class WssDecoratorTest {
     @Test
 	public void testGoogleProblem() throws Exception {
         TestDocument doc = getGoogleTestDocument();
-        Message msg = new Message(doc.c.message,0);
+        Message msg = new Message(doc.c.message);
         assertTrue(msg.isSoap());
         runTest(getGoogleTestDocument());
     }
@@ -557,7 +557,7 @@ public class WssDecoratorTest {
             dreq.getElementsToSign().clear();
             //noinspection unchecked
             dreq.getElementsToSign().add(SoapUtil.getBodyElement(doc));
-            decorator.decorateMessage(new Message(doc,0),
+            decorator.decorateMessage(new Message(doc),
                                       dreq);
             final Matcher matcher = findCreated.matcher(XmlUtil.nodeToString(doc));
             if (matcher.find()) {
@@ -952,7 +952,7 @@ public class WssDecoratorTest {
 
     public TestDocument getSoapWithSignedAttachmentTestDocument() throws Exception {
         final Message message = new Message();
-        message.initialize(ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE), MESS2.getBytes(),0);
+        message.initialize(ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE), MESS2.getBytes());
         final Context c = new Context(message);
         return new TestDocument(c,
                                 TestDocuments.getEttkClientCertificate(),
@@ -1342,7 +1342,7 @@ public class WssDecoratorTest {
             SyspropUtil.setProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND, Boolean.toString(expect));
             DecorationRequirements req = new DecorationRequirements();
             req.setUsernameTokenCredentials(new UsernameTokenImpl("joe", "sekrit".toCharArray()));
-            Message msg = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT),0);
+            Message msg = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
             new WssDecoratorImpl().decorateMessage(msg, req);
             Document doc = msg.getXmlKnob().getDocumentReadOnly();
             Element sechdr = SoapUtil.getSecurityElement(doc, "secure_span");

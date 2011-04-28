@@ -61,7 +61,7 @@ public class ServerRequireWssSamlTest {
         ass.setNoSubjectConfirmation(true);
         ServerRequireWssSaml sass = new ServerRequireWssSaml<RequireWssSaml>(ass, SamlTestUtil.beanFactory, null);
 
-        Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV),0);
+        Message request = new Message(XmlUtil.stringAsDocument(SamlTestUtil.SOAPENV));
         WssDecoratorImpl dec = new WssDecoratorImpl();
         DecorationRequirements dreq = new DecorationRequirements();
         dreq.setSecurityHeaderReusable(true);

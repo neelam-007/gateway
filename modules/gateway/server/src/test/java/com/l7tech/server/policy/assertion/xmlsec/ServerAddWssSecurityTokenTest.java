@@ -56,7 +56,7 @@ public class ServerAddWssSecurityTokenTest {
 
     @Before
     public void setupContext() throws Exception {
-        final Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT), 0);
+        final Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         contextCreds(GATHERED_USER, GATHERED_PASS);
     }

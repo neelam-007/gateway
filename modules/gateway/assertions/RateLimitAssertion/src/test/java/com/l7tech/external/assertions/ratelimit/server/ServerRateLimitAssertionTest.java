@@ -123,7 +123,7 @@ public class ServerRateLimitAssertionTest {
     }
 
     private PolicyEnforcementContext makeContext() throws Exception {
-        Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT),0);
+        Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
         Message response = new Message();
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
     }

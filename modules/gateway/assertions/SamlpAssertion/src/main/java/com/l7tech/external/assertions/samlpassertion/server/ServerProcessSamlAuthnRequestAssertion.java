@@ -106,7 +106,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
         if ( isSetVariables() )  { // Set the request message variable early to assist debugging on failures
             if ( assertion.getSamlProtocolBinding() != null && authnRequestElement != null) {
                 final Message requestMessage = getOrCreateAuthnRequestMessage( context );
-                requestMessage.initialize( authnRequestElement.getOwnerDocument(),0 );
+                requestMessage.initialize( authnRequestElement.getOwnerDocument() );
             } else {
                 context.setVariable( prefix(SUFFIX_REQUEST), null );
             }

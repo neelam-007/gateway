@@ -1,6 +1,5 @@
 package com.l7tech.server.transport.ftp;
 
-import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.FtpRequestKnob;
@@ -21,7 +20,6 @@ import com.l7tech.util.ResourceUtils;
 import org.apache.ftpserver.DefaultFtpReply;
 import org.apache.ftpserver.ServerDataConnectionFactory;
 import org.apache.ftpserver.ftplet.*;
-import org.apache.ftpserver.interfaces.FtpServerContext;
 import org.apache.ftpserver.interfaces.FtpServerSession;
 import org.apache.ftpserver.listener.AbstractListener;
 
@@ -31,7 +29,6 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
-import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,8 +51,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                              final StashManagerFactory stashManagerFactory,
                              final EventChannel messageProcessingEventChannel,
                              final ContentTypeHeader overriddenContentType,
-                             final long hardwiredServiceOid,
-                             final long maxRequestSize) {
+                             final long hardwiredServiceOid) {
         this.ftpServerManager = ftpServerManager;
         this.messageProcessor = messageProcessor;
         this.soapFaultManager = soapFaultManager;
@@ -63,7 +59,6 @@ class MessageProcessingFtplet extends DefaultFtplet {
         this.messageProcessingEventChannel = messageProcessingEventChannel;
         this.overriddenContentType = overriddenContentType;
         this.hardwiredServiceOid = hardwiredServiceOid;
-        this.maxRequestSize = maxRequestSize;
     }
 
     /**
@@ -129,7 +124,6 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private final EventChannel messageProcessingEventChannel;
     private final ContentTypeHeader overriddenContentType;
     private final long hardwiredServiceOid;
-    private final long maxRequestSize;
 
     /*
      * Process a file upload 
@@ -251,13 +245,11 @@ class MessageProcessingFtplet extends DefaultFtplet {
         if (logger.isLoggable(Level.FINE))
             logger.log(Level.FINE, "Processing STOR for path ''{0}'' and file ''{1}''.", new String[]{path, file});
 
-        long maxSize = maxRequestSize == -1 ? Message.getRequestMaxBytes() :maxRequestSize;
-
         // Create request message
         Message request;
         ContentTypeHeader ctype = overriddenContentType != null ? overriddenContentType : ContentTypeHeader.XML_DEFAULT;
         Message requestMessage = new Message();
-        requestMessage.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)),maxSize);
+        requestMessage.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(dataConnection, buildUri(path, file)));
         requestMessage.attachFtpKnob(buildFtpKnob(
                     ftpSession.getServerAddress(),
                     ftpSession.getServerPort(),

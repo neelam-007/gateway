@@ -96,7 +96,7 @@ public class ServerHttpFormPost extends AbstractServerAssertion implements Serve
             outerContentType = "multipart/related; boundary=\"" + new String(boundary) + "\"";
         }
 
-        request.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.parseValue(outerContentType), new ByteArrayInputStream(newMessageBytes),0);
+        request.initialize(stashManagerFactory.createStashManager(), ContentTypeHeader.parseValue(outerContentType), new ByteArrayInputStream(newMessageBytes));
 
         return AssertionStatus.NONE;
     }

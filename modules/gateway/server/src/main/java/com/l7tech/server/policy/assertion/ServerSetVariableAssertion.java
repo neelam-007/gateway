@@ -48,7 +48,7 @@ public class ServerSetVariableAssertion extends AbstractServerAssertion<SetVaria
             final ContentTypeHeader contentType = ContentTypeHeader.parseValue(assertion.getContentType());
             try {
                 final Message message = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getVariableToSet()), false );
-                message.initialize(contentType, strValue.getBytes(contentType.getEncoding()),0);
+                message.initialize(contentType, strValue.getBytes(contentType.getEncoding()));
             } catch (NoSuchVariableException e) {
                 auditor.logAndAudit( CommonMessages.TEMPLATE_UNSUPPORTED_VARIABLE, assertion.getVariableToSet() );
                 return AssertionStatus.FALSIFIED;

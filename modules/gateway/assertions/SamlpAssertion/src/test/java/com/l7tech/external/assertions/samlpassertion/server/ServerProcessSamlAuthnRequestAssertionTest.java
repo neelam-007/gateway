@@ -84,7 +84,7 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
             "    {0}\n" +
             "</samlp:AuthnRequest>";
 
-    private static final String REQUEST_SIGNED =
+    private static final String REQUEST_SIGNED = 
             "<samlp:AuthnRequest AssertionConsumerServiceURL=\"https://www.google.com/a/g.feide.no/acs\" Consent=\"consent\" Destination=\"destination\" ID=\"djikeehkdinmglljlaeianmgabajfnplkldoamkl\" IsPassive=\"false\" IssueInstant=\"2008-05-27T08:19:29Z\" ProtocolBinding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\" ProviderName=\"google.com\" Version=\"2.0\" xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\">\n" +
                     "    <saml:Issuer Format=\"urn:oasis:names:tc:SAML:2.0:nameid-format:entity\" NameQualifier=\"nameQualifier\" SPNameQualifier=\"spNameQualifier\" SPProvidedID=\"spProvidedId\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">irishman.l7tech.com</saml:Issuer>\n" +
                     "    <ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/><ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><ds:Reference URI=\"#djikeehkdinmglljlaeianmgabajfnplkldoamkl\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><ds:DigestValue>TLTfnmrkb9dhaCs5gfbcw426gCs=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>frpwJJEv0glNxSXi6mfsT1C2J9YRqHIkXLCRDOgbgBNM3qaRllTlmSichfOgLMsfCTYbFbIsvXXcIQ74g2PLDI8MIleXfvxXfyfllMagw7Sbb22klvmVz3GPs3PgxIp9p2otRsqGUmyJee8vC9S5bVG9Y/dgKxcakb6hSvi3IT5mmoMYbSGa6Dn7SYYbfW4qifO4F+ukA1Zsbbk11GtRt9D05o8zw6jtXw730E4DCKl5wsikOd7zUrOAYVc80Icggi9g6JDwoDsqeQW60K59Duzw4LuWUiwoyqxxkscF9ISTeRNYIf5vDlkzfsYeAnOjZIeaqqhJi78FXjDsnzrexw==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIDATCCAemgAwIBAgIJAPNZCY/tNKOHMA0GCSqGSIb3DQEBDAUAMB4xHDAaBgNVBAMTE2lyaXNobWFuLmw3dGVjaC5jb20wHhcNMTAwMzIyMTY0OTI1WhcNMjAwMzE5MTY0OTI1WjAeMRwwGgYDVQQDExNpcmlzaG1hbi5sN3RlY2guY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAjfUq3KAsOUL7lAO/gbYVA8x22jgpSu5s9jNZfI0iksvga5rRDGYF/tAALAUj3eL+lG/9cIOtCL3kjPg//IJ+AgZYksCGDDttu1Llx0B0KVBzy0jrZvPtg24Ml3yqkXTylqwShEXRSib5jkQbrRkOuivrVEKzqzYCPZ+4lI8sNkdIAU+baARJh9Wv/LHOwV6JoyahdN34BV+WLWZL5XlmnUSHDW9qpMwbe/pkEjTrAEavZRQKL3XiPRWFxWP/Id47V51adOnUM9tX4MCpXbbCISb1ocYWiAr3YsTd3D8sTX3G7mmNJhslKqIhAtLXJJMO37FqNLkRO3DvIoqjBlFdGQIDAQABo0IwQDAdBgNVHQ4EFgQUIUo+uwBf6SpbPxgl5rj4QWYCX/UwHwYDVR0jBBgwFoAUIUo+uwBf6SpbPxgl5rj4QWYCX/UwDQYJKoZIhvcNAQEMBQADggEBAGQUrOqaSGpx9ZCpG3SYM8iynm6mv8oaqDZ7pBVEmJtuVzTQ/jMdMBjsHDtaIJK5gbFIS+M04wzbnJHa1TTLfjgIUpoMY9/pcZ65xJNS+OEz2E7xWVQ5ANMNUntkYOzJM7ZgFZrzctDOXddjAcS0/TyuzFaJtb+XvvH9OJ3BMEd8MIAZyZ4oHtEPfsidoi8hsE2yiqa1OPktgdl0hnUpjQ2bJhoO23HYrV4pcC3IEbgJ/hbyt+ng24IlkS08bgKywCBdnQp4H+M1EeEvGrFmj+RyyAaxyelwt5L1AtvTlFrirgiR77juht55rPF3HReW9ZZrFpEcSaJZsrrE0I6Qvc0=</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature>\n" +
@@ -106,7 +106,7 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
         // Success
         {
             final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG),0 ),
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG) ),
                     null );
 
             AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
@@ -116,7 +116,7 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
         // Failure, missing ACS URL
         {
             final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "AssertionConsumerServiceURL=\"https://www.google.com/a/g.feide.no/acs\"", "" )),0 ),
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "AssertionConsumerServiceURL=\"https://www.google.com/a/g.feide.no/acs\"", "" )) ),
                     null );
 
             AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
@@ -126,7 +126,7 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
         // Failure, missing ID
         {
             final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "ID=\"djikeehkdinmglljlaeianmgabajfnplkldoamkl\"", "" )),0 ),
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "ID=\"djikeehkdinmglljlaeianmgabajfnplkldoamkl\"", "" )) ),
                     null );
 
             AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
@@ -136,7 +136,7 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
         // Failure, missing Version
         {
             final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "Version=\"2.0\"", "" )) ,0),
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "Version=\"2.0\"", "" )) ),
                     null );
 
             AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
@@ -146,7 +146,7 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
         // Failure, missing IssueInstant
         {
             final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "IssueInstant=\"2008-05-27T08:19:29Z\"", "" )),0 ),
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "IssueInstant=\"2008-05-27T08:19:29Z\"", "" )) ),
                     null );
 
             AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
@@ -177,7 +177,7 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
                 buildServerAssertion( processSamlAuthnRequestAssertion );
 
         final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                new Message( XmlUtil.parse(REQUEST_INVALID_SIG),0),
+                new Message( XmlUtil.parse(REQUEST_INVALID_SIG)),
                 null );
         
         try {
@@ -301,7 +301,7 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
         // Success
         {
             final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                    new Message( XmlUtil.parse( REQUEST_SIGNED),0 ),
+                    new Message( XmlUtil.parse( REQUEST_SIGNED) ),
                     null );
 
             AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );

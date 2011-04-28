@@ -217,7 +217,7 @@ public class ServerNonSoapSignElementAssertionTest {
     }
 
     private static Message makeRequest(String reqXml) {
-        return new Message(XmlUtil.stringAsDocument(reqXml != null ? reqXml : "<foo><bar><child1/><child2>foo</child2></bar></foo>"),0);
+        return new Message(XmlUtil.stringAsDocument(reqXml != null ? reqXml : "<foo><bar><child1/><child2>foo</child2></bar></foo>"));
     }
 
     // Returns the ds:Signature element, embedded within the signed Document

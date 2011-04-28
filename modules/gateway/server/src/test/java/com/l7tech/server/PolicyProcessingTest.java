@@ -748,7 +748,7 @@ public class PolicyProcessingTest {
         // build test request and run WSS processor on it
         String message = new String(loadResource("REQUEST_multiplesignatures.xml"));
         final Message request = new Message();
-        request.initialize(ContentTypeHeader.XML_DEFAULT, message.getBytes(),0);
+        request.initialize(ContentTypeHeader.XML_DEFAULT, message.getBytes());
         request.getSecurityKnob().setProcessorResult(
             WSSecurityProcessorUtils.getWssResults(request, "multiple signatures test request", new SimpleSecurityTokenResolver(), new LogOnlyAuditor(logger))
         );
@@ -1564,7 +1564,7 @@ public class PolicyProcessingTest {
             context.addCookie(new HttpCookie("cookie", "invalue", 0, null, null));
 
             // Process message
-            request.initialize(stashManager, ctype, hrequest.getInputStream(),0);
+            request.initialize(stashManager, ctype, hrequest.getInputStream());
 
             // Add fake auth if requested
             if (contextAuth != null) {
@@ -1686,7 +1686,7 @@ public class PolicyProcessingTest {
         final Message request = new Message();
 
         ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
-        request.initialize(TestStashManagerFactory.getInstance().createStashManager(), ctype, new ByteArrayInputStream(message.getBytes()),0 );
+        request.initialize(TestStashManagerFactory.getInstance().createStashManager(), ctype, new ByteArrayInputStream(message.getBytes()) );
         request.attachJmsKnob(new JmsKnob() {
             @Override
             public boolean isBytesMessage() {

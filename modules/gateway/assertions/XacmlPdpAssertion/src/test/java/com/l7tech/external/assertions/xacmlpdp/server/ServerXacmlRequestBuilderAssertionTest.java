@@ -91,7 +91,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
-        Message m = new Message(doc,0);
+        Message m = new Message(doc);
 
         String contextVariable = "SINGLE_VALUE";
         context.setVariable(contextVariable, m);
@@ -133,7 +133,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
-        Message m = new Message(doc,0);
+        Message m = new Message(doc);
 
         context.setVariable("msg", m);
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
@@ -174,7 +174,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
-        Message m = new Message(doc,0);
+        Message m = new Message(doc);
 
         context.setVariable("msg", m);
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
@@ -211,12 +211,12 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
-        Message m1 = new Message(doc,0);
+        Message m1 = new Message(doc);
         context.setVariable("msg1", m1);
 
         xml = "<othermsg>value</othermsg>";
         doc = XmlUtil.parse(xml);
-        Message m2 = new Message(doc,0);
+        Message m2 = new Message(doc);
 
         context.setVariable("msg2", m2);
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
@@ -263,7 +263,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
-        Message m = new Message(doc,0);
+        Message m = new Message(doc);
         Object [] contextVars = new Object[]{"one", m, "three"};
 
         String multiContextVariable = "MULTI_VALUE";
@@ -307,7 +307,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
-        Message m = new Message(doc,0);
+        Message m = new Message(doc);
         Object [] contentVars = new Object[]{"one", m, "three"};
 
         String multiContextVariable = "MULTI_VALUE";
@@ -457,7 +457,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
-        Message m = new Message(doc,0);
+        Message m = new Message(doc);
 
         String contextVariable = "SINGLE_VALUE";
         context.setVariable(contextVariable, m);
@@ -481,7 +481,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         xml = "<resourcexml>content of resource content</resourcexml>";
         doc = XmlUtil.parse(xml);
-        m = new Message(doc,0);
+        m = new Message(doc);
         context.setVariable("RC_CONTENT", m);
         resourceContent.setContent("${RC_CONTENT}");
         Map<String, String> rcAttributeMap = new HashMap<String, String>();
@@ -544,7 +544,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
             XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleConfig,
             PolicyEnforcementContext context) throws SAXException {
         Document doc = XmlUtil.parse(messageSource);
-        Message m = new Message(doc,0);
+        Message m = new Message(doc);
         String messageVariable = "MESSAGE_VARIABLE";
         context.setVariable(messageVariable, m);
         multipleConfig.setMessageSource(XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE);
@@ -946,7 +946,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
                 "<test:a>this is the contents</test:a>\n" +
                 "<b>b value</b>\n" +
                 "</test:frag>");
-        Message m = new Message(doc,0);
+        Message m = new Message(doc);
         String messageVariable = "ctxvar";
         context.setVariable(messageVariable, m);
 
@@ -1700,7 +1700,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
-        Message m = new Message(doc,0);
+        Message m = new Message(doc);
 
         String contextVariable = "MULTI_VALUE";
         Object [] multiVariable = new Object[]{"one", m, "three"};
@@ -1801,7 +1801,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
-        Message messageVar = new Message(message,0);
+        Message messageVar = new Message(message);
         Object [] contextVars = new Object[]{"one", messageVar, "three"};
         context.setVariable("MULTI_VARIABLE", contextVars);
 
@@ -1858,7 +1858,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
-        Message messageVar = new Message(message,0);
+        Message messageVar = new Message(message);
         Object [] contextVars = new Object[]{"one", messageVar, "three"};
         context.setVariable("MULTI_VARIABLE", contextVars);
 
@@ -1914,7 +1914,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
-        Message messageVar = new Message(message,0);
+        Message messageVar = new Message(message);
         Object [] contextVars = new Object[]{"one", messageVar, "three"};
         context.setVariable("MULTI_VARIABLE", contextVars);
 
@@ -1967,7 +1967,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
-        Message messageVar = new Message(message,0);
+        Message messageVar = new Message(message);
         Object [] contextVars = new Object[]{"one", messageVar, "three"};
         context.setVariable("MULTI_VARIABLE", contextVars);
 
@@ -2020,7 +2020,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
-        Message messageVar = new Message(message,0);
+        Message messageVar = new Message(message);
         context.setVariable("VALUE", messageVar);
 
         XacmlRequestBuilderAssertion assertion = new XacmlRequestBuilderAssertion();
@@ -2071,7 +2071,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
 
         String xml = "<donal>value</donal>";
         Document message = XmlUtil.parse(xml);
-        Message messageVar = new Message(message,0);
+        Message messageVar = new Message(message);
         Object [] contextVars = new Object[]{"one", messageVar, "three"};
         //define datatype as a multi valued context variable
         context.setVariable("MULTI_DATATYPE", contextVars);
@@ -2262,7 +2262,7 @@ public class ServerXacmlRequestBuilderAssertionTest {
             throws SAXException {
         final Message request = new Message();
         if(requestDoc != null){
-            request.initialize(requestDoc,0);
+            request.initialize(requestDoc);
         }
         Message response = new Message();
 

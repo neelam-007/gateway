@@ -357,7 +357,7 @@ public class ServerNonSoapVerifyElementAssertionTest {
     }
 
     private static PolicyEnforcementContext context(String signedXml) {
-        final Message request = new Message(XmlUtil.stringAsDocument(signedXml),0);
+        final Message request = new Message(XmlUtil.stringAsDocument(signedXml));
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
     }
 

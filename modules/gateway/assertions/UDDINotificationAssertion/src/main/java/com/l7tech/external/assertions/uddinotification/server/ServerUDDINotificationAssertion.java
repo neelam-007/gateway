@@ -62,7 +62,7 @@ public class ServerUDDINotificationAssertion extends AbstractServerAssertion<UDD
 
                 MessageFactory messageFactory = SoapUtil.getMessageFactory( SOAPConstants.SOAP_1_1_PROTOCOL );
                 SOAPMessage message = messageFactory.createMessage();
-                response.initialize( message.getSOAPPart(),0 );
+                response.initialize( message.getSOAPPart() );
             } catch ( SOAPException se ) {
                 logger.log( Level.WARNING, "Error generating SOAP response message" );
                 status = AssertionStatus.FAILED;

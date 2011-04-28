@@ -155,7 +155,7 @@ public class TokenServiceClient {
             }
             req.setTimestampCreatedDate(timestampCreatedDate);
             req.setIncludeTimestamp(false);
-            wssDecorator.decorateMessage(new Message(msg,0), req);
+            wssDecorator.decorateMessage(new Message(msg), req);
 
             return msg;
         } catch (IOException e) {
@@ -542,7 +542,7 @@ public class TokenServiceClient {
         final ProcessorResult result;
         try {
             WssProcessor wssProcessor = new WssProcessorImpl();
-            result = wssProcessor.undecorateMessage(new Message(response,0),
+            result = wssProcessor.undecorateMessage(new Message(response),
                     null,
                                                     new SimpleSecurityTokenResolver(clientCertificate, clientPrivateKey));
         } catch (BadSecurityContextException e) {

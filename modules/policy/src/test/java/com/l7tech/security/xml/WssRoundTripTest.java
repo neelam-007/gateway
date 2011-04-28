@@ -101,11 +101,11 @@ public class WssRoundTripTest {
         reqs.setEncryptedKeyReferenceInfo(KeyInfoDetails.makeEncryptedKeySha1Ref(encryptedKey.getEncryptedKeySHA1()));
 
         Document doc = ntd2.td.c.message;
-        new WssDecoratorImpl().decorateMessage(new Message(doc,0), reqs);
+        new WssDecoratorImpl().decorateMessage(new Message(doc), reqs);
 
         // Now try processing it
         Document doc1 = XmlUtil.stringToDocument(XmlUtil.nodeToString(doc));
-        Message req = new Message(doc1,0);
+        Message req = new Message(doc1);
 
         log.info("SECOND decorated request *Pretty-Printed*: " + XmlUtil.nodeToFormattedString(doc));
 
@@ -570,7 +570,7 @@ public class WssRoundTripTest {
 
         // Ooh, an incoming message has just arrived!
         Message incomingMessage = new Message();
-        incomingMessage.initialize(c.messageMessage.getMimeKnob().getOuterContentType(), decoratedMessage,0);
+        incomingMessage.initialize(c.messageMessage.getMimeKnob().getOuterContentType(), decoratedMessage);
         incomingMessage.notifyMessage(fakeRequest, MessageRole.REQUEST);
         Document incomingSoapDocument = incomingMessage.getXmlKnob().getDocumentReadOnly();
 
@@ -976,13 +976,13 @@ public class WssRoundTripTest {
         dreq.setSenderMessageSigningCertificate(key.left);
         dreq.setSenderMessageSigningPrivateKey(key.right);
         dreq.getElementsToSign().add(SoapUtil.getBodyElement(doc));
-        final Message before = new Message(doc,0);
+        final Message before = new Message(doc);
         new WssDecoratorImpl().decorateMessage(before, dreq);
 
         final Document beforeDoc = before.getXmlKnob().getDocumentReadOnly();
         assertNotNull(beforeDoc);
         final String beforeDocXml = XmlUtil.nodeToString(beforeDoc);
-        Message req = new Message(XmlUtil.stringToDocument(beforeDocXml),0);
+        Message req = new Message(XmlUtil.stringToDocument(beforeDocXml));
 
         ProcessorResult pr = new WssProcessorImpl(req).processMessage();
 

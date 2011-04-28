@@ -251,7 +251,7 @@ public class SecureSpanBridgeFactory {
             String nsUri = names == null || names.length < 1 ? null : names[0].getNamespaceURI();
             PolicyAttachmentKey pak = new PolicyAttachmentKey(nsUri, soapAction, origUrl.getFile());
             Message request = new Message();
-            request.initialize(message,0);
+            request.initialize(message);
             Message response = new Message();
             PolicyApplicationContext context = null;
             try {

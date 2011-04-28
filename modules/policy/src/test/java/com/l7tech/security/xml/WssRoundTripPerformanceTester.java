@@ -99,7 +99,7 @@ public class WssRoundTripPerformanceTester {
                 dr.setSenderMessageSigningPrivateKey(SENDER_RSA.getPrivate());
                 dr.setSignTimestamp(true);
                 dr.getElementsToSign().add(SoapUtil.getBodyElement(doc));
-                Message mess = new Message(doc,0);
+                Message mess = new Message(doc);
                 decorator.decorateMessage(mess, dr);
                 return mess;
             }
@@ -113,7 +113,7 @@ public class WssRoundTripPerformanceTester {
         benchmark("VerifyPerformanceRsa", 10000, 10, new Callable() {
             @Override
             public Object call() throws Exception {
-                WssProcessorImpl processor = new WssProcessorImpl(new Message(XmlUtil.stringToDocument(signedMess),0));
+                WssProcessorImpl processor = new WssProcessorImpl(new Message(XmlUtil.stringToDocument(signedMess)));
                 ProcessorResult pr = processor.processMessage();
                 SignedElement[] signed = pr.getElementsThatWereSigned();
                 assertTrue(signed.length >= 2);
@@ -132,7 +132,7 @@ public class WssRoundTripPerformanceTester {
                 DecorationRequirements dr = new DecorationRequirements();
                 dr.setRecipientCertificate(RECIP_RSA.getCertificate());
                 dr.addElementToEncrypt(SoapUtil.getBodyElement(doc));
-                Message mess = new Message(doc,0);
+                Message mess = new Message(doc);
                 decorator.decorateMessage(mess, dr);
                 return mess;
             }
@@ -147,7 +147,7 @@ public class WssRoundTripPerformanceTester {
         benchmark("DecryptionPerformanceRsa", 10000, 10, new Callable() {
             @Override
             public Object call() throws Exception {
-                WssProcessorImpl processor = new WssProcessorImpl(new Message(XmlUtil.stringToDocument(encryptedMess),0));
+                WssProcessorImpl processor = new WssProcessorImpl(new Message(XmlUtil.stringToDocument(encryptedMess)));
                 processor.setSecurityTokenResolver(tokenResolver);
                 ProcessorResult pr = processor.processMessage();
                 EncryptedElement[] encrypted = pr.getElementsThatWereEncrypted();
@@ -171,7 +171,7 @@ public class WssRoundTripPerformanceTester {
         DecorationRequirements dr = new DecorationRequirements();
         dr.setRecipientCertificate(recipient.getCertificate());
         dr.addElementToEncrypt(SoapUtil.getBodyElement(doc));
-        Message mess = new Message(doc,0);
+        Message mess = new Message(doc);
         decorator.decorateMessage(mess, dr);
         return mess;
     }
@@ -184,7 +184,7 @@ public class WssRoundTripPerformanceTester {
         dr.setSenderMessageSigningPrivateKey(sender.getPrivate());
         dr.setSignTimestamp(true);
         dr.getElementsToSign().add(SoapUtil.getBodyElement(doc));
-        Message mess = new Message(doc,0);
+        Message mess = new Message(doc);
         decorator.decorateMessage(mess, dr);
         return mess;
     }

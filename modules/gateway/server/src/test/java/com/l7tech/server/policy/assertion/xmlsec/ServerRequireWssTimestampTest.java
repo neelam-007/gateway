@@ -56,7 +56,7 @@ public class ServerRequireWssTimestampTest {
 
     private void expect(AssertionStatus expected, ServerAssertion sass) throws IOException, SAXException, PolicyAssertionException {
         final Message req = new Message();
-        req.initialize(TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_REQUEST),0);
+        req.initialize(TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_REQUEST));
         final Message res = new Message();
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, res);
         final SimpleSecurityTokenResolver resolver = new SimpleSecurityTokenResolver();

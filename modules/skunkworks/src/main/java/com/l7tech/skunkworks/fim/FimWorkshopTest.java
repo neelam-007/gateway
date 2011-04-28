@@ -93,7 +93,7 @@ public class FimWorkshopTest extends TestCase {
     public void testParseClientRequest() throws Exception {
         initFimNs();
         Document clientReq = null;//TestDocuments.getTestDocument(TestDocuments.FIM2005APR_CLIENT_REQ);
-        Message reqMess = new Message(clientReq,0);
+        Message reqMess = new Message(clientReq);
 
         WssProcessor processor = new WssProcessorImpl();
 

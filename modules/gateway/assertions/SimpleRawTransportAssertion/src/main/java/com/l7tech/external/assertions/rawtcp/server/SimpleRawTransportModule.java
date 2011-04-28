@@ -371,14 +371,14 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
 
             String ctypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
             final int readTimeout = connector.getIntProperty(SimpleRawTransportAssertion.LISTEN_PROP_READ_TIMEOUT, SimpleRawTransportAssertion.DEFAULT_READ_TIMEOUT);
-            final long requestSizeLimit = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, SimpleRawTransportAssertion.DEFAULT_REQUEST_SIZE_LIMIT);
+            final long requestSizeLimit = connector.getLongProperty(SimpleRawTransportAssertion.LISTEN_PROP_REQUEST_SIZE_LIMIT, SimpleRawTransportAssertion.DEFAULT_REQUEST_SIZE_LIMIT);
 
             sock.setSoTimeout(readTimeout);
             InputStream inputStream = new ByteLimitInputStream(sock.getInputStream(), 4096, requestSizeLimit);
             byte[] bytes = IOUtils.slurpStream(inputStream);
 
             ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(ctypeStr);
-            request.initialize(stashManagerFactory.createStashManager(), ctype, new ByteArrayInputStream(bytes), requestSizeLimit);
+            request.initialize(stashManagerFactory.createStashManager(), ctype, new ByteArrayInputStream(bytes));
             request.attachKnob(TcpKnob.class, new SocketTcpKnob(sock));
             if (hardwiredServiceOid != -1) {
                 request.attachKnob(HasServiceOid.class, new HasServiceOidImpl(hardwiredServiceOid));

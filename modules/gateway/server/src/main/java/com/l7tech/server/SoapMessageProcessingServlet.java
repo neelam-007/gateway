@@ -221,12 +221,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         AssertionStatus status;
         try {
-            long maxBytes = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT,Message.getRequestMaxBytes());
-
             if (gzipEncodedTransaction) {
-                request.initialize(stashManager, ctype, gis,maxBytes);
+                request.initialize(stashManager, ctype, gis);
             } else {
-                request.initialize(stashManager, ctype, hrequest.getInputStream(),maxBytes);
+                request.initialize(stashManager, ctype, hrequest.getInputStream());
             }
 
             final long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);

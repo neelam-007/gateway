@@ -1,4 +1,3 @@
-
 package com.l7tech.message;
 
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
@@ -55,8 +54,7 @@ public class KnobblyMessageTest {
         final String bodyString = "blah \u9281 blah \000 blah";
         msg.initialize(new ByteArrayStashManager(),
                               ContentTypeHeader.OCTET_STREAM_DEFAULT,
-                              new ByteArrayInputStream(bodyString.getBytes(ContentTypeHeader.OCTET_STREAM_DEFAULT.getEncoding())),
-                              0);
+                              new ByteArrayInputStream(bodyString.getBytes(ContentTypeHeader.OCTET_STREAM_DEFAULT.getEncoding())));
         byte[] got = IOUtils.slurpStream(msg.getMimeKnob().getFirstPart().getInputStream(true));
         assertTrue(Arrays.equals(got, bodyString.getBytes(ContentTypeHeader.OCTET_STREAM_DEFAULT.getEncoding())));
 
@@ -85,8 +83,7 @@ public class KnobblyMessageTest {
     public void testGetMimePartMultipart() throws Exception {
         Message msg = new Message(new ByteArrayStashManager(),
                                   ContentTypeHeader.parseValue(MESS_CONTENT_TYPE),
-                                  new ByteArrayInputStream(MESS.getBytes()),
-                                  0);
+                                  new ByteArrayInputStream(MESS.getBytes()));
 
         // Consume the first part
         byte[] got = IOUtils.slurpStream(msg.getMimeKnob().getFirstPart().getInputStream(true));
@@ -124,8 +121,7 @@ public class KnobblyMessageTest {
     public void testGetXmlKnob() throws Exception {
         Message msg = new Message(new ByteArrayStashManager(),
                                   ContentTypeHeader.XML_DEFAULT,
-                                  new ByteArrayInputStream("<getquote>MSFT</getquote>".getBytes()),
-                                  0);
+                                  new ByteArrayInputStream("<getquote>MSFT</getquote>".getBytes()));
         logger.info( XmlUtil.nodeToString(msg.getXmlKnob().getDocumentReadOnly()));
         assertNotNull(msg.getMimeKnob());
 
@@ -150,8 +146,7 @@ public class KnobblyMessageTest {
         // create a message
         Message msg = new Message(new ByteArrayStashManager(),
                                   ContentTypeHeader.XML_DEFAULT,
-                                  new ByteArrayInputStream(initial.getBytes()),
-                                  0);
+                                  new ByteArrayInputStream(initial.getBytes()));
 
         // msg processor gets document read only to process security decorations
         msg.getXmlKnob().getDocumentReadOnly();
@@ -175,7 +170,7 @@ public class KnobblyMessageTest {
     @Test
     public void testCombinedDomAndByteOperations() throws Exception {
         final String xml = "<foobarbaz/>";
-        Message msg = new Message(XmlUtil.stringToDocument(xml),0);
+        Message msg = new Message(XmlUtil.stringToDocument(xml));
 
         // Get read-only doc
         Document docro = msg.getXmlKnob().getDocumentReadOnly();
@@ -211,7 +206,7 @@ public class KnobblyMessageTest {
     @Test
     public void testModifiedDomWithIteratedPartInfoStream() throws Exception {
         Message msg = new Message();
-        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream(),0);
+        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream());
 
         // Mutate the document
         Document doc = msg.getXmlKnob().getDocumentWritable();
@@ -230,7 +225,7 @@ public class KnobblyMessageTest {
     @Test
     public void testModifiedDomWithPartInfoStream() throws Exception {
         Message msg = new Message();
-        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream(),0);
+        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream());
 
         // Mutate the document
         Document doc = msg.getXmlKnob().getDocumentWritable();
@@ -249,7 +244,7 @@ public class KnobblyMessageTest {
     @Test
     public void testDomCommitDelayedUntilPartInfoBytesUsed() throws Exception {
         Message msg = new Message();
-        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream(),0);
+        msg.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, TestDocuments.getTestDocumentURL(TestDocuments.PLACEORDER_CLEARTEXT).openStream());
 
         // Mutate the document
         Document doc = msg.getXmlKnob().getDocumentWritable();
@@ -327,8 +322,7 @@ public class KnobblyMessageTest {
         }
         msg.initialize(new ByteArrayStashManager(),
                               ContentTypeHeader.XML_DEFAULT,
-                              TestDocuments.getInputStream(TestDocuments.PLACEORDER_CLEARTEXT),
-                              0);
+                              TestDocuments.getInputStream(TestDocuments.PLACEORDER_CLEARTEXT));
         SoapKnob soapKnob = msg.getSoapKnob();
         if (msg.isSoap()) {
             String uri = soapKnob.getPayloadNames()[0].getNamespaceURI();
@@ -348,8 +342,7 @@ public class KnobblyMessageTest {
 
         msg.initialize(new ByteArrayStashManager(),
                               ContentTypeHeader.XML_DEFAULT,
-                              TestDocuments.getInputStream(TestDocuments.DIR + "bug3559.xml"),
-                              0);
+                              TestDocuments.getInputStream(TestDocuments.DIR + "bug3559.xml"));
 
         // Ensure that message is thought to be SOAP by the software layer, since Tarari isn't here yet
         assertTrue(msg.isSoap());
@@ -389,7 +382,7 @@ public class KnobblyMessageTest {
         Message msg = new Message();
         Bug4542ReproStashManager sm = new Bug4542ReproStashManager();
         try {
-            msg.initialize(sm, ContentTypeHeader.parseValue("multipart/related; boundary=iaintsendingthis"), new IOExceptionThrowingInputStream(new IOException("nope")),0);
+            msg.initialize(sm, ContentTypeHeader.parseValue("multipart/related; boundary=iaintsendingthis"), new IOExceptionThrowingInputStream(new IOException("nope")));
             fail("expected IOException was not thrown");
         } catch (IOException e) {
             // Ok

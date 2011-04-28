@@ -144,9 +144,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     private JPasswordField proxyPasswordField;
     private JCheckBox showProxyPasswordCheckBox;
     private JCheckBox useKeepalivesCheckBox;
-    private JTextField responseMaxSizeTextField;
-    private JPanel maxResponseSizePanel;
-    private JCheckBox setResponseLimitCheckBox;
     private JButton cipherSuitesButton;
     private JComboBox tlsVersionComboBox;
 
@@ -397,16 +394,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
                 okButton.setEnabled(resMsgDestVariableTextField.isEntryValid());
             }
         });
-
-        setResponseLimitCheckBox.addChangeListener(new RunOnChangeListener(){
-            @Override
-            protected void run(){
-               responseMaxSizeTextField.setEnabled(setResponseLimitCheckBox.isSelected());
-            }
-        });
-
-        inputValidator.constrainTextFieldToNumberRange("Response Limit",responseMaxSizeTextField,0,Long.MAX_VALUE,false);
-
+        validateResMsgDest();
         final String resMsgDest = assertion.getResponseMsgDest();
         resMsgDestVariableTextField.setAssertion(assertion,getPreviousAssertion());
         if (resMsgDest == null) {
@@ -415,12 +403,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             resMsgDestVariableTextField.setVariable(resMsgDest);
             resMsgDestVariableRadioButton.doClick();
         }
-        if(assertion.getResponseSize()>=0){
-            setResponseLimitCheckBox.setSelected(true);
-            responseMaxSizeTextField.setText(Long.toString(assertion.getResponseSize()));
-        }
-        responseMaxSizeTextField.setEnabled(setResponseLimitCheckBox.isSelected());
-        validateResMsgDest();
 
         Set<HttpMethod> methods = EnumSet.allOf(HttpMethod.class);
         methods.removeAll(Arrays.asList(HttpMethod.OTHER)); // Omit methods not supports by Commons HTTP client
@@ -758,7 +740,6 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         } else if (resMsgDestVariableRadioButton.isSelected()) {
             assertion.setResponseMsgDest(resMsgDestVariableTextField.getVariable());
         }
-        assertion.setResponseSize(setResponseLimitCheckBox.isSelected()? Long.parseLong( responseMaxSizeTextField.getText() ):-1 );
 
         assertion.getResponseHeaderRules().setRules(responseHttpRulesTableHandler.getData());
         assertion.getResponseHeaderRules().setForwardAll(resHeadersAll.isSelected());

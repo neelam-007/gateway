@@ -8,7 +8,6 @@ import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
-import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
@@ -84,7 +83,7 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
                 auditor.logAndAudit( AssertionMessages.ENCODE_DECODE_ERROR, "Unable to create target message." );
                 throw new AssertionStatusException( AssertionStatus.FAILED );
             }
-            output.initialize( messageData.left, messageData.right, 0 );
+            output.initialize( messageData.left, messageData.right );
         } else {
             context.setVariable( assertion.getTargetVariableName(), result );
         }

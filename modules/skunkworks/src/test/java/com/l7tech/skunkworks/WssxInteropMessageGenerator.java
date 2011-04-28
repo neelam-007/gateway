@@ -44,7 +44,7 @@ public class WssxInteropMessageGenerator {
     }
 
     public Document generateRequest() throws IOException, SAXException, DecoratorException, InvalidDocumentFormatException, GeneralSecurityException {
-        message = new Message(doc,0);
+        message = new Message(doc);
         WssDecoratorImpl decorator = new WssDecoratorImpl();
         dresult = decorator.decorateMessage(message, dreq);
         return message.getXmlKnob().getDocumentWritable();

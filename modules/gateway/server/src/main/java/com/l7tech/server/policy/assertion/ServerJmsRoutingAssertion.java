@@ -44,8 +44,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.server.ServerConfig.PARAM_JMS_MESSAGE_MAX_BYTES;
-
 /**
  * Server side implementation of JMS routing assertion.
  */
@@ -426,20 +424,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, e.getMessage(), e);
 
                     }
-
-                    long maxBytes;
-                    if (assertion.getResponseSize() <0L){
-                        maxBytes = serverConfig.getLongProperty(PARAM_JMS_MESSAGE_MAX_BYTES, 2621440L);
-                    }
-                    else{
-                        maxBytes = assertion.getResponseSize();
-                    }
                     if ( jmsResponse instanceof TextMessage ) {
-                        responseMessage.initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ),maxBytes);
+                        responseMessage.initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ));
                     } else if ( jmsResponse instanceof BytesMessage ) {
                         BytesMessage bytesMessage = (BytesMessage)jmsResponse;
                         final StashManager stashManager = stashManagerFactory.createStashManager();
-                        responseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bytesMessage),maxBytes);
+                        responseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bytesMessage));
                     } else {
                         auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, jmsResponse.getClass().getName());
                         throw new AssertionStatusException(AssertionStatus.FAILED);

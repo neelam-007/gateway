@@ -131,7 +131,7 @@ public class ServerVariablesTest {
         StashManagerFactory factory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory");
         StashManager stashManager = factory.createStashManager();
 
-        Message m = new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(JSON_MESSAGE.getBytes()),0);
+        Message m = new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(JSON_MESSAGE.getBytes()));
         context.setVariable("jsonmessage", m);
         expandAndCheck(context, "${jsonmessage.mainpart}", JSON_MESSAGE);
     }
@@ -392,7 +392,7 @@ public class ServerVariablesTest {
     public void testOriginalRequest() throws Exception {
         SyspropUtil.setProperty(Message.PROPERTY_ENABLE_ORIGINAL_DOCUMENT, "true");
         Message.setDefaultEnableOriginalDocument(true);
-        Message req = new Message(XmlUtil.stringAsDocument(REQUEST_BODY),0);
+        Message req = new Message(XmlUtil.stringAsDocument(REQUEST_BODY));
         PolicyEnforcementContext c = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
         addTextNode(c.getRequest(), "reqfoo");
         String newreq = "<myrequest>reqfoo</myrequest>";
@@ -449,9 +449,9 @@ public class ServerVariablesTest {
     public void testServiceUrlContextVariables() throws Exception{
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         Message request = new Message();
-        request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY),0);
+        request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));
         Message response = new Message();
-        response.initialize(XmlUtil.stringAsDocument(RESPONSE_BODY),0);
+        response.initialize(XmlUtil.stringAsDocument(RESPONSE_BODY));
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
         String host = "servername.l7tech.com";
@@ -858,8 +858,8 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${request.soap.envElopeNs}", "");
         expandAndCheck(c, "${response.soap.version}", "");
         expandAndCheck(c, "${response.soap.envElopeNs}", "");
-        c.getRequest().initialize(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT),0);
-        c.getResponse().initialize(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT_S12),0);
+        c.getRequest().initialize(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
+        c.getResponse().initialize(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT_S12));
         expandAndCheck(c, "${request.soap.version}", "1.1");
         expandAndCheck(c, "${request.soap.envElopeNs}", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
         expandAndCheck(c, "${response.soap.version}", "1.2");
@@ -868,9 +868,9 @@ public class ServerVariablesTest {
 
     private PolicyEnforcementContext context(){
         Message request = new Message();
-        request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY),0);
+        request.initialize(XmlUtil.stringAsDocument(REQUEST_BODY));
         Message response = new Message();
-        response.initialize(XmlUtil.stringAsDocument(RESPONSE_BODY),0);
+        response.initialize(XmlUtil.stringAsDocument(RESPONSE_BODY));
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
     }
 

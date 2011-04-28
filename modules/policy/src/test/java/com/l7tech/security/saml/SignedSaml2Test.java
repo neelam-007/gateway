@@ -152,7 +152,7 @@ public class SignedSaml2Test extends TestCase {
         req.getElementsToSign().add(body);
         req.setSenderMessageSigningCertificate(caCertChain[0]);
         req.setSenderMessageSigningPrivateKey(caPrivateKey);
-        new WssDecoratorImpl().decorateMessage(new Message(request,0), req);
+        new WssDecoratorImpl().decorateMessage(new Message(request), req);
 
         // hack message so original signature refers to the saml token instead of the BST
         Element security = SoapUtil.getSecurityElementForL7(request);
@@ -195,7 +195,7 @@ public class SignedSaml2Test extends TestCase {
         req.getElementsToSign().add(body);
         req.setSenderMessageSigningCertificate(clientCertChain[0]);
         req.setSenderMessageSigningPrivateKey(clientPrivateKey);
-        new WssDecoratorImpl().decorateMessage(new Message(request,0), req);
+        new WssDecoratorImpl().decorateMessage(new Message(request), req);
 
         // Hand-hack the decorated message, replacing the BST with the saml:assertion
         Element security = SoapUtil.getSecurityElementForL7(request);

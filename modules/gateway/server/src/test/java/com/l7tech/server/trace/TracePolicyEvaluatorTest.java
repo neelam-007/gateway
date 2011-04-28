@@ -102,8 +102,8 @@ public class TracePolicyEvaluatorTest {
     public void testTrace() throws Exception {
         PolicyEnforcementContext tracedContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
         tracedContext.setService(testService);
-        tracedContext.getRequest().initialize(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("Howdy there!".getBytes(Charsets.UTF8)),0);
-        tracedContext.getResponse().initialize(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("Howdy yourself!".getBytes(Charsets.UTF8)),0);
+        tracedContext.getRequest().initialize(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("Howdy there!".getBytes(Charsets.UTF8)));
+        tracedContext.getResponse().initialize(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("Howdy yourself!".getBytes(Charsets.UTF8)));
 
         ServerPolicyHandle testHandle = policyCache.getServerPolicy(TEST_POLICY_OID);
         TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, policyCache.getServerPolicy(TRACE_POLICY_OID));
@@ -182,7 +182,7 @@ public class TracePolicyEvaluatorTest {
     @BugNumber(8757)
     public void testMessageVariableMainpart() throws Exception {
         PolicyEnforcementContext tracedContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
-        tracedContext.setVariable("messvar", new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("test message var body".getBytes(Charsets.UTF8)),0));
+        tracedContext.setVariable("messvar", new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new ByteArrayInputStream("test message var body".getBytes(Charsets.UTF8))));
 
         ServerPolicyHandle testHandle = policyCache.getServerPolicy(TEST_POLICY_OID);
         TracePolicyEvaluator evaluator = TracePolicyEvaluator.createAndAttachToContext(tracedContext, policyCache.getServerPolicy(TRACE_POLICY_OID));

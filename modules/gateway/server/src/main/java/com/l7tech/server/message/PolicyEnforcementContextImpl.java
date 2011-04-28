@@ -684,7 +684,7 @@ class PolicyEnforcementContextImpl extends ProcessingContext<AuthenticationConte
                 }
             };
 
-            mess.initialize(sm, ctype, new ByteArrayInputStream(initialValue.getBytes(ctype.getEncoding())),0);
+            mess.initialize(sm, ctype, new ByteArrayInputStream(initialValue.getBytes(ctype.getEncoding())));
             mess.attachKnob(ContextVariableKnob.class, cvk);
             return mess;
         } catch (IOException e) {

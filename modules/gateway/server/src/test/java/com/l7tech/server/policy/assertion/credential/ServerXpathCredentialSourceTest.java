@@ -56,7 +56,7 @@ public class ServerXpathCredentialSourceTest {
         ass.setPasswordExpression(new XpathExpression("/foo/blat"));
         ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass, null);
 
-        Message req = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream(), 0);
+        Message req = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertTrue("assertion shall have failed", !AssertionStatus.NONE.equals(result));
@@ -70,7 +70,7 @@ public class ServerXpathCredentialSourceTest {
         ass.setPasswordExpression(new XpathExpression("\"bloo\""));
         ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass, null);
 
-        Message req = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream(), 0);
+        Message req = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals("server assertion shall succeed", AssertionStatus.NONE, result);
@@ -93,7 +93,7 @@ public class ServerXpathCredentialSourceTest {
         ass.setPasswordExpression(new XpathExpression("\"bloo\""));
         ServerXpathCredentialSource sass = new ServerXpathCredentialSource(ass, null);
 
-        Message req = new Message(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(JSON.getBytes(Charsets.UTF8)), 0);
+        Message req = new Message(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(JSON.getBytes(Charsets.UTF8)));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals("server assertion shall succeed", AssertionStatus.NONE, result);

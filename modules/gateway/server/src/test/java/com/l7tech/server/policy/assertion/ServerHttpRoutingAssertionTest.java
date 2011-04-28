@@ -41,7 +41,7 @@ public class ServerHttpRoutingAssertionTest {
         hra.setProtectedServiceUrl("http://localhost:17380/testurl");
 
         ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
-        Message request = new Message(XmlUtil.stringAsDocument("<foo/>"),0);
+        Message request = new Message(XmlUtil.stringAsDocument("<foo/>"));
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
 
         HttpHeaders headers = new GenericHttpHeaders(new HttpHeader[]{

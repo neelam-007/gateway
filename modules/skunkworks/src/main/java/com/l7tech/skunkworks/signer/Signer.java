@@ -312,7 +312,7 @@ public class Signer extends JDialog {
         }
         decReq.setSecurityHeaderReusable(true);
         decReq.setSecurityHeaderActor(null);
-        new WssDecoratorImpl().decorateMessage( new Message(document,0), decReq );
+        new WssDecoratorImpl().decorateMessage( new Message(document), decReq );
     }
 
 

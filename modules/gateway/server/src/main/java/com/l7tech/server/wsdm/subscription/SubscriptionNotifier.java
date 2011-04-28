@@ -445,7 +445,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         PolicyEnforcementContext context = null;
         AssertionStatus status = AssertionStatus.SERVER_ERROR;
         try {
-            final Message request = new Message(XmlUtil.stringAsDocument(message),0);
+            final Message request = new Message(XmlUtil.stringAsDocument(message));
             request.attachHttpRequestKnob(new HttpRequestKnobAdapter(null));
             context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, false);
             context.setAuditLevel(Level.INFO);

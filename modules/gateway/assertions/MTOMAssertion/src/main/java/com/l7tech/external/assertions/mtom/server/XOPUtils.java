@@ -337,8 +337,7 @@ public class XOPUtils {
                 targetMessage.initialize(
                         stashManagerFactory.createStashManager(),
                         ContentTypeHeader.parseValue( contentTypeBuilder.toString() ),
-                        in,
-                        0);
+                        in );
             } catch ( IOException ioe ) {
                 ResourceUtils.closeQuietly( in );
                 throw ioe;
@@ -350,8 +349,7 @@ public class XOPUtils {
                 targetMessage.initialize(
                         stashManagerFactory.createStashManager(),
                         originalContentType,
-                        in,
-                        0);
+                        in );
             } catch ( NoSuchPartException e ) {
                 ResourceUtils.closeQuietly( in );
                 throw new IOException( "MIME first part cannot be read." );
@@ -475,8 +473,7 @@ public class XOPUtils {
             targetMessage.initialize(
                     stashManagerFactory.createStashManager(),
                     ContentTypeHeader.parseValue( contentTypeBuilder.toString() ),
-                    new ByteArrayInputStream( XmlUtil.toByteArray(document) ),
-                    0);
+                    new ByteArrayInputStream( XmlUtil.toByteArray(document) ) );
         } else {
             final Collection<InputStream> streams = new LinkedList<InputStream>();
             final byte[] mainPartBytes = XmlUtil.toByteArray(document);
@@ -490,8 +487,7 @@ public class XOPUtils {
             targetMessage.initialize(
                     stashManagerFactory.createStashManager(),
                     originalContentType,
-                    new SequenceInputStream(Collections.enumeration(streams)),
-                    0);
+                    new SequenceInputStream(Collections.enumeration(streams)) );
         }
     }
 

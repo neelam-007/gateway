@@ -6,6 +6,7 @@ package com.l7tech.server;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
@@ -167,10 +168,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private void updateSettings(int period) {
-        long maxBytes = serverConfig.getLongPropertyCached(ServerConfig.PARAM_IO_RESPONSE_FIRST_PART_MAX_BYTES, 2621440, period - 1);
-        Message.setResponseMaxBytes(maxBytes);
-        maxBytes = serverConfig.getLongPropertyCached(ServerConfig.PARAM_IO_REQUEST_FIRST_PART_MAX_BYTES, 2621440, period -1);
-        Message.setRequestMaxBytes(maxBytes);
+        long maxBytes = serverConfig.getLongPropertyCached(ServerConfig.PARAM_IO_FIRST_PART_MAX_BYTES, 0, period - 1);
+        MimeBody.setFirstPartMaxBytes(maxBytes);
 
         wssSettingsReference.set( new WssSettings(
             serverConfig.getLongPropertyCached(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0, period - 1),
@@ -1051,8 +1050,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 context.getResponse().initialize(
                     (context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) ?
                     ContentTypeHeader.SOAP_1_2_DEFAULT : ContentTypeHeader.XML_DEFAULT,
-                    fault.getBytes(),
-                    Message.getResponseMaxBytes());
+                    fault.getBytes());
 
                 auditor.logAndAudit(MessageProcessingMessages.RESPONSE_IO_ERROR, e.getMessage());
 

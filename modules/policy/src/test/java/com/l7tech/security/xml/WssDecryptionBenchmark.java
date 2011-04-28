@@ -57,7 +57,7 @@ public class WssDecryptionBenchmark {
         }
 
         WssDecoratorImpl decorator = new WssDecoratorImpl();
-        Message message = new Message(body.getOwnerDocument(),0);
+        Message message = new Message(body.getOwnerDocument());
         DecorationRequirements req = new DecorationRequirements();
         req.setSenderMessageSigningCertificate(clientCert);
         req.setSenderMessageSigningPrivateKey(clientKey);
@@ -82,7 +82,7 @@ public class WssDecryptionBenchmark {
                 Message req = null;
                 try {
                     stashManager = new HybridStashManager(DISK_STASH_THRESHOLD, new File("."), "decryptionBenchmark-" + uniqueLong.incrementAndGet());
-                    req = new Message(stashManager, ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(decoratedXml.getBytes("UTF-8")),0);
+                    req = new Message(stashManager, ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(decoratedXml.getBytes("UTF-8")));
 
                     WssProcessorImpl wssProcessor = new WssProcessorImpl(req);
                     wssProcessor.setSecurityTokenResolver(new SimpleSecurityTokenResolver(serverCert, serverKey));

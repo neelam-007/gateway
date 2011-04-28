@@ -281,7 +281,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 }
 
                 try {
-                    decorator.decorateMessage(new Message(messageDoc,0), dr);
+                    decorator.decorateMessage(new Message(messageDoc), dr);
                 } catch (Exception e) {
                     auditor.logAndAudit(AssertionMessages.SAML_ISSUER_CANT_DECORATE, null, e);
                     return AssertionStatus.FAILED;

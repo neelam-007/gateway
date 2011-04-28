@@ -131,7 +131,7 @@ public class EchoAssertionTest extends TestCase {
     }
 
     public void testBug4570RoutingStatus() throws Exception {
-        Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT),0);
+        Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
         Message response = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
         context.setService(new PublishedService());

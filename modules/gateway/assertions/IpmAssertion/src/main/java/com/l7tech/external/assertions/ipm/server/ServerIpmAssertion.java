@@ -143,7 +143,7 @@ public class ServerIpmAssertion extends AbstractServerAssertion<IpmAssertion> {
         });
         int numBytes = compiledTemplate.expandBytes(inputBuffer, outputBuffer);
         InputStream inputStream = new ByteArrayInputStream(outputBuffer, 0, numBytes);
-        targetMessage.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, inputStream,0);
+        targetMessage.initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, inputStream);
     }
 
     private void expandCharsToVariable(char[] inputBuffer,

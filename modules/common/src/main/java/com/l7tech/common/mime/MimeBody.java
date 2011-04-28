@@ -37,6 +37,8 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     private static final Logger logger = Logger.getLogger(MimeBody.class.getName());
     private static final int BLOCKSIZE = 4096;
 
+    private static final AtomicLong firstPartMaxBytes = new AtomicLong(0);
+
     private static final long PREAMBLE_MAX_SIZE = SyspropUtil.getLong( "com.l7tech.common.mime.preambleMaxSize", 1024 * 32 );
     private static final long HEADERS_MAX_SIZE = SyspropUtil.getLong( "com.l7tech.common.mime.headersMaxSize", 1024 * 32 );
     private static final boolean RAW_PARTS = SyspropUtil.getBoolean( "com.l7tech.common.mime.rawParts", false );
@@ -81,8 +83,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
      */
     public MimeBody(StashManager stashManager,
                              ContentTypeHeader outerContentType,
-                             InputStream mainInputStream,
-                             long firstPartMaxBytes)
+                             InputStream mainInputStream)
             throws IOException
     {
         boolean itworked = false;
@@ -94,6 +95,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
             this.stashManager = stashManager;
             String start = outerContentType.getParam("start");
             if (start != null && start.length() < 1) throw new IOException("Multipart content type has a \"start\" parameter but it is empty");
+            long firstPartMaxBytes = MimeBody.firstPartMaxBytes.get();
 
             if (outerContentType.isMultipart()) {
                 // Multipart message.  Prepare the first part for reading.
@@ -170,13 +172,18 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
      * @throws NoSuchPartException if this message is multpart/related but does not have any parts
      * @throws IOException if the mainInputStream cannot be read, or a multipart message is not in valid MIME format
      */
-    public MimeBody(byte[] bytes, ContentTypeHeader outerContentType, long firstPartMaxBytes) throws IOException, NoSuchPartException {
+    public MimeBody(byte[] bytes, ContentTypeHeader outerContentType) throws IOException, NoSuchPartException {
         this(new ByteArrayStashManager(),
              outerContentType,
-             new ByteArrayInputStream(bytes),
-            firstPartMaxBytes);
+             new ByteArrayInputStream(bytes));
     }
 
+    /**
+    * @param firstPartMaxBytes  size limit to enforce for the first part for new MimeBody instances created from now on, or zero for no limit
+    */
+    public static void setFirstPartMaxBytes(long firstPartMaxBytes) {
+        MimeBody.firstPartMaxBytes.set(firstPartMaxBytes);
+    }
 
 
 
@@ -1175,7 +1182,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
         private void setSizeLimitNonFlagging(long newLimit) throws IOException {
             if (!isLimitCustomized())
-                setSizeLimit(newLimit);
+                super.setSizeLimit(newLimit);
         }
 
         private void clearLimitNonFlagging() throws IOException {

@@ -507,7 +507,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
             context.addCookie(new HttpCookie("cookie", "invalue", 0, null, null));
 
             // Process message
-            request.initialize(stashManager, ctype, hrequest.getInputStream(),0);
+            request.initialize(stashManager, ctype, hrequest.getInputStream());
 
             // Add fake auth if requested
             if (addAuth) {

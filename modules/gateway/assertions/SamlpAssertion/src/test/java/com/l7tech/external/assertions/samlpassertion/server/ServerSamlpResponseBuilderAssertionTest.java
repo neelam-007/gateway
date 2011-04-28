@@ -115,9 +115,9 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
-        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0),0));
-        context.setVariable("attributeToken", new Message(XmlUtil.parse(v2_AttributeAssertion),0));
-        context.setVariable("extension", new Message(XmlUtil.parse("<extension>im an extension element</extension>"),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0)));
+        context.setVariable("attributeToken", new Message(XmlUtil.parse(v2_AttributeAssertion)));
+        context.setVariable("extension", new Message(XmlUtil.parse("<extension>im an extension element</extension>")));
         serverAssertion.checkRequest(context);
 
         final Message output = (Message) context.getVariable("outputVar");
@@ -217,7 +217,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         assertion.setSamlVersion(SamlVersion.SAML1_1);
 
         assertion.setResponseAssertions("${samlToken}");
-        context.setVariable("samlToken", new Message(XmlUtil.parse(v1_1AttributeAssertion),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v1_1AttributeAssertion)));
         boolean correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("A recipient must be supplied.", correctExceptionThrown);
 
@@ -231,22 +231,22 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         //No problems when two assertions are presented. Both satisfy bearer criteria
         assertion.setResponseAssertions("${samlToken} ${attributeToken}");
-        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1),0));
-        context.setVariable("attributeToken", new Message(XmlUtil.parse(v1_1AttributeAssertion),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1)));
+        context.setVariable("attributeToken", new Message(XmlUtil.parse(v1_1AttributeAssertion)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, false);
         Assert.assertTrue("No exception should be thrown.", correctExceptionThrown);
 
         //One bearer assertion is missing the NotBefore and NotOnOrAfter Conditions - should be ok, as only 1 is needed
 
         assertion.setResponseAssertions("${samlToken}");
-        context.setVariable("samlToken", new Message(XmlUtil.parse(v1_missingNotBeforeCondition),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v1_missingNotBeforeCondition)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("NotBefore condition attribute is missing.", correctExceptionThrown);
 
         //non bearer subject based statement
         assertion.setResponseAssertions("${samlToken} ${attributeToken}");
-        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1),0));
-        context.setVariable("attributeToken", new Message(XmlUtil.parse(v1_attributeOnlySenderVouches),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1)));
+        context.setVariable("attributeToken", new Message(XmlUtil.parse(v1_attributeOnlySenderVouches)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("Each subject based assertion must use a confirmation method of bearer.", correctExceptionThrown);
 
@@ -267,7 +267,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         //If not success, then no assertions are allowed
         assertion.setSamlStatus(SamlStatus.SAML2_AUTHN_FAILED);
         assertion.setResponseAssertions("${samlToken}");
-        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("Status is not success so no SAML token can be configured.", correctExceptionThrown);
 
@@ -281,53 +281,53 @@ public class ServerSamlpResponseBuilderAssertionTest {
         //Subjects must be the same across all assertions
         assertion.setResponseAssertions("${samlToken} ${attributeDifferentSubject}");
         assertion.setSignResponse(false);
-        context.setVariable("attributeDifferentSubject", new Message(XmlUtil.parse(v2_AttributeDifferentSubject),0));
+        context.setVariable("attributeDifferentSubject", new Message(XmlUtil.parse(v2_AttributeDifferentSubject)));
 
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("All assertions must have the same subject.", correctExceptionThrown);
 
         //Response must contain a bearer assertion
         assertion.setResponseAssertions("${samlToken}");
-        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoBearerAssertion),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoBearerAssertion)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("A bearer assertion is required.", correctExceptionThrown);
 
         //Response must contain a valid bearer assertion
         //No Recipient attribute
-        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoRecipientAssertion),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoRecipientAssertion)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("A bearer assertion with a Recipient attribute is required.", correctExceptionThrown);
 
         //No NoOnOrAfter attribute
-        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoNotOnorAfterAssertion),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoNotOnorAfterAssertion)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("A bearer assertion with a NotOnOrAfter attribute is required.", correctExceptionThrown);
 
         //Contains a NotBefore attribute
-        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_WithNotBeforeAssertion),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_WithNotBeforeAssertion)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("A bearer assertion with no NotBefore attribute is required.", correctExceptionThrown);
 
         //No authentication statement
-        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoAuthenticationStatement),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_NoAuthenticationStatement)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("A bearer assertion with no NotBefore attribute is required.", correctExceptionThrown);
 
         //No audience restriction on an individual bearer assertion
         assertion.setResponseAssertions("${samlToken} ${attributeNoAudience}");
-        context.setVariable("attributeNoAudience", new Message(XmlUtil.parse(v2_NoAudienceRestriction),0));
+        context.setVariable("attributeNoAudience", new Message(XmlUtil.parse(v2_NoAudienceRestriction)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("A bearer assertion with no NotBefore attribute is required.", correctExceptionThrown);
 
         //All issuers must be the same
         assertion.setResponseAssertions("${samlToken} ${tokenDiffIssuer}");
-        context.setVariable("tokenDiffIssuer", new Message(XmlUtil.parse(v2_DifferentIssuer),0));
+        context.setVariable("tokenDiffIssuer", new Message(XmlUtil.parse(v2_DifferentIssuer)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("All Issuers must be the same.", correctExceptionThrown);
 
         //Issuer has the wrong format
         assertion.setResponseAssertions("${samlToken}");
-        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_IssuerWrongFormat),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(v2_IssuerWrongFormat)));
         correctExceptionThrown = evaluateServerAssertion(appContext, context, assertion, expectThrow);
         Assert.assertTrue("Issuer has an incorrect format.", correctExceptionThrown);
 
@@ -372,7 +372,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
         final PolicyEnforcementContext context = getContext();
-        final Message msg = new Message(XmlUtil.parse(samlToken_2_0),0);
+        final Message msg = new Message(XmlUtil.parse(samlToken_2_0));
         final Element element = msg.getXmlKnob().getDocumentReadOnly().getDocumentElement();
         context.setVariable("samlToken", element);
         serverAssertion.checkRequest(context);
@@ -436,13 +436,13 @@ public class ServerSamlpResponseBuilderAssertionTest {
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
         final PolicyEnforcementContext context = getContext();
-        final Message msg = new Message(XmlUtil.parse(samlToken_2_0),0);
+        final Message msg = new Message(XmlUtil.parse(samlToken_2_0));
         final Element element = msg.getXmlKnob().getDocumentReadOnly().getDocumentElement();
         List list = new ArrayList();
         list.add(null);
         list.add(element);
         context.setVariable("samlToken", list);
-        context.setVariable("attributeToken", new Message(XmlUtil.parse(v2_AttributeAssertion),0));
+        context.setVariable("attributeToken", new Message(XmlUtil.parse(v2_AttributeAssertion)));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
@@ -509,17 +509,17 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final PolicyEnforcementContext context = getContext();
         final String statusDetailIn = "<xml>Status Detail</xml>";
-        context.setVariable(statusDetail, new Message(XmlUtil.parse(statusDetailIn),0));
+        context.setVariable(statusDetail, new Message(XmlUtil.parse(statusDetailIn)));
 
-        final Message msg = new Message(XmlUtil.parse(samlToken_2_0),0);
+        final Message msg = new Message(XmlUtil.parse(samlToken_2_0));
         final Element element = msg.getXmlKnob().getDocumentReadOnly().getDocumentElement();
         context.setVariable(token, element);
 
-        final Message encryptedMessage = new Message(XmlUtil.parse(v2_EncryptedAssertion),0);
+        final Message encryptedMessage = new Message(XmlUtil.parse(v2_EncryptedAssertion));
         context.setVariable(encryptedToken, encryptedMessage);
 
         final String extensionXml = "<extension>im an extension element</extension>";
-        context.setVariable(extensions, new Message(XmlUtil.parse(extensionXml),0));
+        context.setVariable(extensions, new Message(XmlUtil.parse(extensionXml)));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
@@ -609,7 +609,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final PolicyEnforcementContext context = getContext();
 
-        final Message encryptedMessage = new Message(XmlUtil.parse(v2_EncryptedAssertion),0);
+        final Message encryptedMessage = new Message(XmlUtil.parse(v2_EncryptedAssertion));
         context.setVariable(encryptedToken, encryptedMessage);
         serverAssertion.checkRequest(context);
     }
@@ -641,7 +641,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final PolicyEnforcementContext context = getContext();
 
-        final Message encryptedMessage = new Message(XmlUtil.parse(v2_EncryptedAssertion),0);
+        final Message encryptedMessage = new Message(XmlUtil.parse(v2_EncryptedAssertion));
         context.setVariable(encryptedToken, encryptedMessage);
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
@@ -759,9 +759,9 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final PolicyEnforcementContext context = getContext();
         final String statusDetailIn = "<xml>Status Detail</xml>";
-        context.setVariable(statusDetail, new Message(XmlUtil.parse(statusDetailIn),0));
+        context.setVariable(statusDetail, new Message(XmlUtil.parse(statusDetailIn)));
         final String extensionXml = "<extension>im an extension element</extension>";
-        context.setVariable(extensions, new Message(XmlUtil.parse(extensionXml),0));
+        context.setVariable(extensions, new Message(XmlUtil.parse(extensionXml)));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
@@ -906,8 +906,8 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final PolicyEnforcementContext context = getContext();
         final String extensionXml = "<extension>im an extension element</extension>";
-        context.setVariable(extensions, new Message(XmlUtil.parse(extensionXml),0));
-        context.setVariable(token, new Message(XmlUtil.parse(samlToken_2_0),0));
+        context.setVariable(extensions, new Message(XmlUtil.parse(extensionXml)));
+        context.setVariable(token, new Message(XmlUtil.parse(samlToken_2_0)));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
@@ -1020,7 +1020,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
         final PolicyEnforcementContext context = getContext();
-        context.setVariable(token, new Message(XmlUtil.parse(samlToken_1_1),0));
+        context.setVariable(token, new Message(XmlUtil.parse(samlToken_1_1)));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
@@ -1082,7 +1082,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final PolicyEnforcementContext context = getContext();
         final String statusDetailIn = "<xml>Status Detail</xml>";
-        context.setVariable(statusDetail, new Message(XmlUtil.parse(statusDetailIn),0));
+        context.setVariable(statusDetail, new Message(XmlUtil.parse(statusDetailIn)));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
@@ -1144,7 +1144,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
         final PolicyEnforcementContext context = getContext();
-        final Message msg = new Message(XmlUtil.parse(samlToken_2_0),0);
+        final Message msg = new Message(XmlUtil.parse(samlToken_2_0));
         final Element element = msg.getXmlKnob().getDocumentReadOnly().getDocumentElement();
         context.setVariable(token, element);
 
@@ -1193,8 +1193,8 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         final PolicyEnforcementContext context = getContext();
         final String statusDetailIn = "<xml>Status Detail</xml>";
-        context.setVariable(statusDetail, new Message(XmlUtil.parse(statusDetailIn),0));
-        final Message msg = new Message(XmlUtil.parse(samlToken_1_1),0);
+        context.setVariable(statusDetail, new Message(XmlUtil.parse(statusDetailIn)));
+        final Message msg = new Message(XmlUtil.parse(samlToken_1_1));
         final Element element = msg.getXmlKnob().getDocumentReadOnly().getDocumentElement();
         context.setVariable(token, element);
 
@@ -1270,8 +1270,8 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
-        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1),0));
-        context.setVariable("samlAttributeToken", new Message(XmlUtil.parse(v1_1AttributeAssertion),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1)));
+        context.setVariable("samlAttributeToken", new Message(XmlUtil.parse(v1_1AttributeAssertion)));
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
 
@@ -1327,12 +1327,12 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
-        final Message msg = new Message(XmlUtil.parse(samlToken_1_1),0);
+        final Message msg = new Message(XmlUtil.parse(samlToken_1_1));
         final Element element = msg.getXmlKnob().getDocumentReadOnly().getDocumentElement();
         List list = new ArrayList();
         list.add(element);
         context.setVariable("samlToken", list);
-        context.setVariable("attributeToken", new Message(XmlUtil.parse(v1_1AttributeAssertion),0));
+        context.setVariable("attributeToken", new Message(XmlUtil.parse(v1_1AttributeAssertion)));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be NONE", AssertionStatus.NONE, status);
@@ -1386,8 +1386,8 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
-        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1),0));
-        context.setVariable("extension", new Message(XmlUtil.parse("<extension>im an extension element</extension>"),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_1_1)));
+        context.setVariable("extension", new Message(XmlUtil.parse("<extension>im an extension element</extension>")));
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be SERVER_ERROR", AssertionStatus.SERVER_ERROR, status);
     }
@@ -1414,7 +1414,7 @@ public class ServerSamlpResponseBuilderAssertionTest {
 
         ServerSamlpResponseBuilderAssertion serverAssertion = new ServerSamlpResponseBuilderAssertion(assertion, appContext);
 
-        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0),0));
+        context.setVariable("samlToken", new Message(XmlUtil.parse(samlToken_2_0)));
         final AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be SERVER_ERROR", AssertionStatus.SERVER_ERROR, status);
     }

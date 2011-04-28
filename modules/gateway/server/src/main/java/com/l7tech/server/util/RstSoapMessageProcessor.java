@@ -498,7 +498,7 @@ public class RstSoapMessageProcessor {
                 "    </soapenv:Body>\n" +
                 "</soapenv:Envelope>";
 
-        context.setVariable(rstrResponseVariable, new Message(XmlUtil.stringAsDocument(faultResponse),0));
+        context.setVariable(rstrResponseVariable, new Message(XmlUtil.stringAsDocument(faultResponse)));
     }
 
     public static String getSoapVersion(final PolicyEnforcementContext context, final Map<String, String> parameters) {

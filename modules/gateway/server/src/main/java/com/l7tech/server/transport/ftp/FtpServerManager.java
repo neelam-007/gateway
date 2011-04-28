@@ -239,7 +239,6 @@ public class FtpServerManager extends TransportModule {
      */
     private FtpServer createFtpServer(SsgConnector connector) throws ListenerException {
         long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
-        long maxRequestSize = connector.getLongProperty(SsgConnector.PROP_REQUEST_SIZE_LIMIT, -1);
         String overrideContentTypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         ContentTypeHeader overrideContentType = null;
         try {
@@ -260,8 +259,7 @@ public class FtpServerManager extends TransportModule {
                 stashManagerFactory,
                 messageProcessingEventChannel,
                 overrideContentType,
-                hardwiredServiceOid,
-                maxRequestSize);
+                hardwiredServiceOid);
 
         Properties props = asFtpProperties(connector);
 

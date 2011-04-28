@@ -73,7 +73,7 @@ public class ServerEncodeDecodeAssertionTest {
     public void testMessageInputOutput() throws Exception {
         // Test message input
         final Message message = new Message();
-        message.initialize( ContentTypeHeader.TEXT_DEFAULT, "/text/ with spaces and <\">s".getBytes( ContentTypeHeader.TEXT_DEFAULT.getEncoding() ),0);
+        message.initialize( ContentTypeHeader.TEXT_DEFAULT, "/text/ with spaces and <\">s".getBytes( ContentTypeHeader.TEXT_DEFAULT.getEncoding() ));
         String result1 = (String) oneWayTest( EncodeDecodeAssertion.TransformType.BASE64_ENCODE, AssertionStatus.NONE, true, 0, message );
         assertEquals( "B64 message encoding", "L3RleHQvIHdpdGggc3BhY2VzIGFuZCA8Ij5z", result1 );
 

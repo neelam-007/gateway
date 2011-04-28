@@ -1594,7 +1594,7 @@ public class ServerGatewayManagementAssertionTest {
 
         final String contentType = ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue() + "; action=\""+action+"\"";
         final Message request = new Message();
-        request.initialize( ContentTypeHeader.parseValue(contentType) , message.getBytes( "utf-8" ),0);
+        request.initialize( ContentTypeHeader.parseValue(contentType) , message.getBytes( "utf-8" ));
         final Message response = new Message();
 
         final MockServletContext servletContext = new MockServletContext();

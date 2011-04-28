@@ -119,7 +119,6 @@ public class ServerBuildRstSoapRequest extends AbstractServerAssertion<BuildRstS
             final Message output = context.getOrCreateTargetMessage( new MessageTargetableSupport( prefix(BuildRstSoapRequest.VARIABLE_RST_REQUEST) ) , false );
             output.initialize(
                     rstDocument,
-                    0,
                     soapVersion==SoapVersion.SOAP_1_1 ?
                             ContentTypeHeader.XML_DEFAULT :
                             ContentTypeHeader.SOAP_1_2_DEFAULT );

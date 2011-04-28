@@ -246,7 +246,7 @@ public class ServerJmsRoutingAssertionTest {
 
     private PolicyEnforcementContext createPEContext(String testMessage) throws Exception {
 
-        Message req = new Message( testMessage(testMessage),0 );
+        Message req = new Message( testMessage(testMessage) );
         Message res = new Message();
         PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(req, res);
         peCtx.setService(new PublishedService());

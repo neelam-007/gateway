@@ -97,7 +97,7 @@ public class ServerBuildRstrSoapResponse extends AbstractMessageTargetableServer
 
         // Build a RSTR SOAP response message and set the context variable for rstrResponse
         final String rstrSoapResponse = buildRstrSoapResponse(rstParameters.get(RstSoapMessageProcessor.SOAP_ENVELOPE_NS), rstrXml);
-        context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_RSTR_RESPONSE, new Message(XmlUtil.stringAsDocument(rstrSoapResponse),0));// todo
+        context.setVariable(assertion.getVariablePrefix() + "." + BuildRstrSoapResponse.VARIABLE_RSTR_RESPONSE, new Message(XmlUtil.stringAsDocument(rstrSoapResponse)));
 
         // Set the context variable for WS-Addressing Namespace (Note: WS-Addressing Namespace is optional to have.)
         final String wsaNS = RstSoapMessageProcessor.getWsaNamespace( rstParameters );

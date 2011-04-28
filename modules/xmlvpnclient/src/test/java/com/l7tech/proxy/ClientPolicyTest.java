@@ -60,7 +60,7 @@ public class ClientPolicyTest extends TestCase {
     public void testNullPolicy() throws Exception {
         Ssg ssg = new Ssg(1, "foo");
         Document env = XmlUtil.stringToDocument("<foo/>");
-        PolicyApplicationContext context = new PolicyApplicationContext(ssg, new Message(env,0), null, null, null, null);
+        PolicyApplicationContext context = new PolicyApplicationContext(ssg, new Message(env), null, null, null, null);
 
         ClientAssertion policy = new ClientTrueAssertion( TrueAssertion.getInstance() );
 
@@ -74,7 +74,7 @@ public class ClientPolicyTest extends TestCase {
         ClientAssertion policy = new ClientHttpBasic( new HttpBasic() );
         Ssg ssg = new Ssg(1, "foo");
         Document env = XmlUtil.stringToDocument("<foo/>");
-        PolicyApplicationContext context = new PolicyApplicationContext(ssg, new Message(env,0), null, null, null, null);
+        PolicyApplicationContext context = new PolicyApplicationContext(ssg, new Message(env), null, null, null, null);
         AssertionStatus result;
 
         ssg.setUsername(null);
@@ -108,7 +108,7 @@ public class ClientPolicyTest extends TestCase {
         ClientAssertion policy = new ClientSslAssertion( new SslAssertion() );
         Ssg ssg = new Ssg(1, "foo");
         Document env = XmlUtil.stringToDocument("<foo/>");
-        PolicyApplicationContext context = new PolicyApplicationContext(ssg, new Message(env,0), null, null, null, null);
+        PolicyApplicationContext context = new PolicyApplicationContext(ssg, new Message(env), null, null, null, null);
         AssertionStatus result;
 
         result = policy.decorateRequest(context);;
@@ -118,7 +118,7 @@ public class ClientPolicyTest extends TestCase {
 
     private PolicyApplicationContext context;
     private PolicyApplicationContext makeContext(Ssg ssg,Document env) throws IOException, SAXException, OperationCanceledException, HttpChallengeRequiredException {
-        context = new PolicyApplicationContext(ssg, new Message(env,0), null, null, null, null);
+        context = new PolicyApplicationContext(ssg, new Message(env), null, null, null, null);
         // preheat credentials
         context.getCredentialsForTrustedSsg();
         return context;

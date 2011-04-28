@@ -384,7 +384,7 @@ public class ExpandVariablesTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testRequestBodyNotText() throws Exception {
-        Message foo = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(TINY_BODY.getBytes("UTF-8")),0);
+        Message foo = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(TINY_BODY.getBytes("UTF-8")));
         ExpandVariables.process("${foo.mainPart}", makeVars(foo), audit, true);
         fail("Expected IAE for non-text mainPart");
     }
@@ -458,7 +458,7 @@ public class ExpandVariablesTest {
     public void testProcessSingleVariableAsDisplayableObject() throws Exception {
         final ApplicationContext spring = ApplicationContexts.getTestApplicationContext();
         final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc,0), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc), new Message());
 
         final RequestXpathAssertion ass = new RequestXpathAssertion(new XpathExpression("/s:Envelope/s:Body/ns1:placeOrder/*", nsmap()));
         new AllAssertion(Arrays.asList(ass, new AuditDetailAssertion("${requestXpath.elements}")));
@@ -476,7 +476,7 @@ public class ExpandVariablesTest {
     @Test
     public void testProcessMultivaluedVariableAsDisplayableObject() throws Exception {
         final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc,0), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc), new Message());
 
         context.setVariable( "requestXpath.elements",  getBodyFirstChildChildElements( doc ));
         final Element[] els = (Element[]) context.getVariable("requestXpath.elements");
@@ -514,7 +514,7 @@ public class ExpandVariablesTest {
     @Test
     public void testMultivaluedElementVariableConcatenation() throws Exception {
         final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc,0), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc), new Message());
 
         context.setVariable( "elements",  getBodyFirstChildChildElements( doc ));
         final Element[] els = (Element[]) context.getVariable("elements");
@@ -527,7 +527,7 @@ public class ExpandVariablesTest {
     @Test
     public void testMultivaluedElementVariableConcatenationWithDelimiter() throws Exception {
         final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc,0), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc), new Message());
 
         context.setVariable( "elements",  getBodyFirstChildChildElements( doc ));
         final Element[] els = (Element[]) context.getVariable("elements");
@@ -540,7 +540,7 @@ public class ExpandVariablesTest {
     @Test
     public void testArrayElementVariableFormatting() throws Exception {
         final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc,0), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc), new Message());
 
         context.setVariable( "elements",  getBodyFirstChildChildElements( doc ));
         final Element[] els = (Element[]) context.getVariable("elements");
@@ -553,7 +553,7 @@ public class ExpandVariablesTest {
     @Test
     public void testElementVariableFormatting() throws Exception {
         final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc,0), new Message());
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(doc), new Message());
 
         context.setVariable( "element", getBodyFirstChildChildElements( doc )[0]);
 
@@ -631,7 +631,7 @@ public class ExpandVariablesTest {
         //Test variable of type Message support
         String xml = "<donal>value</donal>";
         Document doc = XmlUtil.parse(xml);
-        Message m = new Message(doc,0);
+        Message m = new Message(doc);
         vars.put("MESSAGE_VAR", m);
 
         paramValue = ExpandVariables.processNoFormat("${MESSAGE_VAR}", vars, audit, true);
@@ -712,7 +712,7 @@ public class ExpandVariablesTest {
     @Test
     public void testMessagePartInfoArraySelector() throws Exception {
         final Map<String, Object> vars = new HashMap<String,Object>();
-        vars.put("message", new Message(XmlUtil.parse( "<content/>" ),0) );
+        vars.put("message", new Message(XmlUtil.parse( "<content/>" )) );
 
         assertEquals("message.parts.1.body", "<content/>", ExpandVariables.process( "${message.parts.1.body}", vars, audit, true ));
         assertEquals("message.parts.1.contentType", "text/xml; charset=utf-8", ExpandVariables.process( "${message.parts.1.contentType}", vars, audit, true ));
@@ -796,7 +796,7 @@ public class ExpandVariablesTest {
     }
 
     private Message makeTinyRequest() throws NoSuchPartException, IOException {
-        Message foo = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(TINY_BODY.getBytes("UTF-8")),0);
+        Message foo = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(TINY_BODY.getBytes("UTF-8")));
         Map<String, MimeHeader> headers = new HashMap<String, MimeHeader>();
         headers.put("Content-Type", ContentTypeHeader.OCTET_STREAM_DEFAULT);
 

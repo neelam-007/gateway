@@ -475,7 +475,7 @@ public class SoapFaultManager implements ApplicationContextAware {
             requirements.setSignTimestamp(true);
             requirements.getElementsToSign().add( SoapUtil.getBodyElement(soapDoc));
 
-            decorator.decorateMessage(new Message(soapDoc,0), requirements); // todo
+            decorator.decorateMessage(new Message(soapDoc), requirements);
         } catch (InvalidDocumentFormatException e) {
             logger.log( Level.WARNING, "Error signing SOAP Fault.", e );
         } catch (SAXException e) {

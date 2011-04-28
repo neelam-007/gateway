@@ -165,7 +165,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
                     "Error creating output message " + assertion.getTargetName(), ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
         }
-        message.initialize(responseDoc,0);
+        message.initialize(responseDoc);
         if(logger.isLoggable(Level.FINEST)){
             logger.log(Level.FINEST, "SAMLP Response: " + XmlUtil.nodeToString(responseDoc));
         }
@@ -408,7 +408,7 @@ public class ServerSamlpResponseBuilderAssertion extends AbstractServerAssertion
 
                     //try convert to a Message, then we support it
                     try {
-                        Message message = new Message(XmlUtil.parse(token),0);
+                        Message message = new Message(XmlUtil.parse(token));
                         returnCol.add(message);
                     } catch (SAXException e) {
                         final String msg = "String value resolved from '" + variablesOnly + "' for element '" +

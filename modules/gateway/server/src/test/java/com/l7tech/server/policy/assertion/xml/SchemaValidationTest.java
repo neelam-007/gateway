@@ -156,7 +156,7 @@ public class SchemaValidationTest {
         SchemaManager sm = (SchemaManager)testApplicationContext.getBean("schemaManager");
         SchemaHandle handle = sm.getSchemaByUri(new LogOnlyAuditor(logger), REUTERS_SCHEMA_URL);
         Document requestDoc = XmlUtil.parse(new URL(REUTERS_REQUEST_URL).openStream());
-        Message request = new Message(requestDoc,0);
+        Message request = new Message(requestDoc);
 
         handle.validateMessage(request, ValidationTarget.BODY, new SchemaValidationErrorHandler());
     }
@@ -227,7 +227,7 @@ public class SchemaValidationTest {
         assertion.setApplyToArguments(true);
         assertion.setResourceInfo(new StaticResourceInfo(schema));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, testApplicationContext);
-        Message requestMsg = new Message(XmlUtil.stringToDocument(request),0);
+        Message requestMsg = new Message(XmlUtil.stringToDocument(request));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, new Message());
         AssertionStatus res = serverAssertion.validateMessage(requestMsg, context);
         Assert.assertTrue(res == AssertionStatus.NONE);
@@ -278,8 +278,7 @@ public class SchemaValidationTest {
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(
                 new Message((TestStashManagerFactory.getInstance().createStashManager()),
                             ContentTypeHeader.XML_DEFAULT,
-                            TestDocuments.getInputStream(path),
-                            0),
+                            TestDocuments.getInputStream(path)),
                 new Message());
     }
 

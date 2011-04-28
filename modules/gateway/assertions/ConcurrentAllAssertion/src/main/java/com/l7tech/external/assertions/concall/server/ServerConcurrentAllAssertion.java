@@ -292,7 +292,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
      * @throws java.io.IOException if a Message variable is to be copied and it cannot be read
      */
     private PolicyEnforcementContext copyContext(PolicyEnforcementContext source, Map<String, Object> varsMap) throws IOException {
-        PolicyEnforcementContext ret = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null,null);
+        PolicyEnforcementContext ret = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
 
         ret.setRequestWasCompressed(source.isRequestWasCompressed());
         ret.setService(source.getService());
@@ -357,7 +357,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
 
         try {
             byte[] sourceBytes = IOUtils.slurpStream(mk.getEntireMessageBodyAsInputStream());
-            return new Message(new ByteArrayStashManager(), mk.getOuterContentType(), new ByteArrayInputStream(sourceBytes),0);
+            return new Message(new ByteArrayStashManager(), mk.getOuterContentType(), new ByteArrayInputStream(sourceBytes));
         } catch (NoSuchPartException e) {
             throw new IOException(e);
         }

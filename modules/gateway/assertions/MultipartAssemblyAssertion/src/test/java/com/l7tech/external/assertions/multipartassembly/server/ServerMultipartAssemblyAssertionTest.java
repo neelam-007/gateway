@@ -51,8 +51,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
         });
         MimeBody mimeBody = new MimeBody(new ByteArrayStashManager(),
                                          ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
-                                         new ByteArrayInputStream(MESS2.getBytes()),
-                                         0);
+                                         new ByteArrayInputStream(MESS2.getBytes()));
 
         List<PartInfo> infos = collectParts(mimeBody.iterator());
         PartInfo soapPart = infos.get(0);
@@ -81,7 +80,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
                 partIds);
 
         // Make sure the resulting stream matches its ingredients
-        MimeBody mb = new MimeBody(new ByteArrayStashManager(), multipartRelated, messStream,0);
+        MimeBody mb = new MimeBody(new ByteArrayStashManager(), multipartRelated, messStream);
         List<PartInfo> parts = collectParts(mb.iterator());
         final PartInfo part0 = parts.get(0);
         final PartInfo part1 = parts.get(1);
@@ -102,8 +101,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
 
         Message request = new Message(new ByteArrayStashManager(),
                                       ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
-                                      new ByteArrayInputStream(MESS2.getBytes()),
-                                      0);
+                                      new ByteArrayInputStream(MESS2.getBytes()));
         Message response = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
@@ -115,7 +113,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
         assertEquals(result, AssertionStatus.NONE);
 
         // Make sure the resulting stream matches its ingredients
-        MimeBody mb = new MimeBody(new ByteArrayStashManager(), request.getMimeKnob().getOuterContentType(), request.getMimeKnob().getEntireMessageBodyAsInputStream(),0);
+        MimeBody mb = new MimeBody(new ByteArrayStashManager(), request.getMimeKnob().getOuterContentType(), request.getMimeKnob().getEntireMessageBodyAsInputStream());
         List<PartInfo> parts = collectParts(mb.iterator());
         final PartInfo multi = parts.get(0);
         final PartInfo soap1 = parts.get(1);
@@ -155,8 +153,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
 
         Message request = new Message(new ByteArrayStashManager(),
                                       ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
-                                      new ByteArrayInputStream(MESS2.getBytes()),
-                                      0);
+                                      new ByteArrayInputStream(MESS2.getBytes()));
         Message response = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
 
@@ -177,7 +174,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
         assertTrue(bodySoapStream2.closeCalled);
 
         // Make sure the resulting stream matches its ingredients
-        MimeBody mb = new MimeBody(new ByteArrayStashManager(), request.getMimeKnob().getOuterContentType(), request.getMimeKnob().getEntireMessageBodyAsInputStream(),0);
+        MimeBody mb = new MimeBody(new ByteArrayStashManager(), request.getMimeKnob().getOuterContentType(), request.getMimeKnob().getEntireMessageBodyAsInputStream());
         List<PartInfo> parts = collectParts(mb.iterator());
         final PartInfo multi = parts.get(0);
         final PartInfo soap1 = parts.get(1);
@@ -196,7 +193,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
     }
 
     private void assertSimilarToMess2(ContentTypeHeader outerctype, InputStream stream) throws Exception {
-        MimeBody mb = new MimeBody(new ByteArrayStashManager(), outerctype, stream,0);
+        MimeBody mb = new MimeBody(new ByteArrayStashManager(), outerctype, stream);
         List<PartInfo> parts = collectParts(mb.iterator());
         final PartInfo part0 = parts.get(0);
         final PartInfo part1 = parts.get(1);

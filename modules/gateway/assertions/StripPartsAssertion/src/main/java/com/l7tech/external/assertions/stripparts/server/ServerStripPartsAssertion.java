@@ -49,9 +49,9 @@ public class ServerStripPartsAssertion extends AbstractServerAssertion<StripPart
 
             if (sm.isByteArrayAvailable(0)) {
                 byte[] bytes = sm.recallBytes(0);
-                message.initialize(ctype, bytes,0);
+                message.initialize(ctype, bytes);
             } else {
-                message.initialize(stashManagerFactory.createStashManager(), ctype, sm.recall(0),0);
+                message.initialize(stashManagerFactory.createStashManager(), ctype, sm.recall(0));
             }
 
             return AssertionStatus.NONE;

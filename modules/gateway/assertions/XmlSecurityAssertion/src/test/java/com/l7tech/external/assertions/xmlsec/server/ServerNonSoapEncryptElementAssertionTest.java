@@ -173,7 +173,7 @@ public class ServerNonSoapEncryptElementAssertionTest {
                 "  <par:username>brian</par:username> \n" +
                 "  <par:password>somepassword</par:password> \n" +
                 "  <par:notice_id>12345</par:notice_id> \n" +
-                "</par:GetNoaParties>"),0);
+                "</par:GetNoaParties>"));
     }
 
     private void checkResult(Message req, int expectedLength) throws SAXException, IOException {

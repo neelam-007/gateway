@@ -41,20 +41,20 @@ public class ServiceResolutionManagerTest {
     @Test
     public void testResolutionEmptyBody() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
-        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body/></soapenv:Envelope>" ),0);
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body/></soapenv:Envelope>" ));
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved)", service );
-        assertEquals( "Service id", 1, service.getOid() );
+        assertEquals( "Service id", 1L, service.getOid() );
     }
 
     @Test
     public void testResolutionUri() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
-        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
         message.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/warehouse") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved)", service );
-        assertEquals( "Service id", 2, service.getOid() );
+        assertEquals( "Service id", 2L, service.getOid() );
 
         // test with body content resolver disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -62,23 +62,23 @@ public class ServiceResolutionManagerTest {
         configure( config, resolutionManager.getResolvers() );
         PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service2 );
-        assertEquals( "Service id", 2, service2.getOid() );
+        assertEquals( "Service id", 2L, service2.getOid() );
     }
 
     @Test
     public void testResolutionUriWild() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
-        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
         message.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/wild/some/path/here") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved)", service );
-        assertEquals( "Service id", 4, service.getOid() );
+        assertEquals( "Service id", 4L, service.getOid() );
     }
 
     @Test
     public void testResolutionUriCaseInsensitive() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
-        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
         message.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/WaReHoUsE") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNull( "Service not null (resolved)", service );
@@ -89,24 +89,24 @@ public class ServiceResolutionManagerTest {
         configure( config, resolutionManager.getResolvers() );
         PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service2 );
-        assertEquals( "Service id", 2, service2.getOid() );
+        assertEquals( "Service id", 2L, service2.getOid() );
     }
 
     @Test
     public void testResolutionUriPathRequired() throws Exception {
         // test services when path is not required
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
-        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
         message.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/warehouse") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved)", service );
-        assertEquals( "Service id", 2, service.getOid() );
+        assertEquals( "Service id", 2L, service.getOid() );
 
-        Message message2 = new Message( XmlUtil.parse( "<xml-message/>" ),0);
+        Message message2 = new Message( XmlUtil.parse( "<xml-message/>" ));
         message2.attachHttpRequestKnob( new HttpRequestKnobStub(null, "/service/3") );
         PublishedService service2 = resolutionManager.resolve( auditor, message2, srl(), services );
         assertNotNull( "Service null (not resolved)", service2 );
-        assertEquals( "Service id", 3, service2.getOid() );
+        assertEquals( "Service id", 3L, service2.getOid() );
 
         // test with uri path required
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -114,7 +114,7 @@ public class ServiceResolutionManagerTest {
         configure( config, resolutionManager.getResolvers() );
         PublishedService service3 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service3 );
-        assertEquals( "Service id", 2, service3.getOid() );
+        assertEquals( "Service id", 2L, service3.getOid() );
 
         PublishedService service4 = resolutionManager.resolve( auditor, message2, srl(), services );
         assertNull( "Service not null (resolved)", service4 );
@@ -123,10 +123,10 @@ public class ServiceResolutionManagerTest {
     @Test
     public void testResolutionSoapBody() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
-        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved)", service );
-        assertEquals( "Service id", 2, service.getOid() );
+        assertEquals( "Service id", 2L, service.getOid() );
 
         // test with SOAP action resolver disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -134,7 +134,7 @@ public class ServiceResolutionManagerTest {
         configure( config, resolutionManager.getResolvers() );
         PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service2 );
-        assertEquals( "Service id", 2, service2.getOid() );
+        assertEquals( "Service id", 2L, service2.getOid() );
 
         // test failure when SOAP Body child resolution is not in use
         config.setUseSoapBodyChildNamespace( false );
@@ -146,11 +146,11 @@ public class ServiceResolutionManagerTest {
     @Test
     public void testResolutionSoapAction() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
-        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
-        message.attachJmsKnob( new JmsKnobStub( 0, true, "http://warehouse.acme.com/ws/listProducts" ) );
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
+        message.attachJmsKnob( new JmsKnobStub( 0L, true, "http://warehouse.acme.com/ws/listProducts" ) );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 1)", service );
-        assertEquals( "Service id", 2, service.getOid() );
+        assertEquals( "Service id", 2L, service.getOid() );
 
         // test with body content resolver disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -158,7 +158,7 @@ public class ServiceResolutionManagerTest {
         configure( config, resolutionManager.getResolvers() );
         PublishedService service2 = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 2)", service2 );
-        assertEquals( "Service id", 2, service2.getOid() );
+        assertEquals( "Service id", 2L, service2.getOid() );
 
         // test failure when soap action is not in use
         config.setUseSoapAction( false );
@@ -170,11 +170,11 @@ public class ServiceResolutionManagerTest {
     @Test
     public void testResolutionOriginalUrl() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
-        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
         message.attachHttpRequestKnob( new HttpRequestKnobStub(l(header("L7-Original-URL","http://blah/warehouse")),"/some/other/uri") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 1)", service );
-        assertEquals( "Service id", 2, service.getOid() );
+        assertEquals( "Service id", 2L, service.getOid() );
 
         // test with original url disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -187,11 +187,11 @@ public class ServiceResolutionManagerTest {
     @Test
     public void testResolutionServiceId() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
-        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
         message.attachHttpRequestKnob( new HttpRequestKnobStub(null,"/service/2") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 1)", service );
-        assertEquals( "Service id", 2, service.getOid() );
+        assertEquals( "Service id", 2L, service.getOid() );
 
         // test with service id disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -204,11 +204,11 @@ public class ServiceResolutionManagerTest {
     @Test
     public void testResolutionServiceIdInOriginalUrl() throws Exception {
         configure( getDefaultResolutionConfiguration(), resolutionManager.getResolvers() );
-        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
+        Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
         message.attachHttpRequestKnob( new HttpRequestKnobStub(l(header("L7-Original-URL","http://blah/service/2")),"/some/other/uri") );
         PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
         assertNotNull( "Service null (not resolved 1)", service );
-        assertEquals( "Service id", 2, service.getOid() );
+        assertEquals( "Service id", 2L, service.getOid() );
 
         // test with original url disabled
         final ResolutionConfiguration config = getDefaultResolutionConfiguration();
@@ -238,7 +238,7 @@ public class ServiceResolutionManagerTest {
 
         final String[] extraElementValues = new String[]{ "2", "" };
         for ( final String extraElementText : extraElementValues ) {
-            final Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts"+extraElementText+" xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0);
+            final Message message = new Message( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><listProducts"+extraElementText+" xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ));
             message.attachKnob( HttpRequestKnobStub.class, new HttpRequestKnobStub(null, "/warehouse") );
             final PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
 
@@ -257,7 +257,7 @@ public class ServiceResolutionManagerTest {
         final SoapVersion[] soapVersions = new SoapVersion[]{ SoapVersion.SOAP_1_2, SoapVersion.SOAP_1_1 };
         for ( final SoapVersion soapVersion : soapVersions ) {
             final Message message = new Message();
-            message.initialize( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\""+soapVersion.getNamespaceUri()+"\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ),0, ContentTypeHeader.create( soapVersion.getContentType() ));
+            message.initialize( XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\""+soapVersion.getNamespaceUri()+"\"><soapenv:Body><listProducts xmlns=\"http://warehouse.acme.com/ws\"/></soapenv:Body></soapenv:Envelope>" ), ContentTypeHeader.create( soapVersion.getContentType() ));
             final PublishedService service = resolutionManager.resolve( auditor, message, srl(), services );
             if ( soapVersion == SoapVersion.SOAP_1_1 ) {
                 assertNotNull( "Service not null (resolved)", service );
@@ -281,7 +281,7 @@ public class ServiceResolutionManagerTest {
         final ServiceResolver r3 = new SoapOperationResolver(auditFactory, new ServiceDocumentManagerStub());
 
         final PublishedService service = new PublishedService();
-        service.setOid(1);
+        service.setOid( 1L );
         service.setName("EmptyOpService");
         service.setRoutingUri( "/empty" );
         service.setSoap(true);
@@ -296,10 +296,10 @@ public class ServiceResolutionManagerTest {
     @BugNumber(9776)
     @Test
     public void testServiceConflictWild() throws Exception {
-        resolutionManager.checkResolution( service( -1, "Test1", "/wild/path", null, false ), services );      
+        resolutionManager.checkResolution( service( -1L, "Test1", "/wild/path", null, false ), services );
 
         try {
-            resolutionManager.checkResolution( service( -1, "Test2", "/wild/*", null, false ), services );
+            resolutionManager.checkResolution( service( -1L, "Test2", "/wild/*", null, false ), services );
             fail( "Service conflict expected for /wild/*" );
         } catch ( NonUniqueServiceResolutionException e ) {
             // expected
@@ -334,10 +334,10 @@ public class ServiceResolutionManagerTest {
         ));
 
         final ServiceInfo[] serviceInfos = new ServiceInfo[]{
-            si( service(1, "EmptyOpService", "/empty", SoapVersion.UNKNOWN, false), l("urn:empty:empty"), l((String)null), l(Collections.<QName>emptyList()) ),
-            si( service(2, "SoapService", "/warehouse", SoapVersion.SOAP_1_1, false), l("http://warehouse.acme.com/ws/listProducts","http://warehouse.acme.com/ws/getProductDetails"), l("http://warehouse.acme.com/ws"), l(qns("http://warehouse.acme.com/ws","listProducts"),qns("http://warehouse.acme.com/ws","getProductDetails")) ),
-            si( service(3, "XML", null, null, false), null, null, null ), // unresolvable other than by id
-            si( service(4, "Wild", "/wild/*", null, false), null, null, null ),
+            si( service( 1L, "EmptyOpService", "/empty", SoapVersion.UNKNOWN, false), l("urn:empty:empty"), l((String)null), l(Collections.<QName>emptyList()) ),
+            si( service( 2L, "SoapService", "/warehouse", SoapVersion.SOAP_1_1, false), l("http://warehouse.acme.com/ws/listProducts","http://warehouse.acme.com/ws/getProductDetails"), l("http://warehouse.acme.com/ws"), l(qns("http://warehouse.acme.com/ws","listProducts"),qns("http://warehouse.acme.com/ws","getProductDetails")) ),
+            si( service( 3L, "XML", null, null, false), null, null, null ), // unresolvable other than by id
+            si( service( 4L, "Wild", "/wild/*", null, false), null, null, null ),
         };
 
         Collection<PublishedService> services = new ArrayList<PublishedService>();

@@ -348,7 +348,7 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         if ( soapResponse instanceof Identify ) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             soapResponse.writeTo( os );
-            response.initialize( ContentTypeHeader.SOAP_1_2_DEFAULT, os.toByteArray(), 0 );
+            response.initialize( ContentTypeHeader.SOAP_1_2_DEFAULT, os.toByteArray() );
         } else {
             sendManagementResponse( (Management) soapResponse, response);
         }
@@ -374,10 +374,9 @@ public class ServerGatewayManagementAssertion extends AbstractServerAssertion<Ga
         if ( managementResponse.getHeader() != null && managementResponse.getAction() != null ) {
             response.initialize(
                     ContentTypeHeader.parseValue(ContentTypeHeader.SOAP_1_2_DEFAULT.getFullValue() + "; action="+managementResponse.getAction()), 
-                    responseData,
-                    0);
+                    responseData );
         } else {
-            response.initialize( ContentTypeHeader.SOAP_1_2_DEFAULT, responseData, 0 );
+            response.initialize( ContentTypeHeader.SOAP_1_2_DEFAULT, responseData );
         }
     }
 

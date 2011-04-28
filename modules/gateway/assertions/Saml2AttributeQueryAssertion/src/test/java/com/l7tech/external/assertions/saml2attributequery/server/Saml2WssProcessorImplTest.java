@@ -102,7 +102,7 @@ public class Saml2WssProcessorImplTest {
         DocumentBuilder parser = factory.newDocumentBuilder();
 
         Document doc = parser.parse(new ByteArrayInputStream(QUERY_XML.getBytes("UTF-8")));
-        Message message = new Message(doc,0);
+        Message message = new Message(doc);
 
         PEMReader pemReader = new PEMReader(new StringReader(CERTIFICATE_PEM));
         X509Certificate cert = (X509Certificate)pemReader.readObject();
@@ -137,7 +137,7 @@ public class Saml2WssProcessorImplTest {
         DocumentBuilder parser = factory.newDocumentBuilder();
 
         Document doc = parser.parse(new ByteArrayInputStream(QUERY_XML.getBytes("UTF-8")));
-        Message message = new Message(doc,0);
+        Message message = new Message(doc);
 
         PEMReader pemReader = new PEMReader(new StringReader(CERTIFICATE_PEM));
         X509Certificate cert = (X509Certificate)pemReader.readObject();

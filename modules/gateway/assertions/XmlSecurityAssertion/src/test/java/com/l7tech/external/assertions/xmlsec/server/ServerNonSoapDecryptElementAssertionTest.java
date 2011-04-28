@@ -38,7 +38,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         logger.info("Attempting to decrypt:\n" + TEST_ENCRYPTED);
         NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
-        Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED),0);
+        Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);
@@ -55,7 +55,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         logger.info("Attempting to decrypt:\n" + TEST_ENCRYPTED_FOR_SOMEONE_ELSE);
         NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
-        Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED_FOR_SOMEONE_ELSE),0);
+        Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED_FOR_SOMEONE_ELSE));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
         assertEquals(AssertionStatus.BAD_REQUEST, result);
@@ -71,7 +71,7 @@ public class ServerNonSoapDecryptElementAssertionTest {
         logger.info("Attempting to decrypt:\n" + TEST_ENCRYPTED_FOR_DATA);
         NonSoapDecryptElementAssertion ass = new NonSoapDecryptElementAssertion();
         ass.setXpathExpression(new XpathExpression("//*[local-name() = 'EncryptedData']"));
-        Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED_FOR_DATA),0);
+        Message request = new Message(XmlUtil.stringAsDocument(TEST_ENCRYPTED_FOR_DATA));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = new ServerNonSoapDecryptElementAssertion(ass, beanFactory, null).checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);

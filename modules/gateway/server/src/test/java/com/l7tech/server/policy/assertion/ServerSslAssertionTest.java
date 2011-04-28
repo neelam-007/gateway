@@ -45,7 +45,7 @@ public class ServerSslAssertionTest extends TestCase {
         Message request = new Message();
         Message response = new Message();
 
-        request.initialize( XmlUtil.stringToDocument("<blah/>"),0);
+        request.initialize( XmlUtil.stringToDocument("<blah/>"));
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
         response.attachHttpResponseKnob(new HttpServletResponseKnob(hresponse));
 

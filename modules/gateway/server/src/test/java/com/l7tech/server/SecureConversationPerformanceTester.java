@@ -40,7 +40,7 @@ public class SecureConversationPerformanceTester {
         td.req.getElementsToSign().clear();
         td.req.getElementsToEncrypt().clear();
 
-        Message message = new Message(td.c.message,0);
+        Message message = new Message(td.c.message);
         new WssDecoratorImpl().decorateMessage(message, td.req);
         final String reqXml = XmlUtil.nodeToString(message.getXmlKnob().getDocumentReadOnly());
 
@@ -49,7 +49,7 @@ public class SecureConversationPerformanceTester {
         Runnable r = new Runnable() {
             @Override
             public void run() {
-                Message req = new Message(XmlUtil.stringAsDocument(reqXml),0);
+                Message req = new Message(XmlUtil.stringAsDocument(reqXml));
                 try {
                     final WssProcessorImpl wssProcessor = new WssProcessorImpl(req);
                     wssProcessor.setSecurityContextFinder(new SecurityContextFinder() {

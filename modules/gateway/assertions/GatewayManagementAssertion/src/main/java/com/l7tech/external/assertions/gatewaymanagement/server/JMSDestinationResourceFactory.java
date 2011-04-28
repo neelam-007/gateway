@@ -164,7 +164,6 @@ public class JMSDestinationResourceFactory extends EntityManagerResourceFactory<
         oldJmsEndpoint.setUsername( newJmsEndpoint.getUsername() );
         oldJmsEndpoint.setPassword( newJmsEndpoint.getPassword() );
         oldJmsEndpoint.setUseMessageIdForCorrelation( newJmsEndpoint.isUseMessageIdForCorrelation() );
-        oldJmsEndpoint.setRequestMaxSize(newJmsEndpoint.getRequestMaxSize());
 
         // Copy connection properties that allow update
         oldJmsConnection.setProviderType( newJmsConnection.getProviderType() );

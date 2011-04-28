@@ -114,7 +114,7 @@ public class ServerJSONSchemaAssertionTest {
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(null, true, varName, ContentTypeHeader.APPLICATION_JSON, null);
-        final Message message = new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(jsonInstance.getBytes()),0);
+        final Message message = new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(jsonInstance.getBytes()));
         pec.setVariable(varName, message);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.NONE, assertionStatus);
@@ -169,7 +169,7 @@ public class ServerJSONSchemaAssertionTest {
         final GenericApplicationContext context = buildContext();
         ServerJSONSchemaAssertion serverAssertion = new ServerJSONSchemaAssertion(assertion, context);
         PolicyEnforcementContext pec = getContext(null, true, varName, ContentTypeHeader.APPLICATION_JSON, null);
-        final Message message = new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidJsonInstance.getBytes()),0);
+        final Message message = new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidJsonInstance.getBytes()));
         pec.setVariable(varName, message);
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(pec);
         Assert.assertEquals(AssertionStatus.FAILED, assertionStatus);
@@ -409,9 +409,9 @@ public class ServerJSONSchemaAssertionTest {
         if (contextVariableName != null && !contextVariableName.isEmpty()) {
         } else {
             if (useRequest) {
-                request.initialize(stashManager, contentType, new ByteArrayInputStream(requestData.getBytes(Charsets.UTF8)),0);
+                request.initialize(stashManager, contentType, new ByteArrayInputStream(requestData.getBytes(Charsets.UTF8)));
             } else {
-                response.initialize(stashManager, contentType, new ByteArrayInputStream(requestData.getBytes(Charsets.UTF8)),0);
+                response.initialize(stashManager, contentType, new ByteArrayInputStream(requestData.getBytes(Charsets.UTF8)));
             }
         }
         request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));

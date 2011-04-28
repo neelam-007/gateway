@@ -113,7 +113,7 @@ public class PolicyServiceTest {
         assertNotNull(requestDoc);
         log.info("Request (pretty-printed): " + XmlUtil.nodeToFormattedString(requestDoc));
 
-        request.initialize(requestDoc,0);
+        request.initialize(requestDoc);
         return context;
     }
 

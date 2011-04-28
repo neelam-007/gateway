@@ -444,7 +444,7 @@ public class SamlGenerator {
                         decoReq.getElementsToSign().addAll(DomUtils.findChildElementsByName(maybeHeader, SoapConstants.WSA_NAMESPACE_ARRAY, "To"));
                     }
                 }
-                deco.decorateMessage(new Message(soapDoc,0), decoReq);
+                deco.decorateMessage(new Message(soapDoc), decoReq);
                 assertionStr = XmlUtil.nodeToString(soapDoc);
             }
             else {

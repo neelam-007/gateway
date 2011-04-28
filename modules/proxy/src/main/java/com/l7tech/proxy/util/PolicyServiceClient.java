@@ -98,7 +98,7 @@ public class PolicyServiceClient {
                 req.getElementsToSign().add(mid);
             }
             req.setTimestampCreatedDate(timestampCreatedDate);
-            decorator.decorateMessage(new Message(msg, 0), req);
+            decorator.decorateMessage(new Message(msg), req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
         } catch (DecoratorException e) {
@@ -137,7 +137,7 @@ public class PolicyServiceClient {
             req.getElementsToSign().add(mid);
 
             req.setTimestampCreatedDate(timestampCreatedDate);
-            decorator.decorateMessage(new Message(msg,0), req);
+            decorator.decorateMessage(new Message(msg), req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
         } catch (DecoratorException e) {
@@ -221,7 +221,7 @@ public class PolicyServiceClient {
         WssProcessor wssProcessor = new WssProcessorImpl();
         ProcessorResult result;
         try {
-            result = wssProcessor.undecorateMessage(new Message(response,0), null, new SimpleSecurityTokenResolver(clientCert, clientKey));
+            result = wssProcessor.undecorateMessage(new Message(response), null, new SimpleSecurityTokenResolver(clientCert, clientKey));
         } catch (BadSecurityContextException e) {
             throw new ProcessorException(e); // can't happen
         } catch (IOException e) {

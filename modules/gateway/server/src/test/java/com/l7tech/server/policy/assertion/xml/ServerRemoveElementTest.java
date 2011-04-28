@@ -51,7 +51,7 @@ public class ServerRemoveElementTest {
     @Test
     public void testRemoveSingleElement_targetNotXml() throws Exception {
         Message mess = new Message();
-        mess.initialize(ContentTypeHeader.OCTET_STREAM_DEFAULT, "blah blah blah".getBytes(Charsets.UTF8), 0);
+        mess.initialize(ContentTypeHeader.OCTET_STREAM_DEFAULT, "blah blah blah".getBytes(Charsets.UTF8));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(mess, new Message());
         context.setVariable("remel", XmlUtil.stringAsDocument("<b/>").getDocumentElement());
 

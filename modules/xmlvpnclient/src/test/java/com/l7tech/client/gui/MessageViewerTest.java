@@ -28,11 +28,11 @@ import java.io.IOException;
 @Ignore
 public class MessageViewerTest {
     private static PolicyApplicationContext request(String what, RequestInterceptor ri) throws IOException, SAXException {
-        return new PolicyApplicationContext(null, new Message( XmlUtil.stringToDocument(what),0), null, ri, null, null);
+        return new PolicyApplicationContext(null, new Message( XmlUtil.stringToDocument(what)), null, ri, null, null);
     }
 
     private static PolicyApplicationContext reply(String what, RequestInterceptor ri) throws IOException, SAXException {
-        return new PolicyApplicationContext(null, null, new Message(XmlUtil.stringToDocument(what),0), ri, null, null);
+        return new PolicyApplicationContext(null, null, new Message(XmlUtil.stringToDocument(what)), ri, null, null);
     }
 
     public static void main(String[] args) throws Exception {

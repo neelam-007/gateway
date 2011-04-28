@@ -146,7 +146,7 @@ public class ServerNonSoapSignatureRoundTripTest {
         ass.setTarget(TargetMessageType.REQUEST);
 
         ServerNonSoapVerifyElementAssertion sass = new ServerNonSoapVerifyElementAssertion(ass, beanFactory, null);
-        Message request = new Message(XmlUtil.stringAsDocument(signedXml),0);
+        Message request = new Message(XmlUtil.stringAsDocument(signedXml));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(expectedAssertionResult, result);
@@ -162,7 +162,7 @@ public class ServerNonSoapSignatureRoundTripTest {
         ass.setTarget(TargetMessageType.REQUEST);
 
         ServerNonSoapSignElementAssertion sass = new ServerNonSoapSignElementAssertion(ass, beanFactory, null);
-        Message request = new Message(XmlUtil.stringAsDocument("<foo><bar/></foo>"),0);
+        Message request = new Message(XmlUtil.stringAsDocument("<foo><bar/></foo>"));
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         AssertionStatus result = sass.checkRequest(context);
         assertEquals(AssertionStatus.NONE, result);

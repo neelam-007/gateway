@@ -108,7 +108,7 @@ public class ServerWssConfigurationAssertionTest {
 
 
     private static PolicyEnforcementContext context(Document doc) {
-        final Message request = new Message(doc, 0);
+        final Message request = new Message(doc);
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
     }
 }
