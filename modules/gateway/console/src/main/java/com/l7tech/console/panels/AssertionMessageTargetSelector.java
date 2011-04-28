@@ -114,7 +114,7 @@ public class AssertionMessageTargetSelector extends JDialog {
     private void doValidate() {
         if ( !readonly ) {
             _contextVarName.setEditable(_otherContextVariableRadioButton.isSelected());
-            boolean isOkEnabled = false;
+            boolean isOkEnabled = true;
             if ( _otherContextVariableRadioButton.isSelected()
                     && _contextVarName.getText() != null
                     && _contextVarName.getText().length() > 0) {
