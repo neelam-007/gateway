@@ -47,7 +47,7 @@ public class PolicyExporter {
 
     public Document exportToDocument(Assertion rootAssertion) throws IOException, SAXException {
         // do policy to xml
-        Document policyDoc = XmlUtil.stringToDocument(WspWriter.getPolicyXml(rootAssertion));
+        final Document policyDoc = WspWriter.getPolicyDocument(rootAssertion);
         // go through each assertion and list external dependencies
         Collection<ExternalReference> refs = new ArrayList<ExternalReference>();
         traverseAssertionTreeForReferences(rootAssertion, refs);

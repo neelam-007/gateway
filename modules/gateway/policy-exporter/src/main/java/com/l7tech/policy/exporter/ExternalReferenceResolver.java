@@ -80,7 +80,7 @@ class ExternalReferenceResolver {
         // Go through each assertion and fix the changed references.
         Assertion root;
         try {
-            root = wspReader.parsePermissively( XmlUtil.nodeToString(policyXML), WspReader.INCLUDE_DISABLED);
+            root = wspReader.parsePermissively( policyXML, WspReader.INCLUDE_DISABLED );
         } catch (IOException e) {
             throw new InvalidPolicyStreamException(e);
         }

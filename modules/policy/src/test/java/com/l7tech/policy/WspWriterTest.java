@@ -31,9 +31,8 @@ import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.wsdl.MimePartInfo;
 import com.l7tech.xml.xpath.XpathExpression;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.*;
+import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
@@ -53,7 +52,7 @@ import java.util.logging.Logger;
 /**
  * Test serializing policy tree to XML.
  */
-public class WspWriterTest extends TestCase {
+public class WspWriterTest {
     private static Logger log = Logger.getLogger(WspWriterTest.class.getName());
     private static final ClassLoader cl = WspReaderTest.class.getClassLoader();
     public static final String RESOURCE_PATH = "com/l7tech/policy/resources";
@@ -68,18 +67,11 @@ public class WspWriterTest extends TestCase {
         AssertionRegistry.installEnhancedMetadataDefaults();
     }
 
-    public WspWriterTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(WspWriterTest.class);
-    }
-
     private String fixLines(String input) {
         return input.replaceAll("\\r\\n", "\n").replaceAll("\\n\\r", "\n").replaceAll("\\r", "\n");
     }
 
+    @Test
     public void testWriteNullPolicy() {
         Assertion policy = null;
         String xml = WspWriter.getPolicyXml(policy);
@@ -136,6 +128,7 @@ public class WspWriterTest extends TestCase {
      *
      * @throws Exception
      */
+    @Test
     public void testWritePolicyForAllDisabledAssertions() throws Exception {
         Assertion policy = makeAllDisabledAssertions();
         log.fine("The created policy with all disabled assertions:\n" + policy);
@@ -156,6 +149,7 @@ public class WspWriterTest extends TestCase {
      *
      * @throws Exception
      */
+    @Test
     public void testWritePolicyForAllEnabledAssertions() throws Exception {
         Assertion policy = makeAllEnabledAssertions();
         log.fine("The created policy with all enabled assertions:\n" + policy);
@@ -174,6 +168,7 @@ public class WspWriterTest extends TestCase {
      *
      * @throws Exception
      */
+    @Test
     public void testWritePolicy() throws Exception {
         Assertion policy = makeTestPolicy();
 
@@ -265,11 +260,13 @@ public class WspWriterTest extends TestCase {
         return st;
     }
 
-    public static void testNestedMaps() throws Exception {
+    @Test
+    public void testNestedMaps() throws Exception {
         Assertion policy = createSoapWithAttachmentsPolicy();
         log.info("Serialized complex policy: " + WspWriter.getPolicyXml(policy));
     }
 
+    @Test
     public void testUnknownAssertionPreservesOriginalElement() throws Exception {
         UnknownAssertion uk = new UnknownAssertion(null, "<FooAssertion/>");
         AllAssertion aa = new AllAssertion(Arrays.asList(
@@ -283,6 +280,7 @@ public class WspWriterTest extends TestCase {
         log.info("Serialized: " + got);
     }
 
+    @Test
     public void testUnknownAssertionPreservesOriginalElementIgnoringSurroundingText() throws Exception {
         UnknownAssertion uk = new UnknownAssertion(null, "asdf\n\nasdfq  <FooBarBazAssertion/>qgrqegr");
         AllAssertion aa = new AllAssertion(Arrays.asList(
@@ -296,6 +294,7 @@ public class WspWriterTest extends TestCase {
         log.info("Serialized: " + got);
     }
 
+    @Test
     public void testUnknownAssertionFallbackOnBadForm() throws Exception {
         UnknownAssertion uk = new UnknownAssertion(null, "foo>blah<>not<well<formed/>");
         AllAssertion aa = new AllAssertion(Arrays.asList(
@@ -311,6 +310,7 @@ public class WspWriterTest extends TestCase {
         log.info("Serialized: " + got);
     }
 
+    @Test
     public void testUnknownAssertionFallbackOnMultipleElements() throws Exception {
         UnknownAssertion uk = new UnknownAssertion(null, "<foo/>blahblah<bar/>");
         AllAssertion aa = new AllAssertion(Arrays.asList(
@@ -325,6 +325,7 @@ public class WspWriterTest extends TestCase {
         log.info("Serialized: " + got);
     }
 
+    @Test
     public void testUnknownAssertionFallbackOnNoElement() throws Exception {
         UnknownAssertion uk = new UnknownAssertion(null, "asdf asdhfkajsl laskfh");
         AllAssertion aa = new AllAssertion(Arrays.asList(
@@ -339,6 +340,7 @@ public class WspWriterTest extends TestCase {
         log.info("Serialized: " + got);
     }
     
+    @Test
     public void testInheritedProperties() throws Exception {
         final WssBasic wssBasic = new WssBasic();
         wssBasic.setRecipientContext(new XmlSecurityRecipientContext("myfunkyactor", HexUtils.encodeBase64(new TestCertificateGenerator().generate().getEncoded())));
@@ -346,6 +348,7 @@ public class WspWriterTest extends TestCase {
         assertTrue(got.contains("myfunkyactor"));
     }
 
+    @Test
     public void testSslAssertionOptionChange() throws Exception {
         SslAssertion sa = new SslAssertion(SslAssertion.OPTIONAL);
         String got = WspWriter.getPolicyXml(sa);
@@ -378,10 +381,6 @@ public class WspWriterTest extends TestCase {
         return policy;
     }
 
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
     public static Map checkTestCustomAssertion(CustomAssertion ca) throws Exception {
         if (ca == null)
             throw new NullPointerException("CustomAssertion is null");
@@ -395,6 +394,7 @@ public class WspWriterTest extends TestCase {
         return tca.getMap1();
     }
 
+    @Test
     public void testBraServerCertOid() throws Exception {
         BridgeRoutingAssertion bra = new BridgeRoutingAssertion();
         bra.setServerCertificateOid(232L);
@@ -407,6 +407,7 @@ public class WspWriterTest extends TestCase {
         assertEquals((long)((BridgeRoutingAssertion)got).getServerCertificateOid(), 232L);
     }
 
+    @Test
     @BugNumber(4752)
     public void testBug4752SamlVersion() throws Exception {
         RequireWssSaml ass = new RequireWssSaml();
@@ -420,6 +421,7 @@ public class WspWriterTest extends TestCase {
         assertTrue(WspWriter.getPolicyXml(ass2).contains("TokenType>urn:oasis:names:tc:SAML:2.0:assertion#Assertion<"));
     }
 
+    @Test
     public void testDisappearingXslt() throws Exception {
         SchemaValidation sv = new SchemaValidation();
         sv.setResourceInfo(new StaticResourceInfo("<schema/>"));
@@ -437,6 +439,7 @@ public class WspWriterTest extends TestCase {
         System.out.println(WspWriter.getPolicyXml(all));
     }
 
+    @Test
     public void testResourceInfo() throws Exception {
         tryIt(new XslTransformation(), makeStaticInfo());
         tryIt(new XslTransformation(), makeSingleInfo());
@@ -444,6 +447,7 @@ public class WspWriterTest extends TestCase {
         tryIt(new XslTransformation(), null);
     }
 
+    @Test
     public void testWrite50Policy() throws Exception {
         AllAssertion all = new AllAssertion(Arrays.<Assertion>asList(
             new RequireWssSignedElement(),
@@ -473,6 +477,7 @@ public class WspWriterTest extends TestCase {
         assertFalse( "5.0 format wss security token", value.contains(":RequireWssSecurityToken") );
     }
 
+    @Test
     @BugNumber(8933)
     public void testWritePolicyWithInvalidXMLCharacters() throws Exception {
         final CommentAssertion commentAssertion = new CommentAssertion();
@@ -497,6 +502,21 @@ public class WspWriterTest extends TestCase {
         System.out.println("Got policy xml\n" + value2);
 
         assertFalse( "Base64 encoded string value: ", value2.contains( "stringValueBase64" ));
+    }
+
+    @Test
+    public  void testWritePolicyAsDocument() throws Exception {
+        final CommentAssertion commentAssertion = new CommentAssertion();
+        commentAssertion.setComment( "<doc><[CDATA[comment text\n]]></doc>" );
+        final AllAssertion all = new AllAssertion(Arrays.<Assertion>asList(
+            commentAssertion
+        ));
+
+        final Document document = WspWriter.getPolicyDocument( all );
+        final String value = XmlUtil.nodeToFormattedString( document );
+        System.out.println(value);
+        assertTrue( "contains comment text", value.contains( "comment text" ) );
+        XmlUtil.parse( value ); // ensure parsable with nested CDATA
     }
 
     private void tryIt(XslTransformation xsl, AssertionResourceInfo rinfo) {

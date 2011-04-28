@@ -163,6 +163,17 @@ public class WspWriter {
         }
     }
 
+    /**
+     * Obtain the DOM representation of the given poicy tree, using the default policy format.
+     *
+     * @param assertion The policy to obtain
+     */
+    public static Document getPolicyDocument( final Assertion assertion ) {
+        final WspWriter writer = new WspWriter();
+        writer.setPolicy( assertion );
+        return writer.document;
+    }
+
     public void addTypeMappingFinder(TypeMappingFinder typeMappingFinder) {
         if (typeMappingFinder == null)
             throw new NullPointerException("typeMappingFinder can't be null");
