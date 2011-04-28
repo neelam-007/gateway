@@ -1218,6 +1218,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                                         applet.redirectToServlet();
                                     }
                                 } else {
+                                    enableOrDisableConnectionComponents(false); // Fixed bug 10238 to disable the connection button or the connection menu item immediately.
                                     LogonDialog.logon(TopComponents.getInstance().getTopParent(), logonListenr);
                                 }
                             }
@@ -1226,6 +1227,16 @@ public class MainWindow extends JFrame implements SheetHolder {
                 };
         connectAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return connectAction;
+    }
+
+    /**
+     * Enable or disable the connection button in the tool bar and the connection menu item in the main menu.
+     *
+     * @param enabled: a boolean value to indicate if the connection components will be enabled or not.
+     */
+    public void enableOrDisableConnectionComponents(boolean enabled) {
+        getConnectAction().setEnabled(enabled);
+        getConnectMenuItem().setEnabled(enabled);
     }
 
     /**

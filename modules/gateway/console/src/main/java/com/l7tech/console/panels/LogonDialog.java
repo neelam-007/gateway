@@ -586,6 +586,8 @@ public class LogonDialog extends JDialog {
             // do nothing
         } else if (actionCommand.equals(CMD_CANCEL)) {
             dispose();
+            if (parentFrame instanceof MainWindow)
+                ((MainWindow)parentFrame).enableOrDisableConnectionComponents(true);
         } else if (actionCommand.equals(CMD_LOGIN)) {
             setVisible(false);
             SwingUtilities.invokeLater(new Runnable() {
@@ -749,6 +751,8 @@ public class LogonDialog extends JDialog {
                 public void run() {
                     parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                     progressDialog1.dispose();
+                    if (progressDialog1.isCancelled() && parentFrame instanceof MainWindow)
+                        ((MainWindow)parentFrame).enableOrDisableConnectionComponents(true);
                 }
             });
         } catch (Exception e) {
