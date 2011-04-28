@@ -89,6 +89,15 @@ public interface TransportAdmin {
     void deleteSsgConnector(long oid) throws DeleteException, FindException, CurrentAdminConnectionException;
 
     /**
+     * Get the names of all protocols supported by the default TLS provider on the current node.
+     *
+     * @param defaultProviderOnly if true, only those protocols supported by the default TLS provider will be included.  If false, all protocols supported by any known provider will be included.
+     * @return an array of protocol names, ie { "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2" }.  Never null but may (theoretically) be empty.
+     */
+    @Transactional(readOnly=true)
+    String[] getAllProtocolVersions(boolean defaultProviderOnly);
+
+    /**
      * Get the names of all cipher suites available on this system.
      *
      * @return the list of all cipher suites, ie { "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" }

@@ -8,6 +8,7 @@ import com.l7tech.console.policy.SsmPolicyVariableUtils;
 import com.l7tech.console.table.HttpHeaderRuleTableHandler;
 import com.l7tech.console.table.HttpParamRuleTableHandler;
 import com.l7tech.console.table.HttpRuleTableHandler;
+import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -425,6 +426,14 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             }
         }, null, true ) );
         Utilities.enableGrayOnDisabled(tlsVersionComboBox);
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(tlsVersionComboBox) {
+            @Override
+            public String getValidationError() {
+                return CipherSuiteGuiUtil.isSupportedTlsVersion(tlsVersionComboBox.getSelectedItem())
+                        ? null
+                        : "The selected TLS version is not available with the Gateway's current security provider configuration.";
+            }
+        });
 
         cipherSuitesButton.addActionListener(new ActionListener() {
             @Override

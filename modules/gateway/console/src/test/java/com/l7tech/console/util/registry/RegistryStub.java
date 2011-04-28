@@ -245,6 +245,11 @@ public class RegistryStub extends Registry {
             }
 
             @Override
+            public String[] getAllProtocolVersions(boolean defaultProvderOnly) {
+                return new String[0];
+            }
+
+            @Override
             public String[] getAllCipherSuiteNames() {
                 return new String[0];
             }

@@ -1,5 +1,6 @@
 package com.l7tech.common.io;
 
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.net.ssl.SSLSocket;
@@ -82,8 +83,13 @@ public class SSLSocketFactoryWrapper extends SSLSocketFactory {
             protected Socket notifySocket( final Socket socket ) {
                 if ( socket instanceof SSLSocket) {
                     final SSLSocket sslSocket = (SSLSocket) socket;
-                    if (tlsVersions != null)
-                        sslSocket.setEnabledProtocols(tlsVersions);
+                    if (tlsVersions != null) {
+                        try {
+                            sslSocket.setEnabledProtocols(tlsVersions);
+                        } catch (IllegalArgumentException e) {
+                            throw new UnsupportedTlsVersionsException("Specified TLS version is not availble in the current configuration: " + ExceptionUtils.getMessage(e), e);
+                        }
+                    }
                     if (tlsCipherSuites != null)
                         sslSocket.setEnabledCipherSuites(tlsCipherSuites);
                 }

@@ -4,6 +4,7 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.common.io.UnsupportedTlsVersionsException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeUtil;
@@ -394,6 +395,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                     contentType = cth == null || cth.getValue() == null ? null : ContentTypeHeader.parseValue(cth.getValue());
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);
                     contentLength = clh == null || clh.getValue() == null ? null : MimeHeader.parseNumericValue(clh.getValue());
+                } catch (UnsupportedTlsVersionsException e) {
+                    throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ": " + ExceptionUtils.getMessage(e), e);
                 } catch (IOException e) {
                     throw new GenericHttpException("Unable to obtain HTTP response" + getTargetDescription(hconf, method, " from ") + ": " + ExceptionUtils.getMessage(e), e);
                 } catch (NumberFormatException e) {

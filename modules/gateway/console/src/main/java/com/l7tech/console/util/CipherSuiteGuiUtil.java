@@ -180,4 +180,16 @@ public final class CipherSuiteGuiUtil {
         return string.indexOf(substr) > 0;
     }
 
+    /**
+     * Check if the specified TLS version is unsupported by the current Gateway node's default TLS provider.
+     *
+     * @param selectedTlsVersion a TLS version to check, ie "TLSv1" or "TLSv1.2".  Required.
+     * @return  false if the specified TLS version is definitely not supported by the default TLS provider.  True if it may be supported.
+     */
+    public static boolean isSupportedTlsVersion(Object selectedTlsVersion) {
+        if (!Registry.getDefault().isAdminContextPresent())
+            return true;
+        Set<String> protos = new HashSet<String>(Arrays.asList(Registry.getDefault().getTransportAdmin().getAllProtocolVersions(true)));
+        return protos.contains(String.valueOf(selectedTlsVersion));
+    }
 }

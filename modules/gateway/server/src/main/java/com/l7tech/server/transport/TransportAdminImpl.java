@@ -88,6 +88,19 @@ public class TransportAdminImpl implements TransportAdmin {
         connectorManager.delete(oid);
     }
 
+    @Override
+    public String[] getAllProtocolVersions(boolean defaultProviderOnly) {
+        String[] protos;
+        if (defaultProviderOnly) {
+            protos = getTestSslContext(null).getSupportedSSLParameters().getProtocols();
+        } else {
+            protos = ArrayUtils.union(
+                    getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10)).getSupportedSSLParameters().getProtocols(),
+                    getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS12)).getSupportedSSLParameters().getProtocols());
+        }
+        return protos;
+    }
+
     private SSLContext getTestSslContext(Provider provider) {
         String providerName = provider == null ? "" : provider.getName();
         SSLContext sslContext = testSslContextByProviderName.get(providerName);

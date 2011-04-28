@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -14,12 +15,7 @@ import com.l7tech.util.Functions;
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.util.ResourceBundle;
 
 /**
@@ -118,6 +114,14 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         validator.constrainTextFieldToBeNonEmpty( "Proxy Host", proxyHostTextField, null );
         validator.constrainTextFieldToNumberRange( "Proxy Port", proxyPortTextField, 1, 0xFFFF );
         validator.addRule( new PasswordValidationRule( "Proxy Password", proxyUsernameTextField, (SecurePasswordComboBox)proxyPasswordComboBox ) );
+        validator.addRule( new InputValidator.ComponentValidationRule(tlsVersionComboBox) {
+            @Override
+            public String getValidationError() {
+                return CipherSuiteGuiUtil.isSupportedTlsVersion(tlsVersionComboBox.getSelectedItem())
+                        ? null
+                        : "The selected TLS version is not available with the Gateway's current security provider configuration.";
+            }
+        });
         validator.attachToButton( okButton, new ActionListener(){
             @Override
             public void actionPerformed( final ActionEvent e ) {
