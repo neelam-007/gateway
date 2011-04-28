@@ -205,6 +205,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_LOG_DIRECTORY = "logDirectory";
 
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
+    public static final String MAX_LDAP_GROUP_SEARCH_RESULT_SIZE = "ldap.group.searchMaxResults";
 
     public static final String PARAM_MAX_LOGIN_ATTEMPTS_ALLOW = "logon.maxAllowableAttempts";
     public static final String PARAM_MAX_LOCKOUT_TIME = "logon.lockoutTime";

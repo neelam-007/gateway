@@ -348,6 +348,7 @@
                                 <value>ldapCertIndexInterval</value>
                                 <value>ldapCertCacheLifetime</value>
                                 <value>maxLdapSearchResultSize</value>
+                                <value>ldap.group.searchMaxResults</value>
                             </list>
                         </entry>
                         <entry key="adminSessionManager">

@@ -134,7 +134,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
             final String filter = identityProvider.groupSearchFilterWithParam( name );
             final LdapGroup[] groupHolder = new LdapGroup[1];
             try {
-                ldapTemplate.search( filter, 2, null, new LdapUtils.LdapListener(){
+                ldapTemplate.search( filter, 2L, null, new LdapUtils.LdapListener(){
                     @Override
                     void searchResults( final NamingEnumeration<SearchResult> results ) throws NamingException {
                         if ( results.hasMore() ) {
@@ -276,7 +276,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                         if ( !getCachedSubgroups( group, subgroups ) ) {
                             final String filter = identityProvider.groupSearchFilterWithParam("*");
                             // use dn of group as base
-                            ldapTemplate.search( group.getDn(), filter, 0, null, new LdapUtils.LdapListener(){
+                            ldapTemplate.search( group.getDn(), filter, 0L, null, new LdapUtils.LdapListener(){
                                 @Override
                                 void attributes( final String dn, final Attributes attributes ) throws NamingException {
                                     if ( !group.getDn().equals(dn) ) { // avoid recursion on this group
@@ -513,9 +513,10 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                     throw new FindException(msg, e);
                 }
 
+                final long maxSize = ldapRuntimeConfig.getMaxGroupSearchResultSize();
                 try {
                     final DirContext searchContext = context;
-                    ldapTemplate.search( context, filter.buildFilter(), ldapRuntimeConfig.getMaxSearchResultSize(), null, new LdapUtils.LdapListener(){
+                    ldapTemplate.search( context, filter.buildFilter(), maxSize, null, new LdapUtils.LdapListener(){
                         @Override
                         boolean searchResult( final SearchResult sr ) throws NamingException {
                             IdentityHeader header = identityProvider.searchResultToHeader(sr);
@@ -536,7 +537,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                     logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
                                            "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
                                            e);
-                    output.setMaxExceeded(ldapRuntimeConfig.getMaxSearchResultSize());
+                    output.setMaxExceeded(maxSize);
                     // dont throw here, we still want to return what we got
                 } catch (NamingException e) {
                     String msg = "error getting answer";
@@ -624,8 +625,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         final LdapIdentityProvider identityProvider = getIdentityProvider();
         String filter = subGroupSearchString( groupHeader );
         if (filter != null) {
+            final long maxSize = ldapRuntimeConfig.getMaxGroupSearchResultSize();
             try {
-                ldapTemplate.search( context, filter, ldapRuntimeConfig.getMaxSearchResultSize(), null, new LdapUtils.LdapListener(){
+                ldapTemplate.search( context, filter, maxSize, null, new LdapUtils.LdapListener(){
                     @Override
                     boolean searchResult( final SearchResult sr ) throws NamingException {
                         IdentityHeader header = identityProvider.searchResultToHeader(sr);
@@ -640,7 +642,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
             } catch (SizeLimitExceededException e) {
                 // add something to the result that indicates the fact that the search criteria is too wide
                 logger.log(Level.FINE, "the search results exceeded the maximum.", e);
-                groups.setMaxExceeded(ldapRuntimeConfig.getMaxSearchResultSize());
+                groups.setMaxExceeded(maxSize);
                 // dont throw here, we still want to return what we got
             } catch (NamingException e) {
                 logger.log(Level.WARNING, "naming exception with filter " + filter, e);
@@ -929,8 +931,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                         final Set<String> processedGroupNames,
                                         final Set<String> processedGroupIds ) throws NamingException {
         final LdapIdentityProvider identityProvider = getIdentityProvider();
-        final long maxSize = ldapRuntimeConfig.getMaxSearchResultSize();
-        if (memberHeaders.size() >= maxSize) return;
+        final long maxSize = ldapRuntimeConfig.getMaxGroupSearchResultSize();
+        if ( (long) memberHeaders.size() >= maxSize) return;
 
         // build group memberships
         String filter = identityProvider.userSearchFilterWithParam("*");
@@ -953,12 +955,12 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         } catch (SizeLimitExceededException e) {
             // add something to the result that indicates the fact that the search criteria is too wide
             logger.log(Level.FINE, "the search results exceeded the maximum.", e);
-            memberHeaders.setMaxExceeded(ldapRuntimeConfig.getMaxSearchResultSize());
+            memberHeaders.setMaxExceeded(maxSize);
             // dont throw here, we still want to return what we got
         }
 
         // sub group search
-        if ( memberHeaders.size() < maxSize &&
+        if ( (long) memberHeaders.size() < maxSize &&
              groupNestingProcessNextDepth(depth) ) {
             filter = identityProvider.groupSearchFilterWithParam("*");
             // use dn of group as base
@@ -988,7 +990,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
             } catch (SizeLimitExceededException e) {
                 // add something to the result that indicates the fact that the search criteria is too wide
                 logger.log(Level.FINE, "the search results exceeded the maximum.", e);
-                memberHeaders.setMaxExceeded(ldapRuntimeConfig.getMaxSearchResultSize());
+                memberHeaders.setMaxExceeded(maxSize);
                 // dont throw here, we still want to return what we got
             }
         }
@@ -999,8 +1001,8 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
                                      final Set<IdentityHeader> memberHeaders ) throws NamingException {
         final LdapIdentityProvider identityProvider = getIdentityProvider();
         final LdapIdentityProviderConfig ldapIdentityProviderConfig = getIdentityProviderConfig();
-        final long maxSize = ldapRuntimeConfig.getMaxSearchResultSize();
-        if (memberHeaders.size() >= maxSize) return true;
+        final long maxSize = ldapRuntimeConfig.getMaxGroupSearchResultSize();
+        if ( (long) memberHeaders.size() >= maxSize) return true;
 
         LdapSearchFilter filter = new LdapSearchFilter();
         filter.or();
@@ -1105,7 +1107,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
     private long getProviderOid() {
         long oid = providerOid;
 
-        if ( oid == 0 ) {
+        if ( oid == 0L ) {
             oid = identityProviderConfig.getOid();
             providerOid = oid;
         }

@@ -2,6 +2,7 @@ package com.l7tech.server.identity.ldap;
 
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.Config;
+import com.l7tech.util.ValidatedConfig;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
@@ -18,7 +19,7 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
     //- PUBLIC
 
     public LdapRuntimeConfig( final Config config ) {
-        this.config = config;
+        this.config = validated( config );
         initializeConfigProperties();
     }
 
@@ -46,6 +47,10 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
         return maxSearchResultSize.get();
     }
 
+    public long getMaxGroupSearchResultSize() {
+        return maxGroupSearchResultSize.get();
+    }
+
     public long getRetryFailedConnectionTimeout() {
         return retryFailedConnectionTimeout.get();
     }
@@ -59,6 +64,9 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
             loadReadTimeout();
         } else if (ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE.equals(propertyName)) {
             loadMaxSearchResultSize();
+            loadMaxGroupSearchResultSize(); // defaults to max search results size
+        } else if (ServerConfig.MAX_LDAP_GROUP_SEARCH_RESULT_SIZE.equals(propertyName)) {
+            loadMaxGroupSearchResultSize();
         } else if (PROP_RECONNECT_TIMEOUT.equals(propertyName)) {
             loadReconnectTimeout();
         } else if (ServerConfig.PARAM_LDAPCERTINDEX_REBUILD_INTERVAL.equals(propertyName)) {
@@ -76,20 +84,21 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
 
     private static final String PROP_RECONNECT_TIMEOUT = "ldap.reconnect.timeout";
 
-    private static final long DEFAULT_INDEX_REBUILD_INTERVAL = 1000*60*10; // 10 minutes
-    private static final long DEFAULT_CACHE_CLEANUP_INTERVAL = 1000*60*10; // 10 minutes
-    private static final long DEFAULT_CACHED_CERT_ENTRY_LIFE = 1000*60*10; // 10 minutes
-    private static final long MIN_INDEX_REBUILD_TIME = 10000; //10 seconds
-    private static final long MIN_CERT_CACHE_LIFETIME = 10000; //10 seconds
-    private static final long DEFAULT_MAX_SEARCH_RESULT_SIZE = 100;
-    private static final long DEFAULT_RECONNECT_TIMEOUT = 60000;
+    private static final long DEFAULT_INDEX_REBUILD_INTERVAL = 1000L * 60L * 10L; // 10 minutes
+    private static final long DEFAULT_CACHE_CLEANUP_INTERVAL = 1000L * 60L * 10L; // 10 minutes
+    private static final long DEFAULT_CACHED_CERT_ENTRY_LIFE = 1000L * 60L * 10L; // 10 minutes
+    private static final long MIN_INDEX_REBUILD_TIME = 10000L; //10 seconds
+    private static final long MIN_CERT_CACHE_LIFETIME = 10000L; //10 seconds
+    private static final long DEFAULT_MAX_SEARCH_RESULT_SIZE = 100L;
+    private static final long DEFAULT_RECONNECT_TIMEOUT = 60000L;
 
     private final AtomicLong rebuildTimerLength = new AtomicLong(DEFAULT_INDEX_REBUILD_INTERVAL);
     private final AtomicLong cleanupTimerLength = new AtomicLong(DEFAULT_CACHE_CLEANUP_INTERVAL);
     private final AtomicLong cachedCertEntryLife = new AtomicLong(DEFAULT_CACHED_CERT_ENTRY_LIFE);
-    private final AtomicLong ldapConnectionTimeout = new AtomicLong(LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT);
-    private final AtomicLong ldapReadTimeout = new AtomicLong(LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT);
+    private final AtomicLong ldapConnectionTimeout = new AtomicLong( (long) LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT );
+    private final AtomicLong ldapReadTimeout = new AtomicLong( (long) LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT );
     private final AtomicLong maxSearchResultSize = new AtomicLong(DEFAULT_MAX_SEARCH_RESULT_SIZE);
+    private final AtomicLong maxGroupSearchResultSize = new AtomicLong(DEFAULT_MAX_SEARCH_RESULT_SIZE);
     private final AtomicLong retryFailedConnectionTimeout = new AtomicLong(DEFAULT_RECONNECT_TIMEOUT);
 
 
@@ -97,19 +106,20 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
         loadConnectionTimeout();
         loadReadTimeout();
         loadMaxSearchResultSize();
+        loadMaxGroupSearchResultSize();
         loadReconnectTimeout();
         loadIndexRebuildIntervalProperty();
         loadCachedCertEntryLifeProperty();
     }
 
     private void loadConnectionTimeout() {
-        long ldapConnectionTimeout = config.getTimeUnitProperty(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT);
+        long ldapConnectionTimeout = config.getTimeUnitProperty(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, (long) LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT );
         logger.config("Connection timeout = " + ldapConnectionTimeout);
         this.ldapConnectionTimeout.set(ldapConnectionTimeout);
     }
 
     private void loadReadTimeout() {
-        long ldapReadTimeout = config.getTimeUnitProperty(ServerConfig.PARAM_LDAP_READ_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT);
+        long ldapReadTimeout = config.getTimeUnitProperty(ServerConfig.PARAM_LDAP_READ_TIMEOUT, (long) LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT );
         logger.config("Read timeout = " + ldapReadTimeout);
         this.ldapReadTimeout.set(ldapReadTimeout);
     }
@@ -122,7 +132,7 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
         } else {
             try {
                 long tmpl = Long.parseLong(tmp);
-                if (tmpl <= 0) {
+                if (tmpl <= 0L ) {
                     logger.info(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE + " has invalid value: " + tmp +
                                 ". using default value.");
                     maxSearchResultSize.set(DEFAULT_MAX_SEARCH_RESULT_SIZE);
@@ -136,6 +146,10 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
                 maxSearchResultSize.set(DEFAULT_MAX_SEARCH_RESULT_SIZE);
             }
         }
+    }
+
+    private void loadMaxGroupSearchResultSize() {
+        maxGroupSearchResultSize.set( config.getLongProperty( ServerConfig.MAX_LDAP_GROUP_SEARCH_RESULT_SIZE, DEFAULT_MAX_SEARCH_RESULT_SIZE ) );
     }
 
     private void loadReconnectTimeout() {
@@ -205,5 +219,13 @@ public class LdapRuntimeConfig implements PropertyChangeListener {
         }
         cachedCertEntryLife.set(cleanupLife);
         logger.config("Certificate cache entry lifetime = " + cleanupLife);
+    }
+
+    private Config validated( final Config config ) {
+        final ValidatedConfig validatedConfig = new ValidatedConfig( config, logger );
+
+        validatedConfig.setMinimumValue( ServerConfig.MAX_LDAP_GROUP_SEARCH_RESULT_SIZE, 1 );
+
+        return validatedConfig;
     }
 }
