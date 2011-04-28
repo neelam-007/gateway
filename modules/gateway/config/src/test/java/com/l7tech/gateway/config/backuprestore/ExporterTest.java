@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -904,4 +905,33 @@ public class ExporterTest {
         Assert.assertTrue("File name ending should not have been changed",
                 uniqueImageNameWithPath.endsWith(ImportExportUtilities.getFilePart(imageNameWithPath)));
     }
+
+    @BugNumber(10111)
+    @Test
+    public void testPostVersion5Release() throws Exception{
+        //pre five o the image name should not be changed
+        try {
+            System.setProperty("com.l7tech.util.buildVersion", "6.0");
+            System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(true));
+
+            final URL resource = this.getClass().getClassLoader().getResource("Gateway/runtime");
+            final File nodeDirSrc = new File(resource.getPath());
+            final File nodeDirDest = new File(tmpSsgHome, "runtime");
+            nodeDirDest.mkdir();
+            ImportExportUtilities.copyDir(nodeDirSrc, nodeDirDest);
+
+            final Exporter fiveOExporter = new Exporter(tmpSecureSpanHome, System.out);
+            final Field declaredField = fiveOExporter.getClass().getDeclaredField("isPostFiveO");
+            declaredField.setAccessible(true);
+            final boolean isPostFiveO = declaredField.getBoolean(fiveOExporter);
+            Assert.assertTrue("6.0 Gateway should be registered as post 5.0.", isPostFiveO);
+
+
+        } finally {
+            System.setProperty("com.l7tech.util.buildVersion", TEST_DEFAULT_VERSION);//test default value
+            System.setProperty("com.l7tech.gateway.config.backuprestore.checkversion", Boolean.toString(false));
+        }
+
+    }
+
 }

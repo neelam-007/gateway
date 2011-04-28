@@ -157,7 +157,7 @@ public final class BackupImage {
         try {
             versionStream = new FileInputStream(versionFile);
             final byte[] bytes = IOUtils.slurpStream(new FileInputStream(versionFile), 50);//should just contain 5.0 or 5.1
-            version = new String(bytes);
+            version = new String(bytes).trim();
             final String[] parts = version.split("\\.");//need to escape the . so it's treated literally
             if (parts.length < 2)
                 throw new InvalidBackupImageException("Invalid version number '" + version + "' found in version file ");
@@ -174,7 +174,7 @@ public final class BackupImage {
             }
         } catch (NumberFormatException nfe) {
             throw new InvalidBackupImageException("Version number found in image is invalid" +
-                    ((version != null)? ": '" + version.trim() + "'" : "" ));
+                    ((version != null)? ": '" + version + "'" : "" ));
 
         } finally {
             ResourceUtils.closeQuietly(versionStream);
