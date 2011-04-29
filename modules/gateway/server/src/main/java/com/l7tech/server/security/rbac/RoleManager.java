@@ -26,12 +26,15 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
     Collection<Role> getAssignedRoles(User user) throws FindException;
 
     /**
-     * Finds the roles assigned to this user, but doesn't validate the account for expiry, disablement etc.
+     * Finds the roles assigned to this user, optionally skipping validation of the account for expiry, disablement etc.
      *
-     * Only for display purposes--don't use for authorization!
+     * @param user The user whose roles should be accessed
+     * @param skipAccountValidation True to skip account validation. This is only for display purposes -- don't use for authorization!
+     * @param disabledGroupIsError True if an exception should be thrown if there are no roles assigned and one or more disabled groups.
+     * @throws DisabledGroupRolesException if disabledGroupIsError is true an the user has no role assignements due to disabled groups.
      */
     @Transactional(readOnly=true)
-    Collection<Role> getAssignedRolesSkippingUserAccountValidation(User user) throws FindException;
+    Collection<Role> getAssignedRoles(User user, boolean skipAccountValidation, boolean disabledGroupIsError) throws FindException;
 
     /**
      * Get the distinct Collection of users who have a direct role assignment.
@@ -98,4 +101,13 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
      * @throws DeleteException
      */
     void deleteRoleAssignmentsForGroup(final Group group) throws DeleteException;
+
+    /**
+     * Exception thrown when a user has no role assignments due to disabled groups.
+     */
+    class DisabledGroupRolesException extends FindException {
+        public DisabledGroupRolesException( final String message ) {
+            super( message );
+        }
+    }
 }

@@ -233,19 +233,20 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                     }
 
                     logonService.hookPreLoginCheck(currentUser);
-                    authResult = ((AuthenticatingIdentityProvider) provider).authenticate(creds, true);
-                    User authdUser = authResult == null ? null : authResult.getUser();
-                    if (authdUser != null) {
+                    final AuthenticationResult providerAuthResult = ((AuthenticatingIdentityProvider) provider).authenticate(creds, true);
+                    final User providerAuthdUser = providerAuthResult == null ? null : providerAuthResult.getUser();
+                    if (providerAuthdUser != null) {
                         //Validate the user , now authenticated so that we know all of their group roles
-                        checkPerms(authdUser);
+                        checkPerms(providerAuthdUser);
                         logger.info("Authenticated on " + provider.getConfig().getName());
 
                         //Ensure password not expired, ignore password expire if using cert to login
-                        if (passwordEnforcerManager.isPasswordExpired(authdUser) && (creds.getClientCert() == null)) {
+                        if (passwordEnforcerManager.isPasswordExpired(providerAuthdUser) && (creds.getClientCert() == null)) {
                             throw new CredentialExpiredPasswordDetailsException("Password expired.", passwordEnforcerManager.getPasswordPolicy().getDescription());
                         }
 
-                        user = authdUser;
+                        authResult = providerAuthResult;
+                        user = providerAuthdUser;
                         break;
                     }
                 } catch (BadCredentialsException bce) {
@@ -531,16 +532,19 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     public boolean isAdministrativeUser(final User user) throws FindException {
         boolean hasPermission = false;
-        // TODO is holding any CRUD permission sufficient?
-        Collection<Role> roles = roleManager.getAssignedRoles(user);
-        roles:
-        for (Role role : roles) {
-            for (Permission perm : role.getPermissions()) {
-                if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
-                    hasPermission = true;
-                    break roles;
+        try {
+            Collection<Role> roles = roleManager.getAssignedRoles(user, false, true);
+            roles:
+            for (Role role : roles) {
+                for (Permission perm : role.getPermissions()) {
+                    if (perm.getEntityType() != null && perm.getOperation() != OperationType.NONE) {
+                        hasPermission = true;
+                        break roles;
+                    }
                 }
             }
+        } catch ( RoleManager.DisabledGroupRolesException e ) {
+            logger.info( "Administrative access for '"+user.getLogin()+"' denied due to: " + ExceptionUtils.getMessage( e ) );
         }
 
         return hasPermission;

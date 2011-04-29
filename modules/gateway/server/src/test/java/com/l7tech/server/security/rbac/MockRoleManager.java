@@ -25,7 +25,7 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
     private final RbacServices rbacServices;
 
     @Override
-    public Collection<Role> getAssignedRolesSkippingUserAccountValidation(User user) throws FindException {
+    public Collection<Role> getAssignedRoles(User user, boolean ignore1, boolean ignore2) throws FindException {
         return getAssignedRoles(user);
     }
 

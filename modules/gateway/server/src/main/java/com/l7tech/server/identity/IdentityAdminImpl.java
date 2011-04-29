@@ -718,7 +718,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
      * @return TRUE if has roles, otherwise FALSE
      */
     private boolean isAdministrativeUser(final User user) throws FindException {
-        final Collection<Role> roles = roleManager.getAssignedRolesSkippingUserAccountValidation(user);
+        final Collection<Role> roles = roleManager.getAssignedRoles(user, true, false);
         return roles != null && !roles.isEmpty();
     }
 

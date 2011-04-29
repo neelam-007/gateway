@@ -10,7 +10,9 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -68,12 +70,14 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     @Override
     @Transactional(readOnly=true)
     public Collection<Role> getAssignedRoles(final User user) throws FindException {
-        return getAssignedRoles0(user, false);
+        return getAssignedRoles0(user, false ,false);
     }
 
     @Override
-    public Collection<Role> getAssignedRolesSkippingUserAccountValidation(User user) throws FindException {
-        return getAssignedRoles0(user, true);
+    public Collection<Role> getAssignedRoles( final User user,
+                                              final boolean skipAccountValidation,
+                                              final boolean throwOnGroupDisabled ) throws FindException {
+        return getAssignedRoles0(user, skipAccountValidation, throwOnGroupDisabled);
     }
 
     @Override
@@ -100,13 +104,16 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         });
     }
 
-    private Collection<Role> getAssignedRoles0(final User user, final boolean skipAccountValidation) throws FindException {
+    private Collection<Role> getAssignedRoles0( final User user,
+                                                final boolean skipAccountValidation,
+                                                final boolean throwOnGroupDisabled ) throws FindException {
         final Set<IdentityHeader> groupHeaders = groupProvider.getGroups(user, skipAccountValidation);
 
-        return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Collection<Role>>() {
+        final Either<Collection<Role>,String> result =
+                getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Either<Collection<Role>,String>>() {
             @SuppressWarnings({ "unchecked" })
             @Override
-            public Collection<Role> doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
+            public Either<Collection<Role>,String> doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
                 //Get the User's directly assigned Role's
                 final Set<Role> roles = new HashSet<Role>();
                 final Criteria userAssignmentQuery = session.createCriteria(RoleAssignment.class);
@@ -119,28 +126,55 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                 }
 
                 //Now get the Roles the user can access via it's group membership
-                final List<String> groupNames = new ArrayList<String>();
-                for( IdentityHeader groupHeader : groupHeaders ){
+                final List<String> groupIds = new ArrayList<String>();
+                for( final IdentityHeader groupHeader : groupHeaders ){
                     if ( groupHeader != null && groupHeader.getProviderOid()==user.getProviderId() ) {
-                        if ( groupHeader.isEnabled() ) {
-                            groupNames.add( groupHeader.getStrId() );
-                        }
+                        groupIds.add( groupHeader.getStrId() );
                     }
                 }
-                if(groupNames.size() == 0) return roles;
+                if(groupIds.size() == 0) return Either.<Collection<Role>,String>left( roles );
 
+                final Set<String> disabledGroupsWithRoles = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
                 final Criteria groupQuery = session.createCriteria(RoleAssignment.class);
-                groupQuery.add(Restrictions.in("identityId", groupNames));
+                groupQuery.add(Restrictions.in("identityId", groupIds));
                 groupQuery.add(Restrictions.eq("providerId", user.getProviderId()));
                 groupQuery.add(Restrictions.eq("entityType", EntityType.GROUP.getName()));
                 final List<RoleAssignment> gList = (List<RoleAssignment>) groupQuery.list();
                 for ( final RoleAssignment ra : gList) {
-                    roles.add(ra.getRole());
+                    IdentityHeader header = null;
+                    for ( final IdentityHeader groupHeader : groupHeaders ) {
+                        if ( ra.getIdentityId()!=null && ra.getIdentityId().equals( groupHeader.getStrId() )  ) {
+                            header = groupHeader;
+                        }
+                    }
+                    if ( header != null ) {
+                        if ( header.isEnabled() ) {
+                            roles.add(ra.getRole());
+                        } else {
+                            disabledGroupsWithRoles.add( header.getName() );
+                        }
+                    }
                 }
 
-                return roles;
+                if ( throwOnGroupDisabled && roles.isEmpty() && !disabledGroupsWithRoles.isEmpty() ) {
+                    return Either.right( "No permissions due to disabled groups " + disabledGroupsWithRoles );
+                } else {
+                    return Either.<Collection<Role>,String>left( roles );
+                }
             }
         });
+
+        return result.either( new Functions.UnaryThrows<Collection<Role>,Collection<Role>,FindException>(){
+            @Override
+            public Collection<Role> call( final Collection<Role> roles ) throws FindException {
+                return roles;
+            }
+        }, new Functions.UnaryThrows<Collection<Role>,String,FindException>(){
+            @Override
+            public Collection<Role> call( final String message ) throws FindException {
+                throw new DisabledGroupRolesException( message );
+            }
+        } );
     }
 
     private Collection<Role> getAssignedGroup(final Group group) throws FindException {
@@ -347,7 +381,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     @SuppressWarnings({ "ThrowInsideCatchBlockWhichIgnoresCaughtException" })
     public void deleteRoleAssignmentsForUser(final User user) throws DeleteException {
         try {
-            Collection<Role> roles = getAssignedRolesSkippingUserAccountValidation(user);
+            Collection<Role> roles = getAssignedRoles(user, true, false);
             for (Role role : roles) {
                 role.removeAssignedUser(user);
                 update(role);
