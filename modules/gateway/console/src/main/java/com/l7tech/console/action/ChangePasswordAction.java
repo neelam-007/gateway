@@ -2,6 +2,8 @@ package com.l7tech.console.action;
 
 import java.awt.Frame;
 import java.net.PasswordAuthentication;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 
 import javax.security.auth.login.LoginException;
@@ -14,8 +16,11 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
 
 /**
@@ -35,6 +40,7 @@ public class ChangePasswordAction extends SecureAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Change Password";
     }
@@ -42,6 +48,7 @@ public class ChangePasswordAction extends SecureAction {
     /**
      * @return the action description
      */
+    @Override
     public String getDescription() {
         return "Change Password";
     }
@@ -49,6 +56,7 @@ public class ChangePasswordAction extends SecureAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/user16.png";
     }
@@ -79,6 +87,7 @@ public class ChangePasswordAction extends SecureAction {
     /**
      * 
      */
+    @Override
     protected void performAction() {
         Registry registry = Registry.getDefault();
 
@@ -101,14 +110,52 @@ public class ChangePasswordAction extends SecureAction {
                                 final SecurityProvider securityProvider,
                                 final String message,
                                 final boolean modifyCancelBehaviour) {
+        changePassword(owner, user, securityProvider, message, modifyCancelBehaviour, false);
+    }
+
+    private void changePassword(final Frame owner,
+                                final User user,
+                                final SecurityProvider securityProvider,
+                                final String message,
+                                final boolean modifyCancelBehaviour,
+                                final boolean reentrant) {
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
+                if(!reentrant){
+                    //check if the user has a cert, don't show if user has already seen this message whilst trying to change their password
+                    try {
+                        final boolean userHasCert = Registry.getDefault().getIdentityAdmin().doesCurrentUserHaveCert();
+                        if(userHasCert){
+                            Locale locale = Locale.getDefault();
+                            ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.PasswordDialog", locale);
+
+                            int res = JOptionPane.showConfirmDialog(
+                                    null,
+                                    resources.getString("revokeClientCertCurrentUser.question"),
+                                    resources.getString("revokeClientCert.title"),
+                                    JOptionPane.YES_NO_OPTION);
+                            if (res != JOptionPane.YES_OPTION) {
+                                return;
+                            }
+
+                        }
+                    } catch (FindException e) {
+                        logger.log(Level.WARNING, "Could not check if user '" + user.getLogin() + "'has a cert: " +
+                                ExceptionUtils.getMessage(e));
+                    } catch (AuthenticationException e) {
+                        logger.log(Level.WARNING, "Could not check if user '" + user.getLogin() + "'has a cert: " +
+                                ExceptionUtils.getMessage(e));
+                    }
+                }
+
                 final ChangePasswordDialog changePasswordDialog = new ChangePasswordDialog(owner, message, user.getLogin(), false);
                 if ( modifyCancelBehaviour ) changePasswordDialog.changeCancelBehaviourToDisconnectBehaviour();
                 changePasswordDialog.pack();
                 changePasswordDialog.setModal(true);
                 Utilities.centerOnScreen(changePasswordDialog);
                 DialogDisplayer.display(changePasswordDialog, new Runnable() {
+                    @Override
                     public void run() {
                         if (changePasswordDialog.wasOk()) {
                             PasswordAuthentication oldPass = changePasswordDialog.getCurrentPasswordAuthentication();
@@ -117,10 +164,10 @@ public class ChangePasswordAction extends SecureAction {
                                 securityProvider.changePassword(oldPass, newPass);
                             }
                             catch(LoginException le) {
-                                changePassword(owner, user, securityProvider, "Incorrect password.", modifyCancelBehaviour);
+                                changePassword(owner, user, securityProvider, "Incorrect password.", modifyCancelBehaviour, true);
                             }
                             catch(InvalidPasswordException iae) {
-                                changePassword(owner, user, securityProvider, formatErrors( iae ), modifyCancelBehaviour);
+                                changePassword(owner, user, securityProvider, formatErrors( iae ), modifyCancelBehaviour, true);
                             }
                             catch(IllegalStateException iae) {
                                 DialogDisplayer.showMessageDialog(owner, "Error changing password.", iae.getMessage(), null);

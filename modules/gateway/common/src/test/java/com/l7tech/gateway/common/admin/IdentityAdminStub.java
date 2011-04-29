@@ -188,7 +188,12 @@ public class IdentityAdminStub implements IdentityAdmin {
     public String getUserCert(User user) throws FindException, CertificateEncodingException {
         return null; // TODO ?
     }
-    
+
+    @Override
+    public boolean doesCurrentUserHaveCert() throws FindException {
+        return false;
+    }
+
     @Override
     public void revokeCert(User user) throws UpdateException, ObjectNotFoundException {
     }

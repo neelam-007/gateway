@@ -328,6 +328,17 @@ public interface IdentityAdmin {
     String getUserCert(User user) throws FindException, CertificateEncodingException;
 
     /**
+     * Check if the currently logged on user has a client cert. Used to warn the user when they go to
+     * change their password.
+     *
+     * @return true if the user is internal or belongs to an LDAP which allows the Gateway to issue certs
+     * on it's behalf and the Gateway has a cert for the current user.
+     * @throws FindException if problem searching for users certificate.
+     */
+    @Transactional(readOnly=true)
+    boolean doesCurrentUserHaveCert() throws FindException, AuthenticationException;
+
+    /**
      * Revoke a user's X.509 certificate and lock the password where possible.  This removes any (possibly-shadowed)
      * X.509 certificate that is being stored for the specified {@link User}.  If the user is an internal user,
      * this will also change the user's password to a string of 32 random bytes, effective locking out the

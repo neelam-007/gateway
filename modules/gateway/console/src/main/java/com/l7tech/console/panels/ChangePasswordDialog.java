@@ -105,6 +105,7 @@ public class ChangePasswordDialog extends JDialog {
     public void changeCancelBehaviourToDisconnectBehaviour() {
         //remove old one if any
         cancelButton.removeActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
             }
         });
@@ -112,6 +113,7 @@ public class ChangePasswordDialog extends JDialog {
         //if click on cancel button we want to disconnect them from the server
         cancelButton.addActionListener(new ActionListener(){
 
+            @Override
             public void actionPerformed(ActionEvent e) {
                 TopComponents.getInstance().disconnectFromGateway();
             }
@@ -119,6 +121,7 @@ public class ChangePasswordDialog extends JDialog {
 
         //if close window using top right corner (x) button, disconnect them from the server
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 TopComponents.getInstance().disconnectFromGateway();
             }
@@ -204,6 +207,7 @@ public class ChangePasswordDialog extends JDialog {
             userNameTextField.setEditable(false);
 
         RunOnChangeListener rocl = new RunOnChangeListener(new Runnable(){
+            @Override
             public void run() {
                 updateButtons();
             }
@@ -215,6 +219,7 @@ public class ChangePasswordDialog extends JDialog {
         newPasswordConfirmationField.getDocument().addDocumentListener(rocl);
 
         okButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 ok = true;
                 dispose();
@@ -222,6 +227,7 @@ public class ChangePasswordDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel = true;
                 dispose();
@@ -229,11 +235,13 @@ public class ChangePasswordDialog extends JDialog {
         });
 
         helpBtn.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 help = true;
                 final PasswordHelpDialog dialog = new PasswordHelpDialog(ChangePasswordDialog.this, passwordPolicyDescription);
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog, new Runnable() {
+                    @Override
                     public void run() {
                         if (!dialog.isOk()) {
                             dispose();
@@ -244,6 +252,7 @@ public class ChangePasswordDialog extends JDialog {
         });
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowOpened(WindowEvent e) {
                 if (usernameEditable)
                     userNameTextField.requestFocusInWindow();

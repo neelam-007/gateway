@@ -500,6 +500,15 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     @Override
+    public boolean doesCurrentUserHaveCert() throws FindException, AuthenticationException {
+        final User currentUser = JaasUtils.getCurrentUser();
+        if(currentUser == null) throw new AuthenticationException("Current user as not found");
+
+        final IdentityProvider provider = identityProviderFactory.getProvider(currentUser.getProviderId());
+        return provider.hasClientCert(currentUser.getLogin());
+    }
+
+    @Override
     public void revokeCert(User user) throws UpdateException, ObjectNotFoundException {
         try {
             // revoke the cert in internal CA

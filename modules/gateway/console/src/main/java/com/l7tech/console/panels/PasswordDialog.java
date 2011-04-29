@@ -4,13 +4,11 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -118,6 +116,7 @@ public class PasswordDialog extends JDialog {
         }
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent event) {
                 // user hit window manager close button
                 windowAction(CMD_CANCEL);
@@ -218,6 +217,7 @@ public class PasswordDialog extends JDialog {
         okButton.setToolTipText(resources.getString("okButton.tooltip"));
         okButton.setActionCommand(CMD_OK);
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 windowAction(event);
             }
@@ -232,6 +232,7 @@ public class PasswordDialog extends JDialog {
         cancelButton.setText(resources.getString("cancelButton.label"));
         cancelButton.setActionCommand(CMD_CANCEL);
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 windowAction(event);
             }
@@ -279,7 +280,7 @@ public class PasswordDialog extends JDialog {
 
     /**
      * validate the username and context
-     * @return true validated, false othwerwise
+     * @return true validated, false otherwise
      */
     private boolean validateInput() {
         char[] newPass = newPasswordField.getPassword();
@@ -317,8 +318,8 @@ public class PasswordDialog extends JDialog {
             if (userPanel.certExist()) {
                 int res = JOptionPane.showConfirmDialog(
                         null,
-                        resources.getString("confirmPassChange.question"),
-                        resources.getString("confirmPassChange.title"),
+                        resources.getString("revokeClientCert.question"),
+                        resources.getString("revokeClientCert.title"),
                         JOptionPane.YES_NO_OPTION);
                 if (res != JOptionPane.YES_OPTION) {
                     return;

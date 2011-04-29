@@ -174,7 +174,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     @Override
     @Transactional(readOnly=true)
     public Certificate getUserCert(User user) throws FindException {
-        if (user == null) throw new IllegalArgumentException("can't call this with null");
+        if (user == null) throw new IllegalArgumentException("user cannot be null");
         logger.finest("getUserCert for " + getName(user));
         CertEntryRow userData = getFromTable(user);
         if (userData != null) {

@@ -204,6 +204,9 @@ public class IdentityProviderConfig extends NamedEntityImp {
         setProperty(ADMIN_ENABLED, adminEnabled);
     }
 
+    /**
+     * @return true if the Gateway can issue Certificates on behalf of this identity provider.
+     */
     @Transient
     public boolean canIssueCertificates() {
         return true;
