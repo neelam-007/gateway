@@ -584,7 +584,14 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                                 sortData(columnToSort, false);
 
                                 // populate the change to the display
-                                realModel.fireTableDataChanged();
+
+                                // The line "realModel.fireTableDataChanged()" has been deleted to fix bug 10085.
+                                // If the table content is changed, then the index of the audit in the table associated with msgNumSelected will be changed.
+                                // Then, the line below, "logPane.setSelectedRow(msgNumSelected)" wil eventually invoke DefaultListSelectionModel.fireValueChanged().
+                                // Thus, there is no need to call realModel.fireTableDataChanged() again.  The table change event now really depends on the table content change.
+                                // If no content change, then no event dispatched.  It turns out ListSelectionListener in LogPanel will not make unnecessary calls on updateMsgDetails()
+                                // to frequently update the details pane.  This fix will probably improve the performance of the audit viewer a bit.
+
                                 logPane.updateMsgTotal();
                                 logPane.setSelectedRow(msgNumSelected);
                             }
