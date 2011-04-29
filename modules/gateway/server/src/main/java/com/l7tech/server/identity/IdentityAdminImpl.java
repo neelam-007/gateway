@@ -505,7 +505,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         if(currentUser == null) throw new AuthenticationException("Current user as not found");
 
         final IdentityProvider provider = identityProviderFactory.getProvider(currentUser.getProviderId());
-        return provider.hasClientCert(currentUser.getLogin());
+        return provider.getConfig().canIssueCertificates() && provider.hasClientCert(currentUser.getLogin());
     }
 
     @Override
