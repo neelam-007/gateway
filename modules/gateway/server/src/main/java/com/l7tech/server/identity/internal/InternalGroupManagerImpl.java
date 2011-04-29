@@ -7,6 +7,8 @@ import com.l7tech.identity.Identity;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalGroupMembership;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.identity.PersistentGroupManagerImpl;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.objectmodel.DeleteException;
@@ -36,10 +38,12 @@ public class InternalGroupManagerImpl
         this.roleManager = roleManager;
     }
 
+    @Override
     public void configure(InternalIdentityProvider provider) {
         this.setIdentityProvider(provider);
     }
 
+    @Override
     public InternalGroup reify(GroupBean bean) {
         InternalGroup ig = new InternalGroup(bean.getName());
         ig.setDescription(bean.getDescription());
@@ -47,16 +51,19 @@ public class InternalGroupManagerImpl
         return ig;
     }
 
+    @Override
     public GroupMembership newMembership(InternalGroup group, InternalUser user) {
         long groupOid = Long.parseLong(group.getId());
         long userOid = Long.parseLong(user.getId());
         return InternalGroupMembership.newInternalMembership(groupOid, userOid);
     }
 
+    @Override
     public Class getMembershipClass() {
         return InternalGroupMembership.class;
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public InternalGroup cast(Group group) {
         if ( group instanceof GroupBean ) {
@@ -66,18 +73,27 @@ public class InternalGroupManagerImpl
         }
     }
 
+    @Override
     public String getTableName() {
         return "internal_group";
     }
 
+    @Override
     public Class<InternalGroup> getImpClass() {
         return InternalGroup.class;
     }
 
+    @Override
     public Class<Group> getInterfaceClass() {
         return Group.class;
     }
 
+    @Override
+    protected IdentityHeader newHeader( final InternalGroup entity ) {
+        return new IdentityHeader(getProviderOid(), entity.getOid(), EntityType.GROUP, entity.getName(), entity.getDescription(), null, entity.getVersion(), entity.isEnabled());
+    }
+
+    @Override
     protected void addMembershipCriteria(Criteria crit, Group group, Identity identity) {
         crit.add(Restrictions.eq("memberProviderOid", identity.getProviderId()));
     }

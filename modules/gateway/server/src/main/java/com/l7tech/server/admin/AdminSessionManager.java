@@ -1,11 +1,11 @@
 package com.l7tech.server.admin;
 
-import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.InvalidPasswordException;
@@ -17,7 +17,7 @@ import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.event.GroupMembershipEvent;
+import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -100,10 +100,13 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             if (eie.getEntityClass() == IdentityProviderConfig.class) {
                 setupAdminProviders();
             }
-        } else if (event instanceof GroupMembershipEvent) {
-            final GroupMembershipEvent groupMembershipEvent = (GroupMembershipEvent) event;
-            final Group group = groupMembershipEvent.getEntity();
-            groupCache.invalidate(group.getProviderId());
+        } else if (event instanceof Updated) {
+            // handles direct group updates and GroupMembershipEvents
+            final Updated updatedEvent = (Updated) event;
+            final Entity perhapsGroup = updatedEvent.getEntity();
+            if ( perhapsGroup instanceof Group ) {
+                groupCache.invalidate(((Group)perhapsGroup).getProviderId());
+            }
         } else if (event instanceof ReadyForMessages) {
             // check for inactive users once a day
             timer.scheduleAtFixedRate(new TimerTask() {

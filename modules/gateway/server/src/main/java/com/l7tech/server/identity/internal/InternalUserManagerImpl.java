@@ -56,10 +56,8 @@ public class InternalUserManagerImpl
     }
 
     @Override
-    @Transactional(propagation=Propagation.SUPPORTS)
-    public IdentityHeader userToHeader(InternalUser user) {
-        InternalUser imp = cast(user);
-        return new IdentityHeader(imp.getProviderId(), imp.getId(), EntityType.USER, imp.getLogin(), imp.getDescription(), imp.getName(), imp.getVersion());
+    protected IdentityHeader newHeader( final InternalUser entity ) {
+        return new IdentityHeader(entity.getProviderId(), entity.getOid(), EntityType.USER, entity.getLogin(), entity.getDescription(), entity.getName(), entity.getVersion(), entity.isEnabled());
     }
 
     @Override
@@ -204,17 +202,8 @@ public class InternalUserManagerImpl
         }
     }
 
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private final Logger logger = Logger.getLogger(getClass().getName());
-
-/*
-    @Override
-    protected Map<String, Object> getUniqueConstraints(InternalUser entity) {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("login", entity.getLogin());
-        map.put("providerId", entity.getProviderId());
-        return map;
-    }
-*/
 
     @Override
     protected UniqueType getUniqueType() {

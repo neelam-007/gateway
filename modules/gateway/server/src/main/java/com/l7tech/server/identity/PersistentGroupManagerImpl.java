@@ -125,14 +125,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                     for (Object result : results) {
                         //noinspection unchecked
                         GT group = (GT)result;
-                        headers.add(new IdentityHeader(
-                                group.getProviderId(),
-                                group.getId(),
-                                EntityType.GROUP,
-                                group.getName(),
-                                group.getDescription(),
-                                null,
-                                group.getVersion()));
+                        headers.add( newHeader(group) );
                     }
                     return Collections.unmodifiableList(headers);
                 }
@@ -619,7 +612,7 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
                 for (Iterator i = query.iterate(); i.hasNext();) {
                     //noinspection unchecked
                     GT group = (GT) i.next();
-                    headers.add(new IdentityHeader(group.getProviderId(), group.getId(), EntityType.GROUP, group.getName(), group.getDescription(), null, group.getVersion()));
+                    headers.add( newHeader( group ) );
                 }
                 return headers;
             }

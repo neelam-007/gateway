@@ -16,6 +16,8 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -26,6 +28,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
         extends HibernateEntityManager<UT, IdentityHeader>
         implements PersistentUserManager<UT>
 {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(PersistentUserManagerImpl.class.getName());
 
     private final String HQL_DELETE_BY_PROVIDEROID =
@@ -112,7 +115,7 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
                     for (Object entity : entities) {
                         //noinspection unchecked
                         UT user = (UT) entity;
-                        headers.add(userToHeader(user));
+                        headers.add(newHeader( user ));
                     }
                     return headers;
                 }
@@ -160,10 +163,10 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
             // Revoke cert before deleting user (Bug #2963)
             revokeCert(userImp);
             deleteLogonInfo(userImp);
-            getHibernateTemplate().execute(new HibernateCallback(){
+            getHibernateTemplate().execute(new HibernateCallback<Void>(){
                 @Override
                 @SuppressWarnings({"unchecked"})
-                public Object doInHibernate( final Session session) throws HibernateException, SQLException {
+                public Void doInHibernate( final Session session) throws HibernateException, SQLException {
                     UT entity = (UT)session.get(userImp.getClass(), userImp.getOid());
                     if (entity == null) {
                         session.delete(userImp);
@@ -197,9 +200,9 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     @Override
     public void deleteAll(final long ipoid) throws DeleteException {
         try {
-            getHibernateTemplate().execute(new HibernateCallback() {
+            getHibernateTemplate().execute(new HibernateCallback<Void>() {
                 @Override
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                public Void doInHibernate(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_DELETE_BY_PROVIDEROID);
                     q.setLong(0, ipoid);
                     for (Iterator i = q.iterate(); i.hasNext();) {
@@ -219,9 +222,9 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     @Override
     public void delete(final String identifier) throws DeleteException {
         try {
-            getHibernateTemplate().execute(new HibernateCallback() {
+            getHibernateTemplate().execute(new HibernateCallback<Void>() {
                 @Override
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                public Void doInHibernate(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_DELETE);
                     q.setString(0, identifier);
                     for (Iterator i = q.iterate(); i.hasNext();) {
@@ -339,6 +342,12 @@ public abstract class PersistentUserManagerImpl<UT extends PersistentUser, GT ex
     @Override
     protected IdentityHeader newHeader(UT entity) {
         return new IdentityHeader(getProviderOid(), entity.getOid(), EntityType.USER, entity.getLogin(), null, entity.getName(), entity.getVersion());
+    }
+
+    @Override
+    @Transactional(propagation= Propagation.SUPPORTS)
+    public final IdentityHeader userToHeader( final UT user ) {
+        return newHeader( user );
     }
 
     /**

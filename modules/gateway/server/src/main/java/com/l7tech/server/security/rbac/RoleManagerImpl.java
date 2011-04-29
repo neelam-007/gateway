@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleAssignment;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
-import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.EntityFinder;
@@ -33,6 +32,7 @@ import java.util.regex.Pattern;
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor = Throwable.class)
 public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> implements RoleManager, RbacServices {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private static final Logger logger = Logger.getLogger(RoleManagerImpl.class.getName());
 
     private RbacServices rbacServices;
@@ -103,56 +103,38 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     private Collection<Role> getAssignedRoles0(final User user, final boolean skipAccountValidation) throws FindException {
         final Set<IdentityHeader> groupHeaders = groupProvider.getGroups(user, skipAccountValidation);
 
-        //noinspection unchecked
-        return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+        return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Collection<Role>>() {
+            @SuppressWarnings({ "unchecked" })
             @Override
-            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+            public Collection<Role> doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
                 //Get the User's directly assigned Role's
-                Set<Role> roles = new HashSet<Role>();
-                Criteria userAssignmentQuery = session.createCriteria(RoleAssignment.class);
+                final Set<Role> roles = new HashSet<Role>();
+                final Criteria userAssignmentQuery = session.createCriteria(RoleAssignment.class);
                 userAssignmentQuery.add(Restrictions.eq("identityId", user.getId()));
                 userAssignmentQuery.add(Restrictions.eq("providerId", user.getProviderId()));
                 userAssignmentQuery.add(Restrictions.eq("entityType", EntityType.USER.getName()));
-                List uras = userAssignmentQuery.list();
-                //(hibernate results aren't generic)
-                //noinspection ForLoopReplaceableByForEach
-                for (Iterator i = uras.iterator(); i.hasNext();) {
-                    RoleAssignment ra = (RoleAssignment) i.next();
-                    roles.add(ra.getRole());
+                final List<RoleAssignment> uras = (List<RoleAssignment>) userAssignmentQuery.list();
+                for ( final RoleAssignment ra : uras ) {
+                    roles.add( ra.getRole() );
                 }
 
                 //Now get the Roles the user can access via it's group membership
-                List<Long> groupIds = new ArrayList<Long>();
+                final List<String> groupNames = new ArrayList<String>();
                 for( IdentityHeader groupHeader : groupHeaders ){
                     if ( groupHeader != null && groupHeader.getProviderOid()==user.getProviderId() ) {
-                        groupIds.add(groupHeader.getOid());
+                        if ( groupHeader.isEnabled() ) {
+                            groupNames.add( groupHeader.getStrId() );
+                        }
                     }
                 }
-                if(groupIds.size() == 0) return roles;
+                if(groupNames.size() == 0) return roles;
 
-                // get only enabled groups
-                Criteria enabledGroupsQuery = session.createCriteria(InternalGroup.class);
-                enabledGroupsQuery.add(Restrictions.in("oid", groupIds));
-                enabledGroupsQuery.add(Restrictions.eq("enabled", true));
-                List enabledGroupsList = enabledGroupsQuery.list();
-
-                if(enabledGroupsList.size() == 0) return roles;
-
-                List<String> groupNames = new ArrayList<String>();
-                for (Object enabledGroup : enabledGroupsList) {
-                    InternalGroup ig = (InternalGroup) enabledGroup;
-                    groupNames.add( ig.getId() );
-                }
-
-                // get roles from groups
-                Criteria groupQuery = session.createCriteria(RoleAssignment.class);
+                final Criteria groupQuery = session.createCriteria(RoleAssignment.class);
                 groupQuery.add(Restrictions.in("identityId", groupNames));
                 groupQuery.add(Restrictions.eq("providerId", user.getProviderId()));
                 groupQuery.add(Restrictions.eq("entityType", EntityType.GROUP.getName()));
-                List gList = groupQuery.list();
-
-                for (Object aGList : gList) {
-                    RoleAssignment ra = (RoleAssignment) aGList;
+                final List<RoleAssignment> gList = (List<RoleAssignment>) groupQuery.list();
+                for ( final RoleAssignment ra : gList) {
                     roles.add(ra.getRole());
                 }
 

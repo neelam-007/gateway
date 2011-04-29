@@ -44,12 +44,6 @@ public class FederatedUserManagerImpl
 
     @Override
     @Transactional(propagation=Propagation.SUPPORTS)
-    public IdentityHeader userToHeader( final FederatedUser user ) {
-        return newHeader( user );
-    }
-
-    @Override
-    @Transactional(propagation=Propagation.SUPPORTS)
     public FederatedUser headerToUser(IdentityHeader header) {
         FederatedUser fu = new FederatedUser(getProviderOid(), header.getName());
         fu.setOid(header.getOid());

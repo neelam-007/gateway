@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.objectmodel;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -13,26 +10,40 @@ import javax.xml.bind.annotation.XmlAttribute;
 @XmlRootElement
 public class IdentityHeader extends EntityHeader {
     private long providerOid;
-    private String commonName = "";
+    private final String commonName;
+    private final boolean enabled;
 
     @Deprecated // use for serialization only
-    public IdentityHeader() {}
+    public IdentityHeader() {
+        commonName = "";
+        enabled = true;
+    }
 
     public IdentityHeader(long providerOid, long identityOid, EntityType type, String loginName, String description, String commonName, int version) {
-        this(providerOid, Long.toString(identityOid), type, loginName, description, commonName, version);
+        this(providerOid, Long.toString(identityOid), type, loginName, description, commonName, version, true);
+    }
+
+    public IdentityHeader(long providerOid, long identityOid, EntityType type, String loginName, String description, String commonName, int version, boolean enabled) {
+        this(providerOid, Long.toString(identityOid), type, loginName, description, commonName, version, enabled);
     }
 
     //added for bug #5321
     public IdentityHeader(long providerOid, String identityId, EntityType type, String loginName, String description, String commonName, Integer version) {
+        this(providerOid, identityId, type, loginName, description, commonName, version, true );
+    }
+
+    public IdentityHeader(long providerOid, String identityId, EntityType type, String loginName, String description, String commonName, Integer version, boolean enabled) {
         super(identityId, type, loginName, description, version);
         if (type != EntityType.USER && type != EntityType.GROUP)
             throw new IllegalArgumentException("EntityType must be USER or GROUP");
         this.providerOid = providerOid;
         this.commonName = commonName;
+        this.enabled = enabled;
     }
 
     public IdentityHeader( long providerOid, EntityHeader header ) {
-        this(providerOid, header.getStrId(), header.getType(), header.getName(), header.getDescription(), getCommonName(header), header.getVersion());
+        this(providerOid, header.getStrId(), header.getType(), header.getName(), header.getDescription(), getCommonName(header), header.getVersion(),
+                !(header instanceof IdentityHeader) || ((IdentityHeader) header).isEnabled() );
     }
 
     @XmlAttribute
@@ -51,8 +62,9 @@ public class IdentityHeader extends EntityHeader {
         return commonName;
     }
 
-    public void setCommonName(String commonName) {
-        this.commonName = commonName;
+    @XmlTransient
+    public boolean isEnabled() {
+        return enabled;
     }
 
     @Override
