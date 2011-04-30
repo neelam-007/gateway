@@ -27,6 +27,7 @@ public class NcipherJceProviderEngine extends JceProvider {
             // Leave existing provider order unchanged
             PROVIDER = existing;
         }
+        PROVIDER.remove("KeyStore.JKS"); // Bug #10109 - avoid message to STDERR from nCipher prov when third-party software loads truststores using JKS
         MESSAGE_DIGEST_PROVIDER = Security.getProvider("SUN"); // Bug #10327 - use Sun JDK provider for MD5, SHA-1, and SHA-2, if available, to avoid clobbering a nethsm with Sha512Crypt password hashes
     }
 
