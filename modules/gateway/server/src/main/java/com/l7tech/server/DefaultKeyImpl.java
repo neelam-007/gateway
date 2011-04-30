@@ -147,7 +147,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
             String name = serverConfig.getClusterPropertyName(SC_PROP_SSL_KEY);
             if (name == null)
                 throw new IOException("Unable to configure default SSL key: no cluster property defined for ServerConfig property " + SC_PROP_SSL_KEY);
-            String value = entry.getKeystoreId() + ":" + alias;
+            String value = entry.getKeystoreId() + ":" + entry.getAlias();
             clusterPropertyManager.putProperty(name, value);
             invalidateCachedCerts();
             return entry;

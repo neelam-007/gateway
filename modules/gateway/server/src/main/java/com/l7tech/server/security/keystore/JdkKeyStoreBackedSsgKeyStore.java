@@ -4,13 +4,13 @@ import com.l7tech.common.io.*;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.cert.BouncyCastleCertUtils;
-import com.l7tech.common.io.CertificateGeneratorException;
 import com.l7tech.security.cert.ParamsKeyGenerator;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.Stopped;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.NotFuture;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -31,6 +31,8 @@ import java.util.logging.Logger;
 public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
     private static final Logger logger = Logger.getLogger(JdkKeyStoreBackedSsgKeyStore.class.getName());
+
+    private static final boolean FORCE_CASE_INSENSITIVE_ALIAS_MATCH = SyspropUtil.getBoolean("com.l7tech.server.security.keystore.jdkbacked.checkForCaseInsensitiveAliasMatch", true);
 
     private static BlockingQueue<Runnable> mutationQueue = new LinkedBlockingQueue<Runnable>();
     private static ExecutorService mutationExecutor = new ThreadPoolExecutor(1, 1, 5 * 60, TimeUnit.SECONDS, mutationQueue);
@@ -93,6 +95,19 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         KeyStore keystore = keyStore();
 
         Certificate[] chain = keystore.getCertificateChain(alias);
+        if (chain == null && FORCE_CASE_INSENSITIVE_ALIAS_MATCH) {
+            // Check for an entry that differs only by alias case, to work-around how some keystores have case-sensitive aliases while others are case-insensitive (Bug #9991)
+            Enumeration<String> aliasEn = keystore.aliases();
+            while (aliasEn.hasMoreElements()) {
+                String haveAlias = aliasEn.nextElement();
+                if (haveAlias.equalsIgnoreCase(alias)) {
+                    alias = haveAlias;
+                    chain = keystore.getCertificateChain(alias);
+                    break;
+                }
+            }
+        }
+
         if (chain == null)
             throw new ObjectNotFoundException("Keystore " + getName() + " does not contain any certificate chain entry with alias " + alias);
         if (chain.length < 1)
