@@ -370,7 +370,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         } catch (FindException e) {
             throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
         } catch (ExecutionException e) {
-            throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
+            throw new DeleteException("Unable to delete key: " + ExceptionUtils.getMessage(e), e);
         } catch (InterruptedException e) {
             throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
         }

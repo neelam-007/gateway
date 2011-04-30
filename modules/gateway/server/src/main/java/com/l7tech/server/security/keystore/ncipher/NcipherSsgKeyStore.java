@@ -53,9 +53,14 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         return mutateKeystore(transactionCallback, new Callable<Boolean>() {
             @Override
             public Boolean call() throws KeyStoreException {
-                keyStore().deleteEntry(keyAlias);
-                checkForDeletedFilesOnNextStoreToDisk = true;
-                return Boolean.TRUE;
+                KeyStore ks = keyStore();
+                if (ks.containsAlias(keyAlias)) {
+                    ks.deleteEntry(keyAlias);
+                    checkForDeletedFilesOnNextStoreToDisk = true;
+                    return Boolean.TRUE;
+                } else {
+                    return Boolean.FALSE;
+                }
             }
         });
     }
