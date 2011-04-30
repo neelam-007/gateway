@@ -1,7 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * @author darmstrong
- */
 package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.common.http.HttpConstants;
@@ -17,9 +13,13 @@ import com.l7tech.security.token.http.HttpDigestToken;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationContext;
 
+import javax.mail.internet.HeaderTokenizer;
+import javax.mail.internet.ParseException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,8 +38,6 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
 
     public ServerHttpDigest(HttpDigest assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion, context);
-
-        this.assertion = assertion;
         this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
     }
 
@@ -53,10 +51,12 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
      *
      * @return a hardcoded realm. never null
      */
+    @Override
     protected String realm() {
         return HexUtils.REALM;
     }
 
+    @Override
     protected AssertionStatus checkAuthParams(Map authParams) {
         if ( authParams == null ) return AssertionStatus.AUTH_REQUIRED;
 
@@ -116,6 +116,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
         return authParam;
     }
 
+    @Override
     protected Map<String,String> challengeParams( Message request, Map<String, String> requestAuthParams ) {
         DigestSessions sessions = DigestSessions.getInstance();
 
@@ -140,10 +141,12 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
         }
     }
 
+    @Override
     protected String scheme() {
         return HttpDigest.SCHEME;
     }
 
+    @Override
     protected LoginCredentials findCredentials( Message request, Map<String, String> authParams )
             throws IOException, CredentialFinderException
     {
@@ -153,6 +156,30 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
             return null;
         }
 
+        if ( !populateAuthParams( authParams, authorization.trim() ) ) {
+            auditor.logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
+            return null;
+        }
+
+        return doFindCredentials( request, authParams );
+    }
+
+    // - PACKAGE
+
+    static boolean populateAuthParams( final Map<String, String> authParams,
+                                       final String authorization ) throws CredentialFinderException {
+        if ( OLD_PARSER ) {
+            return popluateAuthParamsST( authParams, authorization );
+        } else {
+            return popluateAuthParamsHT( authParams, authorization );
+        }
+    }
+
+    /**
+     * Original parser using StringTokenizer, has bugs with quoted string parsing
+     */
+    static boolean popluateAuthParamsST( final Map<String, String> authParams,
+                                         final String authorization ) throws CredentialFinderException  {
         StringTokenizer stok = new StringTokenizer( authorization, ", " );
         String scheme = null;
         String token, name, value;
@@ -195,21 +222,87 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
                     throw new CredentialFinderException( "Unexpected value '" + token + "' in WWW-Authorize header" );
                 }
 
-                if ( !scheme().equals(scheme) ) {
-                    auditor.logAndAudit(AssertionMessages.HTTPCREDS_NA_AUTHN_HEADER);
-                    return null;
+                if ( !HttpDigest.SCHEME.equals(scheme) ) {
+                    return false;
                 }
             }
         }
 
-        return doFindCredentials( request, authParams );
+        return true;
+    }
+
+    /**
+     * Parse using HeaderTokenizer to fix issues with quoted string parsing
+     */
+    static boolean popluateAuthParamsHT( final Map<String, String> authParams,
+                                         final String authorization ) throws CredentialFinderException  {
+        final int schemeEnd = authorization.indexOf( ' ' );
+        if ( schemeEnd > 0 ) {
+            final String scheme = authorization.substring( 0, schemeEnd );
+            if ( !HttpDigest.SCHEME.equals( scheme ) ) {
+                return false;
+            }
+            authParams.put( HttpCredentialSourceAssertion.PARAM_SCHEME, HttpDigest.SCHEME );
+        }
+
+        final HeaderTokenizer ht = new HeaderTokenizer(authorization.substring( schemeEnd+1 ), ",\\\"\t =", false);
+        try {
+            while ( true ) {
+                // name
+                HeaderTokenizer.Token token = ht.next();
+                if ( token.getType() == HeaderTokenizer.Token.EOF ) {
+                    break;
+                }
+                expect( token, "name", HeaderTokenizer.Token.ATOM );
+                final String name = token.getValue();
+
+                // =
+                consume(ht, "\t ");
+                token = ht.next();
+                expect( token, "equals", (int)'=' );
+                consume(ht, "\t ");
+
+                // value
+                token = ht.next();
+                if ( token.getType() == HeaderTokenizer.Token.QUOTEDSTRING ) {
+                    authParams.put( name, token.getValue() );
+                } else if ( isAtomOrAtomChar( token.getType() ) ) {
+                    final StringBuilder valueBuilder = new StringBuilder();
+                    while ( true ) {
+                        valueBuilder.append( token.getValue() );
+
+                        if ( isAtomOrAtomChar( ht.peek().getType() ) ) {
+                            token = ht.next();
+                        } else {
+                            // consecutive peek() calls not supported, so we have to consume the next token
+                            token = ht.next();
+                            if ( token.getType()!=(int)' ' && token.getType()!=(int)'\t' && token.getType()!= (int)',' ) {
+                                expect( token, "separator", (int)' ' ); //fail and throw
+                            }
+                            break;
+                        }
+                    }
+                    authParams.put( name, valueBuilder.toString() );
+                } else { //fail and throw
+                    expect( token, "value", HeaderTokenizer.Token.ATOM );
+                }
+
+                // eat separator and whitespace
+                consume( ht, ",\t " );
+            }
+        } catch ( ParseException e ) {
+            throw new CredentialFinderException( "Error processing header: " + ExceptionUtils.getMessage( e ), AssertionStatus.BAD_REQUEST );
+        }
+
+        return true;
     }
 
     // - PRIVATE
 
     private static final Logger logger = Logger.getLogger(ServerHttpDigest.class.getName());
 
-    private final HttpDigest assertion;
+    private static final boolean OLD_PARSER = SyspropUtil.getBoolean( "com.l7tech.server.policy.assertion.credential.http.oldDigestParser", false );
+
     private final Auditor auditor;
 
     private Map<String,String> myChallengeParams( String nonce ) {
@@ -218,5 +311,40 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
         params.put( HttpDigest.PARAM_NONCE, nonce );
         params.put( HttpDigest.PARAM_OPAQUE, HexUtils.encodeMd5Digest( HexUtils.getMd5Digest( nonce.getBytes() ) ) );
         return params;
+    }
+
+    private static boolean isAtomOrAtomChar( final int tokenType ) {
+        boolean atomOrAtomChar = false;
+
+        if ( tokenType != HeaderTokenizer.Token.COMMENT &&
+             tokenType != HeaderTokenizer.Token.EOF &&
+             tokenType != HeaderTokenizer.Token.QUOTEDSTRING ) {
+            if ( tokenType == HeaderTokenizer.Token.ATOM ) {
+                atomOrAtomChar = true;
+            } else if ( !Character.isISOControl(tokenType) && tokenType!=(int)' ' && tokenType!=(int)'\t' && tokenType!= (int)',' ) {
+                atomOrAtomChar = true;
+            }
+        }
+
+        return atomOrAtomChar;
+    }
+
+    private static void expect( final HeaderTokenizer.Token token,
+                                final String description,
+                                final int expectedType ) throws CredentialFinderException {
+        if ( token.getType() != expectedType ) {
+            throw new CredentialFinderException( "Error processing header, expected "+description+".", AssertionStatus.BAD_REQUEST );
+        }
+    }
+
+    private static void consume( final HeaderTokenizer ht, final String characters ) throws ParseException {
+        while ( true ) {
+            final HeaderTokenizer.Token token = ht.peek();
+            if ( characters.indexOf( token.getType() ) >=0 ) {
+                ht.next();
+            } else {
+                break;
+            }
+        }
     }
 }
