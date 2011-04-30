@@ -77,7 +77,7 @@ public class LicenseSpecPanel extends JPanel {
     private JButton eulaDefaultButton;
     private JButton eulaCustomButton;
     private JLabel detailsLabel;
-    private JTextField featureLabelField;
+    private JComboBox featureLabelComboBox;
     private JButton defaultFeatureLabelButton;
     private JList attributesList;
 
@@ -142,6 +142,8 @@ public class LicenseSpecPanel extends JPanel {
             }
         });
 
+        featureLabelComboBox.setModel(new DefaultComboBoxModel(System.getProperty(LicenseGeneratorTopWindow.PROPERTY_FEATURE_LABELS, "").split("\\s*,\\s*")));
+
         idField.addFocusListener(getFocusListener());
         descriptionField.addFocusListener(getFocusListener());
         licenseeEmailField.addFocusListener(getFocusListener());
@@ -153,7 +155,7 @@ public class LicenseSpecPanel extends JPanel {
         minorVersionField.addFocusListener(getFocusListener());
         hostField.addFocusListener(getFocusListener());
         ipField.addFocusListener(getFocusListener());
-        featureLabelField.addFocusListener(getFocusListener());
+        featureLabelComboBox.getEditor().getEditorComponent().addFocusListener(getFocusListener());
         eulaComboBox.addFocusListener(getFocusListener());
 
         idField.getDocument().addDocumentListener(getDocumentListener());
@@ -167,7 +169,7 @@ public class LicenseSpecPanel extends JPanel {
         minorVersionField.getDocument().addDocumentListener(getDocumentListener());
         hostField.getDocument().addDocumentListener(getDocumentListener());
         ipField.getDocument().addDocumentListener(getDocumentListener());
-        featureLabelField.getDocument().addDocumentListener(getDocumentListener());
+        ((JTextField)featureLabelComboBox.getEditor().getEditorComponent()).getDocument().addDocumentListener(getDocumentListener());
         eulaComboBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 if (ItemEvent.SELECTED != e.getStateChange())
@@ -250,7 +252,7 @@ public class LicenseSpecPanel extends JPanel {
         anyMinorVersionButton.addActionListener(blankFieldAction(minorVersionField));
         anyHostButton.addActionListener(blankFieldAction(hostField));
         anyIpButton.addActionListener(blankFieldAction(ipField));
-        defaultFeatureLabelButton.addActionListener(blankFieldAction(featureLabelField));
+        defaultFeatureLabelButton.addActionListener(blankFieldAction(((JTextField)featureLabelComboBox.getEditor().getEditorComponent())));
         eulaDefaultButton.addActionListener(selectItemAction(eulaComboBox, EULA_NONE));
         eulaCustomButton.addActionListener(new CustomEulaAction());
 
@@ -402,7 +404,7 @@ public class LicenseSpecPanel extends JPanel {
 
         setText(hostField, tt(spec.getHostname()));
         setText(ipField, tt(spec.getIp()));
-        setText(featureLabelField, tt(spec.getFeatureLabel()));
+        setText(((JTextField)featureLabelComboBox.getEditor().getEditorComponent()), tt(spec.getFeatureLabel()));
 
         featureNamesChecked.clear();
         featureNamesWithCheckedKids.clear();
@@ -499,13 +501,13 @@ public class LicenseSpecPanel extends JPanel {
         spec.setVersionMinor(fts(minorVersionField));
         spec.setHostname(fts(hostField));
         spec.setIp(fts(ipField));
-        spec.setFeatureLabel(fts(featureLabelField));
+        spec.setFeatureLabel(ftsReq(((JTextField)featureLabelComboBox.getEditor().getEditorComponent())));
         spec.setAttributes(getAttributes());
 
         Object ecb = eulaComboBox.getSelectedItem();
         if (EULA_CUSTOM.equals(ecb)) {
             spec.setEulaText(customEulaText);
-            eulaComboBox.setBackground(defaultTextField.getBackground());
+            eulaComboBox.setBackground(defaultComboBox.getBackground());
         } else {
             spec.setEulaText(null);
             eulaComboBox.setBackground(BAD_FIELD_BG);

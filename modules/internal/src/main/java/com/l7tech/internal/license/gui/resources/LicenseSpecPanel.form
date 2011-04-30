@@ -463,14 +463,6 @@
           </grid>
         </constraints>
       </vspacer>
-      <component id="5a048" class="javax.swing.JTextField" binding="featureLabelField">
-        <constraints>
-          <grid row="16" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-            <preferred-size width="150" height="-1"/>
-          </grid>
-        </constraints>
-        <properties/>
-      </component>
       <component id="d8bc1" class="javax.swing.JButton" binding="defaultFeatureLabelButton">
         <constraints>
           <grid row="16" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
@@ -530,6 +522,15 @@
             <item value="Layer 7 SecureSpan Suite"/>
             <item value="Layer 7 Enterprise Service Manager"/>
           </model>
+        </properties>
+      </component>
+      <component id="1a91e" class="javax.swing.JComboBox" binding="featureLabelComboBox">
+        <constraints>
+          <grid row="16" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <editable value="true"/>
+          <model/>
         </properties>
       </component>
     </children>

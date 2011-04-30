@@ -53,6 +53,8 @@ public class LicenseGeneratorTopWindow extends JFrame {
     private static final Logger logger = Logger.getLogger(LicenseGeneratorTopWindow.class.getName());
     private static final long INACTIVITY_UPDATE_MILLIS = 500; // we'll fire an update when they've made a change then been idle for half a second
 
+    public static final String PROPERTY_FEATURE_LABELS = "licenseGenerator.featureLabels";
+
     public static final String PROPERTY_KEYSTORE_PATH = "licenseGenerator.keystorePath";
     public static final String PROPERTY_KEYSTORE_PASSWORD = "licenseGenerator.keystorePass";
     public static final String PROPERTY_KEYSTORE_TYPE = "licenseGenerator.keystoreType";
