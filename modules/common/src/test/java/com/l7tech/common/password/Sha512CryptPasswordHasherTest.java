@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class Sha512CryptPasswordHasherTest {
     SecureRandom secureRandom = new SecureRandom();
-    PasswordHasher hasher = new Sha512CryptPasswordHasher(secureRandom);
+    PasswordHasher hasher = new Sha512CryptPasswordHasher(Sha512CryptPasswordHasher.DEFAULT_MESSAGE_DIGEST_FACTORY, secureRandom);
     byte[] pass = "blah".getBytes(Charsets.UTF8);
 
     @Test
@@ -61,7 +61,7 @@ public class Sha512CryptPasswordHasherTest {
     @Test
     public void testOverrideNumRounds() throws Exception {
         System.setProperty(Sha512CryptPasswordHasher.PROP_DEFAULT_ROUNDS, "11386");
-        final PasswordHasher customHasher = new Sha512CryptPasswordHasher(secureRandom);
+        final PasswordHasher customHasher = new Sha512CryptPasswordHasher(Sha512CryptPasswordHasher.DEFAULT_MESSAGE_DIGEST_FACTORY, secureRandom);
         final String verifier = customHasher.hashPassword(pass);
         assertTrue(verifier.startsWith("$6$rounds=11386$"));
         customHasher.verifyPassword(pass, verifier);
@@ -72,7 +72,7 @@ public class Sha512CryptPasswordHasherTest {
 
     @Test(expected = NullPointerException.class)
     public void testMissingSecureRandom() {
-        new Sha512CryptPasswordHasher(null);
+        new Sha512CryptPasswordHasher(null, null);
     }
 
     @Test
@@ -118,7 +118,7 @@ public class Sha512CryptPasswordHasherTest {
 
     private void testRoundPerf(int numRounds) {
         System.setProperty(Sha512CryptPasswordHasher.PROP_DEFAULT_ROUNDS, String.valueOf(numRounds));
-        final PasswordHasher customHasher = new Sha512CryptPasswordHasher(secureRandom);
+        final PasswordHasher customHasher = new Sha512CryptPasswordHasher(Sha512CryptPasswordHasher.DEFAULT_MESSAGE_DIGEST_FACTORY, secureRandom);
         long before = System.currentTimeMillis();
         for (int i = 0; i < 1000; ++i) {
             final String pass = "test" + i;

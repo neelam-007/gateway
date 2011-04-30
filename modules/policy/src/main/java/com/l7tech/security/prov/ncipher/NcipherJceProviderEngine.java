@@ -10,9 +10,10 @@ import java.security.Security;
  *
  */
 public class NcipherJceProviderEngine extends JceProvider {
-    static final Provider PROVIDER;
+    final Provider PROVIDER;
+    final Provider MESSAGE_DIGEST_PROVIDER;
 
-    static {
+    public NcipherJceProviderEngine() {
         if (null == System.getProperty("protect")) {
             // Prefer module-level key protection by default
             System.setProperty("protect", "module");
@@ -26,6 +27,7 @@ public class NcipherJceProviderEngine extends JceProvider {
             // Leave existing provider order unchanged
             PROVIDER = existing;
         }
+        MESSAGE_DIGEST_PROVIDER = Security.getProvider("SUN"); // Bug #10327 - use Sun JDK provider for MD5, SHA-1, and SHA-2, if available, to avoid clobbering a nethsm with Sha512Crypt password hashes
     }
 
     @Override
@@ -46,5 +48,12 @@ public class NcipherJceProviderEngine extends JceProvider {
     @Override
     protected String getRsaPkcs1PaddingCipherName() {
         return "RSA/ECB/PKCS1Padding";
+    }
+
+    @Override
+    public Provider getProviderFor(String service) {
+        if (service.startsWith("MessageDigest."))
+            return MESSAGE_DIGEST_PROVIDER;
+        return super.getProviderFor(service);
     }
 }

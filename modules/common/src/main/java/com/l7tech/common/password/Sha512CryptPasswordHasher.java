@@ -1,6 +1,7 @@
 package com.l7tech.common.password;
 
 import com.l7tech.util.Charsets;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 
@@ -16,15 +17,30 @@ public class Sha512CryptPasswordHasher implements PasswordHasher {
     private final int DEFAULT_ROUNDS = SyspropUtil.getInteger(PROP_DEFAULT_ROUNDS, 0);
     private final SecureRandom secureRandom;
     private final ThreadLocal<Pair<MessageDigest, MessageDigest>> digests = new ThreadLocal<Pair<MessageDigest, MessageDigest>>();
+    private final Functions.Unary<MessageDigest,String> messageDigestFactory;
 
-    public Sha512CryptPasswordHasher(SecureRandom secureRandom) {
+    public static final Functions.Unary<MessageDigest,String> DEFAULT_MESSAGE_DIGEST_FACTORY = new Functions.Unary<MessageDigest, String>() {
+        @Override
+        public MessageDigest call(String algorithm) {
+            try {
+                return MessageDigest.getInstance(algorithm);
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
+
+    public Sha512CryptPasswordHasher() {
+        this(DEFAULT_MESSAGE_DIGEST_FACTORY, new SecureRandom());
+    }
+
+    public Sha512CryptPasswordHasher(Functions.Unary<MessageDigest,String> messageDigestFactory, SecureRandom secureRandom) {
+        if (messageDigestFactory == null)
+            throw new NullPointerException("messageDigestFactory is required");
         if (secureRandom == null)
             throw new NullPointerException("secureRandom is required");
         this.secureRandom = secureRandom;
-    }
-
-    public Sha512CryptPasswordHasher() {
-        secureRandom = new SecureRandom();
+        this.messageDigestFactory = messageDigestFactory;
     }
 
     @Override
@@ -59,13 +75,13 @@ public class Sha512CryptPasswordHasher implements PasswordHasher {
         try {
             Pair<MessageDigest, MessageDigest> d = digests.get();
             if (d == null) {
-                MessageDigest mda = MessageDigest.getInstance("SHA-512");
-                MessageDigest mdb = MessageDigest.getInstance("SHA-512");
+                MessageDigest mda = messageDigestFactory.call("SHA-512");
+                MessageDigest mdb = messageDigestFactory.call("SHA-512");
                 d = new Pair<MessageDigest, MessageDigest>(mda, mdb);
                 digests.set(d);
             }
             return d;
-        } catch (NoSuchAlgorithmException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
