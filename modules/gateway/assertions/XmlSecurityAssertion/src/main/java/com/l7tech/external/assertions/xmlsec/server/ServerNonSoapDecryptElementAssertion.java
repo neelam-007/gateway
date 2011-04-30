@@ -26,6 +26,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.NoSuchPaddingException;
 import javax.security.auth.x500.X500Principal;
 import javax.xml.parsers.ParserConfigurationException;
@@ -87,8 +88,8 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
     }
 
     private Triple<String, NodeList, X509Certificate> decryptAndReplaceElement(Element encryptedDataEl)
-            throws StructureException, GeneralSecurityException, IOException, KeyInfoResolvingException, InvalidDocumentFormatException,
-                   UnexpectedKeyInfoException, XSignatureException, SAXException, ParserConfigurationException
+            throws GeneralSecurityException, IOException, KeyInfoResolvingException, InvalidDocumentFormatException,
+                   UnexpectedKeyInfoException, SAXException, ParserConfigurationException
     {
         Pair<X509Certificate, FlexKey> decryptionInfo = unwrapSecretKey(encryptedDataEl, securityTokenResolver);
         X509Certificate recipientCert = decryptionInfo.left;
@@ -130,9 +131,17 @@ public class ServerNonSoapDecryptElementAssertion extends ServerNonSoapSecurityA
             dc.replace();
         } catch (XSignatureException e) {
             DsigUtil.repairXSignatureException(e);
-            throw e;
+            throw new InvalidDocumentFormatException("Error decrypting", e); // generify exception message
         } catch (PseudoIOException e) {
             throw new InvalidKeyException(e);
+        } catch (SAXException e) {
+            throw new SAXException("Error decrypting", e); // generify exception message
+        } catch (IOException e) {
+            throw new IOException("Error decrypting", e); // generify exception message
+        } catch (StructureException e) {
+            throw new InvalidDocumentFormatException("Error decrypting", e); // generify exception message
+        } catch (BadPaddingException e) {
+            throw new InvalidDocumentFormatException("Error decrypting", e); // generify exception message
         }
 
         // determine algorithm

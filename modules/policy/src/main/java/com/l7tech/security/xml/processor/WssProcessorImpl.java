@@ -28,6 +28,7 @@ import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.x500.X500Principal;
@@ -107,7 +108,7 @@ public class WssProcessorImpl implements WssProcessor {
 
     /**
      * Create a WssProcessorImpl context not bound to any message.
-     * An unbound WssProcessorImpl cannot perform any operations except {@link WssProcessor#undecorateMessage}.
+     * An unbound WssProcessorImpl cannot perform any operations except {@link WssProcessor#undecorateMessage(com.l7tech.message.Message, SecurityContextFinder, com.l7tech.security.xml.SecurityTokenResolver)}.
      */
     public WssProcessorImpl() {
         // TODO remove this constructor and the entire WssProcessor interface, then rename this class to WssProcessor
@@ -1473,6 +1474,12 @@ public class WssProcessorImpl implements WssProcessor {
         } catch (IllegalStateException e) {
             logger.log(Level.FINE, "Error decrypting", e);
             throw new ProcessorException("Error decrypting", e);
+        } catch (IOException e) {
+            logger.log(Level.FINE, "Error decrypting", e);
+            throw new ProcessorException("Error decrypting", e);
+        } catch (BadPaddingException e) {
+            logger.log(Level.FINE, "Error decrypting", e);
+            throw new ProcessorException("Error decrypting", e);
         }
 
         // determine algorithm
@@ -1949,13 +1956,13 @@ public class WssProcessorImpl implements WssProcessor {
                 decryptReferencedElements(ekTok.getSecretKey(), refList);
         } catch (ParserConfigurationException e) {
             logger.log(Level.FINE, "Error decrypting", e);
-            throw new ProcessorException(e);
+            throw new ProcessorException("Error decrypting", e);
         } catch (SAXException e) {
             logger.log(Level.FINE, "Error decrypting", e);
-            throw new ProcessorException(e);
+            throw new ProcessorException("Error decrypting", e);
         } catch (IOException e) {
             logger.log(Level.FINE, "Error decrypting", e);
-            throw new ProcessorException(e);
+            throw new ProcessorException("Error decrypting", e);
         }
 
         String wsuId = DomUtils.getElementIdValue(encryptedKeyElement, idAttributeConfig);
