@@ -157,10 +157,12 @@ INSERT INTO `rbac_predicate_attribute` VALUES
 -- Password storage changes
 --
 
--- first modify the password column to be http_digest
+-- first modify the password column to be digest
 ALTER TABLE internal_user CHANGE COLUMN password digest VARCHAR(32) DEFAULT NULL;
--- then add the new password column
+-- then add the new password column with a default value to protect against mysql running in strict mode
 ALTER TABLE internal_user ADD COLUMN password VARCHAR(256) NOT NULL DEFAULT '' AFTER login;
+-- drop default to keep updated schema the same as default schema
+ALTER TABLE internal_user MODIFY COLUMN password VARCHAR(256) NOT NULL;
 
 ALTER TABLE password_history MODIFY COLUMN prev_password VARCHAR(256) NOT NULL;
 ALTER TABLE password_history DROP COLUMN order_id;
