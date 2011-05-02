@@ -367,10 +367,6 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         OneOrMoreAssertion validCredsOverSSL = new OneOrMoreAssertion();
         validCredsOverSSL.addChild(new HttpBasic());
         validCredsOverSSL.addChild(new WssBasic());
-        final boolean enableDigest = config.getBooleanProperty("httpDigest.enable", false);
-        if(enableDigest){
-            validCredsOverSSL.addChild(new HttpDigest());
-        }
         validCredsOverSSL.addChild(new SslAssertion(true));
         RequireWssSaml samlBearerToken = new RequireWssSaml();
         validCredsOverSSL.addChild(samlBearerToken);
