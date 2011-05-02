@@ -141,6 +141,11 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     @Override
+    public boolean currentUsersPasswordCanBeChanged() throws AuthenticationException, FindException {
+        return false;
+    }
+
+    @Override
     public EntityHeaderSet<IdentityHeader> findAllGroups(long idProvCfgId) throws FindException {
         final StubDataStore store = StubDataStore.defaultStore();
         Map<String, PersistentGroup> groups = store.getGroups();

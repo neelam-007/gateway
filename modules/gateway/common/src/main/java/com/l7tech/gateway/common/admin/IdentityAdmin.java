@@ -331,12 +331,20 @@ public interface IdentityAdmin {
      * Check if the currently logged on user has a client cert. Used to warn the user when they go to
      * change their password.
      *
-     * @return true if the user is internal or belongs to an LDAP which allows the Gateway to issue certs
-     * on it's behalf and the Gateway has a cert for the current user.
+     * @return true if the user has a cert.
      * @throws FindException if problem searching for users certificate.
+     * @throws com.l7tech.identity.AuthenticationException if current user cannot be found.
      */
     @Transactional(readOnly=true)
     boolean doesCurrentUserHaveCert() throws FindException, AuthenticationException;
+
+    /**
+     * @return true if the current user's password can be changed.
+     * @throws com.l7tech.objectmodel.FindException if problem looking up users identity provider.
+     * @throws com.l7tech.identity.AuthenticationException if current user cannot be found.
+     */
+    @Transactional(readOnly=true)
+    boolean currentUsersPasswordCanBeChanged() throws AuthenticationException, FindException;
 
     /**
      * Revoke a user's X.509 certificate and lock the password where possible.  This removes any (possibly-shadowed)

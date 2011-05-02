@@ -60,6 +60,9 @@ public class IdentityProviderConfig extends NamedEntityImp {
      */
     public IdentityProviderType type() {return type;}
 
+    /**
+     * @return true if the Gateway can update this Identity Provider e.g. change passwords, reset certs etc.
+     */
     @Transient
     public boolean isWritable() {
         return true; // Internal is writable and there's no InternalIdentityProviderConfig

@@ -84,6 +84,20 @@ public class ChangePasswordAction extends SecureAction {
 
     }
 
+    @Override
+    public boolean isAuthorized() {
+        boolean isAuthorized = false;
+        try {
+            isAuthorized = Registry.getDefault().isAdminContextPresent() && Registry.getDefault().getIdentityAdmin().currentUsersPasswordCanBeChanged();
+        } catch (AuthenticationException e) {
+            logger.log(Level.WARNING, "Problem authorizing change password action: " + ExceptionUtils.getMessage(e));
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Problem authorizing change password action: " + ExceptionUtils.getMessage(e));
+        }
+
+        return isAuthorized;
+    }
+
     /**
      * 
      */
