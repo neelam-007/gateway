@@ -32,6 +32,15 @@ public class JdkLoggerConfigurator {
     static final String LOG4J_JDK_LOG_APPENDER_CLASS = "com.l7tech.util.Log4jJdkLogAppender";
     static final String LOG4J_JDK_LOG_APPENDER_INIT = "init";
 
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+            @Override
+            public void run() {
+                configureShutdownLoggers();
+            }
+        }));
+    }
+
     /**
      * this class cannot be instantiated
      */
@@ -461,5 +470,19 @@ public class JdkLoggerConfigurator {
 
     public static boolean debugState() {
         return debugState.get();
+    }
+
+    private static void configureShutdownLoggers() {
+        final LogManager logManager = LogManager.getLogManager();
+        final String val = logManager.getProperty("com.l7tech.logging.shutdownIgnoreLoggers");
+        if ( val != null ) {
+            final StringTokenizer tokenizer = new StringTokenizer( val, " " );
+            while( tokenizer.hasMoreTokens() ) {
+                final String logger = tokenizer.nextToken().trim();
+                if ( !logger.isEmpty() ) {
+                    Logger.getLogger( logger ).setLevel( Level.OFF );
+                }
+            }
+        }
     }
 }
