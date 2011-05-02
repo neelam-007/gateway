@@ -1,6 +1,7 @@
 package com.l7tech.server.logon;
 
 import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.identity.LogonInfo;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
@@ -182,7 +183,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                 case ACTIVE:
                     break; //
                 case INACTIVE: {   // exception for administrator users
-                    if (!isDefaultAdminUser(user)) {
+                    if (!isUserFullAdministrator(user)) {
                         String msg = "Access is denied because of inactivity";
                         logger.info(msg);
                         throw new FailInactivityPeriodExceededException(msg);
@@ -214,7 +215,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
             Calendar inactivityCal = Calendar.getInstance();
             inactivityCal.setTimeInMillis(logonInfo.getLastActivity());
             inactivityCal.add(Calendar.HOUR, this.maxInactivityPeriod * 24);
-            if (!isDefaultAdminUser(user) && this.maxInactivityPeriod != 0 && logonInfo.getLastActivity() > 0 && inactivityCal.getTimeInMillis() <= now) {
+            if (!isUserFullAdministrator(user) && this.maxInactivityPeriod != 0 && logonInfo.getLastActivity() > 0 && inactivityCal.getTimeInMillis() <= now) {
                 long daysAgo = (now - logonInfo.getLastActivity()) / 1000 / 60 / 60 / 24;
                 auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_INACTIVITY, user.getLogin(), Long.toString(daysAgo), Integer.toString(this.maxInactivityPeriod));
                 String msg = "Credentials login matches an internal user " + user.getLogin() + ", but access is denied because of account inactivity.";
@@ -462,8 +463,14 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         });
     }
 
-    private boolean isDefaultAdminUser(User user) {
-        return user instanceof InternalUser && ((InternalUser) user).getOid() == 3;
+    private boolean isUserFullAdministrator(User user) throws FindException {
+        for (Role role : roleManager.getAssignedRoles(user)) {
+            if (role.getTag() == Role.Tag.ADMIN) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private InternalUserManager getInternalUserManager() throws FindException {
