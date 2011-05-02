@@ -110,7 +110,8 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
             String values[] = requestKnob.getHeaderValues("Referer");
 
             String referer = null;
-            if(!assertion.isAllowEmptyReferer() && (values == null || values.length == 0)) {
+            if(!assertion.isAllowEmptyReferer() && (values == null || values.length == 0
+                    || (values.length == 1 && StringUtils.isEmpty(values[0])))) {
                 auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MISSING_REFERER);
                 return AssertionStatus.FAILED;
             } else if(values != null && values.length > 0) {

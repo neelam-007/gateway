@@ -461,7 +461,7 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
                 new HashMap<String, String>(),
                 HttpMethod.POST,
                 new HashMap<String, String[]>(),
-                new String[] {"http://www.layer7tech.com/page.html"});
+                new String[] {"Referer: http://www.layer7tech.com/page.html"});
 
         CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
         assertion.setEnableDoubleSubmitCookieChecking(false);
@@ -475,6 +475,39 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
+        assertEquals(status, AssertionStatus.NONE);
+    }
+
+    /**
+     * If AllowEmptyReferer, must succeed when referer is null or empty string
+     * @throws Exception
+     */
+    public void testSucceedRefererCheck5() throws Exception {
+        PolicyEnforcementContext context = createPolicyEnforcementContext(
+                new URL("http://localhost:8080/test"),
+                new HashMap<String, String>(),
+                HttpMethod.POST,
+                new HashMap<String, String[]>(),
+                new String[] {"Referer: "});   // empty string referer
+
+        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
+        assertion.setEnableDoubleSubmitCookieChecking(false);
+        assertion.setEnableHttpRefererChecking(true);
+        assertion.setAllowEmptyReferer(true);
+        assertion.setAllowEmptyReferer(true);
+        assertion.setOnlyAllowCurrentDomain(true);
+
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        AssertionStatus status = serverAssertion.checkRequest(context);
+        assertEquals(status, AssertionStatus.NONE);
+
+        context = createPolicyEnforcementContext(
+                new URL("http://localhost:8080/test"),
+                new HashMap<String, String>(),
+                HttpMethod.POST,
+                new HashMap<String, String[]>(),
+                new String[] {});   // null referer
+        status = serverAssertion.checkRequest(context);
         assertEquals(status, AssertionStatus.NONE);
     }
 
@@ -524,7 +557,7 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
                 for(String header : headers) {
                     Matcher matcher = pattern.matcher(header);
                     if(matcher.matches()) {
-                        values.add(matcher.group(1).trim());
+                        values.add(new String(matcher.group(1).trim()));
                     }
                 }
 
