@@ -104,23 +104,30 @@ public class JdkLogConfig {
     private static boolean loggingConfigured = false;
 
     private static void initLogging(final boolean isJdkInit) {
-        ServerConfig serverConfig = ServerConfig.getInstance();
-        String logConfigurationPath = serverConfig.getPropertyCached("configDirectory") + File.separator + "ssglog.properties";
+        final ServerConfig serverConfig = ServerConfig.getInstance();
+        final String logConfigurationPath = serverConfig.getPropertyCached("configDirectory") + File.separator + "ssglog.properties";
+
+        final Runnable configCallback = new Runnable(){
+            @Override
+            public void run() {
+                boolean logToConsole = SyspropUtil.getBoolean(PARAM_LOG_TO_CONSOLE);
+                if ( logToConsole ) {
+                    addSystemErrorHandler();
+                }
+
+                loadSerializedConfig();
+            }
+        };
+
+        final String logClassname = !isJdkInit ? "com.l7tech.logging" : null;
 
         if ( new File(logConfigurationPath).exists() ) {
-            JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/server/resources/logging.properties", logConfigurationPath, !isJdkInit, !isJdkInit);
+            JdkLoggerConfigurator.configure(logClassname, "com/l7tech/server/resources/logging.properties", logConfigurationPath, !isJdkInit, !isJdkInit, configCallback);
         } else {
             // specify "ssglog.properties" twice since the non-default one can be overridden by
             // a system property.
-            JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/server/resources/logging.properties", "com/l7tech/server/resources/logging.properties", !isJdkInit, !isJdkInit);
+            JdkLoggerConfigurator.configure(logClassname, "com/l7tech/server/resources/logging.properties", "com/l7tech/server/resources/logging.properties", !isJdkInit, !isJdkInit, configCallback);
         }
-
-        boolean logToConsole = SyspropUtil.getBoolean(PARAM_LOG_TO_CONSOLE);
-        if ( logToConsole ) {
-            addSystemErrorHandler();
-        }
-
-        loadSerializedConfig();
     }
 
     /**

@@ -83,6 +83,29 @@ public class JdkLoggerConfigurator {
                                               final boolean reloading,
                                               final boolean redirectOtherFrameworks)
     {
+        configure( classname, shippedDefaults, shippedLoggingProperties, reloading, redirectOtherFrameworks, null );
+    }
+
+    /**
+     * initialize logging, try different strategies. First look for the system
+     * property <code>java.util.logging.config.file</code>, then look for
+     * <code>logging.properties</code>. If that fails fall back to the
+     * <code>shippedLoggingProperties</code>
+     *
+     * @param classname                the classname to use for logging info about which logging.properties was found
+     * @param shippedDefaults          path or file for default log properties (these are overridden by those in shippedLoggingProperties)
+     * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found
+     * @param reloading                whether to start the configuration reloading thread
+     * @param redirectOtherFrameworks  true to redirect other logging frameworks to JUL (should not be used during initial JDK config)
+     * @param configCallback           the callback for additional log configuration (may be null)
+     */
+    public static synchronized void configure(final String classname,
+                                              final String shippedDefaults,
+                                              final String shippedLoggingProperties,
+                                              final boolean reloading,
+                                              final boolean redirectOtherFrameworks,
+                                              final Runnable configCallback )
+    {
         final boolean succeedSilently = shippedDefaults == null && shippedLoggingProperties == null;
 
         try {
@@ -133,6 +156,10 @@ public class JdkLoggerConfigurator {
                     probeFile = new File(resource.getPath());
                     break;
                 }
+            }
+
+            if ( configCallback != null ) {
+                configCallback.run();
             }
 
             if ( classname != null ) {
