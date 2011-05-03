@@ -95,6 +95,7 @@ doSystemConfiguration() {
             echo " 2) Display current network configuration"
             echo " 3) Configure keyboard layout"
             echo " 4) Configure authentication method"
+            echo " 5) About system (versions)"
             echo " X) Exit menu"
             echo ""
             echo -n "Please make a selection: "
@@ -113,6 +114,11 @@ doSystemConfiguration() {
                    clear;;
                 4) clear
                    (${SYSWIZARD} -authConfig)
+                   confirmedMessage ""
+                   clear;;
+                5) clear
+                   echo "Layer 7 Software Versions"
+                   echo "$(rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}_%{ARCH}\n' | grep ssg | sed "s/^/  - /")"
                    confirmedMessage ""
                    clear;;
                 x|X)
@@ -924,10 +930,8 @@ isPatchListMenuValid="n"
 while [ "$isPatchListMenuValid" != "y" ]
 do
     clear
-        echo "Welcome to the SecureSpan Gateway"
-		echo "$(cat /etc/issue | head -1 | cut -d" " -f4 | sed 's/^v/ Version /')"
-		echo "$(rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}_%{ARCH}\n' | grep ssg | sed "s/^/  - /")"
-        echo
+        echo "Welcome to the SecureSpan Gateway - $(cat /etc/issue | head -1 | cut -d" " -f4 | sed 's/^v/ Version /')"
+		echo
         echo "This user account allows you to configure the appliance"
         echo "What would you like to do?"
         echo ""
