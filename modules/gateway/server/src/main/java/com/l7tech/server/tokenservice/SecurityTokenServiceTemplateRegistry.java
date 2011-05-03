@@ -5,9 +5,11 @@ import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.service.ServiceType;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.service.ServiceTemplateManager;
-import com.l7tech.util.*;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.wsdl.ResourceTrackingWSDLLocator;
 import com.l7tech.wsdl.WsdlEntityResolver;
 import org.springframework.beans.factory.DisposableBean;
@@ -40,11 +42,9 @@ public class SecurityTokenServiceTemplateRegistry implements InitializingBean, D
     private Map<String, String> wsTrustNS_WSDL = new HashMap<String, String>();
     private ServiceTemplateManager serviceTemplateManager;
     private ServiceTemplate serviceTemplate;
-    private final Config config;
 
-    public SecurityTokenServiceTemplateRegistry(ServiceTemplateManager serviceTemplateManager, Config config) {
+    public SecurityTokenServiceTemplateRegistry(ServiceTemplateManager serviceTemplateManager) {
         this.serviceTemplateManager = serviceTemplateManager;
-        this.config = config;
 
         initialize();
     }
@@ -93,13 +93,6 @@ public class SecurityTokenServiceTemplateRegistry implements InitializingBean, D
             final List<ServiceDocument> svcDocs = ServiceDocumentWsdlStrategy.fromWsdlResources( sourceDocs );
 
             String policyContents = getDefaultPolicyXml();
-            final boolean enableDigest = config.getBooleanProperty("httpDigest.enable", false);
-            if(enableDigest){
-                policyContents = policyContents.replaceFirst("HTTP_DIGEST_REPLACEMENT", "<L7p:HttpDigest/>");
-            } else {
-                policyContents = policyContents.replaceFirst("HTTP_DIGEST_REPLACEMENT", "");
-            }
-            
             template = new ServiceTemplate("Security Token Service", "/tokenservice", contents.get(url), url, policyContents, svcDocs, ServiceType.OTHER_INTERNAL_SERVICE, null);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Can't load WSDL and/or Policy XML; service template will not be available", e);

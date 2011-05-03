@@ -90,6 +90,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
     private static final Logger logger = Logger.getLogger(TokenServiceImpl.class.getName());
 
     private static final String SERVICE_VALIDATE_WSS_TIMESTAMPS = "service.validateWssTimestamps";
+    private static final String HTTP_DIGEST_ENABLE = "httpDigest.enable";
 
     private static final String WST_RST_RESPONSE_INFIX =
                   "</wst:RequestedSecurityToken>";
@@ -313,7 +314,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
 
     @Override
     public void propertyChange( final PropertyChangeEvent evt ) {
-        if ( SERVICE_VALIDATE_WSS_TIMESTAMPS.equals( evt.getPropertyName() ) ) {
+        if ( SERVICE_VALIDATE_WSS_TIMESTAMPS.equals( evt.getPropertyName() )
+                || HTTP_DIGEST_ENABLE.equals( evt.getPropertyName() ) ) {
             logger.info( "Rebuilding token service policy." );
             try {
                 buildTokenServicePolicy();
@@ -321,7 +323,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 logger.log( Level.SEVERE, "Error rebuilding token service policy.", e );
             } catch ( LicenseException e) {
                 logger.log( Level.SEVERE, "Error rebuilding token service policy.", e );
-            }            
+            }
         }
     }
 
@@ -341,6 +343,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      *       OneOrMoreAssertion:
      *         HttpBasic
      *         WssBasic
+     *         HttpDigest (when httpDigest.enable is true)
      *         HttpClientCert
      * </pre>
      */
@@ -367,6 +370,10 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         OneOrMoreAssertion validCredsOverSSL = new OneOrMoreAssertion();
         validCredsOverSSL.addChild(new HttpBasic());
         validCredsOverSSL.addChild(new WssBasic());
+        final boolean enableDigest = config.getBooleanProperty(HTTP_DIGEST_ENABLE, false);
+        if(enableDigest){
+            validCredsOverSSL.addChild(new HttpDigest());
+        }
         validCredsOverSSL.addChild(new SslAssertion(true));
         RequireWssSaml samlBearerToken = new RequireWssSaml();
         validCredsOverSSL.addChild(samlBearerToken);
