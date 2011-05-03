@@ -149,6 +149,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     private JMenuItem serviceUDDISettingsMenuItem = null;
     private JMenuItem deleteServiceMenuItem = null;
 
+    private JPopupMenu appletManagePopUpMenu;
+
     // actions
     private Action refreshAction = null;
     private FindIdentityAction findIdentityAction = null;
@@ -169,7 +171,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
     private ManageKerberosAction manageKerberosAction = null;
     private ManageRolesAction manageRolesAction = null;
-    private ManageAdminUserAccountAction manageAdminUserAccountAction = null;
     private ManageResolutionConfigurationAction manageServiceResolutionAction = null;
     private HomeAction homeAction = new HomeAction();
     private NewGroupAction newInernalGroupAction;
@@ -953,6 +954,9 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     /**
      * Return the tasksMenu property value.
+     * <p>
+     * NOTICE: CHECK THAT THE MENU IS ADDED FOR THE APPLET ALSO.
+     * See {@link MainWindow#getToolBarPane()}
      *
      * @return JMenu
      */
@@ -996,7 +1000,6 @@ public class MainWindow extends JFrame implements SheetHolder {
             menu.add(getManageUDDIRegistriesAction());
             menu.add(getManageHttpConfigurationAction());
             menu.add(getManageServiceResolutionMenuItem());
-            menu.add(getManageAdminUserAccountAction());
 
             menu.add(getCustomGlobalActionsMenu());
 
@@ -1043,6 +1046,9 @@ public class MainWindow extends JFrame implements SheetHolder {
             manageAdminUsersSubMenu.setText("Manage Account Policies");
             manageAdminUsersSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/ManageUserAccounts16.png")));
 
+            final SecureAction mangeAdminUsers = new ManageAdminUserAccountAction();
+            disableUntilLogin(mangeAdminUsers);
+            manageAdminUsersSubMenu.add(mangeAdminUsers);
 
             final SecureAction forceResetAction = new ForceAdminPasswordResetAction();
             disableUntilLogin(forceResetAction);
@@ -1053,16 +1059,6 @@ public class MainWindow extends JFrame implements SheetHolder {
             manageAdminUsersSubMenu.add(managePasswdPolicyAction);
         }
         return manageAdminUsersSubMenu;
-    }
-
-    private Action getManageAdminUserAccountAction() {
-        if (manageAdminUserAccountAction != null)
-            return manageAdminUserAccountAction;
-
-        manageAdminUserAccountAction = new ManageAdminUserAccountAction();
-        disableUntilLogin(manageAdminUserAccountAction);
-        return manageAdminUserAccountAction;
-
     }
 
     /**
@@ -2401,36 +2397,42 @@ public class MainWindow extends JFrame implements SheetHolder {
             // (side effects, hack hack)
             getEditMenu();
 
-            JPopupMenu menu = new JPopupMenu("Manage...");
-            menu.add(getMenuItemPreferences(false));
-            menu.add(getManageCertificatesMenuItem());
-            menu.add(getManagePrivateKeysMenuItem());
-            menu.add(getManageSecurePasswordsMenuItem());
-            menu.add(getManageGlobalResourcesMenuItem());
-            menu.add(getManageClusterPropertiesActionMenuItem());
-            menu.add(getManageSsgConnectorsAction());
-            menu.add(getManageJdbcConnectionsAction());
-            menu.add(getManageJmsEndpointsMenuItem());
-            menu.add(getManageKerberosMenuItem());
-            menu.add(getManageRolesMenuItem());
-            menu.add(getManageAuditAlertOptionsMenuItem());
-            menu.add(getManageClusterLicensesMenuItem());
-            menu.add(getChangePasswordMenuItem(false));
-            menu.add(getManageLogSinksAction());
-            menu.add(getManageEmailListenersAction());
-            menu.add(getConfigureFtpAuditArchiverAction());
-            menu.add(getManageTrustedEsmUsersAction());
-            menu.add(getManageUDDIRegistriesAction());
-            menu.add(getManageHttpConfigurationAction());
-            menu.add(getManageServiceResolutionMenuItem());
-            menu.add(getManageAdminUserAccountAction());
+            if(appletManagePopUpMenu == null){
+                JPopupMenu manageMenu = new JPopupMenu("Manage...");
+                manageMenu.add(getManageAdminUsersSubMenu());
+                manageMenu.addSeparator();
 
-            menu.add(getCustomGlobalActionsMenu());
+                manageMenu.add(getMenuItemPreferences(false));
+                manageMenu.add(getManageCertificatesMenuItem());
+                manageMenu.add(getManagePrivateKeysMenuItem());
+                manageMenu.add(getManageSecurePasswordsMenuItem());
+                manageMenu.add(getManageGlobalResourcesMenuItem());
+                manageMenu.add(getManageClusterPropertiesActionMenuItem());
+                manageMenu.add(getManageSsgConnectorsAction());
+                manageMenu.add(getManageJdbcConnectionsAction());
+                manageMenu.add(getManageJmsEndpointsMenuItem());
+                manageMenu.add(getManageKerberosMenuItem());
+                manageMenu.add(getManageRolesMenuItem());
+                manageMenu.add(getManageAuditAlertOptionsMenuItem());
+                manageMenu.add(getManageClusterLicensesMenuItem());
+                manageMenu.add(getChangePasswordMenuItem(false));
+                manageMenu.add(getManageLogSinksAction());
+                manageMenu.add(getManageEmailListenersAction());
+                manageMenu.add(getConfigureFtpAuditArchiverAction());
+                manageMenu.add(getManageTrustedEsmUsersAction());
+                manageMenu.add(getManageUDDIRegistriesAction());
+                manageMenu.add(getManageHttpConfigurationAction());
+                manageMenu.add(getManageServiceResolutionMenuItem());
 
-            Utilities.removeToolTipsFromMenuItems(menu);
-            tbadd(toolBarPane, menu, RESOURCE_PATH + "/Properties16.gif");
+                manageMenu.add(getCustomGlobalActionsMenu());
+                appletManagePopUpMenu = manageMenu;
+            }
 
-            menu = new JPopupMenu("Monitor...");
+            updateTopMenu(appletManagePopUpMenu);
+            Utilities.removeToolTipsFromMenuItems(appletManagePopUpMenu);
+            tbadd(toolBarPane, appletManagePopUpMenu, RESOURCE_PATH + "/Properties16.gif");
+
+            JPopupMenu menu = new JPopupMenu("Monitor...");
             menu.add(getDashboardMenuItem());
             menu.add(getAuditMenuItem());
             menu.add(getFromFileMenuItem());
@@ -3030,9 +3032,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         installCascadingErrorHandler();
         installClosingWindowHandler();
 
-        if (!isApplet()) {
-            installTopMenuRefresh();
-        }
+        installTopMenuRefresh();
     }
 
     /**
@@ -3888,7 +3888,11 @@ public class MainWindow extends JFrame implements SheetHolder {
      * @param menu The root of the menu.
      */
     private void updateTopMenu(JMenu menu) {
-        final Component[] components = menu.getMenuComponents();
+        updateTopMenu(menu.getPopupMenu());
+    }
+
+    private void updateTopMenu(JPopupMenu menu) {
+        final Component[] components = menu.getComponents();
         for (Component component : components) {
             if (component instanceof JMenu) {
                 component.setEnabled(isMenuItemActive((JMenu) component));
@@ -3900,11 +3904,15 @@ public class MainWindow extends JFrame implements SheetHolder {
      * Updates the top menu to enable/disable the menu items
      */
     private void updateTopMenu() {
-        updateTopMenu(fileMenu);
-        updateTopMenu(editMenu);
-        updateTopMenu(tasksMenu);
-        updateTopMenu(viewMenu);
-        updateTopMenu(helpMenu);
+        if(isApplet()){
+           updateTopMenu(appletManagePopUpMenu);
+        } else {
+            updateTopMenu(fileMenu);
+            updateTopMenu(editMenu);
+            updateTopMenu(tasksMenu);
+            updateTopMenu(viewMenu);
+            updateTopMenu(helpMenu);
+        }
     }
 
     /**
