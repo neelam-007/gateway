@@ -107,16 +107,19 @@ public class ServerNonSoapVerifyElementAssertionTest {
             "<ds:KeyInfo>\n" +
             "<ds:X509Data>\n" +
             "<ds:X509Certificate>\n" +
-            "MIICEjCCAbegAwIBAgIGARJQ/UmbMAsGByqGSM49BAEFADBQMSEwHwYDVQQDExhYTUwgRUNEU0Eg\n" +
+            "MIIC0zCCAlmgAwIBAgIGARJQ/UmbMAkGByqGSM49BAEwUDEhMB8GA1UEAxMYWE1MIEVDRFNBIFNp\n" +
+            "Z25hdHVyZSBUZXN0MRYwFAYKCZImiZPyLGQBGRMGYXBhY2hlMRMwEQYKCZImiZPyLGQBGRMDb3Jn\n" +
+            "MCAXDTA3MDUwMzA4MTAxNVoYDzQ3NDkwMzMwMTcyMzU0WjBQMSEwHwYDVQQDExhYTUwgRUNEU0Eg\n" +
             "U2lnbmF0dXJlIFRlc3QxFjAUBgoJkiaJk/IsZAEZEwZhcGFjaGUxEzARBgoJkiaJk/IsZAEZEwNv\n" +
-            "cmcwHhcNMDcwNTAzMDgxMDE1WhcNMTEwNTAzMDgxMDE1WjBQMSEwHwYDVQQDExhYTUwgRUNEU0Eg\n" +
-            "U2lnbmF0dXJlIFRlc3QxFjAUBgoJkiaJk/IsZAEZEwZhcGFjaGUxEzARBgoJkiaJk/IsZAEZEwNv\n" +
-            "cmcwgbQwgY0GByqGSM49AgEwgYECAQEwLAYHKoZIzj0BAQIhAP//////////////////////////\n" +
-            "//////////////2XMCcEIQD////////////////////////////////////////9lAQCAKYEAgMB\n" +
-            "AiEA/////////////////////2xhEHCZWtEARYQbCbdhuJMDIgADZubz40WiQ+v/nrjhfizYmEIl\n" +
-            "tKIr/n7hwGwpG3CDEk2jIDAeMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgGmMAsGByqGSM49\n" +
-            "BAEFAANIADBFAiEA63Pq7/YfDDrnbCxXVX20T3dn77iL8dvC1Cb24Al9VFkCIHUeymf/N+H60OQL\n" +
-            "v9Wg/X8Cbp2am42qjQvaKtb4+BFk\n" +
+            "cmcwggEzMIHsBgcqhkjOPQIBMIHgAgEBMCwGByqGSM49AQECIQD/////////////////////////\n" +
+            "///////////////9lzBEBCD////////////////////////////////////////9lAQgAAAAAAAA\n" +
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKYEQQQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n" +
+            "AAAAAXJuG44fZ2Ml2CCvpbrA1InK1rDSINwcTt1TNmNhYN+DAiEA/////////////////////2xh\n" +
+            "EHCZWtEARYQbCbdhuJMCAQEDQgAEZubz40WiQ+v/nrjhfizYmEIltKIr/n7hwGwpG3CDEk3OTDm8\n" +
+            "kAaLKEgVfamdL/RaR8ExrP7vfRyVzkLIkfQEraNCMEAwHQYDVR0OBBYEFCGBVSkjUniioRMZg+2N\n" +
+            "b1x/dadFMB8GA1UdIwQYMBaAFCGBVSkjUniioRMZg+2Nb1x/dadFMAkGByqGSM49BAEDaQAwZgIx\n" +
+            "AL+Ff9YRyKHW/Iq5eA5dt7If9vp77YZjgQwWEWjQdgIxK1dwuSFZ1IQDNrMgdoMcvQIxANHKPAC5\n" +
+            "qZ5v+y4srbPR7yg3x7rjIUj1pMDNqIpoHkgsWBJjV42iHIppNC5LFtzjhw==\n" +
             "</ds:X509Certificate>\n" +
             "</ds:X509Data>\n" +
             "</ds:KeyInfo>\n" +
