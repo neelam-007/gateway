@@ -16,26 +16,49 @@ The configuration file:
 - it must have layer7 as owner and 600 permission
 
 The script:
-- expects to be run with two parameters:
+- expects to be run with one or two parameters:
 	- if the first one is --configfile the second should be the configuration file (full path and filename)
-	- if the first one is --getcurrentconfig the second one will be the configuration type for which is should
-	retrieve the defaults values for directives in the appropriate configuration files
-
+	- if there is only one it must be --getcurrentconfig
+		
 These are all possible combinations:
 .../authconfig/radius_ldap_setup.sh --configfile /opt/SecureSpan/Appliance/config/configfiles/radius_ldap_setup.conf
-.../authconfig/radius_ldap_setup.sh --getcurrentconfig local
-.../authconfig/radius_ldap_setup.sh --getcurrentconfig ldap_only
-.../authconfig/radius_ldap_setup.sh --getcurrentconfig radius_only
-.../authconfig/radius_ldap_setup.sh --getcurrentconfig radius_and_ldap
+.../authconfig/radius_ldap_setup.sh --getcurrentconfig
 
-- when called to get the default configuration values, the info will be sent to stdout for each file relevant
-to the configuration type chosen, like this:
-????
+- when called with the --getcurrentconfig parameter it will:
+	- output the current configuration type "CFG_TYPE=xxx" and the current values for all variables
+	Ex:
+		CFG_TYPE="radius_only"
+		LDAP_SRV_IP=""
+		LDAP_BASE=""
+		RADIUS_SRV_IP="10.7.48.130"
+		RADIUS_SECRET="poiu0987"
+		RADIUS_TIMEOUT="3"
+	or:
+		CFG_TYPE="radius_with_ldap"
+		Radius server IP: 10.7.48.130
+		Radius server secret: qwer1234
+		Radius timeout: 3
+		LDAP server IP: 10.7.48.160
+		LDAP base: dc=example,dc=com
+	or:
+		CFG_TYPE="local"
+		System is configured for local (file) authentication only.
+
 
 - when called with the configuration file it will:
-	- make backup files in ./bk_files directory for the configuration files that it is going to modify
+	- make backup files in the "bk_files" directory for the configuration files that it is going to modify
 	- change the appropriate files on the system (depending on the configuration type chosen)
 	- delete the configuration file it received as parameter
+
+It should be able to:
+- Detect if the system is each of the appropriate files are already configured
+- Differentiate between reconfiguring a system and configuring it from the original default state
+- Allow switching from any configuration type to any other configuration type without damaging the configuration files
+- Differentiate between original backup files and current backup files (the original ones will be used to roll back to local auth when necessary)
+- Adjust only the necessary files when changing the configuration type or parameters already configured
+- Log each action taken in a more detailed and clear way in the log file
+
+Note: the checks for ownership and permissions are disabled for the moment
 
 
 The packages required:
@@ -182,8 +205,6 @@ End of ldap_only authentication testing.
 ===================================================================
 
 
-
-
 ===================================================================
 SSH/Console access via Radius Auth only:
 -------------------------------------------------------------------
@@ -205,10 +226,10 @@ ssh client
   SSHD
   > allow/deny authentication
 
-There is no "radius client" in the usual sense used to communicate with
-Radius server. In order to make ssh authentication with Radius we need
-to configure SSHD to use PAM and them use PAM Radius module to interrogate
-Radius server. The configuration of PAM Radius modules is made in the
+There is no "radius client" in the usual sense used to communicate with Radius server.
+In order to make ssh authentication with Radius we need to configure SSHD to use PAM
+(already configured in the SSG 5.4.1 appliance) and then use PAM Radius module to
+interrogate Radius server. The configuration of PAM Radius modules is made in the
 pam_radius.conf file (provided by pam_radius package).
   
 INSTALL: 
@@ -227,7 +248,7 @@ CONFIGURE:
 
 The users from radius server should exist on the machine that is accessed via SSH
 but they may have no password set - this is how you actually test that radius
-is supplying the password to sshd to give you access.... if they have a local
+is supplying the password to sshd to give access.... if they have a local
 password set the configuration will allows falling back to local auth if Radius
 server fails for any reason
 
@@ -239,7 +260,7 @@ The Radius server should be configured like this:
 - insert as first line the next line to /etc/raddb/users:
 test1     Cleartext-Password := "pass1"
 - stop radius: /etc/init.d/radiusd stop
-- make sure there is no test1 local user on the SSG appliance with: cat /etc/passwd | grep test1
+- make sure there is no "test1" local user on the SSG appliance with: cat /etc/passwd | grep test1
 
 Test 1:
 - start radius in debug, foreground mode: /usr/sbin/radiusd -X
@@ -336,14 +357,8 @@ ldapsearch -x -b 'dc=example,dc=com' '(objectclass=*)'
 Should output a lot of info about LDAP structure...
 
 End of LDAP server configuration.
----------------------------------------------------------------------------------
-
-
-
+-------------------------------------------------------------------
 ===================================================================
-
-
-
 
 
 ===================================================================
@@ -379,6 +394,11 @@ drwx------ 2 ssgconfig users     4096 Apr  6 16:25 ldapuser
 ......
 
 which is normal but most likely not wanted.
+
+
+
+
+
 
 
 ===============================================
