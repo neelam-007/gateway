@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.server.admin;
 
 import com.l7tech.gateway.common.admin.AdminLogin;
@@ -10,6 +5,7 @@ import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.identity.CredentialExpiredPasswordDetailsException;
 import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.audit.AuditContext;
@@ -53,7 +49,6 @@ import org.w3c.dom.Document;
 
 import javax.security.auth.login.LoginException;
 import javax.security.auth.login.AccountLockedException;
-import javax.security.auth.login.CredentialExpiredException;
 import javax.servlet.*;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -110,9 +105,9 @@ public class ManagerAppletFilter implements Filter {
     private Document fakeDoc;
     private String codebasePrefix;
 
-    private Object getBean(String name, Class clazz) throws ServletException {
+    private <T> T getBean(String name, Class<T> clazz) throws ServletException {
         try {
-            final Object o = applicationContext.getBean(name, clazz);
+            final T o = applicationContext.getBean(name, clazz);
             if (o == null) throw new ServletException("Configuration error; could not find bean " + name);
             return o;
         } catch (BeansException beansException) {
@@ -127,13 +122,13 @@ public class ManagerAppletFilter implements Filter {
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
-        customAssertionsRegistrar = (CustomAssertionsRegistrar)getBean("customAssertionRegistrar", CustomAssertionsRegistrar.class);
-        ServerPolicyFactory serverPolicyFactory = (ServerPolicyFactory)getBean("policyFactory", ServerPolicyFactory.class);
-        assertionRegistry = (ServerAssertionRegistry)getBean("assertionRegistry", ServerAssertionRegistry.class);
-        adminSessionManager = (AdminSessionManager)getBean("adminSessionManager", AdminSessionManager.class);
-        adminLogin = (AdminLogin)getBean("adminLogin", AdminLogin.class);
-        adminLoginHelper = (AdminLoginHelper)getBean("adminLoginHelper", AdminLoginHelper.class);
-        auditContext = (AuditContext)getBean("auditContext", AuditContext.class);
+        customAssertionsRegistrar = getBean("customAssertionRegistrar", CustomAssertionsRegistrar.class);
+        ServerPolicyFactory serverPolicyFactory = getBean("policyFactory", ServerPolicyFactory.class);
+        assertionRegistry = getBean("assertionRegistry", ServerAssertionRegistry.class);
+        adminSessionManager = getBean("adminSessionManager", AdminSessionManager.class);
+        adminLogin = getBean("adminLogin", AdminLogin.class);
+        adminLoginHelper = getBean("adminLoginHelper", AdminLoginHelper.class);
+        auditContext = getBean("auditContext", AuditContext.class);
 
         //CompositeAssertion dogfood = new AllAssertion();
         CompositeAssertion dogfood = new OneOrMoreAssertion();
@@ -409,7 +404,7 @@ public class ManagerAppletFilter implements Filter {
 
             // For the case - incorrect username and password
             if (username != null || password != null) {
-                if (ExceptionUtils.causedBy(e, CredentialExpiredException.class)) {
+                if (ExceptionUtils.causedBy(e, CredentialExpiredPasswordDetailsException.class)) {
                     //credentials expired so we'll need to redirect to proper page to change password and login
                     hreq.setAttribute(CREDS_EXPIRED, "YES");
                     hreq.setAttribute(USERNAME, username);
