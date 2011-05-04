@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
+import javax.swing.text.html.HTMLEditorKit;
 import java.awt.event.*;
 import java.awt.*;
 
@@ -11,8 +12,6 @@ public class WarningBanner extends JDialog {
     private JButton buttonOK;
     private JButton buttonCancel;
     private JEditorPane warningMsgEditor;
-    private JScrollPane warningMsgScrollPane;
-    private Frame owner;
 
     private boolean okClicked;
     private boolean cancelClicked;
@@ -21,7 +20,6 @@ public class WarningBanner extends JDialog {
 
     public WarningBanner(Frame owner, String warningMsg) {
         super(owner, true);
-        this.owner = owner;
         this.warningMsg = warningMsg;
 
         this.okClicked = false;
@@ -32,6 +30,7 @@ public class WarningBanner extends JDialog {
         getRootPane().setDefaultButton(buttonOK);
 
         buttonOK.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 okClicked = true;
                 onOK();
@@ -39,6 +38,7 @@ public class WarningBanner extends JDialog {
         });
 
         buttonCancel.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancelClicked = true;
                 onCancel();
@@ -48,6 +48,7 @@ public class WarningBanner extends JDialog {
 // call onCancel() when cross is clicked
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 onCancel();
             }
@@ -55,6 +56,7 @@ public class WarningBanner extends JDialog {
 
 // call onCancel() on ESCAPE
         contentPane.registerKeyboardAction(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onCancel();
             }
@@ -92,17 +94,14 @@ public class WarningBanner extends JDialog {
     }
 
     private void createUIComponents() {
+        warningMsgEditor = new JEditorPane(){
+            @Override
+            public boolean getScrollableTracksViewportWidth() {
+                return true;
+            }
+        };
+        warningMsgEditor.setText( warningMsg );
 
-        //warningMsgEditor = new JEditorPane();
-        warningMsgEditor.setText(warningMsg);
-        warningMsgEditor.setPreferredSize(new Dimension(300, 100));
-        warningMsgEditor.setMinimumSize(new Dimension(300, 100));
-        warningMsgEditor.setVisible(true);
-        warningMsgEditor.setEditable(false);
-        
-
-        //Utilities.centerOnParent(this);
-        //Utilities.centerOnParentWindow(this);
         this.pack();
         this.setSize(600, 350);
         this.setTitle("Warning");

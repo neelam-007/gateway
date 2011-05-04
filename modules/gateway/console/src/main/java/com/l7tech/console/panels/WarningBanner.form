@@ -61,10 +61,10 @@
         <properties/>
         <border type="none"/>
         <children>
-          <scrollpane id="f63a1" binding="warningMsgScrollPane">
+          <scrollpane id="f63a1">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
-                <minimum-size width="350" height="125"/>
+                <minimum-size width="240" height="100"/>
                 <preferred-size width="350" height="125"/>
               </grid>
             </constraints>
@@ -73,9 +73,10 @@
             </properties>
             <border type="none"/>
             <children>
-              <component id="9fc39" class="javax.swing.JEditorPane" binding="warningMsgEditor">
+              <component id="9fc39" class="javax.swing.JEditorPane" binding="warningMsgEditor" custom-create="true">
                 <constraints/>
                 <properties>
+                  <editable value="false"/>
                   <inheritsPopupMenu value="false"/>
                   <minimumSize width="300" height="100"/>
                   <preferredSize width="576" height="100"/>
