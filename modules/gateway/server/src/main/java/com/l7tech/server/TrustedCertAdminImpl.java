@@ -240,6 +240,12 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
+    public X509Certificate getSSGAuditSigningCert() throws IOException, CertificateException {
+        final SsgKeyEntry info = defaultKey.getAuditSigningInfo();
+        return info != null ? info.getCertificate() : getSSGSslCert();
+    }
+
+    @Override
     public List<KeystoreFileEntityHeader> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException {
         List<SsgKeyFinder> finders = ssgKeyStoreManager.findAll();
         List<KeystoreFileEntityHeader> list = new ArrayList<KeystoreFileEntityHeader>();

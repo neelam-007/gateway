@@ -92,6 +92,11 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
+    public X509Certificate getSSGAuditSigningCert() throws IOException, CertificateException {
+        return null;
+    }
+
+    @Override
     public List<KeystoreFileEntityHeader> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException {
         return null;
     }

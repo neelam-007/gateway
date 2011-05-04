@@ -15,8 +15,6 @@ import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.cluster.GatewayStatus;
 import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
-import com.l7tech.gateway.common.security.SpecialKeyType;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gui.util.ImageCache;
 
 import javax.swing.*;
@@ -644,10 +642,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         }
 
         // get the audit signing key's cert.  If no audit signing key designated, use default SSL key's cert instead
-        final SsgKeyEntry entry = TopComponents.getInstance().getDefaultAliasTracker().getSpecialKey(SpecialKeyType.AUDIT_SIGNING);
-        X509Certificate cert = entry == null
-                ? TopComponents.getInstance().getSsgCert()[0]
-                : entry.getCertificate();
+        final X509Certificate cert = TopComponents.getInstance().getSsgAuditSigningCert();
         if (cert == null) return DigitalSignatureUIState.INVALID;
         try {
             boolean result = new AuditRecordVerifier(cert).verifySignatureOfDigest(signatureToVerify, digestValue);

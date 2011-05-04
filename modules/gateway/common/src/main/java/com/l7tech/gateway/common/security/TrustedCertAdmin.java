@@ -181,6 +181,18 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     public X509Certificate getSSGSslCert() throws IOException, CertificateException;
 
     /**
+     * Get the certificate that should be used for verifying signed audit records.
+     * <p/>
+     * This will be the same ast he gateway's SSL cert unless a special audit signing key has been explicitly designated by the administrator.
+     *
+     * @return the Gateway's audit signing certificate.
+     * @throws IOException if the certificate cannot be retrieved
+     * @throws CertificateException if the certificate cannot be retrieved
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    public X509Certificate getSSGAuditSigningCert() throws IOException, CertificateException;
+
+    /**
      * Find all keystore instances available on this Gateway.
      *
      * @param includeHardware   whether to include hardware keystores

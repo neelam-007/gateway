@@ -244,7 +244,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     private AuditAlertsNotificationPanel auditAlertBar;
     private AuditAlertChecker auditAlertChecker;
     private X509Certificate serverSslCert;
-    private DefaultAliasTracker defaultAliasTracker;
+    private X509Certificate auditSigningCert;
     private RootNode rootNode;
     private String serviceUrl = null;
     public final static String FILTER_STATUS_NONE = "Filter: None";
@@ -1523,7 +1523,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                      * Invoked when an action occurs.
                      *
                      * @param event the event that occured
-                     * @see Action#removePropertyChangeListener
+                     * @see Action#removePropertyChangeListener(java.beans.PropertyChangeListener)
                      */
                     @Override
                     public void actionPerformed(ActionEvent event) {
@@ -1560,7 +1560,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                      * Invoked when an action occurs.
                      *
                      * @param event the event that occured
-                     * @see Action#removePropertyChangeListener
+                     * @see Action#removePropertyChangeListener(java.beans.PropertyChangeListener)
                      */
                     @Override
                     public void actionPerformed(ActionEvent event) {
@@ -3501,6 +3501,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                     /* clear cached server cert */
                     serverSslCert = null;
+                    auditSigningCert = null;
 
                     /* init rmi cl */
                     if (!isApplet())
@@ -3830,11 +3831,20 @@ public class MainWindow extends JFrame implements SheetHolder {
         return new X509Certificate[]{serverSslCert};
     }
 
-    public DefaultAliasTracker getDefaultAliasTracker() {
-        if (defaultAliasTracker == null) {
-            defaultAliasTracker = ssmApplication.getApplicationContext().getBean("defaultAliasTracker", DefaultAliasTracker.class);
+    /**
+     * @return the SSG audit signing cert, or null if not connected or we can't look it up due to an error.
+     */
+    public X509Certificate getSsgAuditSigningCert() {
+        if (auditSigningCert == null) {
+            try {
+                auditSigningCert = Registry.getDefault().getTrustedCertManager().getSSGAuditSigningCert();
+            } catch (IOException e) {
+                log.log(Level.WARNING, "Unable to look up Gateway audit signing cert: " + ExceptionUtils.getMessage(e), e);
+            } catch (CertificateException e) {
+                log.log(Level.WARNING, "Unable to look up Gateway audit signing cert: " + ExceptionUtils.getMessage(e), e);
+            }
         }
-        return defaultAliasTracker;
+        return auditSigningCert;
     }
 
     public Action getPublishInternalServiceAction() {

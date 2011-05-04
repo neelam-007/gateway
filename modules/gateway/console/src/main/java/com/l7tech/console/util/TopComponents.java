@@ -167,8 +167,8 @@ public class TopComponents {
         return getMainWindow().getServerSslCertChain();
     }
 
-    public DefaultAliasTracker getDefaultAliasTracker() {
-        return getMainWindow().getDefaultAliasTracker();
+    public X509Certificate getSsgAuditSigningCert() {
+        return getMainWindow().getSsgAuditSigningCert();
     }
 
     /**
