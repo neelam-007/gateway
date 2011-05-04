@@ -208,7 +208,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
 
     private String findUnusedAlias(String propertyName, String defaultBaseAlias) throws IOException {
         Pair<Long, String> keyaddr = getKeyStoreOidAndAlias(propertyName);
-        String baseAlias = keyaddr.right;
+        String baseAlias = keyaddr == null ? null : keyaddr.right;
         if (baseAlias == null || baseAlias.trim().length() < 1)
             baseAlias = defaultBaseAlias;
         String alias = baseAlias;
@@ -341,15 +341,18 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
             return null;
 
         Matcher matcher = KEYSTORE_ID_AND_ALIAS_PATTERN.matcher(propVal);
-        if (!matcher.matches())
-            throw new IOException("Badly formatted value for serverconfig property " + propertyName + ": \"" + propVal + "\"");
+        if (!matcher.matches()) {
+            logger.log(Level.WARNING, "Badly formatted value for serverconfig property " + propertyName + ": \"" + propVal + "\"");
+            return null;
+        }
 
         try {
             long keystoreOid = Long.parseLong(matcher.group(1));
             String keyAlias = matcher.group(2);
             return new Pair<Long, String>(keystoreOid, keyAlias);
         } catch (NumberFormatException nfe) {
-            throw new IOException("Badly formatted value for serverconfig property " + propertyName + ": " + propVal);
+            logger.log(Level.WARNING, "Badly formatted value for serverconfig property " + propertyName + ": " + propVal);
+            return null;
         }
     }
 
