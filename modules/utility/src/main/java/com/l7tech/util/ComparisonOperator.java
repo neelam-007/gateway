@@ -84,6 +84,21 @@ public enum ComparisonOperator {
                     right = s.toLowerCase();
                 }
             }
+
+            if (left instanceof CharSequence && right instanceof CharSequence) {
+                // Use constant-time comparison when comparing strings
+                final CharSequence lc = (CharSequence) left;
+                final CharSequence rc = (CharSequence) right;
+                final int len = lc.length();
+                if (len != rc.length())
+                    return false;
+                int val = 0;
+                for (int i = 0; i < len; ++i) {
+                    val |= lc.charAt(i) ^ rc.charAt(i);
+                }
+                return 0 == val;
+            }
+
             return super.compare(left, right, ignoreCase);
         }
 
