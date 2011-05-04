@@ -159,6 +159,11 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         return true;
     }
 
+    @Override
+    public boolean isShowNavigation() {
+        return false;
+    }
+
     private static final Logger logger = Logger.getLogger(SystemConfigWizardNetworkingStep.class.getName());
     private static final String TITLE = "Configure User Authentication";
     private static final String STEP_INFO = "This step lets you configure the authentication method for users on this machine" + EOL;

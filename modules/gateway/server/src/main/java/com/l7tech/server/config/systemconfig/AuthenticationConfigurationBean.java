@@ -135,7 +135,7 @@ public class AuthenticationConfigurationBean extends BaseConfigurationBean{
         LOCAL("Local System","file"),
         LDAP("LDAP","ldap_only"),
         RADIUS("RADIUS","radius_only"),
-        RADIUS_LDAP("RADIUS with LDAP","radius_and_ldap");
+        RADIUS_LDAP("RADIUS with LDAP","radius_with_ldap");
 
 
 

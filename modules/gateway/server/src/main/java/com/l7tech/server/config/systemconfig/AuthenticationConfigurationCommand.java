@@ -9,6 +9,7 @@ import java.util.logging.Logger;
  */
 public class AuthenticationConfigurationCommand extends BaseConfigurationCommand<AuthenticationConfigurationBean> {
     private static final Logger logger = Logger.getLogger(AuthenticationConfigurationCommand.class.getName());
+    private static final String CONF_FILE = "radius_ldap_setup.conf";
 
     protected AuthenticationConfigurationCommand(AuthenticationConfigurationBean bean) {
         super(bean);
@@ -17,7 +18,7 @@ public class AuthenticationConfigurationCommand extends BaseConfigurationCommand
     @Override
     public boolean execute() {
         boolean success;
-        success = writeConfigFile("radius_ldap_setup.conf",configBean.asConfigFile());
+        success = writeConfigFile(CONF_FILE,configBean.asConfigFile());
         return success;
     }
 }

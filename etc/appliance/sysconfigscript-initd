@@ -11,7 +11,7 @@ fi
 
 ssgconfigutil="/usr/bin/perl /opt/SecureSpan/Appliance/config/ssg_sys_config.pl"
 migrationdeamon="${SSGHOME}/config/backup/ssgrestore.sh cfgdeamon"
-authenticationconfigutil="/bin/bash /opt/SecureSpan/Appliance/config/authconfig/radius_ldap_setup.sh /opt/SecureSpan/Appliance/config/configfiles/radius_ldap_setup.conf"
+authenticationconfigutil="/bin/bash /opt/SecureSpan/Appliance/config/authconfig/radius_ldap_setup.sh --configfile /opt/SecureSpan/Appliance/config/configfiles/radius_ldap_setup.conf"
 
 MESSAGE="Applying Network (Re)Configuration"
 USER=`whoami`
