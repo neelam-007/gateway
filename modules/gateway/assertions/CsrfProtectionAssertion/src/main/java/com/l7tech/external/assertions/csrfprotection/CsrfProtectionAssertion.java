@@ -57,8 +57,10 @@ public class CsrfProtectionAssertion extends Assertion implements SetsVariables 
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "CSRF Protection");
-        meta.put(AssertionMetadata.LONG_NAME, "CSRF Protection");
+        meta.put(AssertionMetadata.SHORT_NAME, "Protect Against Cross-Site Request Forgery");
+        meta.put(AssertionMetadata.DESCRIPTION, "The Protect Against Cross-Site Request Forgery Assertion helps " +
+                "detect and prevent CSRF (Cross-Site Request Forgery) attacks");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME, "Protect Against CSRF Forgery");
 
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
         othermappings.add(new Java5EnumTypeMapping(HttpParameterType.class, "httpParameterType"));
