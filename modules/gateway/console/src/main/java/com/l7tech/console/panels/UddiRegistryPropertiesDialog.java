@@ -8,6 +8,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIRegistryInfo;
 import com.l7tech.util.ExceptionUtils;
@@ -123,27 +124,27 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             registryToInfoMap.put(info.getName(), info);
         }
 
-        baseUrlTextField.addFocusListener(new FocusListener() {
+        baseUrlTextField.addFocusListener( new FocusListener() {
             @Override
-            public void focusGained(FocusEvent e) {
+            public void focusGained( FocusEvent e ) {
                 //disable the ok button as the default action when ever the base url field gets focus
                 //if ok, it will be set when focus is lost
-                getRootPane().setDefaultButton(null);
+                getRootPane().setDefaultButton( null );
             }
 
             @Override
-            public void focusLost(FocusEvent e) {
+            public void focusLost( FocusEvent e ) {
                 //If any other url field is currently empty, then auto generate the text for that field
-                computeURLField(securityUrlTextField, SECURITY);
-                computeURLField(inquiryUrlTextField, INQUIRY);
-                computeURLField(publishUrlTextField, PUBLISH);
-                computeURLField(subscriptionUrlTextField, SUBSCRIPTION);
+                computeURLField( securityUrlTextField, SECURITY );
+                computeURLField( inquiryUrlTextField, INQUIRY );
+                computeURLField( publishUrlTextField, PUBLISH );
+                computeURLField( subscriptionUrlTextField, SUBSCRIPTION );
                 enableOrDisableUrls();
                 enableOkButtonAfterBaseURLUpdated();
             }
-        });
+        } );
 
-        subscriptionUrlTextField.getDocument().addDocumentListener( new RunOnChangeListener( new Runnable(){
+        subscriptionUrlTextField.getDocument().addDocumentListener( new RunOnChangeListener( new Runnable() {
             @Override
             public void run() {
                 enableOrDisableMonitoringOptions();
@@ -284,8 +285,8 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             }
         });
 
-        inputValidator.constrainTextFieldToNumberRange( "Metrics Publish Frequency", metricsPublishFrequencyTextField, 1, 1440 );
-        inputValidator.constrainTextFieldToNumberRange( "Frequency", notificationFrequencyTextField, 1, 1440 );
+        inputValidator.constrainTextFieldToNumberRange( "Metrics Publish Frequency", metricsPublishFrequencyTextField, 1L, 1440L );
+        inputValidator.constrainTextFieldToNumberRange( "Frequency", notificationFrequencyTextField, 1L, 1440L );
 
         inputValidator.addRule(new InputValidator.ValidationRule(){
             @Override
@@ -307,6 +308,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         PasswordGuiUtils.configureOptionalSecurePasswordField(passwordTextField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         modelToView( uddiRegistry );
+        setMinimumSize( getMinimumSize() );
     }
 
     /**
@@ -435,7 +437,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         subscriptionUrlTextField.setCaretPosition( 0 );
         clientAuthenticationCheckBox.setSelected(uddiRegistry.isClientAuth());
         PrivateKeysComboBox privateKeyDropDown = (PrivateKeysComboBox) privateKeyComboBox;
-        final Long keyStoreOid = (uddiRegistry.getKeystoreOid() != null)? uddiRegistry.getKeystoreOid(): 0;
+        final Long keyStoreOid = (uddiRegistry.getKeystoreOid() != null)? uddiRegistry.getKeystoreOid(): 0L;
         final String alias = uddiRegistry.getKeyAlias();
 
         privateKeyDropDown.select(keyStoreOid, alias);
@@ -445,7 +447,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         passwordTextField.setCaretPosition( 0 );
         metricsEnabledCheckBox.setSelected(uddiRegistry.isMetricsEnabled());
         if ( uddiRegistry.isMetricsEnabled() ) {
-            metricsPublishFrequencyTextField.setText(Long.toString(uddiRegistry.getMetricPublishFrequency()/TimeUnit.MINUTES.getMultiplier()));
+            metricsPublishFrequencyTextField.setText(Long.toString(uddiRegistry.getMetricPublishFrequency()/ (long) TimeUnit.MINUTES.getMultiplier() ));
         } else {
             metricsPublishFrequencyTextField.setText( DEFAULT_METRICS_INTERVAL );
         }
@@ -453,7 +455,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         if ( uddiRegistry.isMonitoringEnabled() ) {
             subscribeForNotificationRadioButton.setSelected(uddiRegistry.isSubscribeForNotifications());
             pollForNotificationsRadioButton.setSelected(!uddiRegistry.isSubscribeForNotifications());
-            notificationFrequencyTextField.setText(Long.toString(uddiRegistry.getMonitoringFrequency()/TimeUnit.MINUTES.getMultiplier()));
+            notificationFrequencyTextField.setText(Long.toString(uddiRegistry.getMonitoringFrequency()/ (long) TimeUnit.MINUTES.getMultiplier() ));
         } else {
             subscribeForNotificationRadioButton.setSelected(true);
             notificationFrequencyTextField.setText( DEFAULT_SUBSCRIPTION_INTERVAL );
@@ -574,18 +576,18 @@ public class UddiRegistryPropertiesDialog extends JDialog {
         final boolean metricsEnabled = metricsEnabledCheckBox.isSelected() && metricsEnabledCheckBox.isEnabled();
         uddiRegistry.setMetricsEnabled(metricsEnabled);
         if(metricsEnabled){
-            uddiRegistry.setMetricPublishFrequency(Long.parseLong(metricsPublishFrequencyTextField.getText())*TimeUnit.MINUTES.getMultiplier());
+            uddiRegistry.setMetricPublishFrequency(Long.parseLong(metricsPublishFrequencyTextField.getText())* (long) TimeUnit.MINUTES.getMultiplier() );
         } else {
-            uddiRegistry.setMetricPublishFrequency(0);
+            uddiRegistry.setMetricPublishFrequency( 0L );
         }
 
         final boolean monitoringEnabled = monitoringEnabledCheckBox.isSelected() && monitoringEnabledCheckBox.isEnabled();
         uddiRegistry.setMonitoringEnabled(monitoringEnabled);
         if(monitoringEnabled){
             uddiRegistry.setSubscribeForNotifications(subscribeForNotificationRadioButton.isSelected());
-            uddiRegistry.setMonitoringFrequency(Long.parseLong(notificationFrequencyTextField.getText())*TimeUnit.MINUTES.getMultiplier());
+            uddiRegistry.setMonitoringFrequency(Long.parseLong(notificationFrequencyTextField.getText())* (long) TimeUnit.MINUTES.getMultiplier() );
         } else {
-            uddiRegistry.setMonitoringFrequency(0);
+            uddiRegistry.setMonitoringFrequency( 0L );
         }
     }
 
@@ -605,6 +607,9 @@ public class UddiRegistryPropertiesDialog extends JDialog {
      */
     private void createUIComponents() {
         privateKeyComboBox = new PrivateKeysComboBox(true, false, false);
+        privateKeyComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
+        privateKeyComboBox.setMinimumSize( new Dimension( 100, privateKeyComboBox.getPreferredSize().height  ) );
+        privateKeyComboBox.setPreferredSize( new Dimension( 100, privateKeyComboBox.getPreferredSize().height ) );
 
         //Registry type
         UDDIRegistry.UDDIRegistryType[] types = UDDIRegistry.UDDIRegistryType.values();
