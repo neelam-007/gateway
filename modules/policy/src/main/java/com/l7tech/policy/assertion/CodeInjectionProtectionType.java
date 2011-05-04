@@ -61,14 +61,14 @@ public class CodeInjectionProtectionType implements Serializable {
     public static final CodeInjectionProtectionType PHP_EVAL_INJECTION = new CodeInjectionProtectionType(
             "phpEvalInjection",
             "PHP eval Injection",
-            "Block messages which contain metacharacters that can be used to inject PHP code into a PHP eval statement. These metacharacters are ';\"\\.",
+            "Block messages which contain metacharacters that can be used to inject PHP code into a PHP eval statement. These metacharacters are ';\"\\",
             Pattern.compile("[';\"\\\\]"),
             true,
             false);
     public static final CodeInjectionProtectionType SHELL_INJECTION = new CodeInjectionProtectionType(
             "shellInjection",
             "Shell Injection",
-            "Block messages which contain metacharacters that can be used to inject shell script into a system call statement.  These metacharacters are `;|&>\\.",
+            "Block messages which contain metacharacters that can be used to inject shell script into a system call statement.  These metacharacters are `;|&>\\",
             Pattern.compile("[`;|&>\\\\]"),
             true,
             false);
@@ -76,14 +76,14 @@ public class CodeInjectionProtectionType implements Serializable {
             "ldapDnInjection",
             "LDAP DN Injection",
             "Block messages which contain metacharacters that can be used to inject code into LDAP DN values. These metacharacters are \\,+\"<>;",
-            Pattern.compile("[\\,+\"<>;]"),
+            Pattern.compile("[\\\\,+\"<>;]"),
             true,
             false);
     public static final CodeInjectionProtectionType LDAP_SEARCH_INJECTION = new CodeInjectionProtectionType(
             "ldapSearchInjection",
             "LDAP Search Injection",
             "Block messages which contain metacharacters that can be used to inject code into LDAP search values. The metacharacters are \\*()\\u0000",
-            Pattern.compile("[\\*()\u0000]"),
+            Pattern.compile("[\\\\*()\u0000]"),
             true,
             false);
     public static final CodeInjectionProtectionType XPATH_INJECTION = new CodeInjectionProtectionType(

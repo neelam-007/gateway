@@ -7,8 +7,6 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.json.JSONData;
-import com.l7tech.json.JSONFactory;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.HttpServletResponseKnob;
 import com.l7tech.message.Message;
@@ -32,9 +30,12 @@ import org.springframework.mock.web.MockServletContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 /**
- * Basic test coverage for JSON. //todo tests for other content-types are needed
+ * Basic test coverage for JSON and code injections apart from HTML.
+ *
+ * //todo complete test coverage
  */
 public class ServerCodeInjectionProtectionAssertionTest {
     private ApplicationContext appContext;
@@ -68,7 +69,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         ServerCodeInjectionProtectionAssertion serverAssertion =
                 new ServerCodeInjectionProtectionAssertion(assertion, appContext);
 
-        final PolicyEnforcementContext context = getContext(null);
+        final PolicyEnforcementContext context = getContext(null, ContentTypeHeader.APPLICATION_JSON);
         context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(noInvalidCharacters.getBytes())));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -95,7 +96,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         ServerCodeInjectionProtectionAssertion serverAssertion =
                 new ServerCodeInjectionProtectionAssertion(assertion, appContext);
 
-        final PolicyEnforcementContext context = getContext(null);
+        final PolicyEnforcementContext context = getContext(null, ContentTypeHeader.APPLICATION_JSON);
         context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidCharsInKeyValue.getBytes())));
 
         final AssertionStatus status = serverAssertion.checkRequest(context);
@@ -122,7 +123,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         ServerCodeInjectionProtectionAssertion serverAssertion =
                 new ServerCodeInjectionProtectionAssertion(assertion, appContext);
 
-        final PolicyEnforcementContext context = getContext(null);
+        final PolicyEnforcementContext context = getContext(null, ContentTypeHeader.APPLICATION_JSON);
         context.setVariable(varName, new Message(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(invalidCharactersInValue.getBytes())));
 
         AssertionStatus status = serverAssertion.checkRequest(context);
@@ -151,15 +152,85 @@ public class ServerCodeInjectionProtectionAssertionTest {
         ServerCodeInjectionProtectionAssertion serverAssertion =
                 new ServerCodeInjectionProtectionAssertion(assertion, appContext);
 
-        final PolicyEnforcementContext context = getContext(invalidCharactersInValue);
+        final PolicyEnforcementContext context = getContext(invalidCharactersInValue, ContentTypeHeader.APPLICATION_JSON);
 
         AssertionStatus status = serverAssertion.checkRequest(context);
         Assert.assertEquals("Status should be BAD_REQUEST", AssertionStatus.BAD_REQUEST, status);
     }
 
+    @BugNumber(10008)
+    @Test
+    public void testLdapCodeInjection_Backslash() throws Exception{
+        CodeInjectionProtectionAssertion assertion = new CodeInjectionProtectionAssertion();
+        assertion.setProtections(new CodeInjectionProtectionType[]{
+                CodeInjectionProtectionType.LDAP_DN_INJECTION});
+        assertion.setIncludeRequestBody(true);
+
+        ServerCodeInjectionProtectionAssertion serverAssertion =
+                new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext("\\", ContentTypeHeader.TEXT_DEFAULT);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Incorrect status returned", AssertionStatus.FALSIFIED, status);
+    }
+
+    @BugNumber(10008)
+    @Test
+    public void testLdapSearchInjection_Backslash() throws Exception{
+        CodeInjectionProtectionAssertion assertion = new CodeInjectionProtectionAssertion();
+        assertion.setProtections(new CodeInjectionProtectionType[]{
+                CodeInjectionProtectionType.LDAP_SEARCH_INJECTION});
+        assertion.setIncludeRequestBody(true);
+
+        ServerCodeInjectionProtectionAssertion serverAssertion =
+                new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext("\\", ContentTypeHeader.TEXT_DEFAULT);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Incorrect status returned", AssertionStatus.FALSIFIED, status);
+    }
+
+    /**
+     * Test all supported code injections, apart from HTML, for it's range of illegal characters against the request body for a text
+     * document. Expected outcome for each illegal character is assertion falsified.
+     */
+    @Test
+    public void testCodeProtections_ApartFromHTML() throws Exception{
+        final CodeInjectionProtectionType[] protectionTypes = CodeInjectionProtectionType.values();
+        for (CodeInjectionProtectionType protectionType : protectionTypes) {
+
+            if(protectionType == CodeInjectionProtectionType.HTML_JAVASCRIPT) continue; //not as simple as going through its chars
+
+            System.out.println(protectionType.getDisplayName());
+
+            CodeInjectionProtectionAssertion assertion = new CodeInjectionProtectionAssertion();
+            assertion.setProtections(new CodeInjectionProtectionType[]{protectionType});
+            assertion.setIncludeRequestBody(true);
+
+            ServerCodeInjectionProtectionAssertion serverAssertion =
+                    new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+
+            final Pattern pattern = protectionType.getPattern();
+            System.out.println(protectionType.getDescription());
+            final String str = pattern.toString();
+            final String patternString = str.substring(1, str.length() - 1);//ignore the opening and closing square brackets
+            for(int i = 0; i < patternString.length(); i++){
+
+                final String illegalString = new String(new char[]{patternString.charAt(i)});
+                final PolicyEnforcementContext context = getContext(illegalString, ContentTypeHeader.TEXT_DEFAULT);
+
+                AssertionStatus status = serverAssertion.checkRequest(context);
+                Assert.assertEquals("Incorrect status returned", AssertionStatus.FALSIFIED, status);
+                context.close();//close to ensure the stash manager is closed, otherwise it will continue to initialize the request with the same content!
+            }
+        }
+    }
+
     // - PRIVATE
 
-    private PolicyEnforcementContext getContext(String requestBody) throws IOException {
+    private PolicyEnforcementContext getContext(String requestBody, ContentTypeHeader contentTypeHeader) throws IOException {
 
         Message request = new Message();
         Message response = new Message();
@@ -170,7 +241,7 @@ public class ServerCodeInjectionProtectionAssertionTest {
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
 
         if(requestBody != null){
-            request.initialize(stashManager, ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream(requestBody.getBytes(Charsets.UTF8)));    
+            request.initialize(stashManager, contentTypeHeader, new ByteArrayInputStream(requestBody.getBytes(Charsets.UTF8)));
         }
 
         PolicyEnforcementContext policyEnforcementContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
