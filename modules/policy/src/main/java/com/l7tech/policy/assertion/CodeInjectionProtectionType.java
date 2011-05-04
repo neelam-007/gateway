@@ -90,7 +90,7 @@ public class CodeInjectionProtectionType implements Serializable {
             "xpathInjection",
             "XPath Injection",
             "Block messages which contain metacharacters that can be used to inject code into XPath queries. The metacharacters are \"*^';&<>()",
-            Pattern.compile("[\"*^'&<>()]"),
+            Pattern.compile("[\"*^';&<>()]"),
             true,
             false);
 

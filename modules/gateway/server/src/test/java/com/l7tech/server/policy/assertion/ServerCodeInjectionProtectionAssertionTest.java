@@ -192,6 +192,23 @@ public class ServerCodeInjectionProtectionAssertionTest {
         Assert.assertEquals("Incorrect status returned", AssertionStatus.FALSIFIED, status);
     }
 
+    @BugNumber(10011)
+    @Test
+    public void testXpathInjection_SemiColon() throws Exception{
+        CodeInjectionProtectionAssertion assertion = new CodeInjectionProtectionAssertion();
+        assertion.setProtections(new CodeInjectionProtectionType[]{
+                CodeInjectionProtectionType.XPATH_INJECTION});
+        assertion.setIncludeRequestBody(true);
+
+        ServerCodeInjectionProtectionAssertion serverAssertion =
+                new ServerCodeInjectionProtectionAssertion(assertion, appContext);
+
+        final PolicyEnforcementContext context = getContext(";", ContentTypeHeader.TEXT_DEFAULT);
+
+        AssertionStatus status = serverAssertion.checkRequest(context);
+        Assert.assertEquals("Incorrect status returned", AssertionStatus.FALSIFIED, status);
+    }
+
     /**
      * Test all supported code injections, apart from HTML, for it's range of illegal characters against the request body for a text
      * document. Expected outcome for each illegal character is assertion falsified.
