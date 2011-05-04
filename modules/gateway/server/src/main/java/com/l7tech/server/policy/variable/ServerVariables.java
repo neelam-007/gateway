@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.*;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
@@ -499,7 +500,7 @@ public class ServerVariables {
                     ClusterProperty cp = getClusterPropertyCache().getCachedEntityByName(name, 30000);
                     if (cp != null && cp.isHiddenProperty()) return null;
                     return cp != null && cp.getValue() != null ? cp.getValue() :
-                                 getClusterPropertyCache().getPropertyValueWithDefaultFallback(name);
+                                 ServerConfig.getInstance().getPropertyByClusterName( name, false );
                 } else {
                     logger.severe("cannot get ClusterPropertyCache context");
                     return null;

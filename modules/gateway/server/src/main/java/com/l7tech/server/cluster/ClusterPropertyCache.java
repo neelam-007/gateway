@@ -12,7 +12,6 @@ import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 
 import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ImmutableClusterProperty;
@@ -66,26 +65,6 @@ public class ClusterPropertyCache implements ApplicationListener {
         synchronized (propLock) {
             this.clusterPropertyManager = clusterPropertyManager;
         }
-    }
-
-
-    /**
-     * Set the server config.
-     *
-     * @param serverConfig The ServerConfig to use for default values.
-     * @throws IllegalArgumentException if the given ServerConfig is null
-     * @throws IllegalStateException if the ServerConfig is already set.
-     */
-    public void setServerConfig(final ServerConfig serverConfig) {
-        synchronized (propLock) {
-            if (serverConfig == null)
-                throw new IllegalArgumentException("serverConfig must not be null");
-            if (this.serverConfig != null)
-                throw new IllegalStateException("serverConfig already set!");
-
-            this.serverConfig = serverConfig;
-        }
-        this.defaultValues = serverConfig.getClusterPropertyDefaults();
     }
 
     /**
@@ -198,12 +177,6 @@ public class ClusterPropertyCache implements ApplicationListener {
         return value;
     }
 
-    @ManagedOperation(description="Get Property Value With Default Fallback")
-    public String getPropertyValueWithDefaultFallback( final String name ) {
-        String value = getPropertyValue(name);
-        return (value != null || defaultValues == null) ? value : defaultValues.get(name);
-    }
-
     /**
      *
      */
@@ -227,8 +200,6 @@ public class ClusterPropertyCache implements ApplicationListener {
     private final Object propLock = new Object();
     private ClusterPropertyManager clusterPropertyManager;
     private ClusterPropertyListener clusterPropertyListener;
-    private ServerConfig serverConfig;
-    private Map<String, String> defaultValues;
 
     private void fireChanged(final ClusterPropertyListener cpl, final ClusterProperty classic, final ClusterProperty updated) {
         if (cpl != null) {

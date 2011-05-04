@@ -600,6 +600,25 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     }
 
     /**
+     * Get a server config property value by cluster property name.
+     *
+     * @param clusterPropertyName The cluster property name.
+     * @param includeClusterProperties True to include values from cluster properties.
+     * @return The value of the related server config property or null.
+     */
+    public String getPropertyByClusterName( final String clusterPropertyName,
+                                            final boolean includeClusterProperties ) {
+        String value = null;
+
+        final String propertyName = getNameFromClusterName( clusterPropertyName );
+        if ( propertyName != null ) {
+            value = getPropertyUncached( propertyName, includeClusterProperties );
+        }
+
+        return value;
+    }
+
+    /**
      * Get the cluster property name, if any, for the specified ServerConfig property.
      *
      * @param serverConfigPropertyName the ServerConfig property whose cluster property name to look up.

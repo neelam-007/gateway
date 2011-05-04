@@ -1,5 +1,6 @@
 package com.l7tech.server.uddi;
 
+import com.l7tech.server.ServerConfig;
 import com.l7tech.uddi.UDDIException;
 import com.l7tech.uddi.UDDIClient;
 import com.l7tech.uddi.UDDIInvalidKeyException;
@@ -269,7 +270,7 @@ public class MetricsUDDITaskFactory extends UDDITaskFactory {
                             if ( property != null && !property.isHiddenProperty() ) {
                                 value = property.getValue();
                                 if ( value == null ) {
-                                    value = factory.clusterPropertyCache.getPropertyValueWithDefaultFallback( metricsSub );
+                                    value = ServerConfig.getInstance().getPropertyByClusterName( metricsSub, false );
                                 }
                             }
                         }
