@@ -119,6 +119,7 @@ doSystemConfiguration() {
                 5) clear
                    echo "Layer 7 Software Versions"
                    echo "$(rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}_%{ARCH}\n' | grep ssg | sed "s/^/  - /")"
+                   echo "$(rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}_%{ARCH}\n' | grep ssem | sed "s/^/  - /")"
                    confirmedMessage ""
                    clear;;
                 x|X)
