@@ -22,6 +22,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.TextUtils;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
@@ -138,8 +139,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
             for (String urlParamValue : entry.getValue()) {
                 final CodeInjectionProtectionType protectionViolated = scan(urlParamValue, assertion.getProtections(), evidence);
                 if (protectionViolated != null) {
-                    auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
-                            "request message body", urlParamName, evidence.toString(), protectionViolated.getDisplayName());
+                    logAndAudit("request message body", evidence, urlParamName, protectionViolated);
                     return AssertionStatus.FALSIFIED;
                 }
             }
@@ -156,8 +156,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
             for (String urlParamValue : entry.getValue()) {
                 final CodeInjectionProtectionType protectionViolated = scan(urlParamValue, assertion.getProtections(), evidence);
                 if (protectionViolated != null) {
-                    auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
-                            "request URL", urlParamName, evidence.toString(), protectionViolated.getDisplayName());
+                    logAndAudit("request URL", evidence, urlParamName, protectionViolated);
                     return AssertionStatus.FALSIFIED;
                 }
             }
@@ -205,8 +204,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                         StringBuilder evidence = new StringBuilder();
                         final CodeInjectionProtectionType protectionViolated = scan(partString, assertion.getProtections(), evidence);
                         if (protectionViolated != null) {
-                            auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                                    where, evidence.toString(), protectionViolated.getDisplayName());
+                            logAndAudit(where, evidence, protectionViolated);
                             return AssertionStatus.FALSIFIED;
                         }
                     } catch (NoSuchPartException e) {
@@ -270,8 +268,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
             final StringBuilder evidence = new StringBuilder();
             final CodeInjectionProtectionType protectionViolated = scan(bodyString, assertion.getProtections(), evidence);
             if (protectionViolated != null) {
-                auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                        where, evidence.toString(), protectionViolated.getDisplayName());
+                logAndAudit(where, evidence, protectionViolated);
                 return AssertionStatus.FALSIFIED;
             }
         } catch (NoSuchPartException e) {
@@ -288,8 +285,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         try {
             process(o);
         } catch (CodeInjectionDetectedException e) {
-            auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                    where + " in JSON value", e.getEvidence(), e.getProtectionViolated().getDisplayName());
+            logAndAudit(where + " in JSON value", new StringBuilder(e.getEvidence()), e.getProtectionViolated());
             return true;
         }
 
@@ -387,14 +383,31 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                             nodePath = element.getNodeName() + "@" + node.getNodeName();
                         }
                     }
-                    auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
-                            where + " in XML node " + nodePath, evidence.toString(), protectionViolated.getDisplayName());
+                    logAndAudit(where + " in XML node " + nodePath, evidence, protectionViolated);
                     return true;
                 }
                 break;
         }
 
         return false;
+    }
+
+    private void logAndAudit(String where, StringBuilder evidence, CodeInjectionProtectionType protectionViolated) {
+        if(protectionViolated.containsNonIdentifiableCharacters()){
+            TextUtils.makeIgnorableCharactersViewableAsUnicode(evidence);
+        }
+
+        auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED,
+                where, evidence.toString(), protectionViolated.getDisplayName());
+    }
+
+    private void logAndAudit(String where, StringBuilder evidence, String urlParamName, CodeInjectionProtectionType protectionViolated) {
+        if(protectionViolated.containsNonIdentifiableCharacters()){
+            TextUtils.makeIgnorableCharactersViewableAsUnicode(evidence);
+        }
+
+        auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM,
+                where, urlParamName, evidence.toString(), protectionViolated.getDisplayName());
     }
 
     /**

@@ -643,4 +643,19 @@ public class TextUtils {
 
         return returnList;
     }
+
+    /**
+     * Modify the StringBuilder replacing any ignorable characters with their unicode value.
+     *
+     * @param builder string builder to update
+     */
+    public static void makeIgnorableCharactersViewableAsUnicode(StringBuilder builder) {
+        for(int i = 0; i < builder.length(); i++){
+            final char c = builder.charAt(i);
+            if(Character.isIdentifierIgnorable(c)){
+                //%1$04d - %1$ = argument_index, 0 = flags - pad with leading zeros, 4 = width, d = conversion
+                builder.replace(i, i+ 1, "\\u" + String.format("%1$04d", (int)c));
+            }
+        }
+    }
 }

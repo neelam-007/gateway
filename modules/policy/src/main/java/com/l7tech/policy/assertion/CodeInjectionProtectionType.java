@@ -42,13 +42,17 @@ public class CodeInjectionProtectionType implements Serializable {
     /** Whether this type of protection is applicable to response messages. */
     private final boolean _applicableToResponse;
 
+    /** Whether the code protects against characters which cannot always be displayed. If true, any such chars will
+     * be converted to their unicode value.**/
+    private final boolean _containsNonIdentifiableCharacters;
+
     /** Map for looking up instance by wspName.
         The keys are of type String. The values are of type {@link CodeInjectionProtectionType}. */
-    private static final Map _byWspName = new HashMap();
+    private static final Map<String, CodeInjectionProtectionType> _byWspName = new HashMap<String, CodeInjectionProtectionType>();
 
     /** Map for looking up instance by displayName.
         The keys are of type String. The values are of type {@link CodeInjectionProtectionType}. */
-    private static final Map _byDisplayName = new HashMap();
+    private static final Map<String, CodeInjectionProtectionType> _byDisplayName = new HashMap<String, CodeInjectionProtectionType>();
 
     // Warning: Never change wspName; in order to maintain backward compatibility.
     public static final CodeInjectionProtectionType HTML_JAVASCRIPT = new CodeInjectionProtectionType(
@@ -85,7 +89,8 @@ public class CodeInjectionProtectionType implements Serializable {
             "Block messages which contain metacharacters that can be used to inject code into LDAP search values. The metacharacters are \\*()\\u0000",
             Pattern.compile("[\\\\*()\u0000]"),
             true,
-            false);
+            false,
+            true);
     public static final CodeInjectionProtectionType XPATH_INJECTION = new CodeInjectionProtectionType(
             "xpathInjection",
             "XPath Injection",
@@ -103,7 +108,7 @@ public class CodeInjectionProtectionType implements Serializable {
             XPATH_INJECTION};
 
     public static CodeInjectionProtectionType[] values() {
-        return (CodeInjectionProtectionType[])_values.clone();
+        return _values.clone();
     }
 
     /**
@@ -114,11 +119,11 @@ public class CodeInjectionProtectionType implements Serializable {
      *         this enum type has no constant with the specified wspName
      */
     public static CodeInjectionProtectionType fromWspName(final String wspName) {
-        return (CodeInjectionProtectionType) _byWspName.get(wspName);
+        return _byWspName.get(wspName);
     }
 
     public static CodeInjectionProtectionType fromDisplayName(final String displayName) {
-        return (CodeInjectionProtectionType) _byDisplayName.get(displayName);
+        return _byDisplayName.get(displayName);
     }
 
     private CodeInjectionProtectionType(final String wspName,
@@ -126,7 +131,8 @@ public class CodeInjectionProtectionType implements Serializable {
                                         final String description,
                                         final Pattern pattern,
                                         final boolean applicableToRequest,
-                                        final boolean applicableToResponse) {
+                                        final boolean applicableToResponse,
+                                        final boolean containsNonIdentifiableCharacters) {
         _wspName = wspName;
         _displayName = displayName;
         _description = description;
@@ -135,6 +141,16 @@ public class CodeInjectionProtectionType implements Serializable {
         _applicableToResponse = applicableToResponse;
         _byWspName.put(wspName, this);
         _byDisplayName.put(displayName, this);
+        _containsNonIdentifiableCharacters = containsNonIdentifiableCharacters;
+    }
+
+    private CodeInjectionProtectionType(final String wspName,
+                                        final String displayName,
+                                        final String description,
+                                        final Pattern pattern,
+                                        final boolean applicableToRequest,
+                                        final boolean applicableToResponse) {
+        this(wspName, displayName, description, pattern, applicableToRequest, applicableToResponse, false);
     }
 
     /** @return string representation used in XML serialization */
@@ -167,6 +183,10 @@ public class CodeInjectionProtectionType implements Serializable {
         return _applicableToResponse;
     }
 
+    public boolean containsNonIdentifiableCharacters() {
+        return _containsNonIdentifiableCharacters;
+    }
+
     /** @return a String representation suitable for UI display */
     public String toString() {
         return _displayName;
@@ -179,11 +199,13 @@ public class CodeInjectionProtectionType implements Serializable {
     // This method is invoked reflectively by WspEnumTypeMapping
     public static EnumTranslator getEnumTranslator() {
         return new EnumTranslator() {
+            @Override
             public String objectToString(Object target) {
                 CodeInjectionProtectionType type = (CodeInjectionProtectionType)target;
                 return type.getWspName();
             }
 
+            @Override
             public Object stringToObject(String wspName) throws IllegalArgumentException {
                 CodeInjectionProtectionType type = CodeInjectionProtectionType.fromWspName(wspName);
                 if (type == null) throw new IllegalArgumentException("Unknown CodeInjectionProtectionType: '" + wspName + "'");

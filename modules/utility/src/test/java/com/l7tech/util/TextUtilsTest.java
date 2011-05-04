@@ -1,9 +1,9 @@
 package com.l7tech.util;
 
+import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import com.l7tech.util.TextUtils;
 
 /**
  * Tests for TextUtils
@@ -249,5 +249,11 @@ public class TextUtilsTest extends TestCase {
         final String actualOutput = TextUtils.escapeHtmlSpecialCharacters(testInput);
 
         assertEquals("Correctly escape HTML special characters", expectedOutput, actualOutput);
+    }
+
+    public void testMakeIgnorableCharactersViewableAsUnicode(){
+        StringBuilder builder = new StringBuilder("Hello\u0000World");
+        TextUtils.makeIgnorableCharactersViewableAsUnicode(builder);
+        Assert.assertEquals("Unicode character should be converted into characters", "Hello\\u0000World", builder.toString());
     }
 }
