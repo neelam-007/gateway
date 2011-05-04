@@ -241,16 +241,29 @@ public class PoolByteArrayOutputStream extends OutputStream {
         if (len < 0)
             throw new IllegalArgumentException("len must be nonnegative");
         needBuf();
-        while(len > (buf.length - count))
-            expandBuffer();
+        if (len > (buf.length - count)) {
+            int buffLen = buf.length;
+            while (len > (buffLen - count))
+                buffLen <<= 1;
+            byte[] newBuf = BufferPool.getBuffer(buffLen);
+            System.arraycopy(buf, 0, newBuf, 0, count);
+            byte[] oldBuf = buf;
+            buf = newBuf;
+            BufferPool.returnBuffer(oldBuf);
+        }
         System.arraycopy(b, off, buf, count, len);
         count += len;
     }
 
     public void write(int b) throws IOException {
         needBuf();
-        if (count >= buf.length)
-            expandBuffer();
+        if (count >= buf.length) {
+            byte [] newBuf = BufferPool.getBuffer(buf.length << 1);
+            System.arraycopy(buf, 0, newBuf, 0, count);
+            byte[] oldBuf = buf;
+            buf = newBuf;
+            BufferPool.returnBuffer(oldBuf);
+        }
         buf[count++] = (byte)b;
     }
 
@@ -264,14 +277,6 @@ public class PoolByteArrayOutputStream extends OutputStream {
     {
         needBuf();
         out.write(buf,0,count);
-    }
-
-    private void expandBuffer()
-    {
-        // copy contents to a new byte array
-        byte [] newBuf = new byte[buf.length*2];
-        System.arraycopy(buf, 0, newBuf, 0, count);
-        buf = newBuf;
     }
 
     private void needBuf() throws IOException {

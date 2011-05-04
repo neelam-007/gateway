@@ -353,6 +353,8 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     private static final String SUFFIX_CLUSTER_AGE = ".clusterPropertyAge";
     private static final int CLUSTER_DEFAULT_AGE = 30000;
 
+    private static final boolean ENABLE_JNDI_PROPERTY_LOOKUP = SyspropUtil.getBoolean("com.l7tech.server.config.enableJndiPropertyLookup", false);
+
 
     public static ServerConfig getInstance() {
         return InstanceHolder.INSTANCE;
@@ -525,7 +527,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
             }
         }
 
-        if (value == null && jndiName != null && jndiName.length() > 0 ) {
+        if (value == null && ENABLE_JNDI_PROPERTY_LOOKUP && jndiName != null && jndiName.length() > 0 ) {
             try {
                 logger.finest("Checking JNDI property " + jndiName);
                 if (icontext == null) {
