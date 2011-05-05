@@ -4,9 +4,9 @@ import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.util.BeanUtils;
 import com.l7tech.util.Functions;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
@@ -23,6 +23,7 @@ import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -89,6 +90,19 @@ public class ApplicationContextTest  {
         for (String beanId : dlbf.getBeanDefinitionNames()) {
             BeanDefinition bd = dlbf.getBeanDefinition(beanId);
 
+            final String className = bd.getBeanClassName();
+            Class beanClass = null;
+            if ( className != null ) {
+                try {
+                    final Class<?> clazz = Class.forName( className );
+                    if ( !FactoryBean.class.isAssignableFrom( clazz ) && className.startsWith( "com.l7tech" ) ) {
+                        beanClass = clazz;
+                    }
+                } catch ( ClassNotFoundException e ) {
+                    Assert.fail("Class not found for bean '"+beanId+"': " + className);
+                }
+            }
+
             ConstructorArgumentValues cav = bd.getConstructorArgumentValues();
             if (cav != null) {
                 List<ConstructorArgumentValues.ValueHolder> constructorArgs = new ArrayList<ConstructorArgumentValues.ValueHolder>();
@@ -109,6 +123,10 @@ public class ApplicationContextTest  {
 
             MutablePropertyValues mpv = bd.getPropertyValues();
             if (mpv != null) {
+                final Set<PropertyDescriptor> descriptors = beanClass==null ?
+                        Collections.<PropertyDescriptor>emptySet() :
+                        BeanUtils.getProperties( beanClass, false, true );
+
                 for (PropertyValue propValue : mpv.getPropertyValues()) {
                     Object value = propValue.getValue();
                     if (value instanceof RuntimeBeanReference) {
@@ -116,6 +134,18 @@ public class ApplicationContextTest  {
                         String name = rbr.getBeanName();
                         Assert.assertTrue("Application context uses bean with name '"+name+"', but no such bean exists (referenced from bean '"+beanId+"' as property) ",
                                    dlbf.containsBean(name));
+                    }
+
+                    if ( beanClass != null ) {
+                        boolean foundProperty = false;
+                        for ( final PropertyDescriptor descriptor : descriptors ) {
+                            if ( descriptor.getName().equals( propValue.getName() ) ) {
+                                foundProperty = true;
+                                break;
+                            }
+                        }
+
+                        Assert.assertTrue( "Property '"+propValue.getName()+"' for bean '"+beanId+"' does not exist", foundProperty );
                     }
                 }
             }

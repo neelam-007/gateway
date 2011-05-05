@@ -2,8 +2,10 @@ package com.l7tech.server.ems;
 
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.server.ApplicationContextTest;
+import com.l7tech.util.BeanUtils;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -13,6 +15,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.junit.Test;
 import org.junit.Assert;
 
+import java.beans.PropertyDescriptor;
 import java.util.*;
 import java.lang.reflect.Method;
 
@@ -24,7 +27,7 @@ import java.lang.reflect.Method;
 public class EsmApplicationContextTest {
 
     private static final String[] CONTEXTS = {
-            "com/l7tech/server/ems/resources/esmApplicationContext.xml",
+        "com/l7tech/server/ems/resources/esmApplicationContext.xml",
         "com/l7tech/server/ems/resources/webApplicationContext.xml"
     };
 
@@ -60,6 +63,19 @@ public class EsmApplicationContextTest {
         for (String beanId : dlbf.getBeanDefinitionNames()) {
             BeanDefinition bd = dlbf.getBeanDefinition(beanId);
 
+            final String className = bd.getBeanClassName();
+            Class beanClass = null;
+            if ( className != null ) {
+                try {
+                    final Class<?> clazz = Class.forName( className );
+                    if ( !FactoryBean.class.isAssignableFrom( clazz ) && className.startsWith( "com.l7tech" ) ) {
+                        beanClass = clazz;
+                    }
+                } catch ( ClassNotFoundException e ) {
+                    Assert.fail("Class not found for bean '"+beanId+"': " + className);
+                }
+            }
+
             ConstructorArgumentValues cav = bd.getConstructorArgumentValues();
             if (cav != null) {
                 List<ConstructorArgumentValues.ValueHolder> constructorArgs = new ArrayList<ConstructorArgumentValues.ValueHolder>();
@@ -80,6 +96,10 @@ public class EsmApplicationContextTest {
 
             MutablePropertyValues mpv = bd.getPropertyValues();
             if (mpv != null) {
+                final Set<PropertyDescriptor> descriptors = beanClass==null ?
+                        Collections.<PropertyDescriptor>emptySet() :
+                        BeanUtils.getProperties( beanClass, false, true );
+
                 for (PropertyValue propValue : mpv.getPropertyValues()) {
                     Object value = propValue.getValue();
                     if (value instanceof RuntimeBeanReference) {
@@ -87,6 +107,18 @@ public class EsmApplicationContextTest {
                         String name = rbr.getBeanName();
                         Assert.assertTrue("Application context uses bean with name '"+name+"', but no such bean exists (referenced from bean '"+beanId+"' as property) ",
                                    dlbf.containsBean(name));
+                    }
+
+                    if ( beanClass != null ) {
+                        boolean foundProperty = false;
+                        for ( final PropertyDescriptor descriptor : descriptors ) {
+                            if ( descriptor.getName().equals( propValue.getName() ) ) {
+                                foundProperty = true;
+                                break;
+                            }
+                        }
+
+                        Assert.assertTrue( "Property '"+propValue.getName()+"' for bean '"+beanId+"' does not exist", foundProperty );
                     }
                 }
             }

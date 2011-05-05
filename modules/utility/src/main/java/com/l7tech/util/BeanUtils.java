@@ -102,13 +102,28 @@ public final class BeanUtils {
      * @return a Set of property descriptors.  May be empty but never null.
      */
     public static <T> Set<PropertyDescriptor> getProperties(Class<T> clazz) {
+        return getProperties( clazz, true, true );
+    }
+
+    /**
+     * Returns a new mutable set of PropertyDescriptor instances for all BeanInfo properties of the specified class.
+     *
+     * @param clazz  the class to introspect.  Required
+     * @param requireGetter true to require a "get" method.
+     * @param requireSetter true to require a "set" method.
+     * @return a Set of property descriptors.  May be empty but never null.
+     */
+    public static <T> Set<PropertyDescriptor> getProperties( final Class<T> clazz,
+                                                             final boolean requireGetter,
+                                                             final boolean requireSetter ) {
         try {
             return grep(new HashSet<PropertyDescriptor>(),
                         Arrays.asList(Introspector.getBeanInfo(clazz).getPropertyDescriptors()),
                         new Unary<Boolean, PropertyDescriptor>() {
                 @Override
                 public Boolean call(PropertyDescriptor propertyDescriptor) {
-                    return propertyDescriptor.getReadMethod() != null && propertyDescriptor.getWriteMethod() != null;
+                    return (!requireGetter || propertyDescriptor.getReadMethod() != null) &&
+                           (!requireSetter || propertyDescriptor.getWriteMethod() != null);
                 }
             });
         } catch (IntrospectionException e) {
