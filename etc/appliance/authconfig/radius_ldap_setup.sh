@@ -104,7 +104,8 @@ getCurrentConfigValues () {
 if [ $# -eq 1 ]; then
         case $1 in
                 ldap_only)
-                        echo "LDAP server IP: $(grep "^URI" /etc/openldap/ldap.conf | sed 's|^.*//||' | tr -d '/')"
+                        echo "LDAP server IP: $(grep "^URI" /etc/openldap/ldap.conf | sed 's|^.*//||' | tr -d '/' | cut -f 1 -d \:)"
+						echo "LDAP server Port: $(grep "^URI" /etc/openldap/ldap.conf | sed 's|^.*//||' | tr -d '/' | cut -f 2 -d \:)"
                         echo "LDAP base: $(grep "^BASE" /etc/openldap/ldap.conf | sed 's|^BASE ||')"
         	        ;;
                 
@@ -120,10 +121,11 @@ if [ $# -eq 1 ]; then
 
 		radius_with_ldap)
 			echo "Radius server IP: $(cat /etc/pam_radius.conf | grep "^[0-9]" | awk '{print $1}')"
-                        echo "Radius server secret: $(cat /etc/pam_radius.conf | grep "^[0-9]" | awk '{print $2}')"
+			echo "Radius server secret: $(cat /etc/pam_radius.conf | grep "^[0-9]" | awk '{print $2}')"
 			echo "Radius timeout: $(cat /etc/pam_radius.conf | grep "^[0-9]" | awk '{print $3}')"
-			echo "LDAP server IP: $(grep "^URI" /etc/openldap/ldap.conf | sed 's|^.*//||' | tr -d '/')"
-                        echo "LDAP base: $(grep "^BASE" /etc/openldap/ldap.conf | sed 's|^BASE ||')"
+			echo "LDAP server IP: $(grep "^URI" /etc/openldap/ldap.conf | sed 's|^.*//||' | tr -d '/' | cut -f 1 -d \:)"
+			echo "LDAP server IP: $(grep "^URI" /etc/openldap/ldap.conf | sed 's|^.*//||' | tr -d '/' | cut -f 2 -d \:)"
+			echo "LDAP base: $(grep "^BASE" /etc/openldap/ldap.conf | sed 's|^BASE ||')"
 			;;
 		*)
 			toLog "  ERROR - Function 'getCurrentConfigValues' called with invalid argument. Exiting..."	
