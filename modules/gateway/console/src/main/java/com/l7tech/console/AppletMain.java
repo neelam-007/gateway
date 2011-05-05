@@ -6,7 +6,6 @@
 package com.l7tech.console;
 
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.console.logging.CascadingErrorHandler;
 import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.util.AppletSsmPreferences;
@@ -18,11 +17,13 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.SaveErrorStrategy;
 import com.l7tech.gui.util.SheetHolder;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InetAddressUtil;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.mail.internet.MimeUtility;
 import javax.swing.*;
+import javax.swing.text.html.parser.ParserDelegator;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -181,6 +182,8 @@ public class AppletMain extends JApplet implements SheetHolder {
     public void start() {
         setFocusable(true);
         forceEarlyClassLoading();
+        new ParserDelegator() {{ setDefaultDTD(); }};  // Work around for Java plug-in bug 6993073
+
         if ( otherSessionId == null || !otherSessionId.equals(sessionId) ) {
             MainWindow mainWindow =  getApplication().getMainWindow();
 
