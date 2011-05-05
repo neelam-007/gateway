@@ -11,7 +11,6 @@ import com.l7tech.console.table.HttpRuleTableHandler;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.IpListPanel;
 import com.l7tech.gui.widgets.TextListCellRenderer;
@@ -429,7 +428,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         inputValidator.addRule(new InputValidator.ComponentValidationRule(tlsVersionComboBox) {
             @Override
             public String getValidationError() {
-                return CipherSuiteGuiUtil.isSupportedTlsVersion(tlsVersionComboBox.getSelectedItem())
+                final Object version = tlsVersionComboBox.getSelectedItem();
+                return version == null || ANY_TLS_VERSION.equals(version) || CipherSuiteGuiUtil.isSupportedTlsVersion(version)
                         ? null
                         : "The selected TLS version is not available with the Gateway's current security provider configuration.";
             }
