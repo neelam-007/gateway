@@ -336,6 +336,7 @@ public interface IdentityAdmin {
      * @throws com.l7tech.identity.AuthenticationException if current user cannot be found.
      */
     @Transactional(readOnly=true)
+    @Administrative(licensed = false)
     boolean doesCurrentUserHaveCert() throws FindException, AuthenticationException;
 
     /**
@@ -344,6 +345,7 @@ public interface IdentityAdmin {
      * @throws com.l7tech.identity.AuthenticationException if current user cannot be found.
      */
     @Transactional(readOnly=true)
+    @Administrative(licensed = false)
     boolean currentUsersPasswordCanBeChanged() throws AuthenticationException, FindException;
 
     /**
