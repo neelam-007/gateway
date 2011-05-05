@@ -1,9 +1,8 @@
 package com.l7tech.server;
 
 import com.l7tech.common.http.*;
-import com.l7tech.util.IOUtils;
-import com.l7tech.common.io.ProcUtils;
 import com.l7tech.common.io.ProcResult;
+import com.l7tech.common.io.ProcUtils;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
@@ -23,9 +22,10 @@ import com.l7tech.server.event.system.BackupEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.transport.ListenerException;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.FileUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FileUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -36,9 +36,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -405,7 +405,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
                 _logger.fine("Routed backup response from " + nodeName + " at " + nodeAddress + ": " + numBytes + " bytes in body");
             }
         } catch (IOException e) {
-            logAndAudit(getOriginalClientAddr(request), user, "Backup request routing failed", ServiceMessages.BACKUP_ROUTING_IO_ERROR, e);
+            logAndAudit(getOriginalClientAddr(request), user, "Backup request routing failed", ServiceMessages.BACKUP_ROUTING_IO_ERROR_INFO, null, ExceptionUtils.getMessage(e));
             respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Routing failed");
         } finally {
             ResourceUtils.closeQuietly( routedRequest );
