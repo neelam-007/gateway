@@ -7,16 +7,13 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.*;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.Functions;
+import com.l7tech.util.*;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
-import com.l7tech.util.TextUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -285,7 +282,7 @@ public class AuditRecordManagerImpl
     /**
      * Gets the autoextend:max defined for the innodb table space, from the innodb_data_file_paths MySQL variable.
      *
-     * @return  Max table space size in bytes, or -1 if not defined 
+     * @return  Max table space size in bytes, or -1 if not defined
      * @throws FindException if an error was encountered and the value could not be retrieved
      */
     @Override
@@ -300,24 +297,7 @@ public class AuditRecordManagerImpl
 
             if (rs != null && rs.next()) {
                 String innodbData = rs.getString("value");
-                int index = innodbData.lastIndexOf(":autoextend:max:");
-                if (index > 0) {
-                    String max = innodbData.substring(index + 16);
-                    return getLongSize(max);
-                } else if (innodbData.indexOf(":autoextend") > 0) {
-                    return -1;
-                } else {
-                    // use fixed size(es)
-                    long max = 0;
-                    String[] datafiles = innodbData.split(";");
-                    for (String datafile : datafiles) {
-                        String[] tokens = datafile.split(":");
-                        if (tokens.length > 1) {
-                            max += getLongSize(tokens[1]);
-                        }
-                    }
-                    return max;
-                }
+                return SqlUtils.getMaxTableSize(innodbData);
             }
 
             return -1; // rs empty
@@ -331,16 +311,6 @@ public class AuditRecordManagerImpl
             ResourceUtils.closeQuietly(statement);
             releaseSession(session);
         }
-    }
-
-    // gets a long out of a mysql / innodb size specification NNNN[M|G]
-    private long getLongSize(String max) {
-        long multiplier = 1L;
-        if ("m".equalsIgnoreCase(max.substring(max.length()-1)))
-            multiplier = 0x100000L;
-        else if ("g".equalsIgnoreCase(max.substring(max.length()-1)))
-            multiplier = 0x40000000L;
-        return multiplier * Long.parseLong(multiplier > 1 ? max.substring(0, max.length() -1) : max);
     }
 
     @Override

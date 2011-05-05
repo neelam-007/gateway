@@ -92,6 +92,12 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, AuditReco
 
     public int deleteRangeByOid(final long start, final long end) throws SQLException;
 
+    /**
+     * Get the max table space size in bytes for the current database.
+     *
+     * @return  Max table space size in bytes, or -1 if not defined
+     * @throws FindException if an error was encountered and the value could not be retrieved
+     */
     public long getMaxTableSpace() throws FindException;
     
     public long getCurrentUsage() throws FindException;

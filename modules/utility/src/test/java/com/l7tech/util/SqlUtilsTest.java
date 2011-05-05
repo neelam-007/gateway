@@ -214,6 +214,32 @@ public class SqlUtilsTest {
         assertEquals( "statement 3", "SELECT * \nFROM\nc", statements[2]);
     }
 
+    @Test
+    public void testMaxTableSize(){
+        //validate strings from the mysql documentation
+        //http://dev.mysql.com/doc/refman/5.0/en/innodb-configuration.html
+        final String unlimited = "innodb_data_file_path=ibdata1:10M:autoextend";
+        long tableSize = SqlUtils.getMaxTableSize(unlimited);
+        //this database is unlimited
+        Assert.assertEquals("Incorrect value", -1, tableSize);
+
+        final String oneHundredMegsUnlimited = "innodb_data_file_path=ibdata1:50M;ibdata2:50M:autoextend";
+        tableSize = SqlUtils.getMaxTableSize(oneHundredMegsUnlimited);
+        Assert.assertEquals("Incorrect value", -1, tableSize);
+
+        final String fiveHunderedMegs = "innodb_data_file_path=ibdata1:10M:autoextend:max:500M";
+        tableSize = SqlUtils.getMaxTableSize(fiveHunderedMegs);
+        Assert.assertEquals("Incorrect value", 524288000L, tableSize);
+
+        final String thirtyMegs = "innodb_data_file_path=ibdata1:15M;ibdata2:15M";
+        tableSize = SqlUtils.getMaxTableSize(thirtyMegs);
+        Assert.assertEquals("Incorrect value", 31457280L, tableSize);
+
+        final String twoGigs = "innodb_data_file_path=ibdata1:10M:autoextend:max:2G";
+        tableSize = SqlUtils.getMaxTableSize(twoGigs);
+        Assert.assertEquals("Incorrect value", 2147483648L, tableSize);
+    }
+
     private void testSingleStatement( final String description,
                                       final String sql,
                                       final String expectedStatement ) throws IOException {

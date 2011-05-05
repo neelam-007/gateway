@@ -138,7 +138,48 @@ public class SqlUtils {
         return statements.toArray( new String[statements.size()] );
     }
 
+    /**
+     * Parse the value of MySQL variable 'innodb_data_file_path' to determine the
+     * max table size.
+     *
+     * @param innodbData String to parse.
+     * @return the max possible size of the database in bytes. If the database cannot have
+     * a max size due to being allowed to grow unlimited, then -1 is returned.
+     */
+    public static long getMaxTableSize(String innodbData) {
+        int index = innodbData.lastIndexOf(":autoextend:max:");
+        if (index > 0) {
+            String max = innodbData.substring(index + 16);
+            return getLongSize(max);
+        } else if (innodbData.indexOf(":autoextend") > 0) {
+            return -1;
+        } else {
+            // use fixed size(es)
+            long max = 0;
+            String[] datafiles = innodbData.split(";");
+            for (String datafile : datafiles) {
+                String[] tokens = datafile.split(":");
+                if (tokens.length > 1) {
+                    max += getLongSize(tokens[1]);
+                }
+            }
+            return max;
+        }
+    }
+
+    // - PRIVATE
+
     private static boolean isCommentLine( final CharSequence charSequence ) {
         return charSequence.length() > 1 && charSequence.charAt( 0 )=='-' && charSequence.charAt( 1 )=='-';
+    }
+
+    // gets a long out of a mysql / innodb size specification NNNN[M|G]
+    private static long getLongSize(String max) {
+        long multiplier = 1L;
+        if ("m".equalsIgnoreCase(max.substring(max.length()-1)))
+            multiplier = 0x100000L;
+        else if ("g".equalsIgnoreCase(max.substring(max.length()-1)))
+            multiplier = 0x40000000L;
+        return multiplier * Long.parseLong(multiplier > 1 ? max.substring(0, max.length() -1) : max);
     }
 }
