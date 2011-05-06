@@ -25,7 +25,7 @@ public class CsrfProtectionAssertion extends Assertion implements SetsVariables 
     private String parameterName = null;
     private HttpParameterType parameterType = HttpParameterType.POST;
     private boolean enableHttpRefererChecking = false;
-    private boolean allowEmptyReferer = false;
+    private boolean allowMissingOrEmptyReferer = false;
     private boolean onlyAllowCurrentDomain = true;
     private List<String> trustedDomains = new ArrayList<String>();
 
@@ -134,12 +134,12 @@ public class CsrfProtectionAssertion extends Assertion implements SetsVariables 
         this.enableHttpRefererChecking = enableHttpRefererChecking;
     }
 
-    public boolean isAllowEmptyReferer() {
-        return allowEmptyReferer;
+    public boolean isAllowMissingOrEmptyReferer() {
+        return allowMissingOrEmptyReferer;
     }
 
-    public void setAllowEmptyReferer(boolean allowEmptyReferer) {
-        this.allowEmptyReferer = allowEmptyReferer;
+    public void setAllowMissingOrEmptyReferer(boolean allowMissingOrEmptyReferer) {
+        this.allowMissingOrEmptyReferer = allowMissingOrEmptyReferer;
     }
 
     public boolean isOnlyAllowCurrentDomain() {

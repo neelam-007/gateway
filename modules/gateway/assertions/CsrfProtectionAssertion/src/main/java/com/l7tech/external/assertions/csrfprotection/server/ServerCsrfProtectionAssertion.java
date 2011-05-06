@@ -38,8 +38,9 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
         this.auditor = context != null ? new Auditor(this, context, logger) : new LogOnlyAuditor(logger);
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        HttpRequestKnob requestKnob = null;
+        final HttpRequestKnob requestKnob;
         try {
             requestKnob = context.getRequest().getHttpRequestKnob();
         } catch(IllegalStateException e) {
@@ -73,7 +74,6 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
             }
 
             // Try to get the parameter value
-            String paramValue = null;
             if(assertion.getParameterType() == HttpParameterType.GET && requestKnob.getMethod() != HttpMethod.GET) {
                 auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_WRONG_REQUEST_TYPE, "GET");
                 return AssertionStatus.FAILED;
@@ -95,7 +95,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                 auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MULTIPLE_PARAMETER_VALUES);
                 return AssertionStatus.FAILED;
             }
-            paramValue = paramValues[0];
+            final String paramValue = paramValues[0];
 
             if(!cookieValue.equals(paramValue)) {
                 auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_COOKIE_PARAMETER_MISMATCH);
@@ -110,7 +110,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
             String values[] = requestKnob.getHeaderValues("Referer");
 
             String referer = null;
-            if(!assertion.isAllowEmptyReferer() && (values == null || values.length == 0
+            if(!assertion.isAllowMissingOrEmptyReferer() && (values == null || values.length == 0
                     || (values.length == 1 && StringUtils.isEmpty(values[0])))) {
                 auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MISSING_REFERER);
                 return AssertionStatus.FAILED;

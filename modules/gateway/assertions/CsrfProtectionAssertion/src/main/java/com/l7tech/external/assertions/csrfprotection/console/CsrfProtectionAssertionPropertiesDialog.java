@@ -33,20 +33,17 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
     private JButton editDomainButton;
     private JButton removeDomainButton;
 
-    private CsrfProtectionAssertion assertion;
-
     public CsrfProtectionAssertionPropertiesDialog(Frame parent, CsrfProtectionAssertion assertion) {
         super(CsrfProtectionAssertion.class, parent, assertion.getPropertiesDialogTitle(), true);
 
         initComponents();
         setData(assertion);
-
-        this.assertion = assertion;
     }
 
     @Override
     protected void initComponents() {
         enableDoubleSubmitCookieCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 enableDisableDoubleSubmitCookieControls();
             }
@@ -55,6 +52,7 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
         httpParameterTypeComboBox.setModel(new DefaultComboBoxModel(new HttpParameterType[] {HttpParameterType.GET, HttpParameterType.POST, HttpParameterType.GET_AND_POST}));
 
         enableHttpRefererValidationCheckBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 enableDisableHttpRefererControls();
             }
@@ -62,6 +60,7 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
 
         validDomainsComboBox.setModel(new DefaultComboBoxModel(new String[] {"Current Domain", "List of Trusted Domains"}));
         validDomainsComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 enableDisableHttpRefererControls();
             }
@@ -72,6 +71,7 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
         validDomainsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         addDomainButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 String value = JOptionPane.showInputDialog(CsrfProtectionAssertionPropertiesDialog.this, "Enter a Domain Value", "");
                 if(value != null) {
@@ -81,6 +81,7 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
         });
 
         editDomainButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 if(validDomainsList.getSelectedIndex() == -1) {
                     return;
@@ -95,6 +96,7 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
         });
 
         removeDomainButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 if(validDomainsList.getSelectedIndex() == -1) {
                     return;
@@ -140,7 +142,7 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
         enableDisableDoubleSubmitCookieControls();
 
         enableHttpRefererValidationCheckBox.setSelected(assertion.isEnableHttpRefererChecking());
-        allowEmptyValuesCheckBox.setSelected(assertion.isAllowEmptyReferer());
+        allowEmptyValuesCheckBox.setSelected(assertion.isAllowMissingOrEmptyReferer());
         validDomainsComboBox.setSelectedIndex(assertion.isOnlyAllowCurrentDomain() ? 0 : 1);
         validDomainsListModel.removeAllElements();
         for(String trustedDomain : assertion.getTrustedDomains()) {
@@ -175,7 +177,7 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
         assertion.setParameterType((HttpParameterType)httpParameterTypeComboBox.getSelectedItem());
 
         assertion.setEnableHttpRefererChecking(enableHttpRefererValidationCheckBox.isSelected());
-        assertion.setAllowEmptyReferer(allowEmptyValuesCheckBox.isSelected());
+        assertion.setAllowMissingOrEmptyReferer(allowEmptyValuesCheckBox.isSelected());
         assertion.setOnlyAllowCurrentDomain(validDomainsComboBox.getSelectedIndex() == 0 ? true : false);
         java.util.List<String> domains;
         if (validDomainsListModel == null) {

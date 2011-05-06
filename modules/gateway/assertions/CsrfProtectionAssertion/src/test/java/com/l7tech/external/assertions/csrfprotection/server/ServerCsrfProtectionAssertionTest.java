@@ -8,44 +8,24 @@ import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpRequestKnobAdapter;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextWrapper;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.springframework.context.ApplicationContext;
+import junit.framework.Assert;
+import org.junit.Test;
 
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Test the CsrfProtectionAssertion.
  */
-public class ServerCsrfProtectionAssertionTest extends TestCase {
-
-    private static final Logger log = Logger.getLogger(ServerCsrfProtectionAssertionTest.class.getName());
-    private static ApplicationContext applicationContext;
-    private static ServerConfigStub serverConfig;
-
-    public ServerCsrfProtectionAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerCsrfProtectionAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    public void testFailDoubleSubmit1() throws Exception {
+public class ServerCsrfProtectionAssertionTest {
+    @Test
+    public void testDoubleSubmit_Fail_NoCookies_NoHeaders_Post() throws Exception {
         PolicyEnforcementContext context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
                 new HashMap<String, String>(),
@@ -63,10 +43,11 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.FAILED);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
     }
 
-    public void testFailDoubleSubmit2() throws Exception {
+    @Test
+    public void testDoubleSubmit_Fail_WithCookies_NoHeaders_Post() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
         cookies.put("SESSION_ID", "1234567890ABCDEF");
 
@@ -87,10 +68,11 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.FAILED);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
     }
 
-    public void testFailDoubleSubmit3() throws Exception {
+    @Test
+    public void testDoubleSubmit_Fail_WithBoth_ParameterMissing() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
         cookies.put("SESSION_ID", "1234567890ABCDEF");
         HashMap<String, String[]> parameters = new HashMap<String, String[]>();
@@ -113,10 +95,11 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.FAILED);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
     }
 
-    public void testFailDoubleSubmit4() throws Exception {
+    @Test
+    public void testDoubleSubmit_Fail_Cookie_And_Parameter_Values_No_Match() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
         cookies.put("SESSION_ID", "1234567890ABCDEF");
         HashMap<String, String[]> parameters = new HashMap<String, String[]>();
@@ -139,14 +122,42 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.FAILED);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
     }
 
-    public void testFailDoubleSubmit5() throws Exception {
+    @Test
+    public void testDoubleSubmit_Fail_Multiple_Parameter_Values() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
         cookies.put("SESSION_ID", "1234567890ABCDEF");
         HashMap<String, String[]> parameters = new HashMap<String, String[]>();
-        parameters.put("sessionID", new String[] {"123", "1234567890ABCDEF"});
+        parameters.put("sessionID", new String[] {"123", "456"});
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext(
+                new URL("http://localhost:8080/test"),
+                cookies,
+                HttpMethod.POST,
+                parameters,
+                new String[0]);
+
+        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
+        assertion.setEnableDoubleSubmitCookieChecking(true);
+        assertion.setCookieName("SESSION_ID");
+        assertion.setParameterName("sessionID");
+        assertion.setParameterType(HttpParameterType.POST);
+        assertion.setEnableHttpRefererChecking(false);
+
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        Assert.assertEquals(AssertionStatus.FAILED, status);
+    }
+
+    @Test
+    public void testDoubleSubmit_Fail_Incorrect_Http_Method_Requires_Post() throws Exception {
+        HashMap<String, String> cookies = new HashMap<String, String>();
+        cookies.put("SESSION_ID", "1234567890ABCDEF");
+        HashMap<String, String[]> parameters = new HashMap<String, String[]>();
+        parameters.put("sessionID", new String[] {"123"});
 
         PolicyEnforcementContext context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
@@ -165,14 +176,15 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.FAILED);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
     }
 
     /**
      * Fail non supported HTTP method (e.g. PUT).
      * @throws Exception
      */
-    public void testFailDoubleSubmit6() throws Exception {
+    @Test
+    public void testDoubleSubmit_Fail_Http_Method_Not_Supported() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
         String sessionID = "1234567890ABCDEF";
         cookies.put("SESSION_ID", sessionID);
@@ -196,10 +208,11 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.FAILED);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
     }
 
-    public void testSucceedDoubleSubmit1() throws Exception {
+    @Test
+    public void testDoubleSubmit_Success_Post() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
         String sessionID = "1234567890ABCDEF";
         cookies.put("SESSION_ID", sessionID);
@@ -223,11 +236,12 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.NONE);
-        assertEquals(sessionID, context.getVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN));
+        Assert.assertEquals(AssertionStatus.NONE, status);
+        Assert.assertEquals(sessionID, context.getVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN));
     }
 
-    public void testSucceedDoubleSubmit2() throws Exception {
+    @Test
+    public void testDoubleSubmit_Success_Get() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
         String sessionID = "1234567890ABCDEF";
         cookies.put("SESSION_ID", sessionID);
@@ -251,11 +265,12 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.NONE);
-        assertEquals(sessionID, context.getVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN));
+        Assert.assertEquals(AssertionStatus.NONE, status);
+        Assert.assertEquals(sessionID, context.getVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN));
     }
 
-    public void testSucceedDoubleSubmit3() throws Exception {
+    @Test
+    public void testDoubleSubmit_Success_Get_BothAllowed() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
         String sessionID = "1234567890ABCDEF";
         cookies.put("SESSION_ID", sessionID);
@@ -279,11 +294,12 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.NONE);
-        assertEquals(sessionID, context.getVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN));
+        Assert.assertEquals(AssertionStatus.NONE, status);
+        Assert.assertEquals(sessionID, context.getVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN));
     }
 
-    public void testFailRefererCheck1() throws Exception {
+    @Test
+    public void testReferer_Fail_Header_Missing() throws Exception {
         PolicyEnforcementContext context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
                 new HashMap<String, String>(),
@@ -294,27 +310,49 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
         assertion.setEnableDoubleSubmitCookieChecking(false);
         assertion.setEnableHttpRefererChecking(true);
-        assertion.setAllowEmptyReferer(false);
+        assertion.setAllowMissingOrEmptyReferer(false);
+        assertion.setOnlyAllowCurrentDomain(true); // not important
+
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        Assert.assertEquals(AssertionStatus.FAILED, status);
+    }
+
+    @Test
+    public void testReferer_Fail_Header_Invalid_CurrentDomain() throws Exception {
+        PolicyEnforcementContext context = createPolicyEnforcementContext(
+                new URL("http://localhost:8080/test"),
+                new HashMap<String, String>(),
+                HttpMethod.POST,
+                new HashMap<String, String[]>(),
+                new String[]{"Referer: http://otherdomain.com/page.html"});
+
+        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
+        assertion.setEnableDoubleSubmitCookieChecking(false);
+        assertion.setEnableHttpRefererChecking(true);
+        assertion.setAllowMissingOrEmptyReferer(false);
         assertion.setOnlyAllowCurrentDomain(true);
 
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.FAILED);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
     }
 
-    public void testFailRefererCheck2() throws Exception {
+    @Test
+    public void testReferer_Fail_Header_Invalid_TrustedList() throws Exception {
         PolicyEnforcementContext context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
                 new HashMap<String, String>(),
                 HttpMethod.POST,
                 new HashMap<String, String[]>(),
-                new String[0]);
+                new String[]{"Referer: http://otherdomain.com/page.html"});//not in valid list
 
         CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
         assertion.setEnableDoubleSubmitCookieChecking(false);
         assertion.setEnableHttpRefererChecking(true);
-        assertion.setAllowEmptyReferer(false);
+        assertion.setAllowMissingOrEmptyReferer(false);
         assertion.setOnlyAllowCurrentDomain(false);
         ArrayList<String> trustedDomains = new ArrayList<String>();
         trustedDomains.add("layer7tech.com");
@@ -323,107 +361,23 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.FAILED);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
     }
 
-    public void testFailRefererCheck3() throws Exception {
+    @Test
+    public void testReferer_Fail_Header_Invalid_TrustedList_Relative() throws Exception {
         PolicyEnforcementContext context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
                 new HashMap<String, String>(),
                 HttpMethod.POST,
                 new HashMap<String, String[]>(),
-                new String[] {"http://www.layer7tech.com/page.html"});
+                //not in valid list - this will be converted to http://localhost:8080/page.html as context is request URL when relative.
+                new String[]{"Referer: /page.html"});
 
         CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
         assertion.setEnableDoubleSubmitCookieChecking(false);
         assertion.setEnableHttpRefererChecking(true);
-        assertion.setAllowEmptyReferer(false);
-        assertion.setOnlyAllowCurrentDomain(true);
-
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
-        AssertionStatus status = serverAssertion.checkRequest(context);
-
-        assertEquals(status, AssertionStatus.FAILED);
-    }
-
-    public void testFailRefererCheck4() throws Exception {
-        PolicyEnforcementContext context = createPolicyEnforcementContext(
-                new URL("http://localhost:8080/test"),
-                new HashMap<String, String>(),
-                HttpMethod.POST,
-                new HashMap<String, String[]>(),
-                new String[] {"http://www.layer7tech.com/page.html"});
-
-        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
-        assertion.setEnableDoubleSubmitCookieChecking(false);
-        assertion.setEnableHttpRefererChecking(true);
-        assertion.setAllowEmptyReferer(false);
-        assertion.setOnlyAllowCurrentDomain(false);
-        ArrayList<String> trustedDomains = new ArrayList<String>();
-        trustedDomains.add("l7tech.com");
-        assertion.setTrustedDomains(trustedDomains);
-
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
-        AssertionStatus status = serverAssertion.checkRequest(context);
-
-        assertEquals(status, AssertionStatus.FAILED);
-    }
-
-    public void testFailRefererCheck5() throws Exception {
-        PolicyEnforcementContext context = createPolicyEnforcementContext(
-                new URL("http://localhost:8080/test"),
-                new HashMap<String, String>(),
-                HttpMethod.POST,
-                new HashMap<String, String[]>(),
-                new String[] {"/page.html"});
-
-        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
-        assertion.setEnableDoubleSubmitCookieChecking(false);
-        assertion.setEnableHttpRefererChecking(true);
-        assertion.setAllowEmptyReferer(false);
-        assertion.setOnlyAllowCurrentDomain(false);
-        ArrayList<String> trustedDomains = new ArrayList<String>();
-        trustedDomains.add("l7tech.com");
-        assertion.setTrustedDomains(trustedDomains);
-
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
-        AssertionStatus status = serverAssertion.checkRequest(context);
-
-        assertEquals(status, AssertionStatus.FAILED);
-    }
-
-    public void testSucceedRefererCheck1() throws Exception {
-        PolicyEnforcementContext context = createPolicyEnforcementContext(
-                new URL("http://localhost:8080/test"),
-                new HashMap<String, String>(),
-                HttpMethod.POST,
-                new HashMap<String, String[]>(),
-                new String[0]);
-
-        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
-        assertion.setEnableDoubleSubmitCookieChecking(false);
-        assertion.setEnableHttpRefererChecking(true);
-        assertion.setAllowEmptyReferer(true);
-        assertion.setOnlyAllowCurrentDomain(true);
-
-        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
-        AssertionStatus status = serverAssertion.checkRequest(context);
-
-        assertEquals(status, AssertionStatus.NONE);
-    }
-
-    public void testSucceedRefererCheck2() throws Exception {
-        PolicyEnforcementContext context = createPolicyEnforcementContext(
-                new URL("http://localhost:8080/test"),
-                new HashMap<String, String>(),
-                HttpMethod.POST,
-                new HashMap<String, String[]>(),
-                new String[0]);
-
-        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
-        assertion.setEnableDoubleSubmitCookieChecking(false);
-        assertion.setEnableHttpRefererChecking(true);
-        assertion.setAllowEmptyReferer(true);
+        assertion.setAllowMissingOrEmptyReferer(false);
         assertion.setOnlyAllowCurrentDomain(false);
         ArrayList<String> trustedDomains = new ArrayList<String>();
         trustedDomains.add("layer7tech.com");
@@ -432,10 +386,59 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.NONE);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
     }
 
-    public void testSucceedRefererCheck3() throws Exception {
+    @Test
+    public void testReferer_Success_Missing_Header_Allowed_CurrentDomain() throws Exception {
+        PolicyEnforcementContext context = createPolicyEnforcementContext(
+                new URL("http://localhost:8080/test"),
+                new HashMap<String, String>(),
+                HttpMethod.POST,
+                new HashMap<String, String[]>(),
+                new String[0]);
+
+        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
+        assertion.setEnableDoubleSubmitCookieChecking(false);
+        assertion.setEnableHttpRefererChecking(true);
+        assertion.setAllowMissingOrEmptyReferer(true);
+        assertion.setOnlyAllowCurrentDomain(true);
+
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        Assert.assertEquals(status, AssertionStatus.NONE);
+    }
+
+    /**
+     * Same as testReferer_Success_Missing_Header_Allowed_CurrentDomain - code paths are identical.
+     */
+    @Test
+    public void testReferer_Success_Missing_Header_Allowed_TrustedList() throws Exception {
+        PolicyEnforcementContext context = createPolicyEnforcementContext(
+                new URL("http://localhost:8080/test"),
+                new HashMap<String, String>(),
+                HttpMethod.POST,
+                new HashMap<String, String[]>(),
+                new String[0]);
+
+        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
+        assertion.setEnableDoubleSubmitCookieChecking(false);
+        assertion.setEnableHttpRefererChecking(true);
+        assertion.setAllowMissingOrEmptyReferer(true);
+        assertion.setOnlyAllowCurrentDomain(false);
+        ArrayList<String> trustedDomains = new ArrayList<String>();
+        trustedDomains.add("layer7tech.com");
+        assertion.setTrustedDomains(trustedDomains);
+
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        Assert.assertEquals(status, AssertionStatus.NONE);
+    }
+
+    @Test
+    public void testReferer_Success_CurrentDomain_Relative() throws Exception {
         PolicyEnforcementContext context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
                 new HashMap<String, String>(),
@@ -446,16 +449,38 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
         assertion.setEnableDoubleSubmitCookieChecking(false);
         assertion.setEnableHttpRefererChecking(true);
-        assertion.setAllowEmptyReferer(true);
+        assertion.setAllowMissingOrEmptyReferer(true);
         assertion.setOnlyAllowCurrentDomain(true);
 
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.NONE);
+        Assert.assertEquals(status, AssertionStatus.NONE);
     }
 
-    public void testSucceedRefererCheck4() throws Exception {
+    @Test
+    public void testReferer_Success_CurrentDomain() throws Exception {
+        PolicyEnforcementContext context = createPolicyEnforcementContext(
+                new URL("http://localhost:8080/test"),
+                new HashMap<String, String>(),
+                HttpMethod.POST,
+                new HashMap<String, String[]>(),
+                new String[] {"Referer: http://localhost:8080/page.html"});
+
+        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
+        assertion.setEnableDoubleSubmitCookieChecking(false);
+        assertion.setEnableHttpRefererChecking(true);
+        assertion.setAllowMissingOrEmptyReferer(true);
+        assertion.setOnlyAllowCurrentDomain(true);
+
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        Assert.assertEquals(status, AssertionStatus.NONE);
+    }
+
+    @Test
+    public void testReferer_Success_TrustedListMatch() throws Exception {
         PolicyEnforcementContext context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
                 new HashMap<String, String>(),
@@ -466,7 +491,7 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
         assertion.setEnableDoubleSubmitCookieChecking(false);
         assertion.setEnableHttpRefererChecking(true);
-        assertion.setAllowEmptyReferer(true);
+        assertion.setAllowMissingOrEmptyReferer(true);
         assertion.setOnlyAllowCurrentDomain(false);
         ArrayList<String> trustedDomains = new ArrayList<String>();
         trustedDomains.add("layer7tech.com");
@@ -475,14 +500,15 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
 
-        assertEquals(status, AssertionStatus.NONE);
+        Assert.assertEquals(status, AssertionStatus.NONE);
     }
 
     /**
-     * If AllowEmptyReferer, must succeed when referer is null or empty string
+     * If setAllowEmptyOrMissingReferer(true), must succeed when referer is null or empty string
      * @throws Exception
      */
-    public void testSucceedRefererCheck5() throws Exception {
+    @Test
+    public void testReferer_Success_RefererPresentButEmptyOrNull() throws Exception {
         PolicyEnforcementContext context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
                 new HashMap<String, String>(),
@@ -493,13 +519,12 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
         CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
         assertion.setEnableDoubleSubmitCookieChecking(false);
         assertion.setEnableHttpRefererChecking(true);
-        assertion.setAllowEmptyReferer(true);
-        assertion.setAllowEmptyReferer(true);
+        assertion.setAllowMissingOrEmptyReferer(true);
         assertion.setOnlyAllowCurrentDomain(true);
 
         ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
         AssertionStatus status = serverAssertion.checkRequest(context);
-        assertEquals(status, AssertionStatus.NONE);
+        Assert.assertEquals(status, AssertionStatus.NONE);
 
         context = createPolicyEnforcementContext(
                 new URL("http://localhost:8080/test"),
@@ -508,15 +533,43 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
                 new HashMap<String, String[]>(),
                 new String[] {});   // null referer
         status = serverAssertion.checkRequest(context);
-        assertEquals(status, AssertionStatus.NONE);
+        Assert.assertEquals(status, AssertionStatus.NONE);
+    }
+
+    @Test
+    public void testBothDoubleCookieAndRefererSuccessful() throws Exception {
+        HashMap<String, String> cookies = new HashMap<String, String>();
+        String sessionID = "1234567890ABCDEF";
+        cookies.put("SESSION_ID", sessionID);
+        HashMap<String, String[]> parameters = new HashMap<String, String[]>();
+        parameters.put("sessionID", new String[] {sessionID});
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext(
+                new URL("http://localhost:8080/test"),
+                cookies,
+                HttpMethod.GET,
+                parameters,
+                new String[] {"Referer: http://localhost:8080"});
+
+        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
+        assertion.setEnableDoubleSubmitCookieChecking(true);
+        assertion.setCookieName("SESSION_ID");
+        assertion.setParameterName("sessionID");
+        assertion.setParameterType(HttpParameterType.GET_AND_POST);
+        assertion.setEnableHttpRefererChecking(true);
+
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        Assert.assertEquals(AssertionStatus.NONE, status);
+        Assert.assertEquals(sessionID, context.getVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN));
     }
 
     private PolicyEnforcementContext createPolicyEnforcementContext(final URL url,
                                                                     final HashMap<String, String> cookies,
                                                                     final HttpMethod method,
                                                                     final HashMap<String, String[]> parameters,
-                                                                    final String[] headers)
-    {
+                                                                    final String[] headers) {
         return createPolicyEnforcementContext(url,  cookies, method, parameters, headers, new HashMap<String, Object>());
     }
 
@@ -525,8 +578,7 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
                                                                     final HttpMethod method,
                                                                     final HashMap<String, String[]> parameters,
                                                                     final String[] headers,
-                                                                    final HashMap<String, Object> contextVariables)
-    {
+                                                                    final HashMap<String, Object> contextVariables) {
         final HttpRequestKnob requestKnob = new HttpRequestKnobAdapter() {
             @Override
             public HttpCookie[] getCookies() {
@@ -590,5 +642,4 @@ public class ServerCsrfProtectionAssertionTest extends TestCase {
             }
         };
     }
-
 }
