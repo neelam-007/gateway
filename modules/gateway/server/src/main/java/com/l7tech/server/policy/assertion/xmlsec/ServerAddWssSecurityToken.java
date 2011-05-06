@@ -181,7 +181,7 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
             } catch (InvalidDocumentFormatException e) {
                 auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE, null, e);
             } catch (UnexpectedKeyInfoException e) {
-                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE, null, e);
+                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE_WITH_MORE_INFO, ExceptionUtils.getMessage(e));
             } catch (GeneralSecurityException e) {
                 auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE, null, e);
             }

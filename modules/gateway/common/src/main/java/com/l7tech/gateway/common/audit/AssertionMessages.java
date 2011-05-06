@@ -794,6 +794,7 @@ public class AssertionMessages extends Messages {
     public static final M ADD_WSS_TOKEN_NOT_SAML = m(7905, Level.WARNING, false, false, "SAML assertion variable did not contain a valid SAML assertion: {0}");
     public static final M ADD_WSS_TOKEN_MULTIPLE_REQ_TOKENS = m(7906, Level.INFO, false, false, "Unable to identify the encryption recipient because we are decorating a response to a request with multiple eligible tokens.  Encryption recipient must be specified explicitly.");
     public static final M ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE = m(7907, Level.WARNING, false, false, "The SAML assertion uses a secret key for subject confirmation, but the Gateway does not already possess this key, and is unable to unwrap it from the EncryptedKey");
+    public static final M ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE_WITH_MORE_INFO = m(7908, Level.WARNING, false, false, "The SAML assertion uses a secret key for subject confirmation, but the Gateway does not already possess this key, and is unable to unwrap it from the EncryptedKey: {0}");
 
     public static final M CUSTOM_ASSERTION_INFO = m(8000, Level.INFO, "Assertion ''{0}''; {1}");
     public static final M CUSTOM_ASSERTION_WARN = m(8001, Level.WARNING, "Assertion ''{0}''; {1}");
