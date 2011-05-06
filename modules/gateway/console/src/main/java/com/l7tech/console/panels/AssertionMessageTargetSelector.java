@@ -115,20 +115,19 @@ public class AssertionMessageTargetSelector extends JDialog {
         if ( !readonly ) {
             _contextVarName.setEditable(_otherContextVariableRadioButton.isSelected());
             boolean isOkEnabled = true;
-            if ( _otherContextVariableRadioButton.isSelected()
-                    && _contextVarName.getText() != null
-                    && _contextVarName.getText().length() > 0) {
-                if (VariablePrefixUtil.hasValidDollarCurlyOpenStart(_contextVarName.getText())
-                        && VariablePrefixUtil.hasValidCurlyCloseEnd(_contextVarName.getText())) {
+            if ( _otherContextVariableRadioButton.isSelected()) {
+                final String name = _contextVarName.getText();
+                if (VariablePrefixUtil.hasValidDollarCurlyOpenStart(name)
+                        && VariablePrefixUtil.hasValidCurlyCloseEnd(name)) {
 
                     // valid start and end marker exist e.g. ${variableName}, now check between the markers
-                    isOkEnabled = VariablePrefixUtil.fixVariableName(_contextVarName.getText()).length() > 0;
+                    isOkEnabled = name != null && name.length() > 0 && VariablePrefixUtil.fixVariableName(name).length() > 0;
                 } else {
 
                     // support variable name with no ${} marker e.g. varName
-                    isOkEnabled = !VariablePrefixUtil.hasValidDollarCurlyOpenStart(_contextVarName.getText())
-                            && !VariablePrefixUtil.hasValidCurlyCloseEnd(_contextVarName.getText())
-                            && !VariablePrefixUtil.hasDollarOrCurlyOpen(_contextVarName.getText());
+                    isOkEnabled = name != null && name.length() > 0 && !VariablePrefixUtil.hasValidDollarCurlyOpenStart(name)
+                            && !VariablePrefixUtil.hasValidCurlyCloseEnd(name)
+                            && !VariablePrefixUtil.hasDollarOrCurlyOpen(name);
                 }
             }
             buttonOK.setEnabled(isOkEnabled);
