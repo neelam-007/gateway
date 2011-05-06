@@ -42,6 +42,7 @@ import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.security.token.OpaqueSecurityToken;
+import com.l7tech.util.TextUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -440,7 +441,7 @@ public class ManagerAppletFilter implements Filter {
             logger.log(Level.FINE, "Error changing password, " + ExceptionUtils.getMessage(ipe), ipe);
             hreq.setAttribute(INVALID_PASSWORD, "YES");
             hreq.setAttribute(USERNAME, username);
-            hreq.setAttribute(INVALID_PASSWORD_MESSAGE, ipe.getMessage());
+            hreq.setAttribute(INVALID_PASSWORD_MESSAGE, formatErrors(ipe));
             return AuthResult.FAIL;
         } catch (PolicyAssertionException e) {
             auditor.logAndAudit(ServiceMessages.APPLET_AUTH_POLICY_FAILED, ExceptionUtils.getMessage(e));
@@ -677,7 +678,17 @@ public class ManagerAppletFilter implements Filter {
                 ret.add(mod);
         return ret;
     }
-    
+
+    public static String formatErrors( final InvalidPasswordException e ) {
+        if ( e.getPasswordErrors().isEmpty() ) {
+            return "Invalid password '"+e.getMessage()+"'.";
+        } else if ( e.getPasswordErrors().size() == 1 ) {
+            return "Invalid password '"+e.getPasswordErrors().iterator().next()+"'.";
+        } else {
+            return "<div style=\"text-align: left\">Invalid password:<ul><li>" + TextUtils.join( "</li><li>", e.getPasswordErrors() ) + "</li></ul></div>";
+        }
+    }
+
     /**
      * The class stores additional session information such as port, etc.
      * If there are more additional info later on, you can add them as instance variables into the class.
