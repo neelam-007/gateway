@@ -1,6 +1,7 @@
 package com.l7tech.gateway.common.admin;
 
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 
 import java.io.Serializable;
 
@@ -18,7 +19,7 @@ public final class AdminLoginResult implements Serializable {
 
     public AdminLoginResult(User user, String secret, String version, String softwareVersion, String logonWarningBanner) {
         if (user == null || secret == null || secret.length() == 0 || version == null || softwareVersion == null) throw new IllegalArgumentException();
-        this.user = user;
+        this.user = bean(user);
         this.sessionCookie = secret;
         this.version = version;
         this.softwareVersion = softwareVersion;
@@ -58,5 +59,22 @@ public final class AdminLoginResult implements Serializable {
      */
     public String getLogonWarningBanner() {
         return logonWarningBanner;
+    }
+
+    private static User bean( User user ) {
+        final UserBean bean;
+        if ( user instanceof UserBean ) {
+            bean = (UserBean) user;
+        } else {
+            bean = new UserBean( user.getProviderId(), user.getLogin() );
+            bean.setUniqueIdentifier( user.getId() );
+            bean.setName( user.getName() );
+            bean.setFirstName( user.getFirstName() );
+            bean.setLastName( user.getLastName() );
+            bean.setDepartment( user.getDepartment() );
+            bean.setEmail( user.getEmail() );
+            bean.setSubjectDn( user.getSubjectDn() );
+        }
+        return bean;
     }
 }

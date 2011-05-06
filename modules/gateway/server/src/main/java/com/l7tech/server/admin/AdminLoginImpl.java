@@ -288,6 +288,11 @@ public class AdminLoginImpl
         }
     }
 
+    @Override
+    public byte[] getServerCertificate( final String username ) {
+        return new byte[0];
+    }
+
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     private AccessControlException buildAccessControlException(final String message, final Throwable cause) {
         return (AccessControlException) new AccessControlException(message).initCause(cause);

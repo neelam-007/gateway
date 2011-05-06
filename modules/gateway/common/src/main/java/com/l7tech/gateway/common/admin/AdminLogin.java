@@ -63,6 +63,13 @@ public interface AdminLogin {
             throws AccessControlException;
 
     /**
+     * No longer supported, pre 6.0 Managers will use this method prior to version checks.
+     */
+    @Deprecated
+    @Administrative(authenticated =false, licensed=false)
+    byte[] getServerCertificate(String username);
+
+    /**
      * Method that allows admins to login, returning an interface to
      * the server.
      *
