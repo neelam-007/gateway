@@ -153,7 +153,7 @@ public class PrivateKeysComboBox extends JComboBox {
      */
     public int select(final long keystoreId, final String keyAlias) {
         if (keyAlias == null) {
-            setSelectedIndex(0);
+            setSelectedIndex(-1);
             return 0;
         }
 
@@ -215,7 +215,7 @@ public class PrivateKeysComboBox extends JComboBox {
     }
 
     public void selectDefaultSsl() {
-        setSelectedIndex(0);
+        setSelectedIndex(getModel().getSize() > 0 ? 0 : -1);
     }
 
     public static void main(String[] args) {
