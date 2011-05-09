@@ -973,7 +973,7 @@ public class AssertionMessages extends Messages {
     public static final M CSRF_PROTECTION_COOKIE_PARAMETER_MISMATCH = m(9406, Level.WARNING, "The parameter did not match the cookie value, failing assertion.");
     public static final M CSRF_PROTECTION_MISSING_REFERER = m(9407, Level.WARNING, "The HTTP-Referer header was not provided but it is required, failing assertion.");
     public static final M CSRF_PROTECTION_MULTIPLE_REFERERS = m(9408, Level.WARNING, "The HTTP-Referer header was provided multiple times, failing assertion.");
-    public static final M CSRF_PROTECTION_INVALID_REFERER = m(9409, Level.WARNING, "The HTTP-Referer header value was not valid, failing assertion.");
+    public static final M CSRF_PROTECTION_INVALID_REFERER = m(9409, Level.WARNING, "The HTTP-Referer header value ''{0}'' was not valid, failing assertion.");
 
     // Highest ID reserved for AssertionMessages = 99999
 }

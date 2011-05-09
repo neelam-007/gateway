@@ -125,12 +125,12 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
 
             // Empty referer values are valid at this point. If not empty, then validate the value
             if(!StringUtils.isEmpty(referer)) {
-                String domain = null;
+                final String domain;
                 try {
                     URL url = new URL(requestKnob.getRequestURL(), referer);
                     domain = url.getHost();
                 } catch(MalformedURLException e) {
-                    auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER);
+                    auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER, referer);
                     return AssertionStatus.FAILED;
                 }
 
@@ -138,20 +138,20 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                     String localDomain = requestKnob.getRequestURL().getHost();
 
                     if(!localDomain.equals(domain)) {
-                        auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER);
+                        auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER, referer);
                         return AssertionStatus.FAILED;
                     }
                 } else {
                     boolean valid = false;
                     for(String allowedDomain : assertion.getTrustedDomains()) {
-                        if(domain.equals(allowedDomain) || domain.endsWith("." + allowedDomain)) {
+                        if(domain.equals(allowedDomain)) {
                             valid = true;
                             break;
                         }
                     }
 
                     if(!valid) {
-                        auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER);
+                        auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER, referer);
                         return AssertionStatus.FAILED;
                     }
                 }
