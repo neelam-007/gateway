@@ -19,8 +19,9 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
     private JCheckBox enableDoubleSubmitCookieCheckBox;
     private JLabel cookieNameLabel;
     private JTextField cookieNameField;
-    private JLabel parameterNameLabel;
+    private JLabel httpParameterNameLabel;
     private JTextField httpParameterNameField;
+    private JLabel allowedHttpMethodsLabel;
     private JComboBox httpParameterTypeComboBox;
     private JCheckBox enableHttpRefererValidationCheckBox;
     private JLabel refererOptionsLabel;
@@ -112,8 +113,9 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
     private void enableDisableDoubleSubmitCookieControls() {
         cookieNameLabel.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
         cookieNameField.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
-        parameterNameLabel.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
+        httpParameterNameLabel.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
         httpParameterNameField.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
+        allowedHttpMethodsLabel.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
         httpParameterTypeComboBox.setEnabled(enableDoubleSubmitCookieCheckBox.isSelected());
     }
 
