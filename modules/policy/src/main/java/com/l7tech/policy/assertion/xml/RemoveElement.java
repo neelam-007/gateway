@@ -100,7 +100,7 @@ public class RemoveElement extends MessageTargetableAssertion {
 
     private final static String baseName = "Add or Remove XML Element(s)";
     private final static String baseNameRemove = "Remove XML Element(s)";
-    private final static String baseNameInsert = "Insert XML Element(s)";
+    private final static String baseNameInsert = "Add XML Element(s)";
 
     final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<RemoveElement>(){
         @Override
@@ -123,10 +123,10 @@ public class RemoveElement extends MessageTargetableAssertion {
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(SHORT_NAME, baseName);
-        meta.put(DESCRIPTION, "Insert or remove one or more XML elements from a message.");
+        meta.put(DESCRIPTION, "Add or remove one or more XML elements from a message.");
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.RemoveElementPropertiesDialog");
-        meta.put(PROPERTIES_ACTION_NAME, "Insert or Remove XML Elements Properties");
+        meta.put(PROPERTIES_ACTION_NAME, "Add or Remove XML Elements Properties");
         meta.put(PALETTE_FOLDERS, new String[] { "xml" });
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(

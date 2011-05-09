@@ -96,7 +96,7 @@ public class RemoveElementPropertiesDialog extends AssertionPropertiesEditorSupp
                 String var = newElementField.getVariable();
                 if (var != null && var.trim().length() > 0)
                     return null;
-                return "A new element variable name must be provided when inserting an element.";
+                return "A new element variable name must be provided when adding an element.";
             }
         });
 
