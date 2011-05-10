@@ -4,12 +4,9 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.wizard.BaseConsoleStep;
 import com.l7tech.server.config.wizard.ConfigurationWizard;
-import com.l7tech.util.Functions;
-import fiorano.net.sf.saxon.instruct.While;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
@@ -48,6 +45,11 @@ public class SystemConfigWizardKeyboardStep extends BaseConsoleStep<KeyboardConf
     @Override
     public boolean validateStep() {
         return true;
+    }
+
+    @Override
+    public boolean isShowNavigation() {
+        return false;
     }
 
     // - PACKAGE

@@ -79,8 +79,8 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         promptList.add("Please make a selection [1] : ");
         printText("Select the authentication method you wish to configure." + EOL);
 
-        String[] allowedEntries = new String[x];
-        for (int index=1; index <= x; ++index) {
+        String[] allowedEntries = new String[x-1];
+        for (int index=1; index < x; ++index) {
             allowedEntries[index-1] = String.valueOf(index);
         }
         String whichChoice = getData(promptList.toArray(new String[promptList.size()]), "1", allowedEntries,null);
