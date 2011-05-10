@@ -49,7 +49,7 @@ public class PublishNonSoapServiceWizard extends Wizard {
 
     public PublishNonSoapServiceWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
-        setTitle("Publish XML Application Wizard");
+        setTitle("Publish REST, Web API, or Other Service Wizard");
 
         getButtonHelp().addActionListener(new ActionListener() {
             @Override
@@ -57,7 +57,6 @@ public class PublishNonSoapServiceWizard extends Wizard {
                 Actions.invokeHelp(PublishNonSoapServiceWizard.this);
             }
         });
-
     }
 
     @Override

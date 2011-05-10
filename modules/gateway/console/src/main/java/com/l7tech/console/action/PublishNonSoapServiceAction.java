@@ -35,11 +35,11 @@ public class PublishNonSoapServiceAction extends SecureAction {
     }
 
     public String getName() {
-        return "Publish XML Application";
+        return "Publish REST, Web API, or Other Service";
     }
 
     public String getDescription() {
-        return "Publish a non-soap XML application";
+        return "Publish an entry point for a generic service not based on a WSDL (REST, Web API, FTP)";
     }
 
     protected String iconResource() {
