@@ -492,101 +492,109 @@ if [ $# -eq 1 ]; then
 	fi
 elif [ $# -eq 2 ]; then
 	if [ "X$1" == "X--configfile" ]; then
-		# Start checking the config file received as second parameter:
-		# check ownership
-		#if [ "X$(stat -c %U $2)" != "X$OWNER_CFG_FILE" ]; then
-		#	toLog "ERROR - $(basename $2) file is not owned by $OWNER_CFG_FILE! Exiting..."
-		#	exit 1
-		#fi
-		# check permissions
-		#if [ "X$(stat -c %a $2)" != "X$PERM_CFG_FILE" ]; then
-		#	toLog "ERROR - $(basename $2) file does not have $PERM_CFG_FILE permissions! Exiting..."
-		#	exit 1
-		#fi
-		# check file type
-		if [ "X$(file -b $2)" != "XASCII text" ]; then
-			toLog "ERROR - $(basename $2) file is not a text file! Exiting..."
-			exit 1
-		fi
-		# check file name
-		if [ "X$(basename $2)" != "Xradius_ldap_setup.conf" ]; then
-			toLog "ERROR - The argument provided was not correct; \"radius_ldap_setup.conf\" filename expected! Exiting..."
-			exit 1
-		fi
-		# if this point was reached all above conditions were passed so the configuration file can be sourced:
-		source $2
-		if [ "X$?" == "X0" ]; then
-			toLog "Info - Configuration file ($(basename $2)) successfuly sourced."
-			case "$CFG_TYPE" in
-				ldap_only)
-					getOriginalFiles
-					doConfigureLDAPonly
-					if [ $RETVAL -eq 0 ]; then
-						toLog "Success - System configuration for LDAP only authentication completed."
-					else
-						toLog "ERROR - Configuration of LDAP only authentication failed! Exiting..."
-						exit 1
-					fi
-					;;
-
-				radius_only)
-					getOriginalFiles
-					doConfigureRADIUSonly
-					if [ "$RETVAL" -eq "0" ]; then
-						toLog "Success - System configuration for Radius only authentication completed."
-					else
-						toLog "ERROR - System configuration for Radius only authentication failed! Exiting..."
-						exit 1
-					fi
-					;;
-
-				radius_with_ldap)
-					getOriginalFiles
-					doConfigureRADIUSonly
-					if [ $RETVAL -eq 0 ]; then
+		checkFileExists $2
+		if [ "X$RETVAL" == "X1" ]; then
+			toLog "Info - File $2 does not exist. This may not be an error!"
+			# the script will NOT exit with error because it is called each time the appliance
+			# boots but the appliance may have not been configured for radius authentication
+		else
+			toLog "Info - Verifying the configuration file."
+			# Start checking the config file received as second parameter:
+			# check ownership
+			#if [ "X$(stat -c %U $2)" != "X$OWNER_CFG_FILE" ]; then
+			#	toLog "ERROR - $(basename $2) file is not owned by $OWNER_CFG_FILE! Exiting..."
+			#	exit 1
+			#fi
+			# check permissions
+			#if [ "X$(stat -c %a $2)" != "X$PERM_CFG_FILE" ]; then
+			#	toLog "ERROR - $(basename $2) file does not have $PERM_CFG_FILE permissions! Exiting..."
+			#	exit 1
+			#fi
+			# check file type
+			if [ "X$(file -b $2)" != "XASCII text" ]; then
+				toLog "ERROR - $(basename $2) file is not a text file! Exiting..."
+				exit 1
+			fi
+			# check file name
+			if [ "X$(basename $2)" != "Xradius_ldap_setup.conf" ]; then
+				toLog "ERROR - The argument provided was not correct; \"radius_ldap_setup.conf\" filename expected! Exiting..."
+				exit 1
+			fi
+			# if this point was reached all above conditions were passed so the configuration file can be sourced:
+			source $2
+			if [ "X$?" == "X0" ]; then
+				toLog "Info - Configuration file ($(basename $2)) successfuly sourced."
+				case "$CFG_TYPE" in
+					ldap_only)
+						getOriginalFiles
 						doConfigureLDAPonly
 						if [ $RETVAL -eq 0 ]; then
-							toLog "Success - System configuration for Radius with LDAP authentication completed."
+							toLog "Success - System configuration for LDAP only authentication completed."
 						else
-							toLog "ERROR - System configuration for Radius with LDAP authentication failed! Exiting..."
+							toLog "ERROR - Configuration of LDAP only authentication failed! Exiting..."
 							exit 1
 						fi
-					fi
-					;;
+						;;
 
-				local)
-					getCurrentConfigType
-					if [ $RETVAL -eq 2 ]; then
-						CUR_CFG_TYPE="local"
-						toLog "Info - ===== Starting system configuration for local authentication. ====="
-						toLog "  Info - System is already configured for local authentication. Nothing will be changed."
-					else
-						# bring back the original files
-						toLog "Info - ===== Starting system reconfiguration for local authentication. ====="
+					radius_only)
 						getOriginalFiles
-						if [ $RETVAL -eq 0 ]; then
-							toLog "Success - System re-configuration for local authentication completed."
+						doConfigureRADIUSonly
+						if [ "$RETVAL" -eq "0" ]; then
+							toLog "Success - System configuration for Radius only authentication completed."
 						else
-							toLog "ERROR - System re-configuration for local authentication failed. Exiting..."
+							toLog "ERROR - System configuration for Radius only authentication failed! Exiting..."
 							exit 1
 						fi
-					fi
-					;;
+						;;
 
-				*)
-					toLog "ERROR - Configuration type read from configuration file is not valid! Exiting..."
-					exit 1
-			esac
-			# deleting the config file:
-			#rm -rf "$2"
-			if [ "X$?" == "X0" ]; then
-				toLog "Info - Configuration file ($(basename $2)) was successfuly deleted."
+					radius_with_ldap)
+						getOriginalFiles
+						doConfigureRADIUSonly
+						if [ $RETVAL -eq 0 ]; then
+							doConfigureLDAPonly
+							if [ $RETVAL -eq 0 ]; then
+								toLog "Success - System configuration for Radius with LDAP authentication completed."
+							else
+								toLog "ERROR - System configuration for Radius with LDAP authentication failed! Exiting..."
+								exit 1
+							fi
+						fi
+						;;
+
+					local)
+						getCurrentConfigType
+						if [ $RETVAL -eq 2 ]; then
+							CUR_CFG_TYPE="local"
+							toLog "Info - ===== Starting system configuration for local authentication. ====="
+							toLog "  Info - System is already configured for local authentication. Nothing will be changed."
+						else
+							# bring back the original files
+							toLog "Info - ===== Starting system reconfiguration for local authentication. ====="
+							getOriginalFiles
+							if [ $RETVAL -eq 0 ]; then
+								toLog "Success - System re-configuration for local authentication completed."
+							else
+								toLog "ERROR - System re-configuration for local authentication failed. Exiting..."
+								exit 1
+							fi
+						fi
+						;;
+
+					*)
+						toLog "ERROR - Configuration type read from configuration file is not valid! Exiting..."
+						exit 1
+				esac
+				# deleting the config file:
+				rm -rf "$2"
+				if [ "X$?" == "X0" ]; then
+					toLog "Info - Configuration file ($(basename $2)) was successfuly deleted."
+				else
+					toLog "ERROR - Configuration file ($(basename $2)) was NOT successfuly deleted!"
+				fi
 			else
-				toLog "ERROR - Configuration file ($(basename $2)) was NOT successfuly deleted!"
+				toLog "ERROR - Sourcing of configuration file ($(basename $2)) failed! Exiting..."
+				exit 1
 			fi
-		else
-			toLog "ERROR - Sourcing of configuration file ($(basename $2)) failed! Exiting..."
-			exit 1
 		fi
 	else
 		toLog "ERROR - First parameter received is invalid! Exiting..."
