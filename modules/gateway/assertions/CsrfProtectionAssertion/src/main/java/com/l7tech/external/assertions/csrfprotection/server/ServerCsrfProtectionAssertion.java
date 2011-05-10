@@ -54,7 +54,7 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
             HttpCookie[] cookies = requestKnob.getCookies();
             if(cookies != null) {
                 for(HttpCookie cookie : cookies) {
-                    if(assertion.getCookieName().equals(cookie.getCookieName())) {
+                    if(assertion.getCookieName().equalsIgnoreCase(cookie.getCookieName())) {
                         if(cookieValue != null && !cookieValue.equals(cookie.getCookieValue())) {
                             auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_MULTIPLE_COOKIE_VALUES);
                             return AssertionStatus.FAILED;

@@ -241,6 +241,35 @@ public class ServerCsrfProtectionAssertionTest {
         Assert.assertEquals(sessionID, context.getVariable(CsrfProtectionAssertion.CTX_VAR_NAME_CSRF_VALID_TOKEN));
     }
 
+    @BugNumber(10283)
+    @Test
+    public void testDoubleSubmit_Success_CaseInsensitiveCookieName() throws Exception {
+        HashMap<String, String> cookies = new HashMap<String, String>();
+        String sessionID = "1234567890ABCDEF";
+        cookies.put("SESSION_ID", sessionID);
+        HashMap<String, String[]> parameters = new HashMap<String, String[]>();
+        parameters.put("sessionID", new String[] {sessionID});
+
+        PolicyEnforcementContext context = createPolicyEnforcementContext(
+                new URL("http://localhost:8080/test"),
+                cookies,
+                HttpMethod.POST,
+                parameters,
+                new String[0]);
+
+        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
+        assertion.setEnableDoubleSubmitCookieChecking(true);
+        assertion.setCookieName("session_id"); //different case, should be found
+        assertion.setParameterName("sessionID");
+        assertion.setParameterType(HttpParameterType.POST);
+        assertion.setEnableHttpRefererChecking(false);
+
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        Assert.assertEquals(AssertionStatus.NONE, status);
+    }
+
     @Test
     public void testDoubleSubmit_Success_Get() throws Exception {
         HashMap<String, String> cookies = new HashMap<String, String>();
