@@ -315,7 +315,8 @@ public class GatewayFeatureSets {
             ass(RemoteDomainIdentityInjection.class),
             mass("assertion:SamlIssuer"),
             mass("assertion:LDAPQuery"),
-            mass("assertion:IdentityAttributes"));
+            mass("assertion:IdentityAttributes"),
+            mass("assertion:CertificateAttributes"));
 
         GatewayFeatureSet accessGateway =
         fsr("set:AccessControl:Gateway", "SecureSpan Gateway access control",
@@ -483,8 +484,7 @@ public class GatewayFeatureSets {
             ass(Include.class),
             ass(ExportVariablesAssertion.class),
             mass("assertion:EchoRouting"),
-            mass("assertion:HardcodedResponse"),
-            mass("assertion:CertificateAttributes"));
+            mass("assertion:HardcodedResponse"));
 
         GatewayFeatureSet threatIps =
         fsr("set:Threats:IPS", "SecureSpan XML IPS threat protection",
@@ -622,7 +622,6 @@ public class GatewayFeatureSets {
             fs(customDs),
             fs(uddiNotificationAssertions),
             fs(esmAssertions),
-            fs(samlpSsoAssertions),
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
