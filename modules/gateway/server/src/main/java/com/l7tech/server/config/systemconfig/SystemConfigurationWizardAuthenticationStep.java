@@ -11,7 +11,8 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static com.l7tech.server.config.beans.BaseConfigurationBean.EOL;
-import static com.l7tech.server.config.systemconfig.AuthenticationConfigurationBean.AuthType.*;
+import static com.l7tech.server.config.systemconfig.AuthenticationConfigurationBean.AuthType.LOCAL;
+import static com.l7tech.server.config.systemconfig.AuthenticationConfigurationBean.AuthType.values;
 
 /**
  * @author: megery
@@ -42,82 +43,25 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
 
     private void doAuthMethodPrompts() throws IOException, WizardNavigationException {
         AuthenticationConfigurationBean.AuthType authType = doSelectAuthTypePrompts();
-        switch (authType) {
-            case LOCAL:
-                    doLocalConfigPrompts();
-                    break;
-            case LDAP:
-                    doLdapConfigPrompts();
-                    break;
-            case RADIUS:
-                    doRadiusConfigPrompts();
-                    break;
-            case RADIUS_LDAP:
-                    doRadiusWithLdapConfigPrompts();
-                    break;
+
+        doAuthTypeSpecificPrompts(authType);
+    }
+
+    private void doAuthTypeSpecificPrompts(AuthenticationConfigurationBean.AuthType authType) throws IOException, WizardNavigationException {
+        List<AuthenticationConfigurationBean.AuthTypeDescriptor> prompts = authType.getPrompts();
+
+
+        for (AuthenticationConfigurationBean.AuthTypeDescriptor prompt : prompts) {
+            Pattern allowedPattern = prompt.getAllowedPattern() == null?null:Pattern.compile(prompt.getAllowedPattern());
+            String val = getData(
+                new String[] {prompt.getPrompt() + ": "},
+                "",
+                allowedPattern,
+                "*** Invalid Entry: Please enter a valid address for the " + prompt.getDescription() + "***"
+            );
+            configBean.setAuthData(prompt,val);
         }
-    }
-
-    private void doRadiusWithLdapConfigPrompts() throws IOException, WizardNavigationException {
-        doRadiusConfigPrompts();
-        doLdapConfigPrompts();
-    }
-
-    private void doRadiusConfigPrompts() throws IOException, WizardNavigationException {
-        String radiusAddress = getData(
-                new String[] {GET_RADIUS_ADDRESS},
-                "",
-                Pattern.compile("\\S+"),
-                "*** Invalid Entry: Please enter a valid address for the RADIUS server ***"
-        );
-
-        configBean.setRadiusAddress(radiusAddress);
-
-        //TODO mask this
-        String radiusSecret = getData(
-                new String[] {GET_RADIUS_SECRET},
-                "",
-                (String[])null,
-                null
-        );
-
-        configBean.setRadiusSecret(radiusSecret);
-
-        //TODO make sure this is ONLY a number
-        String radiusTimeout = getData(
-                new String[] {GET_RADIUS_TIMEOUT},
-                "",
-                Pattern.compile("\\d+"),
-                "*** Invalid Entry: Please enter the number of seconds to wait for a reply from the RADIUS server ***"
-        );
-
-        configBean.setRadiusTimeout(radiusTimeout);
-    }
-
-    private void doLdapConfigPrompts() throws IOException, WizardNavigationException {
-        String ldapAddress = getData(
-                new String[] {GET_LDAP_ADDRESS},
-                "",
-                Pattern.compile("\\S+"),
-                "*** Invalid Entry: Please enter a valid address for the LDAP server ***"
-        );
-
-        configBean.setLdapAddress(ldapAddress);
-
-        //TODO mask this
-        String ldapBase = getData(
-                new String[] {GET_LDAP_BASE},
-                "",
-                (String[])null,
-                null
-        );
-
-        configBean.setLdapBase(ldapBase);
-    }
-
-    private void doLocalConfigPrompts() {
-        //nothing to do since this amounts to disabling the other methods
-        configBean.setAuthType(LOCAL);
+        configBean.setAuthType(authType);
     }
 
     private AuthenticationConfigurationBean.AuthType doSelectAuthTypePrompts() throws IOException, WizardNavigationException {
@@ -129,7 +73,7 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
         int x = 1;
         for (AuthenticationConfigurationBean.AuthType at: allAuthTypes) {
             String indexStr = String.valueOf(x++);
-            promptList.add(indexStr + ") " + at.describe() + EOL);
+            promptList.add(indexStr + ") " + at.getNiceName() + EOL);
         }
 
         promptList.add("Please make a selection [1] : ");
@@ -167,11 +111,4 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
     private static final Logger logger = Logger.getLogger(SystemConfigWizardNetworkingStep.class.getName());
     private static final String TITLE = "Configure User Authentication";
     private static final String STEP_INFO = "This step lets you configure the authentication method for users on this machine" + EOL;
-
-    private static final String GET_RADIUS_ADDRESS = EOL + "Enter the address of the RADIUS server: ";
-    private static final String GET_RADIUS_SECRET = EOL + "Enter the RADIUS shared secret: ";
-    private static final String GET_RADIUS_TIMEOUT = EOL + "Enter the RADIUS timeout (in seconds): ";
-    private static final String GET_LDAP_ADDRESS = EOL + "Enter the address of the LDAP server: ";
-    private static final String GET_LDAP_BASE = EOL + "Enter the LDAP base DN: ";
-
 }
