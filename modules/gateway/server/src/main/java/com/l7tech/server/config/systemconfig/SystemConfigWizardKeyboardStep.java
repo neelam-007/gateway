@@ -175,11 +175,11 @@ public class SystemConfigWizardKeyboardStep extends BaseConsoleStep<KeyboardConf
             prompts.add("Please make a selection (press [Enter] for next page): ");
         }
 
-        String tzSelection = getData(prompts.toArray(new String[prompts.size()]), defaultValue, acceptedEntries,null);
-        if (tzSelection.equals(defaultValue)) {
+        String selection = getData(prompts.toArray(new String[prompts.size()]), defaultValue, acceptedEntries,null);
+        if (selection.equals(defaultValue)) {
             return -1;
         }
-        int whichChoice = Integer.parseInt(tzSelection);
+        int whichChoice = Integer.parseInt(selection);
         return whichChoice - 1;
     }
 }
