@@ -165,7 +165,7 @@ if [ $# -eq 1 ]; then
 	else
 		local FILE=$1
 	fi
-	cp --preserve=mode,ownership "$FILE" "$BK_DIR/$FILE_bk_$BK_TIME"
+	cp --preserve=mode,ownership $FILE $BK_DIR"/"$(basename $FILE)"_bk_"$BK_TIME
 	if [ "X$?" == "X0" ]; then
 		toLog "    Success - Backup of current $FILE file created."
 		RETVAL=0
@@ -182,7 +182,7 @@ fi
 }
 
 
-doGetOriginalFiles () {
+getOriginalFiles () {
 # this function will replace any current configuration file relevant to this setup with the original version.
 if [ $# -eq 0 ]; then
 	# making sure the directory exists and it is readable
