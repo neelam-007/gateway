@@ -15,11 +15,10 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.WsdlComposer;
 import com.l7tech.console.util.WsdlDependenciesResolver;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import static com.l7tech.objectmodel.EntityType.SERVICE;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
-import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.EntityHeader;
@@ -50,6 +49,8 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.objectmodel.EntityType.SERVICE;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the publish
@@ -115,6 +116,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                     Utilities.setEscKeyStrokeDisposes(wizard);
                     wizard.pack();
                     Utilities.centerOnScreen(wizard);
+                    DialogDisplayer.suppressSheetDisplay(wizard);
                     DialogDisplayer.display(wizard);
                 } catch (WSDLException we) {
                     throw new RuntimeException(we);

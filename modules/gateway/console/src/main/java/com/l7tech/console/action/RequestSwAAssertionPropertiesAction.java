@@ -61,6 +61,7 @@ public class RequestSwAAssertionPropertiesAction extends NodeActionWithMetaSuppo
                                 d.pack();
                                 Utilities.centerOnScreen(d);
                                 d.addPolicyListener(listener);
+                                DialogDisplayer.suppressSheetDisplay(d);
                                 DialogDisplayer.display(d);
                             }
                         } catch (FindException e) {

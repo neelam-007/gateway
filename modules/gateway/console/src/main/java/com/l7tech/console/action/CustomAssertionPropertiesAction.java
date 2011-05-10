@@ -101,6 +101,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
         dialog.setTitle(ca.getName());
         dialog.pack();
         Utilities.centerOnScreen(dialog);
+        DialogDisplayer.suppressSheetDisplay(dialog);
         DialogDisplayer.display(dialog);
     }
 
