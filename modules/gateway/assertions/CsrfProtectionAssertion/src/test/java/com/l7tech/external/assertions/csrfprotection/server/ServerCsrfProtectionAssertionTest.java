@@ -448,7 +448,7 @@ public class ServerCsrfProtectionAssertionTest {
     @Test
     public void testReferer_Fail_SubDomain_CurrentDomain() throws Exception {
         PolicyEnforcementContext context = createPolicyEnforcementContext(
-                new URL("http://layer7tech:8080/test"),
+                new URL("http://layer7tech.com:8080/test"),
                 new HashMap<String, String>(),
                 HttpMethod.POST,
                 new HashMap<String, String[]>(),
@@ -464,6 +464,54 @@ public class ServerCsrfProtectionAssertionTest {
         AssertionStatus status = serverAssertion.checkRequest(context);
 
         Assert.assertEquals(AssertionStatus.FAILED, status);
+    }
+
+    @BugNumber(10448)
+    @Test
+    public void testReferer_Success_CaseInsensitive_CurrentDomain() throws Exception{
+        PolicyEnforcementContext context = createPolicyEnforcementContext(
+                new URL("http://layer7tech.com:8080/test"),
+                new HashMap<String, String>(),
+                HttpMethod.POST,
+                new HashMap<String, String[]>(),
+                new String[]{"Referer: http://LAYER7TECH.com/page.html"});
+
+        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
+        assertion.setEnableDoubleSubmitCookieChecking(false);
+        assertion.setEnableHttpRefererChecking(true);
+        assertion.setAllowMissingOrEmptyReferer(false);
+        assertion.setOnlyAllowCurrentDomain(true);
+
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        Assert.assertEquals(AssertionStatus.NONE, status);
+    }
+
+    @BugNumber(10448)
+    @Test
+    public void testReferer_Success_CaseInsensitive_TrustedList() throws Exception{
+        PolicyEnforcementContext context = createPolicyEnforcementContext(
+                new URL("http://layer7tech:8080/test"),
+                new HashMap<String, String>(),
+                HttpMethod.POST,
+                new HashMap<String, String[]>(),
+                new String[]{"Referer: http://LAYER7TECH.com/page.html"});
+
+        CsrfProtectionAssertion assertion = new CsrfProtectionAssertion();
+        assertion.setEnableDoubleSubmitCookieChecking(false);
+        assertion.setEnableHttpRefererChecking(true);
+        assertion.setAllowMissingOrEmptyReferer(false);
+
+        assertion.setOnlyAllowCurrentDomain(false);
+        ArrayList<String> trustedDomains = new ArrayList<String>();
+        trustedDomains.add("layer7tech.com");
+        assertion.setTrustedDomains(trustedDomains);
+
+        ServerCsrfProtectionAssertion serverAssertion = new ServerCsrfProtectionAssertion(assertion, null);
+        AssertionStatus status = serverAssertion.checkRequest(context);
+
+        Assert.assertEquals(AssertionStatus.NONE, status);
     }
 
     @Test

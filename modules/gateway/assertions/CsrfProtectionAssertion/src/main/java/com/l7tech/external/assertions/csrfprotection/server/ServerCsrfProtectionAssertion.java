@@ -137,14 +137,14 @@ public class ServerCsrfProtectionAssertion extends AbstractServerAssertion<CsrfP
                 if(assertion.isOnlyAllowCurrentDomain()) {
                     String localDomain = requestKnob.getRequestURL().getHost();
 
-                    if(!localDomain.equals(domain)) {
+                    if(!localDomain.equalsIgnoreCase(domain)) {
                         auditor.logAndAudit(AssertionMessages.CSRF_PROTECTION_INVALID_REFERER, referer);
                         return AssertionStatus.FAILED;
                     }
                 } else {
                     boolean valid = false;
                     for(String allowedDomain : assertion.getTrustedDomains()) {
-                        if(domain.equals(allowedDomain)) {
+                        if(domain.equalsIgnoreCase(allowedDomain)) {
                             valid = true;
                             break;
                         }
