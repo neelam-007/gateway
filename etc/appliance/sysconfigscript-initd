@@ -11,7 +11,8 @@ fi
 
 ssgconfigutil="/usr/bin/perl /opt/SecureSpan/Appliance/config/ssg_sys_config.pl"
 migrationdeamon="${SSGHOME}/config/backup/ssgrestore.sh cfgdeamon"
-authenticationconfigutil="/bin/bash /opt/SecureSpan/Appliance/config/authconfig/radius_ldap_setup.sh --configfile /opt/SecureSpan/Appliance/config/configfiles/radius_ldap_setup.conf"
+authconfigfile="/opt/SecureSpan/Appliance/config/configfiles/radius_ldap_setup.conf"
+authenticationconfigutil="/bin/bash /opt/SecureSpan/Appliance/config/authconfig/radius_ldap_setup.sh --configfile ${authconfigfile}"
 
 MESSAGE="Applying Network (Re)Configuration"
 USER=`whoami`
@@ -28,7 +29,9 @@ start() {
         (${migrationdeamon})
 
         #run the authentication configuration script which reads litter files as well.
-        (${authenticationconfigutil})
+        if [ -e ${authconfigfile} ] ; then
+            (${authenticationconfigutil})
+        fi
 	else
 		echo "Need to be root to run this script";
 		exit
