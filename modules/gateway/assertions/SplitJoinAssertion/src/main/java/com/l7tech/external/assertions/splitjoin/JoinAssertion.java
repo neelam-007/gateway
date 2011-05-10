@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.splitjoin;
 
-import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -11,11 +10,8 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
-import com.l7tech.util.TextUtils;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -69,17 +65,7 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        if(inputVariable == null)
-            return EMPTY_STRING;
-
-        String refString = inputVariable.replaceAll("\\[.\\]","");
-        List<String> refs = TextUtils.getTokensFromString(refString,",");
-        List <String> vars = new ArrayList<String>();
-        for(String ref: refs){
-            if(!vars.contains(ref.trim()))
-                vars.add(ref.trim());
-        }
-        return vars.toArray(new String[vars.size()]);
+        return inputVariable == null ? EMPTY_STRING : new String[] { inputVariable };
     }
 
     @Override
@@ -87,21 +73,6 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
         return outputVariable == null ? EMPTY_VARIABLE_METADATA : new VariableMetadata[] {
                 new VariableMetadata(outputVariable, false, true, outputVariable, true, DataType.STRING)
         };
-    }
-
-    public static String containsValidVariables(String variables){
-        if(variables == null)
-            return VariableMetadata.validateName(variables);
-
-        String refString = variables.replaceAll("\\[.\\]","");
-        List<String> refs = TextUtils.getTokensFromString(refString,",");
-        String message;
-        for(String ref: refs){
-            message = VariableMetadata.validateName(VariablePrefixUtil.fixVariableName(ref.trim()));
-            if(message!=null)
-                return message;
-        }
-        return null;
     }
 
     //

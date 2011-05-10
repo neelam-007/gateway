@@ -4,6 +4,7 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.VariablePrefixUtil;
 import com.l7tech.external.assertions.splitjoin.JoinAssertion;
+import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -66,7 +67,7 @@ public class JoinVariablePropertiesDialog extends AssertionPropertiesOkCancelSup
     }
 
     private void validateData() throws ValidationException {
-        String message = JoinAssertion.containsValidVariables(sourceVariableTextField.getText());
+        String message = VariableMetadata.validateName(VariablePrefixUtil.fixVariableName(sourceVariableTextField.getText()));
         String propertyName = "sourceVariable";
 
         if (message != null) {
