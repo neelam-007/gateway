@@ -22,26 +22,31 @@ echo
 echo
 
 # VERIFY THAT WE HAVE THE DB USERNAME AND PASSWD AS ARGUMENTS
-if [ ! $1 ]; then
-    echo "please provide database account name"
-	echo "USAGE resetAdmin.sh dbaccountname dbpasswd"
+if [ ! $1 ] || [ ! $2 ]; then
+    echo "Not enough arguments."
+    echo "Please provide the database account name and database account password"
+    echo "to access the database"
 	echo
-	exit -1
-fi
-if [ ! $2 ]; then
-    echo "please provide database account passwd"
-	echo "USAGE resetAdmin.sh dbusername dbpasswd"
+	echo "USAGE: $0 dbaccountname dbpasswd"
 	echo
 	exit -1
 fi
 
 # GET GATEWAY DATABASE NAME
-echo "Please enter the Layer7 Gateway database name"
-read DATABASE_NAME
+DATABASE_NAME=""
+while [ -z "${DATABASE_NAME}" ] ; do
+    echo -n "Please enter the Layer7 Gateway database name (required): "
+    read DATABASE_NAME
+done
+
 
 # GET AN ADMIN ACCOUNT NAME
-echo "Please enter your ssg admin account name"
-read ACCOUNT_NAME
+ACCOUNT_NAME=""
+while [ -z "${ACCOUNT_NAME}" ] ; do
+    echo -n "Please enter your ssg admin account name (required): "
+    read ACCOUNT_NAME
+done
+
 
 ADMIN_HASH='$6$S7Z3HcudYNsObgs8$SjwZ3xtCkSjXOK2vHfOVEg2dJES3cgvtIUdHbEN/KdCBXoI6uuPSbxTEwcH.av6lpcb1p6Lu.gFeIX04FBxiJ.'
 
