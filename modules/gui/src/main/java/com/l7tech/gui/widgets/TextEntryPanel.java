@@ -29,6 +29,7 @@ public abstract class TextEntryPanel extends ValidatedPanel<String> {
         this("Prompt:", null, null);
     }
 
+    @Override
     public void setEnabled(boolean enable) {
         textField.setEnabled(enable);
         super.setEnabled(enable);
@@ -42,6 +43,7 @@ public abstract class TextEntryPanel extends ValidatedPanel<String> {
         init();
     }
 
+    @Override
     protected void initComponents() {
         statusScrollPane.setBorder(null);
         promptLabel.setText(label);
@@ -50,11 +52,13 @@ public abstract class TextEntryPanel extends ValidatedPanel<String> {
         statusScrollPane.setMinimumSize(new Dimension(-1, fm.getHeight()));
 
         TextComponentPauseListenerManager.registerPauseListener(textField, new PauseListener() {
+            @Override
             public void textEntryPaused(JTextComponent component, long msecs) {
                 checkSyntax();
                 checkSemantic();
             }
 
+            @Override
             public void textEntryResumed(JTextComponent component) {
                 syntaxOk = false;
                 statusLabel.setText(null);
@@ -62,14 +66,17 @@ public abstract class TextEntryPanel extends ValidatedPanel<String> {
         }, 1500);
 
         textField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) {
                 checkSyntax();
             }
 
+            @Override
             public void removeUpdate(DocumentEvent e) {
                 checkSyntax();
             }
 
+            @Override
             public void changedUpdate(DocumentEvent e) {
                 checkSyntax();
             }
@@ -94,23 +101,28 @@ public abstract class TextEntryPanel extends ValidatedPanel<String> {
         textField.setText(s);
     }
 
+    @Override
     public void focusFirstComponent() {
         textField.requestFocus();
     }
 
+    @Override
     protected String getModel() {
         if (textField == null) return null;
         return textField.getText();
     }
 
     /** Nothing to do here--in this case {@link TextField#getText()} <em>is</em> the model */
+    @Override
     protected void doUpdateModel() {
     }
 
+    @Override
     protected void goodSyntax() {
         textField.setNone();
     }
 
+    @Override
     protected void badSyntax() {
         textField.setColor(Color.RED);
         textField.setDotted();

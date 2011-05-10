@@ -3,12 +3,17 @@ package com.l7tech.external.assertions.csrfprotection.console;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.external.assertions.csrfprotection.CsrfProtectionAssertion;
 import com.l7tech.external.assertions.csrfprotection.HttpParameterType;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.OkCancelDialog;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.ResourceBundle;
 
 /**
  * User: njordan
@@ -17,6 +22,7 @@ import java.util.ArrayList;
 public class CsrfProtectionAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<CsrfProtectionAssertion> {
     private static final String CURRENT_DOMAIN = "Current Domain";
     private static final String LIST_OF_TRUSTED_DOMAINS = "List of Trusted Domains";
+    private static ResourceBundle resourceBundle = ResourceBundle.getBundle("com.l7tech.external.assertions.csrfprotection.console.resources.CsrfProtectionAssertionPropertiesDialog");
     private JPanel mainPanel;
     private JCheckBox enableDoubleSubmitCookieCheckBox;
     private JLabel cookieNameLabel;
@@ -76,10 +82,12 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
         addDomainButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
-                String value = JOptionPane.showInputDialog(CsrfProtectionAssertionPropertiesDialog.this, "Enter a Domain Value", "");
-                if(value != null && !value.trim().isEmpty()) {
-                    validDomainsListModel.addElement(value.trim());
-                }
+                requestDomainValue((String) validDomainsList.getSelectedValue(), new Functions.UnaryVoid<String>() {
+                    @Override
+                    public void call(String s) {
+                        validDomainsListModel.addElement(s);
+                    }
+                });
             }
         });
 
@@ -90,15 +98,12 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
                     return;
                 }
 
-                String value = (String)validDomainsList.getSelectedValue();
-                value = JOptionPane.showInputDialog(CsrfProtectionAssertionPropertiesDialog.this, "Enter a Domain Value", value);
-                if(value != null) {
-                    if(value.trim().isEmpty()){
-                        validDomainsListModel.remove(validDomainsList.getSelectedIndex());
-                    } else {
-                        validDomainsListModel.set(validDomainsList.getSelectedIndex(), value.trim());
+                requestDomainValue((String) validDomainsList.getSelectedValue(), new Functions.UnaryVoid<String>() {
+                    @Override
+                    public void call(String s) {
+                        validDomainsListModel.set(validDomainsList.getSelectedIndex(), s);
                     }
-                }
+                });
             }
         });
 
@@ -114,6 +119,25 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
         });
 
         super.initComponents();
+    }
+
+    private void requestDomainValue(final String valueIfEdit, final Functions.UnaryVoid<String> continuation){
+
+        final OkCancelDialog<String> inputDialog = OkCancelDialog.createOKCancelDialog(this,
+                resourceBundle.getString("enterDomainTitle"), true, new DomainInputPanel(valueIfEdit));
+
+        inputDialog.pack();
+        Utilities.centerOnParentWindow(inputDialog);
+
+        DialogDisplayer.display(inputDialog, new Runnable() {
+            @Override
+            public void run() {
+                final String validatedDomain = inputDialog.getValue();
+                if(validatedDomain != null){
+                    continuation.call(validatedDomain);
+                }
+            }
+        });
     }
 
     private void enableDisableDoubleSubmitCookieControls() {
