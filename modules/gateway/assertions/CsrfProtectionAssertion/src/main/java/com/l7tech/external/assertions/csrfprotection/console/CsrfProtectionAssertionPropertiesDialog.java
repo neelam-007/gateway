@@ -15,6 +15,8 @@ import java.util.ArrayList;
  * Date: 17-Feb-2011
  */
 public class CsrfProtectionAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<CsrfProtectionAssertion> {
+    private static final String CURRENT_DOMAIN = "Current Domain";
+    private static final String LIST_OF_TRUSTED_DOMAINS = "List of Trusted Domains";
     private JPanel mainPanel;
     private JCheckBox enableDoubleSubmitCookieCheckBox;
     private JLabel cookieNameLabel;
@@ -59,7 +61,7 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
             }
         });
 
-        validDomainsComboBox.setModel(new DefaultComboBoxModel(new String[] {"Current Domain", "List of Trusted Domains"}));
+        validDomainsComboBox.setModel(new DefaultComboBoxModel(new String[] {CURRENT_DOMAIN, LIST_OF_TRUSTED_DOMAINS}));
         validDomainsComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
@@ -75,8 +77,8 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
             @Override
             public void actionPerformed(ActionEvent evt) {
                 String value = JOptionPane.showInputDialog(CsrfProtectionAssertionPropertiesDialog.this, "Enter a Domain Value", "");
-                if(value != null) {
-                    validDomainsListModel.addElement(value);
+                if(value != null && !value.trim().isEmpty()) {
+                    validDomainsListModel.addElement(value.trim());
                 }
             }
         });
@@ -91,7 +93,11 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
                 String value = (String)validDomainsList.getSelectedValue();
                 value = JOptionPane.showInputDialog(CsrfProtectionAssertionPropertiesDialog.this, "Enter a Domain Value", value);
                 if(value != null) {
-                    validDomainsListModel.set(validDomainsList.getSelectedIndex(), value);
+                    if(value.trim().isEmpty()){
+                        validDomainsListModel.remove(validDomainsList.getSelectedIndex());
+                    } else {
+                        validDomainsListModel.set(validDomainsList.getSelectedIndex(), value.trim());
+                    }
                 }
             }
         });
@@ -124,10 +130,11 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
         allowEmptyValuesCheckBox.setEnabled(enableHttpRefererValidationCheckBox.isSelected());
         validDomainsLabel.setEnabled(enableHttpRefererValidationCheckBox.isSelected());
         validDomainsComboBox.setEnabled(enableHttpRefererValidationCheckBox.isSelected());
-        validDomainsList.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && validDomainsComboBox.getSelectedIndex() > 0);
-        addDomainButton.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && validDomainsComboBox.getSelectedIndex() > 0);
-        editDomainButton.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && validDomainsComboBox.getSelectedIndex() > 0);
-        removeDomainButton.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && validDomainsComboBox.getSelectedIndex() > 0);
+        final boolean trustedListSelected = validDomainsComboBox.getSelectedItem() == LIST_OF_TRUSTED_DOMAINS;
+        validDomainsList.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && trustedListSelected);
+        addDomainButton.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && trustedListSelected);
+        editDomainButton.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && trustedListSelected);
+        removeDomainButton.setEnabled(enableHttpRefererValidationCheckBox.isSelected() && trustedListSelected);
     }
 
     @Override
@@ -145,7 +152,7 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
 
         enableHttpRefererValidationCheckBox.setSelected(assertion.isEnableHttpRefererChecking());
         allowEmptyValuesCheckBox.setSelected(assertion.isAllowMissingOrEmptyReferer());
-        validDomainsComboBox.setSelectedIndex(assertion.isOnlyAllowCurrentDomain() ? 0 : 1);
+        validDomainsComboBox.setSelectedItem(assertion.isOnlyAllowCurrentDomain() ? CURRENT_DOMAIN : LIST_OF_TRUSTED_DOMAINS);
         validDomainsListModel.removeAllElements();
         for(String trustedDomain : assertion.getTrustedDomains()) {
             validDomainsListModel.addElement(trustedDomain);
@@ -169,7 +176,9 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
             }
         }
 
-        if(enableHttpRefererValidationCheckBox.isSelected() && validDomainsComboBox.getSelectedIndex() == 1 && validDomainsListModel.size() == 0) {
+        if(enableHttpRefererValidationCheckBox.isSelected() &&
+                validDomainsComboBox.getSelectedItem() == LIST_OF_TRUSTED_DOMAINS &&
+                validDomainsListModel.isEmpty()) {
             throw new ValidationException("The list of trusted domains is empty.");
         }
 
@@ -180,7 +189,7 @@ public class CsrfProtectionAssertionPropertiesDialog extends AssertionProperties
 
         assertion.setEnableHttpRefererChecking(enableHttpRefererValidationCheckBox.isSelected());
         assertion.setAllowMissingOrEmptyReferer(allowEmptyValuesCheckBox.isSelected());
-        assertion.setOnlyAllowCurrentDomain(validDomainsComboBox.getSelectedIndex() == 0 ? true : false);
+        assertion.setOnlyAllowCurrentDomain(validDomainsComboBox.getSelectedItem() == CURRENT_DOMAIN);
         java.util.List<String> domains;
         if (validDomainsListModel == null) {
             domains = new ArrayList<String>();
