@@ -100,11 +100,12 @@ public class InternalGroupManagerImpl
 
     @Override
     protected void preDelete(InternalGroup group) throws DeleteException {
-        roleManager.deleteRoleAssignmentsForGroup(group);
     }
 
     @Override
     protected void postDelete(InternalGroup group) throws DeleteException {
+        if (group != null)
+            roleManager.deleteRoleAssignmentsForGroup(group);
         try {
             roleManager.validateRoleAssignments();
         } catch ( UpdateException ue ) {
