@@ -35,11 +35,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.util.Background;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.util.*;
 
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
@@ -216,7 +212,9 @@ public class MainWindow extends JFrame implements SheetHolder {
     private EventListenerList listenerList = new WeakEventListenerList();
     @SuppressWarnings({"FieldCanBeLocal"})
     private LogonListener closeWindowListener;
-    LogonListener topMenuListener;
+    LogonListener topMenuLogonListener;
+    LicenseListener topMenuLicenseListener;
+    PermissionRefreshListener topMenuPermissionRefreshListener;
     // cached credential manager
     private String connectionContext = "";
     private String connectionID = "";
@@ -954,7 +952,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     /**
      * Return the tasksMenu property value.
-     * <p>
+     * <p/>
      * NOTICE: CHECK THAT THE MENU IS ADDED FOR THE APPLET ALSO.
      * See {@link MainWindow#getToolBarPane()}
      *
@@ -2397,7 +2395,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             // (side effects, hack hack)
             getEditMenu();
 
-            if(appletManagePopUpMenu == null){
+            if (appletManagePopUpMenu == null) {
                 JPopupMenu manageMenu = new JPopupMenu("Manage...");
                 manageMenu.add(getManageAdminUsersSubMenu());
                 manageMenu.addSeparator();
@@ -3266,7 +3264,7 @@ public class MainWindow extends JFrame implements SheetHolder {
      */
     private void installTopMenuRefresh() {
         updateTopMenu();
-        topMenuListener = new LogonListener() {
+        topMenuLogonListener = new LogonListener() {
             @Override
             public void onLogoff(LogonEvent e) {
                 updateTopMenu();
@@ -3277,7 +3275,25 @@ public class MainWindow extends JFrame implements SheetHolder {
                 updateTopMenu();
             }
         };
-        addLogonListener(topMenuListener);
+        addLogonListener(topMenuLogonListener);
+
+        topMenuPermissionRefreshListener = new PermissionRefreshListener() {
+            @Override
+            public void onPermissionRefresh() {
+                updateTopMenu();
+            }
+        };
+        addPermissionRefreshListener(topMenuPermissionRefreshListener);
+
+        topMenuLicenseListener = new LicenseListener() {
+            @Override
+            public void licenseChanged(ConsoleLicenseManager licenseManager) {
+                updateTopMenu();
+            }
+        };
+        Registry.getDefault().getLicenseManager().addLicenseListener(topMenuLicenseListener);
+
+
     }
 
     /**
@@ -3914,8 +3930,8 @@ public class MainWindow extends JFrame implements SheetHolder {
      * Updates the top menu to enable/disable the menu items
      */
     private void updateTopMenu() {
-        if(isApplet()){
-           updateTopMenu(appletManagePopUpMenu);
+        if (isApplet()) {
+            updateTopMenu(appletManagePopUpMenu);
         } else {
             updateTopMenu(fileMenu);
             updateTopMenu(editMenu);
