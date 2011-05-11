@@ -118,7 +118,7 @@ if [ $# -eq 1 ]; then
 			echo "Radius timeout: $(cat $PAM_RADIUS_CONF_FILE | grep "^[0-9]" | awk '{print $3}')"
 			;;
 		
-		local|file)
+		local)
 			echo "System is configured for local (file) authentication only."
 			;;
 
@@ -146,37 +146,36 @@ fi
 
 doBackup () {
 # this function expects to be called with one parameter only identifying the file that should be processed.
-
 if [ $# -eq 1 ]; then
 	# making sure there is a directory to store backup files in:
 	if [ ! -d $BK_DIR ]; then
-		toLog "    Info - $BK_DIR does not exists. Creating it..."
+		toLog "  Info - $BK_DIR does not exists. Creating it..."
 		mkdir $BK_DIR
 		if [ "X$?" == "X0" ]; then
-			toLog "    Info - $BK_DIR not found but successfuly created."
+			toLog "  Info - $BK_DIR not found but successfuly created."
 		else
-			toLog "    ERROR - $BK_DIR could not be created! Exiting..."
+			toLog "  ERROR - $BK_DIR could not be created! Exiting..."
 			exit 1
 		fi
 	fi
 	
 	checkFileExists $1
 	if [ "X$RETVAL" == "X1" ]; then
-		toLog "    ERROR - File $1 does not exist! Exiting..."
+		toLog "  ERROR - File $1 does not exist! Exiting..."
 		exit 1
 	else
 		local FILE=$1
 	fi
 	cp --preserve=mode,ownership $FILE $BK_DIR"/"$(basename $FILE)"_bk_"$BK_TIME
 	if [ "X$?" == "X0" ]; then
-		toLog "    Success - Backup of current $FILE file created."
+		toLog "  Success - Backup of current $FILE file created."
 		RETVAL=0
 	else
-		toLog "    ERROR - Backup of current $FILE could not be created! Exiting..."
+		toLog "  ERROR - Backup of current $FILE could not be created! Exiting..."
 		exit 1
 	fi
 else
-	toLog "    ERROR - Function 'doBackup' should be called with one parameter only! Exiting..."
+	toLog "  ERROR - Function 'doBackup' should be called with one parameter only! Exiting..."
 	exit 1
 fi
 
@@ -281,8 +280,6 @@ if [ "X$RETVAL" == "X1" ]; then
 	exit 1
 else
 	toLog "   Info - FILE $PAM_SSHD_CONF_FILE CONFIGURATION:"
-	# making a backup copy of the current file
-	doBackup $PAM_SSHD_CONF_FILE
 	# adding the line for pam_radius with 'sufficient' ensures that
 	# SSHD will allow logins if radius server fails; also, the 'retry=2' and
 	# 'localifdown' option makes sure that after 2 retries the auth process
@@ -305,8 +302,6 @@ if [ "X$RETVAL" == "X1" ]; then
 	exit 1
 else
 	toLog "   Info - FILE $PAM_RADIUS_CONF_FILE CONFIGURATION:"
-	# making a backup copy of the current file
-	doBackup $PAM_RADIUS_CONF_FILE
 	sed -i "s/\(^127.0.0.1.*$\)/###\1/" $PAM_RADIUS_CONF_FILE
 	if [ $? -ne 0 ]; then
 		toLog "    ERROR - Commenting the default host (127.0.0.1) line in $PAM_RADIUS_CONF_FILE failed! Exiting..."
@@ -348,8 +343,6 @@ if [ "X$RETVAL" == "X1" ]; then
 	exit 1
 else
 	toLog "   Info - FILE $LDAP_CONF_FILE1 CONFIGURATION:"
-	# making a backup copy of the current file
-	doBackup $LDAP_CONF_FILE1
 	# adding the necessary lines to the config file
 	echo "URI ldap://$LDAP_SRV_IP:$LDAP_SRV_PORT/" >> $LDAP_CONF_FILE1
 	if [ $? -ne 0 ]; then
@@ -372,8 +365,6 @@ if [ "X$RETVAL" == "X1" ]; then
 	exit 1
 else
 	toLog "   Info - FILE $LDAP_CONF_FILE2 CONFIGURATION:"
-	# making a backup copy of the current file
-	doBackup $LDAP_CONF_FILE2
 	# disabling the default host directive
 	sed -i 's/^host 127.0.0.1/###host 127.0.0.1/' $LDAP_CONF_FILE2
 	if [ $? -ne 0 ]; then
@@ -413,10 +404,7 @@ if [ "X$RETVAL" == "X1" ]; then
 	toLog "  ERROR - File $LDAP_NSS_FILE does not exist! Exiting..."
 	exit 1
 else
-	toLog "   Info - FILE $LDAP_NSS_FILE CONFIGURATION:"
-	# making a backup copy of the current file
-	doBackup $LDAP_NSS_FILE
-	
+	toLog "   Info - FILE $LDAP_NSS_FILE CONFIGURATION:"	
 	sed -i "s/^passwd:\(.*$\)/###passwd:\1/" $LDAP_NSS_FILE
 	if [ $? -ne 0 ]; then
 		toLog "    ERROR - Disabling default 'passwd:' field in $LDAP_NSS_FILE failed. Exiting..."
@@ -569,37 +557,70 @@ elif [ $# -eq 2 ]; then
 				toLog "Info - Configuration file ($(basename $2)) successfuly sourced."
 				case "$CFG_TYPE" in
 					ldap_only)
+						# make backups of each file that will be changed/replaced:
+						toLog "Info - ===== Starting backup for LDAP current configuration files. ====="
+						doBackup $LDAP_CONF_FILE1
+						doBackup $LDAP_CONF_FILE2
+						doBackup $LDAP_NSS_FILE
 						getOriginalFiles
-						doConfigureLDAPonly
-						if [ $RETVAL -eq 0 ]; then
-							toLog "Success - System configuration for LDAP only authentication completed."
-						else
-							toLog "ERROR - Configuration of LDAP only authentication failed! Exiting..."
-							exit 1
+						if [ $RETVAL -ne 0 ]; then
+                                                        toLog "  ERROR - Restoring original files failed. Exiting..."
+                                                        exit 1
+                                                else
+							doConfigureLDAPonly
+							if [ $RETVAL -eq 0 ]; then
+								toLog "  Success - System configuration for LDAP only authentication completed."
+							else
+								toLog "  ERROR - Configuration of LDAP only authentication failed! Exiting..."
+								exit 1
+							fi
 						fi
 						;;
 
 					radius_only)
+						# make backups of each file that will be changed/replaced:
+						toLog "Info - ===== Starting backup for Radius current configuration files. ====="
+						doBackup $PAM_SSHD_CONF_FILE
+						doBackup $PAM_RADIUS_CONF_FILE
 						getOriginalFiles
-						doConfigureRADIUSonly
-						if [ "$RETVAL" -eq "0" ]; then
-							toLog "Success - System configuration for Radius only authentication completed."
-						else
-							toLog "ERROR - System configuration for Radius only authentication failed! Exiting..."
-							exit 1
+						if [ $RETVAL -ne 0 ]; then
+                                                        toLog "  ERROR - Restoring original files failed. Exiting..."
+                                                        exit 1
+                                                else
+							doConfigureRADIUSonly
+							if [ "$RETVAL" -eq "0" ]; then
+								toLog "  Success - System configuration for Radius only authentication completed."
+							else
+								toLog "  ERROR - System configuration for Radius only authentication failed! Exiting..."
+								exit 1
+							fi
 						fi
 						;;
 
 					radius_with_ldap)
+						# make backups of each file that will be changed/replaced:
+						toLog "Info - ===== Starting backup for Radius current configuration files. ====="
+						doBackup $PAM_SSHD_CONF_FILE
+						doBackup $PAM_RADIUS_CONF_FILE
+						toLog "Info - ===== Starting backup for LDAP current configuration files. ====="
+						doBackup $LDAP_CONF_FILE1
+						doBackup $LDAP_CONF_FILE2
+						doBackup $LDAP_NSS_FILE
+						# bring back the original files
 						getOriginalFiles
-						doConfigureRADIUSonly
-						if [ $RETVAL -eq 0 ]; then
-							doConfigureLDAPonly
+						if [ $RETVAL -ne 0 ]; then
+                                                	toLog "  ERROR - Restoring original files failed. Exiting..."
+							exit 1
+						else
+							doConfigureRADIUSonly
 							if [ $RETVAL -eq 0 ]; then
-								toLog "Success - System configuration for Radius with LDAP authentication completed."
-							else
-								toLog "ERROR - System configuration for Radius with LDAP authentication failed! Exiting..."
-								exit 1
+								doConfigureLDAPonly
+								if [ $RETVAL -eq 0 ]; then
+									toLog "  Success - System configuration for Radius with LDAP authentication completed."
+								else
+									toLog "  ERROR - System configuration for Radius with LDAP authentication failed! Exiting..."
+									exit 1
+								fi
 							fi
 						fi
 						;;
@@ -611,8 +632,14 @@ elif [ $# -eq 2 ]; then
 							toLog "Info - ===== Starting system configuration for local authentication. ====="
 							toLog "  Info - System is already configured for local authentication. Nothing will be changed."
 						else
-							# bring back the original files
+							# make backups of each file that will be replaced:
 							toLog "Info - ===== Starting system reconfiguration for local authentication. ====="
+							doBackup $PAM_SSHD_CONF_FILE
+							doBackup $PAM_RADIUS_CONF_FILE
+							doBackup $LDAP_CONF_FILE1
+							doBackup $LDAP_CONF_FILE2
+							doBackup $LDAP_NSS_FILE
+							# bring back the original files
 							getOriginalFiles
 							if [ $RETVAL -eq 0 ]; then
 								toLog "Success - System re-configuration for local authentication completed."
@@ -628,7 +655,7 @@ elif [ $# -eq 2 ]; then
 						exit 1
 				esac
 				# deleting the config file:
-				rm -rf "$2"
+				echo 'rm -rf "$2"'
 				if [ "X$?" == "X0" ]; then
 					toLog "Info - Configuration file ($(basename $2)) was successfuly deleted."
 				else
