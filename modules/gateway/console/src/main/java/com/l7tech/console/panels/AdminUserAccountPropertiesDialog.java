@@ -128,7 +128,7 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         if (accountMinimums != null) {
             noWarning = ((Integer) invalidAttemptsSpinner.getValue() <= accountMinimums.getAttempts());
             noWarning = noWarning && ((Integer) minLockoutSpinner.getValue() >= accountMinimums.getLockout());
-            noWarning = noWarning && ((Integer) expirySpinner.getValue() <= accountMinimums.getExpiry());
+            noWarning = noWarning && (accountMinimums.getExpiry() < 0 || ((Integer) expirySpinner.getValue() <= accountMinimums.getExpiry()));
             noWarning = noWarning && ((Integer) inactivitySpinner.getValue() <= accountMinimums.getInactivity());
         }
 

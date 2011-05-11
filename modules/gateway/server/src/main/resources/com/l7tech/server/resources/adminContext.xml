@@ -8,7 +8,7 @@
        xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation= "http://www.springframework.org/schema/beans
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
                             http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
                             http://www.springframework.org/schema/aop
                             http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
@@ -24,7 +24,8 @@
         <constructor-arg ref="sslKeystoreCertificate"/>
     </bean>
 
-    <bean id="clusterHttpRequestExecutor" class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerRequestExecutor">
+    <bean id="clusterHttpRequestExecutor"
+          class="com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerRequestExecutor">
         <constructor-arg>
             <ref bean="clusterHttpClient"/>
         </constructor-arg>
@@ -39,7 +40,8 @@
     </bean>
 
     <!-- shared invoker properties, inherited with parent -->
-    <bean id="clusterInvokerCommon" abstract="true"  class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
+    <bean id="clusterInvokerCommon" abstract="true"
+          class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
         <property name="httpInvokerRequestExecutor">
             <ref bean="clusterHttpRequestExecutor"/>
         </property>
@@ -52,7 +54,7 @@
     <bean id="clusterContextFactory" class="com.l7tech.server.cluster.ClusterContextFactory">
         <constructor-arg index="0">
             <list>
-                <ref bean="genericLogAdmin"/>    
+                <ref bean="genericLogAdmin"/>
             </list>
         </constructor-arg>
         <constructor-arg index="1" ref="clusterHttpRequestExecutor"/>
@@ -106,7 +108,8 @@
             </list>
         </constructor-arg>
         <constructor-arg index="2" value="true"/>
-        <constructor-arg index="3" value="30000"/> <!-- inside transaction -->
+        <constructor-arg index="3" value="30000"/>
+        <!-- inside transaction -->
     </bean>
 
     <bean id="rbacAdvice" class="com.l7tech.server.security.rbac.SecuredMethodInterceptor">
@@ -132,30 +135,43 @@
             <list/>
         </constructor-arg>
         <constructor-arg index="2" value="true"/>
-        <constructor-arg index="3" value="30000"/>  <!-- inside transaction -->
+        <constructor-arg index="3" value="30000"/>
+        <!-- inside transaction -->
     </bean>
 
     <!-- Exception advices for server side error handling -->
-    <bean id="auditingThrowsAdvice" class="com.l7tech.server.util.AuditingThrowsAdvice" depends-on="applicationEventPublisher">
+    <bean id="auditingThrowsAdvice" class="com.l7tech.server.util.AuditingThrowsAdvice"
+          depends-on="applicationEventPublisher">
         <constructor-arg>
             <bean class="com.l7tech.util.SwitchedConfig">
                 <constructor-arg index="0" ref="serverConfig"/>
                 <constructor-arg index="1"> <!-- Properties to switch property -->
                     <props>
-                        <prop key="audit.adminExceptions.defaultIncludes">audit.adminExceptions.auditPermissionDenied</prop>
+                        <prop key="audit.adminExceptions.defaultIncludes">audit.adminExceptions.auditPermissionDenied
+                        </prop>
                         <prop key="audit.adminExceptions.includes">audit.adminExceptions.auditPermissionDenied</prop>
                     </props>
                 </constructor-arg>
                 <constructor-arg index="2"> <!-- Overrides for switched properties when enabled -->
                     <map>
-                        <entry key="audit.adminExceptions.defaultIncludes"><value type="boolean">false</value></entry>
-                        <entry key="audit.adminExceptions.includes"><value type="java.lang.String">java.lang.Throwable com.l7tech.gateway.common.security.rbac.PermissionDeniedException</value></entry>
+                        <entry key="audit.adminExceptions.defaultIncludes">
+                            <value type="boolean">false</value>
+                        </entry>
+                        <entry key="audit.adminExceptions.includes">
+                            <value type="java.lang.String">java.lang.Throwable
+                                com.l7tech.gateway.common.security.rbac.PermissionDeniedException
+                            </value>
+                        </entry>
                     </map>
                 </constructor-arg>
                 <constructor-arg index="3"> <!-- Overrides for switched properties when disabled -->
                     <map>
-                        <entry key="audit.adminExceptions.defaultIncludes"><value type="boolean">false</value></entry>
-                        <entry key="audit.adminExceptions.includes"><value type="java.lang.String">java.lang.Throwable</value></entry>
+                        <entry key="audit.adminExceptions.defaultIncludes">
+                            <value type="boolean">false</value>
+                        </entry>
+                        <entry key="audit.adminExceptions.includes">
+                            <value type="java.lang.String">java.lang.Throwable</value>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -189,7 +205,8 @@
     </bean>
 
     <!-- Bean to switch db pools for admin vs other uses -->
-    <bean id="adminConnectionPoolSelectorInterceptor" class="com.l7tech.server.util.UserSwitchedRoutingDataSourceSelector">
+    <bean id="adminConnectionPoolSelectorInterceptor"
+          class="com.l7tech.server.util.UserSwitchedRoutingDataSourceSelector">
         <constructor-arg value="admin"/>
     </bean>
     <bean id="adminConnectionPoolSelectorAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
@@ -235,7 +252,7 @@
                             <constructor-arg index="0" value="STIG"/>
                             <constructor-arg index="1" value="5"/>
                             <constructor-arg index="2" value="20"/>
-                            <constructor-arg index="3" value="15"/>
+                            <constructor-arg index="3" value="-1"/>
                             <constructor-arg index="4" value="35"/>
                         </bean>
                     </constructor-arg>
@@ -338,11 +355,16 @@
         <constructor-arg index="5" ref="schemaResourceManager"/>
         <constructor-arg index="6">
             <map>
-                <entry key="SOAP_1_1.xsd" value="http://schemas.xmlsoap.org/soap/envelope/|http://schemas.xmlsoap.org/soap/envelope/"/>
-                <entry key="SOAP_1_2.xsd" value="http://www.w3.org/2003/05/soap-envelope/|http://www.w3.org/2003/05/soap-envelope"/>
-                <entry key="/com/l7tech/common/resources/xml.xsd" value="http://www.w3.org/2001/xml.xsd|http://www.w3.org/XML/1998/namespace"/>
-                <entry key="/com/l7tech/common/resources/datatypes.dtd" value="http://www.w3.org/2001/datatypes.dtd|datatypes"/>
-                <entry key="/com/l7tech/common/resources/XMLSchema.dtd" value="http://www.w3.org/2001/XMLSchema.dtd|-//W3C//DTD XMLSCHEMA 200102//EN"/>
+                <entry key="SOAP_1_1.xsd"
+                       value="http://schemas.xmlsoap.org/soap/envelope/|http://schemas.xmlsoap.org/soap/envelope/"/>
+                <entry key="SOAP_1_2.xsd"
+                       value="http://www.w3.org/2003/05/soap-envelope/|http://www.w3.org/2003/05/soap-envelope"/>
+                <entry key="/com/l7tech/common/resources/xml.xsd"
+                       value="http://www.w3.org/2001/xml.xsd|http://www.w3.org/XML/1998/namespace"/>
+                <entry key="/com/l7tech/common/resources/datatypes.dtd"
+                       value="http://www.w3.org/2001/datatypes.dtd|datatypes"/>
+                <entry key="/com/l7tech/common/resources/XMLSchema.dtd"
+                       value="http://www.w3.org/2001/XMLSchema.dtd|-//W3C//DTD XMLSCHEMA 200102//EN"/>
             </map>
         </constructor-arg>
     </bean>
@@ -448,9 +470,9 @@
         <constructor-arg ref="uddiCoordinator"/>
         <constructor-arg ref="serviceCache"/>
         <constructor-arg ref="uddiProxiedServiceInfoManager"/>
-        <constructor-arg ref="uddiPublishStatusManager" />
-        <constructor-arg ref="uddiServiceControlMonitorRuntimeManager" />
-        <constructor-arg ref="uddiBusinessServiceStatusManager" />
+        <constructor-arg ref="uddiPublishStatusManager"/>
+        <constructor-arg ref="uddiServiceControlMonitorRuntimeManager"/>
+        <constructor-arg ref="uddiBusinessServiceStatusManager"/>
         <constructor-arg ref="serviceManager"/>
     </bean>
 
