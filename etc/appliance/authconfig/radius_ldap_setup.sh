@@ -118,7 +118,7 @@ if [ $# -eq 1 ]; then
 			echo "Radius timeout: $(cat $PAM_RADIUS_CONF_FILE | grep "^[0-9]" | awk '{print $3}')"
 			;;
 		
-		local)
+		local|file)
 			echo "System is configured for local (file) authentication only."
 			;;
 
@@ -604,7 +604,7 @@ elif [ $# -eq 2 ]; then
 						fi
 						;;
 
-					local)
+					local|file)
 						getCurrentConfigType
 						if [ $RETVAL -eq 2 ]; then
 							CUR_CFG_TYPE="local"
