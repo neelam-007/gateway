@@ -112,13 +112,21 @@ class GroupCache {
 
     // If caller wants only one thread at a time to authenticate any given username,
     // caller is responsible for ensuring that only one thread at a time calls this per username,
-    @SuppressWarnings({"unchecked"})
-    private Set<IdentityHeader> getAndCacheNewResult(User u, CacheKey ckey, IdentityProvider idp, boolean skipAccountValidation) throws ValidationException {
+    private <UT extends User, GMT extends GroupManager<UT,?>>
+    Set<IdentityHeader> getAndCacheNewResult(final User uu, final CacheKey ckey, final IdentityProvider<UT,?,?,GMT> idp, final boolean skipAccountValidation) throws ValidationException {
+        final UT u;
+        if (uu instanceof UserBean) {
+            u = idp.getUserManager().reify((UserBean) uu);
+        } else {
+            //noinspection unchecked
+            u = (UT)uu;
+        }
+
         int cacheMaxGroups = this.cacheMaxGroups.get();
         if (!skipAccountValidation) idp.validate(u);
         //download group info and any other info to be added as a gP as and when required here..
 
-        GroupManager gM = idp.getGroupManager();
+        GMT gM = idp.getGroupManager();
         Set<IdentityHeader> gHeaders;
         try {
             gHeaders = gM.getGroupHeaders(u);
