@@ -27,10 +27,12 @@ LDAP_CONF_FILE1="/etc/openldap/ldap.conf"
 LDAP_CONF_FILE2="/etc/ldap.conf"
 LDAP_NSS_FILE="/etc/nsswitch.conf"
 PAM_RADIUS_CONF_FILE="/etc/pam_radius.conf"
+PAM_SSHD_CONF_FILE="/etc/pam.d/sshd"
 BK_TIME=$(date +"%Y%m%d_%H%M%S")
 BK_DIR="/opt/SecureSpan/Appliance/config/authconfig/bk_files"
 ORIG_CONF_FILES_DIR="/opt/SecureSpan/Appliance/config/authconfig/orig_conf_files"
 LOG_FILE="/opt/SecureSpan/Appliance/config/radius_ldap_setup.log"
+CFG_FILES="$LDAP_CONF_FILE1 $LDAP_CONF_FILE2 $LDAP_NSS_FILE $PAM_RADIUS_CONF_FILE $PAM_SSHD_CONF_FILE"
 OWNER_CFG_FILE="layer7"
 PERM_CFG_FILE="600"
 
@@ -76,16 +78,16 @@ fi
 getCurrentConfigType () {
 # this is used to determine the current configuration type of the system
 
-if [ $(grep "ldap" /etc/nsswitch.conf | wc -l) -eq 0 ] && [ $(grep "radius" /etc/pam.d/sshd | wc -l) -eq 0 ]; then
+if [ $(grep "ldap" $LDAP_NSS_FILE | wc -l) -eq 0 ] && [ $(grep "radius" $PAM_SSHD_CONF_FILE | wc -l) -eq 0 ]; then
 	# type is local
 	RETVAL=2
-elif [ $(grep "ldap" /etc/nsswitch.conf | wc -l) -ge 1 ] && [ $(grep "radius" /etc/pam.d/sshd | wc -l) -eq 0 ]; then
+elif [ $(grep "ldap" $LDAP_NSS_FILE | wc -l) -ge 1 ] && [ $(grep "radius" $PAM_SSHD_CONF_FILE | wc -l) -eq 0 ]; then
 	# type is ldap_only
 	RETVAL=3
-elif [ $(grep "ldap" /etc/nsswitch.conf | wc -l) -eq 0 ] && [ $(grep "radius" /etc/pam.d/sshd | wc -l) -ge 1 ]; then
+elif [ $(grep "ldap" $LDAP_NSS_FILE | wc -l) -eq 0 ] && [ $(grep "radius" $PAM_SSHD_CONF_FILE | wc -l) -ge 1 ]; then
 	# type is radius_only
 	RETVAL=4
-elif [ $(grep "ldap" /etc/nsswitch.conf | wc -l) -ge 1 ] && [ $(grep "radius" /etc/pam.d/sshd | wc -l) -ge 1 ]; then
+elif [ $(grep "ldap" $LDAP_NSS_FILE | wc -l) -ge 1 ] && [ $(grep "radius" $PAM_SSHD_CONF_FILE | wc -l) -ge 1 ]; then
 	# type is radius_with_ldap
 	RETVAL=5
 else
@@ -105,15 +107,15 @@ getCurrentConfigValues () {
 if [ $# -eq 1 ]; then
 	case $1 in
 		ldap_only)
-			echo "LDAP server IP: $(grep "^URI" /etc/openldap/ldap.conf | sed 's|^.*//||' | tr -d '/' | cut -f 1 -d \:)"
-			echo "LDAP server Port: $(grep "^URI" /etc/openldap/ldap.conf | sed 's|^.*//||' | tr -d '/' | cut -f 2 -d \:)"
-			echo "LDAP base: $(grep "^BASE" /etc/openldap/ldap.conf | sed 's|^BASE ||')"
+			echo "LDAP server IP: $(grep "^URI" $LDAP_CONF_FILE1 | sed 's|^.*//||' | tr -d '/' | cut -f 1 -d \:)"
+			echo "LDAP server Port: $(grep "^URI" $LDAP_CONF_FILE1 | sed 's|^.*//||' | tr -d '/' | cut -f 2 -d \:)"
+			echo "LDAP base: $(grep "^BASE" $LDAP_CONF_FILE1 | sed 's|^BASE ||')"
 			;;
 				
 		radius_only)
-			echo "Radius server IP: $(cat /etc/pam_radius.conf | grep "^[0-9]" | awk '{print $1}')"
-			echo "Radius server secret: $(cat /etc/pam_radius.conf | grep "^[0-9]" | awk '{print $2}')"
-			echo "Radius timeout: $(cat /etc/pam_radius.conf | grep "^[0-9]" | awk '{print $3}')"
+			echo "Radius server IP: $(cat $PAM_RADIUS_CONF_FILE | grep "^[0-9]" | awk '{print $1}')"
+			echo "Radius server secret: $(cat $PAM_RADIUS_CONF_FILE | grep "^[0-9]" | awk '{print $2}')"
+			echo "Radius timeout: $(cat $PAM_RADIUS_CONF_FILE | grep "^[0-9]" | awk '{print $3}')"
 			;;
 		
 		local)
@@ -121,12 +123,12 @@ if [ $# -eq 1 ]; then
 			;;
 
 		radius_with_ldap)
-			echo "Radius server IP: $(cat /etc/pam_radius.conf | grep "^[0-9]" | awk '{print $1}')"
-			echo "Radius server secret: $(cat /etc/pam_radius.conf | grep "^[0-9]" | awk '{print $2}')"
-			echo "Radius timeout: $(cat /etc/pam_radius.conf | grep "^[0-9]" | awk '{print $3}')"
-			echo "LDAP server IP: $(grep "^URI" /etc/openldap/ldap.conf | sed 's|^.*//||' | tr -d '/' | cut -f 1 -d \:)"
-			echo "LDAP server Port: $(grep "^URI" /etc/openldap/ldap.conf | sed 's|^.*//||' | tr -d '/' | cut -f 2 -d \:)"
-			echo "LDAP base: $(grep "^BASE" /etc/openldap/ldap.conf | sed 's|^BASE ||')"
+			echo "Radius server IP: $(cat $PAM_RADIUS_CONF_FILE | grep "^[0-9]" | awk '{print $1}')"
+			echo "Radius server secret: $(cat $PAM_RADIUS_CONF_FILE | grep "^[0-9]" | awk '{print $2}')"
+			echo "Radius timeout: $(cat $PAM_RADIUS_CONF_FILE | grep "^[0-9]" | awk '{print $3}')"
+			echo "LDAP server IP: $(grep "^URI" $LDAP_CONF_FILE1 | sed 's|^.*//||' | tr -d '/' | cut -f 1 -d \:)"
+			echo "LDAP server Port: $(grep "^URI" $LDAP_CONF_FILE1 | sed 's|^.*//||' | tr -d '/' | cut -f 2 -d \:)"
+			echo "LDAP base: $(grep "^BASE" $LDAP_CONF_FILE1 | sed 's|^BASE ||')"
 			;;
 		*)
 			toLog "  ERROR - Function 'getCurrentConfigValues' called with invalid argument. Exiting..."	
@@ -209,6 +211,44 @@ fi
 # END of 'getOriginalFiles' function
 }
 
+doBackupOriginalConfig () {
+# this fucntion is called if the script is ran with --initialconfig parameter
+# the purpose is to create the $ORIG_CONF_FILES_DIR in which it will copy the
+# configuration files that will be considerd original files; it should only
+# be called once, during application install time
+
+# making sure there is a directory to store backup files in:
+if [ ! -d $ORIG_CONF_FILES_DIR ]; then
+	toLog "    Info - $ORIG_CONF_FILES_DIR does not exists. Creating it..."
+	mkdir $ORIG_CONF_FILES_DIR
+	if [ "X$?" == "X0" ]; then
+		toLog "Info - $ORIG_CONF_FILES_DIR not found but successfuly created."
+	else
+		toLog "ERROR - $ORIG_CONF_FILES_DIR could not be created! Exiting..."
+		exit 1
+	fi
+fi
+if [ $(ls -1A $ORIG_CONF_FILES_DIR | wc -l) -eq 0 ]; then
+	for F in $CFG_FILES; do
+		checkFileExists $F
+		if [ "X$RETVAL" == "X1" ]; then
+			toLog "ERROR - File $F does not exist! Exiting..."
+			exit 1
+		else
+			cp --preserve=mode,ownership $F $ORIG_CONF_FILES_DIR"/"$(echo $F | sed -e 's|/|-|g')
+			if [ $? -ne 0 ]; then
+				toLog "ERROR - File $F does not exist! Exiting..."
+				exit 1
+			else
+				toLog "Info - Original file $F was sucessfully copied to $ORIG_CONF_FILES_DIR directory."
+			fi
+		fi
+	done
+fi
+
+# END of 'doInitialConfig' function
+}
+
 
 doConfigureRADIUSonly () {
 ## ==========================================
@@ -235,24 +275,24 @@ else
 fi
 
 # Configuring pam sshd module to use pam_radius module:
-checkFileExists /etc/pam.d/sshd
+checkFileExists $PAM_SSHD_CONF_FILE
 if [ "X$RETVAL" == "X1" ]; then
-	toLog "  ERROR - File /etc/pam.d/sshd does not exist! Exiting..."
+	toLog "  ERROR - File $PAM_SSHD_CONF_FILE does not exist! Exiting..."
 	exit 1
 else
-	toLog "   Info - FILE /etc/pam.d/sshd CONFIGURATION:"
+	toLog "   Info - FILE $PAM_SSHD_CONF_FILE CONFIGURATION:"
 	# making a backup copy of the current file
-	doBackup /etc/pam.d/sshd
+	doBackup $PAM_SSHD_CONF_FILE
 	# adding the line for pam_radius with 'sufficient' ensures that
 	# SSHD will allow logins if radius server fails; also, the 'retry=2' and
 	# 'localifdown' option makes sure that after 2 retries the auth process
 	# will fall back to local authentication
-	sed -i "s/\(.*requisite.*$\)/auth\tsufficient\tpam_radius_auth.so conf=\/etc\/pam_radius.conf retry=2 localifdown\n\1/" /etc/pam.d/sshd
+	sed -i "s/\(.*requisite.*$\)/auth\tsufficient\tpam_radius_auth.so conf=\/etc\/pam_radius.conf retry=2 localifdown\n\1/" $PAM_SSHD_CONF_FILE
 	if [ $? -ne 0 ]; then
-		toLog "    ERROR - Inserting the pam_radius module line in the /etc/pam.d/sshd file failed! Exiting..."
+		toLog "    ERROR - Inserting the pam_radius module line in the $PAM_SSHD_CONF_FILE file failed! Exiting..."
 		exit 1
 	else
-		toLog "    Success - Configuration of /etc/pam.d/sshd completed."
+		toLog "    Success - Configuration of $PAM_SSHD_CONF_FILE completed."
 		RETVAL=0
 	fi
 fi
@@ -486,6 +526,9 @@ if [ $# -eq 1 ]; then
 			toLog "ERROR - Determining the current config type failed! Exiting..."
 			exit 1
 		fi
+	elif [ "X$1" == "X--backuporiginalconfig" ]; then
+		# create the repository of original configuration files:
+		doBackupOriginalConfig
 	else
 		toLog "Error - The script was called with an invalid parameter. Exiting..."
 		exit 1
