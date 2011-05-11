@@ -655,7 +655,7 @@ elif [ $# -eq 2 ]; then
 						exit 1
 				esac
 				# deleting the config file:
-				echo 'rm -rf "$2"'
+				rm -rf "$2"
 				if [ "X$?" == "X0" ]; then
 					toLog "Info - Configuration file ($(basename $2)) was successfuly deleted."
 				else
