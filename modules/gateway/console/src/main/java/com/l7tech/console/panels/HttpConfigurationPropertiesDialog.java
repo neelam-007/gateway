@@ -117,7 +117,8 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         validator.addRule( new InputValidator.ComponentValidationRule(tlsVersionComboBox) {
             @Override
             public String getValidationError() {
-                return CipherSuiteGuiUtil.isSupportedTlsVersion(tlsVersionComboBox.getSelectedItem())
+                final Object item = tlsVersionComboBox.getSelectedItem();
+                return item == null || item == ANY || CipherSuiteGuiUtil.isSupportedTlsVersion(item)
                         ? null
                         : "The selected TLS version is not available with the Gateway's current security provider configuration.";
             }
