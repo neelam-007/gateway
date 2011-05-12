@@ -39,7 +39,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     /** If testmode property set to true, all properties are considered mutable, not just the ones with .mutable = true. */
     public static final String PROP_TEST_MODE = "com.l7tech.server.serverconfig.testmode";
 
-    public static final long DEFAULT_CACHE_AGE = 30000;
+    public static final long DEFAULT_CACHE_AGE = 30000L;
 
     public static final String PARAM_SERVER_ID = "serverId";
     public static final String PARAM_KEYSTORE = "keystorePropertiesPath";
@@ -381,9 +381,14 @@ public class ServerConfig implements ClusterPropertyListener, Config {
             String description = tuple[2];
             String defaultValue = tuple[3];
 
-            if (defaultValue != null) _properties.setProperty(propName + SUFFIX_DEFAULT, defaultValue);
-            if (description != null) _properties.setProperty(propName + SUFFIX_DESC, description);
-            if (clusterPropName != null) _properties.setProperty(propName + SUFFIX_CLUSTER_KEY, clusterPropName);
+            propLock.writeLock().lock();
+            try {
+                if (defaultValue != null) _properties.setProperty(propName + SUFFIX_DEFAULT, defaultValue);
+                if (description != null) _properties.setProperty(propName + SUFFIX_DESC, description);
+                if (clusterPropName != null) _properties.setProperty(propName + SUFFIX_CLUSTER_KEY, clusterPropName);
+            } finally {
+                propLock.writeLock().unlock();
+            }
 
             String value = getPropertyUncached(propName, true);
             valueCache.put(propName, new CachedValue(value, now));
@@ -648,17 +653,22 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     private String getServerConfigPropertyName(String suffix, String value) {
         String name = null;
         if(suffix!=null && value!=null) {
-            Set<Map.Entry<Object,Object>> propEntries = _properties.entrySet();
-            for (Map.Entry<Object,Object> propEntry : propEntries) {
-                String propKey = (String) propEntry.getKey();
-                String propVal = (String) propEntry.getValue();
+            propLock.readLock().lock();
+            try {
+                Set<Map.Entry<Object,Object>> propEntries = _properties.entrySet();
+                for (Map.Entry<Object,Object> propEntry : propEntries) {
+                    String propKey = (String) propEntry.getKey();
+                    String propVal = (String) propEntry.getValue();
 
-                if (propKey == null || propVal == null) continue;
+                    if (propKey == null || propVal == null) continue;
 
-                if (propKey.endsWith(suffix) && propVal.equals(value)) {
-                    name = propKey.substring(0, propKey.length() - suffix.length());
-                    break;
+                    if (propKey.endsWith(suffix) && propVal.equals(value)) {
+                        name = propKey.substring(0, propKey.length() - suffix.length());
+                        break;
+                    }
                 }
+            } finally {
+                propLock.readLock().unlock();
             }
         }
         return name;
@@ -965,7 +975,12 @@ public class ServerConfig implements ClusterPropertyListener, Config {
      * @return true if the specified property is marked as mutable
      */
     boolean isMutable(String propName) {
-        return SyspropUtil.getBooleanCached(PROP_TEST_MODE, false) || "true".equals(_properties.getProperty(propName + ".mutable"));
+        propLock.readLock().lock();
+        try {
+            return SyspropUtil.getBooleanCached(PROP_TEST_MODE, false) || "true".equals(_properties.getProperty(propName + ".mutable"));
+        } finally {
+            propLock.readLock().unlock();
+        }
     }
 
     /**
@@ -977,7 +992,13 @@ public class ServerConfig implements ClusterPropertyListener, Config {
      */
     public boolean putProperty(String propName, String value) {
         if (!isMutable(propName)) return false;
-        String oldValue = (String) _properties.setProperty(propName, value);
+        String oldValue;
+        propLock.writeLock().lock();
+        try {
+            oldValue = (String) _properties.setProperty(propName, value);
+        } finally {
+            propLock.writeLock().unlock();
+        }
         valueCache.remove(propName);
 
         PropertyChangeListener pcl;
@@ -1011,7 +1032,12 @@ public class ServerConfig implements ClusterPropertyListener, Config {
      */
     public boolean removeProperty(String propName) {
         if (!isMutable(propName)) return false;
-        _properties.remove(propName);
+        propLock.writeLock().lock();
+        try {
+            _properties.remove(propName);
+        } finally {
+            propLock.writeLock().unlock();
+        }
         valueCache.remove(propName);
         return true;
     }
@@ -1136,8 +1162,15 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     }
 
     private void prepopulateSystemProperties() {
-        for (Map.Entry entry : _properties.entrySet()) {
-            String key = (String)entry.getKey();
+        Set<String> propKeys;
+        propLock.readLock().lock();
+        try {
+            propKeys = new HashSet<String>( _properties.stringPropertyNames() );
+        } finally {
+            propLock.readLock().unlock();
+        }
+
+        for (String key : propKeys) {
             if (key == null)
                 continue;
             if (key.endsWith(SUFFIX_SETSYSPROP)) {
@@ -1181,27 +1214,38 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         SyspropUtil.clearCache();
     }
 
-    private synchronized Map<String, String> getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {
+    private Map<String, String> getMappedServerConfigPropertyNames(String keySuffix, String valueSuffix) {
         Map<String, String> keyValueToMappedValue = new TreeMap<String, String>();
         if(keySuffix!=null) {
-            for (Map.Entry propEntry : _properties.entrySet()) {
-                String propKey = (String) propEntry.getKey();
-                String propVal = (String) propEntry.getValue();
+            propLock.readLock().lock();
+            try {
+                for (Map.Entry propEntry : _properties.entrySet()) {
+                    String propKey = (String) propEntry.getKey();
+                    String propVal = (String) propEntry.getValue();
 
-                if(propKey==null || propVal==null) continue;
+                    if(propKey==null || propVal==null) continue;
 
-                if(propKey.endsWith(keySuffix)) {
-                    keyValueToMappedValue.put(
-                            propVal,
-                            getServerConfigProperty(propKey.substring(0, propKey.length()-keySuffix.length()) + valueSuffix));
+                    if(propKey.endsWith(keySuffix)) {
+                        keyValueToMappedValue.put(
+                                propVal,
+                                getServerConfigProperty(propKey.substring(0, propKey.length()-keySuffix.length()) + valueSuffix));
+                    }
                 }
+            } finally {
+                propLock.readLock().unlock();
             }
         }
         return keyValueToMappedValue;
     }
 
     private String getServerConfigProperty(String prop) {
-        String val = _properties.getProperty(prop);
+        String val;
+        propLock.readLock().lock();
+        try {
+            val = _properties.getProperty(prop);
+        } finally {
+            propLock.readLock().unlock();
+        }
         if (val == null) return null;
         if (val.length() == 0) return val;
 
