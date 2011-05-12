@@ -644,9 +644,8 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         User user = JaasUtils.getCurrentUser();
         if (user == null)
             return null;
-        if (user instanceof InternalUser)
-            return passwordPolicyManger.findByInternalIdentityProviderOid(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID).getDescription();
-        return null;
+        final IdentityProviderPasswordPolicy policy = passwordPolicyManger.findByInternalIdentityProviderOid(user.getProviderId());
+        return policy == null ? null : policy.getDescription();
     }
 
     @Override

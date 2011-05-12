@@ -1,16 +1,17 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderPasswordPolicy;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PasswordHelpDialog extends JDialog {
+    private static final Logger logger = Logger.getLogger(PasswordHelpDialog.class.getName());
+
     private JPanel contentPane;
     private JButton buttonOK;
     private JEditorPane editorPane;
@@ -45,15 +46,18 @@ public class PasswordHelpDialog extends JDialog {
         {
             try
             {
-               passwordHelpMsg  = reg.getIdentityAdmin().getPasswordPolicyDescriptionForIdentityProvider();
+                passwordHelpMsg  = reg.getIdentityAdmin().getPasswordPolicyDescriptionForIdentityProvider();
+                if (passwordHelpMsg == null || passwordHelpMsg.trim().length() < 1)
+                    passwordHelpMsg = "No password policy description available for current admin user.";
             } catch (Exception e) {
                 passwordHelpMsg = "Error getting password policy description";
+                logger.log(Level.WARNING, passwordHelpMsg, e);
             }
         }
         editorPane.setText(passwordHelpMsg);
 
         this.pack();
-        this.setSize(400, 275);
+        this.setSize(480, 275);
         this.setResizable(true);
     }
 

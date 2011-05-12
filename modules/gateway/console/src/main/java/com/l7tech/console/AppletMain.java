@@ -182,7 +182,7 @@ public class AppletMain extends JApplet implements SheetHolder {
     public void start() {
         setFocusable(true);
         forceEarlyClassLoading();
-        new ParserDelegator() {{ setDefaultDTD(); }};  // Work around for Java plug-in bug 6993073
+        new ParserDelegator();  // Work around for Java plug-in bug 6993073
 
         if ( otherSessionId == null || !otherSessionId.equals(sessionId) ) {
             MainWindow mainWindow =  getApplication().getMainWindow();
