@@ -119,7 +119,8 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
         }
     }
 
-    private void reloadConfig() {//todo add validation of thresholds
+    private void reloadConfig() {
+        //todo add validation of thresholds
         logger.info("Reloading configuration.");
 
         shutdownThreshold = config.getIntProperty(PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD, 90);
@@ -230,8 +231,8 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
             } else if (max > 0L) {
                 usage = (int) (100L * recordManager.getCurrentUsage() / max);
                 adjustedUsage = (int) (100L * (recordManager.getCurrentUsage() - adjustment) / max);
-                if (adjustedUsage <= 0) {
-                    adjustedUsage = usage;
+                if (adjustedUsage < 0) {
+                    adjustedUsage = 0;
                 }
 
                 if (adjustment > 0L)
@@ -275,7 +276,8 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
             long maxOidArchived = Long.MIN_VALUE;
             long zipBytesArchived = 0L;
 
-            while (stopThreshold <= (currentUsageCheck(zipBytesArchived))) {//todo fix for when stop threshold is below size of non audit data
+            while (stopThreshold <= (currentUsageCheck(zipBytesArchived))) {
+                //todo fix for when stop threshold is below size of non audit data
                 // get starting point
                 long startOid;
                 try {
@@ -287,6 +289,7 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
                 }
                 if (initialStartOid == Long.MIN_VALUE) initialStartOid = startOid;
                 if (startOid == -1L) {
+                    //todo this situation is expected when the limits are set such that the archiver wants to run but there are no more audits to archive.
                     auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_ERROR, "Error getting lowest audit record object id.");
                     break;
                 }
