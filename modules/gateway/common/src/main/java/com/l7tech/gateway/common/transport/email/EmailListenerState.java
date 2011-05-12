@@ -1,12 +1,13 @@
 package com.l7tech.gateway.common.transport.email;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.PersistentEntity;
 
 import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.*;
+import org.hibernate.annotations.Parameter;
 
 import java.io.Serializable;
 
@@ -25,11 +26,9 @@ public class EmailListenerState implements PersistentEntity, Serializable {
     private EmailListener emailListener;
 
     public EmailListenerState() {
-        super();
     }
 
     public EmailListenerState(EmailListener emailListener) {
-        super();
         this.emailListener = emailListener;
     }
 
@@ -57,6 +56,7 @@ public class EmailListenerState implements PersistentEntity, Serializable {
         return version;
     }
 
+    @Override
     public void setVersion(int version) {
         this.version = version;
     }
@@ -74,7 +74,7 @@ public class EmailListenerState implements PersistentEntity, Serializable {
 
     @Id
     @Column(name="objectid", nullable=false, updatable=false)
-    @GenericGenerator( name="generator", strategy = "hilo" )
+    @GenericGenerator( name="generator", strategy = "seqhilo", parameters = @Parameter(name="max_lo", value="32767") )
     @GeneratedValue(strategy=GenerationType.SEQUENCE, generator = "generator")
     public Long getObjectId() {
         return Id;
@@ -89,6 +89,7 @@ public class EmailListenerState implements PersistentEntity, Serializable {
         return getOid();
     }
 
+    @Override
     @Transient
     public String getId() {
         return Long.toString(getOid());

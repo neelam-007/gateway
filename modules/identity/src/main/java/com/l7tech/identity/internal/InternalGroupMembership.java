@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2003-2005 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.identity.internal;
 
 import com.l7tech.identity.GroupMembership;
@@ -17,6 +13,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Transient;
 
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Proxy;
 
 /**
@@ -51,7 +48,7 @@ public class InternalGroupMembership extends GroupMembership {
 
     @Id
     @Column(name="objectid", nullable=false, updatable=false)
-    @GenericGenerator( name="generator", strategy = "hilo" )
+    @GenericGenerator( name="generator", strategy = "seqhilo", parameters = @Parameter(name="max_lo", value="32767") )
     @GeneratedValue(strategy= GenerationType.SEQUENCE, generator = "generator")
     public long getOid() {
         return _oid;

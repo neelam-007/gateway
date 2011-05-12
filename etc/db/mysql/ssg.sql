@@ -20,21 +20,19 @@ CREATE TABLE hibernate_unique_key (
 
 INSERT INTO hibernate_unique_key VALUES (1);
 
--- TODO [steve] uncomment when committing identifier generation changes
+--
 -- Create "sequence" function for next_hi value
 --
--- NOTE that the function is safe when either row based or statement based replication is in use, but "SET GLOBAL" is not
+-- NOTE that the function is safe when either row based or statement based replication is in use.
 --
--- SET GLOBAL log_bin_trust_function_creators = 1; //put this in my.cnf?
---
--- delimiter //
--- CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER
--- BEGIN
---     UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+2;
---    RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());
--- END
--- //
--- delimiter ;
+delimiter //
+CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER
+BEGIN
+    UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+IF(@@global.server_id=0,1,2);
+    RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());
+END
+//
+delimiter ;
 
 --
 -- Table structure for table 'identity_provider'
@@ -856,22 +854,22 @@ CREATE TABLE keystore_file (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 -- placeholder for legacy Software Static, never loaded or saved
-insert into keystore_file values (0, 0, "Software Static", "ss", null, null);
+insert into keystore_file values (0, 0, 'Software Static', 'ss', null, null);
 
 -- tar.gz of items in sca 6000 keydata directory
-insert into keystore_file values (1, 0, "HSM", "hsm.sca.targz", null, null);
+insert into keystore_file values (1, 0, 'HSM', 'hsm.sca.targz', null, null);
 
 -- bytes of a PKCS#12 keystore
-insert into keystore_file values (2, 0, "Software DB", "sdb.pkcs12", null, null);
+insert into keystore_file values (2, 0, 'Software DB', 'sdb.pkcs12', null, null);
 
 -- placeholder for ID reserved for Luna, never loaded or saved
-insert into keystore_file values (3, 0, "SafeNet HSM", "luna", null, null);
+insert into keystore_file values (3, 0, 'SafeNet HSM', 'luna', null, null);
 
 -- serialized NcipherKeyStoreData for an nCipher keystore
-insert into keystore_file values (4, 0, "nCipher HSM", "hsm.NcipherKeyStoreData", null, null);
+insert into keystore_file values (4, 0, 'nCipher HSM', 'hsm.NcipherKeyStoreData', null, null);
 
 -- Reserve OID 5 for "Generic" keystores
--- insert into keystore_file values (5, 0, "Generic", "generic", null, null);
+-- insert into keystore_file values (5, 0, 'Generic', 'generic', null, null);
 
 DROP TABLE IF EXISTS shared_keys;
 CREATE TABLE shared_keys (
@@ -1683,6 +1681,6 @@ CREATE TABLE ssg_version (
    current_version char(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
-INSERT INTO ssg_version (current_version) VALUES ("6.0.0");
+INSERT INTO ssg_version (current_version) VALUES ('6.1.0');
 
 SET FOREIGN_KEY_CHECKS = 1;

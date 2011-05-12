@@ -5,6 +5,7 @@ import com.l7tech.util.ResourceUtils;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
@@ -42,6 +43,42 @@ public class DatabaseFunctions {
             }
         } finally {
             ResourceUtils.closeQuietly( statement );
+            ResourceUtils.closeQuietly( connection );
+        }
+    }
+
+    /**
+     * Create a sequence initialized from the given (presumably single rowed) table.
+     *
+     * @param sequenceName The name of the sequence to create
+     * @param tableName The name of the table to select the start value from
+     * @param columnName The name of the column containing the start value
+     * @throws SQLException If an error occurs
+     */
+    public static void createSequenceFromTable( final String sequenceName,
+                                                final String tableName,
+                                                final String columnName ) throws SQLException {
+        long startValue = 1L;
+        Connection connection = null;
+        PreparedStatement statement1 = null;
+        PreparedStatement statement2 = null;
+        ResultSet resultSet = null;
+        try {
+            connection = DriverManager.getConnection( "jdbc:default:connection" );
+
+            // Get the start value
+            statement1 = connection.prepareStatement(  "select " + columnName + " from " + tableName );
+            resultSet = statement1.executeQuery();
+            if ( resultSet.next() ) {
+                startValue = resultSet.getLong( 1 );
+            }
+
+            statement2 = connection.prepareStatement(  "create sequence " + sequenceName + " start with " + startValue );
+            statement2.execute();
+        } finally {
+            ResourceUtils.closeQuietly( resultSet );
+            ResourceUtils.closeQuietly( statement1 );
+            ResourceUtils.closeQuietly( statement2 );
             ResourceUtils.closeQuietly( connection );
         }
     }

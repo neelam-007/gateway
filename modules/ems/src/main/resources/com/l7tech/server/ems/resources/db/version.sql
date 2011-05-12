@@ -9,4 +9,12 @@ create table schema_version (
     current_version bigint NOT NULL
 );
 
-insert into schema_version values ( 1 );
+--
+-- Insert the current schema version (see SchemaUpdaterImpl.SCHEMA_VERSION)
+--
+insert into schema_version values ( 2 );
+
+--
+-- Initialize the object identifier high value to 1
+--
+create sequence hibernate_sequence start with 1;

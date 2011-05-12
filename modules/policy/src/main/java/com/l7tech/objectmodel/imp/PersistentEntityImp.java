@@ -1,10 +1,8 @@
-/*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.PersistentEntity;
-import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.*;
+import org.hibernate.annotations.Parameter;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -32,7 +30,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
     @Override
     @Id @XmlTransient
     @Column(name="objectid", nullable=false, updatable=false)
-    @GenericGenerator( name="generator", strategy = "hilo" )
+    @GenericGenerator( name="generator", strategy = "seqhilo", parameters = @Parameter(name="max_lo", value="32767") )
     @GeneratedValue(strategy=GenerationType.SEQUENCE, generator = "generator")
     public long getOid() {
         return _oid;

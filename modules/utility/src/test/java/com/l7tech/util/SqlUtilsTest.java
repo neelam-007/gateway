@@ -1,9 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: Mar 17, 2009
- * Time: 2:09:45 PM
- */
 package com.l7tech.util;
 
 import org.junit.Test;
@@ -72,7 +66,7 @@ public class SqlUtilsTest {
         Assert.assertEquals("Expected: " + expectedVal + " actual: " + actualValue, actualValue, expectedVal);
     }
 
-        @Test
+    @Test
     public void testParseSqlStatement() throws Exception {
         testSingleStatement( "Simple", "SELECT * from test;", "SELECT * from test" );
         testSingleStatement( "Insert",
@@ -174,6 +168,29 @@ public class SqlUtilsTest {
         testSingleStatement( "XML content",
                 "INSERT INTO table (objectid, version, content) VALUES (-5,0,'<?xml version=\\'1.0\\'?>\\n<xs:schema targetNamespace=\\\"http://www.w3.org/XML/1998/namespace\\\" xmlns:xs=\\\"http://www.w3.org/2001/XMLSchema\\\" xml:lang=\\\"en\\\">\\n\\n <xs:annotation>\\n  <xs:documentation>In keeping with the XML Schema WG\\'s standard versioning\\n   policy, this schema document will persist at\\n   http://www.w3.org/2007/08/xml.xsd.\\n   At the date of issue it can also be found at\\n   http://www.w3.org/2001/xml.xsd.\\n   The schema document at that URI may however change in the future,\\n   in order to remain compatible with the latest version of XML Schema\\n   itself, or with the XML namespace itself.  In other words, if the XML\\n   Schema or XML namespaces change, the version of this document at\\n   http://www.w3.org/2001/xml.xsd will change\\n   accordingly; the version at\\n   http://www.w3.org/2007/08/xml.xsd will not change.\\n  </xs:documentation>\\n </xs:annotation>\\n\\n <xs:attribute name=\\\"lang\\\">\\n  <xs:annotation>\\n   <xs:documentation>Attempting to install the relevant ISO 2- and 3-letter\\n         codes as the enumerated possible values is probably never\\n         going to be a realistic possibility.  See\\n         RFC 3066 at http://www.ietf.org/rfc/rfc3066.txt and the IANA registry\\n         at http://www.iana.org/assignments/lang-tag-apps.htm for\\n         further information.\\n\\n         The union allows for the \\'un-declaration\\' of xml:lang with\\n         the empty string.</xs:documentation>\\n  </xs:annotation>\\n  <xs:simpleType>\\n   <xs:union memberTypes=\\\"xs:language\\\">\\n    <xs:simpleType>    \\n     <xs:restriction base=\\\"xs:string\\\">\\n      <xs:enumeration value=\\\"\\\"/>\\n     </xs:restriction>\\n    </xs:simpleType>\\n   </xs:union>\\n  </xs:simpleType>\\n </xs:attribute>\\n\\n <xs:attribute name=\\\"space\\\">\\n  <xs:simpleType>\\n   <xs:restriction base=\\\"xs:NCName\\\">\\n    <xs:enumeration value=\\\"default\\\"/>\\n    <xs:enumeration value=\\\"preserve\\\"/>\\n   </xs:restriction>\\n  </xs:simpleType>\\n </xs:attribute>\\n\\n <xs:attribute name=\\\"base\\\" type=\\\"xs:anyURI\\\">\\n  <xs:annotation>\\n   <xs:documentation>See http://www.w3.org/TR/xmlbase/ for\\n                     information about this attribute.</xs:documentation>\\n  </xs:annotation>\\n </xs:attribute>\\n \\n <xs:attribute name=\\\"id\\\" type=\\\"xs:ID\\\">\\n  <xs:annotation>\\n   <xs:documentation>See http://www.w3.org/TR/xml-id/ for\\n                     information about this attribute.</xs:documentation>\\n  </xs:annotation>\\n </xs:attribute>\\n\\n <xs:attributeGroup name=\\\"specialAttrs\\\">\\n  <xs:attribute ref=\\\"xml:base\\\"/>\\n  <xs:attribute ref=\\\"xml:lang\\\"/>\\n  <xs:attribute ref=\\\"xml:space\\\"/>\\n  <xs:attribute ref=\\\"xml:id\\\"/>\\n </xs:attributeGroup>\\n\\n</xs:schema>');",
                 "INSERT INTO table (objectid, version, content) VALUES (-5,0,'<?xml version=\\'1.0\\'?>\\n<xs:schema targetNamespace=\\\"http://www.w3.org/XML/1998/namespace\\\" xmlns:xs=\\\"http://www.w3.org/2001/XMLSchema\\\" xml:lang=\\\"en\\\">\\n\\n <xs:annotation>\\n  <xs:documentation>In keeping with the XML Schema WG\\'s standard versioning\\n   policy, this schema document will persist at\\n   http://www.w3.org/2007/08/xml.xsd.\\n   At the date of issue it can also be found at\\n   http://www.w3.org/2001/xml.xsd.\\n   The schema document at that URI may however change in the future,\\n   in order to remain compatible with the latest version of XML Schema\\n   itself, or with the XML namespace itself.  In other words, if the XML\\n   Schema or XML namespaces change, the version of this document at\\n   http://www.w3.org/2001/xml.xsd will change\\n   accordingly; the version at\\n   http://www.w3.org/2007/08/xml.xsd will not change.\\n  </xs:documentation>\\n </xs:annotation>\\n\\n <xs:attribute name=\\\"lang\\\">\\n  <xs:annotation>\\n   <xs:documentation>Attempting to install the relevant ISO 2- and 3-letter\\n         codes as the enumerated possible values is probably never\\n         going to be a realistic possibility.  See\\n         RFC 3066 at http://www.ietf.org/rfc/rfc3066.txt and the IANA registry\\n         at http://www.iana.org/assignments/lang-tag-apps.htm for\\n         further information.\\n\\n         The union allows for the \\'un-declaration\\' of xml:lang with\\n         the empty string.</xs:documentation>\\n  </xs:annotation>\\n  <xs:simpleType>\\n   <xs:union memberTypes=\\\"xs:language\\\">\\n    <xs:simpleType>    \\n     <xs:restriction base=\\\"xs:string\\\">\\n      <xs:enumeration value=\\\"\\\"/>\\n     </xs:restriction>\\n    </xs:simpleType>\\n   </xs:union>\\n  </xs:simpleType>\\n </xs:attribute>\\n\\n <xs:attribute name=\\\"space\\\">\\n  <xs:simpleType>\\n   <xs:restriction base=\\\"xs:NCName\\\">\\n    <xs:enumeration value=\\\"default\\\"/>\\n    <xs:enumeration value=\\\"preserve\\\"/>\\n   </xs:restriction>\\n  </xs:simpleType>\\n </xs:attribute>\\n\\n <xs:attribute name=\\\"base\\\" type=\\\"xs:anyURI\\\">\\n  <xs:annotation>\\n   <xs:documentation>See http://www.w3.org/TR/xmlbase/ for\\n                     information about this attribute.</xs:documentation>\\n  </xs:annotation>\\n </xs:attribute>\\n \\n <xs:attribute name=\\\"id\\\" type=\\\"xs:ID\\\">\\n  <xs:annotation>\\n   <xs:documentation>See http://www.w3.org/TR/xml-id/ for\\n                     information about this attribute.</xs:documentation>\\n  </xs:annotation>\\n </xs:attribute>\\n\\n <xs:attributeGroup name=\\\"specialAttrs\\\">\\n  <xs:attribute ref=\\\"xml:base\\\"/>\\n  <xs:attribute ref=\\\"xml:lang\\\"/>\\n  <xs:attribute ref=\\\"xml:space\\\"/>\\n  <xs:attribute ref=\\\"xml:id\\\"/>\\n </xs:attributeGroup>\\n\\n</xs:schema>')");
+        testSingleStatement( "Function", "delimiter //\n" +
+                "CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER\n" +
+                "BEGIN\n" +
+                "    UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+2;\n" +
+                "    RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());\n" +
+                "END//\n" +
+                "delimiter ;", "CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER\n" +
+                "BEGIN\n" +
+                "    UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+2;\n" +
+                "    RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());\n" +
+                "END" );
+        testSingleStatement( "Function delimiter on newline", "delimiter //\n" +
+                "CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER\n" +
+                "BEGIN\n" +
+                "    UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+2;\n" +
+                "    RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());\n" +
+                "END\n" +
+                "//\n" +
+                "delimiter ;", "CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER\n" +
+                "BEGIN\n" +
+                "    UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+2;\n" +
+                "    RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());\n" +
+                "END\n" );
         testSingleStatement( "Complex whitespace",
                 "SELECT\t   *  \n \n from test;",
                 "SELECT\t   *  \n \n from test" );

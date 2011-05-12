@@ -65,6 +65,8 @@ public class SchemaUpdaterImpl extends JdbcDaoSupport implements SchemaUpdater {
      * -  0 : 1.0
      * -  1 : 1.5
      * -  2 : 1.6
+     *
+     * The version should match the value in "version.sql"
      */
     private static final int SCHEMA_VERSION = 2;
 

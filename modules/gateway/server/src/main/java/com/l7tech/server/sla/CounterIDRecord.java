@@ -1,12 +1,7 @@
-/**
- * LAYER 7 TECHNOLOGIES, INC<br/>
- *
- * User: flascell<br/>
- * Date: Apr 4, 2005<br/>
- */
 package com.l7tech.server.sla;
 
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Entity;
@@ -27,14 +22,14 @@ import java.io.Serializable;
 @Table(name="counters")
 public class CounterIDRecord implements Serializable {
     public static final String UNIDENTIFIED_USER = "*";
-    public long counterId = -1;
+    public long counterId = -1L;
     public String userId = UNIDENTIFIED_USER;
-    public long providerId = -1;
+    public long providerId = -1L;
     public String counterName;
 
     @Id
     @GeneratedValue(strategy= GenerationType.SEQUENCE, generator="generator")
-    @GenericGenerator( name="generator", strategy = "hilo" )
+    @GenericGenerator( name="generator", strategy = "seqhilo", parameters = @Parameter(name="max_lo", value="32767") )
     public long getCounterId() {
         return counterId;
     }

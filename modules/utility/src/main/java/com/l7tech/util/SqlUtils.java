@@ -1,9 +1,3 @@
-/**
- * Copyright (C) 2008, Layer 7 Technologies Inc.
- * User: darmstrong
- * Date: Mar 17, 2009
- * Time: 2:00:17 PM
- */
 package com.l7tech.util;
 
 import java.io.IOException;
@@ -96,16 +90,32 @@ public class SqlUtils {
         boolean escaped = false;
 
         int token;
+        String delimiter = null;
         final StringBuilder builder = new StringBuilder();
         while( (token = tokenizer.nextToken()) != StreamTokenizer.TT_EOF ) {
             boolean wasEscaped = escaped;
             escaped = false;
 
             if ( token == StreamTokenizer.TT_WORD ) {
-                builder.append( tokenizer.sval );
+                if ( delimiter!=null && tokenizer.sval.endsWith( delimiter ) ) {
+                    builder.append( tokenizer.sval.substring( 0, tokenizer.sval.length()-delimiter.length() ) );
+                    final String statement = builder.toString();
+                    if ( !statement.trim().isEmpty() ) {
+                        statements.add( statement );
+                    }
+                    builder.setLength( 0 );
+                } else {
+                    builder.append( tokenizer.sval );
+                }
             } else if ( token == StreamTokenizer.TT_EOL ) {
                 // check for comment line
                 if ( isCommentLine(builder) ) {
+                    builder.setLength( 0 );
+                } else if ( isDelimiterStart(builder) ) {
+                    delimiter = getDelimiter(builder);
+                    if ( ";".equals( delimiter ) ) {
+                        delimiter = null;
+                    }
                     builder.setLength( 0 );
                 } else {
                     if ( builder.length() > 0 ) {
@@ -123,7 +133,7 @@ public class SqlUtils {
                 if (inString) escaped = !wasEscaped;
                 builder.append( (char)token );
             } else if ( token == ';' ) {
-                if ( !inString && !isCommentLine(builder) ) {
+                if ( delimiter==null && !inString && !isCommentLine(builder) ) {
                     final String statement = builder.toString();
                     if ( !statement.trim().isEmpty() ) {
                         statements.add( statement );
@@ -171,6 +181,27 @@ public class SqlUtils {
 
     private static boolean isCommentLine( final CharSequence charSequence ) {
         return charSequence.length() > 1 && charSequence.charAt( 0 )=='-' && charSequence.charAt( 1 )=='-';
+    }
+
+    private static boolean isDelimiterStart( final CharSequence charSequence ) {
+        return getDelimiter( charSequence ) != null;
+    }
+
+    private static String getDelimiter( final CharSequence charSequence ) {
+        String delimiter = null;
+        String value = charSequence.toString();
+        if ( value.startsWith( "delimiter " ) ) {
+            final String delimiterText = value.substring( 10 ).trim();
+            if ( !delimiterText.isEmpty() ) {
+                final int delimiterEnd = delimiterText.indexOf( ' ' );
+                if ( delimiterEnd < 0 ) {
+                    delimiter = delimiterText;
+                } else {
+                    delimiter = delimiterText.substring( 0, delimiterEnd );
+                }
+            }
+        }
+        return delimiter;
     }
 
     // gets a long out of a mysql / innodb size specification NNNN[M|G]
