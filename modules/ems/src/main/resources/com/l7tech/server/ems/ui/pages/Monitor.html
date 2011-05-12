@@ -105,6 +105,7 @@
         /** Localized strings for local HTML markups, e.g., toolbar buttons, context menu, error dialogs. */
         var localizedStrings = {
             AUDIT_SIZE : 'audit size',
+            REPLICATION_DELAY : 'replication delay',
             OPERATING_STATUS : 'operating status',
             LOG_SIZE : 'log file size',
             DISK_USAGE : 'disk usage (root partition)',
@@ -287,6 +288,8 @@
         function getMonitoringPropertyTypeLocalizedStrings(type) {
             if (type == l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY.AUDIT_SIZE) {
                 return localizedStrings.AUDIT_SIZE;
+            } else if (type == l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY.DATABASE_REPLICATION_DELAY ) {
+                return localizedStrings.REPLICATION_DELAY;
             } else if (type == l7.Constants.SSG_NODE_MONITORING_PROPERTY.OPERATING_STATUS) {
                 return localizedStrings.OPERATING_STATUS;
             } else if (type == l7.Constants.SSG_NODE_MONITORING_PROPERTY.LOG_SIZE) {
@@ -1257,6 +1260,7 @@
                     l7.EntityTreeTable.COLUMN.ONLINE_STATUS,
                     l7.EntityTreeTable.COLUMN.TYPE,
                     l7.EntityTreeTable.COLUMN.MONITORING_AUDIT_SIZE,
+                    l7.EntityTreeTable.COLUMN.MONITORING_DATABASE_REPLICATION_DELAY,
                     l7.EntityTreeTable.COLUMN.MONITORING_OPERATING_STATUS,
                     l7.EntityTreeTable.COLUMN.MONITORING_LOG_SIZE,
                     l7.EntityTreeTable.COLUMN.MONITORING_DISK_USAGE,
@@ -1678,6 +1682,11 @@
                                                     <td>&ge; <input id="auditSizeDefaultTriggerValueTextBox" class="right" type="text" size="13" maxlength="13" onkeyup="validateSetup();"/> <span id="auditSizeDefaultTriggerUnitLabel"></span> <img id="auditSizeDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
                                                 <tr>
+                                                    <td>replication delay</td>
+                                                    <td class="center"><input id="databaseReplicationDelaySamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="databaseReplicationDelaySamplingIntervalWarningIcon" src="../images/warning.png"/></td>
+                                                    <td>&ge; <input id="databaseReplicationDelayDefaultTriggerValueTextBox" class="right" type="text" size="13" maxlength="13" onkeyup="validateSetup();"/> <span id="databaseReplicationDelayDefaultTriggerUnitLabel"></span> <img id="databaseReplicationDelayDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
+                                                </tr>
+                                                <tr>
                                                     <td>operating status</td>
                                                     <td class="center"><input id="operatingStatusSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="operatingStatusSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
                                                     <td>upon not RUNNING</td>
@@ -1772,10 +1781,11 @@
                                         <th class="bottom" rowspan="2">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
                                         <th class="bottom" rowspan="2"><img src="../images/status.png" title="Online Status" alt="" /></th>
                                         <th class="bottom" rowspan="2">Type</th>
-                                        <th colspan="10"><div class="trafficImgParent"><img class="tippy" src="../images/tippyCollapsed.png" title="Click to expand headers" alt="" onclick="expandSteppedHeaders();" /><span class="clickable" title="Click to expand headers" onclick="expandSteppedHeaders();">Monitored Properties</span><img id="refreshMonitoringProperties_collapsedHeaders_trafficImg" class="trafficImg" src="../images/traffic.png"/><img id="refreshMonitoringProperties_collapsedHeaders_errorImg" class="trafficImg" src="../images/trafficError.png"/></div></th>
+                                        <th colspan="11"><div class="trafficImgParent"><img class="tippy" src="../images/tippyCollapsed.png" title="Click to expand headers" alt="" onclick="expandSteppedHeaders();" /><span class="clickable" title="Click to expand headers" onclick="expandSteppedHeaders();">Monitored Properties</span><img id="refreshMonitoringProperties_collapsedHeaders_trafficImg" class="trafficImg" src="../images/traffic.png"/><img id="refreshMonitoringProperties_collapsedHeaders_errorImg" class="trafficImg" src="../images/trafficError.png"/></div></th>
                                     </tr>
                                     <tr>
                                         <th class="group0"><div class="collapsedHeader" style="display: none;">audit size (no. of audit events)</div></th>
+                                        <th class="group0"><div class="collapsedHeader" style="display: none;">replication delay</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">operating status</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">log files size</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">disk usage (root partition)</div></th>
@@ -1790,25 +1800,32 @@
                                 <thead id="steppedHeaders" style="display: none;">
                                     <!-- These headers are initially hidden until tippy is clicked. -->
                                     <tr>
-                                        <th class="bottom" rowspan="11">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
-                                        <th class="bottom" rowspan="11"><img src="../images/status.png" title="Online Status" alt="" /></th>
-                                        <th class="bottom" rowspan="11">Type</th>
-                                        <th colspan="10"><div class="trafficImgParent"><img class="tippy" src="../images/tippyExpanded.png" title="Click to collapse headers" alt="" onclick="collapseSteppedHeaders();" /><span class="clickable" title="Click to collapse headers" onclick="collapseSteppedHeaders();">Monitored Properties</span><img id="refreshMonitoringProperties_steppedHeaders_trafficImg" class="trafficImg" src="../images/traffic.png"/><img id="refreshMonitoringProperties_steppedHeaders_errorImg" class="trafficImg" src="../images/trafficError.png"/></div></th>
-                                        <th class="parentId" rowspan="11"><!-- hidden column --></th>
+                                        <th class="bottom" rowspan="12">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
+                                        <th class="bottom" rowspan="12"><img src="../images/status.png" title="Online Status" alt="" /></th>
+                                        <th class="bottom" rowspan="12">Type</th>
+                                        <th colspan="11"><div class="trafficImgParent"><img class="tippy" src="../images/tippyExpanded.png" title="Click to collapse headers" alt="" onclick="collapseSteppedHeaders();" /><span class="clickable" title="Click to collapse headers" onclick="collapseSteppedHeaders();">Monitored Properties</span><img id="refreshMonitoringProperties_steppedHeaders_trafficImg" class="trafficImg" src="../images/traffic.png"/><img id="refreshMonitoringProperties_steppedHeaders_errorImg" class="trafficImg" src="../images/trafficError.png"/></div></th>
+                                        <th class="parentId" rowspan="12"><!-- hidden column --></th>
                                     </tr>
                                     <tr>
-                                        <th class="topStep group0" colspan="10">audit size (no. of audit events)</th>
+                                        <th class="topStep group0" colspan="11">audit size (no. of audit events)</th>
                                     </tr>
                                     <tr>
+                                        <th class="group0 middleStep group0middleStep"> </th>
+                                        <th class="topStep group0" colspan="10">replication delay (seconds)</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group1 topStep" colspan="9">operating status</th>
                                     </tr>
                                     <tr>
                                         <th class="group0 middleStep group0middleStep"> </th>
+                                        <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 topStep" colspan="8">log files size</th>
                                     </tr>
                                     <tr>
+                                        <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
@@ -1816,12 +1833,14 @@
                                     </tr>
                                     <tr>
                                         <th class="group0 middleStep group0middleStep"> </th>
+                                        <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 topStep" colspan="6">disk free (root partition)</th>
                                     </tr>
                                     <tr>
+                                        <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
@@ -1831,6 +1850,7 @@
                                     </tr>
                                     <tr>
                                         <th class="group0 middleStep group0middleStep"> </th>
+                                        <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
@@ -1839,6 +1859,7 @@
                                         <th class="group1 topStep" colspan="4">CPU temperature</th>
                                     </tr>
                                     <tr>
+                                        <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
@@ -1850,6 +1871,7 @@
                                     </tr>
                                     <tr>
                                         <th class="group0 middleStep group0middleStep"> </th>
+                                        <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
@@ -1860,6 +1882,7 @@
                                         <th class="group1 topStep" colspan="2">swap space usage</th>
                                     </tr>
                                     <tr>
+                                        <th class="group0 bottomStep group0bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
                                         <th class="group0 bottomStep group0bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
                                         <th class="group1 bottomStep group1bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
                                         <th class="group1 bottomStep group1bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
@@ -2126,6 +2149,7 @@
                         <td>
                             <!-- Only the matching one will be shown: -->
                             <div id="monDlg_auditSizeTriggerConfig">&ge; <input id="monDlg_auditSizeTriggerValueTextBox" class="right" type="text" size="13" maxlength="13" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_auditSizeTriggerValueUnitLabel"></span></div>
+                            <div id="monDlg_databaseReplicationDelayTriggerConfig">&ge; <input id="monDlg_databaseReplicationDelayTriggerValueTextBox" class="right" type="text" size="13" maxlength="13" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_databaseReplicationDelayTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_operatingStatusTriggerConfig">upon not RUNNING</div>
                             <div id="monDlg_logSizeTriggerConfig">&ge; <input id="monDlg_logSizeTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_logSizeTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_diskUsageTriggerConfig">&ge; <input id="monDlg_diskUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_diskUsageTriggerValueUnitLabel"></span></div>

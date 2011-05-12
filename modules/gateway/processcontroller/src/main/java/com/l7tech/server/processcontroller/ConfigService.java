@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.objectmodel.DeleteException;
@@ -28,6 +25,7 @@ public interface ConfigService {
     String HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_FILE = "host.controller.remoteNodeManagement.truststore.file";
     String HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_TYPE = "host.controller.remoteNodeManagement.truststore.type";
     String HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_PASSWORD = "host.controller.remoteNodeManagement.truststore.password";
+    String HOSTPROPERTIES_NODEMANAGEMENT_THUMBPRINT= "host.controller.remoteNodeManagement.thumbprint";
     String HOSTPROPERTIES_PATCH_TRUSTSTORE_FILE = "host.controller.patch.truststore.file";
     String HOSTPROPERTIES_PATCH_TRUSTSTORE_TYPE = "host.controller.patch.truststore.type";
     String HOSTPROPERTIES_PATCH_TRUSTSTORE_PASSWORD = "host.controller.patch.truststore.password";
@@ -83,6 +81,20 @@ public interface ConfigService {
 
     /** The client certificates that will be accepted by the remote {@link com.l7tech.server.management.api.node.NodeManagementApi}. */
     Set<X509Certificate> getTrustedRemoteNodeManagementCerts();
+
+    /**
+     * Thumbprints of the client certificates that will be accepted.
+     *
+     * @return The set of (partial) thumbprints.
+     */
+    Set<String> getTrustedRemoteNodeManagementCertThumbprints();
+
+    /**
+     * The given client certificate should be accepted for remote management.
+     *
+     * @param certificate The certificate to trust
+     */
+    void acceptTrustedRemoteNodeManagementCert(X509Certificate certificate);
 
     /** The certificates that are trusted to sign patches. */
     Set<X509Certificate> getTrustedPatchCerts();

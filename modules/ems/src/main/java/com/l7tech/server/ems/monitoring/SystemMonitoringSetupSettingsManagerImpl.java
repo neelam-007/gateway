@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
-
 package com.l7tech.server.ems.monitoring;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
@@ -21,13 +17,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * The implementation of the interface, {@link SystemMonitoringSetupSettingsManager}.
  */
 public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitoringSetupSettingsManager {
-    private static final Logger logger = Logger.getLogger(SystemMonitoringSetupSettingsManagerImpl.class.getName());
     private final ClusterPropertyManager clusterPropertyManager;
     private ServerConfig serverConfig;
 
@@ -63,10 +57,11 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
     public Map<String, Object> findSetupSettings() throws FindException, InvalidMonitoringSetupSettingException {
         ClusterProperty setupSettings = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS);
 
+        Map<String, Object> defaults = getInitialSetupSettings();
         if (setupSettings == null) {
-            return getInitialSetupSettings();
+            return defaults;
         } else {
-            return convertStringToMap(setupSettings.getValue());
+            return convertStringToMap(setupSettings.getValue(), defaults);
         }
     }
 
@@ -80,6 +75,7 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
 
         try {
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_AUDITSIZE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DATABASEREPLICATIONDELAY)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE,          Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_LOGSIZE)) * KB_MB_CONVERTOR);
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE,         Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DISKFREE)) * KB_GB_CONVERTOR);
@@ -88,6 +84,7 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE)) * KB_MB_CONVERTOR);
 
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_AUDITSIZE,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_AUDITSIZE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_DATABASEREPLICATIONDELAY)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_LOGSIZE,         Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_LOGSIZE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DISKUSAGE,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE)));
@@ -114,13 +111,20 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
      * @param serializedSettings: the given string to conert to a map.
      * @return a map with all info extracted from the string.
      */
-    private Map<String, Object> convertStringToMap(String serializedSettings) {
+    private Map<String, Object> convertStringToMap(final String serializedSettings,
+                                                   final Map<String, Object> defaults ) {
         Map<String, Object> settingsMap = new HashMap<String, Object>();
 
         if (serializedSettings != null && serializedSettings.length() >= 2) {
             ByteArrayInputStream in = new ByteArrayInputStream(HexUtils.encodeUtf8(serializedSettings));
             java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
             settingsMap = (Map<String, Object>) decoder.readObject();
+        }
+
+        for ( final String key : defaults.keySet() ) {
+            if ( !settingsMap.containsKey( key ) ) {
+                settingsMap.put( key, defaults.get( key ) );
+            }
         }
 
         return settingsMap;

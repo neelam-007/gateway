@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.management.api.monitoring;
 
 import com.l7tech.server.management.NodeStateType;
@@ -16,6 +13,8 @@ import java.util.*;
 public final class BuiltinMonitorables {
     /** Number of records currently in the cluster's audit table */
     public static final MonitorableProperty AUDIT_SIZE = new MonitorableProperty(ComponentType.CLUSTER, "auditSize", Long.class, "records", 30000L, ComparisonOperator.GE, "100000");
+    /** Number of records currently in the cluster's audit table */
+    public static final MonitorableProperty DATABASE_REPLICATION_DELAY = new MonitorableProperty(ComponentType.CLUSTER, "databaseReplicationDelay", Long.class, "seconds", 30000L, ComparisonOperator.GE, "100000");
     /** Current state of Gateway node */
     public static final MonitorableProperty NODE_STATE = new MonitorableProperty(ComponentType.NODE, "operatingStatus", NodeStateType.class, null, 10000L, ComparisonOperator.NE, NodeStateType.RUNNING.name());
     /** Size of log files, in KiB */
@@ -38,7 +37,7 @@ public final class BuiltinMonitorables {
     public static final MonitorableProperty TIME = new MonitorableProperty(ComponentType.HOST, "time", Long.class, "ms since epoch", 5000L, ComparisonOperator.LT, "1");
 
     private static final Monitorable[] VALUES = new Monitorable[] {
-            CPU_USAGE, CPU_TEMPERATURE, SWAP_USAGE_KIB, DISK_FREE_KIB, DISK_USAGE_PERCENT, TIME, LOG_SIZE, NODE_STATE, NTP_STATUS, RAID_STATUS, AUDIT_SIZE
+            CPU_USAGE, CPU_TEMPERATURE, SWAP_USAGE_KIB, DISK_FREE_KIB, DISK_USAGE_PERCENT, TIME, LOG_SIZE, NODE_STATE, NTP_STATUS, RAID_STATUS, AUDIT_SIZE, DATABASE_REPLICATION_DELAY
     };
 
     private final Map<Pair<ComponentType, String>, MonitorableProperty> builtinProperties;

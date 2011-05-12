@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.gateway.config.client.beans.trust;
 
 import com.l7tech.common.io.CertUtils;
@@ -8,6 +5,8 @@ import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.gateway.config.client.beans.BooleanConfigurableBean;
 import com.l7tech.gateway.config.client.beans.ConfigResult;
 import com.l7tech.gateway.config.client.beans.ConfigurationContext;
+import com.l7tech.util.Either;
+import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 
 import java.security.GeneralSecurityException;
@@ -15,10 +14,19 @@ import java.security.cert.X509Certificate;
 
 /** @author alex */
 public class ConfirmTrustedCert extends BooleanConfigurableBean {
-    private final X509Certificate cert;
+    private final Either<X509Certificate,String> cert; // either the certificate or its SHA-1 thumbprint
     private final NewTrustedCertFactory factory;
 
+    ConfirmTrustedCert(final String thumprint, NewTrustedCertFactory factory) {
+        this( Either.<X509Certificate,String>right( thumprint ), factory );
+    }
+
     ConfirmTrustedCert(final X509Certificate cert, NewTrustedCertFactory factory) {
+        this( Either.<X509Certificate,String>left( cert ), factory );
+    }
+
+    ConfirmTrustedCert( final Either<X509Certificate,String> cert,
+                        final NewTrustedCertFactory factory ) {
         super("host.controller.remoteNodeManagement.confirmTrustedCert", "Confirm Trusted Certificate", false);
         this.cert = cert;
         this.factory = factory;
@@ -31,20 +39,35 @@ public class ConfirmTrustedCert extends BooleanConfigurableBean {
 
     @Override
     public String getShortValueDescription() {
-       StringBuilder description = new StringBuilder();
+        final StringBuilder description = new StringBuilder();
 
-        description.append("\n");
-        description.append("  Issuer       : ");
-        description.append(cert.getIssuerDN().getName());
-        description.append("\n");
-        description.append("  Serial Number: ");
-        description.append(hexFormat(cert.getSerialNumber().toByteArray()));
-        description.append("\n");
-        description.append("  Subject      : ");
-        description.append(cert.getSubjectDN().getName());
-        description.append("\n");
-        description.append("  Thumbprint   : ");
-        description.append(getCertificateThumbprint(cert));
+        cert.either( new Functions.Unary<Void,X509Certificate>(){
+            @Override
+            public Void call( final X509Certificate cert ) {
+                description.append("\n");
+                description.append("  Issuer       : ");
+                description.append(cert.getIssuerDN().getName());
+                description.append("\n");
+                description.append("  Serial Number: ");
+                description.append(hexFormat(cert.getSerialNumber().toByteArray()));
+                description.append("\n");
+                description.append("  Subject      : ");
+                description.append(cert.getSubjectDN().getName());
+                description.append("\n");
+                description.append("  Thumbprint   : ");
+                description.append(getCertificateThumbprint(cert));
+                return null;
+            }
+        }, new Functions.Unary<Void,String>(){
+            @Override
+            public Void call( final String thumbprint ) {
+                description.append("\n");
+                description.append("  Thumbprint: ");
+                description.append(thumbprint);
+                return null;
+            }
+        } );
+
 
         return description.toString();
     }

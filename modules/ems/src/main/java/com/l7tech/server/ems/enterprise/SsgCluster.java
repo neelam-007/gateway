@@ -41,6 +41,8 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
 
     private boolean trustStatus;
 
+    private String statusMessage;
+
     private String dbHosts;
 
     private EnterpriseFolder parentFolder;
@@ -231,6 +233,15 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         this.trustStatus = trustStatus;
     }
 
+    @Column(name="status_message", length=255)
+    public String getStatusMessage() {
+        return statusMessage;
+    }
+
+    public void setStatusMessage( final String statusMessage ) {
+        this.statusMessage = statusMessage;
+    }
+
     /**
      * Is the cluster available? (at least partially up)
      *
@@ -330,6 +341,7 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         output.add(JSONConstants.ADMIN_PORT, Integer.toString(adminPort));
         output.add(JSONConstants.ADMIN_APPLET_PORT, Integer.toString(adminAppletPort));
         output.add(JSONConstants.ONLINE_STATUS, isOffline() ? null : onlineStatus);
+        output.add(JSONConstants.STATUS_MESSAGE, statusMessage );
         output.add(JSONConstants.CLUSTER_ANCESTORS, findAllAncestors());
         Collection<String> dbHosts = obtainDbHosts();
         if (dbHosts != null && !dbHosts.isEmpty()) {

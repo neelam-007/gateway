@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server;
 
 import com.l7tech.common.io.CertUtils;
@@ -70,6 +67,8 @@ public class NodeApiImpl implements NodeApi {
         logger.fine("getProperty");
         if (propertyId.equals(BuiltinMonitorables.AUDIT_SIZE.getName())) {
             return Long.toString(auditRecordManager.findCount(new AuditSearchCriteria.Builder().build()));
+        } else if (propertyId.equals(BuiltinMonitorables.DATABASE_REPLICATION_DELAY.getName())) {
+            return "41"; //TODO [steve] implement property for database replication delay
         } else {
             throw new UnsupportedPropertyException("propertyId");
         }

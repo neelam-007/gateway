@@ -89,6 +89,16 @@ public class ConfigServiceStub implements ConfigService {
     }
 
     @Override
+    public Set<String> getTrustedRemoteNodeManagementCertThumbprints() {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
+
+    @Override
+    public void acceptTrustedRemoteNodeManagementCert( final X509Certificate certificate ) {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
+
+    @Override
     public Set<X509Certificate> getTrustedPatchCerts() {
         return trustedPatchCerts;        
     }

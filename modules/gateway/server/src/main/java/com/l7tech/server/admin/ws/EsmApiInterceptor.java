@@ -65,7 +65,7 @@ public class EsmApiInterceptor extends AbstractPhaseInterceptor<Message> {
             logger.warning("Error in remote management, connector info not found.");
             throw new SoapFault("Server Error", SoapFault.FAULT_CODE_SERVER);
         }
-        if (!connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_REMOTE))
+        if (!connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_REMOTE_ESM))
             throw new SoapFault("Server Error", SoapFault.FAULT_CODE_SERVER);
 
         Subject subject = JaasUtils.getCurrentSubject();

@@ -117,7 +117,7 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative>, 
     }
 
     /**
-     * Assert that this request arrived over a port that enables either ADMIN_APPLET or ADMIN_REMOTE.
+     * Assert that this request arrived over a port that enables either ADMIN_APPLET or ADMIN_REMOTE_SSM.
      */
     private void enforceAdminEnabled( boolean checkAuthenticated ) {
         HttpServletRequest hreq = RemoteUtils.getHttpServletRequest();
@@ -128,7 +128,7 @@ public class AdminRemotingProvider implements RemotingProvider<Administrative>, 
         if (connector == null)
             throw new AccessControlException("Admin request disallowed: Unable to determine which connector this request came in on");
 
-        if (!connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET) && !connector.offersEndpoint( SsgConnector.Endpoint.ADMIN_REMOTE))
+        if (!connector.offersEndpoint(SsgConnector.Endpoint.ADMIN_APPLET) && !connector.offersEndpoint( SsgConnector.Endpoint.ADMIN_REMOTE_SSM))
             throw new AccessControlException("Request not permitted on this port");
 
         if ( checkAuthenticated ) {

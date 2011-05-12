@@ -2,6 +2,7 @@ package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.message.Message;
@@ -14,6 +15,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,8 +76,8 @@ public class SecurityInterceptor extends AbstractPhaseInterceptor<Message> {
             throw new IllegalArgumentException(AUTH_FAILURE);
         }
 
-        if (!configService.getTrustedRemoteNodeManagementCerts().contains(certificate)) {
-            logger.fine( "Client certificate was not trusted for remote management '" + certificate.getSubjectDN().toString() + "' from '"+req.getRemoteAddr()+"'." );
+        if ( !isTrustedForRemoteManagement(certificate) ) {
+            logger.fine( "Client certificate was not trusted for remote management '" + certificate.getSubjectDN().toString() + "' from '" + req.getRemoteAddr() + "'." );
             throw new IllegalArgumentException(AUTH_FAILURE);
         }
 
@@ -91,6 +94,35 @@ public class SecurityInterceptor extends AbstractPhaseInterceptor<Message> {
     private ConfigService configService;
 
     private final boolean allowLocalAccess;
+
+    /**
+     * Check if the given certificate is trusted for remote management.
+     *
+     * This method will accept the given certificate if it matches the thumbprint
+     * of the trusted ESM certificate.
+     */
+    private boolean isTrustedForRemoteManagement( final X509Certificate certificate ) {
+        boolean trusted = configService.getTrustedRemoteNodeManagementCerts().contains(certificate);
+
+        if ( !trusted ) {
+            try {
+                final String thumbprint = CertUtils.getCertificateFingerprint(certificate, "SHA1").substring(5);
+                for ( String partialThumbprint : configService.getTrustedRemoteNodeManagementCertThumbprints() ) {
+                    if ( thumbprint.startsWith( partialThumbprint ) ) {
+                        configService.acceptTrustedRemoteNodeManagementCert( certificate );
+                        trusted = true;
+                        break;
+                    }
+                }
+            } catch ( CertificateEncodingException e ) {
+                logger.log(Level.INFO, "Error checking if certificate is trusted : " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ));
+            } catch ( NoSuchAlgorithmException e ) {
+                logger.log(Level.WARNING,  "Error checking if certificate is trusted : " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ));
+            }
+        }
+
+        return trusted;
+    }
 
     private boolean validCookie( final Cookie[] servletCookies,
                                  final String name,

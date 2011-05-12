@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.cluster;
 
 import com.l7tech.objectmodel.UpdateException;
@@ -53,8 +50,17 @@ public interface ClusterInfoManager {
     Collection<ClusterNodeInfo> retrieveClusterStatus() throws FindException;
 
     /**
-     * determines this node's nodeid value
+     * Determines this node's nodeid value
+     *
      * @return the node info for the current node.
      */
     ClusterNodeInfo getSelfNodeInf();
+
+    /**
+     * Determines this node's nodeid value
+     *
+     * @param refresh True to refresh the information
+     * @return the node info for the current node.
+     */
+    ClusterNodeInfo getSelfNodeInf( final boolean refresh );
 }

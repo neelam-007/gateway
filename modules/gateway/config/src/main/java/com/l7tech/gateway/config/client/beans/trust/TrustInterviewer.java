@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.gateway.config.client.beans.trust;
 
 import com.l7tech.common.io.CertUtils;
@@ -33,6 +30,7 @@ public class TrustInterviewer {
     static String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_FILE = "host.controller.remoteNodeManagement.truststore.file";
     static String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_TYPE = "host.controller.remoteNodeManagement.truststore.type";
     static String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_PASSWORD = "host.controller.remoteNodeManagement.truststore.password";
+    static String HOSTPROPERTIES_NODEMANAGEMENT_THUMBPRINT= "host.controller.remoteNodeManagement.thumbprint";
     static String HOSTPROPERTIES_NODEMANAGEMENT_ENABLED = "host.controller.remoteNodeManagement.enabled";
     static String HOSTPROPERTIES_NODEMANAGEMENT_IPADDRESS ="host.controller.sslIpAddress";
     static String HOSTPROPERTIES_NODEMANAGEMENT_PORT ="host.controller.sslPort";
@@ -76,7 +74,7 @@ public class TrustInterviewer {
             final MasterPasswordManager masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( masterPasswordFile ) );
 
             final NewTrustedCertFactory trustedCertFactory = new NewTrustedCertFactory(1); // max=1, temporary fix for Bug #6979
-            final Map<ConfiguredTrustedCert, String> inCertBeans;
+            Map<ConfiguredTrustedCert, String> inCertBeans;
             KeyStore trustStore = null;
             if ( tsFile.exists() ) {
                 String pass = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_PASSWORD);
@@ -107,6 +105,13 @@ public class TrustInterviewer {
             } else {
                 inCertBeans = Collections.emptyMap();
             }
+            if ( inCertBeans.isEmpty() ) {
+                final String thumbprint = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_THUMBPRINT);
+                if ( thumbprint != null ) {
+                    inCertBeans = new HashMap<ConfiguredTrustedCert, String>();
+                    inCertBeans.put( new ConfiguredTrustedCert(Either.<X509Certificate,String>right(thumbprint), trustedCertFactory), "" );
+                }
+            }
 
             trustedCertFactory.setConsumedInstances(inCertBeans.size());
 
@@ -135,13 +140,18 @@ public class TrustInterviewer {
                 for (ConfigurationBean bean : outBeans) {
                     if (bean instanceof ConfiguredTrustedCert) {
                         ConfiguredTrustedCert trustedCert = (ConfiguredTrustedCert)bean;
-                        X509Certificate cert = trustedCert.getConfigValue();
+                        Either<X509Certificate,String> cert = trustedCert.getConfigValue();
                         if (inCertBeans == null || !inCertBeans.containsKey(trustedCert)) {
-                            try {
+                            if ( cert.isLeft() ) {
+                                try {
+                                    hasCert = true;
+                                    addCerts.put("trustedCert-" + CertUtils.getThumbprintSHA1(cert.left()) + "-" + System.currentTimeMillis(), cert.left());
+                                } catch (CertificateEncodingException e) {
+                                    logger.warning("Couldn't get thumbprint for " + cert.left().getSubjectDN().getName() + "; skipping");
+                                }
+                            } else {
                                 hasCert = true;
-                                addCerts.put("trustedCert-" + CertUtils.getThumbprintSHA1(cert) + "-" + System.currentTimeMillis(), cert);
-                            } catch (CertificateEncodingException e) {
-                                logger.warning("Couldn't get thumbprint for " + cert.getSubjectDN().getName() + "; skipping");
+                                hostProps.setProperty( HOSTPROPERTIES_NODEMANAGEMENT_THUMBPRINT, cert.right() );
                             }
                         }
                     }
@@ -149,6 +159,11 @@ public class TrustInterviewer {
                 if (inCertBeans != null) {
                     for (ConfiguredTrustedCert bean : inCertBeans.keySet()) {
                         String oldAlias = inCertBeans.get(bean);
+
+                        // skip thumprint or invalid bean
+                        if ( oldAlias==null || bean.getConfigValue()==null )
+                            continue;
+
                         boolean found = false;
                         for (ConfigurationBean configurationBean : outBeans) {
                             if (configurationBean instanceof ConfiguredTrustedCert) {
@@ -159,7 +174,7 @@ public class TrustInterviewer {
                                 }
                             }
                         }
-                        if (!found) deleteCerts.put(oldAlias, bean.getConfigValue());
+                        if (!found && bean.getConfigValue().isLeft()) deleteCerts.put(oldAlias, bean.getConfigValue().left());
                     }
                 }
                 for (ConfigurationBean bean : outBeans) {
@@ -357,7 +372,7 @@ public class TrustInterviewer {
             String alias = aliases.nextElement();
             Certificate cert = trustStore.getCertificate(alias);
             if (!(cert instanceof X509Certificate)) continue;
-            beansFromTruststore.put(new ConfiguredTrustedCert((X509Certificate)cert, trustedCertFactory), alias);
+            beansFromTruststore.put(new ConfiguredTrustedCert(Either.<X509Certificate,String>left((X509Certificate)cert), trustedCertFactory), alias);
             // Note, don't consume() here because we want to leave open the "back door" of modifying the truststore externally
         }
         return beansFromTruststore;

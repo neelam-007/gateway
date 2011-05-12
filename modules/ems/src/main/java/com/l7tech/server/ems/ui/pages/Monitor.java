@@ -832,6 +832,13 @@ public class Monitor extends EsmStandardWebPage {
         auditSizeMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_LOWERLIMIT)));
         auditSizeMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_UNIT));
 
+        // "databaseReplicationDelay"
+        Map<String, Object> databaseReplicationDelayMap = new HashMap<String, Object>();
+        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY));
+        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY));
+        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_LOWERLIMIT)));
+        databaseReplicationDelayMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_UNIT));
+
         // "operatingStatus"
         Map<String, Object> operatingStatusMap = new HashMap<String, Object>();
         operatingStatusMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,   clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS));
@@ -891,6 +898,7 @@ public class Monitor extends EsmStandardWebPage {
         // "propertySetup"
         Map<String, Object> propertySetupMap = new HashMap<String, Object>();
         propertySetupMap.put(JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE,          auditSizeMap);
+        propertySetupMap.put(JSONConstants.SsgClusterMonitoringProperty.DATABASE_REPLICATION_DELAY, databaseReplicationDelayMap);
         propertySetupMap.put(JSONConstants.SsgNodeMonitoringProperty.OPERATING_STATUS,       operatingStatusMap);
         propertySetupMap.put(JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE,               logSizeMap);
         propertySetupMap.put(JSONConstants.SsgNodeMonitoringProperty.DISK_USAGE,             diskUsageMap);
@@ -945,6 +953,16 @@ public class Monitor extends EsmStandardWebPage {
 
                 long triggerVal = getTriggerValue(auditSizeMap, JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_LOWERLIMIT)), null);
                 clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE, triggerVal);
+            }
+
+            // "databaseReplicationDelay"
+            Map<String, Object> databaseReplicationDelayMap = (Map<String, Object>) propertySetupMap.get(JSONConstants.SsgClusterMonitoringProperty.DATABASE_REPLICATION_DELAY);
+            if (databaseReplicationDelayMap != null && !databaseReplicationDelayMap.isEmpty()) {
+                long interval = getSamplingInterval(databaseReplicationDelayMap, JSONConstants.SsgClusterMonitoringProperty.DATABASE_REPLICATION_DELAY);
+                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY, interval);
+
+                long triggerVal = getTriggerValue(auditSizeMap, JSONConstants.SsgClusterMonitoringProperty.DATABASE_REPLICATION_DELAY, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_LOWERLIMIT)), null);
+                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY, triggerVal);
             }
 
             // "operatingStatus"
@@ -1152,7 +1170,10 @@ public class Monitor extends EsmStandardWebPage {
             Object oldVal = oldMap.get(key);
 
             if (newVal != null && ! newVal.equals(oldVal)) {
-                String entityType = key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE)? "ssgCluster" : "ssgNode";
+                String entityType = key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE) ||
+                                    key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY) ?
+                        "ssgCluster" :
+                        "ssgNode";
                 String propertyName = key.split("\\.").length < 2? key : key.split("\\.")[1];
 
                 if (key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE)) {

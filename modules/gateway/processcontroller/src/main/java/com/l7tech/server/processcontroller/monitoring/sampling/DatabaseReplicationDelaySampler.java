@@ -6,12 +6,16 @@ import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Logger;
 
-public class AuditSizeSampler extends NamedPropertySampler<Long> {
+/**
+ * Named property sampler for the database replication delay property.
+ */
+public class DatabaseReplicationDelaySampler  extends NamedPropertySampler<Long> {
     private static final Logger logger = Logger.getLogger(AuditSizeSampler.class.getName());
-    private static final MonitorableProperty AUDIT_SIZE = BuiltinMonitorables.AUDIT_SIZE;
+    private static final MonitorableProperty DATABASE_REPLICATION_DELAY = BuiltinMonitorables.DATABASE_REPLICATION_DELAY;
 
-    public AuditSizeSampler(String componentId, ApplicationContext spring) {
-        super(componentId, spring, AUDIT_SIZE, logger);
+    public DatabaseReplicationDelaySampler( final String componentId,
+                                            final ApplicationContext spring ) {
+        super(componentId, spring, DATABASE_REPLICATION_DELAY, logger);
     }
 
     @Override

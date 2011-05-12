@@ -410,7 +410,12 @@
                                 <value>audit.adminExceptions.auditPermissionDenied</value>
                                 <value>audit.adminExceptions.excludes</value>
                             </list>
-                        </entry>                        
+                        </entry>
+                        <entry key="clusterInfoRefresher">
+                            <list>
+                                <value>admin.esmInterfaceTag</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -582,6 +587,7 @@
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="serverConfig" ref="serverConfig"/>
     </bean>
+    <bean id="clusterInfoRefresher" class="com.l7tech.server.cluster.ClusterInfoRefresher"/>
     <!-- server side Service Usage  manager -->
     <bean id="serviceUsageManager" class="com.l7tech.server.cluster.ServiceUsageManagerImpl">
         <property name="sessionFactory" ref="sessionFactory"/>

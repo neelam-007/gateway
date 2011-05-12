@@ -101,7 +101,13 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         MESSAGE_INPUT,
 
         /** Connections from standalone SSM. */
-        ADMIN_REMOTE,
+        ADMIN_REMOTE_SSM,
+
+        /** Connections from Enterprise Service Manager or clients of ESM specific services. */
+        ADMIN_REMOTE_ESM,
+
+        /** Connections from standalone SSM or the ESM. */
+        ADMIN_REMOTE(ADMIN_REMOTE_SSM, ADMIN_REMOTE_ESM),
 
         /** Administration services offered over HTTP(S), i.e. the admin applet and backup services. */
         ADMIN_APPLET,

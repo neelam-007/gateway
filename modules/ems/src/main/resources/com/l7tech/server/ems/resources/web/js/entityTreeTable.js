@@ -729,10 +729,17 @@ if (!l7.EntityTreeTable) {
                         if ( entity.dbHosts ) {
                             td.innerHTML += ' [<span class="hasTooltip" title="' + this._localizedStrings.DATABASE_HOSTS + '">' + entity.dbHosts.join( ',' ) + '</span>]';
                         }
+                        if ( entity.statusMessage ) {
+                            td.innerHTML += ' - ' + entity.statusMessage;
+                        }
                     }
                 } else if ( entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE ) {
                     td.innerHTML = '<span class="hasTooltip" title="' + this._localizedStrings.SELF_HOST_NAME + '">' + entity.selfHostName + '</span>'
+                            + ':<span class="hasTooltip" title="' + this._localizedStrings.ADMINISTRATIVE_PORT_NUMBER + '">' + entity.gatewayPort + '</span>'
                             + ' (<span class="hasTooltip" title="' + this._localizedStrings.IP_ADDRESS + '">' + entity.ipAddress + '</span>)';
+                    if ( entity.statusMessage ) {
+                        td.innerHTML += ' - ' + entity.statusMessage;
+                    }
                 } else {
                     // No details for other entity types.
                 }
@@ -1432,10 +1439,8 @@ if (!l7.EntityTreeTable) {
                 if ( property && property.monitored ) {
                     if ( property.value != undefined && property.value != null ) {
                         span.innerHTML = l7.Util.escapeHtmlText( property.value );
-                        if ( propertyType != l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY.AUDIT_SIZE ) { // Unit label for audit size is too long.
-                            if ( property.value != l7.Constants.NA && property.unit != undefined && property.unit != null ) {
-                                span.innerHTML += ' ' + l7.Util.escapeHtmlText( property.unit );
-                            }
+                        if ( property.value != l7.Constants.NA && property.unit != undefined && property.unit != null && property.unit.length < 7 ) {
+                            span.innerHTML += ' ' + l7.Util.escapeHtmlText( property.unit );
                         }
                         if ( property.alert ) {
                             td.className = 'right alert'; // CSS style class.
@@ -1587,6 +1592,7 @@ if (!l7.EntityTreeTable) {
             DETAILS                     : 'details',
             ZOOM                        : 'zoom',
             MONITORING_AUDIT_SIZE       : MONITORING_COLUMN_PREFIX + l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY.AUDIT_SIZE,
+            MONITORING_DATABASE_REPLICATION_DELAY : MONITORING_COLUMN_PREFIX + l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY.DATABASE_REPLICATION_DELAY,
             MONITORING_OPERATING_STATUS : MONITORING_COLUMN_PREFIX + l7.Constants.SSG_NODE_MONITORING_PROPERTY.OPERATING_STATUS,
             MONITORING_LOG_SIZE         : MONITORING_COLUMN_PREFIX + l7.Constants.SSG_NODE_MONITORING_PROPERTY.LOG_SIZE,
             MONITORING_DISK_USAGE       : MONITORING_COLUMN_PREFIX + l7.Constants.SSG_NODE_MONITORING_PROPERTY.DISK_USAGE,

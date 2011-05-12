@@ -575,7 +575,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
 
     @Override
     protected SsgConnector.Endpoint getRequiredEndpoint() {
-        return SsgConnector.Endpoint.ADMIN_REMOTE;
+        return SsgConnector.Endpoint.ADMIN_REMOTE_ESM;
     }
 
     private String formatCertInfo( final X509Certificate cert ) throws GeneralSecurityException {

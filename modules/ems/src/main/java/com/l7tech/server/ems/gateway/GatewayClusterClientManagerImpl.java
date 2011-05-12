@@ -101,13 +101,13 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
 
             final long connectionTimeout = SyspropUtil.getLong(PROP_CONN_TIMEOUT, 15000);
             final long readTimeout = SyspropUtil.getLong(PROP_READ_TIMEOUT, 30000);
-            final int adminPort = ssgCluster.getAdminPort();
             List<GatewayContext> nodeContexts = Functions.map(ssgCluster.getAvailableNodes(), new Functions.Unary<GatewayContext, SsgNode>() {
                 @Override
                 public GatewayContext call(SsgNode ssgNode) {
                     try {
                         final String nodeAdminAddress = ssgNode.getIpAddress();
-                        GatewayContext nodeContext = gatewayContextFactory.createGatewayContext(user, clusterId, nodeAdminAddress, adminPort);
+                        final int nodePort = ssgNode.getGatewayPort();
+                        GatewayContext nodeContext = gatewayContextFactory.createGatewayContext(user, clusterId, nodeAdminAddress, nodePort);
                         nodeContext.setConnectionTimeout( connectionTimeout );
                         nodeContext.setReadTimeout( readTimeout );
                         return nodeContext;
@@ -120,6 +120,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
             // Add the public hostname of the entire cluster as a least-preference option, just in case
             // none of the individual node IPs are reachable from the ESM.
             if ( ssgCluster.isAvailable() ) {
+                final int adminPort = ssgCluster.getAdminPort();
                 GatewayContext publicContext = gatewayContextFactory.createGatewayContext(user, clusterId, ssgCluster.getSslHostName(), adminPort);
                 if ( publicContext != null ) {
                     publicContext.setConnectionTimeout( connectionTimeout );

@@ -14,6 +14,7 @@ import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TextUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -78,7 +79,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
 
     @SuppressWarnings({"override"})
     public void afterPropertiesSet() throws Exception {
-        timer.schedule( timerTask, 30000, 15000 );
+        timer.schedule( timerTask, 30000L, 15000L );
     }
 
     @Override
@@ -94,7 +95,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
 
     public void onApplicationEvent( final ApplicationEvent event ) {
         if ( event instanceof GatewayRegistrationEvent ) {
-            timer.schedule( timerTask, 0 );   
+            timer.schedule( timerTask, 0L );
         } else if ( event instanceof LogonEvent) {
             LogonEvent logonEvent = (LogonEvent) event;
             if ( logonEvent.getType() == LogonEvent.LOGON ) {
@@ -117,7 +118,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                     AuditContextUtils.setSystem( isSystem );
                 }
             }
-        }, 0);
+        }, 0L );
     }
 
     //- PRIVATE
@@ -213,6 +214,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                         if ( !cluster.getTrustStatus() ) {
                                             logger.info("Trust established for gateway cluster '"+host+":"+port+"'.");
                                             cluster.setTrustStatus( true );
+                                            cluster.setStatusMessage( null );
                                             ssgClusterManager.update( cluster );
                                         }
                                     }
@@ -224,11 +226,11 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                     logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
                                 } catch ( WebServiceException e ) {
                                     if ( GatewayContext.isNetworkException(e) ) {
+                                        skipStatusUpdate = true;
                                         logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
                                     } else {
                                         throw e;
                                     }
-                                    skipStatusUpdate = true;
                                 }
 
                                 // Periodically update SSG Nodes.
@@ -249,7 +251,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                         node.setIpAddress( newInfo.getIpAddress() );
                                         node.setGatewayPort( newInfo.getGatewayPort() );
                                         node.setProcessControllerPort( newInfo.getProcessControllerPort() );
-                                        refreshNodeStatus(node, port);
+                                        refreshNodeStatus(node);
                                         nodes.add(node);
                                     }
                                     cluster.getNodes().clear();
@@ -260,7 +262,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                 } else {
                                     boolean updated = false;
                                     for ( SsgNode node : cluster.getNodes() ) {
-                                        updated = updated || refreshNodeStatus( node, port );
+                                        updated = updated || refreshNodeStatus( node );
                                     }
                                     updated = updated || refreshDbHosts(cluster);
                                     if ( updated ) {
@@ -274,10 +276,10 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                 if ( GatewayContext.isNetworkException(e) ) {
                                     logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
                                 } else if ( "Authentication Required".equals(e.getMessage()) ){
-                                    skipStatusUpdate = true;
                                     if ( cluster.getTrustStatus() ) {
                                         logger.info("Trust lost for gateway cluster '"+host+":"+port+"'.");
                                         cluster.setTrustStatus( false );
+                                        cluster.setStatusMessage( "ESM Certificate not trusted." );
                                         ssgClusterManager.update( cluster );
                                     }
                                 } else if ( "Not Licensed".equals(e.getMessage()) ) {
@@ -296,7 +298,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                     // fully operational, but do update the status of each node
                                     boolean updated = false;
                                     for ( SsgNode node : cluster.getNodes() ) {
-                                        updated = updated || refreshNodeStatus( node, port );
+                                        updated = updated || refreshNodeStatus( node );
                                     }
                                     if ( updated ) {
                                         refreshClusterStatus(cluster);
@@ -344,7 +346,12 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
             clusterStatus = JSONConstants.SsgClusterOnlineState.UP;
         }
 
-        cluster.setOnlineStatus( clusterStatus );        
+        cluster.setOnlineStatus( clusterStatus );
+        if ( cluster.getTrustStatus() ) {
+            cluster.setStatusMessage( null );
+        } else {
+            cluster.setStatusMessage( "ESM Certificate not trusted." );
+        }
     }
 
     /**
@@ -371,13 +378,15 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
      *
      * @return true if updated
      */
-    private boolean refreshNodeStatus( final SsgNode node, final int port ) {
+    private boolean refreshNodeStatus( final SsgNode node ) {
         boolean updated = false;
 
         final String host = node.getIpAddress();
+        final int port = node.getGatewayPort();
         Boolean trusted = null;
         boolean checkGatewayDirectly = false;
         String status = JSONConstants.SsgNodeOnlineState.OFFLINE;
+        String statusMessage = null;
         try {
             NodeManagementApi nodeApi = gatewayContextFactory.createProcessControllerContext( node ).getManagementApi();
             Collection<NodeManagementApi.NodeHeader> nodeHeaders = nodeApi.listNodes();
@@ -390,6 +399,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                             case WONT_START:
                             case CRASHED:
                                 status = JSONConstants.SsgNodeOnlineState.DOWN;
+                                statusMessage = "Error running node.";
                                 break;
                             case NOT_PC_MANAGED:
                             case STARTING:
@@ -426,39 +436,70 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                     GatewayApi api = context.getApi();
                     if ( api.getClusterInfo() != null ) {
                         status = JSONConstants.SsgNodeOnlineState.ON;
+                    } else {
+                        statusMessage = "Error accessing node.";
                     }
                 } catch (GatewayException e) {
                     // don't care
                     logger.log( Level.FINE, "Error checking gateway status using gateway api for '"+host+"'.", ExceptionUtils.getDebugException(e) );
+                    statusMessage = buildStatusMessage( e );
                 } catch ( WebServiceException e ) {
                     // don't care
                     if ( !GatewayContext.isNetworkException(e) ) {
                         logger.log( Level.FINE, "Error checking gateway status using gateway api for  '"+host+"'.", ExceptionUtils.getDebugException(e)  );
                     }
+                    if ( "Authentication Required".equals(e.getMessage()) ) {
+                        // The cluster is not trusted, but the node is up
+                        status = JSONConstants.SsgNodeOnlineState.ON;
+                    } else {
+                        statusMessage = buildStatusMessage( e );
+                    }
                 }
-
             }
         }
 
         if ( trusted != null && trusted != node.isTrustStatus() ) {
             updated = true;
+            statusMessage = null;
             if ( !trusted ) {
+                statusMessage = "ESM Certificate not trusted.";
                 logger.info("Trust lost for gateway node '"+host+"'.");
             } else {
                 logger.info("Trust established for gateway '"+host+"'.");
             }
-            node.setTrustStatus(trusted);
+            node.setTrustStatus( trusted );
             node.setOnlineStatus( status );
-        } else if ( !status.equals( node.getOnlineStatus() ) ) {
+            node.setStatusMessage( statusMessage );
+        } else if ( !status.equals( node.getOnlineStatus() ) ||
+                    (statusMessage==null&&node.getStatusMessage()!=null) ||
+                    (statusMessage!=null&&!statusMessage.equals( node.getStatusMessage() ))) {
             updated = true;
             final SsgCluster clust = node.getSsgCluster();
             final String clustName = clust == null ? "<unknown>" : clust.getName();
             final String clustSslName = clust == null ? "<unknown>" : clust.getSslHostName();
-            logger.info("Online status of gateway node '" + node.getName() + "' (" + node.getIpAddress() + ") in cluster '" + clustName + "' (" + clustSslName + ") changed from '" + node.getOnlineStatus() + "' to '" + status + "'.");
+            if ( !status.equals( node.getOnlineStatus() ) ) {
+                logger.info("Online status of gateway node '" + node.getName() + "' (" + node.getIpAddress() + ") in cluster '" + clustName + "' (" + clustSslName + ") changed from '" + node.getOnlineStatus() + "' to '" + status + "'.");
+            }
             node.setOnlineStatus( status );
+            node.setStatusMessage( statusMessage );
         }
 
         return updated;
+    }
+
+    private String buildStatusMessage( final Throwable e ) {
+        final StringBuilder messageBuilder = new StringBuilder( 200 );
+        messageBuilder.append( "Error accessing node: '" );
+        messageBuilder.append( ExceptionUtils.getMessage( e ) );
+        messageBuilder.append( "'" );
+        final Throwable causedBy = ExceptionUtils.unnestToRoot( e );
+        if ( causedBy != e ) {
+            messageBuilder.append( ", due to '" );
+            messageBuilder.append( ExceptionUtils.getMessage( causedBy ) );
+            messageBuilder.append( "'" );
+        }
+        messageBuilder.append( "." );
+        return TextUtils.truncateStringAtEnd( messageBuilder.toString(), 200 );
     }
 
     /**

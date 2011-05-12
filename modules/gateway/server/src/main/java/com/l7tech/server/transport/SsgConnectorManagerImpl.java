@@ -166,7 +166,7 @@ public class SsgConnectorManagerImpl
 
         List<InetAddress> localAddrs;
         try {
-            localAddrs = findAllLocalInetAddresses();
+            localAddrs = InetAddressUtil.findAllLocalInetAddresses();
         } catch (SocketException e) {
             throw new ListenerException("Unable to look up network interfaces while finding a match for listen port " +
                                port + " using interface " + bindAddress + ": " + ExceptionUtils.getMessage(e));
@@ -262,30 +262,6 @@ public class SsgConnectorManagerImpl
                 return tag;
         }
         return null;
-    }
-
-    private List<InetAddress> findAllLocalInetAddresses() throws SocketException {
-        Set<InetAddress> collected = new HashSet<InetAddress>();
-        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-        while (interfaces.hasMoreElements())
-            collectAddresses(interfaces.nextElement(), collected);
-
-        return Functions.sort(collected, new Comparator<InetAddress>() {
-            @Override
-            public int compare(InetAddress left, InetAddress right) {
-                return ArrayUtils.compareArraysUnsigned(left.getAddress(), right.getAddress());
-            }
-        });
-    }
-
-    private void collectAddresses(NetworkInterface face, Set<InetAddress> collect) {
-        Enumeration<InetAddress> addrs = face.getInetAddresses();
-        while (addrs.hasMoreElements())
-            collect.add(addrs.nextElement());
-
-        Enumeration<NetworkInterface> subs = face.getSubInterfaces();
-        while (subs.hasMoreElements())
-            collectAddresses(subs.nextElement(), collect);
     }
 
     private Pair<String, Set<InterfaceTag>> loadInterfaceTags() throws FindException, ParseException {

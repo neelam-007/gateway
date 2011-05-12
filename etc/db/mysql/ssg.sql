@@ -20,6 +20,22 @@ CREATE TABLE hibernate_unique_key (
 
 INSERT INTO hibernate_unique_key VALUES (1);
 
+-- TODO [steve] uncomment when committing identifier generation changes
+-- Create "sequence" function for next_hi value
+--
+-- NOTE that the function is safe when either row based or statement based replication is in use, but "SET GLOBAL" is not
+--
+-- SET GLOBAL log_bin_trust_function_creators = 1; //put this in my.cnf?
+--
+-- delimiter //
+-- CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER
+-- BEGIN
+--     UPDATE hibernate_unique_key SET next_hi=last_insert_id(next_hi)+2;
+--    RETURN IF((last_insert_id()%2=0 and @@global.server_id=1) or (last_insert_id()%2=1 and @@global.server_id=2),last_insert_id()+1,last_insert_id());
+-- END
+-- //
+-- delimiter ;
+
 --
 -- Table structure for table 'identity_provider'
 --
@@ -318,6 +334,7 @@ CREATE TABLE cluster_info (
   mac varchar(18) NOT NULL,
   name varchar(128) NOT NULL,
   address varchar(39) NOT NULL,
+  esm_address varchar(39) NOT NULL,
   multicast_address varchar(39),
   uptime bigint NOT NULL,
   avgload double NOT NULL,

@@ -1,5 +1,7 @@
 package com.l7tech.server.cluster;
 
+import com.l7tech.gateway.common.transport.InterfaceTag;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
@@ -8,6 +10,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.util.SyspropUtil;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
@@ -23,6 +26,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -207,27 +211,37 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      */
     @Override
     public synchronized ClusterNodeInfo getSelfNodeInf() {
+        return getSelfNodeInf( false );
+    }
+
+    @Override
+    public synchronized ClusterNodeInfo getSelfNodeInf( boolean refresh ) {
         ClusterNodeInfo clusterNodeInfo;
 
         clusterNodeInfo = getNodeStatusFromDB(nodeid);
         if (clusterNodeInfo != null) {
 
-            if ( !isInfoChecked() ) {
-                String newIpAddress = getIPAddress(null); // Load of IP is used to track if info is checked
-                if (!isValidIPAddress(clusterNodeInfo.getAddress())) {
-                    int newClusterPort = getClusterPort();
-                    clusterNodeInfo.setAddress(newIpAddress);
+            if ( !isInfoChecked() || refresh ) {
+                if ( refresh ) thisNodeEsmIPAddress = null;
+                final String newIpAddress = getIPAddress(null); // Load of IP is used to track if info is checked
+                final String newEsmIpAddress = getEsmIpAddress(newIpAddress);
+                final boolean updateIp = !isValidIPAddress(clusterNodeInfo.getAddress());
+                final boolean updateEsmIp = newEsmIpAddress!=null && !newEsmIpAddress.equals( clusterNodeInfo.getEsmAddress() );
+                if ( updateIp || updateEsmIp ) {
+                    if (updateIp) clusterNodeInfo.setAddress(newIpAddress);
+                    if (updateEsmIp) clusterNodeInfo.setEsmAddress(newEsmIpAddress);
                     try {
                         updateSelfStatus(clusterNodeInfo);
                     } catch (UpdateException e) {
-                        String msg = "Error saving node's new ip '"+newIpAddress+"' or new cluster port '"+newClusterPort+"'.";
+                        String msg = "Error saving node's new ip '"+newIpAddress+"'.";
                         logger.log(Level.WARNING, msg, e);
                     }
                 }
 
                 logger.config( "Using server " + clusterNodeInfo.getName() +
                         " (Id:" + clusterNodeInfo.getNodeIdentifier() +
-                        ", Ip:" + clusterNodeInfo.getAddress() + ")");
+                        ", Ip:" + clusterNodeInfo.getAddress() +
+                        ", EsmIp:" + clusterNodeInfo.getEsmAddress() + ")");
             }
 
             return clusterNodeInfo;
@@ -277,6 +291,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     private static final long rememberedBootTime = System.currentTimeMillis();
     private String thisNodeIPAddress;
     private String thisNodeMac;
+    private String thisNodeEsmIPAddress;
     private final String nodeid;
 
     private ServerConfig serverConfig;
@@ -297,6 +312,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     private ClusterNodeInfo selfPopulateClusterDB(String nodeid, String macid) {
         ClusterNodeInfo newClusterInfo = new ClusterNodeInfo();
         newClusterInfo.setAddress(getIPAddress(macid));
+        newClusterInfo.setEsmAddress(getEsmIpAddress(newClusterInfo.getAddress()));
         newClusterInfo.setNodeIdentifier(nodeid);
         newClusterInfo.setMac(macid);
         newClusterInfo.setBootTime(rememberedBootTime);
@@ -415,7 +431,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     }
 
     private boolean isInfoChecked() {
-        return thisNodeIPAddress != null;
+        return thisNodeIPAddress != null && thisNodeEsmIPAddress != null;
     }
 
     /**
@@ -496,10 +512,82 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     }
 
     /**
-     * Get the cluster port.
+     * Get the IP address to use for ESM administrative requests.
+     *
+     * @param defaultIpAddress The default address to use.
+     * @return The ESM IP Address (only null if the default is null)
      */
-    private int getClusterPort() {
-        return serverConfig.getIntProperty("clusterPort", 2124);
+    private String getEsmIpAddress( final String defaultIpAddress ) {
+        String esmIpAddress = thisNodeEsmIPAddress;
+
+        if ( esmIpAddress == null ) {
+            esmIpAddress = defaultIpAddress;
+
+            final String pcIp = SyspropUtil.getProperty( "com.l7tech.server.processControllerIpAddress" );
+            if ( pcIp != null ) {
+                if ( !InetAddressUtil.isAnyHostAddress( pcIp ) &&
+                     !InetAddressUtil.isLoopbackAddress( pcIp ) ) {
+                    esmIpAddress = pcIp;
+                }
+            }
+
+            final String interfaceTag = serverConfig.getProperty( "admin.esmInterfaceTag", null );
+            if ( interfaceTag != null ) {
+                final InterfaceTag tag = getInterfaceTagByName( interfaceTag );
+                if ( tag != null ) {
+                    List<InetAddress> localAddrs = Collections.emptyList();
+                    try {
+                        localAddrs = InetAddressUtil.findAllLocalInetAddresses();
+                    } catch (SocketException e) {
+                        logger.log( Level.WARNING, "Unable to list interfaces to check ESM interface tag: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+                    }
+
+                    final Set<String> patterns = tag.getIpPatterns();
+                    InetAddress match = null;
+                    outer: for (InetAddress addr : localAddrs) {
+                        for (String pattern : patterns) {
+                            if (InetAddressUtil.patternMatchesAddress(pattern, addr)) {
+                                if (match == null) {
+                                    match = addr;
+                                } else {
+                                    logger.log(Level.WARNING, "Interface tag " + interfaceTag + " contains patterns matching more than one network addresses on this node.  Will use first match of " + match);
+                                    break outer;
+                                }
+                            }
+                        }
+                    }
+
+                    if ( match != null ) {
+                        esmIpAddress = match.getHostAddress();
+                    }
+                }
+            }
+
+            thisNodeEsmIPAddress = esmIpAddress;
+        }
+
+        return esmIpAddress;
+    }
+
+    private InterfaceTag getInterfaceTagByName( final String desiredName ) {
+        InterfaceTag interfaceTag = null;
+
+        try {
+            final String stringForm = serverConfig.getProperty(InterfaceTag.PROPERTY_NAME);
+            final Set<InterfaceTag> tags = stringForm == null ?
+                    Collections.<InterfaceTag>emptySet() :
+                    InterfaceTag.parseMultiple(stringForm);
+            for ( final InterfaceTag tag : tags ) {
+                if ( tag.getName().equalsIgnoreCase(desiredName) ) {
+                    interfaceTag = tag;
+                    break;
+                }
+            }
+        } catch ( ParseException e ) {
+            logger.log( Level.WARNING, "Error loading interface tags: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+        }
+
+        return interfaceTag;
     }
 
     /**

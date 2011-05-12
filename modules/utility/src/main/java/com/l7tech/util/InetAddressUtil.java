@@ -1,12 +1,11 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.util;
 
 import java.net.*;
+import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -677,5 +676,34 @@ public class InetAddressUtil {
     private static boolean isEqualIgnoreCaseString(String s1, String s2) {
         return s1 == null ? s2 == null : s1.equalsIgnoreCase(s2);
     }
+
+    public static List<InetAddress> findAllLocalInetAddresses() throws SocketException {
+        final Set<InetAddress> collected = new HashSet<InetAddress>();
+        final Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        while (interfaces.hasMoreElements()) {
+            collectAddresses(interfaces.nextElement(), collected);
+        }
+
+        return Functions.sort(collected, new Comparator<InetAddress>() {
+            @Override
+            public int compare(InetAddress left, InetAddress right) {
+                return ArrayUtils.compareArraysUnsigned(left.getAddress(), right.getAddress());
+            }
+        });
+    }
+
+    private static void collectAddresses( final NetworkInterface face,
+                                          final Set<InetAddress> collect ) {
+        final Enumeration<InetAddress> addrs = face.getInetAddresses();
+        while (addrs.hasMoreElements()) {
+            collect.add(addrs.nextElement());
+        }
+
+        final Enumeration<NetworkInterface> subs = face.getSubInterfaces();
+        while (subs.hasMoreElements()) {
+            collectAddresses(subs.nextElement(), collect);
+        }
+    }
+
 
 }

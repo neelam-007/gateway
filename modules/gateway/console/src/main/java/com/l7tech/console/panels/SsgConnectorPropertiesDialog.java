@@ -14,6 +14,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.*;
 
@@ -90,6 +91,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JTabbedPane tabbedPane;
     private JCheckBox cbEnableMessageInput;
     private JCheckBox cbEnableBuiltinServices;
+    private JCheckBox cbEnableEsmRemote;
     private JCheckBox cbEnableSsmRemote;
     private JCheckBox cbEnableSsmApplet;
     private JCheckBox cbEnableNode;
@@ -123,6 +125,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             cbEnableMessageInput,
             cbEnableSsmApplet,
             cbEnableSsmRemote,
+            cbEnableEsmRemote,
             cbEnableNode,
             cbEnablePCAPI,
             tls10CheckBox,
@@ -165,9 +168,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         managePrivateKeysButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final PrivateKeyManagerWindow pkmw = new PrivateKeyManagerWindow(TopComponents.getInstance().getTopParent());
+                final PrivateKeyManagerWindow pkmw = new PrivateKeyManagerWindow(SsgConnectorPropertiesDialog.this);
                 pkmw.pack();
-                Utilities.centerOnScreen(pkmw);
+                Utilities.centerOnParentWindow(pkmw);
                 DialogDisplayer.display(pkmw, new Runnable() {
                     @Override
                     public void run() {
@@ -183,6 +186,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 enableOrDisableEndpoints();
             }
         };
+        privateKeyComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
         privateKeyComboBox.addActionListener(enableOrDisableEndpointsListener);
 
         otherSettingsPanel.setLayout(new CardLayout(8, 8));
@@ -397,6 +401,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     cbEnableMessageInput.isSelected() ||
                     cbEnableSsmApplet.isSelected() ||
                     cbEnableSsmRemote.isSelected() ||
+                    cbEnableEsmRemote.isSelected() ||
                     cbEnableNode.isSelected() ||
                     cbEnablePCAPI.isSelected())
                 {
@@ -502,10 +507,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private void editProperty(final Pair<String, String> origPair) {
-        final Frame p = TopComponents.getInstance().getTopParent();
-        final SimplePropertyDialog dlg = origPair == null ? new SimplePropertyDialog(p) : new SimplePropertyDialog(p, origPair);
+        final SimplePropertyDialog dlg = origPair == null ? new SimplePropertyDialog(this) : new SimplePropertyDialog(this, origPair);
         dlg.pack();
-        Utilities.centerOnScreen(dlg);
+        Utilities.centerOnParentWindow(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             /** @noinspection unchecked*/
             @Override
@@ -706,7 +710,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.MESSAGE_INPUT, cbEnableMessageInput);
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.PC_NODE_API, cbEnablePCAPI);
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.OTHER_SERVLETS, cbEnableBuiltinServices);
-        disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.ADMIN_REMOTE, cbEnableSsmRemote);
+        disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.ADMIN_REMOTE_ESM, cbEnableEsmRemote);
+        disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.ADMIN_REMOTE_SSM, cbEnableSsmRemote);
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.ADMIN_APPLET, cbEnableSsmApplet);
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.NODE_COMMUNICATION, cbEnableNode);
 
@@ -716,7 +721,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         if (!ssl) {
-            setEnableAndSelect(false, false, "Disabled because it requires a TLS-based transport", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode);
+            setEnableAndSelect(false, false, "Disabled because it requires a TLS-based transport", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableEsmRemote, cbEnableNode);
         }
 
         if (!cbEnableSsmRemote.isSelected()) {
@@ -789,7 +794,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         List<String> endpoints = new ArrayList<String>();
 
         if (cbEnableMessageInput.isSelected()) endpoints.add(Endpoint.MESSAGE_INPUT.name());
-        if (cbEnableSsmRemote.isSelected()) endpoints.add(Endpoint.ADMIN_REMOTE.name());
+        if (cbEnableEsmRemote.isSelected()) endpoints.add(Endpoint.ADMIN_REMOTE_ESM.name());
+        if (cbEnableSsmRemote.isSelected()) endpoints.add(Endpoint.ADMIN_REMOTE_SSM.name());
         if (cbEnableSsmApplet.isSelected()) endpoints.add(Endpoint.ADMIN_APPLET.name());
         if (cbEnableBuiltinServices.isSelected()) endpoints.add(Endpoint.OTHER_SERVLETS.name());
         if (cbEnableNode.isSelected()) endpoints.add(Endpoint.NODE_COMMUNICATION.name());
@@ -809,6 +815,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         String[] names = endpoints == null ? ArrayUtils.EMPTY_STRING_ARRAY : CipherSuiteListModel.WS_COMMA_WS.split(endpoints);
 
         boolean messages = false;
+        boolean esmRemote = false;
         boolean ssmRemote = false;
         boolean ssmApplet = false;
         boolean builtin = false;
@@ -825,7 +832,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 //noinspection EnumSwitchStatementWhichMissesCases
                 switch (endpoint) {
                     case MESSAGE_INPUT:     messages  = true;   break;
-                    case ADMIN_REMOTE:      ssmRemote = true;   break;
+                    case ADMIN_REMOTE:      ssmRemote = true;
+                                            esmRemote = true;   break;
+                    case ADMIN_REMOTE_ESM:  esmRemote = true;   break;
+                    case ADMIN_REMOTE_SSM:  ssmRemote = true;   break;
                     case ADMIN_APPLET:      ssmApplet = true;   break;
                     case NODE_COMMUNICATION: node     = true;   break;
                     case PC_NODE_API:       pcapi     = true;   break;            
@@ -837,6 +847,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         cbEnableMessageInput.setSelected(messages);
+        cbEnableEsmRemote.setSelected(esmRemote);
         cbEnableSsmRemote.setSelected(ssmRemote);
         cbEnableSsmApplet.setSelected(ssmApplet);
         cbEnableBuiltinServices.setSelected(builtin);

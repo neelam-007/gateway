@@ -80,7 +80,8 @@ if (!l7.Constants) {
          * @final
          */
         l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY = {
-            AUDIT_SIZE : 'auditSize'
+            AUDIT_SIZE : 'auditSize',
+            DATABASE_REPLICATION_DELAY : 'databaseReplicationDelay'
         };
 
         /**

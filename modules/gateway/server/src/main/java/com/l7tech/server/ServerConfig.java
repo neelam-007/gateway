@@ -258,6 +258,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_SYSTEM_MONITORING_SETUP_SETTINGS = "system.monitoring.setup.settings";
 
     public static final String PARAM_MONITORING_TRIGGER_AUDITSIZE = "trigger.auditSize";
+    public static final String PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY = "trigger.databaseReplicationDelay";
     public static final String PARAM_MONITORING_TRIGGER_LOGSIZE = "trigger.logSize";
     public static final String PARAM_MONITORING_TRIGGER_DISKUSAGE = "trigger.diskUsage";
     public static final String PARAM_MONITORING_TRIGGER_DISKFREE = "trigger.diskFree";
@@ -266,6 +267,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MONITORING_TRIGGER_SWAPUSAGE = "trigger.swapUsage";
 
     public static final String PARAM_MONITORING_INTERVAL_AUDITSIZE = "interval.auditSize";
+    public static final String PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY = "interval.databaseReplicationDelay";
     public static final String PARAM_MONITORING_INTERVAL_OPERATINGSTATUS = "interval.operatingStatus";
     public static final String PARAM_MONITORING_INTERVAL_LOGSIZE = "interval.logSize";
     public static final String PARAM_MONITORING_INTERVAL_DISKUSAGE = "interval.diskUsage";
@@ -282,6 +284,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MONITORING_AUDITUPONNOTIFICATION = "auditUponNotification";
 
     public static final String PARAM_MONITORING_INIT_TRIGGER_AUDITSIZE = "monitoring.ssgCluster.initAlertTrigger.auditSize";
+    public static final String PARAM_MONITORING_INIT_TRIGGER_DATABASEREPLICATIONDELAY = "monitoring.ssgCluster.initAlertTrigger.databaseReplicationDelay";
     public static final String PARAM_MONITORING_INIT_TRIGGER_LOGSIZE = "monitoring.ssgNode.initAlertTrigger.logSize";
     public static final String PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE = "monitoring.ssgNode.initAlertTrigger.diskUsage";
     public static final String PARAM_MONITORING_INIT_TRIGGER_DISKFREE = "monitoring.ssgNode.initAlertTrigger.diskFree";
@@ -290,6 +293,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE = "monitoring.ssgNode.initAlertTrigger.swapUsage";
 
     public static final String PARAM_MONITORING_INIT_INTERVAL_AUDITSIZE = "monitoring.ssgCluster.initSamplingInterval.auditSize";
+    public static final String PARAM_MONITORING_INIT_INTERVAL_DATABASEREPLICATIONDELAY = "monitoring.ssgCluster.initSamplingInterval.databaseReplicationDelay";
     public static final String PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS = "monitoring.ssgNode.initSamplingInterval.operatingStatus";
     public static final String PARAM_MONITORING_INIT_INTERVAL_LOGSIZE = "monitoring.ssgNode.initSamplingInterval.logSize";
     public static final String PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE = "monitoring.ssgNode.initSamplingInterval.diskUsage";
@@ -307,6 +311,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
     public static final String PARAM_MONITORING_SAMPLINGINTERVAL_LOWERLIMIT = "monitoring.samplingInterval.lowerLimit";
     public static final String PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_LOWERLIMIT = "monitoring.ssgCluster.auditSize.lowerLimit";
+    public static final String PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_LOWERLIMIT = "monitoring.ssgCluster.databaseReplicationDelay.lowerLimit";
     public static final String PARAM_MONITORING_SSGNODE_LOGSIZE_LOWERLIMIT = "monitoring.ssgNode.logSize.lowerLimit";
     public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_LOWERLIMIT = "monitoring.ssgNode.diskUsage.lowerLimit";
     public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_UPPERLIMIT = "monitoring.ssgNode.diskUsage.upperLimit";
@@ -319,6 +324,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MONITORING_NEXTREFRESH_INTERVAL = "monitoring.nextRefresh.interval";
 
     public static final String PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_UNIT = "monitoring.ssgCluster.auditSize.unit";
+    public static final String PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_UNIT = "monitoring.ssgCluster.databaseReplicationDelay.unit";
     public static final String PARAM_MONITORING_SSGNODE_LOGSIZE_UNIT = "monitoring.ssgNode.logSize.unit";
     public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_UNIT = "monitoring.ssgNode.diskUsage.unit";
     public static final String PARAM_MONITORING_SSGNODE_DISKFREE_UNIT = "monitoring.ssgNode.diskFree.unit";

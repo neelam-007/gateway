@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
@@ -21,6 +18,7 @@ public final class PropertySamplerFactory implements ApplicationContextAware {
 
     private static final Map<MonitorableProperty, Class<? extends PropertySampler>> hostPropertySamplers = Collections.unmodifiableMap(new HashMap<MonitorableProperty, Class<? extends PropertySampler>>() {{
         put(BuiltinMonitorables.AUDIT_SIZE, AuditSizeSampler.class);
+        put(BuiltinMonitorables.DATABASE_REPLICATION_DELAY, DatabaseReplicationDelaySampler.class);
         put(BuiltinMonitorables.CPU_TEMPERATURE, CpuTemperatureSampler.class);
         put(BuiltinMonitorables.CPU_USAGE, CpuUsageSampler.class);
         put(BuiltinMonitorables.DISK_FREE_KIB, DiskFreeSampler.class);

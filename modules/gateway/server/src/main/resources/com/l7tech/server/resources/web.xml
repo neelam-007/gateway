@@ -96,7 +96,7 @@
         <filter-class>com.l7tech.gateway.common.transport.http.FeatureFilter</filter-class>
         <init-param>
             <param-name>endpoint-names</param-name>
-            <param-value>ADMIN_REMOTE, PC_NODE_API</param-value>
+            <param-value>ADMIN_REMOTE_ESM, PC_NODE_API</param-value>
         </init-param>
     </filter>
 
@@ -105,7 +105,7 @@
         <filter-class>com.l7tech.gateway.common.transport.http.FeatureFilter</filter-class>
         <init-param>
             <param-name>endpoint-names</param-name>
-            <param-value>ADMIN_REMOTE</param-value>
+            <param-value>ADMIN_REMOTE_ESM</param-value>
         </init-param>
     </filter>
 

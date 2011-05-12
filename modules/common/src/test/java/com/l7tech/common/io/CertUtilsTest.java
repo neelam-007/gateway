@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.common.io;
 
 import static org.junit.Assert.*;
@@ -268,4 +263,38 @@ public class CertUtilsTest {
         System.out.println((double)i/t *1000 + " iterations per second");
     }
 
+    @Test
+    public void testFingerprint() throws Exception {
+        String certificatePem = "-----BEGIN CERTIFICATE-----\n" +
+                "MIIEjTCCA/agAwIBAgIQFE6oIpUaQDfJ0xCp9MFuMDANBgkqhkiG9w0BAQUFADCB\n" +
+                "ujEfMB0GA1UEChMWVmVyaVNpZ24gVHJ1c3QgTmV0d29yazEXMBUGA1UECxMOVmVy\n" +
+                "aVNpZ24sIEluYy4xMzAxBgNVBAsTKlZlcmlTaWduIEludGVybmF0aW9uYWwgU2Vy\n" +
+                "dmVyIENBIC0gQ2xhc3MgMzFJMEcGA1UECxNAd3d3LnZlcmlzaWduLmNvbS9DUFMg\n" +
+                "SW5jb3JwLmJ5IFJlZi4gTElBQklMSVRZIExURC4oYyk5NyBWZXJpU2lnbjAeFw0w\n" +
+                "NTEyMDgwMDAwMDBaFw0wNjEyMDgyMzU5NTlaMIHRMQswCQYDVQQGEwJVUzETMBEG\n" +
+                "A1UECBMKQ2FsaWZvcm5pYTEPMA0GA1UEBxQGTm92YXRvMSgwJgYDVQQKFB9GaXJl\n" +
+                "bWFucyBGdW5kIEluc3VyYW5jZSBDb21wYW55MRYwFAYDVQQLFA1JVCBEZXBhcnRt\n" +
+                "ZW50MTMwMQYDVQQLFCpUZXJtcyBvZiB1c2UgYXQgd3d3LnZlcmlzaWduLmNvbS9y\n" +
+                "cGEgKGMpMDAxJTAjBgNVBAMUHGNlcnRnYXRld2F5LmZpcmVtYW5zZnVuZC5jb20w\n" +
+                "gZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAIwQeBxPHUmOIYm6/Z2D5PKPFwhF\n" +
+                "9FIaK7rji0JBsiwHTCm27grG0RBEmHCqXhbRe0qFzgg/pXwQFQtRDrVUgJhxRN2i\n" +
+                "dVKxs6ccGsxtB88WUPlIaGSpkIeCChT03WedUVtJWPQlPiXpz1O7mWaKKfJZBON2\n" +
+                "4urJcAGU+M4qYD/tAgMBAAGjggF5MIIBdTAJBgNVHRMEAjAAMAsGA1UdDwQEAwIF\n" +
+                "oDBGBgNVHR8EPzA9MDugOaA3hjVodHRwOi8vY3JsLnZlcmlzaWduLmNvbS9DbGFz\n" +
+                "czNJbnRlcm5hdGlvbmFsU2VydmVyLmNybDBEBgNVHSAEPTA7MDkGC2CGSAGG+EUB\n" +
+                "BxcDMCowKAYIKwYBBQUHAgEWHGh0dHBzOi8vd3d3LnZlcmlzaWduLmNvbS9ycGEw\n" +
+                "KAYDVR0lBCEwHwYJYIZIAYb4QgQBBggrBgEFBQcDAQYIKwYBBQUHAwIwNAYIKwYB\n" +
+                "BQUHAQEEKDAmMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC52ZXJpc2lnbi5jb20w\n" +
+                "bQYIKwYBBQUHAQwEYTBfoV2gWzBZMFcwVRYJaW1hZ2UvZ2lmMCEwHzAHBgUrDgMC\n" +
+                "GgQUj+XTGoasjY5rw8+AatRIGCx7GS4wJRYjaHR0cDovL2xvZ28udmVyaXNpZ24u\n" +
+                "Y29tL3ZzbG9nby5naWYwDQYJKoZIhvcNAQEFBQADgYEAMYjuVnHTybB+fwiO2txG\n" +
+                "FOVoHGgzI4OjFbXkpIDrBYDD+DJFVzD3vJeWcBJpOq9bmIPcF47ZlDH0TuQsaBYw\n" +
+                "J1mF24UWOCrnWAbgWAHwax64TIy7K1fvegwKAcQaKgekRYqhRff86tX/ZexHM7jT\n" +
+                "0RTm3chJ4nLEWA2Sd67fGUM=\n" +
+                "-----END CERTIFICATE-----";
+
+        final X509Certificate certificate = CertUtils.decodeFromPEM( certificatePem );
+        final String fingerprint = CertUtils.getCertificateFingerprint(certificate, "SHA1").substring(5);
+        assertEquals( "Fingerprint only", "F6:F6:1A:8B:28:A2:06:1F:5B:62:8C:C8:22:CC:6C:64:D2:5A:D2:79", fingerprint );
+    }
 }

@@ -62,7 +62,7 @@ public class EntityMonitoringPropertySetup extends PersistentEntityImp implement
         this.entityGuid = entityGuid;
     }
     
-    @Column(name="property_type", length=20, nullable=false)
+    @Column(name="property_type", length=32, nullable=false)
     public String getPropertyType() {
         return propertyType;
     }

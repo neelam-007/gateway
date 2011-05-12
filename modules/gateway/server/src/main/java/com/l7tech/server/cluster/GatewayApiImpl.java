@@ -81,10 +81,10 @@ public class GatewayApiImpl implements GatewayApi {
                     GatewayInfo gatewayInfo = new GatewayInfo();
                     gatewayInfo.setId( info.getNodeIdentifier() );
                     gatewayInfo.setName( info.getName() );
-                    gatewayInfo.setIpAddress( info.getAddress() );
+                    gatewayInfo.setIpAddress( info.getEsmAddress() );
                     gatewayInfo.setSoftwareVersion( BuildInfo.getProductVersion() );
                     gatewayInfo.setStatusTimestamp( info.getLastUpdateTimeStamp() );
-                    gatewayInfo.setGatewayPort( config.getIntProperty("clusterhttpsport", 8443) );
+                    gatewayInfo.setGatewayPort( config.getIntProperty("admin.esmPort", 8443) );
                     gatewayInfo.setProcessControllerPort( config.getIntProperty(ServerConfig.PARAM_PROCESS_CONTROLLER_EXTERNAL_PORT, 8765) );
                     gateways.add(gatewayInfo);
                 }

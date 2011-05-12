@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.ems.monitoring;
 
 import com.l7tech.objectmodel.FindException;
@@ -15,10 +12,13 @@ import com.l7tech.server.management.api.monitoring.MonitoredStatus;
 import com.l7tech.server.management.api.monitoring.MonitoringApi;
 import com.l7tech.server.management.config.monitoring.ComponentType;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.IOException;
@@ -36,8 +36,7 @@ public class MonitoringServiceImpl implements MonitoringService {
     private boolean statusesUnavailableWarningMsgLogged;
     // The next three variables used to keep tracking of SSG cluster property status
     private long latestSsgClusterMonitoringTimestamp;
-    private Object latestSsgClusterMonitoredValue;
-    private boolean latestSsgClusterMonitoringAlert;
+    private ConcurrentMap<String,Pair<Object,Boolean>> latestSsgClusterMonitoredValues = new ConcurrentHashMap<String,Pair<Object,Boolean>>();
 
     public MonitoringServiceImpl(GatewayContextFactory gatewayContextFactory, EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager) {
         this.gatewayContextFactory = gatewayContextFactory;
@@ -47,32 +46,34 @@ public class MonitoringServiceImpl implements MonitoringService {
     @Override
     public EntityMonitoringPropertyValues getCurrentSsgClusterPropertyStatus(String ssgClusterGuid) {
         // Get the property setup of the SSG cluster from the database.
-        EntityMonitoringPropertySetup ssgClusterPropertySetup;
+        final List<EntityMonitoringPropertySetup> entityMonitoringPropertySetups;
         try {
-            ssgClusterPropertySetup = entityMonitoringPropertySetupManager.findByEntityGuidAndPropertyType(ssgClusterGuid, JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE);
+            entityMonitoringPropertySetups = entityMonitoringPropertySetupManager.findByEntityGuid(ssgClusterGuid);
         } catch (FindException e) {
             logger.warning("Cannot find the monitoring property setup of the Gateway cluster (GUID = '" + ssgClusterGuid + "').");
             return null;
         }
-        if (ssgClusterPropertySetup == null) {
+
+        if (entityMonitoringPropertySetups == null) {
             return null;
         }
-        // Get the current property status of the SSG cluster from the monitoring api.
-        EntityMonitoringPropertyValues.PropertyValues currentPropertyValues =
-            new EntityMonitoringPropertyValues.PropertyValues(
-                ssgClusterPropertySetup.isMonitoringEnabled(),
-                (latestSsgClusterMonitoredValue == null)? null : latestSsgClusterMonitoredValue.toString(),
-                ssgClusterPropertySetup.getUnit(),
-                latestSsgClusterMonitoringAlert
-            );
-        // Clean these lastest values
-        latestSsgClusterMonitoringTimestamp = 0;
-        latestSsgClusterMonitoredValue = null;
-        latestSsgClusterMonitoringAlert = false;
 
-        // Create an EntityMonitoringPropertyValues object in json-content format and return it to Monitor.
-        Map<String, Object> ssgClusterPropertyValuesMap = new HashMap<String, Object>();
-        ssgClusterPropertyValuesMap.put(JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE, currentPropertyValues);
+        final Map<String, Object> ssgClusterPropertyValuesMap = new HashMap<String, Object>();
+        for ( final EntityMonitoringPropertySetup emps : entityMonitoringPropertySetups ) {
+            // Get the current property status of the SSG cluster from the monitoring api.
+            final Pair<Object, Boolean> value = latestSsgClusterMonitoredValues.get( emps.getPropertyType() );
+
+            final EntityMonitoringPropertyValues.PropertyValues currentPropertyValues =
+                new EntityMonitoringPropertyValues.PropertyValues(
+                    emps.isMonitoringEnabled(),
+                    value == null || value.left==null ? null : value.left.toString(),
+                    emps.getUnit(),
+                    value == null || value.right==null ? false : value.right
+                );
+
+            ssgClusterPropertyValuesMap.put(emps.getPropertyType(), currentPropertyValues);
+        }
+
         return new EntityMonitoringPropertyValues(ssgClusterGuid, ssgClusterPropertyValuesMap);
     }
 
@@ -129,8 +130,7 @@ public class MonitoringServiceImpl implements MonitoringService {
                 if (compTyep.equals(ComponentType.CLUSTER)) {
                     if (latestSsgClusterMonitoringTimestamp < propertyStatus.getTimestamp()) {
                         latestSsgClusterMonitoringTimestamp = propertyStatus.getTimestamp();
-                        latestSsgClusterMonitoredValue = value;
-                        latestSsgClusterMonitoringAlert = alert;
+                        latestSsgClusterMonitoredValues.put( propertyStatus.getMonitorableId(), new Pair<Object,Boolean>( value, alert ) );
                     }
                     continue;
                 }

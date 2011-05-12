@@ -21,7 +21,6 @@ import org.hibernate.annotations.Proxy;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Dec 17, 2003<br/>
- * $Id$
  *
  */
 @Entity
@@ -78,7 +77,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity
     /**
      * direct ip address of this node
      */
-    @Column(name="address",nullable=false,length=16)
+    @Column(name="address",nullable=false,length=39)
     public String getAddress() {
         return address;
     }
@@ -88,6 +87,15 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity
      */
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    @Column(name="esm_address",nullable=false,length=39)
+    public String getEsmAddress() {
+        return esmAddress;
+    }
+
+    public void setEsmAddress( final String esmAddress ) {
+        this.esmAddress = esmAddress;
     }
 
     /**
@@ -185,6 +193,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity
         ClusterNodeInfo that = (ClusterNodeInfo) o;
 
         if (address != null ? !address.equals(that.address) : that.address != null) return false;
+        if (esmAddress != null ? !esmAddress.equals(that.esmAddress) : that.esmAddress != null) return false;
         if (mac != null ? !mac.equals(that.mac) : that.mac != null) return false;
         if (multicastAddress != null ? !multicastAddress.equals(that.multicastAddress) : that.multicastAddress != null)
             return false;
@@ -200,6 +209,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (mac != null ? mac.hashCode() : 0);
         result = 31 * result + (address != null ? address.hashCode() : 0);
+        result = 31 * result + (esmAddress != null ? esmAddress.hashCode() : 0);
         result = 31 * result + (multicastAddress != null ? multicastAddress.hashCode() : 0);
         return result;
     }
@@ -232,6 +242,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity
     private String name;
     private String mac;
     private String address;
+    private String esmAddress;
     private String multicastAddress;
     private long boottime;
     private long uptime;

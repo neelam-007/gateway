@@ -60,6 +60,11 @@ public class ClusterInfoManagerStub implements ClusterInfoManager {
 
     @Override
     public ClusterNodeInfo getSelfNodeInf() {
+        return getSelfNodeInf(false);
+    }
+
+    @Override
+    public ClusterNodeInfo getSelfNodeInf( final boolean refresh ) {
         return cnf;
     }
 }

@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.CertUtils;
@@ -48,6 +45,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final MasterPasswordManager masterPasswordManager;
     private final Pair<X509Certificate[], PrivateKey> sslKeypair;
     private final Set<X509Certificate> trustedRemoteNodeManagementCerts;
+    private final Set<String> trustedRemoteNodeManagementThumbprints;
     private final Set<X509Certificate> trustedPatchCerts;
     private final String secret;
     private final int sslPort;
@@ -89,20 +87,13 @@ public class ConfigServiceImpl implements ConfigService {
         this.applianceLibexecDirectory = new File(processControllerHomeDirectory, ".." + SLASH + "libexec");
         this.masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
 
-        final File hostPropsFile = new File(getProcessControllerHomeDirectory(), "etc" + SLASH + "host.properties");
-        if (!hostPropsFile.exists())
-            throw new IllegalStateException("Couldn't find " + hostPropsFile.getAbsolutePath());
-
-        FileInputStream is = null;
         final Properties hostProps;
         try {
-            is = new FileInputStream(hostPropsFile);
-            hostProps = new Properties();
-            hostProps.load(is);
+            hostProps = loadHostProperties();
+        } catch (FileNotFoundException e) {
+            throw new IllegalStateException("Couldn't find " + ExceptionUtils.getMessage( e ));
         } catch (IOException e) {
-            throw new RuntimeException("Couldn't load " + hostPropsFile.getAbsolutePath(), e);
-        } finally {
-            ResourceUtils.closeQuietly( is );
+            throw new RuntimeException(ExceptionUtils.getMessage( e ), e);
         }
 
         PCHostConfig hostConfig = new PCHostConfig();
@@ -139,9 +130,10 @@ public class ConfigServiceImpl implements ConfigService {
             throw new IllegalStateException("Invalid patch log file configured: " + patchesLog);
 
         this.sslPort = Integer.valueOf(hostProps.getProperty(HOSTPROPERTIES_SSL_PORT, Integer.toString(DEFAULT_SSL_REMOTE_MANAGEMENT_PORT)));
-        this.sslIPAddress = hostProps.getProperty(HOSTPROPERTIES_SSL_IPADDRESS, getDefaultSslIpAddress());
-        this.sslKeypair = readSslKeypair(hostProps);
-        this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts(hostProps);
+        this.sslIPAddress = hostProps.getProperty( HOSTPROPERTIES_SSL_IPADDRESS, getDefaultSslIpAddress() );
+        this.sslKeypair = readSslKeypair( hostProps );
+        this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts( hostProps );
+        this.trustedRemoteNodeManagementThumbprints = readTrustedNodeManagementThumbprints( hostProps );
         this.trustedPatchCerts = readTrustedPatchCerts(hostProps);
         this.secret = hostProps.getProperty(HOSTPROPERTIES_SECRET);
         this.useSca = Boolean.valueOf(hostProps.getProperty("host.sca", "false"));
@@ -162,6 +154,42 @@ public class ConfigServiceImpl implements ConfigService {
         }
 
         this.host = hostConfig;
+    }
+
+    private Properties loadHostProperties() throws IOException {
+        final File hostPropsFile = new File(getProcessControllerHomeDirectory(), "etc" + SLASH + "host.properties");
+        if (!hostPropsFile.exists())
+            throw new FileNotFoundException(hostPropsFile.getAbsolutePath());
+
+        FileInputStream is = null;
+        final Properties hostProps;
+        try {
+            is = new FileInputStream(hostPropsFile);
+            hostProps = new Properties();
+            hostProps.load(is);
+        } catch (IOException e) {
+            throw new IOException("Couldn't load " + hostPropsFile.getAbsolutePath(), e);
+        } finally {
+            ResourceUtils.closeQuietly( is );
+        }
+
+        return hostProps;
+    }
+
+    private void saveHostProperties( final Properties properties ) throws IOException {
+        final File hostPropsFile = new File(getProcessControllerHomeDirectory(), "etc" + SLASH + "host.properties");
+        if (!hostPropsFile.exists())
+            throw new FileNotFoundException(hostPropsFile.getAbsolutePath());
+
+        OutputStreamWriter osw = null;
+        try {
+            osw = new OutputStreamWriter( new FileOutputStream(hostPropsFile) );
+            properties.store( osw, null );
+        } catch (IOException e) {
+            throw new IOException("Couldn't save " + hostPropsFile.getAbsolutePath(), e);
+        } finally {
+            ResourceUtils.closeQuietly( osw );
+        }
     }
 
     private String getDefaultSslIpAddress() {
@@ -307,7 +335,7 @@ public class ConfigServiceImpl implements ConfigService {
         final String trustStoreEnabled = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_ENABLED);
         if (!"true".equalsIgnoreCase(trustStoreEnabled)) {
             logger.info("Remote node management disabled");
-            return Collections.emptySet();
+            return new HashSet<X509Certificate>();
         }
 
         final String trustStoreFilename = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_FILE);
@@ -317,7 +345,7 @@ public class ConfigServiceImpl implements ConfigService {
             trustStoreFile = new File(configDirectory, DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME);
             if (!trustStoreFile.exists()) {
                 logger.info("No remote node management truststore found; continuing with remote node management disabled");
-                return Collections.emptySet();
+                return new HashSet<X509Certificate>();
             }
             trustStoreType = "PKCS12";
         } else {
@@ -330,6 +358,38 @@ public class ConfigServiceImpl implements ConfigService {
         final String encryptedPassword = getRequiredProperty(hostProps, HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_PASSWORD);
 
         return readCerts(trustStoreType, trustStoreFile, encryptedPassword);
+    }
+
+    private void saveTrustedNodeManagementCert( final Properties hostProps,
+                                                final X509Certificate certificate ) throws GeneralSecurityException, IOException {
+        final String trustStoreFilename = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_FILE);
+        final File trustStoreFile;
+        if ( trustStoreFilename == null ) {
+            trustStoreFile = new File(configDirectory, DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME);
+        } else {
+            trustStoreFile = new File(trustStoreFilename);
+        }
+
+        final String trustStoreType = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_TYPE, "PKCS12");
+
+        if ( !trustStoreFile.exists() ) {
+            throw new FileNotFoundException( trustStoreFilename );
+        }
+
+        final String encryptedPassword = hostProps.getProperty( HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_PASSWORD, "" );
+
+        addCert(trustStoreType, trustStoreFile, encryptedPassword, certificate);
+    }
+
+    private Set<String> readTrustedNodeManagementThumbprints( final Properties hostProps ) {
+        final Set<String> thumbprints = new HashSet<String>();
+
+        final String value = hostProps.getProperty( HOSTPROPERTIES_NODEMANAGEMENT_THUMBPRINT );
+        if ( value != null ) {
+            thumbprints.add( value );
+        }
+
+        return thumbprints;
     }
 
     private Set<X509Certificate> readTrustedPatchCerts(Properties hostProps) throws IOException, GeneralSecurityException {
@@ -378,6 +438,28 @@ public class ConfigServiceImpl implements ConfigService {
             return trustedCerts;
         } finally {
             ResourceUtils.closeQuietly(fis);
+        }
+    }
+
+    private void addCert( final String trustStoreType,
+                          final File trustStoreFile,
+                          final String encryptedPassword,
+                          final X509Certificate certificate ) throws GeneralSecurityException, IOException {
+        final char[] keystorePass = masterPasswordManager.decryptPasswordIfEncrypted( encryptedPassword );
+        final KeyStore ks = KeyStore.getInstance(trustStoreType);
+        FileInputStream fis = null;
+        FileOutputStream fos = null;
+        try {
+            fis = new FileInputStream(trustStoreFile);
+            ks.load(fis, keystorePass);
+            final String alias = "trustedCert-" + CertUtils.getThumbprintSHA1(certificate) + "-" + System.currentTimeMillis();
+            ks.setCertificateEntry( alias, certificate );
+
+            fos = new FileOutputStream(trustStoreFile);
+            ks.store(fos, keystorePass);
+        } finally {
+            ResourceUtils.closeQuietly(fis);
+            ResourceUtils.closeQuietly(fos);
         }
     }
 
@@ -487,6 +569,30 @@ public class ConfigServiceImpl implements ConfigService {
     @Override
     public Set<X509Certificate> getTrustedRemoteNodeManagementCerts() {
         return trustedRemoteNodeManagementCerts;
+    }
+
+    @Override
+    public Set<String> getTrustedRemoteNodeManagementCertThumbprints() {
+        return trustedRemoteNodeManagementThumbprints;
+    }
+
+    @Override
+    public void acceptTrustedRemoteNodeManagementCert( final X509Certificate certificate ) {
+        trustedRemoteNodeManagementCerts.add( certificate );
+        trustedRemoteNodeManagementThumbprints.clear();
+
+        logger.info( "Accepting certificate for remote management '"+certificate.getSubjectDN()+"'" );
+        try {
+            final Properties hostProperties = loadHostProperties();
+            hostProperties.remove( HOSTPROPERTIES_NODEMANAGEMENT_THUMBPRINT );
+
+            saveTrustedNodeManagementCert( hostProps, certificate );
+            saveHostProperties( hostProperties );
+        } catch ( IOException e ) {
+            logger.log( Level.WARNING, "Error accepting certificate for configured thumbprint.", e );
+        } catch ( GeneralSecurityException e ) {
+            logger.log( Level.WARNING, "Error accepting certificate for configured thumbprint.", e );
+        }
     }
 
     @Override

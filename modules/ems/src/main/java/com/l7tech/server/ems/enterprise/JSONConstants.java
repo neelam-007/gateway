@@ -47,6 +47,7 @@ public final class JSONConstants {
      */
     public static final class SsgClusterMonitoringProperty {
         public static final String AUDIT_SIZE = "auditSize";
+        public static final String DATABASE_REPLICATION_DELAY = "databaseReplicationDelay";
     }
 
     /**
@@ -241,6 +242,7 @@ public final class JSONConstants {
     public static final String ONLINE_STATUS = "onlineStatus";
     public static final String TRUST_STATUS = "trustStatus";
     public static final String IP_ADDRESS = "ipAddress";
+    public static final String STATUS_MESSAGE = "statusMessage";
     public static final String MONITORING_PROPERTIES = "monitoringProperties";
 
     // Additional properties for enterprise folders, SSG Clusters, service folders, published services or policy fragments.

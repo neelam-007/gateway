@@ -31,6 +31,7 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
     private SsgCluster ssgCluster;
     private String onlineStatus;
     private boolean trustStatus;
+    private String statusMessage;
     private String softwareVersion;
     private long notificationAuditTime; // ignored by equals() and hashCode()
 
@@ -89,6 +90,15 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         this.trustStatus = trustStatus;
     }
 
+    @Column(name="status_message", length=255)
+    public String getStatusMessage() {
+        return statusMessage;
+    }
+
+    public void setStatusMessage( final String statusMessage ) {
+        this.statusMessage = statusMessage;
+    }
+
     @Column(name="gateway_port")
     public int getGatewayPort() {
         return gatewayPort;
@@ -130,6 +140,7 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         output.add(JSONConstants.ONLINE_STATUS, getOnlineStatus());
         output.add(JSONConstants.TRUST_STATUS, isTrustStatus());
         output.add(JSONConstants.SELF_HOST_NAME, obtainHostName());
+        output.add(JSONConstants.STATUS_MESSAGE, getStatusMessage() );
         output.add(JSONConstants.IP_ADDRESS, getIpAddress());
         output.add(JSONConstants.GATEWAY_PORT, Integer.toString(getGatewayPort()));
         output.add(JSONConstants.PROCESS_CONTROLLER_PORT, Integer.toString(getProcessControllerPort()));

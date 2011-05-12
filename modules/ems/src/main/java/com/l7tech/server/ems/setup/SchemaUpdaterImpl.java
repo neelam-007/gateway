@@ -64,8 +64,9 @@ public class SchemaUpdaterImpl extends JdbcDaoSupport implements SchemaUpdater {
      * Schema versions to first used ESM version:
      * -  0 : 1.0
      * -  1 : 1.5
+     * -  2 : 1.6
      */
-    private static final int SCHEMA_VERSION = 1;
+    private static final int SCHEMA_VERSION = 2;
 
     private final PlatformTransactionManager transactionManager;
     private final Map<Integer,Resource> scriptsBySchemaVersion;

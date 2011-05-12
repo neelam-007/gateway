@@ -1,5 +1,6 @@
 package com.l7tech.gateway.config.client.beans.trust;
 
+import com.l7tech.util.Either;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.config.client.options.OptionType;
@@ -64,7 +65,7 @@ public class DeveloperTrustInterviewer extends TrustInterviewer {
             if (certs == null || certs.length < 1) throw new Exception("Server presented no certificates");
             if (!(certs[0] instanceof X509Certificate)) throw new Exception("Server certificate wasn't X.509");
             X509Certificate cert = (X509Certificate)certs[0];
-            inBeans.add( new ConfiguredTrustedCert(cert, null) );
+            inBeans.add( new ConfiguredTrustedCert( Either.<X509Certificate,String>left( cert ), null) );
         } catch (Exception e) {
             e.printStackTrace();
         }
