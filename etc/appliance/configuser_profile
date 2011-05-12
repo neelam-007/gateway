@@ -12,7 +12,6 @@ MASTERKEYMANAGE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
 NCIPHERCONFIG="sudo -u layer7 /opt/SecureSpan/Appliance/libexec/ncipherconfig.pl"
 CHECK_USB_KEY="sudo -u layer7 ${MASTERKEYMANAGE} probe &> /dev/null"
 PATCHTOOL="sudo -u layer7 /opt/SecureSpan/Appliance/libexec/patchcli_launch"
-
 GETROOT="su -"
 MASTER_KEY_BACKUP_FILE_NAME="ssgscabk"
 
@@ -44,6 +43,15 @@ checkForPatcher() {
     PATCHER_PRESENT=""
     if [ -e "/opt/SecureSpan/Controller/bin/patch.sh" ] ; then
         PATCHER_PRESENT="true"
+    fi
+}
+
+
+checkForAuthMethods() {
+    #check for the existence of the files allowing configuration of alternative authentication methods.
+    AUTHMETHODS_CONFIG=""
+    if [ -e "/etc/pam.d/sshd" ] && [ -e "/etc/pam_radius.conf" ] && [ -e "/etc/openldap/ldap.conf" ] && [ -e "/etc/ldap.conf" ] && [ -e "/etc/nsswitch.conf" ] ; then
+        AUTHMETHODS_CONFIG="true"
     fi
 }
 
@@ -94,14 +102,16 @@ doSystemConfiguration() {
             echo " 1) Configure networking and system time settings"
             echo " 2) Display current network configuration"
             echo " 3) Configure keyboard layout"
-            echo " 4) Configure authentication method"
-            echo " 5) About system (versions)"
+            if [ "${AUTHMETHODS_CONFIG}" == "true" ] ; then
+                echo " 4) Configure authentication method"
+            fi
+            echo " A) About system (versions)"
             echo " X) Exit menu"
             echo ""
             echo -n "Please make a selection: "
             read choice
             case $choice in
-                1) clear
+                1) clear                                                      ;
                    (${SYSWIZARD} -systemConfig)
                    clear;;
                 2) clear
@@ -112,11 +122,7 @@ doSystemConfiguration() {
                    (${SYSWIZARD} -keyboardConfig)
                    confirmedMessage ""
                    clear;;
-                4) clear
-                   (${SYSWIZARD} -authConfig)
-                   confirmedMessage ""
-                   clear;;
-                5) clear
+                a|A) clear
                    echo "Layer 7 Software Versions"
                    echo "$(rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}_%{ARCH}\n' | grep ssg | sed "s/^/  - /")"
                    echo "$(rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}_%{ARCH}\n' | grep ssem | sed "s/^/  - /")"
@@ -126,10 +132,15 @@ doSystemConfiguration() {
                     clear;
                     isMenuValid="y";
                     clear;;
-                *)
-                    clear;
-                    confirmedMessage "That is not a valid selection";
-                    clear;;
+                *) if [ "$choice" == "4" ] && [ "${AUTHMETHODS_CONFIG}" == "true" ]; then
+                       clear
+                       (${SYSWIZARD} -authConfig)
+                       confirmedMessage ""
+                       clear;
+                   else
+                        isMenuValid="n"
+                        confirmedMessage "That is not a valid selection";
+                   fi;;
             esac
     done
     isMenuValid="n"
@@ -927,6 +938,7 @@ checkForSca
 checkForNcipher
 checkForEm
 checkForPatcher
+checkForAuthMethods
 isPatchListMenuValid="n"
 while [ "$isPatchListMenuValid" != "y" ]
 do
