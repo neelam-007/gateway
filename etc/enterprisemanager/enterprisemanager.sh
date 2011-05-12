@@ -19,7 +19,7 @@ fi
 #
 cd "${SSEM_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSEM_HOME}"
 
-EM_JAVA_OPTS="-XX:MaxPermSize=256m -Xmx512m"
+EM_JAVA_OPTS="-XX:MaxPermSize=256m -Xmx512m -Djava.security.egd=file:/dev/./urandom"
 if [ -f etc/profile ] ; then
     source etc/profile
 fi
