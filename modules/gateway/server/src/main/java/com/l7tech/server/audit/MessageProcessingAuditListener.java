@@ -12,6 +12,14 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 /**
+ * This listener manages AuditDetailEvent and message processing specific events.
+ *
+ * When an {@link AuditDetailEvent} is received via some code calling {@link Auditor}.logAndAudit, a detail will be
+ * added to the AuditContext which will be associated with the current thread. It is up to the users of
+ * Audit.logAndAudit to ensure the audit context is flushed. This happens automatically for message processing via the
+ * PolicyEnforcementContext being closed, via the MessageProcessor, however for sub systems using Auditor, they will
+ * need to ensure flush is called. An easy way to achieve this is to publish a SystemEvent.
+ *
  * @author alex
  * @version $Revision$
  */
@@ -25,6 +33,7 @@ public class MessageProcessingAuditListener implements ApplicationListener {
         messageProcessingEventChannel.addApplicationListener(this);
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         Object source = event.getSource();
         if (event instanceof AuditDetailEvent) {

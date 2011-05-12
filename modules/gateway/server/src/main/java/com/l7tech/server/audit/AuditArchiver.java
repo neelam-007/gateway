@@ -176,6 +176,8 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
                             archive();
                         } else {
                             auditor.logAndAudit( SystemMessages.AUDIT_ARCHIVER_ERROR, "Receiver not enabled." );
+                            //associate audit details with an audit archiver system record. Causes context to be flushed.
+                            getApplicationContext().publishEvent(new AuditArchiverEvent(this));
                         }
                     } else {
                         logger.warning("NOT starting Audit Archiver job; could not get cluster lock for: " + lock);
@@ -250,6 +252,7 @@ public class AuditArchiver implements ApplicationContextAware, PropertyChangeLis
         } catch (FindException e) {
             auditor.logAndAudit(SystemMessages.AUDIT_ARCHIVER_ERROR, new String[] {" could not retrieve current usage"}, e);
         } finally {
+            //associate all audit details collected with an audit archiver system record. Causes context to be flushed.
             getApplicationContext().publishEvent(new AuditArchiverEvent(this));
         }
 

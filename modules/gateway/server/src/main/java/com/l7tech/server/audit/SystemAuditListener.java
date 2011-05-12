@@ -25,11 +25,12 @@ public class SystemAuditListener implements ApplicationListener {
         this.auditContext = auditContext;
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof SystemEvent) {
             final SystemEvent se = (SystemEvent)event;
 
-            SystemAuditRecord record = null;
+            final SystemAuditRecord record;
             if (event instanceof AuditPurgeEvent) {
                 AuditPurgeEvent ape = (AuditPurgeEvent)event;
                 if (ape.isUpdate()) {

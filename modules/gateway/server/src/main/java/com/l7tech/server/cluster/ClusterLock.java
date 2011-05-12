@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.StaleUpdateException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.audit.AuditContextUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
@@ -140,21 +141,28 @@ public class ClusterLock implements Lock {
     }
 
     private boolean update(final ClusterProperty clusterProperty) {
-        return (Boolean) new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
+        final boolean [] result = new boolean[1];
+        AuditContextUtils.doAsSystem(new Runnable() {
             @Override
-            public Object doInTransaction(TransactionStatus transactionStatus) {
-                try {
-                    clusterPropertyManager.update(clusterProperty);
-                    return Boolean.TRUE;
-                } catch (StaleUpdateException e) {
-                    logger.log(Level.WARNING, "Cluster lock entry modified since last read.");
-                    return Boolean.FALSE;
-                } catch (UpdateException e) {
-                    logger.log(Level.WARNING, "Error updating cluster lock property.", e);
-                    return Boolean.FALSE;
-                }
+            public void run() {
+                result[0] = (Boolean) new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
+                    @Override
+                    public Object doInTransaction(TransactionStatus transactionStatus) {
+                        try {
+                            clusterPropertyManager.update(clusterProperty);
+                            return Boolean.TRUE;
+                        } catch (StaleUpdateException e) {
+                            logger.log(Level.WARNING, "Cluster lock entry modified since last read.");
+                            return Boolean.FALSE;
+                        } catch (UpdateException e) {
+                            logger.log(Level.WARNING, "Error updating cluster lock property.", e);
+                            return Boolean.FALSE;
+                        }
+                    }
+                });
             }
         });
+        return result[0];
     }
 
 
