@@ -106,7 +106,11 @@ public class AuthenticationConfigurationBean extends BaseConfigurationBean{
             for (Map.Entry<AuthTypeDescriptor, String> entry : authDescriptors.entrySet()) {
                 AuthTypeDescriptor desc = entry.getKey();
                 String value = entry.getValue();
-                descs.add("\t" + desc.getDescription() + " = " + value);
+                if (desc.isPassword) {
+                    descs.add("\t" + desc.getDescription() + " = <HIDDEN>");
+                } else {
+                    descs.add("\t" + desc.getDescription() + " = " + value);
+                }
             }
             return descs;
         }

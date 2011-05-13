@@ -32,14 +32,21 @@ public class ConsoleWizardUtils {
         YES_NO_VALUES = ArrayUtils.concat(YES_VALUES, NO_VALUES);
     }
 
-
     public static String getData(String[] promptLines, String defaultValue, boolean isNavAware, Pattern allowedEntriesPattern, String errorMessage) throws IOException, WizardNavigationException {
+        return getData(promptLines, defaultValue, isNavAware, allowedEntriesPattern, errorMessage, false);
+    }
+
+    public static String getData(String[] promptLines, String defaultValue, boolean isNavAware, Pattern allowedEntriesPattern, String errorMessage, boolean isPassword) throws IOException, WizardNavigationException {
         boolean isValidInput;
         String input;
         do {
             isValidInput = true;
             printText(promptLines);
-            input = readLine();
+            if (isPassword) {
+                input = readPassword();
+            } else {
+                input = readLine();
+            }
             if (input != null) input = input.trim();
             handleInput(input, isNavAware);
 
@@ -64,13 +71,17 @@ public class ConsoleWizardUtils {
     }
 
 
-    public static String getData(String[] promptLines, String defaultValue, boolean isNavAware, String[] allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
+    public static String getData(String[] promptLines, String defaultValue, boolean isNavAware, String[] allowedEntries, String errorMessage, boolean isPassword) throws IOException, WizardNavigationException {
         boolean isValidInput;
         String input;
         do {
             isValidInput = true;
             printText(promptLines);
-            input = readLine();
+            if (isPassword) {
+                input = readPassword();
+            } else {
+                input = readLine();
+            }
             if (input != null) input = input.trim();
             handleInput(input, isNavAware);
 
@@ -98,9 +109,20 @@ public class ConsoleWizardUtils {
 
         return input;
     }
+    public static String getData(String[] promptLines, String defaultValue, boolean isNavAware, String[] allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
+        return getData(promptLines, defaultValue, isNavAware, allowedEntries, errorMessage, false);
+    }
 
     public static String readLine() throws IOException {
         return reader.readLine();
+    }
+
+    public static String readPassword() throws IOException {
+        Console console = System.console();
+        if (console != null)
+            return new String(console.readPassword());
+        else
+            return readLine();
     }
 
     public static void printText(String[] textToPrint) {

@@ -89,12 +89,21 @@ public abstract class BaseConsoleStep<CBT extends ConfigurationBean, CCT extends
         ConsoleWizardUtils.handleInput(input, isShowNavigation());
     }
 
+
+    protected String getData(String[] promptLines, String defaultValue, String[] allowedEntries, String errorMessage, boolean isPassword) throws IOException, WizardNavigationException {
+        return ConsoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, errorMessage, isPassword);
+    }
+
     protected String getData(String[] promptLines, String defaultValue, String[] allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
-        return ConsoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, errorMessage);
+        return getData(promptLines, defaultValue, allowedEntries, errorMessage,false);
+    }
+
+    protected String getData(String[] promptLines, String defaultValue, Pattern allowedEntries, String errorMessage, boolean isPassword) throws IOException, WizardNavigationException {
+        return ConsoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, errorMessage,isPassword);
     }
 
     protected String getData(String[] promptLines, String defaultValue, Pattern allowedEntries, String errorMessage) throws IOException, WizardNavigationException {
-        return ConsoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation(), allowedEntries, errorMessage);
+        return getData(promptLines, defaultValue, allowedEntries, errorMessage,false);
     }
 
     protected void printText(List<String> textToPrint) {

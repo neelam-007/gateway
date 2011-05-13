@@ -57,7 +57,8 @@ public class SystemConfigurationWizardAuthenticationStep extends BaseConsoleStep
                 new String[] {prompt.getPrompt() + ": "},
                 "",
                 allowedPattern,
-                "*** Invalid Entry: Please enter a valid address for the " + prompt.getDescription() + "***"
+                "*** Invalid Entry: Please enter a valid address for the " + prompt.getDescription() + "***",
+                prompt.isPassword()
             );
             configBean.setAuthData(prompt,val);
         }
