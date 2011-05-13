@@ -28,6 +28,8 @@ import org.hibernate.annotations.Proxy;
 @Proxy(lazy=false)
 @Table(name="internal_user")
 public class InternalUser extends PersistentUser {
+    private static final long serialVersionUID = 3783059925599980175L;
+
     private long expiration = -1;
     protected String hashedPassword;
     /**

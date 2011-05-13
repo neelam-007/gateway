@@ -18,6 +18,7 @@ import org.hibernate.annotations.Proxy;
 @Proxy(lazy=false)
 @Table(name="password_history")
 public class PasswordChangeRecord extends PersistentEntityImp {
+    private static final long serialVersionUID = 1988465921721711468L;
 
     private InternalUser internalUser;
     private long lastChanged; //that last changed timestamp
