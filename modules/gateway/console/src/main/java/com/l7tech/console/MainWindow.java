@@ -212,9 +212,12 @@ public class MainWindow extends JFrame implements SheetHolder {
     private EventListenerList listenerList = new WeakEventListenerList();
     @SuppressWarnings({"FieldCanBeLocal"})
     private LogonListener closeWindowListener;
-    LogonListener topMenuLogonListener;
-    LicenseListener topMenuLicenseListener;
-    PermissionRefreshListener topMenuPermissionRefreshListener;
+    @SuppressWarnings({"FieldCanBeLocal"})
+    private LogonListener topMenuLogonListener;
+    @SuppressWarnings({"FieldCanBeLocal"})
+    private LicenseListener topMenuLicenseListener;
+    @SuppressWarnings({"FieldCanBeLocal"})
+    private PermissionRefreshListener topMenuPermissionRefreshListener;
     // cached credential manager
     private String connectionContext = "";
     private String connectionID = "";
@@ -3292,8 +3295,6 @@ public class MainWindow extends JFrame implements SheetHolder {
             }
         };
         Registry.getDefault().getLicenseManager().addLicenseListener(topMenuLicenseListener);
-
-
     }
 
     /**
