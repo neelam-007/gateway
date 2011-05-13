@@ -70,7 +70,7 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
             if ( existingElements.length > 0 ) {
                 Document document = message.getXmlKnob().getDocumentWritable();
                 for( Element e : existingElements ) {
-                    if ( document == e.getOwnerDocument() ) {
+                    if ( document == e.getOwnerDocument() && e.getParentNode() != null ) {
                         e.getParentNode().removeChild(e);
                     }
                 }
