@@ -766,7 +766,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         http.setHttpBased(true);
         http.setSupportsHardwiredServiceResolution(true);
         http.setSupportsSpecifiedContentType(true);
-        http.setSupportedEndpoints(EnumSet.of(SsgConnector.Endpoint.MESSAGE_INPUT, SsgConnector.Endpoint.OTHER_SERVLETS, SsgConnector.Endpoint.NODE_COMMUNICATION, SsgConnector.Endpoint.PC_NODE_API));
+        http.setSupportedEndpoints(EnumSet.of(SsgConnector.Endpoint.MESSAGE_INPUT, SsgConnector.Endpoint.OTHER_SERVLETS, SsgConnector.Endpoint.NODE_COMMUNICATION));
         ssgConnectorManager.registerTransportProtocol(http, this);
 
         final TransportDescriptor https = new TransportDescriptor("HTTPS", true);

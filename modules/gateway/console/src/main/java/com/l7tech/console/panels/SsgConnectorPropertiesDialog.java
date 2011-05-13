@@ -340,10 +340,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, null);
         inputValidator.validateWhenDocumentChanges(nameField);
-        inputValidator.constrainTextFieldToNumberRange("Port", portField, 1025, 65535);
+        inputValidator.constrainTextFieldToNumberRange("Port", portField, 1025L, 65535L );
         inputValidator.validateWhenDocumentChanges(portField);
-        inputValidator.constrainTextFieldToNumberRange("Port Range Start", portRangeStartField, 0, 65535);
-        inputValidator.constrainTextFieldToNumberRange("Port Range Count", portRangeCountField, 1, 65535);
+        inputValidator.constrainTextFieldToNumberRange("Port Range Start", portRangeStartField, 0L, 65535L );
+        inputValidator.constrainTextFieldToNumberRange("Port Range Count", portRangeCountField, 1L, 65535L );
         inputValidator.constrainTextField(portRangeCountField, new InputValidator.ComponentValidationRule(portRangeCountField) {
             @Override
             public String getValidationError() {
@@ -534,6 +534,13 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private void initializeInterfaceComboBox() {
         populateInterfaceComboBox(null);
 
+        final ActionListener commonActionListener = new ActionListener(){
+            @Override
+            public void actionPerformed( final ActionEvent e ) {
+                enableOrDisableEndpoints();
+            }
+        };
+
         if(isCluster) {
             interfaceComboBox.addActionListener(new ActionListener() {
                 @Override
@@ -544,8 +551,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                                 "With a cluster, using an interface identified by a raw IP address can have unexpected effects.",
                                 "Possible Input Error", JOptionPane.ERROR_MESSAGE);
                     }
+                    commonActionListener.actionPerformed( evt );
                 }
             });
+        } else {
+            interfaceComboBox.addActionListener( commonActionListener );
         }
     }
 
@@ -600,6 +610,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
     private boolean isThreadPoolProto(TransportDescriptor proto) {
         return proto != null && proto.isSupportsPrivateThreadPool();
+    }
+
+    private boolean isLocalhostListener( final String address ) {
+        return INTERFACE_ANY.equals( address ) ||
+                InetAddressUtil.isLoopbackAddress( address ) ||
+                InetAddressUtil.isAnyHostAddress( address );
     }
 
     private void enableOrDisableComponents() {
@@ -705,6 +721,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private void enableOrDisableEndpoints() {
         TransportDescriptor proto = getSelectedProtocol();
         boolean ssl = isSslProto(proto);
+        boolean local = isLocalhostListener( (String) interfaceComboBox.getSelectedItem() );
 
         Set<Endpoint> endpoints = proto == null ? Collections.<Endpoint>emptySet() : proto.getSupportedEndpoints();
         disableOrRestoreEndpointCheckBox(endpoints, SsgConnector.Endpoint.MESSAGE_INPUT, cbEnableMessageInput);
@@ -721,7 +738,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         if (!ssl) {
-            setEnableAndSelect(false, false, "Disabled because it requires a TLS-based transport", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableEsmRemote, cbEnableNode);
+            setEnableAndSelect(false, false, "Disabled because it requires a TLS-based transport", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableEsmRemote, cbEnableNode, cbEnablePCAPI);
+        }
+
+        if (!local) {
+            setEnableAndSelect(false, false, "Disabled because it requires listening on the localhost address", cbEnablePCAPI);
         }
 
         if (!cbEnableSsmRemote.isSelected()) {
@@ -873,8 +894,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         setEndpointList(connector.getEndpoints());
 
         String hardwiredServiceIdStr = connector.getProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID);
-        long hardwiredServiceId = hardwiredServiceIdStr != null && hardwiredServiceIdStr.trim().length() > 0 ? Long.parseLong(hardwiredServiceIdStr) : -1;
-        boolean usingHardwired = serviceNameComboBox.populateAndSelect(hardwiredServiceId != -1, hardwiredServiceId);
+        long hardwiredServiceId = hardwiredServiceIdStr != null && hardwiredServiceIdStr.trim().length() > 0 ? Long.parseLong(hardwiredServiceIdStr) : -1L;
+        boolean usingHardwired = serviceNameComboBox.populateAndSelect(hardwiredServiceId != -1L, hardwiredServiceId);
         hardwiredServiceCheckBox.setSelected(usingHardwired);
 
         String ctype = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
