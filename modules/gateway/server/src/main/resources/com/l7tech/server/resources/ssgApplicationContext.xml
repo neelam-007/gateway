@@ -1020,6 +1020,7 @@
         <property name="entityFinder" ref="entityFinder"/>
         <property name="ssgKeyStoreManager" ref="ssgKeyStoreManager"/>
         <property name="jdbcConnectionManager" ref="jdbcConnectionManager"/>
+        <property name="config" ref="serverConfig"/>
     </bean>
 
     <!-- server side policy filter manager  -->

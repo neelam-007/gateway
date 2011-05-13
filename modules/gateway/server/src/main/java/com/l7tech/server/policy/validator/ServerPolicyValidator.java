@@ -19,6 +19,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -38,6 +39,7 @@ import com.l7tech.server.jdbc.JdbcConnectionManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.xml.sax.InputSource;
@@ -66,6 +68,7 @@ import java.util.logging.Logger;
  * <p/>
  * 3.     for each JMS routing assertion, make sure referenced endpoint exists
  * <p/>
+ * 4.     Various other rules, which have been added over time. See {@link ServerPolicyValidator#validateAssertion(Assertion, ServerPolicyValidator.PathContext, PolicyValidationContext, PolicyValidatorResult, AssertionPath)}
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -103,6 +106,7 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     private EntityFinder entityFinder;
     private SsgKeyStoreManager ssgKeyStoreManager;
     private JdbcConnectionManager jdbcConnectionManager;
+    private Config config;
 
     public ServerPolicyValidator( final GuidBasedEntityManager<Policy> policyFinder,
                                   final PolicyPathBuilderFactory pathBuilderFactory ) {
@@ -388,6 +392,10 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         if ( assertion instanceof JdbcConnectionable ) {
             checkJdbcConnection((JdbcConnectionable) assertion, path, result);
         }
+
+        if ( assertion instanceof HttpDigest) {
+            checkHttpDigestConfiguration((HttpDigest) assertion, path, result);
+        }
     }
 
     private boolean checkGlobalSchemaExists(GlobalResourceInfo globalResourceInfo) {
@@ -555,6 +563,17 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         }
     }
 
+    private void checkHttpDigestConfiguration(final HttpDigest httpDigestAssertion,
+                                              final AssertionPath ap,
+                                              final PolicyValidatorResult r) {
+
+        final boolean isDigestEnabled = config.getBooleanProperty("httpDigest.enable", false);
+        if ( !isDigestEnabled ) {
+            r.addWarning(new PolicyValidatorResult.Warning(httpDigestAssertion,
+                    "Credentials gathered by this assertion are unlikely to be authenticated by any identity provider because no provider is currently configured to store MD5 password hashes.", null));
+        }
+    }
+
     /**
      * This is synchronized just in case, i don't expect this to be invoked from multiple simultaneous threads.
      * Add more return values as needed.
@@ -648,7 +667,6 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
         return output;
     }
 
-
     public void setJmsEndpointManager(JmsEndpointManager jmsEndpointManager) {
         this.jmsEndpointManager = jmsEndpointManager;
     }
@@ -675,6 +693,10 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
 
     public void setJdbcConnectionManager( final JdbcConnectionManager jdbcConnectionManager ) {
         this.jdbcConnectionManager = jdbcConnectionManager;
+    }
+
+    public void setConfig(Config config) {
+        this.config = config;
     }
 
     @Override
