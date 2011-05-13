@@ -5,21 +5,19 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.boot.ShutdownWatcher;
+import com.l7tech.server.cluster.DatabaseReplicationMonitor;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.node.NodeApi;
-import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.audit.AuditRecordManager;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.SyspropUtil;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
@@ -66,9 +64,9 @@ public class NodeApiImpl implements NodeApi {
         checkRequest();
         logger.fine("getProperty");
         if (propertyId.equals(BuiltinMonitorables.AUDIT_SIZE.getName())) {
-            return Long.toString(auditRecordManager.findCount(new AuditSearchCriteria.Builder().build()));
+            return Integer.toString(auditRecordManager.findCount(new AuditSearchCriteria.Builder().build()));
         } else if (propertyId.equals(BuiltinMonitorables.DATABASE_REPLICATION_DELAY.getName())) {
-            return "41"; //TODO [steve] implement property for database replication delay
+            return Long.toString(databaseReplicationMonitor.getReplicationDelay());
         } else {
             throw new UnsupportedPropertyException("propertyId");
         }
@@ -79,16 +77,13 @@ public class NodeApiImpl implements NodeApi {
     private static final Logger logger = Logger.getLogger(NodeApiImpl.class.getName());
 
     @Inject
-    private ServerConfig serverConfig;
-
-    @Inject
-    private SsgConnectorManager ssgConnectorManager;
-
-    @Inject
     private ShutdownWatcher shutdowner;
 
     @Inject
     private AuditRecordManager auditRecordManager;
+
+    @Inject
+    private DatabaseReplicationMonitor databaseReplicationMonitor;
 
     @Resource
     private WebServiceContext wscontext; // Injected by CXF to get access to request metadata (e.g. HttpServletRequest)

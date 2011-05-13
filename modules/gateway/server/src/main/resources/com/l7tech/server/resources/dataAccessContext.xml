@@ -98,6 +98,20 @@
         </property>
     </bean>
 
+    <!-- Direct unpooled datasource for the primary database -->
+    <bean id="primaryDbDataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <constructor-arg index="0" value="#{hibernateProperties['l7.database.main.url']}"/>
+        <constructor-arg index="1" value="#{hibernateProperties['hibernate.connection.username']}"/>
+        <constructor-arg index="2" value="#{hibernateProperties['hibernate.connection.password']}"/>
+    </bean>
+
+    <!-- Direct unpooled datasource for the secondary database -->
+    <bean id="secondaryDbDataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <constructor-arg index="0" value="#{hibernateProperties['l7.database.failover.url']}"/>
+        <constructor-arg index="1" value="#{hibernateProperties['hibernate.connection.username']}"/>
+        <constructor-arg index="2" value="#{hibernateProperties['hibernate.connection.password']}"/>
+    </bean>
+
     <!--
     Default Hibernate Session Manager
     -->

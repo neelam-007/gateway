@@ -416,6 +416,13 @@
                                 <value>admin.esmInterfaceTag</value>
                             </list>
                         </entry>
+                        <entry key="databaseReplicationMonitor">
+                            <list>
+                                <value>db.replicationDelayCheckInterval</value>
+                                <value>db.replicationDelayThreshold</value>
+                                <value>db.replicationErrorAuditInterval</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -1369,6 +1376,24 @@
             </bean>
         </constructor-arg>
         <constructor-arg index="4" ref="clusterNodeId"/>
+    </bean>
+    <bean id="databaseReplicationMonitor" class="com.l7tech.server.cluster.DatabaseReplicationMonitor" init-method="init">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterMaster"/>
+        <constructor-arg index="2" value="#{hibernateProperties['l7.database.main.description']}"/>
+        <constructor-arg index="3" ref="primaryDbDataSource"/>
+        <constructor-arg index="4" value="#{hibernateProperties['l7.database.failover.description']}"/>
+        <constructor-arg index="5" ref="secondaryDbDataSource"/>
+        <constructor-arg index="6" ref="lazyDataSource"/>
+        <constructor-arg index="7" ref="auditorFactory"/>
+        <constructor-arg index="8" ref="applicationEventPublisher"/>
+        <constructor-arg index="9" ref="clusterNodeId"/>
+        <constructor-arg index="10" value="#{hibernateProperties['node.db.clusterType']}"/>
+        <constructor-arg index="11" >
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="DatabaseReplicationMonitor"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <!-- Dependency ensures system.properties file is processed first -->

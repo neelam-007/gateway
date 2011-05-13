@@ -143,11 +143,17 @@ public class SystemMessages extends Messages {
     public static final M UDDI_GIF_SCHEME_NOT_AVAILABLE         = m(2297, Level.WARNING, "Service is configured to publish a GIF ''{0}'' endpoint which is no longer available on the Gateway. UDDI is now out of date. To fix either add / enable the listener or republish the GIF endpoint.");
     public static final M UDDI_NOTIFICATION_ENDPOINT_UPDATED    = m(2298, Level.INFO,    "Updated context variable service.defaultRoutingURL for published service #({0}) with updated endpoint from UDDI ''{1}'' for business service ''{2}'', wsdl:port ''{3}'' for UDDI registry ''{4}''.");
     public static final M UDDI_ORIGINAL_SERVICE_INVALIDATED     = m(2299, Level.WARNING, "Original Business Service ''{0}'' in UDDI Registry ''{1}'' is no longer eligible to be monitored. Published Service #({2}) can no longer be under UDDI Control.");
+
     // Caches
     public static final M URL_OBJECT_CACHE_REUSE = m( 2320, Level.WARNING, "Reusing previously-cached copy of remote {0}: URL {1}: {2}" );
 
     //audit-message-filter and audit-viewer policies
     public static final M AUDIT_MESSAGE_FILTER_POLICY_FAILED = m( 2360, Level.WARNING, "{0}. {1} message was not audited." );
+
+    // Monitoring
+    public static final M MONITOR_DB_REPLICATION_ERROR       = m( 2380, Level.WARNING, "Error accessing host/database {0}: {1}" );
+    public static final M MONITOR_DB_REPLICATION_FAILED      = m( 2381, Level.WARNING, "Replication failing for host/database {0}: {1}" );
+    public static final M MONITOR_DB_REPLICATION_RECOVERED   = m( 2382, Level.WARNING, "Replication recovered for host/database {0}" );
 
     // MAX -                                      m(2999
 }

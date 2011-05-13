@@ -36,6 +36,21 @@ UPDATE cluster_info set esm_address = address;
 ALTER TABLE cluster_info ALTER COLUMN esm_address DROP DEFAULT;
 
 --
+-- Table for replication monitoring
+--
+DROP TABLE IF EXISTS replication_status;
+CREATE TABLE replication_status (
+  objectid bigint(20) NOT NULL,
+  sequence bigint(20) NOT NULL DEFAULT 1,
+  updated bigint(20) NOT NULL DEFAULT 0,
+  nodeid varchar(32),
+  delay bigint(20) NOT NULL DEFAULT 0,
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+INSERT INTO replication_status (objectid, nodeid) values (1, null);
+
+--
 --
 -- Reenable FK at very end of script
 --
