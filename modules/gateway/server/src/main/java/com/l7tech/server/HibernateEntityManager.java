@@ -5,10 +5,7 @@ import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.hibernate.*;
-import org.hibernate.criterion.Criterion;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.Junction;
+import org.hibernate.criterion.*;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
@@ -172,9 +169,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                         criteria.add( restriction );
                     }
 
-                    final ScrollableResults results = criteria.scroll( ScrollMode.SCROLL_SENSITIVE );
-                    results.last();
-                    return results.getRowNumber() + 1;
+                    criteria.setProjection( Projections.rowCount() );
+                    return (Integer) criteria.uniqueResult();
                 }
             });
         } catch (Exception e) {
