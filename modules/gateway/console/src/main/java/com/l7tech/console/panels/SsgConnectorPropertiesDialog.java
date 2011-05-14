@@ -721,6 +721,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private void enableOrDisableEndpoints() {
         TransportDescriptor proto = getSelectedProtocol();
         boolean ssl = isSslProto(proto);
+        boolean sslWithCert = ssl && clientAuthComboBox.getSelectedItem() != CA_NONE;
         boolean local = isLocalhostListener( (String) interfaceComboBox.getSelectedItem() );
 
         Set<Endpoint> endpoints = proto == null ? Collections.<Endpoint>emptySet() : proto.getSupportedEndpoints();
@@ -738,7 +739,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         if (!ssl) {
-            setEnableAndSelect(false, false, "Disabled because it requires a TLS-based transport", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableEsmRemote, cbEnableNode, cbEnablePCAPI);
+            setEnableAndSelect(false, false, "Disabled because it requires a TLS-based transport", cbEnableSsmApplet, cbEnableSsmRemote, cbEnableNode, cbEnablePCAPI);
+        }
+
+        if (!sslWithCert) {
+            setEnableAndSelect(false, false, "Disabled because it requires a TLS-based transport supporting client certificate authentication", cbEnableEsmRemote);
         }
 
         if (!local) {
