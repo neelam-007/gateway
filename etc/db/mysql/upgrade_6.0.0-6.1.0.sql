@@ -28,6 +28,9 @@ END
 //
 delimiter ;
 
+-- "Sequence" must not take part in transactions
+ALTER TABLE hibernate_unique_key ENGINE MyISAM;
+
 --
 -- Cluster info updated to support ESM IP
 --

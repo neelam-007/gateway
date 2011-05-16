@@ -11,7 +11,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS hibernate_unique_key;
 CREATE TABLE hibernate_unique_key (
   next_hi int(11) default NULL
-) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+) ENGINE=MyISAM DEFAULT CHARACTER SET utf8;
 
 --
 -- Dumping data for table 'hibernate_unique_key'
