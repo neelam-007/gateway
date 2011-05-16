@@ -325,6 +325,7 @@
                             <list>
                                 <value>auditArchiverFtpConfig</value>
                                 <value>auditArchiverFtpMaxUploadFileSize</value>
+                                <value>auditArchiverFtpFileprefix</value>
                             </list>
                         </entry>
                         <entry key="kerberosConfig">
