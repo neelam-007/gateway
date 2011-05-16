@@ -101,7 +101,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         else if (X9ObjectIdentifiers.id_dsa.getId().equals(alg))
             alg = "DSA";
         else if (X9ObjectIdentifiers.ecdsa_with_SHA1.getId().equals(alg) ||
-                 X9ObjectIdentifiers.ellipticCurve.equals(alg) ||
+                 X9ObjectIdentifiers.ellipticCurve.getId().equals(alg) ||
                  X9ObjectIdentifiers.id_ecPublicKey.getId().equals(alg))
             alg = "EC";
 

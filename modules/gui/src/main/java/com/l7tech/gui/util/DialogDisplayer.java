@@ -148,9 +148,7 @@ public class DialogDisplayer {
         SheetHolder holder = getSheetHolderAncestor(dialog.getParent());
         if (holder != null) {
             if (mustShowNative(dialog, holder)) {
-                if (dialog != null) {
-                    dialog.pack();
-                }
+                dialog.pack();
                 return;
             }
             final JLayeredPane layers = holder.getLayeredPane();
@@ -172,9 +170,7 @@ public class DialogDisplayer {
             return;
         }
 
-        if (dialog != null) {
-            dialog.pack();
-        }
+        dialog.pack();
     }
 
     private static boolean mustShowNative(RootPaneContainer dialog, SheetHolder holder) {

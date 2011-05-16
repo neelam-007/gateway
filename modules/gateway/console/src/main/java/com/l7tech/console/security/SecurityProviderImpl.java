@@ -290,7 +290,7 @@ public class SecurityProviderImpl extends SecurityProvider
                             }
                             else if (ExceptionUtils.causedBy(e,RemoteConnectFailureException.class)){
                                 ConnectException causedBy = ExceptionUtils.getCauseIfCausedBy(e, ConnectException.class);
-                                final String logMsg = causedBy!=null||causedBy.getMessage() != null? causedBy.getMessage(): msg;
+                                final String logMsg = causedBy!=null&&causedBy.getMessage() != null? causedBy.getMessage(): msg;
                                 logger.log(Level.WARNING, logMsg, ExceptionUtils.getDebugException(e));
                             }
                             else

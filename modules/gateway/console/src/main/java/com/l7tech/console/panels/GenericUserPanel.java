@@ -652,7 +652,7 @@ public class GenericUserPanel extends UserPanel {
         expiresLabel.setEnabled(neverExpire);
         expireStateLabel.setVisible(!notExpired && !neverExpire);
         enabledCheckBox.setEnabled(neverExpire || notExpired);
-        rolesPanel.enableDisableState(enabledCheckBox != null && enabledCheckBox.isSelected() && (neverExpire || notExpired));
+        rolesPanel.enableDisableState(enabledCheckBox.isSelected() && (neverExpire || notExpired));
     }
 
     /**
