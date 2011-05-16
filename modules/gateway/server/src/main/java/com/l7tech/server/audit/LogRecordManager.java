@@ -163,7 +163,7 @@ public class LogRecordManager {
                 }
             }
             catch(Exception e) {
-                logger.log(Level.WARNING, "Unexpected error during retrieval of logs from remote node '"+clusterNodeInfo.getNodeIdentifier()+"'", e);
+                logger.log(Level.WARNING, "Unexpected error during retrieval of logs from remote node '"+clusterNodeInfo.getNodeIdentifier()+"'", ExceptionUtils.getDebugException(e));
             }
         }
 
