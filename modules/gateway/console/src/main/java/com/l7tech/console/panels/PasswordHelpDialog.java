@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -51,7 +52,7 @@ public class PasswordHelpDialog extends JDialog {
                     passwordHelpMsg = "No password policy description available for current admin user.";
             } catch (Exception e) {
                 passwordHelpMsg = "Error getting password policy description";
-                logger.log(Level.WARNING, passwordHelpMsg, e);
+                logger.log(Level.WARNING, passwordHelpMsg, ExceptionUtils.getDebugException(e));
             }
         }
         editorPane.setText(passwordHelpMsg);
