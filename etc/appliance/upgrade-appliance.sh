@@ -55,9 +55,21 @@ chmod 660 /opt/SecureSpan/Controller/etc/*.p12 2>/dev/null
 find /opt/SecureSpan/Controller/etc -user gateway -exec chown layer7 '{}' \;
 find /opt/SecureSpan/Controller/etc -group gateway -exec chgrp layer7 '{}' \;
 
+# Update replication configuration (even if replication is not enabled)
+MY_CNF="/etc/my.cnf"
+if [ -f "${MY_CNF}" ] ; then
+    grep '^slave-net-timeout=' "${MY_CNF}" &>/dev/null
+    if [ ${?} -eq 0 ] ; then
+        grep '^slave_exec_mode=' "${MY_CNF}" &>/dev/null
+        if [ ${?} -ne 0 ] ; then
+            echo "Updating ${MY_CNF} replication configuration (slave_exec_mode=IDEMPOTENT)"
+            sed -i "/^slave-net-timeout=/a slave_exec_mode=IDEMPOTENT" "${MY_CNF}"
+        fi
+    fi
+fi
+
 # Ensure that configuration for a database with binary logging enabled will
 # permit creation of the "next_hi" database identifier generator function.
-MY_CNF="/etc/my.cnf"
 if [ -f "${MY_CNF}" ] ; then
     grep '^log-bin=' "${MY_CNF}" &>/dev/null
     if [ ${?} -eq 0 ] ; then
