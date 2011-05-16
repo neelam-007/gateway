@@ -170,7 +170,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     }
 
                     criteria.setProjection( Projections.rowCount() );
-                    return (Integer) criteria.uniqueResult();
+                    return ((Number) criteria.uniqueResult()).intValue();
                 }
             });
         } catch (Exception e) {
