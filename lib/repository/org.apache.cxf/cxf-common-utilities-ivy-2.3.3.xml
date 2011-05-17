@@ -79,7 +79,7 @@
 			<exclude org="javax.activation" module="activation" name="*" type="*" ext="*" conf="" matcher="exact"/>
 			<exclude org="activation" module="activation" name="*" type="*" ext="*" conf="" matcher="exact"/>
 		</dependency>
-		<dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3.8" force="true" conf="test->runtime(*),master(*)">
+		<dependency org="com.sun.xml.messaging.saaj" name="saaj-impl" rev="1.3.3" force="true" conf="test->runtime(*),master(*)">
 			<exclude org="javax.activation" module="activation" name="*" type="*" ext="*" conf="" matcher="exact"/>
 			<exclude org="activation" module="activation" name="*" type="*" ext="*" conf="" matcher="exact"/>
 		</dependency>
@@ -94,7 +94,7 @@
 		<override org="com.sun.xml.bind" module="jaxb-impl" matcher="exact" rev="2.1.13"/>
 		<override org="com.sun.xml.bind" module="jaxb-xjc" matcher="exact" rev="2.1.13"/>
 		<override org="com.sun.xml.fastinfoset" module="FastInfoset" matcher="exact" rev="1.2.7"/>
-		<override org="com.sun.xml.messaging.saaj" module="saaj-impl" matcher="exact" rev="1.3.8"/>
+		<override org="com.sun.xml.messaging.saaj" module="saaj-impl" matcher="exact" rev="1.3.3"/>
 		<override org="com.sun.xml.parsers" module="jaxp-ri" matcher="exact" rev="1.4.2"/>
 		<override org="httpunit" module="httpunit" matcher="exact" rev="1.6.2"/>
 		<override org="javax.xml.bind" module="jaxb-api" matcher="exact" rev="2.1"/>
