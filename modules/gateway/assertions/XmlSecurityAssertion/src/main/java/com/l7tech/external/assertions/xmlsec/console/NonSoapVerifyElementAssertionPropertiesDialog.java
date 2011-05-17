@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 
 public class NonSoapVerifyElementAssertionPropertiesDialog extends NonSoapSecurityAssertionDialog<NonSoapVerifyElementAssertion> {
 
-    private static final Logger logger = Logger.getLogger( NonSoapVerifyElementAssertionPropertiesDialog.class.getName() );
+    private static final Logger logger = Logger.getLogger(NonSoapVerifyElementAssertionPropertiesDialog.class.getName());
 
     // For now, we have nothing to configure except the XPath, so we just let our superclass handle everything
     @SuppressWarnings({"UnusedDeclaration"})
@@ -60,25 +60,25 @@ public class NonSoapVerifyElementAssertionPropertiesDialog extends NonSoapSecuri
 
     protected JPanel createExtraPanel() {
 
-        RunOnChangeListener stateUpdateListener = new RunOnChangeListener( new Runnable(){
+        RunOnChangeListener stateUpdateListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
                 updateState();
             }
-        } );
+        });
 
-        keyInfoOverrideCheckBox.addActionListener( stateUpdateListener );
-        certExpectKeyInfoRadioButton.addActionListener( stateUpdateListener );
-        certSelectRadioButton.addActionListener( stateUpdateListener );
-        certLookupRadioButton.addActionListener( stateUpdateListener );
+        keyInfoOverrideCheckBox.addActionListener(stateUpdateListener);
+        certExpectKeyInfoRadioButton.addActionListener(stateUpdateListener);
+        certSelectRadioButton.addActionListener(stateUpdateListener);
+        certLookupRadioButton.addActionListener(stateUpdateListener);
 
-        selectButton.addActionListener( new ActionListener(){
+        selectButton.addActionListener(new ActionListener() {
             @Override
-            public void actionPerformed( final ActionEvent e ) {
+            public void actionPerformed(final ActionEvent e) {
                 doSelectRecipientTrustedCertificate();
             }
-        } );
-        lookupCertificateTextField.getDocument().addDocumentListener( stateUpdateListener );
+        });
+        lookupCertificateTextField.getDocument().addDocumentListener(stateUpdateListener);
 
         Utilities.enableGrayOnDisabled(addIdAttrButton);
         Utilities.enableGrayOnDisabled(removeIdAttrButton);
@@ -160,17 +160,17 @@ public class NonSoapVerifyElementAssertionPropertiesDialog extends NonSoapSecuri
 
     private void doSelectRecipientTrustedCertificate() {
         CertSearchPanel sp = new CertSearchPanel(this, false, true);
-        sp.addCertListener( new CertListenerAdapter(){
+        sp.addCertListener(new CertListenerAdapter() {
             @Override
-            public void certSelected( final CertEvent ce ) {
+            public void certSelected(final CertEvent ce) {
                 TrustedCert cert = ce.getCert();
                 selectedVerifyCertificateOid = cert.getOid();
-                selectedCertificateNameTextField.setText( cert.getName() );
-                selectedCertificateSubjectTextField.setText( cert.getCertificate().getSubjectDN().toString() );
-                selectedCertificateIssuerTextField.setText( cert.getCertificate().getIssuerDN().toString() );
-                selectedCertificateNameTextField.setCaretPosition( 0 );
-                selectedCertificateSubjectTextField.setCaretPosition( 0 );
-                selectedCertificateIssuerTextField.setCaretPosition( 0 );
+                selectedCertificateNameTextField.setText(cert.getName());
+                selectedCertificateSubjectTextField.setText(cert.getCertificate().getSubjectDN().toString());
+                selectedCertificateIssuerTextField.setText(cert.getCertificate().getIssuerDN().toString());
+                selectedCertificateNameTextField.setCaretPosition(0);
+                selectedCertificateSubjectTextField.setCaretPosition(0);
+                selectedCertificateIssuerTextField.setCaretPosition(0);
                 updateState();
             }
         });
@@ -187,16 +187,16 @@ public class NonSoapVerifyElementAssertionPropertiesDialog extends NonSoapSecuri
             certSelectRadioButton.setSelected(true);
             keyInfoOverrideCheckBox.setSelected(assertion.isIgnoreKeyInfo());
             selectedVerifyCertificateOid = assertion.getVerifyCertificateOid();
-            
+
             // fill out the selected cert details
             try {
-                TrustedCert certificate = Registry.getDefault().getTrustedCertManager().findCertByPrimaryKey( selectedVerifyCertificateOid );
-                selectedCertificateNameTextField.setText( certificate==null ? "<Not Found>" : certificate.getName() );
-                selectedCertificateSubjectTextField.setText( certificate==null ? "<Not Found>" : certificate.getSubjectDn() );
-                selectedCertificateIssuerTextField.setText( certificate==null ? "<Not Found>" : certificate.getIssuerDn() );
-                selectedCertificateNameTextField.setCaretPosition( 0 );
-                selectedCertificateSubjectTextField.setCaretPosition( 0 );
-                selectedCertificateIssuerTextField.setCaretPosition( 0 );
+                TrustedCert certificate = Registry.getDefault().getTrustedCertManager().findCertByPrimaryKey(selectedVerifyCertificateOid);
+                selectedCertificateNameTextField.setText(certificate == null ? "<Not Found>" : certificate.getName());
+                selectedCertificateSubjectTextField.setText(certificate == null ? "<Not Found>" : certificate.getSubjectDn());
+                selectedCertificateIssuerTextField.setText(certificate == null ? "<Not Found>" : certificate.getIssuerDn());
+                selectedCertificateNameTextField.setCaretPosition(0);
+                selectedCertificateSubjectTextField.setCaretPosition(0);
+                selectedCertificateIssuerTextField.setCaretPosition(0);
             } catch (FindException e) {
                 logger.warning("Could not find the specified certificate in the trust store. " + ExceptionUtils.getMessage(e));
             }
@@ -253,21 +253,22 @@ public class NonSoapVerifyElementAssertionPropertiesDialog extends NonSoapSecuri
             ListModel mod = customIdAttrListModel;
             final int modSize = mod.getSize();
             for (int i = 0; i < modSize; i++) {
-                ids.add((FullQName)mod.getElementAt(i));
+                ids.add((FullQName) mod.getElementAt(i));
             }
 
             assertion.setCustomIdAttrs(ids.toArray(new FullQName[ids.size()]));
         } else {
             assertion.setCustomIdAttrs(null);
         }
-        
+
         return assertion;
     }
 
     /**
      * Update the state of any/all components based on UI events
      */
-    private void updateState() {
+    @Override
+    protected void updateState() {
         keyInfoOverrideCheckBox.setEnabled(certSelectRadioButton.isSelected() || certLookupRadioButton.isSelected());
         lookupCertificateTextField.setEnabled(certLookupRadioButton.isSelected());
         selectButton.setEnabled(certSelectRadioButton.isSelected());
@@ -279,12 +280,12 @@ public class NonSoapVerifyElementAssertionPropertiesDialog extends NonSoapSecuri
 
         boolean canOk =
                 (certSelectRadioButton.isSelected() && !selectedCertificateNameTextField.getText().isEmpty()) ||
-                (certLookupRadioButton.isSelected() && !lookupCertificateTextField.getText().isEmpty()) ||
-                (certExpectKeyInfoRadioButton.isSelected())  && inputsValid();
+                        (certLookupRadioButton.isSelected() && !lookupCertificateTextField.getText().isEmpty()) ||
+                        (certExpectKeyInfoRadioButton.isSelected()) && inputsValid();
 
         if (customIds && customIdAttrList.getModel().getSize() < 1)
             canOk = false;
 
-        getOkButton().setEnabled( !isReadOnly() && canOk );
+        getOkButton().setEnabled(!isReadOnly() && canOk);
     }
 }

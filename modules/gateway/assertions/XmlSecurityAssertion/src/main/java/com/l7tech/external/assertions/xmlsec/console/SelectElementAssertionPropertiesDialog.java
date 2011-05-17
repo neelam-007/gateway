@@ -31,19 +31,26 @@ public class SelectElementAssertionPropertiesDialog extends NonSoapSecurityAsser
         variableNameField = new TargetVariablePanel();
         variableNamePanel.setLayout(new BorderLayout());
         variableNamePanel.add(variableNameField, BorderLayout.CENTER);
-        variableNameField.addChangeListener(new ChangeListener(){
+        variableNameField.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                getOkButton().setEnabled(!isReadOnly() && variableNameField.isEntryValid() && inputsValid());
+                updateState();
             }
         });
+    }
+
+    @Override
+    protected void updateState() {
+        getOkButton().setEnabled(!isReadOnly() && variableNameField.isEntryValid() && inputsValid());
     }
 
     private JPanel createExtraPanel() {
         return contentPane;
     }
 
-    private String nonull(String s) { return s == null ? "" : s; }
+    private String nonull(String s) {
+        return s == null ? "" : s;
+    }
 
     @Override
     public SelectElementAssertion getData(SelectElementAssertion assertion) throws ValidationException {
@@ -55,7 +62,7 @@ public class SelectElementAssertionPropertiesDialog extends NonSoapSecurityAsser
     @Override
     public void setData(SelectElementAssertion assertion) {
         variableNameField.setVariable(nonull(assertion.getElementVariable()));
-        variableNameField.setAssertion(assertion,getPreviousAssertion());
+        variableNameField.setAssertion(assertion, getPreviousAssertion());
 
         super.setData(assertion);
     }

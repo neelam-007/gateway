@@ -37,12 +37,12 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
      * Subclasses must call {@link #initComponents()} and {@link #setData}, and may override {@link #createPropertyPanel()}
      * to add additional components besides the XPath editor controls.
      *
-     * @param owner      owner window.  required
-     * @param assertion  assertion bean to edit.  required
+     * @param owner     owner window.  required
+     * @param assertion assertion bean to edit.  required
      */
     public NonSoapSecurityAssertionDialog(Window owner, AT assertion) {
         //noinspection unchecked
-        super((Class<AT>)assertion.getClass(), owner, assertion.getPropertiesDialogTitle(), true);
+        super((Class<AT>) assertion.getClass(), owner, assertion.getPropertiesDialogTitle(), true);
         editXpathButton.addActionListener(makeEditXpathAction());
         setXpathExpression(null);
         xpathExpressionLabel.setText("Element(s) to " + assertion.getVerb() + " XPath:");
@@ -51,34 +51,34 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
         defaultXpathExpression = new XpathExpression(assertion.getDefaultXpathExpressionString(), assertion.getDefaultNamespaceMap());
 
 
-
         variablePrefixPanel.setLayout(new BorderLayout());
-        if(assertion instanceof NonSoapCheckVerifyResultsAssertion)
-        {
+        if (assertion instanceof NonSoapCheckVerifyResultsAssertion) {
             variablePrefixTextField = new JTextField();
             variablePrefixPanel.add(variablePrefixTextField, BorderLayout.CENTER);
-            variablePrefixTextField.addActionListener(new RunOnChangeListener(){
+            variablePrefixTextField.addActionListener(new RunOnChangeListener() {
                 @Override
                 public void run() {
-                    getOkButton().setEnabled(!isReadOnly() && inputsValid());
+                    updateState();
                 }
             });
-        }
-        else
-        {
+        } else {
             variablePrefixField = new TargetVariablePanel();
             variablePrefixPanel.setLayout(new BorderLayout());
             variablePrefixPanel.add(variablePrefixField, BorderLayout.CENTER);
-            variablePrefixField.addChangeListener(new ChangeListener(){
+            variablePrefixField.addChangeListener(new ChangeListener() {
                 @Override
                 public void stateChanged(ChangeEvent e) {
-                    getOkButton().setEnabled(!isReadOnly() && inputsValid());
+                    updateState();
                 }
             });
 
         }
 
         this.assertion = assertion;
+    }
+
+    protected void updateState() {
+        getOkButton().setEnabled(!isReadOnly() && inputsValid());
     }
 
     protected ActionListener makeEditXpathAction() {
@@ -121,12 +121,16 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
         return controlsBelowXpath;
     }
 
-    /** @return the current XpathExpression in the view */
+    /**
+     * @return the current XpathExpression in the view
+     */
     public XpathExpression getXpathExpression() {
         return xpathExpression;
     }
 
-    /** @param xpathExpression the XpathExpression to change the view to */
+    /**
+     * @param xpathExpression the XpathExpression to change the view to
+     */
     public void setXpathExpression(XpathExpression xpathExpression) {
         this.xpathExpression = xpathExpression;
         final String label = xpathExpression == null ? "<Not Yet Set>" : xpathExpression.getExpression();
@@ -144,15 +148,13 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     @Override
     public void setData(AT assertion) {
         setXpathExpression(assertion.getXpathExpression());
-        if (assertion instanceof NonSoapCheckVerifyResultsAssertion)
-        {
+        if (assertion instanceof NonSoapCheckVerifyResultsAssertion) {
             variablePrefixTextField.setText(((NonSoapCheckVerifyResultsAssertion) assertion).getVariablePrefix());
-        }
-        else if (assertion instanceof HasVariablePrefix) {
+        } else if (assertion instanceof HasVariablePrefix) {
             HasVariablePrefix hvp = (HasVariablePrefix) assertion;
             String variablePrefix = hvp.getVariablePrefix();
             variablePrefixField.setVariable(variablePrefix == null ? "" : variablePrefix);
-            variablePrefixField.setAssertion(assertion,getPreviousAssertion());
+            variablePrefixField.setAssertion(assertion, getPreviousAssertion());
             variablePrefixField.setSuffixes(hvp.suffixes());
             variablePrefixField.setAcceptEmpty(true);
             variablePrefixField.setVisible(true);
@@ -166,12 +168,10 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     @Override
     public AT getData(AT assertion) throws ValidationException {
         assertion.setXpathExpression(getXpathExpression());
-        if (assertion instanceof NonSoapCheckVerifyResultsAssertion)
-        {
+        if (assertion instanceof NonSoapCheckVerifyResultsAssertion) {
             String variablePrefix = variablePrefixTextField.getText().trim();
             ((NonSoapCheckVerifyResultsAssertion) assertion).setVariablePrefix(variablePrefix.length() < 1 ? null : variablePrefix);
-        }
-        else if (assertion instanceof HasVariablePrefix) {
+        } else if (assertion instanceof HasVariablePrefix) {
             HasVariablePrefix hvp = (HasVariablePrefix) assertion;
             String variablePrefix = variablePrefixField.getVariable().trim();
             hvp.setVariablePrefix(variablePrefix.length() < 1 ? null : variablePrefix);
@@ -180,14 +180,10 @@ public class NonSoapSecurityAssertionDialog<AT extends NonSoapSecurityAssertionB
     }
 
     // for child dialogs to check if OK button should be enabled
-    protected boolean inputsValid()
-    {
-        if(assertion instanceof NonSoapCheckVerifyResultsAssertion)
-        {
+    protected boolean inputsValid() {
+        if (assertion instanceof NonSoapCheckVerifyResultsAssertion) {
             return !variablePrefixTextField.isVisible();
-        }
-        else
-        {
+        } else {
             return (!variablePrefixField.isVisible() || variablePrefixField.isEntryValid());
         }
     }
