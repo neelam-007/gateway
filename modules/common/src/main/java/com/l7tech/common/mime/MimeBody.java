@@ -712,10 +712,10 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     /**
      * @return the number of parts known to exist in this message.  Will always be greater than zero.
      * <p>
-     *         Calling {@link #getPart}() with a number between zero (inclusive) and getNumPartsKnown() (exclusive)
+     *         Calling {@link #getPart(int)}() with a number between zero (inclusive) and getNumPartsKnown() (exclusive)
      *         is guaranteed to return a {@link PartInfo} without throwing.
      * <p>
-     *         If {@link #isMorePartsPossible}() is true, calling {@link #getPart}() with the number getNumPartsKnown() will
+     *         If {@link #isMorePartsPossible}() is true, calling {@link #getPart(int)}() with the number getNumPartsKnown() will
      *         return another {@link PartInfo} without throwing unless the input message is malformed.
      */
     public int getNumPartsKnown() {
