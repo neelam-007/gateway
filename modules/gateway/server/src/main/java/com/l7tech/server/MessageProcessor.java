@@ -821,11 +821,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 auditor.logAndAudit(MessageProcessingMessages.WSS_PROCESSING_COMPLETE);
             }
 
-            // Run pre service global policies
-            return processPreServicePoliciesNoThrow(
-                    PolicyType.TAG_GLOBAL_PRE_SERVICE,
-                    MessageProcessingMessages.RUNNING_PRE_SERVICE_POLICY,
-                    MessageProcessingMessages.ERROR_PRE_SERVICE );
+            return true;
         }
 
         private String getIncomingURL(PolicyEnforcementContext context) {
@@ -894,20 +890,21 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
         private AssertionStatus processPreServicePolicies() throws IOException, PolicyAssertionException {
             AssertionStatus status = AssertionStatus.NONE;
-            // Ensure pre-service policies are run
+            // Ensure pre-security policies are run
             if ( !securityProcessingEvaluatedFlag ) {
                 status = processPreServicePolicies(
                     PolicyType.TAG_GLOBAL_PRE_SECURITY,
                     MessageProcessingMessages.RUNNING_PRE_SECURITY_POLICY,
                     MessageProcessingMessages.ERROR_PRE_SECURITY );
-
-                if ( status == AssertionStatus.NONE ) {
-                    status = processPreServicePolicies(
-                        PolicyType.TAG_GLOBAL_PRE_SERVICE,
-                        MessageProcessingMessages.RUNNING_PRE_SERVICE_POLICY,
-                        MessageProcessingMessages.ERROR_PRE_SERVICE );
-                }
             }
+
+            if ( status == AssertionStatus.NONE ) {
+                status = processPreServicePolicies(
+                    PolicyType.TAG_GLOBAL_PRE_SERVICE,
+                    MessageProcessingMessages.RUNNING_PRE_SERVICE_POLICY,
+                    MessageProcessingMessages.ERROR_PRE_SERVICE );
+            }
+
             return status;
         }
 
