@@ -95,6 +95,11 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         ((SpinnerNumberModel) inactivitySpinner.getModel()).setMinimum(1);
         ((SpinnerNumberModel) inactivitySpinner.getModel()).setMaximum(365);
 
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(invalidAttemptsSpinner, getResourceString("maxattempts.label")));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(minLockoutSpinner, getResourceString("lockout.label")));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(expirySpinner, getResourceString("expiry.label")));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(inactivitySpinner, getResourceString("inactivity.label")));
+
         RunOnChangeListener requirementsListener = new RunOnChangeListener(new Runnable() {
             @Override
             public void run() {
