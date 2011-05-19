@@ -67,9 +67,9 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         this.roleManager = roleManager;
         this.identityProviderFactory = identityProviderFactory;
 
-        this.maxLoginAttempts = this.serverConfig.getIntProperty(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW);
-        this.maxLockoutTime = this.serverConfig.getIntProperty(ServerConfig.PARAM_MAX_LOCKOUT_TIME, DEFAULT_MAX_LOCKOUT_TIME_IN_SECS);
-        this.maxInactivityPeriod = this.serverConfig.getIntProperty(ServerConfig.PARAM_INACTIVITY_PERIOD, DEFAULT_MAX_INACTIVITY_PERIOD);
+        this.maxLoginAttempts = this.config.getIntProperty(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW);
+        this.maxLockoutTime = this.config.getIntProperty(ServerConfig.PARAM_MAX_LOCKOUT_TIME, DEFAULT_MAX_LOCKOUT_TIME_IN_SECS);
+        this.maxInactivityPeriod = this.config.getIntProperty(ServerConfig.PARAM_INACTIVITY_PERIOD, DEFAULT_MAX_INACTIVITY_PERIOD);
     }
 
     public PlatformTransactionManager getTransactionManager() {
@@ -90,49 +90,30 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
 
     public void setConfig(Config config) {
         final ValidatedConfig validatedConfig = new ValidatedConfig(config, logger);
-        this.serverConfig = validatedConfig;
         validatedConfig.setMinimumValue(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, 1);
+        validatedConfig.setMaximumValue(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, 20);
         validatedConfig.setMinimumValue(ServerConfig.PARAM_MAX_LOCKOUT_TIME, 1);
+        validatedConfig.setMaximumValue(ServerConfig.PARAM_MAX_LOCKOUT_TIME, 86400);
         validatedConfig.setMinimumValue(ServerConfig.PARAM_INACTIVITY_PERIOD, 1);
+        validatedConfig.setMaximumValue(ServerConfig.PARAM_INACTIVITY_PERIOD, 365);
+        this.config = validatedConfig;
+
     }
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
-        String newValue = (String) evt.getNewValue();
-
         if (propertyName != null && propertyName.equals(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW)) {
-            try {
-                int newVal = Integer.valueOf(newValue);
-                if (newVal <= 0) throw new NumberFormatException();
-                maxLoginAttempts = newVal;
-            } catch (NumberFormatException nfe) {
-                maxLoginAttempts = DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW;
-                logger.warning("Parameter " + propertyName + " value '" + newValue + "' not a positive integer value. Reuse default value '" + maxLoginAttempts + "'");
-            }
+            this.maxLoginAttempts = this.config.getIntProperty(ServerConfig.PARAM_MAX_LOGIN_ATTEMPTS_ALLOW, DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW);
         }
 
         if (propertyName != null && propertyName.equals(ServerConfig.PARAM_MAX_LOCKOUT_TIME)) {
-            try {
-                int newVal = Integer.valueOf(newValue);
-                if (newVal <= 0) throw new NumberFormatException();
-                maxLockoutTime = newVal;
-            } catch (NumberFormatException nfe) {
-                maxLockoutTime = DEFAULT_MAX_LOCKOUT_TIME_IN_SECS;
-                logger.warning("Parameter " + propertyName + " value '" + newValue + "' not a positive integer value. Reuse default value '" + maxLockoutTime + "'");
-            }
+            this.maxLockoutTime = this.config.getIntProperty(ServerConfig.PARAM_MAX_LOCKOUT_TIME, DEFAULT_MAX_LOCKOUT_TIME_IN_SECS);
         }
 
 
         if (propertyName != null && propertyName.equals(ServerConfig.PARAM_INACTIVITY_PERIOD)) {
-            try {
-                int newVal = Integer.valueOf(newValue);
-                if (newVal <= 0) throw new NumberFormatException();
-                maxInactivityPeriod = newVal;
-            } catch (NumberFormatException nfe) {
-                maxInactivityPeriod = DEFAULT_MAX_INACTIVITY_PERIOD;
-                logger.warning("Parameter " + propertyName + " value '" + newValue + "' not a positive integer value. Reuse default value '" + maxInactivityPeriod + "'");
-            }
+            this.maxInactivityPeriod = this.config.getIntProperty(ServerConfig.PARAM_INACTIVITY_PERIOD, DEFAULT_MAX_INACTIVITY_PERIOD);
         }
 
     }
@@ -344,7 +325,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
 
     private PlatformTransactionManager transactionManager; // required for TransactionTemplate
     private LogonInfoManager logonManager;
-    private Config serverConfig;
+    private Config config;
     private Auditor auditor;
     private final RoleManager roleManager;
     private InternalUserManager internalUserManager;
