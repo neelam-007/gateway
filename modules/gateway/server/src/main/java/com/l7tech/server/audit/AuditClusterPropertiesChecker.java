@@ -81,7 +81,12 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
                     return;
                 }
 
+                final boolean deleted = EntityInvalidationEvent.DELETE == (entityInvalidationEvent.getEntityOperations()[0]);
+
                 if (CLUSTER_PROP_ADMIN_AUDIT_THRESHOLD.equals(clusterProperty.getName())) {
+                    // Check if it is the case where adminThreshold was deleted.  If so, do nothing, since D.N.E is equivalent to INFO.
+                    if (deleted) return;
+
                     final Level currentThreshold = getAdminAuditThresholdByName(clusterProperty.getValue());
                     if (currentThreshold.intValue() > Level.INFO.intValue()) {
                         applicationContext.publishEvent(
@@ -99,7 +104,6 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
                         );
                     }
                 } else {
-                    final boolean deleted = EntityInvalidationEvent.DELETE == (entityInvalidationEvent.getEntityOperations()[0]);
                     final AuditPropertyStatus propStatus = getAndUpdatePropertyStatus(clusterProperty, propStatusMap, deleted);
                     if (propStatus == null) return;
 
