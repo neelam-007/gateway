@@ -86,7 +86,7 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
                     if (currentThreshold.intValue() > Level.INFO.intValue()) {
                         applicationContext.publishEvent(
                             new SystemEvent(AuditClusterPropertiesChecker.this,
-                                Component.GW_AUDIT_PROPERTIES_CONFIG,
+                                Component.GW_AUDIT_SINK_CONFIG,
                                 null,
                                 Level.WARNING,
                                 MessageFormat.format(AUDIT_ADMIN_THRESHOLD_WARNING, currentThreshold.getName())) {
@@ -126,14 +126,14 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
         if (isInternalAuditSystemEnabled(true)) {
             applicationContext.publishEvent(
                 new SystemEvent(AuditClusterPropertiesChecker.this,
-                    Component.GW_AUDIT_PROPERTIES_CONFIG,
+                    Component.GW_AUDIT_SINK_CONFIG,
                     null,
                     Level.INFO,
                     INTERNAL_AUDIT_SYSTEM_STARTED) {
 
                     @Override
                     public String getAction() {
-                        return "Audit Sink Properties Evaluation";
+                        return "Properties Evaluation";
                     }
                 }
             );
@@ -143,14 +143,14 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
         if (isAuditSinkPolicyEnabled()) {
             applicationContext.publishEvent(
                 new SystemEvent(AuditClusterPropertiesChecker.this,
-                    Component.GW_AUDIT_PROPERTIES_CONFIG,
+                    Component.GW_AUDIT_SINK_CONFIG,
                     null,
                     Level.INFO,
                     AUDIT_SINK_POLICY_STARTED) {
 
                     @Override
                     public String getAction() {
-                        return "Audit Sink Properties Evaluation";
+                        return "Properties Evaluation";
                     }
                 }
             );
@@ -161,7 +161,7 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
         if (currentThreshold.intValue() > Level.INFO.intValue()) {
             applicationContext.publishEvent(
                 new SystemEvent(AuditClusterPropertiesChecker.this,
-                    Component.GW_AUDIT_PROPERTIES_CONFIG,
+                    Component.GW_AUDIT_SINK_CONFIG,
                     null,
                     Level.WARNING,
                     MessageFormat.format(AUDIT_ADMIN_THRESHOLD_WARNING, currentThreshold.getName())) {
@@ -178,7 +178,7 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
     /**
      * Check if Internal Audit System is enabled or not.
      * @param toCheckAuditSinkPolicy: if true, combine the status of Internal Audit System and the status of Audit Sink Policy together to determine the final result.
-     * @return: true if "Internal Audit System" property is evaluated as enabled.
+     * @return true if "Internal Audit System" property is evaluated as enabled.
      */
     public boolean isInternalAuditSystemEnabled(boolean toCheckAuditSinkPolicy) {
         final boolean enabled = Boolean.parseBoolean(serverConfig.getPropertyUncached(PARAM_AUDIT_SINK_ALWAYS_FALLBACK));
@@ -364,14 +364,14 @@ public class AuditClusterPropertiesChecker implements ApplicationContextAware, A
             for (String auditMessage: auditMessages) {
                 applicationContext.publishEvent(
                     new SystemEvent(AuditClusterPropertiesChecker.this,
-                        Component.GW_AUDIT_PROPERTIES_CONFIG,
+                        Component.GW_AUDIT_SINK_CONFIG,
                         null,
                         Level.INFO,
                         auditMessage) {
 
                         @Override
                         public String getAction() {
-                            return "Audit Sink Properties Evaluation";
+                            return "Properties Evaluation";
                         }
                     }
                 );
