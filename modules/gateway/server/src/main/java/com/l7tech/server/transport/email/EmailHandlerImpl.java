@@ -72,7 +72,7 @@ public class EmailHandlerImpl implements EmailHandler {
             if(contentTypeValue == null) {
                 ctype = ContentTypeHeader.XML_DEFAULT;
             } else {
-                ctype = ContentTypeHeader.parseValue(contentTypeValue);
+                ctype = ContentTypeHeader.create(contentTypeValue);
             }
             size = message.getSize();
             requestStream = message.getInputStream();

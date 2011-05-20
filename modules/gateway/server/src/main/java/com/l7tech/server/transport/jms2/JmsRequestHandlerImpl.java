@@ -361,37 +361,32 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         String source = props.getProperty(JmsConnection.PROP_CONTENT_TYPE_SOURCE);
         String val = props.getProperty(JmsConnection.PROP_CONTENT_TYPE_VAL);
 
-        try {
-            if ( (null == source) || "".equals(source) ) {
-                _logger.warning ("no content type specified for this message, attempting to find one using Content-Type property");
-                requestCtype = jmsRequest.getStringProperty("Content-Type");
-                if (requestCtype != null) {
-                    _logger.info("found a content type of " + requestCtype);
-                    ctype = ContentTypeHeader.parseValue(requestCtype);
-                } else {
-                    _logger.info("Didn't find a content type. Using " + ContentTypeHeader.XML_DEFAULT.toString());
-                    ctype = ContentTypeHeader.XML_DEFAULT;
+        if ( (null == source) || "".equals(source) ) {
+            _logger.warning ("no content type specified for this message, attempting to find one using Content-Type property");
+            requestCtype = jmsRequest.getStringProperty("Content-Type");
+            if (requestCtype != null) {
+                _logger.info("found a content type of " + requestCtype);
+                ctype = ContentTypeHeader.create(requestCtype);
+            } else {
+                _logger.info("Didn't find a content type. Using " + ContentTypeHeader.XML_DEFAULT.toString());
+                ctype = ContentTypeHeader.XML_DEFAULT;
+            }
+        } else {
+            if (JmsConnection.CONTENT_TYPE_SOURCE_HEADER.equals(source)) {
+                requestCtype = jmsRequest.getStringProperty(val);
+                // more informative diagnosis message
+                if (requestCtype == null || requestCtype.isEmpty()) {
+                    throw new JmsRuntimeException("Expected ContentType JMS property not set: " + val);
                 }
             } else {
-                if (JmsConnection.CONTENT_TYPE_SOURCE_HEADER.equals(source)) {
-                    requestCtype = jmsRequest.getStringProperty(val);
-                    // more informative diagnosis message
-                    if (requestCtype == null || requestCtype.isEmpty()) {
-                        throw new JmsRuntimeException("Expected ContentType JMS property not set: " + val);
-                    }
-                } else {
-                    requestCtype = val;
-                }
-                ctype = ContentTypeHeader.parseValue(requestCtype);
-
-                // log warning for unrecognized content type
-                if (ctype != null && !ctype.matches("text", "xml") && !ctype.matches("text", "plain") && !ctype.matches("application", "*")) {
-                    _logger.log(Level.WARNING, "ContentType from JMS property not recognized, may cause policy to fail: {0}", ctype.toString());
-                }
+                requestCtype = val;
             }
-        } catch (IOException ioex) {
-            _logger.log(Level.WARNING, "Bad ContentType encountered={0}, error message: {1}", new String[] {requestCtype, ioex.getMessage()});
-            throw ioex;
+            ctype = ContentTypeHeader.create(requestCtype);
+
+            // log warning for unrecognized content type
+            if (ctype != null && !ctype.matches("text", "xml") && !ctype.matches("text", "plain") && !ctype.matches("application", "*")) {
+                _logger.log(Level.WARNING, "ContentType from JMS property not recognized, may cause policy to fail: {0}", ctype.toString());
+            }
         }
         return ctype;
     }
