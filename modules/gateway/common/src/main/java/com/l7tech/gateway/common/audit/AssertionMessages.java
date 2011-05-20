@@ -58,7 +58,11 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_INVALIDCOOKIE = m(4036, Level.INFO, "Ignoring invalid cookie header ''{0}''");
     public static final M HTTPROUTE_RESPONSE_CHALLENGE = m(4037, Level.INFO, "Protected service requires authentication.");
     public static final M HTTPROUTE_RESPONSE_BADSTATUS = m(4038, Level.INFO, "Downstream service returned status ({0}). This is considered a failure case.");
-    public static final M HTTPROUTE_CTYPEWOUTPAYLOAD = m(4039, Level.INFO, "Downstream service returned an empty response but still included a content-type of ({0}).");
+    /**
+     * @deprecated
+     */
+    @Deprecated
+    public static final M _UNUSED_HTTPROUTE_CTYPEWOUTPAYLOAD = m(4039, Level.INFO, "Downstream service returned an empty response but still included a content-type of ({0}).");
     public static final M BRIDGEROUTE_REQUEST_NOT_SOAP = m(4040, Level.WARNING, "Route via SecureSpan Bridge Assertion failed because request is not SOAP; this assertion currently does not support non-SOAP requests.");
     public static final M HTTPROUTE_SOCKET_TIMEOUT = m(4041, Level.WARNING, "Remote network connection timed out.");
     public static final M HTTPROUTE_GENERIC_PROBLEM = m(4042, Level.WARNING, "Problem routing to {0}. Error msg: {1}");

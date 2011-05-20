@@ -797,10 +797,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 responseOk = false;
             } else if (outerContentType != null) { // response OK
                 if (responseStream == null) {
-                    if (wasHeadMethod)
-                        destination.initialize(outerContentType, new byte[0]);
-                    else
-                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_CTYPEWOUTPAYLOAD, outerContentType.getFullValue());
+                    destination.initialize(outerContentType, new byte[0]);
                 } else {
                     StashManager stashManager = stashManagerFactory.createStashManager();
                     destination.initialize(stashManager, outerContentType, responseStream);
