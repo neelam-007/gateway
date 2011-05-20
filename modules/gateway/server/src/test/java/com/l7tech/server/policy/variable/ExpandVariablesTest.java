@@ -5,11 +5,7 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.MimeHeader;
-import com.l7tech.common.mime.MimeHeaders;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.*;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.identity.UserBean;
@@ -37,15 +33,13 @@ import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
-import org.junit.Test;
 import org.junit.Before;
+import org.junit.Test;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
-import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -57,6 +51,8 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  * Class ExpandVariablesTest.
@@ -715,7 +711,7 @@ public class ExpandVariablesTest {
         vars.put("message", new Message(XmlUtil.parse( "<content/>" )) );
 
         assertEquals("message.parts.1.body", "<content/>", ExpandVariables.process( "${message.parts.1.body}", vars, audit, true ));
-        assertEquals("message.parts.1.contentType", "text/xml; charset=utf-8", ExpandVariables.process( "${message.parts.1.contentType}", vars, audit, true ));
+        assertEquals("message.parts.1.contentType", "text/xml; charset=UTF-8", ExpandVariables.process( "${message.parts.1.contentType}", vars, audit, true ));
         assertEquals("message.parts.1.size", "10", ExpandVariables.process( "${message.parts.1.size}", vars, audit, true ));
     }
 

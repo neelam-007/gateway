@@ -1,7 +1,6 @@
 package com.l7tech.common.protocol;
 
 import com.l7tech.common.mime.MimeHeader;
-import static com.l7tech.common.protocol.SecureSpanConstants.HttpHeaders.HEADER_DOMAINIDSTATUS;
 import com.l7tech.util.CausedIOException;
 
 import javax.mail.internet.HeaderTokenizer;
@@ -10,6 +9,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static com.l7tech.common.protocol.SecureSpanConstants.HttpHeaders.HEADER_DOMAINIDSTATUS;
+
 /**
  * Utility class to parse, create, and represent a Domain ID Injection status header, as specified by
  * {@link SecureSpanConstants.HttpHeaders#HEADER_DOMAINIDSTATUS}.
@@ -17,8 +18,8 @@ import java.util.TreeMap;
 public class DomainIdStatusHeader extends MimeHeader {
     private final DomainIdStatusCode status;
 
-    protected DomainIdStatusHeader(String value, Map<String, String> params) throws IOException {
-        super(HEADER_DOMAINIDSTATUS, value, params);
+    protected DomainIdStatusHeader(String value, Map<String, String> params, String fullValue) throws IOException {
+        super(HEADER_DOMAINIDSTATUS, value, params, fullValue);
         try {
             status = DomainIdStatusCode.valueOf(value.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
@@ -36,7 +37,7 @@ public class DomainIdStatusHeader extends MimeHeader {
 
     /**
      * Parse an L7-Domain-ID-Status: header, not including the header name and colon.
-     * Example: <code>{@link #parseValue}("INCLUDED; username=X-Injected-User-Name")</code>
+     * Example: <code>parseValue("INCLUDED; username=X-Injected-User-Name")</code>
      *
      * @param fullValue the header value to parse
      * @return a DomainIdStatusHeader instance.  Never null.
@@ -125,7 +126,7 @@ public class DomainIdStatusHeader extends MimeHeader {
                 params.put(name, value.toString());
             }
 
-            return new DomainIdStatusHeader(status, params);
+            return new DomainIdStatusHeader(status, params, fullValue);
         } catch (ParseException e) {
             throw new CausedIOException("Unable to parse L7-Domain-Id-Status header", e);
         }

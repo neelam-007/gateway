@@ -678,6 +678,7 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_FIRST_PART_TOO_LARGE = m(7221, Level.WARNING, "Request first part size exceeds configured limit");
     public static final M MESSAGE_BODY_TOO_LARGE = m(7222, Level.WARNING, "{0} body size exceeds configured limit");
     public static final M MESSAGE_FIRST_PART_TOO_LARGE = m(7223, Level.WARNING, "{0} first part size exceeds configured limit");
+    public static final M MESSAGE_BAD_CONTENT_TYPE = m(7224, Level.WARNING, "{0} content type is syntactically invalid: {1}");
 
     // OversizedTextAssertion
     public static final M OVERSIZEDTEXT_ALREADY_ROUTED = m(7230, Level.WARNING, "Unable to protect against document structure threats -- the request has already been routed");

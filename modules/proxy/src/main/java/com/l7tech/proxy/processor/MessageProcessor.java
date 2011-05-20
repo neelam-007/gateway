@@ -720,7 +720,7 @@ public class MessageProcessor {
             checkResponsePolicyUrl(context, ssg, httpResponse, status, responseHeaders);
             String contentTypeStr = responseHeaders.getOnlyOneValue(MimeUtil.CONTENT_TYPE);
             checkResponseContentType(context, url, ssg, httpResponse, status, responseHeaders, contentTypeStr);
-            final ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(contentTypeStr);
+            final ContentTypeHeader outerContentType = ContentTypeHeader.create(contentTypeStr);
             InputStream responseBodyAsStream = checkResponseGzip(httpResponse);
 
 

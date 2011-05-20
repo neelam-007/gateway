@@ -2,13 +2,13 @@ package com.l7tech.common.mime;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.test.BugNumber;
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for ContentTypeHeader
@@ -74,12 +74,66 @@ public class ContentTypeHeaderTest {
     @Test
     public void testFormattingOption() throws Exception {
         final String contentType = "a/b;  c=d";
-        final ContentTypeHeader contentTypeHeader1 = ContentTypeHeader.parseValue(contentType, true);
-        final ContentTypeHeader contentTypeHeader2 = ContentTypeHeader.parseValue(contentType, false);
-        assertFalse( "Format different", contentTypeHeader1.getFullValue().equals( contentTypeHeader2.getFullValue()) );
+        final ContentTypeHeader contentTypeHeader1 = ContentTypeHeader.parseValue(contentType);
         assertEquals( "Format preserved", contentType, contentTypeHeader1.getFullValue());
         assertArrayEquals( "Format preserved serialized", serialize( contentType ), contentTypeHeader1.getSerializedBytes() );
     }
+
+    @Test
+    @BugNumber(9118)
+    public void testAllowButFlagWhitespace() throws Exception {
+        ContentTypeHeader ch = ContentTypeHeader.create("text / html");
+        try {
+            ch.validate();
+            fail("IOException should have been thrown when validating content type with spaces");
+        } catch (IOException e) {
+            // Ok
+        }
+    }
+
+    @Test
+    public void testLazyParams() throws Exception {
+        ContentTypeHeader ch = ContentTypeHeader.create("foo/bar; a=1; b=3");
+        assertEquals("1", ch.getParam("a"));
+        assertEquals("3", ch.getParam("b"));
+    }
+
+    @Test
+    public void testValidate() throws Exception {
+        String[] good = {
+                "text/xml",
+                "a/b;",
+                "a/b; c=d",
+                "a/b;c=\"d\"",
+                "  a/b  ; c=d  ; e=\"f \" ;",
+                "application/xop+xml;\n" +
+                        "   charset=UTF-8;\n" +
+                        "   type=\"text/xml\"",
+                "a/b; c==="
+        };
+        for (String s : good) {
+            ContentTypeHeader.create(s).validate();
+        }
+
+        String[] bad = {
+                "",
+                "a",
+                "a/b/c",
+                "a /b",
+                "a/ b;",
+                "a/b;c",
+                "a/b ; c<="
+        };
+        for (String s : bad) {
+            try {
+                ContentTypeHeader.create(s).validate();
+                fail("Expected exception not thrown for invalid content type format: " + s);
+            } catch (IOException e) {
+                // Ok
+            }
+        }
+    }
+
 
     private void ensureFormattingPreserved( final String description, final String contentType ) throws Exception {
         final ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue(contentType);

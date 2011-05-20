@@ -114,7 +114,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                         final int status = httpConn.getResponseCode();
                         String ctval = conn.getContentType();
                         final ContentTypeHeader contentTypeHeader =
-                                ctval != null ? ContentTypeHeader.parseValue(ctval) : null;
+                                ctval != null ? ContentTypeHeader.create(ctval) : null;
                         final List<HttpHeader> headers = new ArrayList<HttpHeader>();
                         int n = 0;
                         String value;

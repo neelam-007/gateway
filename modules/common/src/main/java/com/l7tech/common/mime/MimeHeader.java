@@ -7,17 +7,20 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.http.HttpHeader;
-import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.PoolByteArrayOutputStream;
+import com.l7tech.util.SyspropUtil;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -30,6 +33,11 @@ import java.util.regex.Pattern;
  *    params={charset=>"UTF-8"}
  */
 public class MimeHeader implements HttpHeader {
+    private static final Logger logger = Logger.getLogger(MimeHeader.class.getName());
+
+    public static final String PROP_PRESERVE_FORMAT = "com.l7tech.common.mime.preserveFormat";
+    public static final boolean PRESERVE_FORMAT = SyspropUtil.getBoolean(PROP_PRESERVE_FORMAT, true);
+
     /** Encoding used by MIME headers.  Actually limited to 7-bit ASCII per RFC, but UTF-8 is a safer choice. */
     public static final Charset ENCODING = Charsets.UTF8;
 
@@ -48,27 +56,38 @@ public class MimeHeader implements HttpHeader {
         }
     }
 
+    private final String fullValue;
     private final String name;
     private final String mainValue;
-    protected final Map<String, String> params;
+    private final boolean hasParams;
+
+    /** Holds a ref to null if a complete parse/validate has not yet been done for this mime header; otherwise holds MIME params or an empty map if there are none. */
+    protected final AtomicReference<Map<String, String>> params = new AtomicReference<Map<String, String>>();
 
     protected byte[] serializedBytes;
-    private String fullValue = null;
 
     /**
-     * Create a new MimeHeader with the specified name, main value, and parameters.
+     * Create a new MimeHeader with lazily-parsed parameters.
      *
      * @param name   the name of the header, preferably in canonical form, not including the colon, ie "Content-Type".
      *               must not be empty or null.
-     * @param value  the mainValue, ie "text/xml", not including any params that have already been parsed out into params.
-     *               May be empty, but must not be null.
-     * @param params the parameters, ie {charset=>"utf-8"}.  May be empty or null.
-     *               Caller must not modify this map after giving it to this constructor.
-     *               Caller is responsible for ensuring that, if a map is provided, lookups in the map are case-insensitive.
-     *
+     * @param mainValue  the mainValue, ie "text/xml", not including any params that may be present in the fullValue.
+     * @param fullValue The full value for the header, with original formatting, or null if the same as mainValue (in which case hasParams must be null).
+     * @param hasParams true if the fullValue may contain parameters that may need to be parsed out of it.  False if the full
+     *                  value is known not to contain parameters.
      */
-    protected MimeHeader(String name, String value, Map<String, String> params) {
-        this( name, value, params, null );
+    protected MimeHeader(final String name, final String mainValue, final String fullValue, final boolean hasParams) {
+        if (name == null || mainValue == null)
+            throw new IllegalArgumentException("name, mainValue, and fullValue must be provided");
+        if (name.length() < 1)
+            throw new IllegalArgumentException("name must not be empty");
+        if (fullValue == null && hasParams)
+            throw new IllegalArgumentException("fullValue must be provided if hasParams is true");
+        this.name = name;
+        this.mainValue = mainValue;
+        this.params.set(null);
+        this.fullValue = fullValue != null ? fullValue : mainValue;
+        this.hasParams = hasParams;
     }
 
     /**
@@ -81,7 +100,7 @@ public class MimeHeader implements HttpHeader {
      * @param params the parameters, ie {charset=>"utf-8"}.  May be empty or null.
      *               Caller must not modify this map after giving it to this constructor.
      *               Caller is responsible for ensuring that, if a map is provided, lookups in the map are case-insensitive.
-     * @param header The full value for the header
+     * @param header The full value for the header, with original formatting.  Required.
      *
      */
     protected MimeHeader( final String name,
@@ -94,8 +113,9 @@ public class MimeHeader implements HttpHeader {
             throw new IllegalArgumentException("name must not be empty");
         this.name = name;
         this.mainValue = value;
-        this.params = params == null ? Collections.<String, String>emptyMap() : Collections.unmodifiableMap(params);
+        this.params.set(params == null ? Collections.<String, String>emptyMap() : Collections.unmodifiableMap(params));
         this.fullValue = header;
+        this.hasParams = params != null && !params.isEmpty();
     }
 
     /**
@@ -104,21 +124,22 @@ public class MimeHeader implements HttpHeader {
      * object will be a MimeHeader.
      *
      * @param name the name, ie "Content-Type".  may not be null
-     * @param value the full value, ie "text/xml; charset=utf-8".  may not be null
+     * @param fullValue the full value, ie "text/xml; charset=utf-8".  may not be null
      * @return the parsed MimeHeader
      * @throws IOException if the value is not a valid MIME value.
      */
-    public static MimeHeader parseValue(String name, String value) throws IOException {
+    public static MimeHeader parseValue(String name, String fullValue) throws IOException {
+        String value = fullValue;
         if (MimeUtil.CONTENT_TYPE.equalsIgnoreCase(name))
-            return ContentTypeHeader.parseValue(value);
+            return ContentTypeHeader.parseValue(fullValue);
         if (MimeUtil.CONTENT_LENGTH.equalsIgnoreCase(name)) {
             try {
-                value = String.valueOf(parseNumericValue(value));
+                value = String.valueOf(parseNumericValue(fullValue));
             } catch (NumberFormatException e) {
                 throw new IOException("Invalid MIME Content-Length header value: " + value);
             }
         }
-        return new MimeHeader(name, value, null);
+        return new MimeHeader(name, value, fullValue, true);
     }
 
     private static final Pattern COMMAPAT = Pattern.compile("\\s*,\\s*");
@@ -174,16 +195,38 @@ public class MimeHeader implements HttpHeader {
     }
 
     /**
+     * @return true if this header has parameters available via {@link #getParams()}.
+     */
+    public boolean hasParams() {
+        return hasParams;
+    }
+
+    /**
      * @param name the name of the parameter to get.
      * @return the specified parameter, or null if it didn't exist.
      */
     public String getParam(String name) {
-        return params.get(name);
+        return getParams().get(name);
     }
 
-    /** @return the entire params map.  Never null. */
+    /**
+     * Read the parameter map for this MIME header.
+     * This will trigger a full parse/validate of this MIME header value, if one has not already been done.
+     *
+     * @return the entire params map.  Never null but may be empty.
+     */
     public Map<String, String> getParams() {
-        return params;
+        Map<String, String> ret = params.get();
+        if (ret == null) {
+            try {
+                ret = parseParams();
+                params.set(ret);
+            } catch (IOException e) {
+                logger.log(Level.FINE, "Unable to get params because header format is not valid", e);
+                ret = Collections.emptyMap();
+            }
+        }
+        return ret;
     }
 
     /** @return the ENTIRE header string, including name and trailing CRLF, ie "Content-Type: text/xml; charset=utf-8\r\n" */
@@ -202,17 +245,7 @@ public class MimeHeader implements HttpHeader {
 
     @Override
     public String getFullValue() {
-        if (fullValue != null)
-            return fullValue;
-        PoolByteArrayOutputStream out = new PoolByteArrayOutputStream(32);
-        try {
-            writeFullValue(out);
-            return fullValue = out.toString(ENCODING);
-        } catch (IOException e) {
-            throw new RuntimeException(e); // can't happen
-        } finally {
-            out.close();
-        }
+        return fullValue;
     }
 
     /**
@@ -222,7 +255,7 @@ public class MimeHeader implements HttpHeader {
      */
     byte[] getSerializedBytes() {
         if (serializedBytes == null) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(32);
+            PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream(32);
             try {
                 write(baos);
             } catch (IOException e) {
@@ -263,11 +296,11 @@ public class MimeHeader implements HttpHeader {
      * @throws java.io.IOException if there is an IOException while writing to the stream
      */
     void writeFullValue(OutputStream os) throws IOException {
-        if ( fullValue != null ) {
+        if ( PRESERVE_FORMAT ) {
             os.write( fullValue.getBytes(ENCODING) );
         } else {
             os.write(getMainValue().getBytes(ENCODING));
-            for (Map.Entry<String, String> entry : params.entrySet()) {
+            for (Map.Entry<String, String> entry : getParams().entrySet()) {
                 String name = entry.getKey();
                 String value = entry.getValue();
                 os.write(SEMICOLON);
@@ -290,5 +323,18 @@ public class MimeHeader implements HttpHeader {
         os.write(name.getBytes(ENCODING));
         os.write('=');
         os.write(MimeUtility.quote(value, HeaderTokenizer.MIME).getBytes(ENCODING));
+    }
+
+    /**
+     * Parse the parameters and validate the header format.
+     * Subclasses can override this to handle their expected parameter format.
+     * <p/>
+     * This method always returns an empty map.
+     *
+     * @return the parameter map.  Never null but may be empty.
+     * @throws IOException if the parameters cannot be parsed/validated.
+     */
+    protected Map<String, String> parseParams() throws IOException {
+        return Collections.emptyMap();
     }
 }

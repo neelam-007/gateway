@@ -46,7 +46,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     private final FlaggingByteLimitInputStream mainInputStream; // always pointed at current part's body, or just past end of message
     private final int pushbackSize;
     private final StashManager stashManager;
-    private final ContentTypeHeader outerContentType;
+    private ContentTypeHeader outerContentType;
 
     private final List partInfos = new ArrayList(); // our PartInfo instances.  current part is (partInfos.size() - 1)
     private final PartInfoImpl firstPart; // equivalent to (PartInfo)partInfos.get(0)
@@ -701,6 +701,26 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
     }
 
     /**
+     * Change the outer content type.
+     * <p/>
+     * This will change the outer content type reported by this MimeBody but will not affect the processing
+     * of the current MIME body in any way.
+     * <p/>
+     * If this is a multipart message, changing its content type will have no effect on current multipart boundary
+     * for any parts that have not yet been read; nor will it change the number of parts.
+     * <p/>
+     * Similarly, if this is a single-part message, changing its content type will not cause its contents to be recognized
+     * as a multipart message.
+     *
+     * @param outerContentType a new content type to return from {@link #getOuterContentType()}.  Required.
+     */
+    public void setOuterContentType(ContentTypeHeader outerContentType) {
+        if (outerContentType == null)
+            throw new NullPointerException("outerContentType is required");
+        this.outerContentType = outerContentType;
+    }
+
+    /**
      * Check if more parts might remain in the stream, in addition to the ones already reported by {@link #getNumPartsKnown}().
      *
      * @return true if there might be more parts in the stream not yet reported by {@link #getNumPartsKnown}().
@@ -875,7 +895,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
             } else {
                 throw new IOException( "Unsupported content transfer encoding '"+contentTransferEncoding+"'." );
             }
-            headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, Integer.toString(newBody.length), null));
+            headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, Integer.toString(newBody.length), null, false));
         }
 
         @Override
@@ -1096,7 +1116,7 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                                 " bytes, but actual size was " + actualLength + " bytes");
                     }
                 }
-                headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, clen, null));
+                headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, clen, null, false));
             } catch (IOException e) {
                 errorCondition = e;
                 throw e;

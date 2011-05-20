@@ -330,5 +330,8 @@
         <L7p:CustomizeErrorResponse>
             <L7p:Enabled booleanValue="false"/>
         </L7p:CustomizeErrorResponse>
+        <L7p:ValidateContentType>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:ValidateContentType>
     </wsp:OneOrMore>
 </wsp:Policy>

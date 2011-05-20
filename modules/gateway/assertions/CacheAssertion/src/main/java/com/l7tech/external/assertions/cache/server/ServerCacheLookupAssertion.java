@@ -77,8 +77,8 @@ public class ServerCacheLookupAssertion extends AbstractMessageTargetableServerA
             }
             String cachedContentType = cachedEntry.getContentType();
             String contentTypeOverride = assertion.getContentTypeOverride();
-            ContentTypeHeader contentType = contentTypeOverride != null && !contentTypeOverride.isEmpty() ? ContentTypeHeader.parseValue(contentTypeOverride) :
-                cachedContentType != null ? ContentTypeHeader.parseValue(cachedContentType) :
+            ContentTypeHeader contentType = contentTypeOverride != null && !contentTypeOverride.isEmpty() ? ContentTypeHeader.create(contentTypeOverride) :
+                cachedContentType != null ? ContentTypeHeader.create(cachedContentType) :
                     ContentTypeHeader.XML_DEFAULT;
 
             InputStream bodyInputStream = null;

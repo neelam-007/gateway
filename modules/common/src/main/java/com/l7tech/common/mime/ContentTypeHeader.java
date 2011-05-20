@@ -10,12 +10,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Represents a MIME Content-Type header.
@@ -26,8 +29,8 @@ public class ContentTypeHeader extends MimeHeader {
     public static final String PROP_STRICT_CHARSET = "com.l7tech.common.mime.strictCharset";
     public static final boolean STRICT_CHARSET = SyspropUtil.getBoolean(PROP_STRICT_CHARSET, false);
 
-    public static final String PROP_PRESERVE_FORMAT = "com.l7tech.common.mime.preserveFormat";
-    public static final boolean PRESERVE_FORMAT = SyspropUtil.getBoolean(PROP_PRESERVE_FORMAT, true);
+    public static final String PROP_ALWAYS_VALIDATE = "com.l7tech.common.mime.alwaysValidateContentType";
+    public static final boolean ALWAYS_VALIDATE = SyspropUtil.getBoolean(PROP_ALWAYS_VALIDATE, false);
 
     public static final ContentTypeHeader OCTET_STREAM_DEFAULT; // application/octet-stream
     public static final ContentTypeHeader TEXT_DEFAULT; // text/plain; charset=UTF-8
@@ -39,6 +42,9 @@ public class ContentTypeHeader extends MimeHeader {
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
     public static final Charset DEFAULT_HTTP_ENCODING = Charset.forName("ISO8859-1"); // See RFC2616 s3.7.1
 
+    private static final Pattern QUICK_CONTENT_TYPE_PARSER =
+            Pattern.compile("^\\s*([a-zA-Z0-9!#\\$%&'\\*\\+\\-\\.\\^_`\\{\\|\\}~]+)(\\s*)/(\\s*)([a-zA-Z0-9!#\\$%&'\\*\\+\\-\\.\\^_`\\{\\|\\}~]+)\\s*(;.*?)?\\s*$", Pattern.DOTALL);
+
     /**
      * AtomicReference to the list of configured textual content types. Usages do not need to synchronize.
      * Once the list is obtained via get(), it is safe to use as it will be copied if written to.
@@ -49,14 +55,14 @@ public class ContentTypeHeader extends MimeHeader {
 
     static {
         try {
-            OCTET_STREAM_DEFAULT = parseValue("application/octet-stream", false);
+            OCTET_STREAM_DEFAULT = parseValue("application/octet-stream");
             OCTET_STREAM_DEFAULT.getEncoding();
-            TEXT_DEFAULT = parseValue("text/plain; charset=UTF-8", false);
-            XML_DEFAULT = parseValue("text/xml; charset=UTF-8", false);
+            TEXT_DEFAULT = parseValue("text/plain; charset=UTF-8");
+            XML_DEFAULT = parseValue("text/xml; charset=UTF-8");
             XML_DEFAULT.getEncoding();
-            SOAP_1_2_DEFAULT = parseValue("application/soap+xml; charset=UTF-8", false);
-            APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded", false);
-            APPLICATION_JSON = parseValue("application/json; charset=UTF-8", false);
+            SOAP_1_2_DEFAULT = parseValue("application/soap+xml; charset=UTF-8");
+            APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded");
+            APPLICATION_JSON = parseValue("application/json; charset=UTF-8");
         } catch (Throwable e) {
             throw new Error(e);
         }
@@ -64,6 +70,7 @@ public class ContentTypeHeader extends MimeHeader {
 
     private final String type;
     private final String subtype;
+    private final boolean hadWhitespaceAroundSlash;
 
     private Charset javaEncoding = null; // figured out lazy-like
     private String mimeCharset = null;
@@ -74,77 +81,81 @@ public class ContentTypeHeader extends MimeHeader {
      *
      * @param type   the major type, ie "text". may not be null
      * @param subtype the minor type, ie "xml". may not be null
+     * @param hadWhitespaceAroundSlash true if there was whitespace immediate before or after the slash dividing the major from the minor type, ie "foo / bar" rather than "foo/bar".
      * @param params the parameters, ie {charset=>"utf-8"}.  must not be null.
      *               Caller must not modify this map after giving it to this constructor.
      *               Caller is responsible for ensuring that lookups in the map are case-insensitive.
-     * @param header the full header value, a null value means the header will be reconstructed.
+     * @param header the full header value, with original formatting.  Required.
      * @throws IllegalArgumentException if type is multipart, but boundary param is missing or empty; or,
      *                                  if type is multipart, but the subtype is other than "related"
      * @throws NullPointerException if type, subtype or param is null
-     * @throws java.io.IOException if an attempt is made to create a multipart type with a missing or invalid boundary
      */
-    private ContentTypeHeader(String type, String subtype, Map<String, String> params, String header) throws IOException {
+    private ContentTypeHeader(String type, String subtype, boolean hadWhitespaceAroundSlash, Map<String, String> params, String header) {
         super(MimeUtil.CONTENT_TYPE, type + "/" + subtype, params, header);
         this.type = type.toLowerCase();
         this.subtype = subtype.toLowerCase();
+        this.hadWhitespaceAroundSlash = hadWhitespaceAroundSlash;
+    }
 
-        if ("multipart".equalsIgnoreCase(type)) {
-            String boundary = this.params.get("boundary");
-            if (boundary == null || boundary.length() < 1)
-                throw new IOException("Content-Type of type multipart must include a boundary parameter (RFC 2045 sec 5)");
-            byte[] bytes = boundary.getBytes(ENCODING);
-            for (byte aByte : bytes) {
-                if (aByte < ' ' || aByte > 126)
-                    throw new IOException("Content-Type multipart boundary contains illegal character; must be US-ASCII (RFC 2045)");
-            }
-
-        }
+    private ContentTypeHeader(String type, String subtype, boolean hadWhitespaceAroundSlash, boolean hasParams, String fullValue) {
+        super(MimeUtil.CONTENT_TYPE, type + "/" + subtype, fullValue, hasParams);
+        this.type = type.toLowerCase();
+        this.subtype = subtype.toLowerCase();
+        this.hadWhitespaceAroundSlash = hadWhitespaceAroundSlash;
     }
 
     /**
-     * Constructor for use when the value is known to be good.
+     * Parse a MIME Content-Type: header, not including the header name and colon.
+     * Example: <code>parseValue("text/html; charset=\"UTF-8\"")</code>
+     * <p/>
+     * This does a quick parse with no validation.  The returned object will lazily parse
+     * parameters if asked to do so.
      *
-     * @param contentTypeHeaderValue The value for the header
-     * @return The new ContentTypeHeader (never null)
-     * @throws IllegalArgumentException if the contentTypeHeaderValue is not valid
+     * @param contentTypeHeaderValue the header value to parse.  Must be non-null.
+     * @return a ContentTypeHeader instance.  Never null.
      */
     public static ContentTypeHeader create( final String contentTypeHeaderValue ) {
-        try {
-            return parseValue( contentTypeHeaderValue );
-        } catch ( IOException e ) {
-            throw new IllegalArgumentException( e );
+        if (contentTypeHeaderValue == null)
+            throw new NullPointerException("contentTypeHeaderValue is null");
+
+        ContentTypeHeader ret = quickParse(contentTypeHeaderValue);
+        if (ret != null) {
+            if (ALWAYS_VALIDATE) {
+                try {
+                    ret.validate();
+                } catch (IOException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+            return ret;
         }
+        return new ContentTypeHeader("application", "x-invalid-content-type", false, Collections.<String, String>emptyMap(), contentTypeHeaderValue);
     }
 
-    /**
-     * Parse a MIME Content-Type: header, not including the header name and colon.
-     * Example: <code>parseValue("text/html; charset=\"UTF-8\"")</code>
-     *
-     * @param contentTypeHeaderValue the header value to parse
-     * @return a ContentTypeHeader instance.  Never null.
-     * @throws java.io.IOException  if the specified header value was missing, empty, or syntactically invalid
-     */
-    public static ContentTypeHeader parseValue(String contentTypeHeaderValue) throws IOException {
-        return parseValue( contentTypeHeaderValue, PRESERVE_FORMAT );
+    private static ContentTypeHeader quickParse(String contentTypeHeaderValue) {
+        // Quick parse without validation, does not gather parameters, returns a lazy header
+        Matcher matcher = QUICK_CONTENT_TYPE_PARSER.matcher(contentTypeHeaderValue);
+        if (matcher.matches()) {
+            String type = matcher.group(1);
+            String ws = matcher.group(2);
+            if (ws == null || ws.length() < 1)
+                ws = matcher.group(3);
+            String subtype = matcher.group(4);
+            boolean hadWsAroundSlash = ws != null && ws.length() > 0;
+            String params = matcher.group(5);
+            boolean hasParams = params != null && params.trim().length() > 2;
+            return new ContentTypeHeader(type, subtype, hadWsAroundSlash, hasParams, contentTypeHeaderValue);
+        }
+        return null;
     }
 
-    /**
-     * Parse a MIME Content-Type: header, not including the header name and colon.
-     * Example: <code>parseValue("text/html; charset=\"UTF-8\"")</code>
-     *
-     * @param contentTypeHeaderValue the header value to parse
-     * @param preserveFormat True to preserve the formatting of the header
-     * @return a ContentTypeHeader instance.  Never null.
-     * @throws java.io.IOException  if the specified header value was missing, empty, or syntactically invalid
-     */
-    public static ContentTypeHeader parseValue( String contentTypeHeaderValue,
-                                                final boolean preserveFormat ) throws IOException {
+    private static ContentTypeHeader fullParse(String contentTypeHeaderValue, final boolean hadWhitespaceAroundSlash) throws IOException {
         if (contentTypeHeaderValue == null || contentTypeHeaderValue.length() < 1)
             throw new IOException("MIME Content-Type header missing or empty");
 
         final String originalValue = contentTypeHeaderValue;
         if (contentTypeHeaderValue.endsWith(";")) {
-            contentTypeHeaderValue = contentTypeHeaderValue.substring(0, contentTypeHeaderValue.length()-1);    
+            contentTypeHeaderValue = contentTypeHeaderValue.substring(0, contentTypeHeaderValue.length()-1);
         }
 
         HeaderTokenizer ht = new HeaderTokenizer(contentTypeHeaderValue, HeaderTokenizer.MIME, true);
@@ -234,10 +245,63 @@ public class ContentTypeHeader extends MimeHeader {
 
                 params.put(name, value.toString());
             }
+            return new ContentTypeHeader(type, subtype, hadWhitespaceAroundSlash, params, originalValue);
 
-            return new ContentTypeHeader(type, subtype, params, preserveFormat?originalValue:null);
         } catch (ParseException e) {
             throw new CausedIOException("Unable to parse MIME header", e);
+        }
+    }
+
+    /**
+     * Parse a MIME Content-Type: header, not including the header name and colon.
+     * Example: <code>parseValue("text/html; charset=\"UTF-8\"")</code>
+     * <p/>
+     * This does a full parse + validate.
+     *
+     * @param contentTypeHeaderValue the header value to parse
+     * @return a ContentTypeHeader instance.  Never null.
+     * @throws java.io.IOException  if the specified header value was missing, empty, or syntactically invalid
+     */
+    public static ContentTypeHeader parseValue( String contentTypeHeaderValue ) throws IOException {
+        ContentTypeHeader quickHeader = quickParse(contentTypeHeaderValue);
+        ContentTypeHeader fullHeader = fullParse(contentTypeHeaderValue, quickHeader != null && quickHeader.hadWhitespaceAroundSlash);
+        validate(fullHeader);
+        return fullHeader;
+    }
+
+    /**
+     * Ensure this content type header value is syntactically valid.
+     *
+     * @throws IOException if the header does not validate.
+     */
+    public void validate() throws IOException {
+        ContentTypeHeader fullParsed = fullParse(getFullValue(), hadWhitespaceAroundSlash);
+        if (params.get() == null) {
+            params.set(fullParsed.getParams());
+        }
+
+        if (!fullParsed.getType().equalsIgnoreCase(getType()))
+            throw new IOException("Invalid quick-parsed type: " + getType());
+
+        if (!fullParsed.getSubtype().equalsIgnoreCase(getSubtype()))
+            throw new IOException("Invalid quick-parsed subtype: " + getSubtype());
+
+        validate(this);
+
+        if (hadWhitespaceAroundSlash)
+            throw new IOException("Content-Type value may not have whitespace immediately before or after the slash");
+    }
+
+    private static void validate(ContentTypeHeader ch) throws IOException {
+        if ("multipart".equalsIgnoreCase(ch.type)) {
+            String boundary = ch.getParams().get("boundary");
+            if (boundary == null || boundary.length() < 1)
+                throw new IOException("Content-Type of type multipart must include a boundary parameter (RFC 2045 sec 5)");
+            byte[] bytes = boundary.getBytes(ENCODING);
+            for (byte aByte : bytes) {
+                if (aByte < ' ' || aByte > 126)
+                    throw new IOException("Content-Type multipart boundary contains illegal character; must be US-ASCII (RFC 2045)");
+            }
         }
     }
 
@@ -475,5 +539,10 @@ public class ContentTypeHeader extends MimeHeader {
         } else {
             super.writeParam(os, name, value);
         }
+    }
+
+    @Override
+    protected Map<String, String> parseParams() throws IOException {
+        return parseValue(getFullValue()).params.get();
     }
 }

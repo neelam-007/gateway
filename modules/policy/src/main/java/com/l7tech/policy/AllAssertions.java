@@ -34,7 +34,7 @@ import com.l7tech.policy.assertion.xmlsec.*;
 import java.util.Collections;
 
 /**
- * The canonical list of legacy assertions known to a new AssertionRegistry instance on startup.
+ * The canonical list of core assertions known to a new AssertionRegistry instance on startup.
  *
  * @author alex
  */
@@ -111,6 +111,7 @@ public class AllAssertions {
         new AuditRecordToXmlAssertion(),
         new ExportVariablesAssertion(),
         new CustomizeErrorResponseAssertion(),
+        new ValidateContentTypeAssertion(),
     };
 
 
@@ -203,5 +204,6 @@ public class AllAssertions {
         new AuditRecordToXmlAssertion(),
         new ExportVariablesAssertion(),
         new CustomizeErrorResponseAssertion(),
+        new ValidateContentTypeAssertion(),
     };
 }

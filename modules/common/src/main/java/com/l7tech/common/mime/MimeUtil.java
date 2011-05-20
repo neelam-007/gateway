@@ -70,7 +70,7 @@ public class MimeUtil {
             MimeHeader mh;
             if (name.equalsIgnoreCase(CONTENT_TYPE)) {
                 // Special case for Content-Type: since it's such a big deal when doing multipart
-                mh = ContentTypeHeader.parseValue(value);
+                mh = ContentTypeHeader.create(value);
             } else {
                 mh = MimeHeader.parseValue(name, value);
             }

@@ -1,24 +1,25 @@
 package com.l7tech.external.assertions.mtom.server;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Element;
-import org.w3c.dom.Document;
-import com.l7tech.common.mime.StashManager;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.IOUtils;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.message.Message;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.xml.ElementCursor;
+import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import java.io.ByteArrayInputStream;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+
+import static org.junit.Assert.*;
 
 /**
  * 
@@ -31,6 +32,11 @@ public class XOPUtilsTest {
         assertFalse("multipart/related not XOP (no type)", XOPUtils.isXop( ContentTypeHeader.parseValue( "multipart/related; boundary=MB" )));
         assertFalse("multipart/related not XOP", XOPUtils.isXop( ContentTypeHeader.parseValue( "multipart/related; boundary=MB; type=application/soap+xml" )));
         assertTrue("multipart/related XOP", XOPUtils.isXop( ContentTypeHeader.parseValue( "multipart/related; boundary=MB; type=application/xop+xml" )));
+
+        assertFalse("text/xml not XOP", XOPUtils.isXop( ContentTypeHeader.create( "text/xml" )));
+        assertFalse("multipart/related not XOP (no type)", XOPUtils.isXop( ContentTypeHeader.create( "multipart/related; boundary=MB" )));
+        assertFalse("multipart/related not XOP", XOPUtils.isXop( ContentTypeHeader.create( "multipart/related; boundary=MB; type=application/soap+xml" )));
+        assertTrue("multipart/related XOP", XOPUtils.isXop( ContentTypeHeader.create( "multipart/related; boundary=MB; type=application/xop+xml" )));
     }
 
     @Test

@@ -65,7 +65,7 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
             this.responseContentType = null;
             this.responseContentTypeTemplate = responseContentType;
         } else {
-            this.responseContentType = ContentTypeHeader.parseValue(responseContentType);
+            this.responseContentType = ContentTypeHeader.create(responseContentType);
             this.responseContentTypeTemplate = null;
         }
     }
@@ -121,7 +121,7 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
                 sock.setSoTimeout(assertion.getReadTimeoutMillis());
                 ContentTypeHeader contentType = responseContentType != null
                         ? responseContentType
-                        : ContentTypeHeader.parseValue(ExpandVariables.process(responseContentTypeTemplate, vars, auditor, true));
+                        : ContentTypeHeader.create(ExpandVariables.process(responseContentTypeTemplate, vars, auditor, true));
                 response.initialize(stashManagerFactory.createStashManager(), contentType, new ByteLimitInputStream(new BufferedInputStream(sock.getInputStream()), 1024, assertion.getMaxResponseBytes()));
                 final Socket finalSock = sock;
                 sock = null; // defer closing response socket until end of request, so we might be able to stream it

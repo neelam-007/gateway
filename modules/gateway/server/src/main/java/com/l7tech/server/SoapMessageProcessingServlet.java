@@ -200,16 +200,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         final String rawct = hrequest.getContentType();
         ContentTypeHeader ctype = rawct != null && rawct.length() > 0
-          ? ContentTypeHeader.parseValue(rawct)
+          ? ContentTypeHeader.create(rawct)
           : ContentTypeHeader.XML_DEFAULT;
 
         final String overrideContentType = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         if (overrideContentType != null) {
-            try {
-                ctype = ContentTypeHeader.parseValue(overrideContentType);
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "Invalid override content type for connector " + connector.getPort() + "; will use " + ctype);
-            }
+            ctype = ContentTypeHeader.create(overrideContentType);
         }
 
         final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response,  true);

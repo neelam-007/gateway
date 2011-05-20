@@ -392,7 +392,7 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
                 try {
                     status = client.executeMethod(hconf, method, state);
                     Header cth = method.getResponseHeader(MimeUtil.CONTENT_TYPE);
-                    contentType = cth == null || cth.getValue() == null ? null : ContentTypeHeader.parseValue(cth.getValue());
+                    contentType = cth == null || cth.getValue() == null ? null : ContentTypeHeader.create(cth.getValue());
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);
                     contentLength = clh == null || clh.getValue() == null ? null : MimeHeader.parseNumericValue(clh.getValue());
                 } catch (UnsupportedTlsVersionsException e) {

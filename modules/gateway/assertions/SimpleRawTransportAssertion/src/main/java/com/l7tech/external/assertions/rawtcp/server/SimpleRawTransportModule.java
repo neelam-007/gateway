@@ -377,7 +377,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
             InputStream inputStream = new ByteLimitInputStream(sock.getInputStream(), 4096, requestSizeLimit);
             byte[] bytes = IOUtils.slurpStream(inputStream);
 
-            ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.parseValue(ctypeStr);
+            ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.OCTET_STREAM_DEFAULT : ContentTypeHeader.create(ctypeStr);
             request.initialize(stashManagerFactory.createStashManager(), ctype, new ByteArrayInputStream(bytes));
             request.attachKnob(TcpKnob.class, new SocketTcpKnob(sock));
             if (hardwiredServiceOid != -1) {
