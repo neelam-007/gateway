@@ -92,7 +92,7 @@ public class GenericUserPanel extends UserPanel {
     private void initialize() {
         try {
             // Initialize form components
-            rolesPanel = new UserRoleAssignmentsPanel(user, canUpdate);
+            rolesPanel = new UserRoleAssignmentsPanel(user, config.isAdminEnabled(), canUpdate);
             groupPanel = new UserGroupsPanel(this, config, config.isWritable() && canUpdate);
             certPanel = new NonFederatedUserCertPanel(this, config.isWritable() ? passwordChangeListener : null, canUpdate);
             layoutComponents();

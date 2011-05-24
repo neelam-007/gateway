@@ -16,6 +16,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Vector;
 import java.awt.*;
 import java.util.logging.Level;
@@ -34,14 +35,16 @@ public class UserRoleAssignmentsPanel extends JPanel {
     private JLabel statusLabel;
     private JLabel statusTextLabel;
     private boolean canUpdate;
+    private boolean isAdminEnabled;
     private static final String genericLabel = "{0} is assigned to the following roles:";
     static Logger log = Logger.getLogger(UserRoleAssignmentsPanel.class.getName());
 
     private User user;
 
-    public UserRoleAssignmentsPanel(User whichUser, boolean canUpdate) throws FindException {
+    public UserRoleAssignmentsPanel(User whichUser, boolean isAdminEnabled, boolean canUpdate) throws FindException {
         this.user = whichUser;
         this.canUpdate = canUpdate;
+        this.isAdminEnabled = isAdminEnabled;
         rolesLabel.setText(MessageFormat.format(genericLabel, user.getName()));
 
         Vector<String> assignmentsModel = new Vector<String>();
@@ -99,7 +102,7 @@ public class UserRoleAssignmentsPanel extends JPanel {
 
                 isUserEnabledAndNotExpired = isUserEnabledAndNotExpired && (expiry < 0 || expiry > System.currentTimeMillis());
             }
-            enableDisableState(isUserEnabledAndNotExpired);
+            enableDisableState(isAdminEnabled && isUserEnabledAndNotExpired);
 
             String statusButtonText = null;
             if (userState == LogonInfo.State.INACTIVE)
@@ -129,6 +132,8 @@ public class UserRoleAssignmentsPanel extends JPanel {
     }
 
     private Collection<Role> getAssignedRolesForUser() throws FindException {
+        if(!isAdminEnabled)
+            return Collections.emptySet();
         RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
         return rbacAdmin.findRolesForUser(user);
     }
