@@ -42,9 +42,12 @@ my $LOAD_WORLD_B64 = q[/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keyst
 my @SAVE_WORLD_B64 = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty set 4 worldb64);
 my $LOAD_WORLD_KEYSTOREID = q[/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty get 4 initialKeystoreId];
 my @SAVE_WORLD_KEYSTOREID = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty set 4 initialKeystoreId);
+my $LOAD_IGNORE_KEYSTOREIDS = q[/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty get 4 ignoreKeystoreIds];
+my @SAVE_IGNORE_KEYSTOREIDS = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty set 4 ignoreKeystoreIds);
 my @CLEAR_WORLD_B64 = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty clear 4 worldb64);
 my @CLEAR_WORLD_KEYSTOREID = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty clear 4 initialKeystoreId);
 my @CLEAR_WORLD_DATABYTES = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty clear 4 databytes);
+my @CLEAR_IGNORE_KEYSTOREIDS = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -keystoreProperty clear 4 ignoreKeystoreIds);
 my @GENERATE_NEW_KMP = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -changeMasterPassphrase kmp generateAll ncipher.sworld.rsa);
 my @MIGRATE_KMP_TO_OMP = qw(/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -changeMasterPassphrase kmp migrateFromKmpToOmp);
 my $LIST_KEYSTORE_CONTENTS = q[/opt/SecureSpan/Appliance/libexec/ssgconfig_launch -changeMasterPassphrase kmp listKeystoreContents ignoreKmpFile config.profile=ncipher.sworld.rsa keystore.contents.base64=];
@@ -199,9 +202,69 @@ sub saveDatabaseKeystoreId($) {
 }
 
 
+sub loadDatabaseIgnoreIds() {
+    my $keystoreId = `$LOAD_IGNORE_KEYSTOREIDS 2>&1`;
+    my $result = $?;
+    my $status = $? >> 8;
+    chomp($keystoreId);
+    # Status of 11 just means "property not found"
+    return () if $status == 11;
+    die "Failed to load database keystore IDa: $?: $keystoreId\n" if $result;
+
+    my @ids = split '\s*,\s*', $keystoreId;
+    my @ret;
+
+    foreach my $id (@ids) {
+        if ($id =~ /^([a-f0-9]{40})$/) {
+            push @ret, $1;
+        }
+    }
+
+    return @ret;
+}
+
+
+sub saveDatabaseIgnoreIds {
+    my @ignoreIds = @_;
+
+    my $ids = join ",", @ignoreIds;
+    my @cmd = (@SAVE_IGNORE_KEYSTOREIDS, $ids);
+    system(@cmd) == 0
+        or die "Failed to save ignore keystore IDs to database: $?\n";
+}
+
+
+sub addDatabaseIgnoreId($) {
+    my $id = shift;
+
+    my @ids = loadDatabaseIgnoreIds();
+    push @ids, $id;
+    saveDatabaseIgnoreIds(@ids);
+}
+
+
+sub removeDatabaseIgnoreId($) {
+    my $id = shift;
+
+    my @ids = loadDatabaseIgnoreIds();
+    @ids = grep { $id ne $_ } @ids;
+    if (@ids) {
+        saveDatabaseIgnoreIds(@ids);
+    } else {
+        deleteDatabaseIgnoreIds();
+    }
+}
+
+
 sub deleteDatabaseKeystoreId() {
     system(@CLEAR_WORLD_KEYSTOREID) == 0
         or die "Failed to clear world data in database (initialKeystoreId): $?\n";
+}
+
+
+sub deleteDatabaseIgnoreIds() {
+    system(@CLEAR_IGNORE_KEYSTOREIDS) == 0
+        or die "Failed to clear world data in database (ignoreids): $?\n";
 }
 
 
@@ -211,6 +274,7 @@ sub deleteDatabaseWorld() {
     system(@CLEAR_WORLD_DATABYTES) == 0
         or die "Failed to clear world data in database (databytes): $?\n";
     deleteDatabaseKeystoreId();
+    deleteDatabaseIgnoreIds();
 }
 
 
@@ -720,6 +784,11 @@ sub doEnableNcipher() {
 
     doGenerateNewKmp();
 
+    my $kmpKeystoreId = lookupKmpKeystoreId();
+    die "Unable to enable keystore-protected master passphrase: could not determine keystore ID in use by current KMP\n"
+        unless $kmpKeystoreId =~ /^([a-f0-9]{40})$/;
+    addDatabaseIgnoreId($kmpKeystoreId);
+
     unlink(NCIPHERDEFS);
     die "Unable to recreate " . NCIPHERDEFS . " as it already exists and cannot be deleted: $!\n"
         if (-e NCIPHERDEFS);
@@ -772,6 +841,8 @@ sub doMigrateKmpToOmp() {
     my $keystoreFiles = KMDATA . "/key_jcecsp_$keystoreId*";
     system("rm -f $keystoreFiles") == 0
         or die "Unable to remove key blobs for previous keystore-protected master passphrase: $keystoreFiles\n";
+
+    removeDatabaseIgnoreId($keystoreId);
 }
 
 

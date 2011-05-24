@@ -60,10 +60,13 @@ class NcipherKeyStoreData implements Serializable {
      * Get a list of all key_jcecsp files that appear to be represented in the kmdata/local directory on the current node.
      *
      * @param kmdataLocalDir  the directory to load from, ie "/opt/nfast/kmdata/local".  Required.  Must be readable by the current process.
+     * @param toIgnore keystore identifiers that should be ignored and omitted from the returned list, or null.
      * @return a list of 40-character keystore identifier strings, one for each file in the specified directory matching the pattern
      *         "^key_jcecsp_[0-9a-f]{40}}$" (where key_jcecsp_ is whatever is in use as the {@link #APP_PREFIX_KEY_JCECSP}).
      */
-    static List<String> readKeystoreIdentifiersFromLocalDisk(File kmdataLocalDir) {
+    static List<String> readKeystoreIdentifiersFromLocalDisk(File kmdataLocalDir, Set<String> toIgnore) {
+        if (toIgnore == null)
+            toIgnore = Collections.emptySet();
         final String prefix = APP_PREFIX_KEY_JCECSP;
         final int prefixLen = prefix.length();
         final Pattern idpattern = Pattern.compile("^[0-9a-f]{40}$");
@@ -83,6 +86,8 @@ class NcipherKeyStoreData implements Serializable {
                 continue;
             String id = name.substring(prefixLen);
             if (!idpattern.matcher(id).matches())
+                continue;
+            if (toIgnore.contains(id))
                 continue;
             ret.add(id);
         }

@@ -31,6 +31,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     private static final long refreshTime = 5 * 1000;
     private static final File KMDATA_LOCAL_DIR = new File(SyspropUtil.getString("com.l7tech.server.security.keystore.ncipher.kmdataLocalPath", "/opt/nfast/kmdata/local"));
     static final String KF_PROP_INITIAL_KEYSTORE_ID = "initialKeystoreId";
+    static final String KF_PROP_IGNORE_KEYSTORE_IDS = "ignoreKeystoreIds";
 
     private final long id;
     private final String name;
@@ -258,8 +259,22 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
             throw new KeyStoreException("Unable to look up initial keystore ID: " + ExceptionUtils.getMessage(e), e);
         }
 
-        if (identifiersToTry.isEmpty())
-            identifiersToTry = NcipherKeyStoreData.readKeystoreIdentifiersFromLocalDisk(KMDATA_LOCAL_DIR);
+        if (identifiersToTry.isEmpty()) {
+            Set<String> toIgnore = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+            try {
+                KeystoreFile keystoreFile = kem.findByPrimaryKey(getOid());
+                String ignoreIds = keystoreFile.getProperty(KF_PROP_IGNORE_KEYSTORE_IDS);
+                if (ignoreIds != null && ignoreIds.trim().length() > 0) {
+                    String[] ids = ignoreIds.split("\\s*,\\s*");
+                    toIgnore.addAll(Arrays.asList(ids));
+                }
+            } catch (FindException e) {
+                throw new KeyStoreException("Unable to look up keystore IDs to ignore: " + ExceptionUtils.getMessage(e), e);
+            }
+
+            identifiersToTry = NcipherKeyStoreData.readKeystoreIdentifiersFromLocalDisk(KMDATA_LOCAL_DIR, toIgnore);
+        }
+
         return identifiersToTry;
     }
 
