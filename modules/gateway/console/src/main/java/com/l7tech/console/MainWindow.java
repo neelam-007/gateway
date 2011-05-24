@@ -3291,7 +3291,12 @@ public class MainWindow extends JFrame implements SheetHolder {
         topMenuLicenseListener = new LicenseListener() {
             @Override
             public void licenseChanged(ConsoleLicenseManager licenseManager) {
-                updateTopMenu();
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateTopMenu();
+                    }
+                });
             }
         };
         Registry.getDefault().getLicenseManager().addLicenseListener(topMenuLicenseListener);
