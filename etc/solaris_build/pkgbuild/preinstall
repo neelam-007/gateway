@@ -8,11 +8,25 @@ if [ -d /ssg ] ; then
     UID_LAYER7=""
     GID_LAYER7=""
 else
-    UID_GATEWAY=`[ -d /opt/SecureSpan/Gateway ] && ls -nd /opt/SecureSpan/Gateway | awk '{print $3}'`
-    GID_GATEWAY=`[ -d /opt/SecureSpan/Gateway ] && ls -nd /opt/SecureSpan/Gateway | awk '{print $4}'`
+    #look at files/dirs that we know to have been owned by the users we are looking for
+
+    #if the gateway was ever run, then this directory will exist and be owned by gateway
+    UID_GATEWAY=`[ -d /opt/SecureSpan/Gateway/node/default/var ] && ls -nd /opt/SecureSpan/Gateway/node/default/var | awk '{print $3}'`
+
+    #try the same director to find the gateway GID
+    GID_GATEWAY=`[ -d /opt/SecureSpan/Gateway/node/default/var ] && ls -nd /opt/SecureSpan/Gateway/node/default/var | awk '{print $4}'`
+
+    #if we didn't find a group, try again with another file.
+    #look for the config log since this is almost always present, even if the gateway itself was never run
+    if [ -z "${GID_GATEWAY}" ] ; then
+        GID_GATEWAY=`[ -f /opt/SecureSpan/Gateway/config/config.log ] && ls -nd /opt/SecureSpan/Gateway/config/config.log | awk '{print $4}'`
+    fi
+
     UID_SSGCONF="";
-    UID_LAYER7=`[ -f /opt/SecureSpan/Gateway/config/config.log ] && ls -nd /opt/SecureSpan/Gateway/config/config.log | awk '{print $3}'`
-    GID_LAYER7=`[ -f /opt/SecureSpan/Gateway/config/config.log ] && ls -nd /opt/SecureSpan/Gateway/config/config.log | awk '{print $4}'`
+
+    #the layer7 user owns the Gateway root
+    UID_LAYER7=`[ -f /opt/SecureSpan/Gateway/ ] && ls -nd /opt/SecureSpan/Gateway/ | awk '{print $3}'`
+    GID_LAYER7=`[ -d /opt/SecureSpan/Gateway ] && ls -nd /opt/SecureSpan/Gateway | awk '{print $4}'`
 fi
 
 if [ "$UID_GATEWAY" = "$UID_SSGCONF" ] ; then
@@ -76,7 +90,7 @@ else
     if [ $UID_LAYER7 ] ; then
         UID_PARAM="-u $UID_LAYER7"
     fi
-	useradd $UID_PARAM -G gateway -g gateway -d /export/home/layer7 -s /usr/bin/bash layer7
+	useradd $UID_PARAM -G gateway -g layer7 -d /export/home/layer7 -s /usr/bin/bash layer7
         if [ ${?} -eq 1 ]; then
                 echo "Error: User layer7 failed to add"
                 exit 1;
