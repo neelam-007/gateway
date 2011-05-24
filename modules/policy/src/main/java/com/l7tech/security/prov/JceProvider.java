@@ -5,13 +5,10 @@
 
 package com.l7tech.security.prov;
 
-import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
+import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -299,7 +296,7 @@ public abstract class JceProvider {
      * @throws java.security.SignatureException   if there is a problem signing the CSR
      */
     public CertificateRequest makeCsr( String username, KeyPair keyPair ) throws SignatureException, InvalidKeyException {
-        return staticMakeCsr( username, keyPair, getProviderFor(SERVICE_CSR_SIGNING) );
+        return BouncyCastleCertUtils.makeCertificateRequest(username, keyPair, getProviderFor(SERVICE_CSR_SIGNING));
     }
 
     /**
@@ -454,33 +451,6 @@ public abstract class JceProvider {
      */
     public Provider getProviderFor(String service) {
         return null;
-    }
-
-    /**
-     * Generate a CertificateRequest using the specified Crypto provider.
-     *
-     * @param username  the username to put in the cert
-     * @param keyPair the public and private keys
-     * @param provider provider to use for crypto operations, or null to use best preferences.
-     * @return a new CertificateRequest instance.  Never null.
-     * @throws java.security.InvalidKeyException  if a CSR cannot be created using the specified keypair
-     * @throws java.security.SignatureException   if the CSR cannot be signed
-     */
-    public static CertificateRequest staticMakeCsr(String username, KeyPair keyPair, Provider provider ) throws InvalidKeyException, SignatureException {
-        X509Name subject = new X509Name("cn=" + username);
-        ASN1Set attrs = null;
-        PublicKey publicKey = keyPair.getPublic();
-        PrivateKey privateKey = keyPair.getPrivate();
-
-        // Generate request
-        try {
-            PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(DEFAULT_CSR_SIG_ALG, subject, publicKey, attrs, privateKey, provider == null ? null : provider.getName());
-            return new BouncyCastleCertificateRequest(certReq, publicKey);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e); // can't happen
-        } catch (NoSuchProviderException e) {
-            throw new RuntimeException(e); // can't happen
-        }
     }
 
     /**

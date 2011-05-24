@@ -6,7 +6,11 @@ import com.l7tech.common.io.ParamsCertificateGenerator;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
+import com.l7tech.util.SyspropUtil;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 
 import javax.security.auth.x500.X500Principal;
@@ -17,6 +21,9 @@ import java.security.cert.X509Certificate;
  * Certificate utility methods that require static imports of Bouncy Castle classes.
  */
 public class BouncyCastleCertUtils {
+
+    // true to set attrs to null (pre-6.0-2 behavior); false to set attrs to empty DERSet (Bug #10534)
+    private static final boolean omitAttrs = SyspropUtil.getBoolean("com.l7tech.security.cert.csr.omitAttrs", false);
 
     /**
      * Generate a self-signed certificate from the specified KeyPair and the specified cert generation parameters.
@@ -49,7 +56,7 @@ public class BouncyCastleCertUtils {
             throw new IllegalArgumentException("certGenParams must include a subject DN for the CSR");
         Provider sigProvider = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CSR_SIGNING);
         X500Principal subject = certGenParams.getSubjectDn();
-        ASN1Set attrs = null;
+        ASN1Set attrs = omitAttrs ? null : new DERSet(new ASN1EncodableVector());
         PublicKey publicKey = keyPair.getPublic();
         PrivateKey privateKey = keyPair.getPrivate();
 
@@ -62,5 +69,32 @@ public class BouncyCastleCertUtils {
                 ? new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey, null)
                 : new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey, sigProvider.getName());
         return new BouncyCastleCertificateRequest(certReq, publicKey);
+    }
+
+    /**
+     * Generate a CertificateRequest using the specified Crypto provider.
+     *
+     * @param username  the username to put in the cert
+     * @param keyPair the public and private keys
+     * @param provider provider to use for crypto operations, or null to use best preferences.
+     * @return a new CertificateRequest instance.  Never null.
+     * @throws java.security.InvalidKeyException  if a CSR cannot be created using the specified keypair
+     * @throws java.security.SignatureException   if the CSR cannot be signed
+     */
+    public static CertificateRequest makeCertificateRequest(String username, KeyPair keyPair, Provider provider) throws InvalidKeyException, SignatureException {
+        X509Name subject = new X509Name("cn=" + username);
+        ASN1Set attrs = omitAttrs ? null : new DERSet(new ASN1EncodableVector());
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+
+        // Generate request
+        try {
+            PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(JceProvider.DEFAULT_CSR_SIG_ALG, subject, publicKey, attrs, privateKey, provider == null ? null : provider.getName());
+            return new BouncyCastleCertificateRequest(certReq, publicKey);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchProviderException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
