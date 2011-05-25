@@ -18,6 +18,7 @@ public final class EsmApplicationContext {
             old = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
             spring = new ClassPathXmlApplicationContext(new String[] { "com/l7tech/external/assertions/esm/server/resources/esmAssertionContext.xml" }, true, parentSpring);
+            spring.start();
             wsdmService = (ServiceManagementAdministrationService)spring.getBean("wsdmService");
         } finally {
             if (old != null) Thread.currentThread().setContextClassLoader(old);
