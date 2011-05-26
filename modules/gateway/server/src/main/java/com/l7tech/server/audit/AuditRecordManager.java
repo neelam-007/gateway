@@ -34,6 +34,8 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, AuditReco
     }
 
     /**
+     * //todo: Note, this method has no actual usages. If this is used, test it first.
+     * //todo: Delete. This has no usages, although it is referenced indirectly via AuditRecordWorker.
      * Find audit records that match the given criteria.
      *
      * @param criteria The search settings (must not be null)

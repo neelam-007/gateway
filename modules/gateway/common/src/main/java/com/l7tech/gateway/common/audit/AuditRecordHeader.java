@@ -41,6 +41,7 @@ public class AuditRecordHeader extends EntityHeader {
               auditRecordHeader.getVersion() );
     }
 
+    //todo: version should not be required.
     public AuditRecordHeader(long id, String name, String description, byte[] signatureDigest, String signature, String nodeId, long timestamp, Level level, int version) {
         super(id, EntityType.AUDIT_RECORD, name, description, version);
         this.signatureDigest = signatureDigest;

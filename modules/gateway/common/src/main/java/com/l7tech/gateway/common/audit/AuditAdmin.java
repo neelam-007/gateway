@@ -44,6 +44,7 @@ public interface AuditAdmin extends GenericLogAdmin {
     AuditRecord findByPrimaryKey(long oid) throws FindException;
 
     /**
+     * //todo: Delete. This has no usages, although it is referenced via AuditRecordWorker.
      * Retrieves a collection of {@link AuditRecord}s matching the provided criteria.  May be empty, but never null.
      * @param criteria an {@link AuditSearchCriteria} describing the search criteria.  Must not be null.
      * @throws FindException if there was a problem retrieving Audit records from the database

@@ -18,9 +18,7 @@ import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.ScrollableResults;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.Criterion;
+import org.hibernate.criterion.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.TransactionException;
@@ -67,31 +65,67 @@ public class AuditRecordManagerImpl
     @Override
     @Transactional(readOnly=true)
     public Collection<AuditRecord> find( final AuditSearchCriteria criteria ) throws FindException {
-        return find( criteria, new Functions.Unary<AuditRecord,AuditRecord>(){
+        //todo: test before using, no current usages.
+        return find(criteria, null, new Functions.BinaryVoid<List<AuditRecord>, Object>() {
             @Override
-            public AuditRecord call(final AuditRecord auditRecord) {
-                return auditRecord;
+            public void call(List<AuditRecord> auditRecords, Object o) {
+                AuditRecord record = (AuditRecord) o;
+                if (verifyRecordByAuditDetailsSearchCriteria(criteria, record)) {
+                    auditRecords.add(record);
+                }
             }
-        } );
+        });
     }
 
     @Override
     @Transactional(readOnly = true)
     public Collection<AuditRecordHeader> findHeaders(final AuditSearchCriteria criteria) throws FindException {
-        List<AuditRecordHeader> auditRecordHeaders = find(criteria, new Functions.Unary<AuditRecordHeader,AuditRecord>(){
+        final ProjectionList projectionList = Projections.projectionList()
+                .add(Property.forName(PROP_OID))
+                .add(Property.forName(PROP_NAME))
+                .add(Property.forName(PROP_MESSAGE))
+                .add(Property.forName(PROP_SIGNATURE))
+                .add(Property.forName(PROP_NODEID))
+                .add(Property.forName(PROP_TIME))
+                .add(Property.forName(PROP_LEVEL));
+
+        //todo: Could a ResultTransformer be useful here and simplify the mapping of results to AuditRecordHeader?
+        List<AuditRecordHeader> auditRecordHeaders = find(criteria, projectionList, new Functions.BinaryVoid<List<AuditRecordHeader>, Object>() {
             @Override
-            public AuditRecordHeader call(final AuditRecord auditRecord) {
-                return newHeader(auditRecord);
+            public void call(List<AuditRecordHeader> auditRecordHeaders, Object o) {
+                final Object [] values = (Object[]) o;
+
+                final Long id = Long.valueOf(values[0].toString());
+                final String name = (values[1] == null)? null: values[1].toString();
+                final String description = values[2].toString();
+                final String signature = (values[3] == null) ? null : values[3].toString();
+                final String nodeId = values[4].toString();
+                final Long timestamp = Long.valueOf(values[5].toString());
+                final Level level = Level.parse(values[6].toString());
+
+                auditRecordHeaders.add(new AuditRecordHeader(
+                        id,
+                        name,
+                        description,
+                        null,
+                        signature,
+                        nodeId,
+                        timestamp,
+                        level,
+                        0 //version property is not used for AuditRecord or sub classes!
+                ));
             }
         });
-        return Collections.unmodifiableList( auditRecordHeaders );
+
+        return Collections.unmodifiableList(auditRecordHeaders);
     }
 
-    private <T> List<T> find( final AuditSearchCriteria criteria, final Functions.Unary<T,AuditRecord> transform ) throws FindException {
+    private <T> List<T> find( final AuditSearchCriteria criteria,
+                              final ProjectionList projectionList,
+                              final Functions.BinaryVoid<List<T>, Object> resultProcessor) throws FindException {
         if (criteria == null) throw new IllegalArgumentException("Criteria must not be null");
 
-        int maxRecords = criteria.maxRecords;
-        if (maxRecords <= 0) maxRecords = 4096;
+        int maxRecords = getMaxRecords(criteria);
         List<T> result = new ArrayList<T>(maxRecords);
 
         // If search criteria contain conflicts (for example, Request ID and Entity ID are specified in "criteria"),
@@ -100,31 +134,22 @@ public class AuditRecordManagerImpl
 
         Session session = null;
         try {
-            Class findClass = criteria.recordClass;
-            if (findClass == null) findClass = getInterfaceClass();
-
-            if(criteria.requestId != null && findClass != MessageSummaryAuditRecord.class) findClass = MessageSummaryAuditRecord.class;
-
             session = getSession();
 
-            Criteria query = session.createCriteria(findClass);
-
-            query.setMaxResults(maxRecords);
-
-            for ( Criterion criterion : asCriterion( criteria ) ) {
-                query.add( criterion );
+            final Criteria hibernateCriteria = getHibernateCriteriaFromAuditCriteria(criteria, session, maxRecords);
+            if (projectionList != null) {
+                hibernateCriteria.setProjection(projectionList);
             }
 
-            query.addOrder(Order.desc(PROP_TIME));
-
-            ScrollableResults results = query.scroll();
+            ScrollableResults results = hibernateCriteria.scroll();
             while( results.next() ) {
-                AuditRecord record = (AuditRecord) results.get(0);
-                if (verifyRecordByAuditDetailsSearchCriteria(criteria, record)) {
-                    result.add( transform.call(record) );
-                }
-                session.evict(record);
+                //note if a project is used, this will be an array, otherwise it will be the entity type.
+                //todo: test if used for anything other than header data - pre Chinook this was never used for any data other than headers, and is still not
+                final Object object = results.get();
+                resultProcessor.call(result, object);
+                session.evict(object);
             }
+
             return result;
         } catch ( HibernateException e ) {
             throw new FindException("Couldn't find Audit Records", e);
@@ -133,6 +158,31 @@ public class AuditRecordManagerImpl
         }
     }
 
+    private int getMaxRecords(AuditSearchCriteria criteria) {
+        int maxRecords = criteria.maxRecords;
+        if (maxRecords <= 0) maxRecords = 4096;
+        return maxRecords;
+    }
+
+    private Criteria getHibernateCriteriaFromAuditCriteria(final AuditSearchCriteria criteria,
+                                                           final Session session,
+                                                           final int maxRecords) throws FindException {
+        Class findClass = criteria.recordClass;
+        if (findClass == null) findClass = getInterfaceClass();
+
+        if(criteria.requestId != null && findClass != MessageSummaryAuditRecord.class) findClass = MessageSummaryAuditRecord.class;
+
+        Criteria hibernateCriteria = session.createCriteria(findClass);
+        hibernateCriteria.setMaxResults(maxRecords);
+
+        for ( Criterion criterion : asCriterion( criteria ) ) {
+            hibernateCriteria.add( criterion );
+        }
+
+        hibernateCriteria.addOrder(Order.desc(PROP_TIME));
+
+        return hibernateCriteria;
+    }
     /**
      * Check if search criteria have conflict.  The "conflict" means that Request ID and Entity Search Parameters can exist at the same time in the search criteria.
      * @param criteria: the search criteria.
@@ -379,10 +429,10 @@ public class AuditRecordManagerImpl
     private static final String PROP_OID = "oid";
     private static final String PROP_NODEID = "nodeId";
     private static final String PROP_MESSAGE = "message";
+    private static final String PROP_SIGNATURE = "signature";
     private static final String PROP_SERVICE_NAME = "name";
     private static final String PROP_REQUEST_ID = "strRequestId";
-    public static final String PROP_NAME = "name";
-    public static final String PROP_MSG = "message";
+    private static final String PROP_NAME = "name";
     private static final String PROP_PROV_ID = "identityProviderOid";
     private static final String PROP_USER_ID = "userId";
     private static final String PROP_USER_NAME = "userName";
