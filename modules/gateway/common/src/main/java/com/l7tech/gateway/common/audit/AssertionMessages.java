@@ -16,6 +16,7 @@ public class AssertionMessages extends Messages {
     public static final M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "Request did not contain any WSS level security");
     public static final M ASSERTION_MISCONFIGURED = m(4304, Level.WARNING, false, false, "Assertion configuration error: {0}"); // Provided as less-drastic alternative to throwing PolicyAssertionException
     public static final M MESSAGE_NOT_SOAP = m(4305, Level.WARNING, "{0} message not soap; {1}");
+    public static final M NO_SUCH_PART = m(4306, Level.WARNING, "{0} message has no part {1}");
     public static final M MESSAGE_TARGET_ERROR = m(4330, Level.WARNING, "Invalid target message, variable \"{0}\": {1}");
 
     // ServerHttpRoutingAssertion messages

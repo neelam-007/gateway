@@ -95,6 +95,19 @@ public interface MimeKnob extends MessageKnob,Iterable<PartInfo> {
     ContentTypeHeader getOuterContentType() throws IOException;
 
     /**
+     * Change the outer content type of the message.  This will change the value returned by future calls to {@link #getOuterContentType()}.
+     * <p/>
+     * If this message was originally initialized as a multipart message, changing its outer content type will have no effect on current multipart boundary
+     * for any parts that have not yet been read; nor will it change the number of parts that are eventually seen.
+     * <p/>
+     * Similarly, if this message was originally initialized as a single-part message, changing its outer content type
+     * will not cause it to have more than one part, even if its body content is changed to contain now-valid boundaries.
+     *
+     * @param contentType a new content type to return from {@link #getOuterContentType()}.  Required.
+     */
+    void setOuterContentType(ContentTypeHeader contentType);
+
+    /**
      * @return the length of the entire message body.  This might involve reading and stashing the entire message, including all attachments!
      * @throws IOException if there was a problem reading from the message stream
      */

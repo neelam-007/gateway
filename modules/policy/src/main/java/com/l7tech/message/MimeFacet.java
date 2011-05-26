@@ -67,6 +67,12 @@ class MimeFacet extends MessageFacet {
             return getMimeBody().getOuterContentType();
         }
 
+        @Override
+        public void setOuterContentType(ContentTypeHeader contentType) {
+            // TODO should some or all of the message and its knobs be reinitialized by a change to outer content type?
+            getMimeBody().setOuterContentType(contentType);
+        }
+
         public long getContentLength() throws IOException {
             try {
                 return getMimeBody().getEntireMessageBodyLength();

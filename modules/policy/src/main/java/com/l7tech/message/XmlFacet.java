@@ -100,6 +100,11 @@ public class XmlFacet extends MessageFacet {
             return mk.getOuterContentType();
         }
 
+        @Override
+        public void setOuterContentType(ContentTypeHeader contentType) {
+            mk.setOuterContentType(contentType);
+        }
+
         public long getContentLength() throws IOException {
             ensureFirstPartValidMaybeCommitDom();
             return mk.getContentLength();

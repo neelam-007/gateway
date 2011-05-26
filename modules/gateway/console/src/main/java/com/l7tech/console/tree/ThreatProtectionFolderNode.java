@@ -1,6 +1,5 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.policy.assertion.ValidateContentTypeAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.SqlAttackAssertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionAssertion;

@@ -111,7 +111,7 @@ public class AllAssertions {
         new AuditRecordToXmlAssertion(),
         new ExportVariablesAssertion(),
         new CustomizeErrorResponseAssertion(),
-        new ValidateContentTypeAssertion(),
+        new ContentTypeAssertion(),
     };
 
 
@@ -204,6 +204,6 @@ public class AllAssertions {
         new AuditRecordToXmlAssertion(),
         new ExportVariablesAssertion(),
         new CustomizeErrorResponseAssertion(),
-        new ValidateContentTypeAssertion(),
+        new ContentTypeAssertion(),
     };
 }

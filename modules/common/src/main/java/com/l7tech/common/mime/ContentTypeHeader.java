@@ -108,11 +108,12 @@ public class ContentTypeHeader extends MimeHeader {
      * Parse a MIME Content-Type: header, not including the header name and colon.
      * Example: <code>parseValue("text/html; charset=\"UTF-8\"")</code>
      * <p/>
-     * This does a quick parse with no validation.  The returned object will lazily parse
-     * parameters if asked to do so.
+     * This does a quick parse with little or no validation (unless strict validation is turned on globally).
+     * The returned object will lazily parse parameters if asked to do so.
      *
      * @param contentTypeHeaderValue the header value to parse.  Must be non-null.
-     * @return a ContentTypeHeader instance.  Never null.
+     * @return a ContentTypeHeader instance.  Never null, but may show "application/x-invalid-content-type" as the type and subtype
+     * if the provided content type could not be parsed at least well enough to distinguish a type and subtype.
      */
     public static ContentTypeHeader create( final String contentTypeHeaderValue ) {
         if (contentTypeHeaderValue == null)
@@ -263,6 +264,8 @@ public class ContentTypeHeader extends MimeHeader {
      * @throws java.io.IOException  if the specified header value was missing, empty, or syntactically invalid
      */
     public static ContentTypeHeader parseValue( String contentTypeHeaderValue ) throws IOException {
+        if (contentTypeHeaderValue == null)
+            throw new IOException("null content type header value");
         ContentTypeHeader quickHeader = quickParse(contentTypeHeaderValue);
         ContentTypeHeader fullHeader = fullParse(contentTypeHeaderValue, quickHeader != null && quickHeader.hadWhitespaceAroundSlash);
         validate(fullHeader);
