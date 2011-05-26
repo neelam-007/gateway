@@ -603,8 +603,8 @@ public class MimeBodyTest {
         MimeBody mb = new MimeBody(body.getBytes(Charsets.UTF8), ContentTypeHeader.create(ctype));
         byte[] bytes = IOUtils.slurpStream(mb.getEntireMessageBodyAsInputStream(false));
         String result = new String(bytes, Charsets.UTF8);
-        System.out.println(result);
-        assertFalse(result.toLowerCase().contains("content-length:"));
+        assertFalse("To avoid breaking signatures, Content-Length headers shall not be added to parts that did not originally have them",
+                result.toLowerCase().contains("content-length:"));
     }
 
     public final String MESS_SOAPCID = "-76394136.15558";
