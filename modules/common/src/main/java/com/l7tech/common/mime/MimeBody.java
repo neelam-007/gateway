@@ -93,12 +93,13 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
 
             this.outerContentType = outerContentType;
             this.stashManager = stashManager;
-            String start = outerContentType.getParam("start");
-            if (start != null && start.length() < 1) throw new IOException("Multipart content type has a \"start\" parameter but it is empty");
             long firstPartMaxBytes = MimeBody.firstPartMaxBytes.get();
 
             if (outerContentType.isMultipart()) {
                 // Multipart message.  Prepare the first part for reading.
+                String start = outerContentType.hasParams() ? outerContentType.getParam("start") : null;
+                if (start != null && start.length() < 1) throw new IOException("Multipart content type has a \"start\" parameter but it is empty");
+
                 boundaryStr = outerContentType.getMultipartBoundary();
                 boundary = ("--" + boundaryStr).getBytes(MimeHeader.ENCODING);
                 if (boundary.length > BLOCKSIZE)
@@ -1115,8 +1116,8 @@ public class MimeBody implements Iterable<PartInfo>, Closeable {
                         throw new IOException(part + " declared in Content-Length header that size was " + declaredLength +
                                 " bytes, but actual size was " + actualLength + " bytes");
                     }
+                    headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, clen, null, false));
                 }
-                headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, clen, null, false));
             } catch (IOException e) {
                 errorCondition = e;
                 throw e;

@@ -9,6 +9,7 @@ import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
@@ -594,6 +595,18 @@ public class MimeBodyTest {
         }
     }
 
+    @Test
+    @BugNumber(10464)
+    public void testContentLengthHeadersAdded() throws Exception {
+        final String body = BUG_10464_MESS;
+        final String ctype = BUG_10464_CTYPE;
+        MimeBody mb = new MimeBody(body.getBytes(Charsets.UTF8), ContentTypeHeader.create(ctype));
+        byte[] bytes = IOUtils.slurpStream(mb.getEntireMessageBodyAsInputStream(false));
+        String result = new String(bytes, Charsets.UTF8);
+        System.out.println(result);
+        assertFalse(result.toLowerCase().contains("content-length:"));
+    }
+
     public final String MESS_SOAPCID = "-76394136.15558";
     public final String MESS_RUBYCID = "-76392836.15558";
     public static final String MESS_BOUNDARY = "----=Part_-763936460.407197826076299";
@@ -803,4 +816,18 @@ public class MimeBodyTest {
             "abc123\n" +
             "------=_Part_4_20457766.1136482180671--";
 
+    private static final String BUG_10464_CTYPE = "multipart/related; type=\"text/xml\"; start=\"<rootpart@soapui.org>\"; boundary=\"----=_Part_38_1469256273.1305075794627\"";
+    private static final String BUG_10464_MESS =
+            "------=_Part_38_1469256273.1305075794627\r\n" +
+                    "Content-Type: text/xml; charset=UTF-8\r\n" +
+                    "Content-Transfer-Encoding: 8bit\r\n" +
+                    "Content-ID: <rootpart@soapui.org>\r\n" +
+                    "\r\n" +
+                    "<wheatley/>\r\n" +
+                    "------=_Part_38_1469256273.1305075794627\r\n" +
+                    "Content-Type: text/plain; charset=us-ascii\r\n" +
+                    "Content-Transfer-Encoding: 7bit\r\n" +
+                    "\r\n" +
+                    "glados\r\n" +
+                    "------=_Part_38_1469256273.1305075794627--";
 }
