@@ -688,7 +688,7 @@ public class PolicyAdminImpl implements PolicyAdmin {
                       : "<L7p:RecipientCertificateBase64 stringValueReference=\"inline\"><![CDATA[" + recipientCertBase64 + "]]></L7p:RecipientCertificateBase64>") +
             "            <L7p:Target target=\"REQUEST\"/>\n" +
             "            <L7p:XpathExpression xpathExpressionValue=\"included\">\n" +
-            "                <L7p:Expression stringValue=\"//*\"/>\n" +
+            "                <L7p:Expression stringValue=\"/*\"/>\n" +
             "                <L7p:Namespaces mapValue=\"included\">\n" +
             "                    <L7p:entry>\n" +
             "                        <L7p:key stringValue=\"xenc\"/>\n" +
