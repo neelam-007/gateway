@@ -16,6 +16,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -94,7 +95,7 @@ public class AuditFilterPolicyManagerTest {
 
             }
         };
-        filterPolicyManager = new AuditFilterPolicyManager(policyCache);
+        filterPolicyManager = new AuditFilterPolicyManager(policyCache, TestStashManagerFactory.getInstance());
         record = new MessageSummaryAuditRecord(Level.WARNING,
                 "node id",
                 "request id",

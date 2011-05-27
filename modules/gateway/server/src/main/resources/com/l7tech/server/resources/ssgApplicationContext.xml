@@ -139,6 +139,7 @@
 
     <bean id="auditFilterPolicyManager" class="com.l7tech.server.audit.AuditFilterPolicyManager">
         <constructor-arg ref="policyCache"/>
+        <constructor-arg ref="stashManagerFactory"/>
     </bean>
 
     <bean id="ssgShutdown" class="com.l7tech.server.boot.ShutdownWatcher"/>

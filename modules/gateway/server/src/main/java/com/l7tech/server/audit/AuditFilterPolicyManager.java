@@ -13,6 +13,7 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
@@ -34,8 +35,9 @@ public class AuditFilterPolicyManager {
 
     // - PUBLIC
 
-    public AuditFilterPolicyManager(PolicyCache policyCache) {
+    public AuditFilterPolicyManager(PolicyCache policyCache, StashManagerFactory stashManagerFactory) {
         this.policyCache = policyCache;
+        this.stashManagerFactory = stashManagerFactory;
     }
 
     public boolean isAuditViewerPolicyAvailable() {
@@ -327,7 +329,7 @@ public class AuditFilterPolicyManager {
 
         String extraMessage = "";
         if(exceptionIfAny != null){
-            if(exceptionIfAny instanceof AuditPolicyException){
+            if(exceptionIfAny instanceof AuditPolicyException || exceptionIfAny instanceof CannotGetMessageBodyException){
                 extraMessage = ExceptionUtils.getMessage(exceptionIfAny);
             }
         }
@@ -365,15 +367,18 @@ public class AuditFilterPolicyManager {
                 exception);
     }
 
+    //todo: The message is being copied as the AuditRecord's blob of request / response text does not have content type info.
+    //todo: Work around the need to have to copy the request / response. Obtain the content type info from the PEC or else update audit records to have this info.
+    //todo: If messages are large, running them through the AMF adds unnecessary memory usage overhead.
     private Message copyMessageFirstPart(Message msg, boolean isRequest) throws CannotGetMessageBodyException {
         String what = isRequest ? "request" : "response";
         try {
             final MimeKnob mk = msg.getMimeKnob();
             final PartInfo part = mk.getFirstPart();
-            byte[] req = IOUtils.slurpStream(part.getInputStream(false));
-            ContentTypeHeader cth = part.getContentType();
+
             final Message copiedMsg = new Message();
-            copiedMsg.initialize(cth, req);
+            copiedMsg.initialize(stashManagerFactory.createStashManager(), part.getContentType(), part.getInputStream(false));
+
             return copiedMsg;
 
         } catch (Exception e) {
@@ -411,6 +416,7 @@ public class AuditFilterPolicyManager {
     }
 
     private final PolicyCache policyCache;
+    private final StashManagerFactory stashManagerFactory;
 
     private static final Charset FALLBACK_ENCODING = Charsets.ISO8859;
     private static final Logger logger = Logger.getLogger(AuditFilterPolicyManager.class.getName());
