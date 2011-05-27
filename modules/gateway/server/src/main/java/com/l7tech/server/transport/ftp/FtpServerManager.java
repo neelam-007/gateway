@@ -319,9 +319,10 @@ public class FtpServerManager extends TransportModule {
                 try {
                     addConnector(connector);
                 } catch (ListenerException e) {
+                    //noinspection ThrowableResultOfMethodCallIgnored
                     logger.log(Level.WARNING, "Unable to start FTP connector OID " + connector.getOid() +
                                               " (using control port " + connector.getPort() + "): " + ExceptionUtils.getMessage(e),
-                               e);
+                               ExceptionUtils.getDebugException(e));
                 }
             }
         } catch (FindException e) {

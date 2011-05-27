@@ -1,6 +1,5 @@
 package com.l7tech.server.transport.http;
 
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -48,8 +47,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -429,8 +426,14 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                     foundHttp = true;
                     try {
                         if (actuallyStartThem) addConnector(connector);
+                    } catch (ListenerException e) {
+                        //noinspection ThrowableResultOfMethodCallIgnored
+                        logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                                    ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+
                     } catch ( Exception e ) {
                         if ( ExceptionUtils.getMessage(e).contains("java.net.BindException: ") ) { // The exception cause is not chained ...
+                            //noinspection ThrowableResultOfMethodCallIgnored
                             logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
                                         ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         } else {
@@ -469,6 +472,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 if (actuallyStartThem) addConnector(connector);
             } catch (SaveException e) {
                 logger.log(Level.WARNING, "Unable to save fallback connector to DB: " + ExceptionUtils.getMessage(e), e);
+            } catch (ListenerException e) {
+                //noinspection ThrowableResultOfMethodCallIgnored
+                logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                            ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
                             ": " + ExceptionUtils.getMessage(e), e);
@@ -492,6 +499,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 if (actuallyStartThem) addConnector(connector);
             } catch (SaveException e) {
                 logger.log(Level.WARNING, "Unable to save required connector to DB: " + ExceptionUtils.getMessage(e), e);
+            } catch (ListenerException e) {
+                //noinspection ThrowableResultOfMethodCallIgnored
+                logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
+                            ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
                             ": " + ExceptionUtils.getMessage(e), e);
@@ -727,7 +738,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      */
     private String executorName( final SsgConnector connector ) {
         StringBuilder builder = new StringBuilder();
-        builder.append( "connector-" );
+        builder.append("connector-");
         for ( char character : connector.getName().toLowerCase().toCharArray() ) {
             if ( (character >= '0' && character <= '9') ||
                  (character >= 'a' && character <= 'z') ) {

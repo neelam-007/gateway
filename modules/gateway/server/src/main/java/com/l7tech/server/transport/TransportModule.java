@@ -209,6 +209,7 @@ public abstract class TransportModule extends LifecycleBean {
                     try {
                         addConnector(roc);
                     } catch (Exception e) {
+                        //noinspection ThrowableResultOfMethodCallIgnored
                         logger.log(Level.WARNING, "Unable to start " + roc.getScheme() + " connector on port " + roc.getPort() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
                 }
