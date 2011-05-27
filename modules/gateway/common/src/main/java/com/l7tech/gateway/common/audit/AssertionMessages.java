@@ -623,7 +623,9 @@ public class AssertionMessages extends Messages {
     public static final M RATELIMIT_SLEPT_TOO_LONG = m(6951, Level.INFO, "Unable to further delay request for rate limiter {0}, because maximum delay has been reached");
     public static final M RATELIMIT_NODE_CONCURRENCY = m(6952, Level.INFO, "Unable to delay request for rate limiter {0}, because queued thread limit has been reached");
     public static final M RATELIMIT_CONCURRENCY_EXCEEDED = m(6953, Level.INFO, "Concurrency exceeded on rate limiter {0}.");
-    public static final M RATELIMIT_MAX_RPS_TO_LARGE = m(6954, Level.INFO, "Rate limit of {0} exceeds maximum rate limit of {1}. Setting maximum limit to {2}.");
+    @Deprecated
+    public static final M __UNUSED_RATELIMIT_MAX_RPS_TO_LARGE = m(6954, Level.INFO, "Rate limit of {0} exceeds maximum rate limit of {1}. Setting maximum limit to {2}.");
+    public static final M RATELIMIT_BLACKED_OUT = m(6955, Level.INFO, "Failing request because counter is blacked out due to previous failure");
 
     // HTTP Form POST
     public static final M INVERSE_HTTPFORM_NO_SUCH_PART = m(7001, Level.WARNING, "Message has no part #{0}");

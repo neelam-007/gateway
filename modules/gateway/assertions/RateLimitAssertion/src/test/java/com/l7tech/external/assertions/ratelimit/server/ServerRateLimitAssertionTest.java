@@ -1,13 +1,12 @@
 package com.l7tech.external.assertions.ratelimit.server;
 
-import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.util.TestTimeSource;
-import com.l7tech.util.TimeSource;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
+import com.l7tech.message.Message;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -15,26 +14,28 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TestTimeSource;
+import com.l7tech.util.TimeSource;
 import com.l7tech.util.TimeoutExecutor;
-import com.l7tech.message.Message;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Ignore;
-import static junit.framework.Assert.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.concurrent.*;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static junit.framework.Assert.*;
 
 /**
  * Test the RateLimitAssertion.
@@ -125,7 +126,12 @@ public class ServerRateLimitAssertionTest {
     private PolicyEnforcementContext makeContext() throws Exception {
         Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
         Message response = new Message();
-        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+        context.setVariable("one", "1");
+        context.setVariable("five", "5");
+        context.setVariable("ten", "10");
+        context.setVariable("tenthousand", "10000");
+        return context;
     }
 
     private ServerAssertion makePolicy(RateLimitAssertion rla) throws Exception {
@@ -139,8 +145,8 @@ public class ServerRateLimitAssertionTest {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setHardLimit(false);
         rla.setCounterName("testConcurrencyLimit");
-        rla.setMaxConcurrency("10");
-        rla.setMaxRequestsPerSecond("10000");
+        rla.setMaxConcurrency("${ten}");
+        rla.setMaxRequestsPerSecond("${tenThousand}");
         ServerAssertion ass = makePolicy(rla);
 
         PolicyEnforcementContext pecs[] = new PolicyEnforcementContext[20];
@@ -331,6 +337,70 @@ public class ServerRateLimitAssertionTest {
         assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
         assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
         assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+    }
+
+    @Test
+    public void testSimpleRateLimitWithBlackout() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setHardLimit(false);
+        rla.setCounterName("SimpleRateLimitWithBlackout");
+        rla.setMaxRequestsPerSecond("3");
+        rla.setBlackoutPeriodInSeconds("${five}");
+        ServerAssertion ass = makePolicy(rla);
+
+        clock.sync();
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        clock.advanceByMillis(1001);
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        clock.advanceByMillis(4000);
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+    }
+
+    @Test
+    public void testSimpleRateLimitWithLargerWindow() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setHardLimit(false);
+        rla.setWindowSizeInSeconds("10");
+        rla.setCounterName("SimpleRateLimitWithLargerWindow");
+        rla.setMaxRequestsPerSecond("3");
+        ServerAssertion ass = makePolicy(rla);
+
+        clock.sync();
+        assertEquals(AssertionStatus.NONE, ass.checkRequest(makeContext())); // Initial request to create the counter
+
+        clock.advanceByMillis(10001L); // Charge up full 10 seconds worth of idle points
+        for (int i = 0; i < 30; ++i)
+            assertEquals("round " + i, AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+
+        clock.advanceByMillis(10001L);
+        for (int i = 0; i < 30; ++i)
+            assertEquals("round " + i, AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+
+        clock.advanceByMillis(5001L); // Charge up half the max idle points
+        for (int i = 0; i < 15; ++i)
+            assertEquals("round " + i, AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+
+        clock.advanceByMillis(50000L); // Idle for longer than the max, to ensure it cuts off at the max
+        for (int i = 0; i < 30; ++i)
+            assertEquals("round " + i, AssertionStatus.NONE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+        assertEquals(AssertionStatus.SERVICE_UNAVAILABLE, ass.checkRequest(makeContext()));
+
     }
 
     @Test

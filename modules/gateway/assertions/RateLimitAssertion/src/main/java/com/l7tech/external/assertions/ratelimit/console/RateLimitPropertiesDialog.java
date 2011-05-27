@@ -1,10 +1,10 @@
 package com.l7tech.external.assertions.ratelimit.console;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
 
 import javax.swing.*;
@@ -29,7 +29,10 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     private JRadioButton concurrencyLimitOnRb;
     private JTextField concurrencyLimitField;
     private JCheckBox burstTrafficCb;
+    private JTextField burstWindowSizeField;
     private JComboBox counterCb;
+    private JCheckBox blackoutForCheckBox;
+    private JTextField blackoutSecField;
 
     private boolean confirmed = false;
     private String uuid[] = {RateLimitAssertion.PresetInfo.makeUuid()};
@@ -77,6 +80,21 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
                 updateCounterNameEnableState();
             }
         });
+
+        final ActionListener updateBlackoutAndWindowListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateBlackoutAndWindowSizeFieldEnableState();
+            }
+        };
+
+        burstWindowSizeField.setText("1");
+        Utilities.enableGrayOnDisabled(burstWindowSizeField);
+        burstTrafficCb.addActionListener(updateBlackoutAndWindowListener);
+
+        blackoutSecField.setText("1");
+        Utilities.enableGrayOnDisabled(blackoutSecField);
+        blackoutForCheckBox.addActionListener(updateBlackoutAndWindowListener);
 
         Utilities.enableGrayOnDisabled(concurrencyLimitField);
         Utilities.setEscKeyStrokeDisposes(this);
@@ -139,6 +157,11 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         }
     }
 
+    private void updateBlackoutAndWindowSizeFieldEnableState() {
+        burstWindowSizeField.setEnabled(burstTrafficCb.isSelected());
+        blackoutSecField.setEnabled(blackoutForCheckBox.isSelected());
+    }
+
     private boolean checkValidity() {
         String err = null;
 
@@ -148,10 +171,26 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         if(err == null && concurrencyLimitOnRb.isSelected()) err = RateLimitAssertion.validateMaxConcurrency(concurrencyLimitField.getText());
         if(err == null) err = RateLimitAssertion.validateMaxRequestsPerSecond(maxRequestsPerSecondField.getText());
 
+        if (err == null && burstWindowSizeField.isEnabled() && !validNumOrVar(burstWindowSizeField.getText()))
+            err = "Burst traffic window size must be at least 1 second (if not using variables)";
+
+        if (err == null && blackoutForCheckBox.isEnabled() && !validNumOrVar(blackoutSecField.getText()))
+            err = "Blackout time must be a least 1 second (if not using variables)";
+
         if (err != null)
             DialogDisplayer.showMessageDialog(this, err, "Error", JOptionPane.ERROR_MESSAGE, null);
 
         return null == err;
+    }
+
+    private boolean validNumOrVar(String text) {
+        if (Syntax.getReferencedNames(text).length > 0)
+            return true;
+        try {
+            return Long.valueOf(text) > 0;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     private void enableOrDisableOkButton() {
@@ -182,6 +221,12 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         shapingOffRb.setSelected(!rla.isShapeRequests());
 
         burstTrafficCb.setSelected(!rla.isHardLimit());
+        burstWindowSizeField.setText(String.valueOf(rla.getWindowSizeInSeconds()));
+
+        String blackoutSec = rla.getBlackoutPeriodInSeconds();
+        boolean useBlackout = blackoutSec != null && blackoutSec.trim().length() > 0;
+        blackoutSecField.setText(useBlackout ? blackoutSec : "1");
+        blackoutForCheckBox.setSelected(useBlackout);
 
         String maxConc = rla.getMaxConcurrency();
         boolean concLimit = true;
@@ -198,6 +243,7 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         concurrencyLimitOffRb.setSelected(!concLimit);
         updateConcurrencyEnableState();
         updateCounterNameEnableState();
+        updateBlackoutAndWindowSizeFieldEnableState();
     }
 
     @Override
@@ -209,6 +255,8 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
         rla.setShapeRequests(shapingOnRb.isSelected());
         rla.setMaxConcurrency(concurrencyLimitOnRb.isSelected() ? concurrencyLimitField.getText() : "0");
         rla.setHardLimit(!burstTrafficCb.isSelected());
+        rla.setWindowSizeInSeconds(burstWindowSizeField.getText());
+        rla.setBlackoutPeriodInSeconds(blackoutForCheckBox.isSelected() ? blackoutSecField.getText() : null);
         return rla;
     }
 

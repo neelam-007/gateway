@@ -1,14 +1,12 @@
 package com.l7tech.external.assertions.ratelimit;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
-import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -17,6 +15,9 @@ import java.util.Random;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Adds rate limiting to a policy.
@@ -30,18 +31,13 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     private boolean shapeRequests = false;
     private String maxConcurrency = "0";
     private boolean hardLimit = false;
-
-    /**
-     * Maximum number of requests per second that we can enforce.
-     * Warning - if the value is changed to be higher than 93824, then the server assertion must be updated to use
-     * BigIntegers. See the server assertion for more details. 
-     */
-    public static final int MAX_REQUESTS_PER_SECOND = 90000;
+    private String windowSizeInSeconds = "1"; // When hardLimit is false, this is how many seconds of points that are permitted to accumulate in the token bucket during idle periods.
+    private String blackoutPeriodInSeconds = null; // When the assertion fails, for the next N seconds all further attempts to use the same counter will immediately fail.
 
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(getCounterName() + " " + getMaxRequestsPerSecond() + " " + getMaxConcurrency());
+        return Syntax.getReferencedNames(getCounterName() + " " + getMaxRequestsPerSecond() + " " + getMaxConcurrency() + " " + getWindowSizeInSeconds() + " " + getBlackoutPeriodInSeconds());
     }
 
     /**
@@ -140,6 +136,34 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
         this.hardLimit = hardLimit;
     }
 
+    /**
+     * @return the maximum number of seconds worth of points that may accumulate in the token buffer while the counter is idle.
+     */
+    public String getWindowSizeInSeconds() {
+        return windowSizeInSeconds;
+    }
+
+    /**
+     * @param windowSizeInSeconds the maximum number of seconds worth of points that may accumulate in the token buffer while the counter is idle.  Minimum and default is 1.  Ignored unles {@link #hardLimit}.
+     */
+    public void setWindowSizeInSeconds(String windowSizeInSeconds) {
+        this.windowSizeInSeconds = windowSizeInSeconds;
+    }
+
+    /**
+     * @return number of seconds to black out a counter after failure, or null if no blackout should be done.
+     */
+    public String getBlackoutPeriodInSeconds() {
+        return blackoutPeriodInSeconds;
+    }
+
+    /**
+     * @param blackoutPeriodInSeconds number of second to black out a counter after a failure, or null if no blackout should be done.
+     */
+    public void setBlackoutPeriodInSeconds(String blackoutPeriodInSeconds) {
+        this.blackoutPeriodInSeconds = blackoutPeriodInSeconds;
+    }
+
     public static String validateMaxRequestsPerSecond(String maxRequestsPerSecond) {
         final String[] referencedVars = Syntax.getReferencedNamesIndexedVarsNotOmitted(maxRequestsPerSecond);
         if (referencedVars.length > 0) {
@@ -157,7 +181,6 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
                 return "Invalid value for maximum requests per second.";
             }
             if (maxRequests < 1) return "Max requests per second cannot be less than 1.";
-            if (maxRequests > MAX_REQUESTS_PER_SECOND) return "Max requests cannot be greater than " + MAX_REQUESTS_PER_SECOND + ".";
         }
 
         return null;
@@ -203,8 +226,15 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
             if(!decorate) return baseName;
 
             String concurrency = assertion.getMaxConcurrency();
-            StringBuffer sb = new StringBuffer(baseName + ": ");
-            sb.append(assertion.isHardLimit() ? "up to " : "average ");
+            StringBuilder sb = new StringBuilder(baseName + ": ");
+            if (assertion.isHardLimit()) {
+                sb.append("up to ");
+            } else {
+                sb.append("average ");
+                String window = assertion.getWindowSizeInSeconds();
+                if (window != null && window.trim().length() > 0)
+                    sb.append("(over ").append(window).append(" seconds) ");
+            }
             sb.append(assertion.getMaxRequestsPerSecond()).
                     append(" msg/sec");
             if (assertion.isShapeRequests()) sb.append(", shaped,");
@@ -217,6 +247,10 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
                 sb.append(" (concurrency ").append(concurrency).append(")");
             }else{
                 if (Integer.parseInt(concurrency) > 0) sb.append(" (concurrency ").append(concurrency).append(")");
+            }
+
+            if (assertion.getBlackoutPeriodInSeconds() != null && assertion.getBlackoutPeriodInSeconds().trim().length() > 0) {
+                sb.append(" with ").append(assertion.getBlackoutPeriodInSeconds()).append(" sec blackout");
             }
 
             return sb.toString();
