@@ -87,7 +87,7 @@ public final class LogRequest {
         private String userName;
         private String userIdOrDn;
         private Integer messageId; // null = any
-        private String paramValue;
+        private String paramValue; //not currently supported. Will be ignored.
         private String entityClassName; // null = any
         private Long entityId; // null = any
 

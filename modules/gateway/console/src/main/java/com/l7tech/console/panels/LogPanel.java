@@ -658,9 +658,9 @@ public class LogPanel extends JPanel {
         } catch (NumberFormatException e) {
             messageId = Integer.MIN_VALUE; // This case presents  Invalid Message Id
         }
-        paramValue = controlPanel.paramValueTextField.getText();
+//        paramValue = controlPanel.paramValueTextField.getText();
 
-        //Special case: if the entity search fields (Entity Type and Entity ID) are disabled, this means the entity search criteria are not applied. 
+        //Special case: if the entity search fields (Entity Type and Entity ID) are disabled, this means the entity search criteria are not applied.
         entityTypeName = controlPanel.entityTypeComboBox.isEnabled()? (String) controlPanel.entityTypeComboBox.getSelectedItem() : "";
 
         if (controlPanel.entityIdTextField.isEnabled()) {
@@ -711,7 +711,7 @@ public class LogPanel extends JPanel {
             controlPanel.auditCodeTextField.setText(msgIdTxt);
         }
 
-        controlPanel.paramValueTextField.setText(paramValue);
+//        controlPanel.paramValueTextField.setText(paramValue);
         controlPanel.entityTypeComboBox.setSelectedItem(entityTypeName);
 
         if (entityId != null) {
@@ -829,10 +829,10 @@ public class LogPanel extends JPanel {
                 messageId = null; // null = Any
             }
 
-            final String paramValueProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_PARAM_VALUE);
-            if (paramValueProperty != null) {
-                paramValue = paramValueProperty;
-            }
+//            final String paramValueProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_PARAM_VALUE);
+//            if (paramValueProperty != null) {
+//                paramValue = paramValueProperty;
+//            }
 
             final String entityTypeProperty = preferences.getString(SsmPreferences.AUDIT_WINDOW_ENTITY_TYPE);
             if (entityTypeProperty != null) {

@@ -80,17 +80,32 @@ public class AuditRecordManagerImpl
     @Override
     @Transactional(readOnly = true)
     public Collection<AuditRecordHeader> findHeaders(final AuditSearchCriteria criteria) throws FindException {
-        final ProjectionList projectionList = Projections.projectionList()
-                .add(Property.forName(PROP_OID))
-                .add(Property.forName(PROP_NAME))
-                .add(Property.forName(PROP_MESSAGE))
-                .add(Property.forName(PROP_SIGNATURE))
-                .add(Property.forName(PROP_NODEID))
-                .add(Property.forName(PROP_TIME))
-                .add(Property.forName(PROP_LEVEL));
+        final Functions.UnaryVoid<Criteria> criteriaConfigurator = new Functions.UnaryVoid<Criteria>(){
+            @Override
+            public void call(final Criteria hibernateCriteria) {
+                hibernateCriteria.createAlias("details", "ad");
+
+                final ProjectionList projectionList = Projections.projectionList()
+                        .add(Property.forName(PROP_OID))
+                        .add(Property.forName(PROP_NAME))
+                        .add(Property.forName(PROP_MESSAGE))
+                        .add(Property.forName(PROP_SIGNATURE))
+                        .add(Property.forName(PROP_NODEID))
+                        .add(Property.forName(PROP_TIME))
+                        .add(Property.forName(PROP_LEVEL))
+                        .add(Property.forName("ad.messageId"));
+
+                hibernateCriteria.setProjection(projectionList);
+
+                if (criteria.messageId != null) {
+                    final SimpleExpression eq = Restrictions.eq("ad.messageId", criteria.messageId);
+                    hibernateCriteria.add(eq);
+                }
+            }
+        };
 
         //todo: Could a ResultTransformer be useful here and simplify the mapping of results to AuditRecordHeader?
-        List<AuditRecordHeader> auditRecordHeaders = find(criteria, projectionList, new Functions.BinaryVoid<List<AuditRecordHeader>, Object>() {
+        List<AuditRecordHeader> auditRecordHeaders = find(criteria, criteriaConfigurator, new Functions.BinaryVoid<List<AuditRecordHeader>, Object>() {
             @Override
             public void call(List<AuditRecordHeader> auditRecordHeaders, Object o) {
                 final Object [] values = (Object[]) o;
@@ -121,7 +136,7 @@ public class AuditRecordManagerImpl
     }
 
     private <T> List<T> find( final AuditSearchCriteria criteria,
-                              final ProjectionList projectionList,
+                              final Functions.UnaryVoid<Criteria> criteriaConfigurator,
                               final Functions.BinaryVoid<List<T>, Object> resultProcessor) throws FindException {
         if (criteria == null) throw new IllegalArgumentException("Criteria must not be null");
 
@@ -137,8 +152,8 @@ public class AuditRecordManagerImpl
             session = getSession();
 
             final Criteria hibernateCriteria = getHibernateCriteriaFromAuditCriteria(criteria, session, maxRecords);
-            if (projectionList != null) {
-                hibernateCriteria.setProjection(projectionList);
+            if (criteriaConfigurator != null) {
+                criteriaConfigurator.call(hibernateCriteria);
             }
 
             ScrollableResults results = hibernateCriteria.scroll();
@@ -160,7 +175,7 @@ public class AuditRecordManagerImpl
 
     private int getMaxRecords(AuditSearchCriteria criteria) {
         int maxRecords = criteria.maxRecords;
-        if (maxRecords <= 0) maxRecords = 4096;
+        if (maxRecords <= 0) maxRecords = 4096; //todo: this default is different to UI default. Should be consistent.
         return maxRecords;
     }
 
@@ -197,6 +212,7 @@ public class AuditRecordManagerImpl
     }
 
     /**
+     * //todo: This should not be used. Post Chinook update so this is removed. Filtering post search means we cannot guarantee that all applicable results are found. (due to existing audit viewer problem as paging is not supported).
      * Verify if the audit record matches the given audit details search criteria.
      * @param criteria: the whole search criteria
      * @param record: the audit record to be verified
