@@ -204,19 +204,17 @@ public class Wizard<ST> extends JDialog {
         stepLabelsPanel.add(stepsTitlePanel);
         int i = 0;
         WizardStepPanel<ST> p = startPanel;
-        double maxHeight = 0;
         while (p != null) {
             String label = "" + (++i) + ". " + p.getStepLabel();
             WizardLabel l = new WizardLabel(label, p, true);
             stepLabelsPanel.add(l);
             addWizardListener(l);
-            maxHeight = Math.max(maxHeight,p.getPreferredSize().getHeight());
             p = p.nextPanel();
         }
 
         JPanel sizedStepPanel = new JPanel();
         sizedStepPanel.setLayout(new BorderLayout());
-        sizedStepPanel.add(Box.createVerticalStrut(Math.max((int)maxHeight+120,420)), BorderLayout.WEST);
+        sizedStepPanel.add(Box.createVerticalStrut(470), BorderLayout.WEST);
         sizedStepPanel.add( stepLabelsPanel, BorderLayout.CENTER);
         mainPanel.add(sizedStepPanel, BorderLayout.WEST);
 
