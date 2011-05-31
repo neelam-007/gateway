@@ -83,7 +83,6 @@ public class AuditRecordManagerImpl
         final Functions.UnaryVoid<Criteria> criteriaConfigurator = new Functions.UnaryVoid<Criteria>(){
             @Override
             public void call(final Criteria hibernateCriteria) {
-                hibernateCriteria.createAlias("details", "ad");
 
                 final ProjectionList projectionList = Projections.projectionList()
                         .add(Property.forName(PROP_OID))
@@ -93,11 +92,12 @@ public class AuditRecordManagerImpl
                         .add(Property.forName(PROP_NODEID))
                         .add(Property.forName(PROP_TIME))
                         .add(Property.forName(PROP_LEVEL))
-                        .add(Property.forName("ad.messageId"));
+                        ;
 
                 hibernateCriteria.setProjection(projectionList);
 
                 if (criteria.messageId != null) {
+                    hibernateCriteria.createAlias("details", "ad");
                     final SimpleExpression eq = Restrictions.eq("ad.messageId", criteria.messageId);
                     hibernateCriteria.add(eq);
                 }
