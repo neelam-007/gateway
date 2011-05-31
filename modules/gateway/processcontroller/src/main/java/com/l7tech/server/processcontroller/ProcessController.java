@@ -762,6 +762,7 @@ public class ProcessController implements InitializingBean {
         commands.add( propPrefix + "com.l7tech.server.processControllerPresent=true" );
         commands.add( propPrefix + "com.l7tech.server.processControllerCert=" + new File("var/run/pc.cer").getAbsolutePath() );
         commands.add( propPrefix + "com.l7tech.server.processControllerIpAddress=" + configService.getSslIPAddress() );
+        commands.add( propPrefix + "com.l7tech.server.processControllerPort=" + configService.getSslPort() );
         commands.add( propPrefix + "java.util.logging.config.class=com.l7tech.server.log.JdkLogConfig" );
         commands.add( propPrefix + "com.l7tech.server.log.console=true" );
     }
