@@ -2663,7 +2663,6 @@ public class LogPanel extends JPanel {
         private JTextField userNameTextField;
         private JTextField userIdOrDnTextField;
         private JTextField auditCodeTextField;
-        private JTextField paramValueTextField;
         private JLabel entityIdLabel;
         private JTextField entityIdTextField;
         private JLabel entityTypeLabel;
