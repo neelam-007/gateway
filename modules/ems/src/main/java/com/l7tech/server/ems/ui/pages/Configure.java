@@ -259,8 +259,8 @@ public class Configure extends EsmStandardWebPage {
                 String newClusterName = addSSGClusterInputName.getConvertedInput();
                 String parentFolderGuid = addSSGClusterDialogInputParentId.getConvertedInput();
                 String hostname = addSSGClusterInputHostName.getConvertedInput();
-                int port = Integer.parseInt(addSSGClusterInputPort.getConvertedInput());
                 try {
+                    int port = Integer.parseInt(addSSGClusterInputPort.getConvertedInput());
                     logger.fine("Adding Gateway Cluster \""+ newClusterName +
                         "\" (parent folder GUID = "+ parentFolderGuid + ").");
                     return ssgClusterManager.create(newClusterName, hostname, port, parentFolderGuid);

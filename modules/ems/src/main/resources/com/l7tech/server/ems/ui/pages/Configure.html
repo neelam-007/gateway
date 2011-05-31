@@ -95,7 +95,7 @@
                 INVALID_NAME_LENGTH : 'must be 1 to 128 characters',
                 INVALID_NAME_SLASH : 'slash "/" not allowed',
                 HOST_NAME_HINT : 'invalid host name',
-                SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
+                SSG_CLUSTER_PORT_HINT : 'port number must be in the range 1-65535',
                 STARTING_SSG_NODE : 'Starting Gateway Node "{0}"...',
                 STOPPING_SSG_NODE : 'Stopping Gateway Node "{0}"...',
                 CANNOT_ADD_FOLDER : 'Unable to add folder.',
@@ -685,7 +685,7 @@
 
                 var portTextBox = document.getElementById('addSSGClusterDialog_port');
                 var port = portTextBox.value;
-                var portIsValid = l7.Util.isIntString(port) && port > 0;
+                var portIsValid = l7.Util.isIntString(port) && port > 0 && port <= 65535;
                 if (portIsValid || port.length == 0) {
                     YAHOO.util.Dom.removeClass(portTextBox, 'invalid');
                     document.getElementById('addSSGClusterDialog_port_hint').innerHTML = '';
