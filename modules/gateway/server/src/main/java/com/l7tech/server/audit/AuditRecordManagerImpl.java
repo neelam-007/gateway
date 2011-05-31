@@ -104,6 +104,9 @@ public class AuditRecordManagerImpl
             }
         };
 
+        final Class findClass = getFindClass(criteria);
+        final boolean isMessageAudit = findClass == MessageSummaryAuditRecord.class;
+
         //todo: Could a ResultTransformer be useful here and simplify the mapping of results to AuditRecordHeader?
         List<AuditRecordHeader> auditRecordHeaders = find(criteria, criteriaConfigurator, new Functions.BinaryVoid<List<AuditRecordHeader>, Object>() {
             @Override
@@ -111,7 +114,7 @@ public class AuditRecordManagerImpl
                 final Object [] values = (Object[]) o;
 
                 final Long id = Long.valueOf(values[0].toString());
-                final String name = (values[1] == null)? null: values[1].toString();
+                final String name = (values[1] == null || !isMessageAudit) ? null : values[1].toString();
                 final String description = values[2].toString();
                 final String signature = (values[3] == null) ? null : values[3].toString();
                 final String nodeId = values[4].toString();
@@ -182,10 +185,7 @@ public class AuditRecordManagerImpl
     private Criteria getHibernateCriteriaFromAuditCriteria(final AuditSearchCriteria criteria,
                                                            final Session session,
                                                            final int maxRecords) throws FindException {
-        Class findClass = criteria.recordClass;
-        if (findClass == null) findClass = getInterfaceClass();
-
-        if(criteria.requestId != null && findClass != MessageSummaryAuditRecord.class) findClass = MessageSummaryAuditRecord.class;
+        Class findClass = getFindClass(criteria);
 
         Criteria hibernateCriteria = session.createCriteria(findClass);
         hibernateCriteria.setMaxResults(maxRecords);
@@ -198,6 +198,15 @@ public class AuditRecordManagerImpl
 
         return hibernateCriteria;
     }
+
+    private Class getFindClass(AuditSearchCriteria criteria) {
+        Class findClass = criteria.recordClass;
+        if (findClass == null) findClass = getInterfaceClass();
+
+        if(criteria.requestId != null && findClass != MessageSummaryAuditRecord.class) findClass = MessageSummaryAuditRecord.class;
+        return findClass;
+    }
+
     /**
      * Check if search criteria have conflict.  The "conflict" means that Request ID and Entity Search Parameters can exist at the same time in the search criteria.
      * @param criteria: the search criteria.
