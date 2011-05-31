@@ -304,7 +304,12 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
                     rebuildConnectors( actualConfg );
                     configuration.set( actualConfg );
                 } catch ( IOException ioe2 ) {
-                    logger.log( Level.WARNING, "Error reverting listener configuration '"+desiredConfig+"'.", ioe2 );
+                    if ( ExceptionUtils.causedBy( ioe2, BindException.class ) ) {
+                        BindException be = ExceptionUtils.getCauseIfCausedBy( ioe2, BindException.class );
+                        logger.log( Level.WARNING, "Error reverting listener configuration '"+desiredConfig+"', due to '"+ExceptionUtils.getMessage(be)+"'." );
+                    } else {
+                        logger.log( Level.WARNING, "Error reverting listener configuration '"+desiredConfig+"'.", ioe2 );
+                    }
                 }
             }
         }
