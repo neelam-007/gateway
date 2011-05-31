@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -147,16 +148,16 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
         Collection<ClusterPropertyDescriptor> descriptors = getClusterAdmin().getAllPropertyDescriptors();
 
         invalidAttemptProperty = getClusterProp(PARAM_LOGIN_ATTEMPTS, descriptors);
-        invalidAttemptsSpinner.setValue(Integer.parseInt(invalidAttemptProperty.getValue()));
+        setSpinnerValue(invalidAttemptsSpinner,invalidAttemptProperty,1,descriptors);
 
         minLockoutProperty = getClusterProp(PARAM_LOCKOUT, descriptors);
-        minLockoutSpinner.setValue(Integer.parseInt(minLockoutProperty.getValue()) / 60);
+        setSpinnerValue(minLockoutSpinner,minLockoutProperty,60,descriptors);
 
         expiryProperty = getClusterProp(PARAM_EXPIRY, descriptors);
-        expirySpinner.setValue(Integer.parseInt(expiryProperty.getValue()));
+        setSpinnerValue(expirySpinner,expiryProperty,1,descriptors);
 
         inactivityProperty = getClusterProp(PARAM_INACTIVITY, descriptors);
-        inactivitySpinner.setValue(Integer.parseInt(inactivityProperty.getValue()));
+        setSpinnerValue(inactivitySpinner,inactivityProperty,1,descriptors);
     }
 
     /**
@@ -216,6 +217,22 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
             logger.log(Level.SEVERE, "Exception getting properties", e);
             return null;
         }
+    }
+
+    private void setSpinnerValue(JSpinner boundedNumberSpinner, ClusterProperty prop, int divisor, Collection<ClusterPropertyDescriptor> descriptors){
+        try{
+            int value = Integer.parseInt(prop.getValue())/ divisor;
+            SpinnerNumberModel model = (SpinnerNumberModel)boundedNumberSpinner.getModel();
+
+            if ((Integer)model.getMinimum() <= value&&  value <= (Integer)model.getMaximum()) {
+                boundedNumberSpinner.setValue(value);
+                return ;
+            }
+        }catch (NumberFormatException e) {
+                    logger.log(Level.WARNING, "", ExceptionUtils.getDebugException(e));
+        }
+        String value = findDefaultValue(descriptors, prop.getName());
+        boundedNumberSpinner.setValue(Integer.parseInt(value)/ divisor);
     }
 
     private String findDefaultValue(Collection<ClusterPropertyDescriptor> descriptors, String name) {
