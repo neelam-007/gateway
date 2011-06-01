@@ -961,7 +961,7 @@ public class Monitor extends EsmStandardWebPage {
                 long interval = getSamplingInterval(databaseReplicationDelayMap, JSONConstants.SsgClusterMonitoringProperty.DATABASE_REPLICATION_DELAY);
                 clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DATABASEREPLICATIONDELAY, interval);
 
-                long triggerVal = getTriggerValue(auditSizeMap, JSONConstants.SsgClusterMonitoringProperty.DATABASE_REPLICATION_DELAY, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_LOWERLIMIT)), null);
+                long triggerVal = getTriggerValue(databaseReplicationDelayMap, JSONConstants.SsgClusterMonitoringProperty.DATABASE_REPLICATION_DELAY, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGCLUSTER_DATABASEREPLICATIONDELAY_LOWERLIMIT)), null);
                 clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DATABASEREPLICATIONDELAY, triggerVal);
             }
 
