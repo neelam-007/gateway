@@ -84,6 +84,8 @@ public class SystemSettings extends EsmStandardWebPage {
      * Create system settings page
      */
     public SystemSettings() {
+        setVersioned( false );
+
         final WebMarkupContainer dynamicDialogHolder = new WebMarkupContainer("dynamic.holder");
         dynamicDialogHolder.setOutputMarkupId(true);
 
@@ -393,17 +395,16 @@ public class SystemSettings extends EsmStandardWebPage {
         final FeedbackPanel feedback = new FeedbackPanel("globalFeedback");
 
         AttemptedOperation attemptedOperation =  new AttemptedUpdateAny( EntityType.CLUSTER_PROPERTY ) ;
-        Form globalForm = new SecureForm("globalForm", attemptedOperation);
+        Form globalForm = new SecureForm("globalForm", attemptedOperation){
+            @Override
+            protected void onSubmit() {
+                ((WebMarkupContainer)SystemSettings.this.get("dynamic.holder")).replace( new EmptyPanel( "dynamic.holder.content" ) );
+                handleGlobalSettingSubmit( settingsModel, this );
+            }
+        };
         globalForm.add( new YuiAjaxButton("global.submit", globalForm) {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                try {
-                    setupManager.setSessionTimeout( settingsModel.getSessionTimeout() );
-                    this.getForm().info( new StringResourceModel("global.message.updated", SystemSettings.this, null).getString() );
-                } catch ( SetupException se ) {
-                    this.getForm().error( new StringResourceModel("global.message.error", SystemSettings.this, null).getString() );
-                    logger.log( Level.WARNING, "Error updating session timeout cluster property.", se );
-                }
                 ajaxRequestTarget.addComponent( feedback );
             }
             @Override
@@ -417,6 +418,17 @@ public class SystemSettings extends EsmStandardWebPage {
 
         add( feedback.setOutputMarkupId(true) );
         add( globalForm );
+    }
+
+    private void handleGlobalSettingSubmit( final GlobalSettings settingsModel,
+                                            final Form form ) {
+        try {
+            setupManager.setSessionTimeout( settingsModel.getSessionTimeout() );
+            form.info( new StringResourceModel( "global.message.updated", SystemSettings.this, null ).getString() );
+        } catch ( SetupException se ) {
+            form.error( new StringResourceModel( "global.message.error", SystemSettings.this, null ).getString() );
+            logger.log( Level.WARNING, "Error updating session timeout cluster property.", se );
+        }
     }
 
     /**
@@ -563,8 +575,8 @@ public class SystemSettings extends EsmStandardWebPage {
         private License license;
 
         public String getId() {
-            long id = getLicense()==null ? -1 : getLicense().getId();
-            return id <= 0 ? "" : String.valueOf(id);
+            long id = getLicense()==null ? -1L : getLicense().getId();
+            return id <= 0L ? "" : String.valueOf(id);
         }
 
         public String getDescription() {
@@ -639,7 +651,7 @@ public class SystemSettings extends EsmStandardWebPage {
         private final WebMarkupContainer dynamicDialogHolder;
         private final FeedbackPanel formFeedback;
 
-        public LicenseForm(final String componentName, final Component[] components, final WebMarkupContainer dynamicDialogHolder, final FeedbackPanel formFeedback ) {
+        private LicenseForm(final String componentName, final Component[] components, final WebMarkupContainer dynamicDialogHolder, final FeedbackPanel formFeedback ) {
             super(componentName);
 
             this.components = components;
@@ -649,7 +661,7 @@ public class SystemSettings extends EsmStandardWebPage {
             add(fileUpload);
             add(new YuiButton("license.submit"));
 
-            setMaxSize(Bytes.bytes(MAX_LICENSE_FILE_UPLOAD_BYTES));
+            setMaxSize(Bytes.bytes( (long) MAX_LICENSE_FILE_UPLOAD_BYTES ));
             add( new AttemptedUpdateAny( EntityType.CLUSTER_PROPERTY ) );
         }
 
