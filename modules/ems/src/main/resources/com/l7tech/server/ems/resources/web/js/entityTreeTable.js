@@ -1438,7 +1438,12 @@ if (!l7.EntityTreeTable) {
                 this.setMonitoredPropertyValueStale( entity, propertyType, false );
                 if ( property && property.monitored ) {
                     if ( property.value != undefined && property.value != null ) {
-                        span.innerHTML = l7.Util.escapeHtmlText( property.value );
+                        if ( propertyType == l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY.DATABASE_REPLICATION_DELAY &&
+                             l7.Util.isIntString(property.value) && property.value == l7.Constants.SSG_CLUSTER_MONITORING_DATABASE_REPLICATION_DELAY_ERROR ) {
+                            span.innerHTML = 'Error';
+                        } else {
+                            span.innerHTML = l7.Util.escapeHtmlText( property.value );
+                        }
                         if ( property.value != l7.Constants.NA && property.unit != undefined && property.unit != null && property.unit.length < 7 ) {
                             span.innerHTML += ' ' + l7.Util.escapeHtmlText( property.unit );
                         }

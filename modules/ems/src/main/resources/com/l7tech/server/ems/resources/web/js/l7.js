@@ -85,6 +85,11 @@ if (!l7.Constants) {
         };
 
         /**
+         * Replication delay value that indicates a replication error (failure)
+         */
+        l7.Constants.SSG_CLUSTER_MONITORING_DATABASE_REPLICATION_DELAY_ERROR = 0x7fffffffffffffff;
+
+        /**
          * Enum of monitoring property names for SSG Node entities.
          * @final
          */

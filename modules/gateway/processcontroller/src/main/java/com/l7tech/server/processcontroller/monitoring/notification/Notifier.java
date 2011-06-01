@@ -54,6 +54,22 @@ public abstract class Notifier<RT extends NotificationRule> implements Closeable
         return s == null ? "" : s;
     }
 
+    private static Object err(Object in) {
+        Object value = in;
+        if ( isErrorValue(in) ) {
+            value = "Error";
+        }
+        return value;
+    }
+
+    private static boolean isErrorValue(Object in) {
+        boolean error = false;
+        if ( in instanceof Long && ((Long)in)==Long.MAX_VALUE ) {
+            error = true;
+        }
+        return error;
+    }
+
     /**
      * Return a new HashMap populated with interpolatable variables describing the specified Trigger.
      *
@@ -70,8 +86,8 @@ public abstract class Notifier<RT extends NotificationRule> implements Closeable
             PropertyTrigger ptrig = (PropertyTrigger) trigger;
             variables.put("monitoring.context.propertytype", sn(ptrig.getMonitorableId()));
             variables.put("monitoring.context.propertystate", inOut.getShortName());
-            variables.put("monitoring.context.propertyvalue", sn(value));
-            variables.put("monitoring.context.propertyunit", sn(ptrig.getMonitorable().getValueUnit()));
+            variables.put("monitoring.context.propertyvalue", sn(err(value)));
+            variables.put("monitoring.context.propertyunit", isErrorValue(value) ? "" : sn(ptrig.getMonitorable().getValueUnit()));
             variables.put("monitoring.context.triggervalue", sn(ptrig.getTriggerValue()));
         }
         return variables;

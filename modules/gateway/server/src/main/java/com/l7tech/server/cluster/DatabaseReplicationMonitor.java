@@ -113,8 +113,10 @@ public class DatabaseReplicationMonitor implements PropertyChangeListener {
 
     private void scheduleReplicationChecking() {
         synchronized ( taskLock ) {
+            long sequence = 0L;
             if ( task != null ) {
                 task.cancel();
+                sequence = task.sequence;
                 task = null;
             }
 
@@ -124,7 +126,8 @@ public class DatabaseReplicationMonitor implements PropertyChangeListener {
                 task = new ReplicationDelayCheckTask(
                         checkInterval,
                         config.getTimeUnitProperty( PROP_THRESHOLD, TimeUnit.SECONDS.toMillis( 60L ) ) / TimeUnit.SECONDS.toMillis( 1L ),
-                        config.getTimeUnitProperty( PROP_ERROR_INTERVAL, TimeUnit.HOURS.toMillis( 1L ) )
+                        config.getTimeUnitProperty( PROP_ERROR_INTERVAL, TimeUnit.HOURS.toMillis( 1L ) ),
+                        sequence
                 );
                 timer.schedule( task, INITIAL_DELAY, checkInterval );
             }
@@ -140,7 +143,7 @@ public class DatabaseReplicationMonitor implements PropertyChangeListener {
     }
 
     private final class ReplicationDelayCheckTask extends ManagedTimerTask {
-        private static final long DELAY_ERROR = 10000L;
+        private static final long DELAY_ERROR = Long.MAX_VALUE;
         private final long updatePeriod;
         private final long errorThreshold;
         private final long errorSuppressPeriod;
@@ -151,10 +154,12 @@ public class DatabaseReplicationMonitor implements PropertyChangeListener {
 
         private ReplicationDelayCheckTask( final long updatePeriod,
                                            final long errorThreshold,
-                                           final long errorSuppressPeriod ) {
+                                           final long errorSuppressPeriod,
+                                           final long sequence ) {
             this.updatePeriod = updatePeriod;
             this.errorThreshold = errorThreshold;
             this.errorSuppressPeriod = errorSuppressPeriod;
+            this.sequence = sequence;
         }
 
         @Override
