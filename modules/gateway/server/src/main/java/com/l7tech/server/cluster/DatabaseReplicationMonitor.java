@@ -166,7 +166,7 @@ public class DatabaseReplicationMonitor implements PropertyChangeListener {
         protected void doRun() {
             final boolean isMaster = clusterMaster.isMaster();
             final long currentTime = System.currentTimeMillis();
-            final long staleTime = currentTime - TimeUnit.HOURS.toMillis(1L);
+            final long staleTime = currentTime - TimeUnit.HOURS.toMillis(24L);
             String dataSourceDescription = primaryDataSourceDescription;
             try {
                 if ( isMaster ) {
@@ -237,10 +237,17 @@ public class DatabaseReplicationMonitor implements PropertyChangeListener {
             final long delay = replicationDelay.get();
             if ( (System.currentTimeMillis() - created) > errorThreshold &&
                   delay >= errorThreshold  ) {
-                auditErrorIfNotSuppressed(
+                if ( delay == DELAY_ERROR ) {
+                    auditErrorIfNotSuppressed(
                         SystemMessages.MONITOR_DB_REPLICATION_FAILED,
-                        new String[]{ secondaryDataSourceDescription, "delay is " + delay + " seconds" },
-                        null);
+                        new String[]{ secondaryDataSourceDescription, "error calculating delay" },
+                        null );
+                } else {
+                    auditErrorIfNotSuppressed(
+                            SystemMessages.MONITOR_DB_REPLICATION_FAILED,
+                            new String[]{ secondaryDataSourceDescription, "delay is " + delay + " seconds" },
+                            null);
+                }
             } else {
                 if ( lastErrorAudit > 0L ) {
                     lastErrorAudit = 0L;
