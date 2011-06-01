@@ -43,11 +43,13 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
 
     public GatewayPoller( final PlatformTransactionManager transactionManager,
                           final Timer timer,
+                          final SsgNodeManager ssgNodeManager,
                           final SsgClusterManager ssgClusterManager,
                           final GatewayContextFactory gatewayContextFactory,
                           final UserPropertyManager userPropertyManager ) {
         this.transactionManager = transactionManager;
         this.timer = timer;
+        this.ssgNodeManager = ssgNodeManager;
         this.ssgClusterManager = ssgClusterManager;
         this.gatewayContextFactory = gatewayContextFactory;
         this.userPropertyManager = userPropertyManager;
@@ -127,6 +129,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
 
     private final PlatformTransactionManager transactionManager;
     private final Timer timer;
+    private final SsgNodeManager ssgNodeManager;
     private final SsgClusterManager ssgClusterManager;
     private final GatewayContextFactory gatewayContextFactory;
     private final UserPropertyManager userPropertyManager;
@@ -237,11 +240,18 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                 Set<GatewayApi.GatewayInfo> currInfoSet = cluster.obtainGatewayInfoSet();
                                 if ( newInfoSet != null && !newInfoSet.equals(currInfoSet) ) {
                                     Set<SsgNode> nodes = new HashSet<SsgNode>();
+                                    boolean nodesIgnored = false;
 
                                     for (GatewayApi.GatewayInfo newInfo: newInfoSet) {
                                         final String nodeGuid = newInfo.getId();
                                         SsgNode node = cluster.getNode( nodeGuid );
                                         if ( node == null ) {
+                                            final SsgNode existingNode = ssgNodeManager.findByGuid( nodeGuid );
+                                            if ( existingNode != null ) {
+                                                nodesIgnored = true;
+                                                logger.fine( "Ignoring node '"+newInfo.getName()+"', already present for cluster '" + existingNode.getSsgCluster().getName() +"'");
+                                                continue;
+                                            }
                                             node = new SsgNode();
                                             node.setGuid(nodeGuid);
                                             node.setSsgCluster(cluster);
@@ -256,7 +266,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                     }
                                     cluster.getNodes().clear();
                                     cluster.getNodes().addAll(nodes);
-                                    refreshClusterStatus(cluster);
+                                    refreshClusterStatus(cluster, nodesIgnored);
                                     refreshDbHosts(cluster);
                                     ssgClusterManager.update(cluster);
                                 } else {
@@ -266,7 +276,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                     }
                                     updated = updated || refreshDbHosts(cluster);
                                     if ( updated ) {
-                                        refreshClusterStatus(cluster);
+                                        refreshClusterStatus(cluster,false);
                                         ssgClusterManager.update(cluster);
                                     }
                                 }
@@ -301,7 +311,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                         updated = updated || refreshNodeStatus( node );
                                     }
                                     if ( updated ) {
-                                        refreshClusterStatus(cluster);
+                                        refreshClusterStatus(cluster, false);
                                         ssgClusterManager.update(cluster);
                                     }
                                 }
@@ -323,7 +333,8 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
      * Update the online status of the given cluster based on the status of its
      * nodes.
      */
-    private void refreshClusterStatus( final SsgCluster cluster ) {
+    private void refreshClusterStatus( final SsgCluster cluster,
+                                       final boolean nodesIgnored ) {
         int nodeCount = 0;
         int upCount = 0;
 
@@ -347,7 +358,9 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
         }
 
         cluster.setOnlineStatus( clusterStatus );
-        if ( cluster.getTrustStatus() ) {
+        if ( nodesIgnored ) {
+            cluster.setStatusMessage( "Duplicate node(s) ignored." );
+        } else if ( cluster.getTrustStatus() ) {
             cluster.setStatusMessage( null );
         } else {
             cluster.setStatusMessage( "ESM Certificate not trusted." );
