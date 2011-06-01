@@ -1778,7 +1778,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     // reversing the node list preserves the original order
                     final TreePath path = getSelectionPath();
                     if (path != null && path.getPathCount()!=1 && path.getLastPathComponent() != null
-                            && !((TreeNode) path.getLastPathComponent()).getAllowsChildren()) {
+                            && (!((AssertionTreeNode) path.getLastPathComponent()).accept(null) || !((TreeNode) path.getLastPathComponent()).getAllowsChildren()  )) {
                         Collections.reverse( nodeList );
                     }
 
@@ -1836,7 +1836,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     // reversing the node list preserves the original order
                     final TreePath path = getSelectionPath();
                     if (path != null && path.getPathCount()!=1 && path.getLastPathComponent() != null
-                            && !((TreeNode) path.getLastPathComponent()).getAllowsChildren()) {
+                            && (!((AssertionTreeNode) path.getLastPathComponent()).accept(null) || !((TreeNode) path.getLastPathComponent()).getAllowsChildren()  )) {
                         Collections.reverse( list );
                     }
 
