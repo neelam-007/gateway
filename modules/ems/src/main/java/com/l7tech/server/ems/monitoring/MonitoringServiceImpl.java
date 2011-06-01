@@ -34,9 +34,8 @@ public class MonitoringServiceImpl implements MonitoringService {
 
     // Keep tracking if the warning message for properties statuses unavailable has been logged or not.
     private boolean statusesUnavailableWarningMsgLogged;
-    // The next three variables used to keep tracking of SSG cluster property status
-    private long latestSsgClusterMonitoringTimestamp;
-    private ConcurrentMap<String,Pair<Object,Boolean>> latestSsgClusterMonitoredValues = new ConcurrentHashMap<String,Pair<Object,Boolean>>();
+    // Keep tracking of SSG cluster property status
+    private ConcurrentMap<Pair<String,String>,Pair<Object,Boolean>> latestSsgClusterMonitoredValues = new ConcurrentHashMap<Pair<String,String>,Pair<Object,Boolean>>();
 
     public MonitoringServiceImpl(GatewayContextFactory gatewayContextFactory, EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager) {
         this.gatewayContextFactory = gatewayContextFactory;
@@ -61,7 +60,7 @@ public class MonitoringServiceImpl implements MonitoringService {
         final Map<String, Object> ssgClusterPropertyValuesMap = new HashMap<String, Object>();
         for ( final EntityMonitoringPropertySetup emps : entityMonitoringPropertySetups ) {
             // Get the current property status of the SSG cluster from the monitoring api.
-            final Pair<Object, Boolean> value = latestSsgClusterMonitoredValues.get( emps.getPropertyType() );
+            final Pair<Object, Boolean> value = latestSsgClusterMonitoredValues.get( new Pair<String,String>(ssgClusterGuid, emps.getPropertyType()) );
 
             final EntityMonitoringPropertyValues.PropertyValues currentPropertyValues =
                 new EntityMonitoringPropertyValues.PropertyValues(
@@ -128,10 +127,7 @@ public class MonitoringServiceImpl implements MonitoringService {
 
                 // Case 1: SSG cluster property status
                 if (compTyep.equals(ComponentType.CLUSTER)) {
-                    if (latestSsgClusterMonitoringTimestamp < propertyStatus.getTimestamp()) {
-                        latestSsgClusterMonitoringTimestamp = propertyStatus.getTimestamp();
-                        latestSsgClusterMonitoredValues.put( propertyStatus.getMonitorableId(), new Pair<Object,Boolean>( value, alert ) );
-                    }
+                    latestSsgClusterMonitoredValues.put( new Pair<String,String>(ssgNode.getSsgCluster().getGuid(), propertyStatus.getMonitorableId()), new Pair<Object,Boolean>( value, alert ) );
                     continue;
                 }
 
