@@ -229,7 +229,7 @@ public class AdminUserAccountPropertiesDialog extends JDialog {
                 return ;
             }
         }catch (NumberFormatException e) {
-                    logger.log(Level.WARNING, "", ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, "Invalid property value: "+prop.getValue(), ExceptionUtils.getDebugException(e));
         }
         String value = findDefaultValue(descriptors, prop.getName());
         boundedNumberSpinner.setValue(Integer.parseInt(value)/ divisor);
