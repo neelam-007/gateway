@@ -14,6 +14,9 @@ public class OptionTypeTest {
     public void testPortRegex() {
         Assert.assertTrue("Regex passes", OptionType.PORT.matches("1"));
         Assert.assertTrue("Regex passes", OptionType.PORT.matches("65535"));
+        Assert.assertTrue("Regex passes", OptionType.PORT.matches("60000"));
+        Assert.assertTrue("Regex passes", OptionType.PORT.matches("60001"));
+        Assert.assertTrue("Regex passes", OptionType.PORT.matches("60999"));
         Assert.assertTrue("Regex passes", OptionType.PORT.matches("12345"));
         Assert.assertTrue("Regex passes", OptionType.PORT.matches("11"));
         Assert.assertTrue("Regex passes", OptionType.PORT.matches("123"));

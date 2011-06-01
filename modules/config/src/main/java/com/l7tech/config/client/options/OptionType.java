@@ -49,7 +49,7 @@ public enum OptionType {
     /**
      * A port number
      */
-    PORT("^(?:6(?:[1-4]\\d{3}|(?:5(?:[0-4]\\d{2}|5(?:[0-2]\\d|3[0-5]))))|[1-5]\\d{4}|(?!0)\\d{2,4}|[1-9])$", false, new DecimalFormat("#0"), Integer.class),   // 1 - 65535
+    PORT("^(?:6(?:[0-4]\\d{3}|(?:5(?:[0-4]\\d{2}|5(?:[0-2]\\d|3[0-5]))))|[1-5]\\d{4}|(?!0)\\d{2,4}|[1-9])$", false, new DecimalFormat("#0"), Integer.class),   // 1 - 65535
 
     /**
      * A positive integer
