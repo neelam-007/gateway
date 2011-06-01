@@ -28,6 +28,7 @@ import java.net.UnknownHostException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -64,7 +65,7 @@ public class NodeApiImpl implements NodeApi {
         checkRequest();
         logger.fine("getProperty");
         if (propertyId.equals(BuiltinMonitorables.AUDIT_SIZE.getName())) {
-            return Integer.toString(auditRecordManager.findCount(new AuditSearchCriteria.Builder().build()));
+            return Integer.toString(auditRecordManager.findCount( new AuditSearchCriteria.Builder().fromLevel( Level.ALL ).toLevel( Level.OFF ).build() ));
         } else if (propertyId.equals(BuiltinMonitorables.DATABASE_REPLICATION_DELAY.getName())) {
             return Long.toString(databaseReplicationMonitor.getReplicationDelay());
         } else {

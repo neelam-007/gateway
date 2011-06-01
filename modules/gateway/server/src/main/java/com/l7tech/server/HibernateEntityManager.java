@@ -4,9 +4,13 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.SyspropUtil;
 import org.hibernate.*;
 import org.hibernate.criterion.*;
+import org.hibernate.jdbc.Work;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.simple.SimpleJdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -19,6 +23,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.persistence.Table;
 import java.lang.ref.WeakReference;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -155,26 +160,45 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @throws FindException If an error occurs
      */
     protected int findCount( final Class clazz, final Criterion... restrictions ) throws FindException {
-        try {
-            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Integer>() {
-                @Override
-                protected Integer doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    Criteria criteria = session.createCriteria(clazz==null ? getImpClass() : clazz);
-
-                    // Ensure manager specific criteria are added
-                    addFindAllCriteria( criteria );
-
-                    // Add additional criteria
-                    for (Criterion restriction : restrictions ) {
-                        criteria.add( restriction );
+        final Class targetClass = clazz==null ? getImpClass() : clazz;
+        try {            if ( useOptimizedCount && restrictions.length == 0 && targetClass.equals( getImpClass() ) ) {
+                // Warning: This is not strictly correct since it ignores the possibility of manager
+                // specific criteria.
+                return getHibernateTemplate().execute( new ReadOnlyHibernateCallback<Integer>() {
+                    @Override
+                    protected Integer doInHibernateReadOnly( final Session session ) throws HibernateException, SQLException {
+                        final int[] count = new int[1];
+                        session.doWork( new Work(){
+                            @Override
+                            public void execute( final Connection connection ) throws SQLException {
+                                final SimpleJdbcTemplate template = new SimpleJdbcTemplate( new SingleConnectionDataSource(connection, true) );
+                                count[0] = template.queryForInt( "select count(*) from " + getTableName() );
+                            }
+                        } );
+                        return count[0];
                     }
+                } );
+            } else {
+                return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<Integer>() {
+                    @Override
+                    protected Integer doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                        Criteria criteria = session.createCriteria( targetClass );
 
-                    criteria.setProjection( Projections.rowCount() );
-                    return ((Number) criteria.uniqueResult()).intValue();
-                }
-            });
+                        // Ensure manager specific criteria are added
+                        addFindAllCriteria( criteria );
+
+                        // Add additional criteria
+                        for (Criterion restriction : restrictions ) {
+                            criteria.add( restriction );
+                        }
+
+                        criteria.setProjection( Projections.rowCount() );
+                        return ((Number) criteria.uniqueResult()).intValue();
+                    }
+                });
+            }
         } catch (Exception e) {
-            throw new FindException("Couldn't check uniqueness", e);
+            throw new FindException("Error finding count", e);
         }
     }
 
@@ -979,18 +1003,18 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     @SuppressWarnings({ "unchecked" })
     protected List<ET> findByPropertyMaybeNull(final String property, final Object value) throws FindException {
         try {
-            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            return getHibernateTemplate().executeFind( new ReadOnlyHibernateCallback() {
                 @Override
-                protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    final Criteria criteria = session.createCriteria(getImpClass());
-                    if (value == null) {
-                        criteria.add(Restrictions.isNull(property));
+                protected Object doInHibernateReadOnly( Session session ) throws HibernateException, SQLException {
+                    final Criteria criteria = session.createCriteria( getImpClass() );
+                    if ( value == null ) {
+                        criteria.add( Restrictions.isNull( property ) );
                     } else {
-                        criteria.add(Restrictions.eq(property, value));
+                        criteria.add( Restrictions.eq( property, value ) );
                     }
                     return criteria.list();
                 }
-            });
+            } );
         } catch (DataAccessException e) {
             throw new FindException("Couldn't find cert(s)", e);
         }
@@ -1033,6 +1057,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+    private static final boolean useOptimizedCount = SyspropUtil.getBoolean( "com.l7tech.server.hibernate.useOptimizedCount", true );
 
     private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Map<Long, WeakReference<CacheInfo<ET>>> cacheInfoByOid = new HashMap<Long, WeakReference<CacheInfo<ET>>>();

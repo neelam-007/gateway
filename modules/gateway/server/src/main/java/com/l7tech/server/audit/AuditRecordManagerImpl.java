@@ -432,7 +432,7 @@ public class AuditRecordManagerImpl
 
     @Override
     public String getTableName() {
-        return "audit";
+        return "audit_main";
     }
 
     public void setServerConfig(ServerConfig serverConfig) {
@@ -495,6 +495,8 @@ public class AuditRecordManagerImpl
 
         if (fromLevel.equals(toLevel)) {
             criterion.add(Restrictions.eq(PROP_LEVEL, fromLevel.getName()));
+        } else if (fromLevel.equals( Level.ALL ) && toLevel.equals( Level.OFF )) {
+            // no restriction
         } else {
             if (fromLevel.intValue() > toLevel.intValue())
                 throw new FindException("fromLevel " + fromLevel.getName() + " is not lower in value than toLevel " + toLevel.getName());
