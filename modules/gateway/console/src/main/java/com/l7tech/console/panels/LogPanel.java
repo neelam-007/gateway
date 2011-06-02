@@ -532,10 +532,47 @@ public class LogPanel extends JPanel {
                 getRequestXmlTextArea().setText("");
                 getResponseXmlTextArea().setText("");
                 displayedLogMessage = null;
+
+                // Display the visual indication message, "Caution! Constraint may exclude some events", if any search criteria applied.
+                controlPanel.cautionIndicatorPanel.setVisible(isAuditType && hasSearchCriteriaApplied());  // Note: this indicator is not for Gateway Logs Events.
             }
         });
 
         applyPreferences();
+
+        // Display the visual indication message, "Caution! Constraint may exclude some events", if any search criteria applied.
+        controlPanel.cautionIndicatorPanel.setVisible(isAuditType && hasSearchCriteriaApplied());  // Note: this indicator is not for Gateway Logs Events.
+    }
+
+    /**
+     *  Check if there is any search criterion applied.  Make sure this method is called after all search criteria data have been collected.
+     * @return true if there is at least one search criterion applied.
+     */
+    private boolean hasSearchCriteriaApplied() {
+        //return
+            boolean abc =
+            (! logLevelOption.getLevel().equals(Level.ALL)) ||
+            (! auditType.equals(AuditType.ALL)) ||
+            (! isNullOrEmpty(serviceName)) ||
+            (! isNullOrEmpty(message)) ||
+            (! isNullOrEmpty(node)) ||
+            (! isNullOrEmpty(userName)) ||
+            (! isNullOrEmpty(userIdOrDn)) ||
+            (! isNullOrEmpty(requestId)) ||
+            (! "<any>".equals(entityTypeName)) ||
+            (entityId != null) ||
+            (messageId != null);
+
+        return abc;
+    }
+
+    /**
+     * Check if a string variable is null or empty or just contains white spaces.
+     * @param str: the string to be checked.
+     * @return true if the string is null or empty, or just consists of white spaces.
+     */
+    private boolean isNullOrEmpty(String str) {
+        return str == null || str.trim().isEmpty();
     }
 
     /**
@@ -1481,7 +1518,6 @@ public class LogPanel extends JPanel {
         if(filterLabel == null) {
             filterLabel = new JLabel("Caution! Constraint may exclude some events.");
             filterLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            filterLabel.setFont(new java.awt.Font("Dialog", 0, 11));
             filterLabel.setVisible(false);
             filterLabel.setBackground(new Color(0xFF, 0xFF, 0xe1));
             filterLabel.setOpaque(true);
@@ -2671,5 +2707,6 @@ public class LogPanel extends JPanel {
         private JPanel associatedLogsSearchingPane;
         private JPanel userNamePane;
         private JPanel userIdPane;
+        private JPanel cautionIndicatorPanel;
     }
 }
