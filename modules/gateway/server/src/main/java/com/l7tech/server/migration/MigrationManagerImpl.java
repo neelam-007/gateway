@@ -18,6 +18,8 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 
+import java.io.Flushable;
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -369,6 +371,14 @@ public class MigrationManagerImpl implements MigrationManager {
             ((PublishedService)entity).parseWsdlStrategy( buildWsdlStrategy( header, bundle ) );
         }
 
+        if (entity instanceof Flushable ) {
+            try {
+                ((Flushable)entity).flush();
+            } catch ( IOException e ) {
+                throw new MigrationApi.MigrationException("Error flushing entity for update: " + header, e);
+            }
+        }
+
         if (!dryRun) {
             entityCrud.update(entity);
             // todo: need more reliable method of retrieving the new version;
@@ -390,6 +400,14 @@ public class MigrationManagerImpl implements MigrationManager {
             final PublishedService service = (PublishedService) entity;
             service.parseWsdlStrategy( buildWsdlStrategy( header, bundle ) );
             service.setDisabled( !enableServices );
+        }
+
+        if (entity instanceof Flushable ) {
+            try {
+                ((Flushable)entity).flush();
+            } catch ( IOException e ) {
+                throw new MigrationApi.MigrationException("Error flushing entity for save: " + header, e);
+            }
         }
 
         if (!dryRun) {

@@ -3,7 +3,6 @@ package com.l7tech.server.migration;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.migration.*;
@@ -14,7 +13,6 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.lang.reflect.Method;
-import java.io.IOException;
 
 /**
  * Extracts the dependencies and mappings from a Policy object belonging to a service,
@@ -107,11 +105,7 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
         PropertyResolver resolver = getResolver(getter);
         resolver.applyMapping(assertion, assertionPropName, targetHeader, targetValue, originalHeader);
 
-        try {
-            policy.setXml(WspWriter.getPolicyXml(policy.getAssertion()));
-        } catch (IOException e) {
-            throw new PropertyResolverException("Error parsing property name: " + propName, e);
-        }
+        // The policy XML will be updated from the root assertion prior to being stored
     }
 
     private void getHeadersRecursive(ExternalEntityHeader source, Assertion assertion, Map<ExternalEntityHeader, Set<MigrationDependency>> result, String topPropertyName) throws PropertyResolverException {

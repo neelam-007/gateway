@@ -28,6 +28,7 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.soap12.SOAP12Operation;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
@@ -51,7 +52,7 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
  */
 @SuppressWarnings( { "NonJaxWsWebServices" } )
 @XmlRootElement
-public class PublishedService extends NamedEntityImp implements HasFolder {
+public class PublishedService extends NamedEntityImp implements Flushable, HasFolder {
     //private static final long serialVersionUID = 8711916262379377867L;
     private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
 
@@ -637,6 +638,14 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
             builder.setLength( 255 );
 
         return builder.toString();
+    }
+
+    @Override
+    public void flush() throws IOException {
+        checkLocked();
+        if ( policy != null ) {
+            policy.flush();
+        }
     }
 
     /**

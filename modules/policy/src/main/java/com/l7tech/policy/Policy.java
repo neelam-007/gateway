@@ -19,6 +19,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.Flushable;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -28,7 +29,7 @@ import java.util.logging.Logger;
  * @author alex
  */
 @XmlRootElement
-public class Policy extends NamedEntityImp implements HasFolder {
+public class Policy extends NamedEntityImp implements Flushable, HasFolder {
     private static final Logger logger = Logger.getLogger(Policy.class.getName());
 
     private String guid;
@@ -107,6 +108,19 @@ public class Policy extends NamedEntityImp implements HasFolder {
         }
 
         return assertion;
+    }
+
+    /**
+     * Set the policy XML based on the policies root Assertion.
+     *
+     * @throws IOException If an error occurs
+     */
+    @Override
+    public synchronized void flush() throws IOException {
+        checkLocked();
+        if ( assertion != null ) {
+            setXml( WspWriter.getPolicyXml(assertion) );
+        }
     }
 
     public synchronized void forceRecompile() {
