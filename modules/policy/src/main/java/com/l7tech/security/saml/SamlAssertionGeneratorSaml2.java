@@ -174,7 +174,6 @@ public class SamlAssertionGeneratorSaml2 {
             if ( options.getSubjectConfirmationDataNotBeforeSecondsInPast() > -1 ) {
                 Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
                 calendar.add(Calendar.SECOND, (-1 * options.getSubjectConfirmationDataNotBeforeSecondsInPast()));
-                calendar.set(Calendar.MILLISECOND, 0);
                 subjectConfirmationData.setNotBefore(calendar);
             }
             if ( options.getSubjectConfirmationDataNotOnOrAfterExpirySeconds() > -1) {
@@ -264,7 +263,6 @@ public class SamlAssertionGeneratorSaml2 {
             if ( beforeOffsetSeconds > -1 ) {
                 Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
                 calendar.add(Calendar.SECOND, (-1 * beforeOffsetSeconds));
-                calendar.set(Calendar.MILLISECOND, 0);
                 ct.setNotBefore(calendar);
             }
 

@@ -253,7 +253,6 @@ class SamlAssertionGeneratorSaml1 {
             if ( beforeOffsetSeconds > -1 ) {
                 final Calendar calendar = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
                 calendar.add(Calendar.SECOND, (-1 * beforeOffsetSeconds));
-                calendar.set(Calendar.MILLISECOND, 0);
                 ct.setNotBefore(calendar);
             }
 
