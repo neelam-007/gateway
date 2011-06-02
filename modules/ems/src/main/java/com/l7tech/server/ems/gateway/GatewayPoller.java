@@ -201,6 +201,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
 
                         if ( host != null && host.length() > 0 && port > 0 ) {
                             boolean skipStatusUpdate = false;
+                            String skipStatusUpdateStatus = null;
                             try {
                                 GatewayContext context = gatewayContextFactory.createGatewayContext( null, null, host, port );
                                 Set<GatewayApi.GatewayInfo> newInfoSet = null;
@@ -294,6 +295,7 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                     }
                                 } else if ( "Not Licensed".equals(e.getMessage()) ) {
                                     skipStatusUpdate = true;
+                                    skipStatusUpdateStatus = "Not licensed";
                                     logger.fine("Gateway cluster is not licensed '"+host+":"+port+"'.");
                                 } else if ( "Could not send Message.".equals(e.getMessage()) && ExceptionUtils.causedBy(e, IOException.class)) {
                                     logger.info("Unexpected response from Gateway cluster '"+host+":"+port+"'.");
@@ -314,6 +316,12 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
                                         refreshClusterStatus(cluster, false);
                                         ssgClusterManager.update(cluster);
                                     }
+                                } else if ( skipStatusUpdateStatus != null ) {
+                                    for ( SsgNode node : cluster.getNodes() ) {
+                                        node.setStatusMessage( null );
+                                    }
+                                    cluster.setStatusMessage( skipStatusUpdateStatus );
+                                    ssgClusterManager.update(cluster);
                                 }
                             }
                         }
