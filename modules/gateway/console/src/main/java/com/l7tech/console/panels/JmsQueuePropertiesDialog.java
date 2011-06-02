@@ -316,13 +316,13 @@ public class JmsQueuePropertiesDialog extends JDialog {
         jndiUrlTextField.setDocument(new MaxLengthDocument(255));
         jndiUsernameTextField.setDocument(new MaxLengthDocument(1024));
         jndiPasswordField.setDocument(new MaxLengthDocument(255));
-        PasswordGuiUtils.configureOptionalSecurePasswordField(jndiPasswordField, showJndiPasswordCheckBox, jndiPasswordWarningLabel);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(this, jndiPasswordField, showJndiPasswordCheckBox, jndiPasswordWarningLabel);
         // Case 2: in the Destination Tab
         qcfTextField.setDocument(new MaxLengthDocument(255));
         queueNameTextField.setDocument(new MaxLengthDocument(128));
         queueUsernameTextField.setDocument(new MaxLengthDocument(255));
         queuePasswordField.setDocument(new MaxLengthDocument(255));
-        PasswordGuiUtils.configureOptionalSecurePasswordField(queuePasswordField, showQueuePasswordCheckBox, queuePasswordWarningLabel);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(this, queuePasswordField, showQueuePasswordCheckBox, queuePasswordWarningLabel);
         // Case 3: in the Inbound or Outbound Options Tab
         inboundReplySpecifiedQueueField.setDocument(new MaxLengthDocument(128));
         failureQueueNameTextField.setDocument(new MaxLengthDocument(128));

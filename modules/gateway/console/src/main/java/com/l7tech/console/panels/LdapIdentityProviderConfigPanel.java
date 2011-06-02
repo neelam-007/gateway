@@ -188,7 +188,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         Utilities.equalizeButtonSizes(addButton, editButton, removeButton);
 
         ldapSearchBaseTextField.addKeyListener(keyListener);
-        PasswordGuiUtils.configureOptionalSecurePasswordField(ldapBindPasswordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(this, ldapBindPasswordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         clientAuthenticationCheckbox.addActionListener(new ActionListener() {
             @Override

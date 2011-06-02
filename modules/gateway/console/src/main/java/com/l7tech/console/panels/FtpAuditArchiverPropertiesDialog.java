@@ -209,7 +209,7 @@ public class FtpAuditArchiverPropertiesDialog extends JDialog {
         });
         Utilities.enableGrayOnDisabled(_userNameTextField);
         Utilities.enableGrayOnDisabled(_passwordField);
-        PasswordGuiUtils.configureOptionalSecurePasswordField(_passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(this, _passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         _testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

@@ -161,7 +161,7 @@ public class JdbcConnectionPropertiesDialog extends JDialog {
             }
         });
 
-        PasswordGuiUtils.configureOptionalSecurePasswordField(passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(this, passwordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         modelToView();
         enableOrDisableButtons();

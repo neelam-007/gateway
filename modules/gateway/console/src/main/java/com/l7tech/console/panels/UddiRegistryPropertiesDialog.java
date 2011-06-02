@@ -305,7 +305,7 @@ public class UddiRegistryPropertiesDialog extends JDialog {
             }
         });
 
-        PasswordGuiUtils.configureOptionalSecurePasswordField(passwordTextField, showPasswordCheckBox, plaintextPasswordWarningLabel);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(this, passwordTextField, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         modelToView( uddiRegistry );
         setMinimumSize( getMinimumSize() );

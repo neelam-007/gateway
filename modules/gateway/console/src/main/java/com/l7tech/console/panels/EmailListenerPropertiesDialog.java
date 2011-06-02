@@ -296,7 +296,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
             }
         });
         inputValidator.validateWhenDocumentChanges(password);
-        PasswordGuiUtils.configureOptionalSecurePasswordField(password, showPasswordCheckBox, plaintextPasswordWarningLabel);
+        PasswordGuiUtils.configureOptionalSecurePasswordField(this, password, showPasswordCheckBox, plaintextPasswordWarningLabel);
 
         // Folder field must not be empty and must not be longer than 255 characters
                 ((AbstractDocument) folderName.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
