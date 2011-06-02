@@ -452,15 +452,22 @@ public class WsdlComposer {
         if (typesMap.containsKey(sourceWsdlHolder))
             return false;
 
-        addTypesFromDefinition(sourceWsdlHolder, sourceWsdlHolder.wsdl.getDefinition());
+        addTypesFromDefinition(sourceWsdlHolder, sourceWsdlHolder.wsdl.getDefinition(), new HashSet<Definition>());
 
         return true;
     }
 
-    private boolean addTypesFromDefinition(WsdlHolder sourceWsdlHolder, Definition definition) {
-        boolean added = false;
+    private boolean addTypesFromDefinition( final WsdlHolder sourceWsdlHolder,
+                                            final Definition definition,
+                                            final Set<Definition> seenDefinitions ) {
+        if ( seenDefinitions.contains( definition ) ) {
+            return false;
+        } else {
+            seenDefinitions.add( definition );
+        }
 
-        Types sourceTypes = definition.getTypes();
+        boolean added = false;
+        final Types sourceTypes = definition.getTypes();
         if ( sourceTypes != null ) {
             added = true;
             typesMap.put(sourceWsdlHolder, sourceTypes);
@@ -471,7 +478,7 @@ public class WsdlComposer {
             for ( List<Import> imports : importsCollection ) {
                 for ( Import imp : imports ) {
                     if ( imp.getDefinition() != null ) {
-                        added = addTypesFromDefinition(sourceWsdlHolder, imp.getDefinition());
+                        added = addTypesFromDefinition(sourceWsdlHolder, imp.getDefinition(), seenDefinitions);
                         if (added) break outer;
                     }
                 }
@@ -943,6 +950,18 @@ public class WsdlComposer {
     }
 
     private static Map<String,String> findNamespaces( final Definition definition, final Map<String,String> namespaces) {
+        return findNamespaces( definition, namespaces, new HashSet<Definition>() );
+    }
+
+    private static Map<String,String> findNamespaces( final Definition definition,
+                                                      final Map<String,String> namespaces,
+                                                      final Set<Definition> seenDefinitions ) {
+        if ( seenDefinitions.contains( definition ) ) {
+            return namespaces;
+        } else {
+            seenDefinitions.add( definition );
+        }
+
         // Add namespaces from imports first so these are overridden by
         // namespaces from the main WSDL
         //noinspection unchecked
@@ -951,7 +970,7 @@ public class WsdlComposer {
             for ( Import imp : importList ) {
                 Definition importedDef = imp.getDefinition();
                 if ( importedDef != null ) {
-                    findNamespaces( importedDef, namespaces );
+                    findNamespaces( importedDef, namespaces, seenDefinitions );
                 }
             }
         }

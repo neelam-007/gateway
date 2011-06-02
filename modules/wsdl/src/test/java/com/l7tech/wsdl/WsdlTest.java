@@ -2,17 +2,21 @@ package com.l7tech.wsdl;
 
 import com.l7tech.common.TestDocuments;
 
+import javax.wsdl.BindingOperation;
+import javax.wsdl.Operation;
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
 import javax.wsdl.Binding;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
 
+import com.l7tech.test.BugNumber;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
@@ -220,15 +224,13 @@ public class WsdlTest {
 
         // Resource A
         String resourceToReadA = TestDocuments.BUG6944_WSDLS_WITH_CIRCULAR_IMPORTS_A_IMPORTS_B;
-        InputStream inA = WsdlTest.class.getClassLoader().getResourceAsStream(resourceToReadA);
-        String contentA = readContentFromInputStream(inA);
+        String contentA = TestDocuments.getTestDocumentAsXml(resourceToReadA);
         String baseUriA =  resourceToReadA.replace(TestDocuments.DIR, "");
         urisToResources.put(baseUriA, contentA);
 
         // Resource B
         String resourceToReadB = TestDocuments.BUG6944_WSDLS_WITH_CIRCULAR_IMPORTS_B_IMPORTS_A;
-        InputStream inB = WsdlTest.class.getClassLoader().getResourceAsStream(resourceToReadB);
-        String contentB = readContentFromInputStream(inB);
+        String contentB = TestDocuments.getTestDocumentAsXml( resourceToReadB );
         String baseUriB =  resourceToReadB.replace(TestDocuments.DIR, "");
         urisToResources.put(baseUriB, contentB);
 
@@ -261,26 +263,33 @@ public class WsdlTest {
         assertEquals( "Hash", "ylC488wFxrJz8/LTtJxHwg==", wsdlA.getHash() );
     }
 
-    private String readContentFromInputStream(InputStream is) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        StringBuilder sb = new StringBuilder();
+    @Test
+    @BugNumber(9848)
+    public void testCircularWcf() throws Exception {
+        final Map<String, String> urisToResources = new HashMap<String, String>();
+        urisToResources.put("http://localhost/wsdl1.wsdl", TestDocuments.getTestDocumentAsXml( TestDocuments.BUG9848_CIRCULAR_WCF_WSDL1 ));
+        urisToResources.put("http://localhost/wsdl2.wsdl", TestDocuments.getTestDocumentAsXml( TestDocuments.BUG9848_CIRCULAR_WCF_WSDL2 ));
+        final Wsdl wsdl = Wsdl.newInstance(Wsdl.getWSDLFactory(false), Wsdl.getWSDLLocator("http://localhost/wsdl1.wsdl", urisToResources, log));
 
-        String line;
-        try {
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-                sb.append('\n');
+        for ( final Binding binding : wsdl.getBindings() ) {
+            assertFalse( "Binding operations not found", binding.getBindingOperations().isEmpty() );
+
+            for ( final BindingOperation bindingOperation : (List<BindingOperation>) binding.getBindingOperations() ) {
+                assertNotNull( "Binding operation input not found", bindingOperation.getBindingInput() );
+                assertNotNull( "Binding operation output not found", bindingOperation.getBindingOutput() );
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                is.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+
+            assertNotNull( "Bindng port type not found", binding.getPortType() );
+            assertFalse( "Binding port type operations not found", binding.getPortType().getOperations().isEmpty() );
+
+            for ( final Operation operation : (List<Operation>) binding.getPortType().getOperations() ) {
+                assertNotNull( "Operation input not found", operation.getInput() );
+                assertNotNull( "Operation output not found", operation.getOutput() );
+
+                // Messages were null prior to the bug fix
+                assertNotNull( "Operation input message not found", operation.getInput().getMessage() );
+                assertNotNull( "Operation output message not found", operation.getOutput().getMessage() );
             }
         }
-
-        return sb.toString();
     }
 }

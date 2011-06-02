@@ -40,6 +40,8 @@ public final class TestDocuments {
     public static final String WSDL2SERVICES = DIR + "xmltoday-delayed-quotes-2services.wsdl";
     public static final String BUG6944_WSDLS_WITH_CIRCULAR_IMPORTS_A_IMPORTS_B = DIR + "bug6944-wsdls-with-circular-imports-A_Imports_B.wsdl";
     public static final String BUG6944_WSDLS_WITH_CIRCULAR_IMPORTS_B_IMPORTS_A = DIR + "bug6944-wsdls-with-circular-imports-B_Imports_A.wsdl";
+    public static final String BUG9848_CIRCULAR_WCF_WSDL1 = DIR + "wsdl1.wsdl";
+    public static final String BUG9848_CIRCULAR_WCF_WSDL2 = DIR + "wsdl2.wsdl";
     public static final String PLACEORDER_CLEARTEXT = DIR + "PlaceOrder_cleartext.xml";
     public static final String PLACEORDER_CLEARTEXT_S12 = DIR + "PlaceOrder_cleartext_soap12.xml";
     public static final String PLACEORDER_CLEARTEXT_ONELINE = DIR + "PlaceOrder_cleartext_oneline.xml";

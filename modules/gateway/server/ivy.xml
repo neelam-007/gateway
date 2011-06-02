@@ -115,6 +115,6 @@
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
 
         <conflict org="org.slf4j" module="slf4j-api" rev="1.6.1"/>
-        <conflict org="wsdl4j" module="wsdl4j" rev="1.6.2-l7p1"/>
+        <conflict org="wsdl4j" module="wsdl4j" rev="1.6.2-l7p2"/>
     </dependencies>
 </ivy-module>

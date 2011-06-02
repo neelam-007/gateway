@@ -32,6 +32,6 @@
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>
 
-        <override org="wsdl4j" module="wsdl4j" rev="1.6.2-l7p1"/>
+        <override org="wsdl4j" module="wsdl4j" rev="1.6.2-l7p2"/>
     </dependencies>
 </ivy-module>

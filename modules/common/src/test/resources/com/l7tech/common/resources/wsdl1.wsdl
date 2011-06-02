@@ -1,0 +1,46 @@
+<wsdl:definitions name="Service6" targetNamespace="http://sample.org/"
+                                  xmlns:wsdl2="http://sample2.org/"
+                                  xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+                                  xmlns:tns="http://sample.org/"
+                                  xmlns:wsa10="http://www.w3.org/2005/08/addressing"
+                                  xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl"
+                                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                                  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <wsdl:import location="wsdl2.wsdl" namespace="http://sample2.org/"/>
+  <wsdl:types>
+    <xs:schema elementFormDefault="qualified" targetNamespace="http://sample.org/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://sample.org/">
+      <xs:element name="SampleRequest">
+        <xs:complexType>
+          <xs:sequence/>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="SampleResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element minOccurs="0" name="SampleRequestResult" nillable="true" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:schema>
+  </wsdl:types>
+  <wsdl:message name="SampleRequest_InputMessage">
+    <wsdl:part element="tns:SampleRequest" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="SampleRequest_OutputMessage">
+    <wsdl:part element="tns:SampleResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:portType name="SampleServiceInterface">
+    <wsdl:operation name="SampleRequest">
+      <wsdl:input message="tns:SampleRequest_InputMessage" wsaw:Action="http://sample.org/SampleRequest"/>
+      <wsdl:output message="tns:SampleRequest_OutputMessage" wsaw:Action="http://sample.org/SampleResponse"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:service name="SampleService">
+    <wsdl:port binding="wsdl2:SampleBinding" name="SampleServicePort">
+      <soap12:address location="http://localhost:8080/Sample"/>
+      <wsa10:EndpointReference>
+        <wsa10:Address>http://localhost:8080/Sample</wsa10:Address>
+      </wsa10:EndpointReference>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

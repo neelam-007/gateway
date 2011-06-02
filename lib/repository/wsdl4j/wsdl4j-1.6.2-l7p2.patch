@@ -1,0 +1,317 @@
+diff -ur /home/steve/work/wsdl4j-1_6_2/src/com/ibm/wsdl/DefinitionImpl.java com/ibm/wsdl/DefinitionImpl.java
+--- /home/steve/work/wsdl4j-1_6_2/src/com/ibm/wsdl/DefinitionImpl.java	2006-11-07 00:03:18.000000000 -0800
++++ com/ibm/wsdl/DefinitionImpl.java	2011-06-02 10:47:51.708403520 -0700
+@@ -800,8 +800,14 @@
+    * Get all the bindings defined in this Definition and
+    * those in any imported Definitions in the WSDL tree.
+    */
++  
+   public Map getAllBindings()
+   {
++	  return getAllBindings( new HashSet() );
++  }
++  
++  private Map getAllBindings( Set imported )
++  {
+     Map allBindings = new HashMap(getBindings());
+     Map importMap = getImports();
+     Iterator mapItr = importMap.values().iterator();
+@@ -812,11 +818,15 @@
+       while(vecItr.hasNext())
+       {
+         Import importDef = (Import) vecItr.next(); 
+-        Definition importedDef = importDef.getDefinition();
+-        //importedDef may be null (e.g. if the javax.wsdl.importDocuments feature is disabled).
+-        if(importedDef != null)
++        if( !imported.contains( importDef.getLocationURI() ))
+         {
+-          allBindings.putAll(importedDef.getAllBindings());
++      	  imported.add( importDef.getLocationURI() );
++	        DefinitionImpl importedDef = ( DefinitionImpl ) importDef.getDefinition();
++	        //importedDef may be null (e.g. if the javax.wsdl.importDocuments feature is disabled).
++	        if(importedDef != null)
++	        {
++	          allBindings.putAll(importedDef.getAllBindings( imported ));
++	        }
+         }
+       }
+     }
+@@ -827,8 +837,14 @@
+    * Get all the portTypes defined in this Definition and
+    * those in any imported Definitions in the WSDL tree.
+    */
++  
+   public Map getAllPortTypes()
+   {
++	  return getAllPortTypes( new HashSet() );
++  }
++  
++  private Map getAllPortTypes( Set imported )
++  {
+     Map allPortTypes = new HashMap(getPortTypes());
+     Map importMap = getImports();
+     Iterator mapItr = importMap.values().iterator();
+@@ -839,11 +855,15 @@
+       while(vecItr.hasNext())
+       {
+         Import importDef = (Import) vecItr.next(); 
+-        Definition importedDef = importDef.getDefinition();
+-        //importedDef may be null (e.g. if the javax.wsdl.importDocuments feature is disabled).
+-        if(importedDef != null)
++        if( !imported.contains( importDef.getLocationURI() ))
+         {
+-          allPortTypes.putAll(importedDef.getAllPortTypes());
++      	  imported.add( importDef.getLocationURI() );
++      	  DefinitionImpl importedDef = ( DefinitionImpl ) importDef.getDefinition();
++	        //importedDef may be null (e.g. if the javax.wsdl.importDocuments feature is disabled).
++	        if(importedDef != null)
++	        {
++	          allPortTypes.putAll(importedDef.getAllPortTypes( imported ));
++	        }
+         }
+       }
+     }
+@@ -856,24 +876,35 @@
+    */
+   public Map getAllServices()
+   {
+-    Map allServices = new HashMap(getServices());
+-    Map importMap = getImports();
+-    Iterator mapItr = importMap.values().iterator();
+-    while(mapItr.hasNext())
+-    {
+-      Vector importDefs = (Vector) mapItr.next();
+-      Iterator vecItr = importDefs.iterator();
+-      while(vecItr.hasNext())
+-      {
+-        Import importDef = (Import) vecItr.next(); 
+-        Definition importedDef = importDef.getDefinition();
+-        //importedDef may be null (e.g. if the javax.wsdl.importDocuments feature is disabled).
+-        if(importedDef != null)
+-        {
+-          allServices.putAll(importedDef.getAllServices());
+-        }
+-      }
+-    }
+-    return allServices;
++    return getAllServices( new HashSet() );
++  }
++  
++  private Map getAllServices( Set imported )
++  {
++	  Map allServices = new HashMap(getServices());
++	    Map importMap = getImports();
++	    Iterator mapItr = importMap.values().iterator();
++	    while(mapItr.hasNext())
++	    {
++	      Vector importDefs = (Vector) mapItr.next();
++	      Iterator vecItr = importDefs.iterator();
++	      while(vecItr.hasNext())
++	      {
++	        Import importDef = (Import) vecItr.next(); 
++	        if( !imported.contains( importDef.getLocationURI() ))
++	        {
++	      	  imported.add( importDef.getLocationURI() );
++		        DefinitionImpl importedDef = ( DefinitionImpl ) importDef.getDefinition();
++		        //importedDef may be null (e.g. if the javax.wsdl.importDocuments feature is disabled).
++		        if(importedDef != null)
++		        {
++		          allServices.putAll(importedDef.getAllServices( imported ));
++		        }
++	        }
++	      }
++	    }
++	    return allServices;
+   }
++  
++  
+ }
+diff -ur /home/steve/work/wsdl4j-1_6_2/src/com/ibm/wsdl/xml/WSDLReaderImpl.java com/ibm/wsdl/xml/WSDLReaderImpl.java
+--- /home/steve/work/wsdl4j-1_6_2/src/com/ibm/wsdl/xml/WSDLReaderImpl.java	2006-11-07 00:03:18.000000000 -0800
++++ com/ibm/wsdl/xml/WSDLReaderImpl.java	2011-06-02 10:47:21.179613923 -0700
+@@ -4,25 +4,64 @@
+ 
+ package com.ibm.wsdl.xml;
+ 
+-import java.io.*;
+-import java.net.*;
+-import java.util.*;
+-import javax.xml.namespace.*;
+-import javax.xml.parsers.*;
+-import org.w3c.dom.*;
+-import org.xml.sax.*;
+-import javax.wsdl.*;
+-import javax.wsdl.extensions.*;
+-import javax.wsdl.factory.*;
+-import javax.wsdl.xml.*;
+-
+-import com.ibm.wsdl.*;
+-import com.ibm.wsdl.util.*;
+-import com.ibm.wsdl.util.xml.*;
+-
++import java.io.InputStream;
++import java.net.URL;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.Collection;
++import java.util.Hashtable;
++import java.util.Iterator;
++import java.util.List;
++import java.util.ListIterator;
++import java.util.Map;
++import java.util.Vector;
++
++import javax.wsdl.Binding;
++import javax.wsdl.BindingFault;
++import javax.wsdl.BindingInput;
++import javax.wsdl.BindingOperation;
++import javax.wsdl.BindingOutput;
++import javax.wsdl.Definition;
++import javax.wsdl.Fault;
++import javax.wsdl.Import;
++import javax.wsdl.Input;
++import javax.wsdl.Message;
++import javax.wsdl.Operation;
++import javax.wsdl.OperationType;
++import javax.wsdl.Output;
++import javax.wsdl.Part;
++import javax.wsdl.Port;
++import javax.wsdl.PortType;
++import javax.wsdl.Service;
++import javax.wsdl.Types;
++import javax.wsdl.WSDLException;
++import javax.wsdl.extensions.AttributeExtensible;
++import javax.wsdl.extensions.ExtensibilityElement;
++import javax.wsdl.extensions.ExtensionDeserializer;
++import javax.wsdl.extensions.ExtensionRegistry;
+ import javax.wsdl.extensions.schema.Schema;
+ import javax.wsdl.extensions.schema.SchemaReference;
++import javax.wsdl.factory.WSDLFactory;
++import javax.wsdl.xml.WSDLLocator;
++import javax.wsdl.xml.WSDLReader;
++import javax.xml.namespace.QName;
++import javax.xml.parsers.DocumentBuilder;
++import javax.xml.parsers.DocumentBuilderFactory;
++
++import org.w3c.dom.Attr;
++import org.w3c.dom.Document;
++import org.w3c.dom.Element;
++import org.w3c.dom.NamedNodeMap;
++import org.w3c.dom.Node;
++import org.w3c.dom.NodeList;
++import org.xml.sax.InputSource;
++
++import com.ibm.wsdl.Constants;
+ import com.ibm.wsdl.extensions.schema.SchemaConstants;
++import com.ibm.wsdl.util.StringUtils;
++import com.ibm.wsdl.util.xml.DOMUtils;
++import com.ibm.wsdl.util.xml.QNameUtils;
++import com.ibm.wsdl.util.xml.XPathUtils;
+ 
+ 
+ /**
+@@ -331,9 +370,95 @@
+ 
+     parseExtensibilityAttributes(defEl, Definition.class, def, def);
+     
++    resolveForwardImports( def );
++    
+     return def;
+   }
+ 
++  	private void resolveForwardImports( Definition def )
++  	{
++  		Map allBindings = def.getAllBindings();
++  		
++  		for( Iterator bindingIterator = allBindings.values().iterator(); bindingIterator.hasNext(); )
++  		{
++  			Binding binding = ( Binding ) bindingIterator.next();
++  			if( binding.getPortType() != null && binding.getPortType().isUndefined() )
++  			{
++  				PortType portType = def.getPortType( binding.getPortType().getQName() );
++  	   		if( portType != null )
++  	   		{
++  	   			binding.setPortType( portType );
++  	   		}
++  			}
++  			
++  			for (Iterator bindingOperationIterator = binding.getBindingOperations().iterator(); bindingOperationIterator.hasNext();)
++  	      {
++  	         BindingOperation operation = (BindingOperation) bindingOperationIterator.next();
++  	         
++  	         if( operation.getOperation() != null && operation.getOperation().isUndefined() )
++  	         {
++  	         	Operation op = binding.getPortType().getOperation( operation.getName(), operation.getBindingInput().getName(), 
++  	         				operation.getBindingOutput().getName() );
++  	         	if( op != null )
++  	         		operation.setOperation( op );
++  	         }
++  	      }
++  		}
++  		
++  		Map allServices = def.getAllServices();
++  		for( Iterator serviceIterator = allServices.values().iterator(); serviceIterator.hasNext(); )
++  		{
++  			Service service = ( Service ) serviceIterator.next();
++  			Map ports = service.getPorts();
++  			for( Iterator portIterator = ports.values().iterator(); portIterator.hasNext(); )
++  			{
++  				Port port = ( Port ) portIterator.next();
++  				if( port.getBinding() != null && port.getBinding().isUndefined() )
++  				{
++  					Binding binding = def.getBinding( port.getBinding().getQName() );
++  					if( binding != null )
++  						port.setBinding( binding );
++  				}
++  			}
++  		}
++  		
++  		Map allPortTypes = def.getAllPortTypes();
++  		for( Iterator portTypeIterator = allPortTypes.values().iterator(); portTypeIterator.hasNext(); )
++  		{
++  			PortType portType = ( PortType ) portTypeIterator.next();
++  			for( Iterator operationIterator = portType.getOperations().iterator(); operationIterator.hasNext(); )
++  			{
++  				Operation operation = ( Operation ) operationIterator.next();
++  				Input operationInput = operation.getInput();
++				if( operationInput != null && operationInput.getMessage() != null && operationInput.getMessage().isUndefined() )
++  				{
++  					Message message = def.getMessage( operationInput.getMessage().getQName() );
++  					if( message != null )
++  						operationInput.setMessage( message );
++  				}
++				
++				Output operationOutput = operation.getOutput();
++				if( operationOutput != null && operationOutput.getMessage() != null && operationOutput.getMessage().isUndefined() )
++  				{
++  					Message message = def.getMessage( operationOutput.getMessage().getQName() );
++  					if( message != null )
++  						operationOutput.setMessage( message );
++  				}
++				
++				for( Iterator faultIterator = operation.getFaults().values().iterator(); faultIterator.hasNext(); )
++				{
++					Fault fault = ( Fault ) faultIterator.next();
++					if( fault.getMessage() != null && fault.getMessage().isUndefined() )
++	  				{
++	  					Message message = def.getMessage( fault.getMessage().getQName() );
++	  					if( message != null )
++	  						fault.setMessage( message );
++	  				}
++				}
++  			}
++  		}
++	}
++
+   protected Import parseImport(Element importEl,
+                                Definition def,
+                                Map importedDefs)
+@@ -1331,6 +1456,8 @@
+                                               Definition def)
+                                                 throws WSDLException
+   {
++	  if( attrExt == null )
++		  return;
+     List nativeAttributeNames = attrExt.getNativeAttributeNames();
+     NamedNodeMap nodeMap = el.getAttributes();
+     int length = nodeMap.getLength();
