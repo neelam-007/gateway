@@ -3711,7 +3711,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                     public void reportResult(int retval) {
                         if (retval == JOptionPane.YES_OPTION) {
                             LicenseDialog dlg = new LicenseDialog(TopComponents.getInstance().getTopParent(),
-                                    preferences.getString(SsmPreferences.SERVICE_URL));
+                                    TopComponents.getInstance().ssgURL().getHost());
                             dlg.pack();
                             Utilities.centerOnScreen(dlg);
                             dlg.setModal(true);
