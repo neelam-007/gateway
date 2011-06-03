@@ -58,16 +58,16 @@ public class ServerInclude extends AbstractServerAssertion<Include> {
                 return serverPolicy.checkRequest( context );
             } else {
                 String message = "Missing included policy #" + assertion.getPolicyGuid();
-                auditor.logAndAudit(AssertionMessages.INCLUDE_POLICY_EXCEPTION, message);
+                auditor.logAndAudit(AssertionMessages.INCLUDE_POLICY_INVALID, message);
                 throw new PolicyAssertionException(assertion, message);
             }
         } catch (IOException e) {
             // Caught here so we can audit it
-            auditor.logAndAudit(AssertionMessages.INCLUDE_POLICY_EXCEPTION, ExceptionUtils.getMessage(e));
+            auditor.logAndAudit(AssertionMessages.INCLUDE_POLICY_FAILURE, ExceptionUtils.getMessage(e));
             throw e;
         } catch (PolicyAssertionException e) {
             // Caught here so we can audit it
-            auditor.logAndAudit(AssertionMessages.INCLUDE_POLICY_EXCEPTION, ExceptionUtils.getMessage(e));
+            auditor.logAndAudit(AssertionMessages.INCLUDE_POLICY_FAILURE, ExceptionUtils.getMessage(e));
             throw e;
         } finally {
             context.popAssertionOrdinal();
