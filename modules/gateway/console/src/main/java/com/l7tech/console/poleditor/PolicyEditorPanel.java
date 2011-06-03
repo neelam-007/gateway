@@ -546,7 +546,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             final KeyAdapter adapter = new KeyAdapter() {
                 @Override
                 public void keyPressed(KeyEvent e) {
-                    if (e.getKeyCode() == KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_MASK).getKeyCode()) {
+                    if (e.getKeyCode() == KeyEvent.VK_F && e.getModifiers() == KeyEvent.CTRL_MASK) {
                         findAction.actionPerformed(new ActionEvent(this,
                                 ActionEvent.ACTION_PERFORMED,
                                 MainWindow.L7_FIND));
@@ -558,7 +558,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                         f3Action.actionPerformed(new ActionEvent(this,
                                 ActionEvent.ACTION_PERFORMED,
                                 MainWindow.L7_F3));
-                    } else if (e.getKeyCode() == KeyStroke.getKeyStroke(KeyEvent.VK_G, KeyEvent.CTRL_MASK).getKeyCode()) {
+                    } else if (e.getKeyCode() == KeyEvent.VK_G && e.getModifiers() == KeyEvent.CTRL_MASK) {
                         goToAction.actionPerformed(new ActionEvent(this,
                                 ActionEvent.ACTION_PERFORMED,
                                 MainWindow.L7_GO_TO));
