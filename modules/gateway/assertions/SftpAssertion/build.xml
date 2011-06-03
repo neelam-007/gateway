@@ -1,0 +1,3 @@
+<project name="SftpAssertion" default="compile">
+    <import file="../assertion-build.xml"/>
+</project>
