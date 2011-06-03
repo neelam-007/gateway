@@ -1,5 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.MockConfig;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -15,6 +17,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.util.TimeSource;
 import com.l7tech.util.TestTimeSource;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
+import org.w3c.dom.Document;
 
 import java.util.HashMap;
 import java.util.Properties;
@@ -150,6 +153,30 @@ public class ServerWssReplayProtectionTest {
         final ServerWssReplayProtection swrp = buildServerAssertion( wrp );
         final AssertionStatus result1 = swrp.checkRequest(context);
         assertEquals( "Status", AssertionStatus.FAILED, result1 );
+    }
+
+    @Test
+    @BugNumber(9990)
+    public void testNoWSSOrWSA() throws Exception {
+        final WssReplayProtection wrp = new WssReplayProtection();
+        final Document request = XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body/></soapenv:Envelope>" );
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message( request ), new Message());
+
+        final ServerWssReplayProtection swrp = buildServerAssertion( wrp );
+        final AssertionStatus result1 = swrp.checkRequest(context);
+        assertEquals( "Status", AssertionStatus.NOT_APPLICABLE, result1 );
+    }
+
+    @Test
+    @BugNumber(9990)
+    public void testBadSecurity() throws Exception {
+        final WssReplayProtection wrp = new WssReplayProtection();
+        final Document request = XmlUtil.parse( "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Header><wsse:Security soapenv:mustUnderstand=\"1\"  xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"><wsse:BinarySecurityToken Type=\"UNKNOWN\"/></wsse:Security></soapenv:Header><soapenv:Body/></soapenv:Envelope>" );
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message( request ), new Message());
+
+        final ServerWssReplayProtection swrp = buildServerAssertion( wrp );
+        final AssertionStatus result1 = swrp.checkRequest(context);
+        assertEquals( "Status", AssertionStatus.BAD_REQUEST, result1 );
     }
 
     private WssReplayProtection buildAssertion( final int expiry, final String idVar, final String scope ) {

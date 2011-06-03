@@ -147,22 +147,34 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                 throw new AssertionStatusException(AssertionStatus.NOT_APPLICABLE);
             }
 
+            final boolean[] wssError = { false };
             if ( isRequest() && !config.getBooleanProperty(ServerConfig.PARAM_WSS_PROCESSOR_LAZY_REQUEST,true) ) {
                 wssResults = msg.getSecurityKnob().getProcessorResult();
             } else {
-                wssResults = WSSecurityProcessorUtils.getWssResults(msg, targetName, securityTokenResolver, auditor);
+                final Functions.Unary<Boolean,Throwable> errorCallback = new Functions.Unary<Boolean,Throwable>(){
+                    @Override
+                    public Boolean call( final Throwable throwable ) {
+                        wssError[0] = true;
+                        return false;
+                    }
+                };
+                wssResults = WSSecurityProcessorUtils.getWssResults(msg, targetName, securityTokenResolver, null, auditor, errorCallback);
             }
 
-            if (wssResults == null) {
+            if ( wssResults == null ) {
                 if ( isRequest() ) {
-                    // WssProcessorUtil.getWssResults already audited any error messages for non-request
-                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY, targetName);
                     // If we're dealing with something other than the request, there's no point sending a challenge or
                     // policy URL to the original requestor.
                     context.setRequestPolicyViolated();
                     context.setAuthenticationMissing();
                 }
-                throw new AssertionStatusException(AssertionStatus.NOT_APPLICABLE);
+                if ( wssError[0] ) {
+                    // WssProcessorUtil.getWssResults already audited any error messages
+                    throw new AssertionStatusException(getBadMessageStatus());
+                } else {
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY, targetName);
+                    throw new AssertionStatusException(AssertionStatus.NOT_APPLICABLE);
+                }
             }
         } catch (SAXException e) {
             // In practice, this can only happen if a mutating assertion (e.g. XSLT or Regex) has changed this message
