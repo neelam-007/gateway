@@ -12,6 +12,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 import javax.naming.Context;
@@ -32,6 +33,8 @@ import java.util.logging.Logger;
  */
 public class JdbcConnectionPoolManager extends LifecycleBean {
     private static final Logger logger = Logger.getLogger(JdbcConnectionPoolManager.class.getName());
+
+    private static final long MIN_CHECK_AGE = SyspropUtil.getLong( "com.l7tech.server.jdbc.poolConnectionCheckMinAge", 30000L );
 
     private JdbcConnectionManager jdbcConnectionManager;
     private Timer timer;
@@ -101,8 +104,20 @@ public class JdbcConnectionPoolManager extends LifecycleBean {
      * @return a DataSource object.
      * @throws NamingException: thrown when errors retrieving the data source.
      */
-    public DataSource getDataSource(String jdbcConnName) throws NamingException {
-        return (DataSource) context.lookup(jdbcConnName);
+    public DataSource getDataSource(String jdbcConnName) throws NamingException, SQLException {
+        final DataSource ds = (DataSource) context.lookup(jdbcConnName);
+
+        // Verify that the pool is functional to avoid long delays when connections
+        // cannot be created
+        if ( ds instanceof ComboPooledDataSource ) {
+            final ComboPooledDataSource cpds = (ComboPooledDataSource) ds;
+            if ( cpds.getNumConnectionsAllUsers() == 0 &&
+                 (System.currentTimeMillis() - cpds.getStartTimeMillisDefaultUser() > MIN_CHECK_AGE) ) {
+                throw new SQLException("No connections available for '"+jdbcConnName+"'");
+            }
+        }
+
+        return ds;
     }
 
     /**
