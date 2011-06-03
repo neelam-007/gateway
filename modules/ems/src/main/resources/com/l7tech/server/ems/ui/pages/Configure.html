@@ -1569,6 +1569,29 @@
                 contextMenu.subscribe('hide', onContextMenuHide);
             }
 
+            function submitOnEnter(dialog,event) {
+                var keycode;
+                if ( window.event ) {
+                    keycode = window.event.keyCode;
+                } else if ( event ) {
+                    keycode = event.which;
+                } else {
+                    return true;
+                }
+
+                var okButton = dialog.getButtons()[0];
+                if ( okButton.get('disabled') ) {
+                    return true;
+                }
+
+                if ( keycode == 13 ) {
+                   dialog.submit();
+                   return false;
+                } else {
+                   return true;
+                }
+            }
+
             function init() {
                 initDialogs();
                 initToolbar();
@@ -1777,7 +1800,7 @@
 <div id="addSSGClusterDialog">
     <div class="hd">Add Gateway Cluster</div>
     <div class="bd">
-        <form name="addSSGClusterForm" wicket:id="addSSGClusterForm" method="POST">
+        <form name="addSSGClusterForm" wicket:id="addSSGClusterForm" method="POST" onkeypress="return submitOnEnter(addSSGClusterDialog, event)">
             <input id="addSSGClusterDialog_parentId" wicket:id="addSSGClusterDialog_parentId" type="hidden" name="parentId" />
             <table class="spaced">
                 <tr>
@@ -1852,7 +1875,7 @@
 <div id="editSSGClusterDialog">
     <div class="hd">Edit Gateway Cluster</div>
     <div class="bd">
-        <form name="editSSGClusterForm" wicket:id="editSSGClusterForm" method="POST">
+        <form name="editSSGClusterForm" wicket:id="editSSGClusterForm" method="POST" onkeypress="return submitOnEnter(editSSGClusterDialog, event)">
             <input id="editSSGClusterDialog_id" wicket:id="editSSGClusterDialog_id" type="hidden" name="id" />
             <table class="spaced">
                 <tr>
