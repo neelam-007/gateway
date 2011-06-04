@@ -73,6 +73,11 @@ public class SocketTcpKnob implements TcpKnob {
 
     @Override
     public int getLocalPort() {
+        return getLocalListenerPort();
+    }
+
+    @Override
+    public int getLocalListenerPort() {
         SocketAddress sa = sock.getLocalSocketAddress();
         if (sa instanceof InetSocketAddress) {
             InetSocketAddress isa = (InetSocketAddress) sa;

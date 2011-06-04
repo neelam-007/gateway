@@ -64,6 +64,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
     private static final String TCP_LOCAL_IP = "tcp.localip";
     private static final String TCP_LOCAL_HOST = "tcp.localhost";
     private static final String TCP_LOCAL_PORT = "tcp.localport";
+    private static final String TCP_LISTEN_PORT = "tcp.listenport";
 
     // NOTE: Variable names must be lower case
     private static final String SSL_CIPHER_SUITE = "ssl.ciphersuite";
@@ -90,6 +91,7 @@ class MessageSelector implements ExpandVariables.Selector<Message> {
         put(TCP_LOCAL_IP, Functions.propertyTransform(TcpKnob.class, "localAddress"));
         put(TCP_LOCAL_HOST, Functions.propertyTransform(TcpKnob.class, "localHost"));
         put(TCP_LOCAL_PORT, Functions.propertyTransform(TcpKnob.class, "localPort"));
+        put(TCP_LISTEN_PORT, Functions.propertyTransform(TcpKnob.class, "localListenerPort"));
     }});
 
     private static final Map<String, String> SERVLET_ATTRIBUTE_FIELDS = Collections.unmodifiableMap(new HashMap<String, String>() {{

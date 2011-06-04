@@ -338,6 +338,11 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         return request.getServerPort();
     }
 
+    @Override
+    public int getLocalListenerPort() {
+        return request.getLocalPort();
+    }
+
     /** @return the raw HttpServletRequest instance. */
     public HttpServletRequest getHttpServletRequest() {
         return request;

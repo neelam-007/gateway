@@ -92,6 +92,10 @@ public class ServerFtpCredentialAssertionTest extends TestCase {
                     return 0;
                 }
                 @Override
+                public int getLocalListenerPort() {
+                    return 0;
+                }
+                @Override
                 public String getRemoteAddress() {
                     return null;
                 }

@@ -808,6 +808,10 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
             }
             @Override
             public int getLocalPort() {
+                return getLocalListenerPort();
+            }
+            @Override
+            public int getLocalListenerPort() {
                 return localPortFinal;
             }
             @Override

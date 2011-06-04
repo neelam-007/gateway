@@ -330,8 +330,14 @@ class MessageProcessingFtplet extends DefaultFtplet {
         return new FtpRequestKnob(){
             @Override
             public int getLocalPort() {
+                return getLocalListenerPort();
+            }
+
+            @Override
+            public int getLocalListenerPort() {
                 return port;
             }
+
             @Override
             public String getRemoteAddress() {
                 return clientAddress.getHostAddress();

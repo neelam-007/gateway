@@ -263,6 +263,11 @@ public class ExpandVariablesTest {
             public int getLocalPort() {
                 return 33138;
             }
+
+            @Override
+            public int getLocalListenerPort() {
+                return 35791;
+            }
         });
 
         assertEquals("1.1.1.1", ExpandVariables.process("${foo.tcp.remoteAddress}", makeVars(foo), audit));
@@ -273,6 +278,7 @@ public class ExpandVariablesTest {
         assertEquals("1.1.1.2", ExpandVariables.process("${foo.tcp.localIP}", makeVars(foo), audit));
         assertEquals("serverhost4242.example.com", ExpandVariables.process("${foo.tcp.localHost}", makeVars(foo), audit));
         assertEquals("33138", ExpandVariables.process("${foo.tcp.localPort}", makeVars(foo), audit));
+        assertEquals("35791", ExpandVariables.process("${foo.tcp.listenPort}", makeVars(foo), audit));
     }
 
     @Test

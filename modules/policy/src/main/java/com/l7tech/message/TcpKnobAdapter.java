@@ -21,4 +21,7 @@ public class TcpKnobAdapter implements TcpKnob {
 
     @Override
     public int getLocalPort() {return 0;}
+
+    @Override
+    public int getLocalListenerPort() {return getLocalPort();}
 }

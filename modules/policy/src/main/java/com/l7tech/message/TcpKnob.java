@@ -38,7 +38,16 @@ public interface TcpKnob extends MessageKnob {
     String getLocalHost();
 
     /**
+     * The local port as reported by the client.
+     *
      * @return the local TCP port, or 0 if not known.
      */
     int getLocalPort();
+
+    /**
+     * The local port as per the listener.
+     *
+     * @return the actual local TCP port, or 0 if not known.
+     */
+    int getLocalListenerPort();
 }
