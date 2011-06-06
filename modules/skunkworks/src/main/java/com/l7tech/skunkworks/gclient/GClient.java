@@ -85,7 +85,7 @@ public class GClient {
     //- PUBLIC
 
     public GClient() {
-        frame = new JFrame("GClient v0.9.5");
+        frame = new JFrame("GClient v0.9.6");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
 
@@ -1195,6 +1195,9 @@ public class GClient {
                 if ( "Transfer-Encoding".equalsIgnoreCase(httpHeaderNameTextField.getText().trim()) &&
                      "chunked".equalsIgnoreCase(httpHeaderValueTextField.getText())) {
                     setContentLength = false;
+                }
+                if ( "Host".equalsIgnoreCase(httpHeaderNameTextField.getText().trim()) ) {
+                    params.setVirtualHost(httpHeaderValueTextField.getText());
                 }
             }
             if (!headers.isEmpty())
