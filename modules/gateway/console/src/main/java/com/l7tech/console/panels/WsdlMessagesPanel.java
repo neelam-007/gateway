@@ -38,7 +38,6 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     private JButton removeMessageButton;
     private JButton addMessagePartButton;
     private JButton removeMessagePartButton;
-//    private Definition definition;
     private WsdlComposer wsdlComposer;
     private JComboBox partTypesComboBox;
     private JLabel panelHeader;
@@ -71,13 +70,11 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                       addMessageButton.setEnabled(true);
                       removeMessageButton.setEnabled(false);
                       addMessagePartButton.setEnabled(false);
-                      removeMessagePartButton.setEnabled(false);
                       return;
                   }
                   addMessageButton.setEnabled(true);
                   removeMessageButton.setEnabled(true);
                   addMessagePartButton.setEnabled(true);
-                  removeMessagePartButton.setEnabled(true);
               }
           });
 
@@ -92,7 +89,9 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         partsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         partsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                removeMessagePartButton.setEnabled(partsTableModel.getRowCount() > 0);
+                final int selectedRow = partsTable.getSelectedRow();
+                final boolean enabled = selectedRow >= 0 && partsTableModel.getValueAt(selectedRow, 0) != null;
+                removeMessagePartButton.setEnabled(enabled);
             }
         });
         partsTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
