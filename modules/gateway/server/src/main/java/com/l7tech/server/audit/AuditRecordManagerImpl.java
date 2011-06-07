@@ -510,7 +510,7 @@ public class AuditRecordManagerImpl
             criterion.add(Restrictions.in(PROP_LEVEL, levels));
         }
 
-        if (criteria.startMessageNumber > 0) criterion.add(Restrictions.ge(PROP_OID, criteria.startMessageNumber));
+        if (criteria.startMessageNumber > 0) criterion.add(Restrictions.gt(PROP_OID, criteria.startMessageNumber));
         if (criteria.endMessageNumber > 0) criterion.add(Restrictions.lt(PROP_OID, criteria.endMessageNumber));
 
         if (criteria.requestId != null) criterion.add(Restrictions.ilike(PROP_REQUEST_ID, criteria.requestId));
