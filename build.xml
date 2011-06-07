@@ -3254,6 +3254,7 @@
             <copy todir="@{dir}/${install.src.esm.config}">
                 <fileset dir="${build.dir}/emsconfigwizard"/>
             </copy>
+            <copy file="${src.root}/etc/enterprisemanager/logging.template.properties" tofile="@{dir}/${install.src.esm.etc}/logging.properties"/>
             <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.esm.etc}/omp.dat"/>
 
             <!-- help files -->

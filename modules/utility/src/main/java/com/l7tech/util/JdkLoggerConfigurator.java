@@ -266,7 +266,7 @@ public class JdkLoggerConfigurator {
                 readConfigUrl = true;
             } else {
                 //noinspection IOResourceOpenedButNotSafelyClosed
-                fullIn = new SequenceInputStream(defaultsIn, configIn);
+                fullIn = new SequenceInputStream(defaultsIn, new SequenceInputStream(new ByteArrayInputStream("\n".getBytes(Charsets.UTF8)), configIn));
                 readConfigUrl = true;
             }
 
