@@ -150,7 +150,9 @@ public class StaleCheckingHttpConnectionManager extends MultiThreadedHttpConnect
                 for ( int c = 0; c < staleCleanupCountPerHost; c++ ) {
                     HttpConnection connection = super.getConnectionWithTimeout( hostConfiguration, 10L );
                     try {
-                        connection.closeIfStale();
+                        if ( connection.closeIfStale() || !connection.isOpen() ) {
+                            deleteClosedConnections();
+                        }
                     } catch ( IOException ioe ) {
                         if ( logger.isLoggable( Level.FINER ) ) {
                             logger.log( Level.FINER, "Error when stale checking connection '" + ExceptionUtils.getMessage( ioe ) + "'.",
