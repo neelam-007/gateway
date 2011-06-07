@@ -89,4 +89,17 @@ public class CollectionUtilsTest {
         assertTrue( "list 2 empty", list2.isEmpty() );
         assertTrue( "list 3 empty", list3.isEmpty() );
     }
+
+    @Test
+    public void testJoin() {
+        final List<String> list1 = new ArrayList<String>(Arrays.asList( "1", "2" ));
+        final List<String> list2 = new ArrayList<String>(Arrays.asList( "3", "4" ));
+        final List<String> list3 = new ArrayList<String>(Arrays.asList( "5", "6" ));
+
+        final List<List<String>> listList = new ArrayList<List<String>>(Arrays.asList( list1, list2, list3 ));
+        final List<String> expectedResultList = new ArrayList<String>(Arrays.asList( "1", "2", "3", "4", "5", "6" ));
+
+        assertEquals( "Joined list", expectedResultList, CollectionUtils.join( listList ) );
+        assertEquals( "Joined empty list", new ArrayList<String>(), CollectionUtils.join( new ArrayList<List<String>>() ) );
+    }
 }

@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.security.cert;
 
 import com.l7tech.common.io.CertUtils;
@@ -19,7 +16,9 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
@@ -68,11 +67,11 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     // lock and locked items
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Map<String, CertValidationCacheEntry> trustedCertsBySKI;
-    private final Map<String, CertValidationCacheEntry> trustedCertsByDn; // DN strings in RFC2253 format
+    private final Map<String, List<CertValidationCacheEntry>> trustedCertsByDn; // DN strings in RFC2253 format
     private final Map<IDNSerialKey, CertValidationCacheEntry> trustedCertsByIssuerDnAndSerial;
     private final Map<Long, CertValidationCacheEntry> trustedCertsByOid;
     private final Map<Long, RevocationCheckPolicy> revocationPoliciesByOid;
-    private Map<String, TrustAnchor> trustAnchorsByDn;  // DN strings in RFC2253 format
+    private Map<String, List<TrustAnchor>> trustAnchorsByDn;  // DN strings in RFC2253 format
     private final Set<String> permittedCriticalExtensions = new HashSet<String>();
     private CertStore certStore;
     private boolean cacheIsDirty = false;
@@ -93,7 +92,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         this.permissiveRcp.setDefaultSuccess(true);
         this.serverConfig = serverConfig;
 
-        Map<String, CertValidationCacheEntry> myDnCache = new HashMap<String, CertValidationCacheEntry>();
+        Map<String, List<CertValidationCacheEntry>> myDnCache = new HashMap<String, List<CertValidationCacheEntry>>();
         Map<IDNSerialKey, CertValidationCacheEntry> myIssuerDnCache = new HashMap<IDNSerialKey, CertValidationCacheEntry>();
         Map<Long, CertValidationCacheEntry> myOidCache = new HashMap<Long, CertValidationCacheEntry>();
         Map<String, CertValidationCacheEntry> mySkiCache = new HashMap<String, CertValidationCacheEntry>();
@@ -267,13 +266,13 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         lock.readLock().lock();
         try {
             X509Certificate cert = null;
-            CertValidationCacheEntry certValidationCacheEntry = trustedCertsByDn.get(subjectDn);
-            if ( certValidationCacheEntry != null ) {
-                cert = certValidationCacheEntry.cert;
+            final List<CertValidationCacheEntry> certValidationCacheEntry = trustedCertsByDn.get(subjectDn);
+            if ( certValidationCacheEntry != null && !certValidationCacheEntry.isEmpty() ) {
+                cert = certValidationCacheEntry.get( 0 ).cert;
             } else {
-                TrustAnchor ta = trustAnchorsByDn.get(subjectDn);
-                if ( ta != null ) {
-                    cert = ta.getTrustedCert();
+                final List<TrustAnchor> tas = trustAnchorsByDn.get(subjectDn);
+                if ( tas != null && !tas.isEmpty() ) {
+                    cert = tas.get( 0 ).getTrustedCert();
                 }
             }
             return cert;
@@ -304,11 +303,14 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             if ( certValidationCacheEntry != null ) {
                 cert = certValidationCacheEntry.cert;
             } else {
-                for ( TrustAnchor ta : trustAnchorsByDn.values() ) {
-                    X509Certificate taCert = ta.getTrustedCert();
-                    if (key.matches(taCert)) {
-                        cert = taCert;
-                        break;
+                outer:
+                for ( final List<TrustAnchor> tas : trustAnchorsByDn.values() ) {
+                    for ( final TrustAnchor ta : tas ) {
+                        final X509Certificate taCert = ta.getTrustedCert();
+                        if ( key.matches(taCert) ) {
+                            cert = taCert;
+                            break outer;
+                        }
                     }
                 }
             }
@@ -338,11 +340,14 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             if ( certValidationCacheEntry != null ) {
                 cert = certValidationCacheEntry.cert;
             } else {
-                for ( TrustAnchor ta : trustAnchorsByDn.values() ) {
-                    X509Certificate taCert = ta.getTrustedCert();
-                    if ( base64SKI.equals( CertUtils.getSki(taCert)) ) {
-                        cert = ta.getTrustedCert();
-                        break;
+                outer:
+                for ( final List<TrustAnchor> tas : trustAnchorsByDn.values() ) {
+                    for ( final TrustAnchor ta : tas ) {
+                        final X509Certificate taCert = ta.getTrustedCert();
+                        if ( base64SKI.equals( CertUtils.getSki(taCert)) ) {
+                            cert = ta.getTrustedCert();
+                            break outer;
+                        }
                     }
                 }
             }
@@ -357,9 +362,11 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         lock.readLock().lock();
         try {
             final String subjectDn = CertUtils.getSubjectDN(certificate);
-            final CertValidationCacheEntry entry = trustedCertsByDn.get(subjectDn);
-            if (entry == null) return null;
-            if (CertUtils.certsAreEqual(certificate, entry.cert)) return entry.tce;
+            final List<CertValidationCacheEntry> entryList = trustedCertsByDn.get(subjectDn);
+            if (entryList == null || entryList.isEmpty()) return null;
+            for ( final CertValidationCacheEntry entry : entryList ) {
+                if (CertUtils.certsAreEqual(certificate, entry.cert)) return entry.tce;
+            }
             throw new IllegalArgumentException("Cached TrustedCert with DN " + subjectDn + " is different from presented certificate");
         } finally {
             lock.readLock().unlock();
@@ -407,7 +414,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             sel = new X509CertSelector();
             sel.setCertificate(endEntityCertificatePath[0]);
             Set<TrustAnchor> tempAnchors = new HashSet<TrustAnchor>();
-            tempAnchors.addAll(trustAnchorsByDn.values());
+            tempAnchors.addAll( CollectionUtils.join( trustAnchorsByDn.values() ) );
             PKIXBuilderParameters pbp = new PKIXBuilderParameters(tempAnchors, sel);
             pbp.setRevocationEnabled(false); // We'll do our own
             if (checkRevocation)
@@ -483,7 +490,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         }
     }
 
-    private void populateCaches(Map<String, CertValidationCacheEntry> myDnCache,
+    private void populateCaches(Map<String, List<CertValidationCacheEntry>> myDnCache,
                                 Map<IDNSerialKey, CertValidationCacheEntry> myIssuerDnCache,
                                 Map<Long, CertValidationCacheEntry> myOidCache,
                                 Map<String, CertValidationCacheEntry> mySkiCache,
@@ -528,7 +535,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         for (TrustedCert tce : tces) {
             try {
                 final CertValidationCacheEntry entry = new CertValidationCacheEntry(tce);
-                myDnCache.put(tce.getSubjectDn(), entry);
+                addToEntryList( myDnCache, tce.getSubjectDn(), entry );
                 myOidCache.put(tce.getOid(), entry);
                 mySkiCache.put(tce.getSki(), entry);
                 // last since it may throw on invalid data
@@ -623,12 +630,12 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
 
     /** Caller must hold write lock (or be the constructor) */
     private void initializeCertStoreAndTrustAnchors(Collection<TrustedCert> tces, boolean includeDefaults) {
-        Map<String, TrustAnchor> anchors = new HashMap<String, TrustAnchor>();
+        Map<String, List<TrustAnchor>> anchors = new HashMap<String, List<TrustAnchor>>();
         Set<X509Certificate> nonAnchors = new HashSet<X509Certificate>();
 
         SignerInfo caInfo = defaultKey.getCaInfo();
         if (caInfo != null)
-            anchors.put(CertUtils.getSubjectDN( caInfo.getCertificate()), new TrustAnchor(caInfo.getCertificate(), null));
+            addToEntryList( anchors, CertUtils.getSubjectDN( caInfo.getCertificate()), new TrustAnchor(caInfo.getCertificate(), null) );
 
         if ( includeDefaults ) {
             TrustManagerFactory tmf;
@@ -653,13 +660,13 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
             if (x509tm == null) throw new IllegalStateException("Couldn't find an X509TrustManager");
             X509Certificate[] extraAnchors = x509tm.getAcceptedIssuers();
             for (X509Certificate certificate : extraAnchors) {
-                anchors.put(CertUtils.getSubjectDN(certificate), new TrustAnchor(certificate, null));
+                addToEntryList( anchors, CertUtils.getSubjectDN(certificate), new TrustAnchor(certificate, null));
             }
         }
 
         for (TrustedCert tce : tces) {
             if (tce.isTrustAnchor()) {
-                anchors.put(tce.getSubjectDn(), new TrustAnchor(tce.getCertificate(), null));
+                addToEntryList( anchors, tce.getSubjectDn(), new TrustAnchor(tce.getCertificate(), null));
             } else {
                 nonAnchors.add(tce.getCertificate());
             }
@@ -681,8 +688,8 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
 
     /** Caller must hold write lock */
     private void removeRCPFromCaches(long oid) {
-        revocationCheckerFactory.invalidateRevocationCheckPolicy(oid);
-        revocationPoliciesByOid.remove(oid);
+        revocationCheckerFactory.invalidateRevocationCheckPolicy( oid );
+        revocationPoliciesByOid.remove( oid );
         if (currentDefaultRevocationPolicy.getOid() == oid) {
             currentDefaultRevocationPolicy = null;
             logger.fine("Default revocation policy deleted; hopefully soon we'll be notified that a new one was set as default");
@@ -696,7 +703,7 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         } else if (currentDefaultRevocationPolicy!=null && currentDefaultRevocationPolicy.getOid()==policy.getOid()) {
             currentDefaultRevocationPolicy = null;
         }
-        revocationPoliciesByOid.put(policy.getOid(), policy);
+        revocationPoliciesByOid.put( policy.getOid(), policy );
         revocationCheckerFactory.invalidateRevocationCheckPolicy(policy.getOid());
     }
 
@@ -705,12 +712,12 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
         revocationCheckerFactory.invalidateTrustedCert(oid);
         CertValidationCacheEntry entry = trustedCertsByOid.remove(oid);
         if (entry == null) return;
-        trustedCertsByDn.remove(entry.subjectDn);
+        removeFromEntryList( trustedCertsByDn, entry.subjectDn, certValidationCacheEntryMatcher( entry.cert ) );
         trustedCertsBySKI.remove(entry.ski);
         trustedCertsByIssuerDnAndSerial.remove(new IDNSerialKey(entry.issuerDn, entry.serial));
         if(trustAnchorsByDn.containsKey(entry.subjectDn)) {
-            Map<String, TrustAnchor> updatedTrustAnchors = new HashMap<String, TrustAnchor>(trustAnchorsByDn);
-            updatedTrustAnchors.remove(entry.subjectDn);
+            final Map<String, List<TrustAnchor>> updatedTrustAnchors = new HashMap<String, List<TrustAnchor>>(trustAnchorsByDn);
+            removeFromEntryList( updatedTrustAnchors, entry.subjectDn, trustAnchorMatcher( entry.cert ) );
             trustAnchorsByDn = Collections.unmodifiableMap(updatedTrustAnchors);
         }
     }
@@ -719,24 +726,24 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
     private void addTrustedCertToCaches(TrustedCert tce) throws CertificateException {
         // add to trusted cert cache
         CertValidationCacheEntry entry = new CertValidationCacheEntry(tce);
-        trustedCertsByDn.put(tce.getSubjectDn(), entry);
-        trustedCertsBySKI.put(entry.ski, entry);
-        trustedCertsByOid.put(tce.getOid(), entry);
-        trustedCertsByIssuerDnAndSerial.put(new IDNSerialKey(entry.issuerDn, entry.serial), entry);
-        if ( logger.isLoggable(Level.FINE) ) {
+        addToEntryList( trustedCertsByDn, tce.getSubjectDn(), entry, certValidationCacheEntryMatcher(entry.cert) );
+        trustedCertsBySKI.put( entry.ski, entry );
+        trustedCertsByOid.put( tce.getOid(), entry );
+        trustedCertsByIssuerDnAndSerial.put( new IDNSerialKey( entry.issuerDn, entry.serial ), entry );
+        if ( logger.isLoggable( Level.FINE ) ) {
             logger.log(Level.FINE, "Added certificate ''{0}'', to anchors store.", entry.subjectDn);
         }
 
         // update TrustAnchors and known certs
-        Map<String, TrustAnchor> anchors = new HashMap<String, TrustAnchor>(trustAnchorsByDn);
+        Map<String, List<TrustAnchor>> anchors = new HashMap<String, List<TrustAnchor>>(trustAnchorsByDn);
         if ( tce.isTrustAnchor() ) {
-            TrustAnchor old = anchors.put(tce.getSubjectDn(), new TrustAnchor(entry.cert, null));
+            final TrustAnchor old = addToEntryList(anchors, tce.getSubjectDn(), new TrustAnchor(entry.cert, null), trustAnchorMatcher(entry.cert));
             if ( logger.isLoggable(Level.FINE) ) {
                 logger.log(Level.FINE, "Added certificate ''{0}'', to anchors store, replaced ''{1}''.",
                         new Object[]{entry.subjectDn, old==null?"<NULL>":old.getTrustedCert().getSubjectDN()});
             }
         } else {
-            boolean removed = anchors.remove(tce.getSubjectDn())!=null;
+            boolean removed = removeFromEntryList(anchors, tce.getSubjectDn(), trustAnchorMatcher(entry.cert))!=null;
             if ( logger.isLoggable(Level.FINE) ) {
                 logger.log(Level.FINE, "Removed certificate ''{0}'', from anchors store ({1}).",
                         new Object[]{entry.subjectDn, removed});
@@ -766,6 +773,103 @@ public class CertValidationProcessorImpl implements CertValidationProcessor, App
 
         //
         revocationCheckerFactory.invalidateTrustedCert(tce.getOid());
+    }
+
+    private <K,V> void addToEntryList( final Map<K,List<V>> map,
+                                       final K key,
+                                       final V value ) {
+        addToEntryList( map, key, value, null );
+    }
+
+    private <K,V> V addToEntryList( final Map<K,List<V>> map,
+                                    final K key,
+                                    final V value,
+                                    final Functions.Unary<Boolean,V> matcher ) {
+        V replaced = null;
+        final List<V> values = map.get( key );
+        final List<V> updatedList;
+        if ( values == null ) {
+            updatedList = Collections.singletonList( value );
+        } else if ( matcher == null ) {
+            final List<V> valuesCopy = new ArrayList<V>( values );
+            valuesCopy.add( value );
+            updatedList = Collections.unmodifiableList( valuesCopy );
+        } else {
+            final List<V> valuesCopy = new ArrayList<V>( values );
+            int replaceIndex = -1;
+            for ( int i=0; i<valuesCopy.size(); i++ ) {
+                if ( matcher.call( valuesCopy.get( i ) ) ) {
+                    replaceIndex = i;
+                    break;
+                }
+            }
+
+            if ( replaceIndex >= 0 ) {
+                replaced = valuesCopy.remove( replaceIndex );
+                valuesCopy.add( replaceIndex, value );
+            } else {
+                valuesCopy.add( value );
+            }
+            updatedList = Collections.unmodifiableList( valuesCopy );
+        }
+
+        map.put( key, updatedList );
+
+        return replaced;
+    }
+
+    private <K,V> V removeFromEntryList( final Map<K,List<V>> map,
+                                         final K key,
+                                         final Functions.Unary<Boolean,V> matcher ) {
+        V removed = null;
+        final List<V> values = map.get( key );
+        List<V> updatedList = null;
+        if ( values != null ) {
+            final List<V> valuesCopy = new ArrayList<V>( values );
+            int removeIndex = -1;
+            for ( int i=0; i<valuesCopy.size(); i++ ) {
+                if ( matcher.call( valuesCopy.get( i ) ) ) {
+                    removeIndex = i;
+                    break;
+                }
+            }
+
+            if ( removeIndex >= 0 ) {
+                removed = valuesCopy.get( removeIndex );
+                if ( valuesCopy.size() > 1 ) {
+                    valuesCopy.remove( removeIndex );
+                    updatedList = Collections.unmodifiableList( valuesCopy );
+                }
+            } else {
+                updatedList = values; // no change
+            }
+        }
+
+        if ( updatedList != null ) {
+            map.put( key, updatedList );
+        } else {
+            map.remove( key );
+        }
+
+        return removed;
+    }
+
+    private Functions.Unary<Boolean,TrustAnchor> trustAnchorMatcher( final X509Certificate certificate ) {
+        return new Functions.Unary<Boolean,TrustAnchor>() {
+            @Override
+            public Boolean call( final TrustAnchor trustAnchor ) {
+                return CertUtils.certsAreEqual( certificate, trustAnchor.getTrustedCert() );
+            }
+        };
+    }
+
+    private Functions.Unary<Boolean,CertValidationCacheEntry> certValidationCacheEntryMatcher( final X509Certificate certificate ) {
+        return new Functions.Unary<Boolean,CertValidationCacheEntry>() {
+            @Override
+            public Boolean call( final CertValidationCacheEntry certValidationCacheEntry ) {
+                return CertUtils.certsAreEqual( certificate, certValidationCacheEntry.cert );
+            }
+        };
     }
 
     private static final class IDNSerialKey {

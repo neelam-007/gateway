@@ -1,10 +1,10 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -27,7 +27,7 @@ public final class CollectionUtils {
      * @param stringer a function that renders an element of the Iterable as a String
      * @return a String representation of the provided Iterable.
      */
-    public static <T> String mkString(Iterable<T> iterable, String prefix, String delimiter, String suffix, Functions.Unary<String, T> stringer) {
+    public static <T> String mkString(Iterable<T> iterable, String prefix, String delimiter, String suffix, Functions.Unary<String, ? super T> stringer) {
         StringBuilder sb = new StringBuilder(prefix == null ? "" : prefix);
         for (Iterator<T> it = iterable.iterator(); it.hasNext();) {
             T t = it.next();
@@ -38,22 +38,39 @@ public final class CollectionUtils {
         return sb.toString();
     }
 
-    public static <T> String mkString(Iterable<T> iterable, String delimiter, Functions.Unary<String, T> stringer) {
+    public static <T> String mkString(Iterable<T> iterable, String delimiter, Functions.Unary<String, ? super T> stringer) {
         return mkString(iterable, null, delimiter, null, stringer);
     }
 
     public static <T> String mkString(Iterable<T> iterable, String delimiter) {
-        return mkString(iterable, delimiter, (Functions.Unary<String,T>) defaultStringer);
+        return mkString(iterable, delimiter, defaultStringer);
     }
 
     public static <T> String mkString(Iterable<T> iterable, String prefix, String delimiter, String suffix) {
-        return mkString(iterable, prefix, delimiter, suffix, (Functions.Unary<String,T>) defaultStringer);
+        return mkString(iterable, prefix, delimiter, suffix, defaultStringer);
     }
 
     public static Set<String> caseInsensitiveSet( String... values ) {
         final Set<String> set = new TreeSet<String>( String.CASE_INSENSITIVE_ORDER );
         set.addAll( Arrays.asList( values ) );
         return set;
+    }
+
+    /**
+     * Join sublists into a list.
+     *
+     * @param collections The collection of collection subclasses of A
+     * @param <T> The joined collection element type
+     * @return The joined collection (never null)
+     */
+    public static <T> Collection<T> join( final Collection<? extends Collection<T>> collections ) {
+        final List<T> joined = new ArrayList<T>();
+
+        for ( final Collection<T> collection : collections ) {
+            joined.addAll( collection );
+        }
+
+        return joined;
     }
 
     /**
