@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Assertion that can validate the syntax of a target message's outer content type.
@@ -64,13 +65,15 @@ public class ContentTypeAssertion extends MessageTargetableAssertion {
     protected final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<ContentTypeAssertion>(){
         @Override
         public String getAssertionName( final ContentTypeAssertion assertion, final boolean decorate) {
-            final String displayName = assertion.meta().get(AssertionMetadata.SHORT_NAME);
+            final String displayName = assertion.meta().get(SHORT_NAME);
             if (!decorate) return displayName;
 
             final boolean change = assertion.isChangeContentType();
-            String action = change ? "Set" : "Validate";
+            String action = change ? "Change" : "Validate";
             if (assertion.isMessagePart()) action = "(Part " + assertion.getMessagePartNum() + ") " + action;
-            StringBuilder name = new StringBuilder(action + " " + displayName);
+            final StringBuilder name = new StringBuilder();
+            name.append( action );
+            name.append( " Content Type" );
             if (change) name.append(" to ").append(assertion.getNewContentTypeValue());
             return AssertionUtils.decorateName(assertion, name);
         }
@@ -79,10 +82,12 @@ public class ContentTypeAssertion extends MessageTargetableAssertion {
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        meta.put(AssertionMetadata.DESCRIPTION, "Checks that the target message has a syntactically-valid content-type.");
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "threatProtection" });
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
-        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.ContentTypeAssertionDialog");
+        meta.put(SHORT_NAME, "Validate or Change Content Type");
+        meta.put(PROPERTIES_ACTION_NAME, "Content Type Properties");
+        meta.put(DESCRIPTION, "Validate or change the content type of a target message.");
+        meta.put(PALETTE_FOLDERS, new String[] { "threatProtection", "xml" });
+        meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.ContentTypeAssertionDialog");
         return meta;
     }
 }
