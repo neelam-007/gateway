@@ -236,6 +236,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         final YuiAjaxButton clearDependencyButton = new YuiAjaxButton( "dependencyClearButton" ) {
             @Override
             protected void onSubmit( final AjaxRequestTarget target, final Form form ) {
+                setEnabled( false );
                 onClearDependency( target );
             }
         };
@@ -473,7 +474,6 @@ public class PolicyMigration extends EsmStandardWebPage {
         mappingModel.dependencyMap.remove( mappingKey );
         if( valueKey != null ) mappingModel.valueMap.remove( valueKey );
         updateDependencies();
-        setEnabled(false);
         for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) target.addComponent( dependenciesContainer.get(id) );
         target.addComponent( dependencyCandidateContainer );
         target.addComponent( dependenciesOptionsContainer );
