@@ -72,7 +72,7 @@ public class ExternalEntityHeader extends EntityHeader implements ValueMappable 
      */
     public void addExtraProperties(Map<String, String> extraProperties) {
         for ( final Map.Entry<String,String> property : extraProperties.entrySet() ) {
-            if ( this.extraProperties.containsKey( property.getKey() ) ) {
+            if ( !this.extraProperties.containsKey( property.getKey() ) ) {
                 this.extraProperties.put( property.getKey(), property.getValue() );
             }
         }
