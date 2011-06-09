@@ -156,7 +156,7 @@ public class ThreadPool {
      * Shutdown the ThreadPoolExecutor this ThreadPool manages. Invocation has no affect after first call.
      */
     public void shutdown(){
-        if(workerPool.isShutdown()) return;
+        if(workerPool==null || workerPool.isShutdown()) return;
 
         synchronized (this){
             if(!workerPool.isShutdown()){

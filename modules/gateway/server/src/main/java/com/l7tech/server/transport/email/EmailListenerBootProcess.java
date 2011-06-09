@@ -139,6 +139,9 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
                     started = true;  // "started" just means that we have already once attempted to start the email listener subsystem
                     logger.info("Email listeners starting.");
 
+                    // Start thread pool
+                    threadPoolBean.start();
+
                     // Start up listeners for initial configuration
                     Collection<EmailListener> emailListeners = emailListenerManager.getEmailListenersForNode(clusterNodeId);
                     List<Long> staleListeners = new ArrayList<Long>();
@@ -199,7 +202,6 @@ public class EmailListenerBootProcess extends LifecycleBean implements PropertyC
 
         if (applicationEvent instanceof ReadyForMessages) {
             try {
-                threadPoolBean.start();
                 startListeners();
             } catch (LifecycleException e) {
                 logger.log(Level.SEVERE, "Unable to start Email Listener", e);
