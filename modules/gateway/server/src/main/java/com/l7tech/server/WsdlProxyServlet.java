@@ -409,6 +409,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
      * Rewrite any dependency references (schema/wsdl) in the given doc to request from the gateway.
      */
     private void rewriteReferences( final String serviceId,
+                                    final String serviceWsdlUrl,
                                     final Document wsdlDoc,
                                     final Collection<ServiceDocument> documents,
                                     final String requestUri ) {
@@ -426,17 +427,21 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                         try {
                             URI base = new URI(documentUrl);
                             String docUrl = base.resolve(new URI(referenceInfo.getReferenceUrl())).toString();
-                            for ( ServiceDocument serviceDocument : documents ) {
-                                if ( docUrl.equals(serviceDocument.getUri()) ) {
-                                    // Don't proxy WSDL if we generated it in place of a directly imported XSD
-                                    // This occurred prior to 4.5 when we stripped XSDs on import since we only
-                                    // used the WSDL documents.
-                                    if ( !NOOP_WSDL.equals(serviceDocument.getContents()) ) {
-                                        uri = requestUri + "/" + getName(serviceDocument) + "?" +
-                                                SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId + "&" +
-                                                SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEDOCOID + "=" + serviceDocument.getId();
+                            if ( docUrl.equals( serviceWsdlUrl ) ) {
+                                uri = requestUri + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId;
+                            } else {
+                                for ( ServiceDocument serviceDocument : documents ) {
+                                    if ( docUrl.equals(serviceDocument.getUri()) ) {
+                                        // Don't proxy WSDL if we generated it in place of a directly imported XSD
+                                        // This occurred prior to 4.5 when we stripped XSDs on import since we only
+                                        // used the WSDL documents.
+                                        if ( !NOOP_WSDL.equals(serviceDocument.getContents()) ) {
+                                            uri = requestUri + "/" + getName(serviceDocument) + "?" +
+                                                    SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceId + "&" +
+                                                    SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEDOCOID + "=" + serviceDocument.getId();
+                                        }
+                                        break;
                                     }
-                                    break;
                                 }
                             }
                         } catch (Exception e) {
@@ -730,7 +735,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             logger.warning("Unable to determine absolute URL for wsdl proxy '"+ExceptionUtils.getMessage(e)+"'.");            
         }
 
-        rewriteReferences(svc.getId(), wsdlDoc, documents, wsdlProxyUrl);
+        rewriteReferences(svc.getId(), svc.getWsdlUrl(), wsdlDoc, documents, wsdlProxyUrl);
         addOrUpdateEndpoints(wsdlDoc, ssgurl, serviceId);
         addSecurityPolicy(wsdlDoc, svc);
 
