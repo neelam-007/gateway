@@ -27,8 +27,8 @@ import java.util.logging.Logger;
  */
 public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
     private static final Logger logger = Logger.getLogger(InterfaceTagsPanel.class.getName());
-    private final int INDEX_VALUE = 0;
-    private final int INDEX_DONE = 1;
+    private static final int INDEX_VALUE = 0;
+    private static final int INDEX_DONE = 1;
 
     private JPanel mainPanel;
     private JButton createTagButton;
@@ -134,7 +134,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
                             }
                         });
                     }
-                });
+                }, null );
             }
         });
 
@@ -255,29 +255,40 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         return null;
     }
 
-    private void promptForInterfaceName(final Functions.UnaryVoid<String> nameUser) {
-        final Object[] info = new Object[] {
-            null, // Input value with an initial value, null.
-            false // Flag to indicate if the input process is finished or not.
+    private void promptForInterfaceName( final Functions.UnaryVoid<String> nameUser,
+                                         final String initialName ) {
+        final Object option = JOptionPane.showInputDialog( InterfaceTagsPanel.this,
+                "Please enter a name for the new interface.",
+                "Interface Name",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                null,
+                initialName);
+        if (option == null || option.toString().length() < 1) {
+            return;
+        }
+
+        final String name = option.toString();
+        final Runnable retry = new Runnable() {
+            @Override
+            public void run() {
+                promptForInterfaceName( nameUser, name );
+            }
         };
-        while (! (Boolean)info[INDEX_DONE]) {
-            Object option = JOptionPane.showInputDialog(InterfaceTagsPanel.this, "Please enter a name for the new interface.", "Interface Name", JOptionPane.PLAIN_MESSAGE, null, null, info[INDEX_VALUE]);
-            if (option == null || option.toString().length() < 1) {
-                info[INDEX_DONE] = true;
-                return;
-            }
-            final String name = option.toString();
-            if (!InterfaceTag.isValidName(name)) {
-                DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "An interface name must start with a letter or underscore, and can contain only ASCII letters, underscores, or numbers.",
-                    "Invalid Interface Name", JOptionPane.ERROR_MESSAGE, null);
-            } else if (isDuplicateInterfaceName(name)) {
-                DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "The interface '" + name + "' already exists.  Please use a new interface name to try again.",
-                    "Duplicate Interface Name", JOptionPane.ERROR_MESSAGE, null);
-            } else {
-                info[INDEX_DONE] = true;
-                nameUser.call(name);
-            }
-            info[INDEX_VALUE] = name;
+        if ( !InterfaceTag.isValidName(name) ) {
+            DialogDisplayer.showMessageDialog( InterfaceTagsPanel.this,
+                    "An interface name must start with a letter or underscore, and can contain only ASCII letters, underscores, or numbers.",
+                    "Invalid Interface Name",
+                    JOptionPane.ERROR_MESSAGE,
+                    retry );
+        } else if ( isDuplicateInterfaceName(name) ) {
+            DialogDisplayer.showMessageDialog( InterfaceTagsPanel.this,
+                    "The interface '" + name + "' already exists.  Please use a new interface name to try again.",
+                    "Duplicate Interface Name",
+                    JOptionPane.ERROR_MESSAGE,
+                    retry);
+        } else {
+            nameUser.call(name);
         }
     }
 
