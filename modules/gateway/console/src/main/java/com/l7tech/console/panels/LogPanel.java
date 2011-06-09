@@ -583,8 +583,8 @@ public class LogPanel extends JPanel {
         if (entitiesMap == null) {
             entitiesMap = new TreeMap<String, String>();
 
-            AuditAdmin auditAdmin = Registry.getDefault().getAuditAdmin();
-            if (auditAdmin != null) {
+            if (Registry.getDefault().isAdminContextPresent()) {
+                AuditAdmin auditAdmin = Registry.getDefault().getAuditAdmin();
                 String shortName;
                 for (String entityClassName: auditAdmin.getAllEntityClassNames()) {
                     shortName = getShortName(entityClassName);

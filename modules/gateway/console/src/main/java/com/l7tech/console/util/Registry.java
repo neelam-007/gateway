@@ -228,8 +228,12 @@ public abstract class Registry {
 
     /**
      * Implementation of the default 'no-op' registry
+     *
+     * WARNING: DO NOT BREAK THE INTERFACE CONTRACTS IN ANY NEW METHOD IMPLEMENTATIONS
      */
     private static final class Empty extends Registry {
+        private static final String ILLEGAL_STATE_MSG = "This method should not be called when no admin context is present.";
+
         Empty() {
         }
 
@@ -240,17 +244,17 @@ public abstract class Registry {
 
         @Override
         public AdminLogin getAdminLogin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public IdentityAdmin getIdentityAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public IdentityProviderConfig getInternalProviderConfig() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         /**
@@ -258,37 +262,37 @@ public abstract class Registry {
          */
         @Override
         public ServiceAdmin getServiceManager() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public FolderAdmin getFolderAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public JmsAdmin getJmsManager() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public JdbcAdmin getJdbcConnectionAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public FtpAdmin getFtpManager() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public TrustedCertAdmin getTrustedCertManager() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public ResourceAdmin getResourceAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         /**
@@ -296,77 +300,77 @@ public abstract class Registry {
          */
         @Override
         public CustomAssertionsRegistrar getCustomAssertionsRegistrar() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public AuditAdmin getAuditAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public ClusterStatusAdmin getClusterStatusAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public KerberosAdmin getKerberosAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public RbacAdmin getRbacAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public TransportAdmin getTransportAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public EmailListenerAdmin getEmailListenerAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public EmailAdmin getEmailAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public PolicyAdmin getPolicyAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public SecurityProvider getSecurityProvider() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public PolicyValidator getPolicyValidator() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public PolicyPathBuilderFactory getPolicyPathBuilderFactory() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public GuidBasedEntityManager<Policy> getPolicyFinder() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public LogSinkAdmin getLogSinkAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 
         @Override
         public UDDIRegistryAdmin getUDDIRegistryAdmin() {
-            return null;
+            throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
     }
 }

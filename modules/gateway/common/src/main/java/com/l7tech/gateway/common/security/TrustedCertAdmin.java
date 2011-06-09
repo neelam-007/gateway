@@ -183,9 +183,9 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     /**
      * Get the certificate that should be used for verifying signed audit records.
      * <p/>
-     * This will be the same ast he gateway's SSL cert unless a special audit signing key has been explicitly designated by the administrator.
+     * This will be the same as the gateway's SSL cert unless a special audit signing key has been explicitly designated by the administrator.
      *
-     * @return the Gateway's audit signing certificate.
+     * @return the Gateway's audit signing certificate. Never null.
      * @throws IOException if the certificate cannot be retrieved
      * @throws CertificateException if the certificate cannot be retrieved
      */

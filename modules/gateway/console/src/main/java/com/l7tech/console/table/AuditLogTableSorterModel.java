@@ -642,8 +642,13 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         }
 
         // get the audit signing key's cert.  If no audit signing key designated, use default SSL key's cert instead
-        final X509Certificate cert = TopComponents.getInstance().getSsgAuditSigningCert();
-        if (cert == null) return DigitalSignatureUIState.INVALID;
+        final X509Certificate cert;
+        if (Registry.getDefault().isAdminContextPresent()) {
+            cert = TopComponents.getInstance().getSsgAuditSigningCert();
+        } else {
+            return DigitalSignatureUIState.NONE;
+        }
+
         try {
             boolean result = new AuditRecordVerifier(cert).verifySignatureOfDigest(signatureToVerify, digestValue);
             return result ? DigitalSignatureUIState.VALID : DigitalSignatureUIState.INVALID;
