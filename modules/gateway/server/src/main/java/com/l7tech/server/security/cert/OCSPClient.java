@@ -6,6 +6,8 @@ import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.TimeUnit;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.ocsp.CertID;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
@@ -244,7 +246,7 @@ public class OCSPClient {
     private static final String SYSPROP_PROVIDER = "com.l7tech.server.security.ocspProvider";
     private static final String DEFAULT_PROVIDER = "SUN";
 
-    private static final long MAX_RESPONSE_AGE = 1000L * 60L * 60L * 24L * 31L;// around one month 
+    private static final long MAX_RESPONSE_AGE = SyspropUtil.getLong( "com.l7tech.server.security.ocspMaxResponseAge", TimeUnit.DAYS.toMillis(31L) );// default to around one month
 
     private static final String CONTENT_TYPE_OCSP_REQUEST = "application/ocsp-request";
     private static final String CONTENT_TYPE_OCSP_RESPONSE = "application/ocsp-response";
