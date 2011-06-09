@@ -2,6 +2,7 @@ package com.l7tech.config.client;
 
 import com.l7tech.config.client.options.OptionType;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.TextUtils;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -149,6 +150,8 @@ public abstract class Interaction implements Closeable {
             line = reader.readLine();
         }
 
+        if ( line==null ) line = "";
+
         handleInput(line);
 
         return line;
@@ -157,10 +160,12 @@ public abstract class Interaction implements Closeable {
     protected String fallbackReadPassword(final Console console, final BufferedReader reader) throws IOException {
         String line;
         if (console != null) {
-            line = new String(console.readPassword());
+            line = TextUtils.string( console.readPassword() );
         } else {
             line = reader.readLine();
         }
+
+        if ( line==null ) line = "";
 
         handleInput(line);
 

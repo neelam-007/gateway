@@ -12,6 +12,7 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.db.DBActionsListener;
 import com.l7tech.config.client.options.OptionType;
+import com.l7tech.util.TextUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,9 +73,10 @@ public class DatabaseUpgrader {
         String line;
 
         if ( console != null ) {
-            line = new String(console.readPassword());
+            line = TextUtils.string( console.readPassword() );
         } else {
             line = reader.readLine();
+            if ( line == null ) line = "";
         }
 
         exitOnQuit( line );

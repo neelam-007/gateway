@@ -624,6 +624,26 @@ public class TextUtils {
     }
 
     /**
+     * Create a String for the given characters.
+     *
+     * @param characters The charsacters to use (may be null)
+     * @return The new String (never null)
+     */
+    public static String string( final char[] characters ) {
+        return characters == null ? "" : new String(characters);
+    }
+
+    /**
+     * Trim the given string allowing for a null value.
+     *
+     * @param text The text to trim (may be null)
+     * @return the trimmed text, never null
+     */
+    public static String trim( final String text ) {
+        return text==null ? "" : text.trim();
+    }
+
+    /**
      * Break up a string containing tokens into a list of such tokens.
      *
      * @param valueToTokenize String Value to tokenize. Can be null.

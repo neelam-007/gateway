@@ -7,6 +7,7 @@ import com.l7tech.config.client.ConfigurationException;
 import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.TextUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -88,7 +89,7 @@ public class ConfigInterviewer {
                     System.out.println();
                     System.out.print( getPrompt( cb, val ) );
 
-                    final String cmd = inReader.readLine().trim();
+                    final String cmd = TextUtils.trim(inReader.readLine());
                     System.out.println();
 
                     if ("<".equals(cmd)) {

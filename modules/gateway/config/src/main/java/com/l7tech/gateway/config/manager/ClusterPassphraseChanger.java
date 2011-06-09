@@ -9,6 +9,7 @@ import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.TextUtils;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -122,7 +123,7 @@ public class ClusterPassphraseChanger {
         Pattern pattern = Pattern.compile("^.{" + MIN_LENGTH + "," + MAX_LENGTH + "}$", Pattern.DOTALL);
         while (password == null) {
             System.out.println(prompt);
-            password = new String(console.readPassword());
+            password = TextUtils.string( console.readPassword() );
 
             exitOnQuit(password);
 

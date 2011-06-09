@@ -448,7 +448,7 @@ public class ScaHsmKeystoreConfigurator {
         Pattern pattern = Pattern.compile("^.{" + MIN_LENGTH + "," + MAX_LENGTH + "}$", Pattern.DOTALL);
         while( password == null  ) {
             System.out.print( prompt );
-            password = new String(console.readPassword());
+            password = TextUtils.string(console.readPassword());
             if ( !pattern.matcher(password).matches() ) {
                 System.out.println( "The password should be between " + MIN_LENGTH + " and " + MAX_LENGTH + " characters long.\n" );
                 password = null;

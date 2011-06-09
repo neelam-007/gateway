@@ -81,6 +81,8 @@ public class AccountReset {
             line = reader.readLine();
         }
 
+        if ( line == null ) line = "";
+
         exitOnQuit( line );
 
         return line;
@@ -90,9 +92,10 @@ public class AccountReset {
         String line;
 
         if ( console != null ) {
-            line = new String(console.readPassword());
+            line = TextUtils.string(console.readPassword());
         } else {
             line = reader.readLine();
+            if ( line == null ) line = "";
         }
 
         exitOnQuit( line );

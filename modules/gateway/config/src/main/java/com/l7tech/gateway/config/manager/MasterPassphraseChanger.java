@@ -356,7 +356,7 @@ public class MasterPassphraseChanger {
         Pattern pattern = Pattern.compile("^.{" + MIN_LENGTH + "," + MAX_LENGTH + "}$", Pattern.DOTALL);
         while( password == null  ) {
             System.out.println( prompt );
-            password = new String(console.readPassword());
+            password = TextUtils.string(console.readPassword());
 
             exitOnQuit( password );
 

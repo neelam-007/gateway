@@ -2,6 +2,7 @@ package com.l7tech.server.config.wizard;
 
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.util.TextUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
@@ -120,7 +121,7 @@ public class ConsoleWizardUtils {
     public static String readPassword() throws IOException {
         Console console = System.console();
         if (console != null)
-            return new String(console.readPassword());
+            return TextUtils.string(console.readPassword());
         else
             return readLine();
     }
