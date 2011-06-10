@@ -5,6 +5,7 @@ import java.util.logging.Level;
 
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ExceptionUtils;
 
 /**
@@ -40,55 +41,61 @@ public class CascadingErrorHandler implements ErrorHandler, LogonListener {
      *
      * @param e The error event
      */
-    public void handle(ErrorEvent e) {
+    @Override
+    public void handle( final ErrorEvent e ) {
         if (e != null) {
-            synchronized (lock) {
-                errorTimes[errorTimeIndex++] = e.getTime();
-                errorTimeIndex %= ERROR_COUNT;
+            final Runnable handler = new Runnable(){
+                @Override
+                public void run() {
+                    errorTimes[errorTimeIndex++] = e.getTime();
+                    errorTimeIndex %= ERROR_COUNT;
 
-                if ( processingError ) {
-                    // reentrant, so error during error handling
-                    // this can only occur if someone calls ErrorManager.notify inappropriately
-                    Logger logger = e.getLogger();
-                    if ( logger != null ) {
-                        log(e);
-                        logger.log(Level.SEVERE, "Error during error handling.");
-                    }
-                } else {
-                    processingError = true;
-                    try {
-                        long timeNow = System.currentTimeMillis();
+                    if ( processingError ) {
+                        // reentrant, so error during error handling
+                        // this can only occur if someone calls ErrorManager.notify inappropriately
+                        Logger logger = e.getLogger();
+                        if ( logger != null ) {
+                            log(e);
+                            logger.log(Level.SEVERE, "Error during error handling.");
+                        }
+                    } else {
+                        processingError = true;
+                        try {
+                            long timeNow = System.currentTimeMillis();
 
-                        // check for error after disconnection (so probably caused by it)
-                        long disconnectTime = getDisconnectTime();
-                        if ( (disconnectTime+DISCONNECT_SUPPRESS_PERIOD) > timeNow ) {
-                            Logger logger = e.getLogger();
-                            if ( logger != null ) {
-                                log(e);
-                                logger.log(Level.INFO, "Suppressing error due to disconnection from gateway.");
-                            }
-                        } else {
-                            // check for excessive errors in short amount of time
-                            long oldErrorTime = errorTimes[errorTimeIndex];
-                            if ( (oldErrorTime+ERROR_PERIOD) > timeNow ) {
+                            // check for error after disconnection (so probably caused by it)
+                            long disconnectTime = getDisconnectTime();
+                            if ( (disconnectTime+DISCONNECT_SUPPRESS_PERIOD) > timeNow ) {
                                 Logger logger = e.getLogger();
                                 if ( logger != null ) {
                                     log(e);
+                                    logger.log(Level.INFO, "Suppressing error due to disconnection from gateway.");
                                 }
-                                performShutdown(logger);
                             } else {
-                                boolean loggedOn = getLogonStatus();
-                                e.handle();
-                                if ( loggedOn && !getLogonStatus() ) {
-                                    stampDisconnectTime(); // allow for this time after error dialog is closed    
+                                // check for excessive errors in short amount of time
+                                long oldErrorTime = errorTimes[errorTimeIndex];
+                                if ( (oldErrorTime+ERROR_PERIOD) > timeNow ) {
+                                    Logger logger = e.getLogger();
+                                    if ( logger != null ) {
+                                        log(e);
+                                    }
+                                    performShutdown(logger);
+                                } else {
+                                    boolean loggedOn = getLogonStatus();
+                                    e.handle();
+                                    if ( loggedOn && !getLogonStatus() ) {
+                                        stampDisconnectTime(); // allow for this time after error dialog is closed
+                                    }
                                 }
                             }
+                        } finally {
+                            processingError = false;
                         }
-                    } finally {
-                        processingError = false;
                     }
                 }
-            }
+            };
+
+            Utilities.invokeOnSwingThreadAndWait( handler );
         }
     }
 
@@ -97,6 +104,7 @@ public class CascadingErrorHandler implements ErrorHandler, LogonListener {
      *
      * @param e The event
      */
+    @Override
     public void onLogoff(final LogonEvent e) {
         stampDisconnectTime();
         setLogonStatus(false);
@@ -107,6 +115,7 @@ public class CascadingErrorHandler implements ErrorHandler, LogonListener {
      *
      * @param e The event
      */
+    @Override
     public void onLogon(final LogonEvent e) {
         setLogonStatus(true);
     }
@@ -141,15 +150,16 @@ public class CascadingErrorHandler implements ErrorHandler, LogonListener {
     /**
      * Handler for shutting down
      */
-    private static Object shutdownLock = new Object();
-    private static Runnable shutdownHandler = new Runnable() {public void run(){System.exit(-1);}};
+    private static final Object shutdownLock = new Object();
+    private static Runnable shutdownHandler = new Runnable() {
+        @Override
+        public void run(){System.exit(-1);}};
 
-    private Object lock = new Object();
     private boolean processingError = false;
     private long[] errorTimes = new long[ERROR_COUNT];
     private int errorTimeIndex = 0;
 
-    private Object disconnectTimeLock = new Object();
+    private final Object disconnectTimeLock = new Object();
     private long disconnectTime;
     private boolean loggedOn = false;
 
