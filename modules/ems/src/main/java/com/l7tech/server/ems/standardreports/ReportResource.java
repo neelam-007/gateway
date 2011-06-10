@@ -284,11 +284,11 @@ public class ReportResource extends SecureResource {
         ByteArrayOutputStream out = new ByteArrayOutputStream( 100000 );
         ZipOutputStream zipOut = new ZipOutputStream( out );
 
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd_HHmmss");
         for ( StandardReportArtifact resourceArtifact : artifacts ) {
             String reportName = format.format( new Date(resourceArtifact.getReport().getStatusTime()) ) + "_" +
                                 processFilename( resourceArtifact.getReport().getName() != null ?
-                                                 resourceArtifact.getReport().getName() :
+                                                 resourceArtifact.getReport().getId() + "_" +resourceArtifact.getReport().getName() :
                                                  resourceArtifact.getReport().getId() );             
 
             if ( "application/zip".equals( resourceArtifact.getContentType() ) ) {
