@@ -511,16 +511,31 @@ public class GatewayPoller implements InitializingBean, ApplicationContextAware 
     private String buildStatusMessage( final Throwable e ) {
         final StringBuilder messageBuilder = new StringBuilder( 200 );
         messageBuilder.append( "Error accessing node: '" );
-        messageBuilder.append( ExceptionUtils.getMessage( e ) );
+        messageBuilder.append( removePeriod(ExceptionUtils.getMessage( e )) );
         messageBuilder.append( "'" );
         final Throwable causedBy = ExceptionUtils.unnestToRoot( e );
         if ( causedBy != e ) {
             messageBuilder.append( ", due to '" );
-            messageBuilder.append( ExceptionUtils.getMessage( causedBy ) );
+            messageBuilder.append( removePeriod(ExceptionUtils.getMessage( causedBy )) );
             messageBuilder.append( "'" );
         }
         messageBuilder.append( "." );
         return TextUtils.truncateStringAtEnd( messageBuilder.toString(), 200 );
+    }
+
+    /**
+     * If the given text ends with a period and has no other period then remove it
+     *
+     * e.g. "Could not send message." -> "Could not send message"
+     */
+    private String removePeriod( final String text ) {
+        String result = text;
+        int periodIndex = text.indexOf( "." );
+        if ( periodIndex == text.length()-1 ) {
+            result = text.substring( 0, text.length()-1 );
+        }
+
+        return result;
     }
 
     /**
