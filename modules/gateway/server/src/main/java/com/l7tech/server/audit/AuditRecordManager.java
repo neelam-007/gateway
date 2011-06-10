@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.Config;
 
 import java.util.Collection;
 import java.sql.SQLException;
@@ -43,6 +44,13 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, AuditReco
      * @throws FindException If an error occurs
      */
     List<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException;
+
+    /**
+     * Get a validated config containing audit records.
+     * //todo: implement for other properties
+     * @return Config which validates values.
+     */
+    Config getAuditValidatedConfig();
 
     /**
      * Get a digest value for each audit record whose id is contained in auditRecordIds.

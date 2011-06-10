@@ -79,7 +79,6 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private PersistenceEventInterceptor persistenceEventInterceptor;
     private SessionFactory sessionFactory;
     private Auditor auditor;
-    private ValidatedConfig validatedConfig;
 
     public AuditAdminImpl() {
         Background.scheduleRepeated( new TimerTask(){
@@ -108,10 +107,6 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
-
-        validatedConfig = new ValidatedConfig(serverConfig, logger);
-        validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
-        validatedConfig.setMaximumValue(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 1000);
     }
 
     public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
@@ -460,7 +455,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     @Override
     public int getMaxDigestRecords() {
-        return validatedConfig.getIntProperty(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
+        return auditRecordManager.getAuditValidatedConfig().getIntProperty(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
     }
 
     @Override

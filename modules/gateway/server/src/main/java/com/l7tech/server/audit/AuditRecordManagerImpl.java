@@ -53,6 +53,7 @@ public class AuditRecordManagerImpl
     private static final String SQL_GET_MIN_OID = "SELECT MIN(objectid) FROM audit_main WHERE objectid > ?";
     private static final String SQL_INNODB_DATA = "SHOW VARIABLES LIKE 'innodb_data_file_path'";
     private static final String SQL_CURRENT_USAGE = "SHOW TABLE STATUS";
+    private ValidatedConfig validatedConfig;
 
     //- PUBLIC
 
@@ -81,13 +82,7 @@ public class AuditRecordManagerImpl
             session = getSession();
             final Criteria hibernateCriteria = session.createCriteria(interfaceClass);
 
-            final String propertyCached = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE);
-            Integer maxRecords;
-            try {
-                maxRecords = Integer.valueOf(propertyCached);
-            } catch (NumberFormatException e) {
-                maxRecords = 100;
-            }
+            final int maxRecords = validatedConfig.getIntProperty(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
 
             if (auditRecordIds.size() > maxRecords) {
                 int difference = auditRecordIds.size() - maxRecords;
@@ -102,7 +97,7 @@ public class AuditRecordManagerImpl
 
             hibernateCriteria.add(Restrictions.in("oid", auditRecordIds));
 
-            //todo filter out message audit records based on size. Add cluster property for fiter value.
+            //todo: filter out message audit records based on size. Add cluster property for filter value.
 
             final ScrollableResults results = hibernateCriteria.scroll();
             while (results.next()) {
@@ -130,7 +125,6 @@ public class AuditRecordManagerImpl
             @Override
             public void call(final Criteria hibernateCriteria) {
 
-                //should only every select records from audit_main - if you select records from other tables, ensure distinct logic is not broken.
                 final ProjectionList projectionList = Projections.projectionList()
                         .add(Property.forName(PROP_OID))
                         .add(Property.forName(PROP_NAME))
@@ -141,13 +135,15 @@ public class AuditRecordManagerImpl
                         .add(Property.forName(PROP_LEVEL))
                         ;
 
-                //ensure distinct results only
-                hibernateCriteria.setProjection(Projections.distinct(projectionList));
-
                 if (criteria.messageId != null) {
+                    //ensure distinct results only - only an issue when joining with audit_detail
+                    hibernateCriteria.setProjection(Projections.distinct(projectionList));
+
                     hibernateCriteria.createAlias("details", "ad");
                     final SimpleExpression eq = Restrictions.eq("ad.messageId", criteria.messageId);
                     hibernateCriteria.add(eq);
+                } else {
+                    hibernateCriteria.setProjection(projectionList);
                 }
             }
         };
@@ -448,6 +444,14 @@ public class AuditRecordManagerImpl
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
+        validatedConfig = new ValidatedConfig(serverConfig, logger);
+        validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
+        validatedConfig.setMaximumValue(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 1000);
+    }
+
+    @Override
+    public Config getAuditValidatedConfig() {
+        return validatedConfig;
     }
 
     //- PROTECTED

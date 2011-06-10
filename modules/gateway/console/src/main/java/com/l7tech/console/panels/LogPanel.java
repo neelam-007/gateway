@@ -532,9 +532,7 @@ public class LogPanel extends JPanel {
                     //we are on the UI thread
                     validationIsRunning = false;
 
-                    // were on the UI thread.
                     // update currently displayed rows.
-
                     final Rectangle viewRect = getMsgTablePane().getViewport().getViewRect();
                     final int firstRow = getMsgTable().rowAtPoint(new Point(0, viewRect.y));
                     final int lastRow = getMsgTable().rowAtPoint(new Point(0, viewRect.y + viewRect.height - 1));
@@ -2264,7 +2262,6 @@ public class LogPanel extends JPanel {
         Window window = SwingUtilities.getWindowAncestor(this);
 
         if (window != null && window.isVisible()) {
-            //todo why would we only want to download while the window is focused?
 
             String nodeToUse = node;
 

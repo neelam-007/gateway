@@ -213,7 +213,8 @@ public interface AuditAdmin extends GenericLogAdmin {
 
     /**
      * Check if an audit viewer policy is available.
-     * @return
+     *
+     * @return true if available
      */
     @Transactional(readOnly = true)
     boolean isAuditViewerPolicyAvailable();

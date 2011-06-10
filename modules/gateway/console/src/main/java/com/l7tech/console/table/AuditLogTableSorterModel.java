@@ -80,9 +80,24 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     private static final String DATE_FORMAT_PATTERN = "yyyyMMdd HH:mm:ss.SSS";
 
     /**
-     * Track the last signature validated. Index into rawLogCache
+     * Synchronize all updates and read access not on the UI thread to data structures containing audit records.
+     * rawLogCache -> contains all records and is can look up an audit by oid. (HashMap)
+     * filteredLogCache -> contains all records with fast direct access (ArrayList)
+     * sigValidationIndex -> allows validation to resume where it left off. Offer some performance benefits when the
+     * number of record headers gets large.
+     */
+    private final Object auditHeaderLock = new Object();
+
+    /**
+     * Track the last signature validated. Index into filteredLogCache. Reset to 0 when filteredLogCache is modified.
      */
     private volatile int sigValidationIndex;
+
+    /**
+     * Holds a reference to the signature verification task. There should only ever be a single task running with
+     * none queued. This reference can be used to cancel the task.
+     * Do not read or write this variable without holding a lock on sigVerificationExecutor.
+     */
     private volatile Future<?> validateFuture;
     private volatile boolean verifySignatures;
     private volatile Runnable validationNoLongerRunningCallback;
@@ -158,7 +173,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         return ascending;
     }
 
-    /**
+    /** //todo this is not working. truncated is never updated.
      * @return true if displayed logs are truncated to {@link #MAX_NUMBER_OF_LOG_MESSAGES}.
      */
     public boolean isTruncated() {
@@ -177,7 +192,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
             //cancel job if running
             stopValidatingSignatures();
 
-            synchronized (rawLogCacheLock) {
+            synchronized (auditHeaderLock) {
                 rawLogCache.putAll(newLogs);
                 filteredLogCache.clear();
                 filteredLogCache.addAll(rawLogCache.values());
@@ -216,7 +231,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                         final Map<Long, AuditHeaderLogMessage> auditHeaders = new HashMap<Long, AuditHeaderLogMessage>();
                         int index = sigValidationIndex;
                         int count = 0;
-                        synchronized (rawLogCacheLock) {
+                        synchronized (auditHeaderLock) {
 
                             while (index < filteredLogCache.size() && count < maxNumberToProcess) {
                                 if (Thread.currentThread().isInterrupted()) {
@@ -244,7 +259,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                                 return;
                             }
 
-                            synchronized (rawLogCacheLock) {
+                            synchronized (auditHeaderLock) {
                                 for (Long auditRecordId : auditRecordIds) {
                                     if (Thread.currentThread().isInterrupted()) {
                                         return;
@@ -264,7 +279,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "Find Exception validating signatures: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 } catch (Exception e) {
-                    logger.log(Level.INFO, "Unexpected exception validating signatures: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, "Unexpected exception validating signatures: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 } finally {
                     if (interrupted) {
                         if (logger.isLoggable(Level.FINE)) {
@@ -300,7 +315,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
      * Called when either there are no more records to validate, or the validation was cancelled.
      *
      * Will be called on the UI thread.
-     * @param runnable runnable call back.
+     * @param runnable call back.
      */
     public void setValidationNoLongerRunningCallback(Runnable runnable) {
         validationNoLongerRunningCallback = runnable;
@@ -334,26 +349,34 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                     validationStartedCallback.run();
                 }
             });
-            validateFuture = sigVerificationExecutor.submit(getSignatureVerificationRunnable());
+            synchronized (sigVerificationExecutor) {
+                validateFuture = sigVerificationExecutor.submit(getSignatureVerificationRunnable());
+            }
         }
     }
 
     private boolean isValidateJobRunning() {
-        boolean isRunning = validateFuture != null;
+        synchronized (sigVerificationExecutor){
+            boolean isRunning = validateFuture != null;
 
-        //check if task is done or cancelled
-        if (isRunning) {
-            if (validateFuture.isDone() || validateFuture.isCancelled()) {
-                isRunning = false;
+            //check if task is done or cancelled
+            if (isRunning) {
+                if (validateFuture.isDone() || validateFuture.isCancelled()) {
+                    isRunning = false;
+                }
             }
-        }
 
-        return isRunning;
+            return isRunning;
+        }
     }
 
     private void stopValidatingSignatures() {
         if (isValidateJobRunning()) {
-            validateFuture.cancel(true);
+            synchronized (sigVerificationExecutor) {
+                if (validateFuture != null) {
+                    validateFuture.cancel(true);
+                }
+            }
         }
     }
 
@@ -530,8 +553,6 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                     elementB = logMsgB.getNodeName();
                     break;
                 case LogPanel.LOG_TIMESTAMP_COLUMN_INDEX:
-                    //todo [Donal] test
-                    //milliseconds is fine for comparison
                     elementA = logMsgA.getTimestamp();
                     elementB = logMsgB.getTimestamp();
                     break;
@@ -655,11 +676,13 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     public void clearLogCache() {
         cancelWorker();
 
-        if (validateFuture != null) {
-            validateFuture.cancel(true);
+        synchronized (sigVerificationExecutor) {
+            if (validateFuture != null) {
+                validateFuture.cancel(true);
+            }
         }
 
-        synchronized (rawLogCacheLock) {
+        synchronized (auditHeaderLock) {
             rawLogCache = new HashMap<Long,LogMessage>();
             sigValidationIndex = 0;
             filteredLogCache = new ArrayList<LogMessage>();
@@ -738,7 +761,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     }
 
     /**
-     * Retreive logs from the cluster.
+     * Retrieve logs from the cluster.
      *
      * @param logPane   The object reference to the LogPanel.
      * @param logRequest Request parameters.
@@ -765,8 +788,12 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                     logRequest) {
                 @Override
                 public void finished() {
+                    //todo finished() is called on the UI thread. No expensive tasks should be done here. Sorting in particular should be moved into construct().
+
                     if ( !isCancelled() ) {
                         // Note: the get() operation is a blocking operation.
+                        // get() will never block based on construct()'s implementation.
+
                         if (this.get() != null) {
                             Map<Long, LogMessage> newLogs = getNewLogs();
                             int logCount = newLogs.size();
