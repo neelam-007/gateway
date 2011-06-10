@@ -473,11 +473,11 @@
                     </div>
                 </td>
                 <td class="srcDestCenter">
-                    <form wicket:id="migrateForm">
+                    <form wicket:id="migrateForm" onsubmit="return false;"> <!-- Prevents non-ajax submission in IE8 -->
                         <button wicket:id="migrateButton"><img src="../images/copy.png" title="Migrate selected policies with dependency mapping" alt="" id="migrateImage"></button>
                     </form>
                     <br/>
-                    <form wicket:id="identifyDependenciesForm">
+                    <form wicket:id="identifyDependenciesForm" onsubmit="return false;"> <!-- Prevents non-ajax submission in IE8 -->
                         <button wicket:id="identifyDependenciesButton"><img src="../images/resolveDependencies.png" title="Identify dependencies" alt="" id="identifyDependenciesImage"></button>
                      </form>
                 </td>
