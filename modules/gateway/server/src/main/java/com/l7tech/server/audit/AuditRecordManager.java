@@ -13,6 +13,8 @@ import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author alex
@@ -34,24 +36,23 @@ public interface AuditRecordManager extends EntityManager<AuditRecord, AuditReco
     }
 
     /**
-     * //todo: Note, this method has no actual usages. If this is used, test it first.
-     * //todo: Delete. This has no usages, although it is referenced indirectly via AuditRecordWorker.
-     * Find audit records that match the given criteria.
-     *
-     * @param criteria The search settings (must not be null)
-     * @return The collection of audit records (not null)
-     * @throws FindException If an error occurs
-     */
-    Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException;
-
-    /**
      * Find {@link com.l7tech.gateway.common.audit.AuditRecordHeader}s that match the given criteria.
      * (This is the same as the above find() method except it returns headers only as opposed to entire records.
      * @param criteria criteria The search settings (must not be null)
      * @return The collection of audit records (not null)
      * @throws FindException If an error occurs
      */
-    Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException;
+    List<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException;
+
+    /**
+     * Get a digest value for each audit record whose id is contained in auditRecordIds.
+     *
+     * @param auditRecordIds the list of audit records to get digests for. Cannot be null.
+     * @return a map of audit record id to the digest. If the audit record does not exist, then this map will not contain
+     * an entry for the record object id. Returned map may be empty but never null
+     * @throws FindException any problems searching the db. Note FindExceptions are not thrown when records do not exist.
+     */
+    Map<Long, byte[]> getDigestForAuditRecords(Collection<Long> auditRecordIds) throws FindException;
 
     /**
      * Delete old audit records.

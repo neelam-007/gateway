@@ -5,10 +5,7 @@ package com.l7tech.console.table;
 
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.LogPanel;
-import com.l7tech.console.util.ClusterLogWorker;
-import com.l7tech.console.util.LogMessage;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.AuditRecordVerifier;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
@@ -16,6 +13,8 @@ import com.l7tech.gateway.common.cluster.GatewayStatus;
 import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
 import com.l7tech.gui.util.ImageCache;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -23,6 +22,9 @@ import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,18 +44,19 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         /** No signature at all. */
         NONE("missing", "no digital signature", MainWindow.RESOURCE_PATH + "/DigitalSignatureStateNone16.png"),
 
+        NOT_YET_VALIDATED("pending", "not yet validated", null),
+
         /** Has signature and is valid. */
         VALID("verified", "digital signature is verified", MainWindow.RESOURCE_PATH + "/DigitalSignatureStateValid16.png");
 
         private final String name;
         private final String description;
-        private final String icon16Path;
-        private Icon icon16;
+        private final Icon icon16;
 
         DigitalSignatureUIState(String name, String description, String icon16Path) {
             this.name = name;
             this.description = description;
-            this.icon16Path = icon16Path;
+            icon16 = (icon16Path != null) ? new ImageIcon(ImageCache.getInstance().getIcon(icon16Path)) : null;
         }
 
         /** @return a word suitable for message parameter substitution (e.g., Digital signature is BLAH) */
@@ -67,11 +70,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         }
 
         /** @return 16 by 16 pixel icon */
-        public synchronized Icon getIcon16() {
-            if (icon16 == null) {
-                // Can't do this in constructor because testpackage complains.
-                icon16 = new ImageIcon(ImageCache.getInstance().getIcon(icon16Path));
-            }
+        public Icon getIcon16() {
             return icon16;
         }
     }
@@ -80,16 +79,37 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
 
     private static final String DATE_FORMAT_PATTERN = "yyyyMMdd HH:mm:ss.SSS";
 
+    /**
+     * Track the last signature validated. Index into rawLogCache
+     */
+    private volatile int sigValidationIndex;
+    private volatile Future<?> validateFuture;
+    private volatile boolean verifySignatures;
+    private volatile Runnable validationNoLongerRunningCallback;
+    private volatile Runnable validationStartedCallback;
+
+    private final ExecutorService sigVerificationExecutor;
+
     private boolean ascending = false;
     private int columnToSort = LogPanel.LOG_TIMESTAMP_COLUMN_INDEX;
-    private Object[] sortedData = null;
+
+    /**
+     * Holds the index into sorted data. When the view asks for a row, that row index can be used to look up
+     * the actual log record index into the filteredLogCache.
+     */
+    private volatile Integer[] sortedData = null;
     private ClusterStatusAdmin clusterStatusAdmin = null;
     private AuditAdmin auditAdmin = null;
-    private int logType;
+    private final int logType;
     private boolean displayingFromFile;
     private boolean truncated;
-    private AtomicReference<ClusterLogWorker> workerReference = new AtomicReference<ClusterLogWorker>();
+    private final AtomicReference<ClusterLogWorker> workerReference = new AtomicReference<ClusterLogWorker>();
     private TimeZone timeZone;
+    /**
+     * Creating a SimpleDateFormat shows up as largest hotspot in JProfiler. Instead just reuse instance.
+     */
+    private SimpleDateFormat sdf;
+
 
     /**
      * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
@@ -101,6 +121,8 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         this.displayingFromFile = false;
 
         setModel(model);
+
+        sigVerificationExecutor = Executors.newSingleThreadExecutor();
     }
 
     @Override
@@ -152,10 +174,186 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
 
         // add new logs to the cache
         if (newLogs.size() > 0) {
-            rawLogCache.putAll(newLogs);
+            //cancel job if running
+            stopValidatingSignatures();
 
-            filteredLogCache.clear();
-            filteredLogCache.addAll(rawLogCache.values());
+            synchronized (rawLogCacheLock) {
+                rawLogCache.putAll(newLogs);
+                filteredLogCache.clear();
+                filteredLogCache.addAll(rawLogCache.values());
+                //data structures have no order. For now simply start again at the start.
+                sigValidationIndex = 0;
+            }
+            validateSignatures();
+        }
+    }
+
+    private int getMaxSignaturesToValidate() {
+        return Registry.getDefault().getAuditAdmin().getMaxDigestRecords();
+    }
+
+    /**
+     * Only applies for Audits. Does not apply to Gateway Log Messages
+     * @return Runnable signature verification runnable
+     */
+    private Runnable getSignatureVerificationRunnable() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                boolean interrupted = true;
+
+                try {
+                    final int maxNumberToProcess = getMaxSignaturesToValidate();
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.log(Level.FINE, "Beginning validation of audit records");
+                    }
+
+                    while (sigValidationIndex < filteredLogCache.size()) {
+                        if (Thread.currentThread().isInterrupted()) {
+                            return;
+                        }
+
+                        final Map<Long, AuditHeaderLogMessage> auditHeaders = new HashMap<Long, AuditHeaderLogMessage>();
+                        int index = sigValidationIndex;
+                        int count = 0;
+                        synchronized (rawLogCacheLock) {
+
+                            while (index < filteredLogCache.size() && count < maxNumberToProcess) {
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
+
+                                final AuditHeaderLogMessage logMessage = (AuditHeaderLogMessage) filteredLogCache.get(index);
+                                if (logMessage.getSignatureDigest() == null) {
+                                    auditHeaders.put(logMessage.getMsgNumber(), logMessage);
+                                }
+                                index++;
+                                count++;
+                            }
+                        }
+
+                        final List<Long> auditRecordIds = new ArrayList<Long>(auditHeaders.keySet());//keySet is not serializable
+                        if (!auditRecordIds.isEmpty()) {
+                            //update digests
+                            final Map<Long, byte[]> digestsForRecords = auditAdmin.getDigestsForAuditRecords(auditRecordIds);
+                            if (logger.isLoggable(Level.FINE)) {
+                                logger.log(Level.FINE, "Validated " + digestsForRecords.size()+" records.");
+                            }
+
+                            if (Thread.currentThread().isInterrupted()) {
+                                return;
+                            }
+
+                            synchronized (rawLogCacheLock) {
+                                for (Long auditRecordId : auditRecordIds) {
+                                    if (Thread.currentThread().isInterrupted()) {
+                                        return;
+                                    }
+
+                                    if (digestsForRecords.containsKey(auditRecordId)) {
+                                        final AuditHeaderLogMessage auditHeader = auditHeaders.get(auditRecordId);
+                                        auditHeader.setSignatureDigest(digestsForRecords.get(auditRecordId));
+                                    }
+                                }
+                            }
+                        }
+                        sigValidationIndex = index;
+                    }
+
+                    interrupted = false;
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "Find Exception validating signatures: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                } catch (Exception e) {
+                    logger.log(Level.INFO, "Unexpected exception validating signatures: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                } finally {
+                    if (interrupted) {
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.log(Level.FINE, "Audit validation cancelled.");
+                        }
+
+                    } else {
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.log(Level.FINE, "All audit records have been updated with the result of signature verification.");
+                        }
+                    }
+
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            validationNoLongerRunningCallback.run();
+                        }
+                    });
+                }
+            }
+        };
+    }
+
+    /**
+     * Called on the UI thread when validation has started.
+     * @param runnable call back.
+     */
+    public void setValidationHasStartedCallback(Runnable runnable) {
+        validationStartedCallback = runnable;
+    }
+
+    /**
+     * Called when either there are no more records to validate, or the validation was cancelled.
+     *
+     * Will be called on the UI thread.
+     * @param runnable runnable call back.
+     */
+    public void setValidationNoLongerRunningCallback(Runnable runnable) {
+        validationNoLongerRunningCallback = runnable;
+    }
+
+    public void setVerifySignatures(boolean validate) {
+        verifySignatures = validate;
+
+        if (validate) {
+            validateSignatures();
+        } else {
+            stopValidatingSignatures();
+        }
+
+    }
+
+    /**
+     * Ensure signatures are being validated. If validation is not applicable (checkbox not checked or not viewing audits,
+     * then calling this will not cause signatures to be validated.
+     */
+    private void validateSignatures() {
+        if (!verifySignatures || logType != GenericLogAdmin.TYPE_AUDIT) {
+            return;
+        }
+
+        if (!isValidateJobRunning()) {
+            //start job
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    validationStartedCallback.run();
+                }
+            });
+            validateFuture = sigVerificationExecutor.submit(getSignatureVerificationRunnable());
+        }
+    }
+
+    private boolean isValidateJobRunning() {
+        boolean isRunning = validateFuture != null;
+
+        //check if task is done or cancelled
+        if (isRunning) {
+            if (validateFuture.isDone() || validateFuture.isCancelled()) {
+                isRunning = false;
+            }
+        }
+
+        return isRunning;
+    }
+
+    private void stopValidatingSignatures() {
+        if (isValidateJobRunning()) {
+            validateFuture.cancel(true);
         }
     }
 
@@ -196,6 +394,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
 
     /**
      * Perform the data sorting.
+     * //todo This should not be done on the UI thread.
      *
      * @param column  The index of the table column to be sorted.
      * @param orderToggle  true if the sorting order is toggled, false otherwise.
@@ -269,7 +468,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     }
 
     public LogMessage getLogMessageAtRow(int row) {
-        return filteredLogCache.get((Integer)sortedData[row]);
+        return filteredLogCache.get(sortedData[row]);
     }
 
     private DigitalSignatureUIState getUISignatureState(LogMessage msg) {
@@ -331,9 +530,10 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                     elementB = logMsgB.getNodeName();
                     break;
                 case LogPanel.LOG_TIMESTAMP_COLUMN_INDEX:
-                    SimpleDateFormat sdf = getDateFormatter();
-                    elementA = sdf.format(new Date(logMsgA.getTimestamp()));
-                    elementB = sdf.format(new Date(logMsgB.getTimestamp()));
+                    //todo [Donal] test
+                    //milliseconds is fine for comparison
+                    elementA = logMsgA.getTimestamp();
+                    elementB = logMsgB.getTimestamp();
                     break;
                 case LogPanel.LOG_SEVERITY_COLUMN_INDEX:
                     elementA = logMsgA.getSeverity();
@@ -408,9 +608,11 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     }
 
     private SimpleDateFormat getDateFormatter() {
-        SimpleDateFormat sdf = new SimpleDateFormat( DATE_FORMAT_PATTERN );
-        TimeZone timeZone = this.timeZone;
-        if ( timeZone != null ) sdf.setTimeZone( timeZone );
+        if (sdf == null) {
+            sdf = new SimpleDateFormat(DATE_FORMAT_PATTERN);
+            TimeZone timeZone = this.timeZone;
+            if (timeZone != null) sdf.setTimeZone(timeZone);
+        }
         return sdf;
     }
 
@@ -431,6 +633,8 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     public void onDisconnect() {
         clearLogCache();
 
+        sigVerificationExecutor.shutdown();
+
         clusterStatusAdmin = null;
         auditAdmin = null;
     }
@@ -450,10 +654,18 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
      */
     public void clearLogCache() {
         cancelWorker();
-        rawLogCache = new HashMap<Long,LogMessage>();
-        filteredLogCache = new ArrayList<LogMessage>();
+
+        if (validateFuture != null) {
+            validateFuture.cancel(true);
+        }
+
+        synchronized (rawLogCacheLock) {
+            rawLogCache = new HashMap<Long,LogMessage>();
+            sigValidationIndex = 0;
+            filteredLogCache = new ArrayList<LogMessage>();
+        }
         currentNodeList = new HashMap<String, GatewayStatus>();
-        sortedData = new Object[0];
+        sortedData = new Integer[0];
         realModel.setRowCount(sortedData.length);
         realModel.fireTableDataChanged();
         truncated = false;
@@ -637,7 +849,11 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
     }
 
     private DigitalSignatureUIState compareSignatureDigests( String signatureToVerify, byte[] digestValue ) {
-        if (signatureToVerify == null || signatureToVerify.length() < 1 || digestValue == null) {
+        if (signatureToVerify != null && digestValue == null) {
+            return DigitalSignatureUIState.NOT_YET_VALIDATED;
+        }
+
+        if (signatureToVerify == null || signatureToVerify.length() < 1 ) {
             return DigitalSignatureUIState.NONE;
         }
 

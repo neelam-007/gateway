@@ -154,6 +154,8 @@ public class LogPanel extends JPanel {
     private final Map<Long, SoftReference<AuditLogMessage>> cachedLogMessages = Collections.synchronizedMap( new HashMap<Long, SoftReference<AuditLogMessage>>() );
     private JButton invokeRequestAVPolicyButton;
     private JButton invokeResponseAVPolicyButton;
+    private JLabel sigStatusLabel;
+    private boolean validationIsRunning = false;
 
     //
     // Data model for the audit events control panel.
@@ -516,11 +518,51 @@ public class LogPanel extends JPanel {
                 }
             });
             inputValidator.validateWhenDocumentChanges(controlPanel.nodeTextField);
+
+            controlPanel.validateSignaturesCheckBox.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    setSignatureValidationState(controlPanel.validateSignaturesCheckBox.isSelected());
+                }
+            });
+
+            getFilteredLogTableSorter().setValidationNoLongerRunningCallback(new Runnable() {
+                @Override
+                public void run() {
+                    //we are on the UI thread
+                    validationIsRunning = false;
+
+                    // were on the UI thread.
+                    // update currently displayed rows.
+
+                    final Rectangle viewRect = getMsgTablePane().getViewport().getViewRect();
+                    final int firstRow = getMsgTable().rowAtPoint(new Point(0, viewRect.y));
+                    final int lastRow = getMsgTable().rowAtPoint(new Point(0, viewRect.y + viewRect.height - 1));
+                    if (firstRow != -1 && lastRow != -1) {
+                        getFilteredLogTableSorter().fireTableRowsUpdated(firstRow, lastRow);
+                    } else {
+                        //there is not a lot of data if there is no final row
+                        getFilteredLogTableSorter().fireTableDataChanged();
+                    }
+
+                    setSignatureStatusText();
+                }
+            });
+
+            getFilteredLogTableSorter().setValidationHasStartedCallback(new Runnable() {
+                @Override
+                public void run() {
+                    validationIsRunning = true;
+                    setSignatureStatusText();
+                }
+            });
         }
 
         getSearchButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                controlPanel.validateSignaturesCheckBox.setSelected(false);
+                setSignatureValidationState(false);
                 setDataFromControlPanel();
                 savePreferences();
                 updateControlState();
@@ -533,15 +575,43 @@ public class LogPanel extends JPanel {
                 getResponseXmlTextArea().setText("");
                 displayedLogMessage = null;
 
-                // Display the visual indication message, "Caution! Constraint may exclude some events", if any search criteria applied.
-                controlPanel.cautionIndicatorPanel.setVisible(isAuditType && hasSearchCriteriaApplied());  // Note: this indicator is not for Gateway Logs Events.
+                setCautionIndicatorPanelState();
             }
         });
 
         applyPreferences();
 
+        setCautionIndicatorPanelState();
+    }
+
+    /**
+     * Turn on or off signature validation in the model based on the value of the validate signatures checkbox.
+     * Updates the status text.
+     */
+    private void setSignatureValidationState(boolean validate) {
+        final AuditLogTableSorterModel auditModel = getFilteredLogTableSorter();
+        if (validate) {
+            auditModel.setVerifySignatures(true);
+        } else {
+            auditModel.setVerifySignatures(false);
+        }
+        setSignatureStatusText();
+    }
+
+    private void setCautionIndicatorPanelState() {
         // Display the visual indication message, "Caution! Constraint may exclude some events", if any search criteria applied.
-        controlPanel.cautionIndicatorPanel.setVisible(isAuditType && hasSearchCriteriaApplied());  // Note: this indicator is not for Gateway Logs Events.
+        // controlPanel.cautionIndicatorPanel.setVisible(isAuditType && hasSearchCriteriaApplied());  // Note: this indicator is not for Gateway Logs Events.
+
+        final Color bgColor;
+        final boolean showWarning = isAuditType && hasSearchCriteriaApplied();
+        if (showWarning) {
+            bgColor = new Color(255, 255, 225);
+            controlPanel.cautionTextField.setVisible(true);
+        } else {
+            bgColor = controlPanel.mainPanel.getBackground();
+            controlPanel.cautionTextField.setVisible(false);
+        }
+        controlPanel.cautionIndicatorPanel.setBackground(bgColor);
     }
 
     /**
@@ -968,7 +1038,7 @@ public class LogPanel extends JPanel {
         getMsgProgressBar().setVisible(true);   // Shows progress bar only upon full retrieval; not upon incremental auto-refresh.
         clearLogCache();
         if (retrievalMode == RetrievalMode.DURATION) {
-            auditLogTableSorterModel.setTimeZone( null );
+            getFilteredLogTableSorter().setTimeZone(null);
             refreshLogs();
         } else if (retrievalMode == RetrievalMode.TIME_RANGE) {
             auditLogTableSorterModel.setTimeZone( timeRangeTimeZone );
@@ -1083,12 +1153,12 @@ public class LogPanel extends JPanel {
     }
 
     private AuditLogMessage cacheLogMessage( final LogMessage logMessage, final AuditLogMessage auditLogMessage ) {
-        auditLogMessage.setNodeName( logMessage.getNodeName() );
+        auditLogMessage.setNodeName(logMessage.getNodeName());
         this.cachedLogMessages.put( logMessage.getMsgNumber(), new SoftReference<AuditLogMessage>( auditLogMessage ) );
         return auditLogMessage;
     }
 
-    private void doUpdateMsgDetails( final LogMessage logMessage ) {
+    private void doUpdateMsgDetails( final LogMessage logMessage, final Functions.UnaryVoid<AuditRecord> auditLoadedCallback) {
         AuditLogMessage auditLogMessage = getCachedLogMessage( logMessage );
         if ( auditLogMessage != null ) {
             updateMsgDetails( auditLogMessage );
@@ -1101,7 +1171,11 @@ public class LogPanel extends JPanel {
                     public void finished() {
                         final AuditLogMessage fullLogMessage = (AuditLogMessage) this.get();
                         if ( fullLogMessage != null ) {
-                            doUpdateMsgDetails( cacheLogMessage( logMessage, fullLogMessage ) );
+                            doUpdateMsgDetails( cacheLogMessage( logMessage, fullLogMessage ), null);
+                            final AuditRecord auditRecord = fullLogMessage.getAuditRecord();
+                            if (auditRecord != null) {
+                                auditLoadedCallback.call(auditRecord);
+                            }
                         }
                         getMsgProgressBar().setVisible(false);
                     }
@@ -1287,17 +1361,34 @@ public class LogPanel extends JPanel {
         }
     }
 
+    /**
+     * Only call from swing thread.
+     */
     private void updateMsgDetails() {
-        int row = getMsgTable().getSelectedRow();
+        final int row = getMsgTable().getSelectedRow();
 
         if (row == -1) return;
 
         final TableModel model = getMsgTable().getModel();
         if (model instanceof AuditLogTableSorterModel) {
-            LogMessage logHeader = ((AuditLogTableSorterModel) model).getLogMessageAtRow(row);
+            final AuditLogTableSorterModel auditModel = (AuditLogTableSorterModel) model;
+            final LogMessage logHeader = auditModel.getLogMessageAtRow(row);
             if (logHeader == displayedLogMessage) return;
             displayedLogMessage = logHeader;
-            doUpdateMsgDetails( logHeader );
+
+            //update the Sig column when the audit record has been loaded.
+            final Functions.UnaryVoid<AuditRecord> auditRecordRetrievedCallback = new Functions.UnaryVoid<AuditRecord>() {
+                @Override
+                public void call(AuditRecord auditRecord) {
+                    if (logHeader instanceof AuditHeaderLogMessage) {
+                        AuditHeaderLogMessage actualHeader = (AuditHeaderLogMessage) logHeader;
+                        actualHeader.setSignatureDigest(auditRecord.computeSignatureDigest());
+                        auditModel.fireTableRowsUpdated(row, row);
+                    }
+                }
+            };
+
+            doUpdateMsgDetails( logHeader, (logHeader instanceof AuditHeaderLogMessage)? auditRecordRetrievedCallback: null );
         } else {
             updateMsgDetailText( "" );
         }
@@ -1560,6 +1651,29 @@ public class LogPanel extends JPanel {
         return msgTotal;
     }
 
+    private JLabel getSignatureStatusLabel() {
+        if (sigStatusLabel == null) {
+            sigStatusLabel = new JLabel();
+            sigStatusLabel.setFont(new java.awt.Font("Dialog", 0, 12));
+            sigStatusLabel.setAlignmentY(0);
+        }
+
+        return sigStatusLabel;
+    }
+
+    private void setSignatureStatusText() {
+        final JLabel statusLabel = getSignatureStatusLabel();
+
+        StringBuilder builder = new StringBuilder();
+        if (controlPanel.validateSignaturesCheckBox.isSelected()) {
+            builder.append("Signature validation is on");
+            if (validationIsRunning) {
+                builder.append(" [In progress]");
+            }
+        }
+        statusLabel.setText(builder.toString());
+    }
+
     /**
      * @return the progress bar that shows message query is in progress
      */
@@ -1601,7 +1715,7 @@ public class LogPanel extends JPanel {
      *
      * @return JScrollPane
      */
-    private JComponent getMsgTablePane() {
+    private JScrollPane getMsgTablePane() {
         if (msgTablePane == null) {
             msgTablePane = new JScrollPane();
             msgTablePane.setViewportView(getMsgTable());
@@ -1913,11 +2027,21 @@ public class LogPanel extends JPanel {
 
             msgTotalPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
             getLastUpdateTimeLabel().setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            final JPanel lowerPanel = new JPanel();
+            lowerPanel.setLayout(new BoxLayout(lowerPanel, BoxLayout.X_AXIS));
+            lowerPanel.add(getLastUpdateTimeLabel());
+            lowerPanel.add(Box.createHorizontalStrut(10));
+            lowerPanel.add(getSignatureStatusLabel());
+            lowerPanel.add(Box.createHorizontalGlue());
+
+            lowerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
             statusPane = new JPanel();
             statusPane.setLayout(new BoxLayout(statusPane, BoxLayout.Y_AXIS));
             statusPane.add(Box.createVerticalGlue());
             statusPane.add(msgTotalPanel);
-            statusPane.add(getLastUpdateTimeLabel());
+            statusPane.add(lowerPanel);
             statusPane.add(Box.createVerticalGlue());
         }
 
@@ -2058,7 +2182,12 @@ public class LogPanel extends JPanel {
      */
     private AuditLogTableSorterModel getFilteredLogTableSorter() {
         if (auditLogTableSorterModel == null) {
-            auditLogTableSorterModel = new AuditLogTableSorterModel(getLogTableModel(), isAuditType ? GenericLogAdmin.TYPE_AUDIT : GenericLogAdmin.TYPE_LOG);
+            //todo [Donal] add generics. The model should know what it holds.
+            if (isAuditType) {
+                auditLogTableSorterModel = new AuditLogTableSorterModel(getLogTableModel(), isAuditType ? GenericLogAdmin.TYPE_AUDIT : GenericLogAdmin.TYPE_LOG);
+            } else {
+                auditLogTableSorterModel = new AuditLogTableSorterModel(getLogTableModel(), isAuditType ? GenericLogAdmin.TYPE_AUDIT : GenericLogAdmin.TYPE_LOG);
+            }
         }
 
         return auditLogTableSorterModel;
@@ -2135,6 +2264,7 @@ public class LogPanel extends JPanel {
         Window window = SwingUtilities.getWindowAncestor(this);
 
         if (window != null && window.isVisible()) {
+            //todo why would we only want to download while the window is focused?
 
             String nodeToUse = node;
 
@@ -2708,5 +2838,7 @@ public class LogPanel extends JPanel {
         private JPanel userNamePane;
         private JPanel userIdPane;
         private JPanel cautionIndicatorPanel;
+        private JLabel cautionTextField;
+        private JCheckBox validateSignaturesCheckBox;
     }
 }

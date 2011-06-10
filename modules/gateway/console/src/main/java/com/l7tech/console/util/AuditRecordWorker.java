@@ -81,23 +81,6 @@ public class AuditRecordWorker extends SwingWorker {
             return findByOid();
         }
 
-        //then we want the full audit records for every auditRecordHeader
-        Collection<AuditRecord> rawAudits = new ArrayList<AuditRecord>();
-        try{
-            rawAudits = auditAdminService.find(asc);
-        } catch (FindException e) {
-            logger.log(Level.SEVERE, "Unable to retrieve audit records from server.");
-        }
-
-        //build a map of oid to auditRecord
-        for(AuditRecord ar : rawAudits){
-            auditRecords.put(ar.getOid(), ar);
-        }
-
-        if(auditRecords.size() > 0){
-            return auditRecords;
-        }
-
         return null;
     }
 

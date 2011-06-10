@@ -30,14 +30,14 @@ import java.util.logging.Logger;
 
 public class ClusterLogWorker extends SwingWorker {
 
-    static Logger logger = Logger.getLogger(ClusterLogWorker.class.getName());
+    private final static Logger logger = Logger.getLogger(ClusterLogWorker.class.getName());
 
     private final ClusterStatusAdmin clusterStatusService;
     private final AuditAdmin logService;
     private final int logType;
     private Map<String, GatewayStatus> newNodeList;
     private LogRequest logRequest;
-    private final Map<Long, LogMessage> retrievedLogs;
+    private final Map<Long, LogMessage> retrievedLogs = new HashMap<Long, LogMessage>();
     private java.util.Date currentClusterSystemTime = null;
     private final AtomicBoolean cancelled;
 
@@ -50,11 +50,10 @@ public class ClusterLogWorker extends SwingWorker {
      * @param logType    the type (log or audit)
      * @param logRequest  A request for retrieving logs.
      */
-    public ClusterLogWorker( final ClusterStatusAdmin clusterStatusService,
-                             final AuditAdmin logService,
-                             final int logType,
-                             final LogRequest logRequest ) {
-
+    public ClusterLogWorker(final ClusterStatusAdmin clusterStatusService,
+                            final AuditAdmin logService,
+                            final int logType,
+                            final LogRequest logRequest) {
         if (logService == null || clusterStatusService == null) {
             throw new IllegalArgumentException();
         }
@@ -64,8 +63,6 @@ public class ClusterLogWorker extends SwingWorker {
         this.logType = logType;
         this.logRequest = logRequest;
         this.cancelled = new AtomicBoolean(false);
-
-        retrievedLogs = new HashMap<Long, LogMessage>();
     }
 
     /**
@@ -87,9 +84,11 @@ public class ClusterLogWorker extends SwingWorker {
     }
 
     /**
-     * Return the list of unfilled requests.
+     * Return a LogRequest if the construct() method found results. When a query returns no results this will be null
+     * and signals that there is no more work to do for the given search criteria.
      *
-     * @return the list of unfilled requests.
+     * @return a LogRequest if there are possibly more search results as a result of the current query having returned
+     * results, null otherwise.
      */
     public LogRequest getUnfilledRequest() {
         return logRequest;
@@ -105,7 +104,7 @@ public class ClusterLogWorker extends SwingWorker {
     }
 
     /**
-     * Consturct the value. This function performs the actual work of retrieving logs.
+     * Construct the value. This function performs the actual work of retrieving logs.
      *
      * @return Object  An object with the value constructed by this function.
      */
@@ -141,7 +140,7 @@ public class ClusterLogWorker extends SwingWorker {
             }
 
             SSGLogRecord[] rawLogs;
-            AuditRecordHeader[] rawHeaders;
+            List<AuditRecordHeader> rawHeaders;
             if (logRequest != null) {
                 Map<Long, LogMessage> newLogs = new HashMap<Long, LogMessage>();
 
@@ -154,14 +153,14 @@ public class ClusterLogWorker extends SwingWorker {
                                 maxRecords(AuditLogTableSorterModel.MAX_MESSAGE_BLOCK_SIZE).build();
 
                             logger.finer("Start time to grab data:: " + new Date(System.currentTimeMillis()));
-                            rawHeaders = logService.findHeaders(asc).toArray(new AuditRecordHeader[0]);
+                            rawHeaders = logService.findHeaders(asc);
                             logger.finer("End time of grab data:: " + new Date(System.currentTimeMillis()));
-                            if (!isCancelled() && rawHeaders.length > 0) {
+                            if (!isCancelled() && rawHeaders.size() > 0) {
                                 long lowest = -1;
                                 long oldest = -1;
                                 GatewayStatus nodeStatus;
-                                for (int j = 0; j < (rawHeaders.length) && (newLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
-                                    AuditRecordHeader header = rawHeaders[j];
+                                for (int j = 0; j < (rawHeaders.size()) && (retrievedLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
+                                    AuditRecordHeader header = rawHeaders.get(j);
                                     logMessage = new AuditHeaderLogMessage(header);
                                     nodeStatus = newNodeList.get(header.getNodeId());
                                     if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster

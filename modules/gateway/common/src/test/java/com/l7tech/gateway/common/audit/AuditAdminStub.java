@@ -8,6 +8,8 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -24,12 +26,12 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     @Override
-    public Collection<AuditRecord> find( AuditSearchCriteria criteria) throws FindException {
+    public List<AuditRecordHeader> findHeaders( AuditSearchCriteria criteria) throws FindException {
         throw new UnsupportedOperationException("Not supported in stub mode");
     }
 
     @Override
-    public Collection<AuditRecordHeader> findHeaders( AuditSearchCriteria criteria) throws FindException {
+    public Map<Long, byte[]> getDigestsForAuditRecords(Collection<Long> auditRecordIds) throws FindException {
         throw new UnsupportedOperationException("Not supported in stub mode");
     }
 
@@ -51,11 +53,6 @@ public class AuditAdminStub implements AuditAdmin {
     @Override
     public void setFtpAuditArchiveConfig(ClusterProperty prop) throws UpdateException {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
-    }
-
-    @Override
-    public Collection<AuditRecord> findAuditRecords(String nodeid, Date startMsgDate, Date endMsgDate, int size) throws FindException {
-        throw new UnsupportedOperationException("Not supported in stub mode");
     }
 
     @Override
@@ -106,6 +103,11 @@ public class AuditAdminStub implements AuditAdmin {
     @Override
     public boolean isSigningEnabled() throws FindException {
         return false;
+    }
+
+    @Override
+    public int getMaxDigestRecords() {
+        return 0;
     }
 
     @Override

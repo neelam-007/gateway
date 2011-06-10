@@ -44,16 +44,6 @@ public interface AuditAdmin extends GenericLogAdmin {
     AuditRecord findByPrimaryKey(long oid) throws FindException;
 
     /**
-     * //todo: Delete. This has no usages, although it is referenced via AuditRecordWorker.
-     * Retrieves a collection of {@link AuditRecord}s matching the provided criteria.  May be empty, but never null.
-     * @param criteria an {@link AuditSearchCriteria} describing the search criteria.  Must not be null.
-     * @throws FindException if there was a problem retrieving Audit records from the database
-     */
-    @Secured(stereotype=FIND_ENTITIES)
-    @Administrative(licensed=false)
-    Collection<AuditRecord> find(AuditSearchCriteria criteria) throws FindException;
-
-    /**
      * Retrieves a collection of {@link AuditRecordHeader}s matching the provided criteria.  May be empty, but never null.
      * (This is the same as the above method except it retrives AuditRecordHeaders instead of entire AuditRecords.)
      * @param criteria
@@ -62,7 +52,19 @@ public interface AuditAdmin extends GenericLogAdmin {
      */
     @Secured(stereotype=FIND_ENTITIES)
     @Administrative(licensed=false, background = true)
-    Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException;
+    List<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException;
+
+    /**
+     * Get digests for audit records.
+     *
+     * @param auditRecordIds The set of audit records to retrieve digests for. Cannot be null.
+     * @return Digests for the requested audit records. May not contain records for each id requested.
+     * @throws FindException any problems searching.
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITIES)
+    @Administrative(licensed=false, background = true)
+    Map<Long, byte[]> getDigestsForAuditRecords(Collection<Long> auditRecordIds) throws FindException;
 
     /**
      * Checks if there are any audits found given the date and level to search for.
@@ -123,11 +125,6 @@ public interface AuditAdmin extends GenericLogAdmin {
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
     void setFtpAuditArchiveConfig(ClusterProperty prop) throws UpdateException;
-
-    @Secured(stereotype=FIND_ENTITIES)
-    @Administrative(licensed=false)
-    Collection<AuditRecord> findAuditRecords(String nodeid, Date startMsgDate, Date endMsgDate, int size)
-                                      throws FindException;
 
     /**
      * Get the date for the last acknowledged audit event.
@@ -203,6 +200,16 @@ public interface AuditAdmin extends GenericLogAdmin {
     @Transactional(readOnly=true)
     @Administrative(licensed=false, background = true)
     boolean isSigningEnabled() throws FindException;
+
+    /**
+     * Get how many audit records the gateway will get digests for at one time,
+     * based on the value of cluster property "audit.validateSignature.maxrecords".
+     *
+     * @return max number of records for one request.
+     */
+    @Transactional(readOnly=true)
+    @Administrative(licensed=false, background = true)
+    int getMaxDigestRecords();
 
     /**
      * Check if an audit viewer policy is available.

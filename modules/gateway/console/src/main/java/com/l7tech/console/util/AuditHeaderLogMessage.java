@@ -70,6 +70,10 @@ public class AuditHeaderLogMessage extends LogMessage {
         return header.getSignatureDigest();
     }
 
+    public void setSignatureDigest(byte [] signatureDigest) {
+        header.setSignatureDigest(signatureDigest);
+    }
+
     //- PRIVATE
 
     private final AuditRecordHeader header;

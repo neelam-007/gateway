@@ -79,6 +79,7 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     private PersistenceEventInterceptor persistenceEventInterceptor;
     private SessionFactory sessionFactory;
     private Auditor auditor;
+    private ValidatedConfig validatedConfig;
 
     public AuditAdminImpl() {
         Background.scheduleRepeated( new TimerTask(){
@@ -107,6 +108,10 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
+
+        validatedConfig = new ValidatedConfig(serverConfig, logger);
+        validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
+        validatedConfig.setMaximumValue(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 1000);
     }
 
     public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
@@ -134,12 +139,6 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     @Override
     public AuditRecord findByPrimaryKey( final long oid ) throws FindException {
         return auditRecordManager.findByPrimaryKey(oid);
-    }
-
-    @Override
-    public Collection<AuditRecord> find(final AuditSearchCriteria criteria) throws FindException {
-        notifyAuditSearch(criteria);
-        return auditRecordManager.find(criteria);
     }
 
     /**
@@ -185,9 +184,14 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     }
 
     @Override
-    public Collection<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException{
+    public List<AuditRecordHeader> findHeaders(AuditSearchCriteria criteria) throws FindException{
         notifyAuditSearch(criteria);
         return auditRecordManager.findHeaders(criteria);
+    }
+
+    @Override
+    public Map<Long, byte[]> getDigestsForAuditRecords(Collection<Long> auditRecordIds) throws FindException {
+        return auditRecordManager.getDigestForAuditRecords(auditRecordIds);
     }
 
     @Override
@@ -306,27 +310,6 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
        }
 
         return chunk;
-    }
-
-    /**
-     * Find audit records using the given parameters
-     *
-     * @param nodeid The node identifier
-     * @param startMsgDate The starting date
-     * @param endMsgDate The ending date 
-     * @param size The maximum number of records to return
-     * @throws FindException
-     */
-    @Override
-    public Collection<AuditRecord> findAuditRecords(final String nodeid,
-                                                    final Date startMsgDate,
-                                                    final Date endMsgDate,
-                                                    final int size)
-                                             throws FindException {
-        logger.finest("Get audits interval ["+startMsgDate+", "+endMsgDate+"] for node '"+nodeid+"'");
-        //return auditRecordManager.find(new AuditSearchCriteria(startMsgDate, endMsgDate, null, null, null, nodeid, -1, -1, size));
-        return auditRecordManager.find(new AuditSearchCriteria.Builder().fromTime(startMsgDate).
-                toTime(endMsgDate).nodeId(nodeid).startMessageNumber(-1).endMessageNumber(-1).maxRecords(size).build());
     }
 
     @Override
@@ -473,6 +456,11 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
     public boolean isSigningEnabled() throws FindException {
         final String prop = clusterPropertyManager.getProperty("audit.signing");
         return Boolean.valueOf(prop);
+    }
+
+    @Override
+    public int getMaxDigestRecords() {
+        return validatedConfig.getIntProperty(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
     }
 
     @Override

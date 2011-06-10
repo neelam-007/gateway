@@ -63,27 +63,74 @@ public class AuditRecordManagerImpl
     }
 
     @Override
-    @Transactional(readOnly=true)
-    public Collection<AuditRecord> find( final AuditSearchCriteria criteria ) throws FindException {
-        //todo: test before using, no current usages.
-        return find(criteria, null, new Functions.BinaryVoid<List<AuditRecord>, Object>() {
-            @Override
-            public void call(List<AuditRecord> auditRecords, Object o) {
-                AuditRecord record = (AuditRecord) o;
-                if (verifyRecordByAuditDetailsSearchCriteria(criteria, record)) {
-                    auditRecords.add(record);
-                }
+    public Map<Long, byte[]> getDigestForAuditRecords(final Collection<Long> auditRecordIds) throws FindException {
+        if(auditRecordIds == null) throw new NullPointerException("auditRecordIds is null");
+
+        final Map<Long, byte[]> returnMap = new HashMap<Long, byte[]>();
+
+        if (auditRecordIds.isEmpty()) {
+            return returnMap;
+        }
+
+        //hibernate knows about all subclasses which are mapped. Searching for the interface class
+        //will find all known subclasses - they are all left outer joined.
+        final Class<AuditRecord> interfaceClass = getInterfaceClass();
+
+        Session session = null;
+        try {
+            session = getSession();
+            final Criteria hibernateCriteria = session.createCriteria(interfaceClass);
+
+            final String propertyCached = serverConfig.getPropertyCached(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE);
+            Integer maxRecords;
+            try {
+                maxRecords = Integer.valueOf(propertyCached);
+            } catch (NumberFormatException e) {
+                maxRecords = 100;
             }
-        });
+
+            if (auditRecordIds.size() > maxRecords) {
+                int difference = auditRecordIds.size() - maxRecords;
+                final Iterator<Long> iterator = auditRecordIds.iterator();
+                int index = 0;
+                while (iterator.hasNext() && index < difference) {
+                    iterator.remove();
+                    index++;
+                }
+                logger.log(Level.INFO, "Too many audit ids digests requested. Reduced by " + difference);
+            }
+
+            hibernateCriteria.add(Restrictions.in("oid", auditRecordIds));
+
+            //todo filter out message audit records based on size. Add cluster property for fiter value.
+
+            final ScrollableResults results = hibernateCriteria.scroll();
+            while (results.next()) {
+                AuditRecord record = (AuditRecord) results.get(0);
+                String sig = record.getSignature();
+                if (sig != null && !sig.isEmpty()) {
+                    final byte[] digest = record.computeSignatureDigest();
+                    returnMap.put(record.getOid(), digest);
+                }
+                session.evict(record);
+            }
+        } catch ( HibernateException e ) {
+            throw new FindException("Couldn't find Audit Records", e);
+        } finally {
+            releaseSession(session);
+        }
+
+        return returnMap;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Collection<AuditRecordHeader> findHeaders(final AuditSearchCriteria criteria) throws FindException {
+    public List<AuditRecordHeader> findHeaders(final AuditSearchCriteria criteria) throws FindException {
         final Functions.UnaryVoid<Criteria> criteriaConfigurator = new Functions.UnaryVoid<Criteria>(){
             @Override
             public void call(final Criteria hibernateCriteria) {
 
+                //should only every select records from audit_main - if you select records from other tables, ensure distinct logic is not broken.
                 final ProjectionList projectionList = Projections.projectionList()
                         .add(Property.forName(PROP_OID))
                         .add(Property.forName(PROP_NAME))
@@ -94,7 +141,8 @@ public class AuditRecordManagerImpl
                         .add(Property.forName(PROP_LEVEL))
                         ;
 
-                hibernateCriteria.setProjection(projectionList);
+                //ensure distinct results only
+                hibernateCriteria.setProjection(Projections.distinct(projectionList));
 
                 if (criteria.messageId != null) {
                     hibernateCriteria.createAlias("details", "ad");
@@ -105,6 +153,7 @@ public class AuditRecordManagerImpl
         };
 
         final Class findClass = getFindClass(criteria);
+        //todo: this does not work
         final boolean isMessageAudit = findClass == MessageSummaryAuditRecord.class;
 
         //todo: Could a ResultTransformer be useful here and simplify the mapping of results to AuditRecordHeader?
@@ -162,7 +211,7 @@ public class AuditRecordManagerImpl
             ScrollableResults results = hibernateCriteria.scroll();
             while( results.next() ) {
                 //note if a project is used, this will be an array, otherwise it will be the entity type.
-                //todo: test if used for anything other than header data - pre Chinook this was never used for any data other than headers, and is still not
+                //todo: refactor as only used for projections
                 final Object object = results.get();
                 resultProcessor.call(result, object);
                 session.evict(object);
@@ -218,44 +267,6 @@ public class AuditRecordManagerImpl
         final boolean entityIdEnabled = criteria.entityId != null;
 
         return requestIdEnabled && (entityClassEnabled || entityIdEnabled);
-    }
-
-    /**
-     * //todo: This should not be used. Post Chinook update so this is removed. Filtering post search means we cannot guarantee that all applicable results are found. (due to existing audit viewer problem as paging is not supported).
-     * Verify if the audit record matches the given audit details search criteria.
-     * @param criteria: the whole search criteria
-     * @param record: the audit record to be verified
-     * @return true if the audit record matches the audit details search criteria.
-     */
-    private boolean verifyRecordByAuditDetailsSearchCriteria(final AuditSearchCriteria criteria, final AuditRecord record) {
-        final boolean searchingMsgIdEnabled = criteria.messageId != null;
-        final boolean searchingParamValueEnabled = criteria.paramValue != null && !criteria.paramValue.trim().isEmpty();
-
-        // If message id is equal to Integer.MIN_VALUE, then this means message id is invalid, then return false.
-        if (searchingMsgIdEnabled && criteria.messageId.equals(Integer.MIN_VALUE)) return false;
-
-        // If both searching criteria are not enabled, then ignore the checking procedure and return true.
-        if (!searchingMsgIdEnabled && !searchingParamValueEnabled) return true;
-
-        int msgId;
-        String[] params;
-        boolean msgIdMatched;
-        boolean paramValueMatched;
-
-        for (AuditDetail auditDetail: record.getDetails()) {
-            msgId = auditDetail.getMessageId();
-            params = auditDetail.getParams();
-
-            // If the "message id" searching criterion is not enabled, then ignore the message id checking and set msgIdMatched to true.
-            msgIdMatched = (! searchingMsgIdEnabled) || (msgId == criteria.messageId);
-            // If the "param value" searching criterion is not enabled, then ignore the param value checking  and set paramValueMatched to true.
-            paramValueMatched = (! searchingParamValueEnabled) || ((params != null) && (params.length > 0) && matchFound(params, criteria.paramValue));
-
-            if (msgIdMatched && paramValueMatched)
-                return true;
-        }
-
-        return false;
     }
 
     private boolean matchFound(String[] values, String pattern) {

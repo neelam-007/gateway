@@ -19,8 +19,9 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
 
     public static final int MAX_MESSAGE_BLOCK_SIZE = 1024;
     public static final int MAX_NUMBER_OF_LOG_MESSAGES = 131072;//2^17
-    protected Map<Long, LogMessage> rawLogCache = new HashMap<Long, LogMessage>();
-    protected List<LogMessage> filteredLogCache = new ArrayList<LogMessage>();
+    protected volatile Map<Long, LogMessage> rawLogCache = new HashMap<Long, LogMessage>();
+    protected final Object rawLogCacheLock = new Object();
+    protected volatile List<LogMessage> filteredLogCache = new ArrayList<LogMessage>();
     protected Map<String, GatewayStatus> currentNodeList;
     private LogPanel.LogLevelOption filterLevel = LogPanel.LogLevelOption.WARNING;
 
