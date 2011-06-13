@@ -119,6 +119,12 @@ public class XmlFacet extends MessageFacet {
             return mk.getEntireMessageBodyAsInputStream();
         }
 
+        @Override
+        public InputStream getEntireMessageBodyAsInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
+            ensureFirstPartValidMaybeCommitDom();
+            return mk.getEntireMessageBodyAsInputStream(destroyAsRead);
+        }
+
         /**
          * @throws IOException if XML serialization throws IOException
          */

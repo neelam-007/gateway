@@ -555,9 +555,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 maybeEnableTracing();
             status = serverPolicy.checkRequest(context);
 
-            // fail early if there are any (I/O) errors reading the response
-            readAndStashEntireResponse();
-
             // Execute deferred actions for request, then response
             if (status == AssertionStatus.NONE) {
                 status = doDeferredAssertions(context);

@@ -129,6 +129,15 @@ public interface MimeKnob extends MessageKnob,Iterable<PartInfo> {
     InputStream getEntireMessageBodyAsInputStream() throws IOException, NoSuchPartException;
 
     /**
+     * @param destroyAsRead true if it is OK to pass through the live input stream (if the message has not already been stashed).
+     *                      Pass true only if you promise that nobody else will need to access the message stream after this point.
+     * @return an InputStream that will produce the entire message body, including attachments, if any.
+     * @throws IOException if there was a problem reading from the message stream
+     * @throws NoSuchPartException if any part's body is unavailable, e.g. because it was read destructively
+     */
+    InputStream getEntireMessageBodyAsInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException;
+
+    /**
      * Get the PartInfo describing the first part of the message.  For single-part messages this is the
      * psuedopart describing the entire message body.  For multipart messages this is the very first part,
      * after the preamble; what the SOAP with attachments specification calls the "root part".

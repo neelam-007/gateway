@@ -305,7 +305,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     hresponse.setHeader("content-encoding", "gzip");
                     responseos = new GZIPOutputStream(responseos);
                 }
-                IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
+                boolean destroyAsRead = !context.isAuditSaveResponse();
+                IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(destroyAsRead), responseos);
                 responseos.close();
                 logger.fine("servlet transport returned status " + routeStat +
                             ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());

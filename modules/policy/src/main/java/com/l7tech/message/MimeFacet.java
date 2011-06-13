@@ -89,6 +89,11 @@ class MimeFacet extends MessageFacet {
             return getMimeBody().getEntireMessageBodyAsInputStream(false);
         }
 
+        @Override
+        public InputStream getEntireMessageBodyAsInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
+            return getMimeBody().getEntireMessageBodyAsInputStream(destroyAsRead);
+        }
+
         public PartInfo getFirstPart() {
             return getMimeBody().getFirstPart();
         }
