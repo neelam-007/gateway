@@ -12,7 +12,7 @@ preseal)
 ##########
 # Ensure required services are enabled on boot.
 #
-for f in mysqld mysql ssg ssgsysconfig ssg-dbstatus tarari tcp_tune; do chkconfig $f on; chkconfig --list $f;done
+for f in mysqld mysql ssg ssgsysconfig ssg-dbstatus tarari tcp_tune rsyslog; do chkconfig $f on; chkconfig --list $f;done
 echo ""
 
 chkconfig kudzu off
@@ -172,6 +172,9 @@ fi
 ;;
 
 seal)
+  /etc/init.d/rsyslog stop
+  rm -f /var/log/bash_commands.log
+
   # Stop writing to ~/.bash_history
   export HISTSIZE=0
 

@@ -22,6 +22,9 @@ find /var/log -maxdepth 1 -type f | grep -v '/btmp$' | xargs rm -f
 service ssg stop
 rm -f /opt/SecureSpan/Controller/var/logs/*.log
 rm -f /opt/SecureSpan/Gateway/node/default/var/logs/*.log
+/etc/init.d/rsyslog stop
+rm -f /var/log/bash_commands.log
+
 
 echo "Zeroing disk space..."
 # Zero out space only on hardware image, no VMWare
