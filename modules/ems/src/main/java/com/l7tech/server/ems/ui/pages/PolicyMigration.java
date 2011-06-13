@@ -1217,8 +1217,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                 }
             }
         } else {
-            if ( sourceKey != null && isSearchable( sourceKey.asEntityHeader() ) ) {
-                options = retrieveDependencyOptions( lastDestinationClusterId, lastSourceKey, searchModel.getSearchTarget().item, searchModel.getSearchFilter() );
+            final SearchTarget target = searchModel.getSearchTarget();
+            if ( sourceKey != null && target != null && isSearchable( sourceKey.asEntityHeader() ) ) {
+                options = retrieveDependencyOptions( lastDestinationClusterId, lastSourceKey, target.item, searchModel.getSearchFilter() );
             }
         }
 
@@ -1227,7 +1228,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             protected void populateItem( final ListItem<DependencyItem> item ) {
                 final DependencyItem dependencyItem = item.getModelObject();
 
-                Component radioComponent = new WebComponent("uid").add( new AjaxEventBehavior("onchange"){
+                Component radioComponent = new WebComponent("uid").add( new AjaxEventBehavior("onclick"){
                     @Override
                     protected void onEvent( final AjaxRequestTarget target ) {
                         logger.fine("Selection callback for : " + dependencyItem);
