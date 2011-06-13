@@ -402,7 +402,7 @@ public class YuiDataTable extends Panel {
     }
 
     private String escapeSingleQuotes(final String string) {
-        return string == null ? null : string.replace("'", "\\'");
+        return string == null ? null : string.replace( "\\", "\\\\" ).replace("'", "\\'");
     }
 
     private String buildResultsPage(int startIndex, int results, String sortRaw, boolean dir) {

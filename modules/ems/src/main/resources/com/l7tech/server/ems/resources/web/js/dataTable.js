@@ -251,7 +251,12 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
         }
 
         // Create the DataSource for client side data
-        var tableDataObject = YAHOO.lang.JSON.parse( tableData );
+        var tableDataObject;
+        try {
+           tableDataObject = YAHOO.lang.JSON.parse( tableData );
+        } catch (e) {
+            tableDataObject = {data: []};
+        }
 
         myDataSource = new YAHOO.util.DataSource(tableDataObject.data);
         myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;

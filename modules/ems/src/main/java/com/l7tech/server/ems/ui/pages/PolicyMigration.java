@@ -1850,9 +1850,9 @@ public class PolicyMigration extends EsmStandardWebPage {
 
         if ( resolved != null ) {
             if ( resolved ) {
-                icon = "<img src=/images/resolved.png />"; //TODO JSON quote escaping
+                icon = "<img src=\"/images/resolved.png\" />";
             } else {
-                icon = "<img src=/images/unresolved.png />"; //TODO JSON quote escaping
+                icon = "<img src=\"/images/unresolved.png\" />";
             }
 
         }
