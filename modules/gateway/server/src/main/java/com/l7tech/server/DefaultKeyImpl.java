@@ -319,7 +319,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
                 throw new IOException("Unable to retrieve key for " + propertyName + ": " + ExceptionUtils.getMessage(e), e);
             } catch (FindException e) {
                 String reason = ExceptionUtils.getMessage(e);
-                logger.log(Level.INFO, "Private key for " + propertyName + " not available: " + reason);
+                logger.log(required ? Level.WARNING : Level.INFO, "Private key for " + propertyName + " not available: " + reason);
                 ret = NULL_ENTRY;
                 /* FALLTHROUGH and cache the NULL_ENTRY */
             }
@@ -364,18 +364,6 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         try {
             return keyStoreManager.lookupKeyByKeyAlias(keyaddr.right, keyaddr.left);
         } catch (ObjectNotFoundException e) {
-            // HACK:  If looking for SSL key, check for  "tomcat" alias before giving up  (Bug #6912)
-            if (SC_PROP_SSL_KEY.equals(propertyName)) {
-                SsgKeyEntry ret = keyStoreManager.lookupKeyByKeyAlias("tomcat", -1);
-                try {
-                    return new SsgKeyEntry(ret.getKeystoreId(), "tomcat", ret.getCertificateChain(), ret.getPrivateKey());
-                } catch (UnrecoverableKeyException e1) {
-                    // Can't happen
-                    logger.log(Level.SEVERE, "Unable to read 'tomcat' alias private key: " + ExceptionUtils.getMessage(e), e);
-                    return NULL_ENTRY;
-                }
-            }
-
             return NULL_ENTRY;
         }
     }
