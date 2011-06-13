@@ -12,6 +12,8 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -135,6 +137,15 @@ public class SecurePasswordManagerWindow extends JDialog {
             }
         } );
 
+        passwordTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                enableOrDisableButtons();
+            }
+        });
+
+        enableOrDisableButtons();
+
         Utilities.setButtonAccelerator( this, helpButton, KeyEvent.VK_F1 );
         Utilities.setDoubleClickAction(passwordTable, editButton);
         Utilities.setRowSorter(passwordTable, passwordTableModel);
@@ -178,5 +189,13 @@ public class SecurePasswordManagerWindow extends JDialog {
     /** @return the selected SecurePassword, or null if no row is selected. */
     private SecurePassword getSelectedSecurePassword() {
         return passwordTableModel.getRowObject(passwordTable.getRowSorter().convertRowIndexToModel(passwordTable.getSelectedRow()));
+    }
+
+    private void enableOrDisableButtons() {
+        boolean enabled = passwordTable.getSelectedRow() >= 0;
+
+        removeButton.setEnabled(enabled);
+        editButton.setEnabled(enabled);
+        // Other buttons are always enabled.
     }
 }
