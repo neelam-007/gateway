@@ -37,6 +37,7 @@ public class PolicyMigrationMappingValueEditPanel extends Panel {
         final FeedbackPanel feedback = new FeedbackPanel( "feedback" );
         final Label description = new Label( "description", descriptionText );
         final TextField source = new TextField( "source" );
+        source.setEnabled( false );
         final RequiredTextField<String> target = new RequiredTextField<String>( "target" );
         target.add( new FocusBehaviour() );
         final CheckBox applyToAll = new CheckBox( "applyToAll" );
