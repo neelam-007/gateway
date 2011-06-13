@@ -12,7 +12,6 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.util.ServerCertUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.whirlycott.cache.Cache;
@@ -600,9 +599,9 @@ public class RevocationCheckerFactory {
                 CertValidationProcessor certValidationProcessor =  getCertValidationProcessor();
                 X509Certificate crlCertificate;
                 // Check CRL signature using Authority Key Identifier extension to id signer cert (if present)
-                AuthorityKeyIdentifierStructure akis = ServerCertUtils.getAKIStructure(crl);
+                AuthorityKeyIdentifierStructure akis = CertUtils.getAKIStructure(crl);
                 if (akis != null) {
-                    String keyIdentifier = ServerCertUtils.getAKIKeyIdentifier(akis);
+                    String keyIdentifier = CertUtils.getAKIKeyIdentifier(akis);
                     if ( keyIdentifier != null) {
                         crlCertificate = certValidationProcessor.getCertificateBySKI(keyIdentifier);
                         if (crlCertificate == null) {
@@ -610,8 +609,8 @@ public class RevocationCheckerFactory {
                             return CertificateValidationResult.REVOKED;
                         }
                     } else {
-                        String certIssuerDn = ServerCertUtils.getAKIAuthorityCertIssuer(akis);
-                        BigInteger certSerial = ServerCertUtils.getAKIAuthorityCertSerialNumber(akis);
+                        String certIssuerDn = CertUtils.getAKIAuthorityCertIssuer(akis);
+                        BigInteger certSerial = CertUtils.getAKIAuthorityCertSerialNumber(akis);
 
                         if (certIssuerDn == null || certSerial==null) {
                             throw new CRLException("CRL Authority Key Identifier must have both a serial number and issuer name.");
@@ -706,7 +705,7 @@ public class RevocationCheckerFactory {
         @Override
         protected String[] getUrlsFromCert(X509Certificate certificate, Auditor auditor) throws IOException {
             try {
-                return ServerCertUtils.getAuthorityInformationAccessUris(certificate, OID_AIA_OCSP);
+                return CertUtils.getAuthorityInformationAccessUris(certificate, OID_AIA_OCSP);
             } catch (CertificateException ce) {
                 throw new IOException("Error extracting OCSP urls from certificate.", ce);
             }

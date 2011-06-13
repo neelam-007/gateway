@@ -82,7 +82,8 @@ public class CertificatePanel extends JPanel {
         cp.removeAll();
         for (Pair<String, String> pair : props) {
             JLabel key = new JLabel(pair.left + ": ");
-            JLabel value = new JLabel(pair.right);
+            String values[] = pair.right.split("\n");
+            JLabel value = new JLabel(values[0]);
             GridBagConstraints c = new GridBagConstraints();
             c.gridx = 0;
             c.gridy = y++;
@@ -91,6 +92,16 @@ public class CertificatePanel extends JPanel {
             cp.add(key, c);
             c.gridx = 1;
             cp.add(value, c);
+
+            // If there are more than one value, then display them in next rows.
+            if (values.length > 1) {
+                for (int i = 1; i < values.length; i++) {
+                    c.gridx = 1;
+                    c.gridy = y++;
+                    value = new JLabel(values[i]);
+                    cp.add(value, c);
+                }
+            }
         }
         cp.add(Box.createGlue(), new GridBagConstraints(0, y, 1, 1, 1.0, 1.0,
                                                         GridBagConstraints.NORTHWEST,

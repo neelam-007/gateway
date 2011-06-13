@@ -3,7 +3,6 @@ package com.l7tech.internal.certgen;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.security.cert.TestCertificateGenerator;
-import com.l7tech.server.util.ServerCertUtils;
 import com.l7tech.util.Pair;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.junit.Test;
@@ -171,7 +170,7 @@ public class GenerateCertificateTest {
         X509Certificate got = CertUtils.decodeFromPEM(generate("-ocspUrl", "http://ocsp1.blah/asdf", "-ocspUrl", "http://ocsp2.blah/qwer"));
         assertNotNull("AIA ext shall be present", got.getExtensionValue(X509Extensions.AuthorityInfoAccess.getId()));
         assertFalse("AIA shall not be critical by default", got.getCriticalExtensionOIDs().contains(X509Extensions.AuthorityInfoAccess.getId()));
-        String[] urls = ServerCertUtils.getAuthorityInformationAccessUris(got, "1.3.6.1.5.5.7.48.1"); // OID_AIA_OCSP
+        String[] urls = CertUtils.getAuthorityInformationAccessUris(got, "1.3.6.1.5.5.7.48.1"); // OID_AIA_OCSP
         assertEquals(2, urls.length);
         assertEquals("http://ocsp1.blah/asdf", urls[0]);
         assertEquals("http://ocsp2.blah/qwer", urls[1]);
@@ -182,7 +181,7 @@ public class GenerateCertificateTest {
         X509Certificate got = CertUtils.decodeFromPEM(generate("-ocspUrl", "http://ocsp1.blah/asdf", "-ocspUrlCritical", "true"));
         assertNotNull("AIA ext shall be present", got.getExtensionValue(X509Extensions.AuthorityInfoAccess.getId()));
         assertTrue("AIA shall be critical when requested", got.getCriticalExtensionOIDs().contains(X509Extensions.AuthorityInfoAccess.getId()));
-        String[] urls = ServerCertUtils.getAuthorityInformationAccessUris(got, "1.3.6.1.5.5.7.48.1"); // OID_AIA_OCSP
+        String[] urls = CertUtils.getAuthorityInformationAccessUris(got, "1.3.6.1.5.5.7.48.1"); // OID_AIA_OCSP
         assertEquals(1, urls.length);
         assertEquals("http://ocsp1.blah/asdf", urls[0]);
     }

@@ -11,7 +11,6 @@ import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.url.AbstractUrlObjectCache;
 import com.l7tech.server.url.HttpObjectCache;
 import com.l7tech.server.url.LdapUrlObjectCache;
-import com.l7tech.server.util.ServerCertUtils;
 import com.l7tech.util.*;
 import com.whirlycott.cache.Cache;
 import org.springframework.beans.factory.DisposableBean;
@@ -372,7 +371,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         String[] urls = (String[]) certCache.retrieve(key);
 
         if (urls == null) {
-            urls = ServerCertUtils.getCrlUrls(subjectCert);
+            urls = CertUtils.getCrlUrls(subjectCert);
             certCache.store(key, urls);
         }
         return urls;

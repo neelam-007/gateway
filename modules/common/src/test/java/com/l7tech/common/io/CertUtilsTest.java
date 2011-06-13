@@ -1,8 +1,14 @@
 package com.l7tech.common.io;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.HexUtils;
+import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.junit.*;
 
+import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +16,9 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * @author mike
+ * The current CertUtilsTest is the merge of the original CertUtilsTest and ServerCertUtilsTest (Note: ServerCertUtilsTest has been removed.)
+ *
+ * @author mike and steve
  */
 public class CertUtilsTest {
     private static Logger log = Logger.getLogger(CertUtilsTest.class.getName());
@@ -297,4 +305,235 @@ public class CertUtilsTest {
         final String fingerprint = CertUtils.getCertificateFingerprint(certificate, "SHA1").substring(5);
         assertEquals( "Fingerprint only", "F6:F6:1A:8B:28:A2:06:1F:5B:62:8C:C8:22:CC:6C:64:D2:5A:D2:79", fingerprint );
     }
+
+    @Test
+    public void testCRLURL() throws Exception {
+        X509Certificate certificate = CertUtils.decodeFromPEM(GOOGLE_PEM);
+
+        String[] crlUrls = CertUtils.getCrlUrls(certificate);
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Empty CRL urls", crlUrls.length > 0);
+        assertEquals("CRL url missing or invalid", "http://crl.thawte.com/ThawteSGCCA.crl", crlUrls[0]);
+
+    }
+
+    @Test
+    @BugNumber(9347)
+    public void testCRLURL_distPointMulti() throws Exception {
+        X509Certificate certificate = CertUtils.decodeCert(HexUtils.decodeBase64(BUG_9347_CRL_DIST_MULTI_URL));
+
+        String[] crlUrls = CertUtils.getCrlUrls(certificate);
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Wrong number of CRL urls", crlUrls.length == 2);
+        assertEquals("CRL url missing or invalid", "ldap:///CN=Layer%207%20Support,CN=supad1,CN=CDP,CN=Public%20Key%20Services,CN=Services,CN=Configuration,DC=test2003,DC=com?certificateRevocationList?base?objectClass=cRLDistributionPoint", crlUrls[0]);
+        assertEquals("CRL url missing or invalid", "http://supad1.test2003.com/CertEnroll/Layer%207%20Support.crl", crlUrls[1]);
+    }
+
+    @Test
+    @BugNumber(9539)
+    public void testCRLURL_distPointPortal() throws Exception {
+        X509Certificate certificate = CertUtils.decodeCert(HexUtils.decodeBase64(BUG_9539_PORTAL_SPACES));
+
+        String[] crlUrls = CertUtils.getCrlUrls(certificate);
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Wrong number of CRL urls", crlUrls.length == 2);
+        assertEquals("CRL url missing or invalid", "http://crl.disa.mil/getcrl?DOD%20CA-13", crlUrls[0]);
+        assertEquals("CRL url missing or invalid", "ldap://crl.gds.disa.mil/cn%3dDOD%20CA-13%2cou%3dPKI%2cou%3dDoD%2co%3dU.S.%20Government%2cc%3dUS?certificaterevocationlist;binary", crlUrls[1]);
+    }
+
+    @Test
+    @BugNumber(9347)
+    public void testCRLURL_oneDistPoint_twoUrls() throws Exception {
+        //The certificate generation setting:
+        //      Key size: 512
+        //      Include CRL Distribution Points: true
+        //      Set CRL Distribution Points URLs: {"ldap://ldapone.example.com", "http://httpone.example.com"}
+        final String certificatePerm =
+                "-----BEGIN CERTIFICATE-----\n" +
+                "MIIBxzCCAXGgAwIBAgIISYF19Y2ktXkwDQYJKoZIhvcNAQEFBQAwDzENMAsGA1UEAxMEdGVzdDAe\n" +
+                "Fw0xMTA2MTMxNzMzMjFaFw0zMTA2MDgxNzMzMjFaMA8xDTALBgNVBAMTBHRlc3QwXDANBgkqhkiG\n" +
+                "9w0BAQEFAANLADBIAkEAjLvUOsDNAc7jYXURG4UM17NsHK2H74G7PLZB9YJWcBdNsDQaSJ88MOVb\n" +
+                "UoZq4hzVuxHp5iqfOLP6VQ1nCXoqhwIDAQABo4GwMIGtMA4GA1UdDwEB/wQEAwIF4DASBgNVHSUB\n" +
+                "Af8ECDAGBgRVHSUAMB0GA1UdDgQWBBRiGfOcWMpAUC0ndYRnbu2Rbdio+zAfBgNVHSMEGDAWgBRi\n" +
+                "GfOcWMpAUC0ndYRnbu2Rbdio+zBHBgNVHR8EQDA+MDygOqA4hhpsZGFwOi8vbGRhcG9uZS5leGFt\n" +
+                "cGxlLmNvbYYaaHR0cDovL2h0dHBvbmUuZXhhbXBsZS5jb20wDQYJKoZIhvcNAQEFBQADQQAJb45z\n" +
+                "WRT0hwUmfDE3qVwvtHmzc1FiR0OFB1H0mZmMKe5hJGhI2Dy6N9i8XvzhhWY3/SzPrlnpogIyZ3GC\n" +
+                "xVdz\n" +
+                "-----END CERTIFICATE-----";
+
+        X509Certificate certificate = CertUtils.decodeFromPEM(certificatePerm);
+        String[] crlUrls = CertUtils.getCrlUrls(certificate);
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Wrong number of CRL urls", crlUrls.length == 2);
+        assertEquals("CRL url missing or invalid", "ldap://ldapone.example.com", crlUrls[0]);
+        assertEquals("CRL url missing or invalid", "http://httpone.example.com", crlUrls[1]);
+    }
+
+    @Test
+    @BugNumber(9347)
+    public void testCRLURL_twoDistPoints_oneUrlEach() throws Exception {
+        //The certificate generation setting:
+        //      Key size: 512
+        //      Include CRL Distribution Points: true
+        //      Set CRL Distribution Points URLs: {"ldap://ldapone.example.com"}, {"http://httpone.example.com"}
+        final String certificatePerm =
+                "-----BEGIN CERTIFICATE-----\n" +
+                "MIIBzjCCAXigAwIBAgIJAL5eJGSd7l+AMA0GCSqGSIb3DQEBBQUAMA8xDTALBgNVBAMTBHRlc3Qw\n" +
+                "HhcNMTEwNjEzMTc0MjA4WhcNMzEwNjA4MTc0MjA4WjAPMQ0wCwYDVQQDEwR0ZXN0MFwwDQYJKoZI\n" +
+                "hvcNAQEBBQADSwAwSAJBANVL9wbE5Trbcm+0O95CXrGERfjQMcFeLpsFrKffU+3du7RFc0E9z7d/\n" +
+                "xs1pgQ55NlAPZdwhafZAX5b6zqWDS6kCAwEAAaOBtjCBszAOBgNVHQ8BAf8EBAMCBeAwEgYDVR0l\n" +
+                "AQH/BAgwBgYEVR0lADAdBgNVHQ4EFgQU3B7D0UH8sGGF6lXi2Dzeto9IsLgwHwYDVR0jBBgwFoAU\n" +
+                "3B7D0UH8sGGF6lXi2Dzeto9IsLgwTQYDVR0fBEYwRDAgoB6gHIYabGRhcDovL2xkYXBvbmUuZXhh\n" +
+                "bXBsZS5jb20wIKAeoByGGmh0dHA6Ly9odHRwb25lLmV4YW1wbGUuY29tMA0GCSqGSIb3DQEBBQUA\n" +
+                "A0EAx6lyUdXG4nPv66KYct/AEzAQ6sMaLm/szN4y0X26f+W2mGwqGCw+QlACfLNcsg/jSegNOBcw\n" +
+                "5keIg5FgX1nY9w==\n" +
+                "-----END CERTIFICATE-----";
+
+        X509Certificate certificate = CertUtils.decodeFromPEM(certificatePerm);
+        String[] crlUrls = CertUtils.getCrlUrls(certificate);
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Wrong number of CRL urls", crlUrls.length == 2);
+        assertEquals("CRL url missing or invalid", "ldap://ldapone.example.com", crlUrls[0]);
+        assertEquals("CRL url missing or invalid", "http://httpone.example.com", crlUrls[1]);
+    }
+
+    @Test
+    public void testAuthorityInformationAccessUris() throws Exception {
+        X509Certificate certificate = CertUtils.decodeFromPEM(GOOGLE_PEM);
+
+        String[] ocspUrls = CertUtils.getAuthorityInformationAccessUris(certificate, "1.3.6.1.5.5.7.48.1");
+        assertNotNull("No OCSP urls", ocspUrls);
+        assertEquals("OCSP url not found.", "http://ocsp.thawte.com", ocspUrls[0]);
+
+        String[] crtUrls = CertUtils.getAuthorityInformationAccessUris(certificate, "1.3.6.1.5.5.7.48.2");
+        assertNotNull("No CRT urls", crtUrls);
+        assertEquals("CRT url not found", "http://www.thawte.com/repository/Thawte_SGC_CA.crt", crtUrls[0]);
+
+    }
+
+    @Test
+    public void testAuthorityKeyIdentifierIssuerAndSerial() throws Exception {
+        X509Certificate certificate = CertUtils.decodeFromPEM(REDHAT_PEM);
+
+        AuthorityKeyIdentifierStructure aki = CertUtils.getAKIStructure(certificate);
+        BigInteger serial = CertUtils.getAKIAuthorityCertSerialNumber(aki);
+        String issuerDn = CertUtils.getAKIAuthorityCertIssuer(aki);
+
+        assertEquals("Serial number not correctly processed", BigInteger.valueOf(0), serial);
+        assertEquals("Issuer DN not correctly processed", "1.2.840.113549.1.9.1=#160f72686e73407265646861742e636f6d,cn=rhns certificate authority,ou=red hat network services,o=red hat\\, inc.,l=research triangle park,st=north carolina,c=us", issuerDn);
+    }
+
+    @Test
+    public void testAuthorityKeyIdentifierKeyIdentifier() throws Exception {
+        X509Certificate certificate = CertUtils.decodeFromPEM(REDHAT_PEM);
+
+        AuthorityKeyIdentifierStructure aki = CertUtils.getAKIStructure(certificate);
+        String base64KI = CertUtils.getAKIKeyIdentifier(aki);
+
+        assertEquals("KeyIdentifier not correctly processed", "VBXNnyz37A0f0qi+TAesiD77mwo=", base64KI);
+    }
+
+    /**
+     * Test certificate with CRL and OCSP URLS and a CRT URL
+     */
+    private static final String GOOGLE_PEM =
+            "-----BEGIN CERTIFICATE-----\n" +
+            "MIIDITCCAoqgAwIBAgIQaHZkOD1Jbi714xmYQuB87jANBgkqhkiG9w0BAQUFADBMMQswCQYDVQQG\n" +
+            "EwJaQTElMCMGA1UEChMcVGhhd3RlIENvbnN1bHRpbmcgKFB0eSkgTHRkLjEWMBQGA1UEAxMNVGhh\n" +
+            "d3RlIFNHQyBDQTAeFw0wNzA1MDMxNTM0NThaFw0wODA1MTQyMzE4MTFaMGgxCzAJBgNVBAYTAlVT\n" +
+            "MRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRMwEQYDVQQKEwpH\n" +
+            "b29nbGUgSW5jMRcwFQYDVQQDEw53d3cuZ29vZ2xlLmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAw\n" +
+            "gYkCgYEA5sXGjc0LowME3K7MyUa+vcydvHM0SP7TdWTQycl2J3IPqZYaO4HzFPaukFbnGdJzaKeF\n" +
+            "pK7KJBQwALroNl2BczpxBY+xrxGH2lzxPr9TUYRvRA636CbXL7Jv8vJd36fPjKXpHm8wSJQhCwGt\n" +
+            "ug5xAQ0Q77/uLNON/lSo/tOXj8sCAwEAAaOB5zCB5DAoBgNVHSUEITAfBggrBgEFBQcDAQYIKwYB\n" +
+            "BQUHAwIGCWCGSAGG+EIEATA2BgNVHR8ELzAtMCugKaAnhiVodHRwOi8vY3JsLnRoYXd0ZS5jb20v\n" +
+            "VGhhd3RlU0dDQ0EuY3JsMHIGCCsGAQUFBwEBBGYwZDAiBggrBgEFBQcwAYYWaHR0cDovL29jc3Au\n" +
+            "dGhhd3RlLmNvbTA+BggrBgEFBQcwAoYyaHR0cDovL3d3dy50aGF3dGUuY29tL3JlcG9zaXRvcnkv\n" +
+            "VGhhd3RlX1NHQ19DQS5jcnQwDAYDVR0TAQH/BAIwADANBgkqhkiG9w0BAQUFAAOBgQCTpI4FnX2K\n" +
+            "8/gy0DucIc7S6FX9gLW71StUeiWsr3MYCvm3eplcFiNGV/wxGVuL8gR5c+60slZr39f32FbVt6rN\n" +
+            "6JzImfN2S2QHreqaKyCS5pKbMoR8gmJ3mhWg1yGtyNmMuzGCmxCGqUF6EuABVgkG2GOaUO5Erd51\n" +
+            "QQF6aVNJig==\n" +
+            "-----END CERTIFICATE-----";
+
+    /**
+     * Test certificate with an X509v3 Authority Key Identifier that contains
+     * an issuer/serial and a key identifier.
+     */
+    private static final String REDHAT_PEM =
+            "-----BEGIN CERTIFICATE-----\n" +
+            "MIIEMDCCA5mgAwIBAgIBADANBgkqhkiG9w0BAQQFADCBxzELMAkGA1UEBhMCVVMx\n" +
+            "FzAVBgNVBAgTDk5vcnRoIENhcm9saW5hMR8wHQYDVQQHExZSZXNlYXJjaCBUcmlh\n" +
+            "bmdsZSBQYXJrMRYwFAYDVQQKEw1SZWQgSGF0LCBJbmMuMSEwHwYDVQQLExhSZWQg\n" +
+            "SGF0IE5ldHdvcmsgU2VydmljZXMxIzAhBgNVBAMTGlJITlMgQ2VydGlmaWNhdGUg\n" +
+            "QXV0aG9yaXR5MR4wHAYJKoZIhvcNAQkBFg9yaG5zQHJlZGhhdC5jb20wHhcNMDAw\n" +
+            "ODIzMjI0NTU1WhcNMDMwODI4MjI0NTU1WjCBxzELMAkGA1UEBhMCVVMxFzAVBgNV\n" +
+            "BAgTDk5vcnRoIENhcm9saW5hMR8wHQYDVQQHExZSZXNlYXJjaCBUcmlhbmdsZSBQ\n" +
+            "YXJrMRYwFAYDVQQKEw1SZWQgSGF0LCBJbmMuMSEwHwYDVQQLExhSZWQgSGF0IE5l\n" +
+            "dHdvcmsgU2VydmljZXMxIzAhBgNVBAMTGlJITlMgQ2VydGlmaWNhdGUgQXV0aG9y\n" +
+            "aXR5MR4wHAYJKoZIhvcNAQkBFg9yaG5zQHJlZGhhdC5jb20wgZ8wDQYJKoZIhvcN\n" +
+            "AQEBBQADgY0AMIGJAoGBAMBoKxIw4iEtIsZycVu/F6CTEOmb48mNOy2sxLuVO+DK\n" +
+            "VTLclcIQswSyUfvohWEWNKW0HWdcp3f08JLatIuvlZNi82YprsCIt2SEDkiQYPhg\n" +
+            "PgB/VN0XpqwY4ELefL6Qgff0BYUKCMzV8p/8JIt3pT3pSKnvDztjo/6mg0zo3At3\n" +
+            "AgMBAAGjggEoMIIBJDAdBgNVHQ4EFgQUVBXNnyz37A0f0qi+TAesiD77mwowgfQG\n" +
+            "A1UdIwSB7DCB6YAUVBXNnyz37A0f0qi+TAesiD77mwqhgc2kgcowgccxCzAJBgNV\n" +
+            "BAYTAlVTMRcwFQYDVQQIEw5Ob3J0aCBDYXJvbGluYTEfMB0GA1UEBxMWUmVzZWFy\n" +
+            "Y2ggVHJpYW5nbGUgUGFyazEWMBQGA1UEChMNUmVkIEhhdCwgSW5jLjEhMB8GA1UE\n" +
+            "CxMYUmVkIEhhdCBOZXR3b3JrIFNlcnZpY2VzMSMwIQYDVQQDExpSSE5TIENlcnRp\n" +
+            "ZmljYXRlIEF1dGhvcml0eTEeMBwGCSqGSIb3DQEJARYPcmhuc0ByZWRoYXQuY29t\n" +
+            "ggEAMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEEBQADgYEAkwGIiGdnkYye0BIU\n" +
+            "kHESh1UK8lIbrfLTBx2vcJm7sM2AI8ntK3PpY7HQs4xgxUJkpsGVVpDFNQYDWPWO\n" +
+            "K9n5qaAQqZn3FUKSpVDXEQfxAtXgcORVbirOJfhdzQsvEGH49iBCzMOJ+IpPgiQS\n" +
+            "zzl/IagsjVKXUsX3X0KlhwlmsMw=\n" +
+            "-----END CERTIFICATE-----";
+
+    private static final String BUG_9539_PORTAL_SPACES =
+            "MIID3jCCA0egAwIBAgIDAMzBMA0GCSqGSIb3DQEBBQUAMFcxCzAJBgNVBAYTAlVTMRgwFgYDVQQK\n" +
+            "Ew9VLlMuIEdvdmVybm1lbnQxDDAKBgNVBAsTA0RvRDEMMAoGA1UECxMDUEtJMRIwEAYDVQQDEwlE\n" +
+            "T0QgQ0EtMTMwHhcNMDgwNDA4MTgxNjU0WhcNMTEwNDA5MTgxNjU0WjBwMQswCQYDVQQGEwJVUzEY\n" +
+            "MBYGA1UEChMPVS5TLiBHb3Zlcm5tZW50MQwwCgYDVQQLEwNEb0QxDDAKBgNVBAsTA1BLSTENMAsG\n" +
+            "A1UECxMERElTQTEcMBoGA1UEAxMTcG9ydGFsLnNvYWYuY2VzLm1pbDCBnzANBgkqhkiG9w0BAQEF\n" +
+            "AAOBjQAwgYkCgYEAuysRB2FGiZecD80rNHrhfM0QXnXfXqycqvskYXmR/Af9wOIyvg/65LH8xmmW\n" +
+            "2PTfa5EvHCVdH6ytdMPptaC5XVmGJKBGH1Q5xq53pPptBJlhB8IxEGRqU4UfYrPzCb1cs4MIMOXx\n" +
+            "9L8KAo1AZJ/RYZikdZmoUVSD/ZObcNxMaOcCAwEAAaOCAZ0wggGZMB8GA1UdIwQYMBaAFGRkQyWk\n" +
+            "bOcNIh1lrMDkdTfMBNraMB0GA1UdDgQWBBRvhzt8jTXNjfcRNJKMTbyQe8OHgTAOBgNVHQ8BAf8E\n" +
+            "BAMCBaAwgccGA1UdHwSBvzCBvDAtoCugKYYnIGh0dHA6Ly9jcmwuZGlzYS5taWwvZ2V0Y3JsP0RP\n" +
+            "RCUyMENBLTEzMIGKoIGHoIGEhoGBIGxkYXA6Ly9jcmwuZ2RzLmRpc2EubWlsL2NuJTNkRE9EJTIw\n" +
+            "Q0EtMTMlMmNvdSUzZFBLSSUyY291JTNkRG9EJTJjbyUzZFUuUy4lMjBHb3Zlcm5tZW50JTJjYyUz\n" +
+            "ZFVTP2NlcnRpZmljYXRlcmV2b2NhdGlvbmxpc3Q7YmluYXJ5MBYGA1UdIAQPMA0wCwYJYIZIAWUC\n" +
+            "AQsFMGUGCCsGAQUFBwEBBFkwVzAzBggrBgEFBQcwAoYnaHR0cDovL2NybC5kaXNhLm1pbC9nZXRz\n" +
+            "aWduP0RPRCUyMENBLTEzMCAGCCsGAQUFBzABhhRodHRwOi8vb2NzcC5kaXNhLm1pbDANBgkqhkiG\n" +
+            "9w0BAQUFAAOBgQA8oJ2sfVZhrD1sHTtUKZT2YAjY9hsjAKrVAgItVKD8sQorIN8bbc+via0UfXiP\n" +
+            "6OCUj1Ues6IDTEJ9z5hDewXYfyEgYEjImNxBFf889ndDzzYdoxyOLXEIwZlG1TxxZUuV+EMPkflZ\n" +
+            "ln93k/OYqL8Ux7knj/TERR5js+EhWpBVKg==";
+
+    private static final String BUG_9347_CRL_DIST_MULTI_URL =
+            "MIIFUDCCBDigAwIBAgIKLi6BKAAAAAAANjANBgkqhkiG9w0BAQUFADBJMRMwEQYK\n" +
+            "CZImiZPyLGQBGRYDY29tMRgwFgYKCZImiZPyLGQBGRYIdGVzdDIwMDMxGDAWBgNV\n" +
+            "BAMTD0xheWVyIDcgU3VwcG9ydDAeFw0xMDExMDUwMTM5MDJaFw0xMTExMDUwMTQ5\n" +
+            "MDJaMBQxEjAQBgNVBAMTCXRlc3RKYXNvbjCBnzANBgkqhkiG9w0BAQEFAAOBjQAw\n" +
+            "gYkCgYEA03ryUeb4W3fc588UG7wmbJVLi12F+LJiA3+01fVYPBiPhlWKL1NrSqzK\n" +
+            "ny8P/pn+a42pPY3HGg9SaZcG5dYs40qf7uWf2lkqcs9CJCYs37R45HBaJb1/ngqg\n" +
+            "dWtkmQ7pEs+k2iDz9hAW2bueebhldkD6a7Ll1bw4wD2cd2h8pFsCAwEAAaOCAvEw\n" +
+            "ggLtMA4GA1UdDwEB/wQEAwIE8DBEBgkqhkiG9w0BCQ8ENzA1MA4GCCqGSIb3DQMC\n" +
+            "AgIAgDAOBggqhkiG9w0DBAICAIAwBwYFKw4DAgcwCgYIKoZIhvcNAwcwHQYDVR0O\n" +
+            "BBYEFGFx+gMOleTBhksNYhunjvv6VQu/MBMGA1UdJQQMMAoGCCsGAQUFBwMCMB8G\n" +
+            "A1UdIwQYMBaAFCooOCWPsc5SzpS7T5dc5UPfwysKMIIBEwYDVR0fBIIBCjCCAQYw\n" +
+            "ggECoIH/oIH8hoG6bGRhcDovLy9DTj1MYXllciUyMDclMjBTdXBwb3J0LENOPXN1\n" +
+            "cGFkMSxDTj1DRFAsQ049UHVibGljJTIwS2V5JTIwU2VydmljZXMsQ049U2Vydmlj\n" +
+            "ZXMsQ049Q29uZmlndXJhdGlvbixEQz10ZXN0MjAwMyxEQz1jb20/Y2VydGlmaWNh\n" +
+            "dGVSZXZvY2F0aW9uTGlzdD9iYXNlP29iamVjdENsYXNzPWNSTERpc3RyaWJ1dGlv\n" +
+            "blBvaW50hj1odHRwOi8vc3VwYWQxLnRlc3QyMDAzLmNvbS9DZXJ0RW5yb2xsL0xh\n" +
+            "eWVyJTIwNyUyMFN1cHBvcnQuY3JsMIIBJwYIKwYBBQUHAQEEggEZMIIBFTCBswYI\n" +
+            "KwYBBQUHMAKGgaZsZGFwOi8vL0NOPUxheWVyJTIwNyUyMFN1cHBvcnQsQ049QUlB\n" +
+            "LENOPVB1YmxpYyUyMEtleSUyMFNlcnZpY2VzLENOPVNlcnZpY2VzLENOPUNvbmZp\n" +
+            "Z3VyYXRpb24sREM9dGVzdDIwMDMsREM9Y29tP2NBQ2VydGlmaWNhdGU/YmFzZT9v\n" +
+            "YmplY3RDbGFzcz1jZXJ0aWZpY2F0aW9uQXV0aG9yaXR5MF0GCCsGAQUFBzAChlFo\n" +
+            "dHRwOi8vc3VwYWQxLnRlc3QyMDAzLmNvbS9DZXJ0RW5yb2xsL3N1cGFkMS50ZXN0\n" +
+            "MjAwMy5jb21fTGF5ZXIlMjA3JTIwU3VwcG9ydC5jcnQwDQYJKoZIhvcNAQEFBQAD\n" +
+            "ggEBAAsBMmExw0W1QroxjjkSSWtlU2wFjL8R5T29aiTb4kVxiSn4Z+Cmew84uZSt\n" +
+            "O2eNgWd+N/UgQ9LhyivsoBIP9X/wBA7QldDR5fpO4a3GspYJ0IttCI+B0aST/FW8\n" +
+            "AgDWIHgRtS8/c+zZ7RtXDrUmXQpDwzZBV8rpsGr91crBZkRQ7T9Z2+lp6DGxASMI\n" +
+            "zN76wxuXKtHYyZvd6bnpGUZJWHWUHJN7aOJlJv3MWF0zs3Aqula8safTInG/5QX9\n" +
+            "yU/OOxityjqITM5ITy4BKUWPSNYS10F3303bzyQ9LS+ScOha0CIWST8InBV8iCL7\n" +
+            "UATtteuIVGjcXy5b/C9a5m4IET4=";
 }
