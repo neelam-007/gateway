@@ -526,19 +526,8 @@ public class ServerVariablesTest {
     }
 
     @Test
-    public void testAuditNameNotReservedOutsideOfAuditSinkPolicy() throws Exception {
-        // Ensure that variables with names of "audit" or starting with "audit.*" continue to be useable
-        // for user variables when the context is not processing an audit sink policy.
-        PolicyEnforcementContext ctx = context();
-        populateAndCheck(ctx, "audit", "contentsofaudit123");
-        populateAndCheck(ctx, "audit.requestContentLength", "mystuff");
-        populateAndCheck(ctx, "audit.response", "myotherstuff");
-        populateAndCheck(ctx, "audit.var.request", "blahab");
-    }
-
-    @Test(expected = NoSuchVariableException.class)
     public void testNonAuditSinkCtx_base() throws Exception {
-        context().getVariable("audit");
+        Assert.assertNotNull(context().getVariable("audit"));
     }
 
     @Test(expected = NoSuchVariableException.class)

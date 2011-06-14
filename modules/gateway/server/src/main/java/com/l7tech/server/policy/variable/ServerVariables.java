@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.*;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditSinkPolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
@@ -57,6 +58,7 @@ public class ServerVariables {
     private static ClusterPropertyCache clusterPropertyCache;
     private static SecurePasswordManager securePasswordManager;
     private static ClusterInfoManager clusterInfoManager;
+    private static AuditContext auditContext;
 
     static Variable getVariable(String name, PolicyEnforcementContext targetContext) {
         final String lname = name.toLowerCase();
@@ -667,20 +669,20 @@ public class ServerVariables {
         }
     }
 
-    private static ClusterInfoManager getClusterInfoManager() {
-        return clusterInfoManager;
-    }
-
     public static void setClusterInfoManager(ClusterInfoManager clusterInfoManager) {
-        ServerVariables.clusterInfoManager = clusterInfoManager;
-    }
-
-    public static SecurePasswordManager getSecurePasswordManager() {
-        return securePasswordManager;
+        if ( ServerVariables.clusterInfoManager == null ) {
+            ServerVariables.clusterInfoManager = clusterInfoManager;
+        }
     }
 
     public static void setSecurePasswordManager(SecurePasswordManager spm) {
         securePasswordManager = spm;
+    }
+
+    public static void setAuditContext(final AuditContext auditContext) {
+        if ( ServerVariables.auditContext == null ) {
+            ServerVariables.auditContext = auditContext;
+        }
     }
 
     static {
@@ -841,14 +843,9 @@ public class ServerVariables {
             if (context instanceof AuditSinkPolicyEnforcementContext) {
                 AuditSinkPolicyEnforcementContext sinkctx = (AuditSinkPolicyEnforcementContext) context;
                 return sinkctx.getAuditRecord();
+            } else {
+                return new AuditSelector.AuditHolder(auditContext);
             }
-            logger.log(Level.WARNING, "The audit.* variables are only available while processing an audit sink policy.");
-            return null;
-        }
-
-        @Override
-        boolean isValidForContext(PolicyEnforcementContext context) {
-            return context instanceof AuditSinkPolicyEnforcementContext;
         }
     }
 

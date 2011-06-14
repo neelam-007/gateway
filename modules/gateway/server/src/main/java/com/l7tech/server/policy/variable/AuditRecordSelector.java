@@ -52,26 +52,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
             AuditDetail[] details = auditRecord.getDetailsInOrder();
             if (details == null || details.length == 0)
                 return new Selection(null);
-            name = name.substring("details.".length());
-            int dot = name.indexOf('.');
-            int index;
-            String remainingName;
-            try {
-                if (dot == -1) {
-                    index = Integer.parseInt(name);
-                    remainingName = null;
-                } else {
-                    index = Integer.parseInt(name.substring(0, dot));
-                    remainingName = name.length() > dot ? name.substring(dot + 1) : null;
-                }
-                return new Selection(details[index], remainingName);
-            } catch (NumberFormatException nfe) {
-                logger.warning("Invalid numeric index for audit detail lookup");
-                return null;
-            } catch (ArrayIndexOutOfBoundsException e) {
-                logger.fine("Index out of bounds for audit detail lookup");
-                return null;
-            }
+            return selectDetails( name, details, logger );
         }
 
         return null;
@@ -80,6 +61,31 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
     @Override
     public Class<AuditRecord> getContextObjectClass() {
         return AuditRecord.class;
+    }
+
+    static Selection selectDetails( String name,
+                                    final AuditDetail[] details,
+                                    final Logger logger ) {
+        name = name.substring("details.".length());
+        int dot = name.indexOf('.');
+        int index;
+        String remainingName;
+        try {
+            if (dot == -1) {
+                index = Integer.parseInt(name);
+                remainingName = null;
+            } else {
+                index = Integer.parseInt(name.substring(0, dot));
+                remainingName = name.length() > dot ? name.substring(dot + 1) : null;
+            }
+            return new Selection(details[index], remainingName);
+        } catch (NumberFormatException nfe) {
+            logger.warning("Invalid numeric index for audit detail lookup");
+            return null;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            logger.fine("Index out of bounds for audit detail lookup");
+            return null;
+        }
     }
 
     static interface FieldGetter<T extends AuditRecord> {
