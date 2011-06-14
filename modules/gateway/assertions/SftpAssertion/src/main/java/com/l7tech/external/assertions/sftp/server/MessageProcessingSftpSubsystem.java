@@ -9,11 +9,15 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.util.EventChannel;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.InetAddressUtil;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.common.util.Buffer;
@@ -203,6 +207,55 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
     private FileSystemView root;
 
     private int version;
+    private Map<String, Handle> handles = new HashMap<String, Handle>();
+
+
+    protected static abstract class Handle {
+        SshFile file;
+
+        public Handle(SshFile file) {
+            this.file = file;
+        }
+
+        public SshFile getFile() {
+            return file;
+        }
+
+        public void close() throws IOException {
+            file.handleClose();
+        }
+
+    }
+
+    protected static class DirectoryHandle extends Handle {
+        boolean done;
+
+        public DirectoryHandle(SshFile file) {
+            super(file);
+        }
+
+        public boolean isDone() {
+            return done;
+        }
+
+        public void setDone(boolean done) {
+            this.done = done;
+        }
+    }
+
+    protected static class FileHandle extends Handle {
+        int flags;
+
+        public FileHandle(SshFile sshFile, int flags) {
+            super(sshFile);
+            this.flags = flags;
+        }
+
+        public int getFlags() {
+            return flags;
+        }
+    }
+
 
     public void setSession(ServerSession session) {
         this.session = session;
@@ -499,21 +552,23 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
 
     // *** CUSTOMIZED CODE STARTS BELOW ***
 
-    private Map<String, String> handles = new HashMap<String, String>();
-
     public static class Factory implements NamedFactory<Command> {
         private static SsgConnector connector;
         private static MessageProcessor messageProcessor;
+        private EventChannel messageProcessingEventChannel;
+        private SoapFaultManager soapFaultManager;
         private static StashManagerFactory stashManagerFactory;
 
-        public Factory(SsgConnector c, MessageProcessor mp, StashManagerFactory smf) {
+        public Factory(SsgConnector c, MessageProcessor mp, StashManagerFactory smf, SoapFaultManager sfm, EventChannel mpec) {
             connector = c;
             messageProcessor = mp;
+            messageProcessingEventChannel = mpec;
+            soapFaultManager = sfm;
             stashManagerFactory = smf;
         }
 
         public Command create() {
-            return new MessageProcessingSftpSubsystem(connector, messageProcessor, stashManagerFactory);
+            return new MessageProcessingSftpSubsystem(connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel);
         }
 
         public String getName() {
@@ -523,11 +578,16 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
 
     private SsgConnector connector;
     private MessageProcessor messageProcessor;
+    private EventChannel messageProcessingEventChannel;
+    private SoapFaultManager soapFaultManager;
     private StashManagerFactory stashManagerFactory;
 
-    public MessageProcessingSftpSubsystem(SsgConnector c, MessageProcessor mp, StashManagerFactory smf) {
+    public MessageProcessingSftpSubsystem(SsgConnector c, MessageProcessor mp, StashManagerFactory smf,
+                                          SoapFaultManager sfm, EventChannel mpec) {
         connector = c;
         messageProcessor = mp;
+        messageProcessingEventChannel = mpec;
+        soapFaultManager = sfm;
         stashManagerFactory = smf;
     }
 
@@ -645,27 +705,109 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
     }
 
     protected void sshFxpOpen(Buffer buffer, int id) throws IOException {
-        if (session.getFactoryManager().getProperties() != null) {
-            String maxHandlesString = session.getFactoryManager().getProperties().get(MAX_OPEN_HANDLES_PER_SESSION);
-            if (maxHandlesString != null) {
-                int maxHandleCount = Integer.parseInt(maxHandlesString);
-                if (handles.size() > maxHandleCount) {
-                    sendStatus(id, SSH_FX_FAILURE, "Too many open handles");
-                    return;
+                if (session.getFactoryManager().getProperties() != null) {
+                    String maxHandlesString = session.getFactoryManager().getProperties().get(MAX_OPEN_HANDLES_PER_SESSION);
+                    if (maxHandlesString != null) {
+                        int maxHandleCount = Integer.parseInt(maxHandlesString);
+                        if (handles.size() > maxHandleCount) {
+                            sendStatus(id, SSH_FX_FAILURE, "Too many open handles");
+                            return;
+                        }
+                    }
                 }
-            }
-        }
 
-        String path = buffer.getString();
-        int pflags = buffer.getInt();
-        // attrs
-        try {
-            String handle = UUID.randomUUID().toString();
-            handles.put(handle, path);
-            sendHandle(id, handle);
-        } catch (IOException e) {
-            sendStatus(id, SSH_FX_FAILURE, e.getMessage());
-        }
+                if (version <= 4) {
+                    String path = buffer.getString();
+                    int pflags = buffer.getInt();
+                    // attrs
+                    try {
+                        SshFile file = resolveFile(path);
+                        if (file.doesExist()) {
+                            if (((pflags & SSH_FXF_CREAT) != 0) && ((pflags & SSH_FXF_EXCL) != 0)) {
+                                sendStatus(id, SSH_FX_FILE_ALREADY_EXISTS, path);
+                                return;
+                            }
+                        } else {
+                            if (((pflags & SSH_FXF_CREAT) != 0)) {
+                                if (!file.isWritable()) {
+                                    sendStatus(id, SSH_FX_FAILURE, "Can not create " + path);
+                                }
+                            }
+                        }
+                        String acc = ((pflags & (SSH_FXF_READ | SSH_FXF_WRITE)) != 0 ? "r" : "") +
+                                ((pflags & SSH_FXF_WRITE) != 0 ? "w" : "");
+                        if ((pflags & SSH_FXF_TRUNC) != 0) {
+                            file.truncate();
+                        }
+                        String handle = UUID.randomUUID().toString();
+                        handles.put(handle, new FileHandle(file, pflags)); // handle flags conversion
+                        sendHandle(id, handle);
+                    } catch (IOException e) {
+                        sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+                    }
+                } else {
+                    String path = buffer.getString();
+                    int acc = buffer.getInt();
+                    int flags = buffer.getInt();
+                    // attrs
+                    try {
+                        SshFile file = resolveFile(path);
+                        switch (flags & SSH_FXF_ACCESS_DISPOSITION) {
+                            case SSH_FXF_CREATE_NEW: {
+                                if (file.doesExist()) {
+                                    sendStatus(id, SSH_FX_FILE_ALREADY_EXISTS, path);
+                                    return;
+                                } else if (!file.isWritable()) {
+                                    sendStatus(id, SSH_FX_FAILURE, "Can not create " + path);
+                                }
+                                break;
+                            }
+                            case SSH_FXF_CREATE_TRUNCATE: {
+                                if (file.doesExist()) {
+                                    sendStatus(id, SSH_FX_FILE_ALREADY_EXISTS, path);
+                                    return;
+                                } else if (!file.isWritable()) {
+                                    sendStatus(id, SSH_FX_FAILURE, "Can not create " + path);
+                                }
+                                file.truncate();
+                                break;
+                            }
+                            case SSH_FXF_OPEN_EXISTING: {
+                                if (!file.doesExist()) {
+                                    if (!file.getParentFile().doesExist()) {
+                                        sendStatus(id, SSH_FX_NO_SUCH_PATH, path);
+                                    } else {
+                                        sendStatus(id, SSH_FX_NO_SUCH_FILE, path);
+                                    }
+                                    return;
+                                }
+                                break;
+                            }
+                            case SSH_FXF_OPEN_OR_CREATE: {
+                                break;
+                            }
+                            case SSH_FXF_TRUNCATE_EXISTING: {
+                                if (!file.doesExist()) {
+                                    if (!file.getParentFile().doesExist()) {
+                                        sendStatus(id, SSH_FX_NO_SUCH_PATH, path);
+                                    } else {
+                                        sendStatus(id, SSH_FX_NO_SUCH_FILE, path);
+                                    }
+                                    return;
+                                }
+                                file.truncate();
+                                break;
+                            }
+                            default:
+                                throw new IllegalArgumentException("Unsupported open mode: " + flags);
+                        }
+                        String handle = UUID.randomUUID().toString();
+                        handles.put(handle, new FileHandle(file, flags));
+                        sendHandle(id, handle);
+                    } catch (IOException e) {
+                        sendStatus(id, SSH_FX_FAILURE, e.getMessage());
+                    }
+                }
     }
 
     protected void sshFxpWrite(Buffer buffer, int id) throws IOException {
@@ -673,11 +815,19 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
         long offset = buffer.getLong();
         byte[] data = buffer.getBytes();
         try {
-            String path = handles.get(handle);
-            if (path == null) {
+            Handle p = handles.get(handle);
+            if (!(p instanceof FileHandle)) {
                 sendStatus(id, SSH_FX_INVALID_HANDLE, handle);
             } else {
-                pipeDataToGatewayRequestMessage(connector, path, path, data);
+                SshFile sshFile = ((FileHandle) p).getFile();
+
+                String path = sshFile.getAbsolutePath();
+                if (path.indexOf('/') > -1) {
+                    path = path.substring(0, path.lastIndexOf('/'));
+                }
+                pipeDataToGatewayRequestMessage(connector, path, sshFile.getName(), data, offset);
+                sshFile.setLastModified(new Date().getTime());
+
                 sendStatus(id, SSH_FX_OK, "");
             }
         } catch (IOException e) {
@@ -687,23 +837,28 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
 
     protected void sshFxpClose(Buffer buffer, int id) throws IOException {
         String handle = buffer.getString();
-        String path = handles.get(handle);
-        if (path == null) {
-            sendStatus(id, SSH_FX_INVALID_HANDLE, handle, "");
-        } else {
-            handles.remove(handle);
-            sendStatus(id, SSH_FX_OK, "", "");
+        try {
+            Handle h = handles.get(handle);
+            if (h == null) {
+                sendStatus(id, SSH_FX_INVALID_HANDLE, handle, "");
+            } else {
+                handles.remove(handle);
+                h.close();
+                sendStatus(id, SSH_FX_OK, "", "");
+            }
+        } catch (IOException e) {
+            sendStatus(id, SSH_FX_FAILURE, e.getMessage());
         }
     }
 
-    private void pipeDataToGatewayRequestMessage(SsgConnector connector, String path, String file, byte[] data) throws IOException {
+    private void pipeDataToGatewayRequestMessage(SsgConnector connector, String path, String file, byte[] data, long offset) throws IOException {
         Message request = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, true);
 
         String ctypeStr = connector.getProperty(SsgConnector.PROP_OVERRIDE_CONTENT_TYPE);
         ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(ctypeStr);
 
-        request.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(data, path));
+        request.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(data, path, (int) offset));
         request.attachFtpKnob(buildFtpKnob(
                 session.getIoSession().getLocalAddress(),
                 session.getIoSession().getRemoteAddress(),
@@ -728,19 +883,19 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
 
                 } catch ( PolicyVersionException pve ) {
                     logger.log( Level.INFO, "Request referred to an outdated version of policy" );
-                    // TODO faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
+                    faultXml = soapFaultManager.constructExceptionFault(pve, context.getFaultlevel(), context).getContent();
                 } catch ( Throwable t ) {
                     logger.log( Level.WARNING, "Exception while processing SFTP message", t );
-                    // faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
+                    faultXml = soapFaultManager.constructExceptionFault(t, context.getFaultlevel(), context).getContent();
                 }
 
                 if ( status != AssertionStatus.NONE ) {
-                    // faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
+                    faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
                 }
 
-                //if (faultXml != null)
-                    // messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
-
+                if (faultXml != null) {
+                    messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                }
             } finally {
                 ResourceUtils.closeQuietly(context);
             }
@@ -752,50 +907,14 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
     private FtpRequestKnob buildFtpKnob(final SocketAddress localSocketAddress, final SocketAddress remoteSocketAddress,
                                         final String file, final String path, final boolean secure, final boolean unique) {
 
-        // TODO Is there an existing L7 utility to parse host and port?
-        // InetAddressUtil.getHostAndPort(String hostAndPossiblyPort, String defaultPort)
-        // is close, but returns unwanted square bracket around the host name (e.g. [hostname])
+        // SocketAddress requires us to parse for host and port (e.g. /127.0.0.1:22)
+        Pair<String,String> localHostPortPair = getHostAndPort(localSocketAddress.toString());
+        Pair<String,String> remoteHostPortPair = getHostAndPort(remoteSocketAddress.toString());
 
-        // handle to SocketAddress requires us to parse for host and port (e.g. /127.0.0.1:22)
-        String localAddress = localSocketAddress.toString();
-        boolean startsWithForwardSlash = localAddress.charAt(0) == '/';
-        int colonIndex = localAddress.indexOf(':');
-        String localHost;
-        if (startsWithForwardSlash && colonIndex > 1) {
-            localHost = localAddress.substring(1, colonIndex);
-        } else if (startsWithForwardSlash) {
-            localHost = localAddress.substring(1);
-        } else if (colonIndex > -1) {
-            localHost = localAddress.substring(0, colonIndex);
-        } else {
-            localHost = localAddress;
-        }
-        final String localHostFinal = localHost;
-        String localPort = null;
-        if (colonIndex > -1) {
-            localPort = localAddress.substring(colonIndex + 1);
-        }
-        final int localPortFinal = Integer.parseInt(localPort);
-
-        String remoteAddress = remoteSocketAddress.toString();
-        startsWithForwardSlash = remoteAddress.charAt(0) == '/';
-        colonIndex = remoteAddress.indexOf(':');
-        String remoteHost;
-        if (startsWithForwardSlash && colonIndex > 1) {
-            remoteHost = remoteAddress.substring(1, colonIndex);
-        } else if (startsWithForwardSlash) {
-            remoteHost = remoteAddress.substring(1);
-        } else if (colonIndex > -1) {
-            remoteHost = remoteAddress.substring(0, colonIndex);
-        } else {
-            remoteHost = remoteAddress;
-        }
-        final String remoteHostFinal = remoteHost;
-        String remotePort = null;
-        if (colonIndex > -1) {
-            remotePort = remoteAddress.substring(colonIndex + 1);
-        }
-        final int remotePortFinal = Integer.parseInt(remotePort);
+        final String localHostFinal = localHostPortPair.getKey();
+        final int localPortFinal = Integer.parseInt(localHostPortPair.getValue());
+        final String remoteHostFinal = remoteHostPortPair.getKey();
+        final int remotePortFinal = Integer.parseInt(remoteHostPortPair.getValue());
 
         return new FtpRequestKnob(){
             @Override
@@ -870,10 +989,40 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
         };
     }
 
+    /**
+     * Parses the host and port from a "host[:port]" string.
+     *
+     * Similar to InetAddressUtil.getHostAndPort(String hostAndPossiblyPort, String defaultPort),
+     * but does not return unwanted square bracket around the host name (e.g. [hostname]) like InetAddressUtil
+     *
+     * @param hostAndPossiblyPort string containing a host and optionally a port (delimited from the host part with ":")
+     * @return the host and port determined as described above
+     */
+    private static Pair<String,String> getHostAndPort(String hostAndPossiblyPort) {
+        boolean startsWithForwardSlash = hostAndPossiblyPort.charAt(0) == '/';
+        int colonIndex = hostAndPossiblyPort.indexOf(':');
+        String host;
+        if (startsWithForwardSlash && colonIndex > 1) {
+            host = hostAndPossiblyPort.substring(1, colonIndex);
+        } else if (startsWithForwardSlash) {
+            host = hostAndPossiblyPort.substring(1);
+        } else if (colonIndex > -1) {
+            host = hostAndPossiblyPort.substring(0, colonIndex);
+        } else {
+            host = hostAndPossiblyPort;
+        }
+        String port = null;
+        if (colonIndex > -1) {
+            port = hostAndPossiblyPort.substring(colonIndex + 1);
+        }
+
+        return new Pair<String, String>(host, port);
+    }
+
     /*
      * Convert OutputStream to InputStream.
      */
-    private InputStream getDataInputStream(final byte[] data, final String fullPath) throws IOException {
+    private InputStream getDataInputStream(final byte[] data, final String fullPath, final int offset) throws IOException {
         final PipedInputStream pis = new PipedInputStream();
 
         final CountDownLatch startedSignal = new CountDownLatch(1);
@@ -888,7 +1037,7 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                     //noinspection IOResourceOpenedButNotSafelyClosed
                     pos = new PipedOutputStream(pis);
                     startedSignal.countDown();
-                    pos.write(data);
+                    pos.write(data, offset, data.length);
 
                     if (logger.isLoggable(Level.FINE))
                         logger.log(Level.FINE, "Completed data transfer for ''{0}''.", fullPath);

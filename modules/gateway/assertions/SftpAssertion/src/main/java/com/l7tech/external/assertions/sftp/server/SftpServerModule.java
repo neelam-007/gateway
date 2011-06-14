@@ -12,6 +12,8 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.server.util.EventChannel;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Pair;
@@ -61,6 +63,8 @@ public class SftpServerModule extends TransportModule implements ApplicationList
     private final ApplicationEventProxy applicationEventProxy;
     private final GatewayState gatewayState;
     private final MessageProcessor messageProcessor;
+    private final EventChannel messageProcessingEventChannel;
+    private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
 
     private final Map<Long, Pair<SsgConnector, SshServer>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, SshServer>>();
@@ -73,13 +77,17 @@ public class SftpServerModule extends TransportModule implements ApplicationList
                             ServerConfig serverConfig,
                             GatewayState gatewayState,
                             MessageProcessor messageProcessor,
-                            StashManagerFactory stashManagerFactory)
+                            StashManagerFactory stashManagerFactory,
+                            SoapFaultManager soapFaultManager,
+                            EventChannel messageProcessingEventChannel)
     {
         // TODO add & use GatewayFeatureSets.SERVICE_SFTP_MESSAGE_INPUT instead of SERVICE_FTP_MESSAGE_INPUT
         super("SFTP server module", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
         this.applicationEventProxy = applicationEventProxy;
         this.gatewayState = gatewayState;
         this.messageProcessor = messageProcessor;
+        this.messageProcessingEventChannel = messageProcessingEventChannel;
+        this.soapFaultManager = soapFaultManager;
         this.stashManagerFactory = stashManagerFactory;
     }
 
@@ -100,7 +108,11 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         MessageProcessor messageProcessor = getBean(appContext, "messageProcessor", MessageProcessor.class);
         StashManagerFactory stashManagerFactory = getBean(appContext, "stashManagerFactory", StashManagerFactory.class);
         ApplicationEventProxy applicationEventProxy = getBean(appContext, "applicationEventProxy", ApplicationEventProxy.class);
-        return new SftpServerModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig, gatewayState, messageProcessor, stashManagerFactory);
+        SoapFaultManager soapFaultManager = getBean(appContext, "soapFaultManager", SoapFaultManager.class);
+        EventChannel messageProcessingEventChannel = getBean(appContext, "messageProcessingEventChannel", EventChannel.class);
+
+        return new SftpServerModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices,
+                defaultKey, serverConfig, gatewayState, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel);
     }
 
     @Override
@@ -238,8 +250,9 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         try {
 
         SshServer sshd = SshServer.setUpDefaultServer();
+        sshd.setFileSystemFactory(new VirtualFileSystemFactory());
         sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(
-                new MessageProcessingSftpSubsystem.Factory(connector, messageProcessor, stashManagerFactory)));
+                new MessageProcessingSftpSubsystem.Factory(connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel)));
         sshd.setPort(connector.getPort());
         if (SecurityUtils.isBouncyCastleRegistered()) {
             sshd.setKeyPairProvider(new PEMGeneratorHostKeyProvider("key.pem"));
