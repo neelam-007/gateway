@@ -42,7 +42,7 @@ public class PolicyMigrationMappingValueEditPanel extends Panel {
         target.add( new FocusBehaviour() );
         final CheckBox applyToAll = new CheckBox( "applyToAll" );
 
-        target.add( new PatternValidator( targetPattern ) );
+        target.add( new PatternValidator( targetPattern + "|^.*\\$\\{.{1,}\\}.*$") );
 
         Form<MigrationMappingValue> mappingValueForm = new Form<MigrationMappingValue>("mappingValueForm", new CompoundPropertyModel<MigrationMappingValue>(model)){
             @Override
