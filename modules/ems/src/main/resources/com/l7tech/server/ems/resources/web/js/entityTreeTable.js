@@ -783,11 +783,10 @@ if (!l7.EntityTreeTable) {
                 /**
                  * @param {string} propertyName
                  * @param {string} entityType       an l7.Constants.ENTITY_TYPE enum value
-                 * @param {boolean} ssgTrustStatus  indicate if a SSG Cluster is trusted or not
                  * @return {boolean}
                  */
-                function isMonitoringPropertyApplicableToEntity( propertyName, entityType, ssgTrustStatus ) {
-                    if ( entityType == l7.Constants.ENTITY_TYPE.SSG_CLUSTER && ssgTrustStatus ) {  // If a SSG Cluster is not in trust, then we won't monitor it.
+                function isMonitoringPropertyApplicableToEntity( propertyName, entityType ) {
+                    if ( entityType == l7.Constants.ENTITY_TYPE.SSG_CLUSTER ) {
                         return l7.Util.hasPropertyValue( l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY, propertyName );
                     } else if ( entityType == l7.Constants.ENTITY_TYPE.SSG_NODE ) {
                         return l7.Util.hasPropertyValue( l7.Constants.SSG_NODE_MONITORING_PROPERTY, propertyName );
@@ -797,7 +796,7 @@ if (!l7.EntityTreeTable) {
                 }
 
                 var propertyType = getMonitoringPropertyTypeInColumn( column );
-                if ( isMonitoringPropertyApplicableToEntity( propertyType, entity.type, entity.trustStatus ) ) {
+                if ( isMonitoringPropertyApplicableToEntity( propertyType, entity.type ) ) {
                     // We need a DIV element inside the TD element in order to have the
                     // dialog button float in front of the property value.
                     var div = document.createElement( 'div' );
@@ -1427,6 +1426,10 @@ if (!l7.EntityTreeTable) {
                 var entity = this._entitiesById[entityId];
                 if ( !entity ) {
                     YAHOO.log( 'No entity with ID = ' + entityId, 'warning', 'l7.EntityTreeTable.setMonitoredProperty' )
+                    return false;
+                }
+                if ( entity._monitoredPropertyTds == undefined || entity._monitoredPropertySpans == undefined ) {
+                    YAHOO.log( 'Unable to set value of monitored property \"' + propertyType + '\" for entity \"' + entity.name + '\": elements not available', 'warning', 'l7.EntityTreeTable.setMonitoredProperty' );
                     return false;
                 }
                 var td = entity._monitoredPropertyTds[propertyType];
