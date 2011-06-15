@@ -97,6 +97,7 @@ public class EntityMonitoringPropertyValues implements JSON.Convertible {
         private boolean alert;
 
         public PropertyValues() {
+            value = JSONConstants.NA;
         }
 
         public PropertyValues(boolean monitored, String value, String unit, boolean alert) {

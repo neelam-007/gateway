@@ -65,7 +65,7 @@ public class MonitoringServiceImpl implements MonitoringService {
             final EntityMonitoringPropertyValues.PropertyValues currentPropertyValues =
                 new EntityMonitoringPropertyValues.PropertyValues(
                     emps.isMonitoringEnabled(),
-                    value == null || value.left==null ? null : value.left.toString(),
+                    value == null ?  JSONConstants.NA : value.left==null ? null : value.left.toString(),
                     emps.getUnit(),
                     value == null || value.right==null ? false : value.right
                 );
