@@ -251,9 +251,7 @@ public class AuditContextImpl implements AuditContext {
                             if (!extendedAuditDetail.shouldSave()) continue; // we don't want to save this.
                         }
 
-                        if(!sortedDetailsToSave.contains(detailWithInfo.detail)){
-                            sortedDetailsToSave. add(detailWithInfo.detail);
-                        }
+                        sortedDetailsToSave.add(detailWithInfo.detail);
 
                         listener.notifyDetailFlushed(
                                 getSource(detailWithInfo.source, "com.l7tech.server.audit"),
