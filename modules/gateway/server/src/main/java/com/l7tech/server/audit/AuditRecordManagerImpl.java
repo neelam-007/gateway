@@ -92,7 +92,7 @@ public class AuditRecordManagerImpl
                     iterator.remove();
                     index++;
                 }
-                logger.log(Level.INFO, "Too many audit ids digests requested. Reduced by " + difference);
+                logger.log(Level.INFO, "Number of audits to digest reduced to limit of " + maxRecords +" from " + auditRecordIds.size());
             }
 
             hibernateCriteria.add(Restrictions.in("oid", auditRecordIds));
@@ -263,18 +263,6 @@ public class AuditRecordManagerImpl
         final boolean entityIdEnabled = criteria.entityId != null;
 
         return requestIdEnabled && (entityClassEnabled || entityIdEnabled);
-    }
-
-    private boolean matchFound(String[] values, String pattern) {
-        if (pattern == null || pattern.trim().isEmpty()) throw new IllegalArgumentException("Match pattern must be specified.");
-        if (values == null || values.length == 0) return false;
-
-        for (String value: values) {
-            if (TextUtils.matches(pattern, value, true, true)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override
@@ -525,7 +513,24 @@ public class AuditRecordManagerImpl
             criterion.add(Restrictions.in(PROP_LEVEL, levels));
         }
 
-        if (criteria.startMessageNumber > 0) criterion.add(Restrictions.gt(PROP_OID, criteria.startMessageNumber));
+        //a start or end constraint cannot be supplied with out an associated node id.
+        //objectids do not increment across a cluster, they increment for a node.
+
+        final Map<String, Long> nodeIdToStartMsg = criteria.nodeIdToStartMsg;
+        if (!nodeIdToStartMsg.isEmpty()) {
+            // only records for nodes contained in this map will be returned.
+            final Disjunction disjunction = Restrictions.disjunction();
+            for (Map.Entry<String, Long> nodeToStartMsg : nodeIdToStartMsg.entrySet()) {
+                final Conjunction conjunction = Restrictions.conjunction();
+                conjunction.add(Restrictions.eq(PROP_NODEID, nodeToStartMsg.getKey()));
+                conjunction.add(Restrictions.gt(PROP_OID, nodeToStartMsg.getValue()));
+                disjunction.add(conjunction);
+            }
+
+            criterion.add(disjunction);
+        }
+
+        //todo: fix end message number logic
         if (criteria.endMessageNumber > 0) criterion.add(Restrictions.lt(PROP_OID, criteria.endMessageNumber));
 
         if (criteria.requestId != null) criterion.add(Restrictions.ilike(PROP_REQUEST_ID, criteria.requestId));

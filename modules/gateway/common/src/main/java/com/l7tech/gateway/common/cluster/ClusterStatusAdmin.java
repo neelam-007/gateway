@@ -39,7 +39,7 @@ public interface ClusterStatusAdmin {
 
     /**
      * Get status for all nodes part of the cluster.
-     * @return An array of ClusterNodeInfo (one for each node)
+     * @return An array of ClusterNodeInfo (one for each node). Never null, may be of 0 length.
      * @throws FindException if there was a server-side problem accessing the requested information
      */
     @Transactional(readOnly=true)

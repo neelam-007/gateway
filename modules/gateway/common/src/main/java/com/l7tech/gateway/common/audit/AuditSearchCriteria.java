@@ -11,7 +11,7 @@ import com.l7tech.identity.User;
 import com.l7tech.util.Pair;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -44,7 +44,6 @@ public final class AuditSearchCriteria implements Serializable {
         toLevel = builder.toLevel;
         recordClass = builder.recordClass;
         nodeId = builder.nodeId;
-        startMessageNumber = builder.startMessageNumber;
         endMessageNumber = builder.endMessageNumber;
         maxRecords = builder.maxRecords;
         serviceName = builder.serviceName;
@@ -57,6 +56,7 @@ public final class AuditSearchCriteria implements Serializable {
         paramValue = builder.paramValue;
         entityClassName = builder.entityClassName;
         entityId = builder.entityId;
+        nodeIdToStartMsg = builder.nodeIdToStartMsg;
     }
 
     /**
@@ -88,11 +88,15 @@ public final class AuditSearchCriteria implements Serializable {
     public final String nodeId;
 
     /**
-     * the minimum OID to find, inclusive (0 = don't care)
+     * Map of node id to the minimum audit record object id to retrieve for that node.
+     * If any node id key is added, then so should all known node ids, as otherwise only results for the supplied node id
+     * will be returned for any search which uses this AuditSearchCriteria. If there is no
+     * minimum yet for a node, just supply -1.
      */
-    public final long startMessageNumber;
+    public final Map<String, Long> nodeIdToStartMsg;
 
     /**
+     * //todo [Donal] delete - this should never be used.
      * the maximum OID to find, inclusive (0 = don't care)
      */
     public final long endMessageNumber;
@@ -165,14 +169,20 @@ public final class AuditSearchCriteria implements Serializable {
             fullDetailsOnSearchCriteria.append("{Level: " + fromLevel + " to " + toLevel + "} ");
         }
 
-        //construct message number range
-        if (startMessageNumber > 0 && endMessageNumber > 0) {
-            fullDetailsOnSearchCriteria.append("{Message number range: " + startMessageNumber + " to " + endMessageNumber + "} ");
-        } else if (startMessageNumber > 0 && endMessageNumber <= 0) {
-            fullDetailsOnSearchCriteria.append("{Message number greater than: " + startMessageNumber + "} ");
-        } else if (startMessageNumber <= 0 && endMessageNumber > 0) {
-            fullDetailsOnSearchCriteria.append("{Message number less than: " + endMessageNumber + "} ");
+        final Set<Map.Entry<String,Long>> entries = nodeIdToStartMsg.entrySet();
+        for (Map.Entry<String, Long> nodeIdToStartMsg : entries) {
+            fullDetailsOnSearchCriteria.append("{Node id " + nodeIdToStartMsg.getKey() + " minimum audit record: " + nodeIdToStartMsg.getValue() + "} ");
+
         }
+        //todo [Donal] fix for end message number per node.
+//        //construct message number range
+//        if (startMessageNumber > 0 && endMessageNumber > 0) {
+//            fullDetailsOnSearchCriteria.append("{Message number range: " + startMessageNumber + " to " + endMessageNumber + "} ");
+//        } else if (startMessageNumber > 0 && endMessageNumber <= 0) {
+//            fullDetailsOnSearchCriteria.append("{Message number greater than: " + startMessageNumber + "} ");
+//        } else if (startMessageNumber <= 0 && endMessageNumber > 0) {
+//            fullDetailsOnSearchCriteria.append("{Message number less than: " + endMessageNumber + "} ");
+//        }
 
         //construct record class (Audit Type)
         if (recordClass != null) fullDetailsOnSearchCriteria.append("{Audit Type: " + recordClass.getName() + "} ");
@@ -271,8 +281,8 @@ public final class AuditSearchCriteria implements Serializable {
         private Level toLevel = null;
         private Class recordClass = null;
         private String nodeId = null;
-        private long startMessageNumber = 0;
-        private long endMessageNumber = 0;
+        private long endMessageNumber = 0;//todo [Donal] delete
+        private final Map<String, Long> nodeIdToStartMsg;
         private int maxRecords = 0;
 
         private String serviceName = null; //null == any
@@ -288,13 +298,13 @@ public final class AuditSearchCriteria implements Serializable {
         private Long entityId; // null == any
 
         public Builder() {
+            nodeIdToStartMsg = Collections.emptyMap();
         }
 
         public Builder(LogRequest logRequest) {
             fromTime(logRequest.getStartMsgDate());
             toTime(logRequest.getEndMsgDate());
             fromLevel(logRequest.getLogLevel());
-            startMessageNumber(logRequest.getStartMsgNumber());
             endMessageNumber(logRequest.getEndMsgNumber());
             serviceName(logRequest.getServiceName());
             message(logRequest.getMessage());
@@ -306,6 +316,8 @@ public final class AuditSearchCriteria implements Serializable {
             paramValue(logRequest.getParamValue());
             entityClassName(logRequest.getEntityClassName());
             entityId(logRequest.getEntityId());
+            //String and Long are immutable - can just add all to Map.
+            nodeIdToStartMsg = Collections.unmodifiableMap(new HashMap<String, Long>(logRequest.getNodeIdToStartMsg()));
         }
 
         public Builder fromTime(Date value) {
@@ -335,11 +347,6 @@ public final class AuditSearchCriteria implements Serializable {
 
         public Builder nodeId(String value) {
             nodeId = value;
-            return this;
-        }
-
-        public Builder startMessageNumber(long value) {
-            startMessageNumber = value;
             return this;
         }
 

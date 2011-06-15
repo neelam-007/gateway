@@ -115,16 +115,17 @@ public class ClusterLogWorker extends SwingWorker {
         // create a new empty node list
         newNodeList = new HashMap<String, GatewayStatus>();
         try {
-        // retrieve node status
-            ClusterNodeInfo[] clusterNodes = new ClusterNodeInfo[0];
+            // retrieve node status
+            final ClusterNodeInfo[] clusterNodes;
 
             try {
                 clusterNodes = clusterStatusService.getClusterStatus();
             } catch (FindException e) {
                 logger.log(Level.WARNING, "Unable to find cluster status from server", e);
+                return null;
             }
 
-            if ( isCancelled() || clusterNodes == null ) {
+            if (isCancelled()) {
                 return null;
             }
 

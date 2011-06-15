@@ -252,7 +252,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                             //update digests
                             final Map<Long, byte[]> digestsForRecords = auditAdmin.getDigestsForAuditRecords(auditRecordIds);
                             if (logger.isLoggable(Level.FINE)) {
-                                logger.log(Level.FINE, "Validated " + digestsForRecords.size()+" records.");
+                                logger.log(Level.FINE, "Validated " + digestsForRecords.size()+" records. Requested " + auditRecordIds.size()+" records.");
                             }
 
                             if (Thread.currentThread().isInterrupted()) {
@@ -725,14 +725,28 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         if (restartTimer) {
             //...so must set the start message number
             //TODO there is likely a faster way to do this
-            long highest = -1;
+            Map<String, Long> nodeToHighestId = new HashMap<String, Long>();
             Collection<LogMessage> rawLogCacheCollection = rawLogCache.values();
+
+            // new results can only be obtained for known nodes in the cluster.
+            for (String nodeId : currentNodeList.keySet()) {
+                nodeToHighestId.put(nodeId, -1L);
+            }
+
             for (LogMessage logMessage : rawLogCacheCollection) {
-                if (logMessage.getMsgNumber() > highest) {
-                    highest = logMessage.getMsgNumber();
+                //protect against records from nodes not in the cluster anymore
+                if (nodeToHighestId.containsKey(logMessage.getNodeId())) {
+                    final Long nodesHighest = nodeToHighestId.get(logMessage.getNodeId());
+                    if (logMessage.getMsgNumber() > nodesHighest) {
+                        nodeToHighestId.put(logMessage.getNodeId(), logMessage.getMsgNumber());
+                    }
                 }
             }
-            logRequest.setStartMsgNumber(highest);
+
+            for (Map.Entry<String, Long> entry : nodeToHighestId.entrySet()) {
+                //some of entry.getValue() may be -1, this just means we are yet to see a record from the node.
+                logRequest.setStartMsgNumberForNode(entry.getKey(), entry.getValue());
+            }
         }
         doRefreshLogs(logPane, logRequest, restartTimer, 0);
     }

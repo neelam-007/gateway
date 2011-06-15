@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.cluster;
 
 import com.l7tech.gateway.common.audit.AuditType;
 
-import java.util.Date;
+import java.util.*;
 import java.util.logging.Level;
 
 /*
@@ -31,27 +31,8 @@ public final class LogRequest {
     private final String paramValue;
     private final String entityClassName; // null = any
     private final Long entityId; // null = any
-
     private int retrievedLogCount;
-
-    public LogRequest(LogRequest lr) {
-        this.nodeName = lr.getNodeName();
-        this.endMsgNumber = lr.getEndMsgNumber();
-        this.startMsgNumber = lr.getStartMsgNumber();
-        this.startMsgDate = lr.getStartMsgDate();
-        this.endMsgDate = lr.getEndMsgDate();
-        this.logLevel = lr.getLogLevel();
-        this.serviceName = lr.getServiceName();
-        this.message = lr.getMessage();
-        this.requestId = lr.getRequestId();
-        this.auditType = lr.getAuditType();
-        this.userName = lr.getUserName();
-        this.userIdOrDn = lr.getUserIdOrDn();
-        this.messageId = lr.getMessageId();
-        this.paramValue = lr.getParamValue();
-        this.entityClassName = lr.getEntityClassName();
-        this.entityId = lr.getEntityId();
-    }
+    private final Map<String, Long> nodeIdToStartMsg = new HashMap<String, Long>();
 
     private LogRequest(Builder builder) {
         nodeName = builder.nodeName;
@@ -217,6 +198,7 @@ public final class LogRequest {
     /**
      * Set the endMsgNumber.
      *
+     * Do not use for Audits. //todo [Donal] - fix usages
      * @param endMsgNumber The value of the endMsgNumber.
      */
     public void setEndMsgNumber(long endMsgNumber) {
@@ -235,10 +217,29 @@ public final class LogRequest {
     /**
      * Set the startMsgNumber
      *
+     * Do not use for Audits.
+     *
      * @param startMsgNumber  The value of the startMsgNumber
      */
     public void setStartMsgNumber(long startMsgNumber) {
         this.startMsgNumber = startMsgNumber;
+    }
+
+    /**
+     * Record the minimum record id to retrieve for a node.
+     * @param nodeId String node id
+     * @param startMsgNumber object id of the audit record.
+     */
+    public void setStartMsgNumberForNode(String nodeId, long startMsgNumber) {
+        nodeIdToStartMsg.put(nodeId, startMsgNumber);
+    }
+
+    /**
+     * Get the node id to minimum audit record id mappings.
+     * @return Map of node id to minimum audit record object id
+     */
+    public Map<String, Long> getNodeIdToStartMsg() {
+        return Collections.unmodifiableMap(nodeIdToStartMsg);
     }
 
     /**

@@ -319,7 +319,6 @@ public class Audits extends EsmStandardWebPage {
             return new AuditSearchCriteria.Builder().fromTime(options.getStartTime()).
                     toTime(options.getEndTime()).
                     recordClass(getClassForType(options.getAudittype())).
-                    startMessageNumber(-1L).
                     endMessageNumber(-1L).
                     maxRecords(-1).
                     user(user)
