@@ -13,8 +13,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Properties configuration bean provider that uses Properties files for storage.
@@ -58,16 +60,27 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
         return configuration;
     }
 
+    @SuppressWarnings({ "StringEquality" })
     @Override
     public void storeConfiguration( final Collection<ConfigurationBean> configuration ) throws ConfigurationException {
-        Properties properties = loadPropertiesFromFile();
-        
-        for ( ConfigurationBean configBean : configuration ) {
-            String toPersist = onPersist(configBean.getConfigName(), configBean.getConfigValue(), configuration);
-            if ( toPersist != null ) {
+        final Properties properties = loadPropertiesFromFile();
+
+        final Set<String> propertiesToKeep = new HashSet<String>();
+        for ( final ConfigurationBean configBean : configuration ) {
+            final String toPersist = onPersist(configBean.getConfigName(), configBean.getConfigValue(), configuration);
+            if ( toPersist == SKIP ) { // check string identity
+                propertiesToKeep.add( prefix(configBean.getConfigName()) );
+            } else if ( toPersist != null ) {
+                propertiesToKeep.add( prefix(configBean.getConfigName()) );
                 properties.setProperty( prefix(configBean.getConfigName()), toPersist );
             } else {
-                properties.remove( prefix(configBean.getConfigName()) );
+                // will be removed
+            }
+        }
+
+        for ( final String propertyName : properties.stringPropertyNames() ) {
+            if ( !propertiesToKeep.contains( propertyName ) ) {
+                properties.remove( propertyName );
             }
         }
 
@@ -83,6 +96,13 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
     }
 
     //- PROTECTED
+
+    /**
+     * Special property value for use with onPersist.
+     *
+     * @see #onPersist(String, Object, Collection)
+     */
+    protected static final String SKIP = "skip-property";
 
     /**
      * Invoked on load of a property from property file.
@@ -103,9 +123,12 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
      *
      * <p>The default implementation returns the given value. Override to customize persistence of a property.</p>
      *
+     * <p>Return the special value @{link SKIP} to skip persistence for the item.</p>
+     *
      * @param name The name of the (unprefixed) property / configuration bean
      * @param value The value from the configuration bean
      * @return The property value
+     * @see #SKIP
      */
     @SuppressWarnings({"UnusedDeclaration"})
     protected String onPersist( final String name, final Object value, final Collection<ConfigurationBean> beans ) {

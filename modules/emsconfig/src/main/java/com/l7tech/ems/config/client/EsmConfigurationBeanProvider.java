@@ -8,7 +8,6 @@ import com.l7tech.util.SyspropUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collection;
@@ -44,9 +43,13 @@ public class EsmConfigurationBeanProvider extends PropertiesConfigurationBeanPro
     protected String onPersist( final String name, final Object value, final Collection<ConfigurationBean> beans ) {
         String persistValue;
 
-        if ( CONFIG_ADMIN_PASS.equals(name) && value != null ) {
-            // encode the password before storing to the properties file
-            persistValue = hashPassword( value.toString() );
+        if ( CONFIG_ADMIN_PASS.equals(name) ) {
+            if ( value != null ) {
+                // encode the password before storing to the properties file
+                persistValue = hashPassword( value.toString() );
+            } else {
+                persistValue = SKIP; // preserve existing hashed value
+            }
         } else {
             persistValue = super.onPersist( name, value, beans );
         }
@@ -65,7 +68,6 @@ public class EsmConfigurationBeanProvider extends PropertiesConfigurationBeanPro
 
     private static final Logger logger = Logger.getLogger( EsmConfigurationBeanProvider.class.getName() );
 
-    private static final String CONFIG_ADMIN_USER = "admin.user";
     private static final String CONFIG_ADMIN_PASS = "admin.pass";
     
     private static final String PROP_CONFIG_FILE = "com.l7tech.ems.config.file";
@@ -77,7 +79,9 @@ public class EsmConfigurationBeanProvider extends PropertiesConfigurationBeanPro
             File parent = config.getParentFile();
             if ( parent.isDirectory() ) {
                 try {
-                    config.createNewFile();
+                    if (!config.createNewFile()) {
+                        logger.log( Level.INFO, "Unable to create configuration file '"+config.getAbsolutePath()+"' (file already present)." );
+                    }
                 } catch ( IOException ioe ) {
                     logger.log( Level.INFO, "Error creating configuration file '"+config.getAbsolutePath()+"'.", ioe );
                 }
