@@ -219,10 +219,15 @@ public class AuditContextImpl implements AuditContext {
             currentRecord.setLevel(highestLevelYetSeen);
             listener.notifyRecordFlushed(currentRecord, formatter, true);
 
-            Set<AuditDetail> detailsToSave = new HashSet<AuditDetail>();
-            int newOrdinal = 0;
+            Set<AuditDetail> sortedDetailsToSave = new TreeSet<AuditDetail>(new Comparator<AuditDetail>() {
+                @Override
+                public int compare(AuditDetail o1, AuditDetail o2) {
+                    return new Integer(o1.getOrdinal()).compareTo(new Integer(o2.getOrdinal()));
+                }
+            });
             for (List<AuditDetailWithInfo> list : details.values()) {
-                for (AuditDetailWithInfo detailWithInfo : list) {
+                for (int i = list.size()-1 ; i>=0 ; i-- ){
+                    AuditDetailWithInfo detailWithInfo = list.get(i);
                     int mid = detailWithInfo.detail.getMessageId();
 
                     final Pair<Boolean,AuditDetailMessage> pair = MessagesUtil.getAuditDetailMessageByIdWithFilter(mid);
@@ -246,8 +251,9 @@ public class AuditContextImpl implements AuditContext {
                             if (!extendedAuditDetail.shouldSave()) continue; // we don't want to save this.
                         }
 
-                        detailsToSave.add(detailWithInfo.detail);
-                        detailWithInfo.detail.setOrdinal(newOrdinal++);
+                        if(!sortedDetailsToSave.contains(detailWithInfo.detail)){
+                            sortedDetailsToSave. add(detailWithInfo.detail);
+                        }
 
                         listener.notifyDetailFlushed(
                                 getSource(detailWithInfo.source, "com.l7tech.server.audit"),
@@ -260,7 +266,12 @@ public class AuditContextImpl implements AuditContext {
                 }
             }
 
-            currentRecord.setDetails(detailsToSave);
+            int newOrdinal = 0;
+            for (AuditDetail auditDetail : sortedDetailsToSave) {
+                auditDetail.setOrdinal(newOrdinal++);
+            }
+
+            currentRecord.setDetails(sortedDetailsToSave);
 
             outputRecord(currentRecord, this.update, policyEnforcementContext, formatter);
         } catch (SaveException e) {
