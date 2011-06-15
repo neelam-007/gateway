@@ -462,6 +462,7 @@ public class LogPanel extends JPanel {
         controlPanel.userIdPane.setVisible(isAuditType);
         controlPanel.associatedLogsSearchingPane.setVisible(isAuditType);
         controlPanel.entitySearchingPane.setVisible(isAuditType);
+        controlPanel.validateSignaturesCheckBox.setVisible(isAuditType);
 
         //if its a logViewer add listeners to the filter fields
 
