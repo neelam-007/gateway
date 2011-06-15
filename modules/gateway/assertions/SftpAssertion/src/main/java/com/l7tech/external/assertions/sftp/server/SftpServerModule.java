@@ -1,11 +1,13 @@
 package com.l7tech.external.assertions.sftp.server;
 
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.TransportDescriptor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.transport.ListenerException;
@@ -68,6 +70,8 @@ public class SftpServerModule extends TransportModule implements ApplicationList
     private final StashManagerFactory stashManagerFactory;
 
     private final Map<Long, Pair<SsgConnector, SshServer>> activeConnectors = new ConcurrentHashMap<Long, Pair<SsgConnector, SshServer>>();
+
+    private Auditor auditor;
 
     public SftpServerModule(ApplicationEventProxy applicationEventProxy,
                             LicenseManager licenseManager,
@@ -297,8 +301,10 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         });
             logger.info("Starting " + connector.getScheme() + " connector on port " + connector.getPort());
             sshd.start();
+            auditStart(connector);
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, SshServer>(connector, sshd));
         } catch (IOException e) {
+            auditError("Error during startup, unable to create sshd.", e);
             throw new ListenerException("Unable to create sshd: " + ExceptionUtils.getMessage(e), e);
         }
     }
@@ -313,8 +319,10 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         if (sshd != null) {
             try {
                 sshd.stop();
+                auditStop("connector OID " + oid);
             } catch (InterruptedException e) {
                 logger.log(Level.SEVERE, "Unable to remove sshd: " + ExceptionUtils.getMessage(e), e);
+                auditError("Error while shutting down, unable to remove sshd.", e);
             }
         }
     }
@@ -322,5 +330,35 @@ public class SftpServerModule extends TransportModule implements ApplicationList
     @Override
     protected Set<String> getSupportedSchemes() {
         return SUPPORTED_SCHEMES;
+    }
+
+    private void auditStart(SsgConnector connector) {
+        // TODO add and use SystemMessages.SFTPSERVER_START
+        getAuditor().logAndAudit(SystemMessages.FTPSERVER_START, toString(connector));
+    }
+
+    private String toString(SsgConnector connector) {
+        return "SFTP connector OID " + connector.getOid() + " (control port " + connector.getPort() + ")";
+    }
+
+    private void auditStop(String listener) {
+        // TODO add and use SystemMessages.SFTPSERVER_STOP
+        getAuditor().logAndAudit(SystemMessages.FTPSERVER_STOP, listener);
+    }
+
+    private void auditError(String message, Exception exception) {
+        // TODO add and use SystemMessages.SFTPSERVER_ERROR
+        getAuditor().logAndAudit(SystemMessages.FTPSERVER_ERROR, new String[]{message}, exception);
+    }
+
+    private Auditor getAuditor() {
+        Auditor auditor = this.auditor;
+
+        if (auditor == null) {
+            auditor = new Auditor(this, getApplicationContext(), logger);
+            this.auditor = auditor;
+        }
+
+        return auditor;
     }
 }

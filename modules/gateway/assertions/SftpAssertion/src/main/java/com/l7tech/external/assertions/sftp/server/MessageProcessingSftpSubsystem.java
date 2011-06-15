@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.sftp.server;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.message.FtpRequestKnob;
-import com.l7tech.message.HasServiceOid;
-import com.l7tech.message.HasServiceOidImpl;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
@@ -825,9 +822,13 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
                 if (path.indexOf('/') > -1) {
                     path = path.substring(0, path.lastIndexOf('/'));
                 }
-                pipeDataToGatewayRequestMessage(connector, path, sshFile.getName(), data, offset);
-                sshFile.setLastModified(new Date().getTime());
 
+                if (!pipeDataToGatewayRequestMessage(connector, path, sshFile.getName(), data, offset)) {
+                    sendStatus(id, SSH_FX_FAILURE, path);
+                    return;
+                }
+
+                sshFile.setLastModified(new Date().getTime());
                 sendStatus(id, SSH_FX_OK, "");
             }
         } catch (IOException e) {
@@ -851,7 +852,8 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
         }
     }
 
-    private void pipeDataToGatewayRequestMessage(SsgConnector connector, String path, String file, byte[] data, long offset) throws IOException {
+    private boolean pipeDataToGatewayRequestMessage(SsgConnector connector, String path, String file, byte[] data, long offset) throws IOException {
+        boolean success = false;
         Message request = new Message();
         PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, true);
 
@@ -859,13 +861,8 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
         ContentTypeHeader ctype = ctypeStr == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.create(ctypeStr);
 
         request.initialize(stashManagerFactory.createStashManager(), ctype, getDataInputStream(data, path, (int) offset));
-        request.attachFtpKnob(buildFtpKnob(
-                session.getIoSession().getLocalAddress(),
-                session.getIoSession().getRemoteAddress(),
-                file,
-                path,
-                true,
-                true));
+        request.attachFtpKnob(buildFtpKnob(session.getIoSession().getLocalAddress(),
+                session.getIoSession().getRemoteAddress(), file, path, true, true));
 
         long hardwiredServiceOid = connector.getLongProperty(SsgConnector.PROP_HARDWIRED_SERVICE_ID, -1);
         if (hardwiredServiceOid != -1) {
@@ -891,6 +888,8 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
 
                 if ( status != AssertionStatus.NONE ) {
                     faultXml = soapFaultManager.constructReturningFault(context.getFaultlevel(), context).getContent();
+                } else {
+                    success = true;
                 }
 
                 if (faultXml != null) {
@@ -899,13 +898,14 @@ public class MessageProcessingSftpSubsystem implements Command, Runnable, Sessio
             } finally {
                 ResourceUtils.closeQuietly(context);
             }
+        return success;
     }
 
     /*
      * Sftp uses a similar format to FtpKnob.  Create an FtpKnob for the given info.
      */
     private FtpRequestKnob buildFtpKnob(final SocketAddress localSocketAddress, final SocketAddress remoteSocketAddress,
-                                        final String file, final String path, final boolean secure, final boolean unique) {
+                                          final String file, final String path, final boolean secure, final boolean unique) {
 
         // SocketAddress requires us to parse for host and port (e.g. /127.0.0.1:22)
         Pair<String,String> localHostPortPair = getHostAndPort(localSocketAddress.toString());
