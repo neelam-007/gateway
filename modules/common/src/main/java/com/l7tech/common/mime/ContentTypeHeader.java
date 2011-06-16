@@ -1,5 +1,6 @@
 package com.l7tech.common.mime;
 
+import com.l7tech.common.io.UncheckedIOException;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.SyspropUtil;
 
@@ -125,7 +126,7 @@ public class ContentTypeHeader extends MimeHeader {
                 try {
                     ret.validate();
                 } catch (IOException e) {
-                    throw new IllegalArgumentException(e);
+                    throw new UncheckedIOException(e);
                 }
             }
             return ret;
