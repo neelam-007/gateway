@@ -821,6 +821,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             return true;
         }
 
+        @Override
+        public boolean notifyResolveCatchAll() {
+            return securityProcessingException == null && securityProcessingAssertionStatus == null;
+        }
+
         private String getIncomingURL(PolicyEnforcementContext context) {
             HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
             if (hrk == null) {

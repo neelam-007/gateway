@@ -351,6 +351,13 @@ public class ServiceCache
          * @return true if service resolution should be continued
          */
         boolean notifyPreParseServices(Message message, Set<ServiceMetadata> serviceSet);
+
+        /**
+         * Notification that the catch all service will be resolved.
+         *
+         * @return true if the catch all service may be used.
+         */
+        boolean notifyResolveCatchAll();
     }
 
     public static final class ServiceMetadata {
@@ -392,7 +399,7 @@ public class ServiceCache
         try {
             Collection<PublishedService> serviceSet = Collections.unmodifiableCollection(services.values());
             PublishedService result = resolve( req, rl, serviceSet );
-            if (result == null && nonSoapCatchAllServiceOid != null && UriResolver.canResolveByURI(req)) {
+            if (result == null && rl.notifyResolveCatchAll() && nonSoapCatchAllServiceOid != null && UriResolver.canResolveByURI(req)) {
                 result = services.get(nonSoapCatchAllServiceOid);
                 if (result != null)
                     auditor.logAndAudit(MessageProcessingMessages.SERVICE_CACHE_RESOLVED_CATCHALL, result.getName(), result.getId());
