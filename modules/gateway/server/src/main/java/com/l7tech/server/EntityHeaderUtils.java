@@ -173,6 +173,10 @@ public final class EntityHeaderUtils {
     }
 
     public static EntityHeader fromExternal(ExternalEntityHeader eh) {
+        return fromExternal( eh, true );
+    }
+
+    public static EntityHeader fromExternal(ExternalEntityHeader eh, boolean strict) {
         EntityHeader header;
         int sepIndex;
         switch (eh.getType()) {
@@ -212,9 +216,17 @@ public final class EntityHeaderUtils {
                 break;
 
             case RESOURCE_ENTRY:
+                final ResourceType resourceType;
                 final String resourceTypeStr = eh.getProperty( "resourceType" );
-                if ( resourceTypeStr == null ) throw new IllegalArgumentException("Missing resource type");
-                final ResourceType resourceType = ResourceType.valueOf( resourceTypeStr );
+                if ( resourceTypeStr == null ) {
+                    if ( strict ) {
+                        throw new IllegalArgumentException("Missing resource type");
+                    } else {
+                        resourceType = null;
+                    }
+                } else {
+                    resourceType = ResourceType.valueOf( resourceTypeStr );
+                }
                 header = new ResourceEntryHeader(eh.getStrId(), eh.getName(), eh.getDescription(), resourceType, eh.getProperty( "resourceKey1" ), eh.getProperty( "resourceKey2" ), eh.getProperty( "resourceKey3" ), eh.getVersion());
                 break;
 

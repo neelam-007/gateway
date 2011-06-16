@@ -635,13 +635,18 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private String getDisplayId(EntityHeader header) {
         String id = header instanceof GuidEntityHeader ? ((GuidEntityHeader)header).getGuid() :
-                    header.getOid() != -1 ? Long.toString(header.getOid()) : null;
+                    header.getOid() != -1L ? Long.toString(header.getOid()) : null;
         return id == null ? "" : " (#" + id + ")";
     }
 
     private Entity loadEntity( final ExternalEntityHeader externalHeader ) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Loading entity for header: {0}", externalHeader);
-        EntityHeader header = EntityHeaderUtils.fromExternal(externalHeader);
+        EntityHeader header;
+        try {
+            header = EntityHeaderUtils.fromExternal(externalHeader, false);
+        } catch ( IllegalArgumentException e ) {
+            throw new MigrationApi.MigrationException("Error processing the header for entity: " + externalHeader.getExternalId(), e);
+        }
         Entity ent;
         try {
             // special handling for value-reference entities
