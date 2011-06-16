@@ -134,6 +134,13 @@ public class ContentTypeHeaderTest {
         }
     }
 
+    @Test
+    public void testDefaultCharset() throws Exception {
+        assertEquals("utf-8", ContentTypeHeader.XML_DEFAULT.getParam("charset"));
+        assertEquals("utf-8", ContentTypeHeader.TEXT_DEFAULT.getParam("charset"));
+        assertEquals("utf-8", ContentTypeHeader.SOAP_1_2_DEFAULT.getParam("charset"));
+        assertEquals("utf-8", ContentTypeHeader.APPLICATION_JSON.getParam("charset"));
+    }
 
     private void ensureFormattingPreserved( final String description, final String contentType ) throws Exception {
         final ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue(contentType);

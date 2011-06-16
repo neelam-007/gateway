@@ -58,12 +58,12 @@ public class ContentTypeHeader extends MimeHeader {
         try {
             OCTET_STREAM_DEFAULT = parseValue("application/octet-stream");
             OCTET_STREAM_DEFAULT.getEncoding();
-            TEXT_DEFAULT = parseValue("text/plain; charset=UTF-8");
-            XML_DEFAULT = parseValue("text/xml; charset=UTF-8");
+            TEXT_DEFAULT = parseValue("text/plain; charset=utf-8");
+            XML_DEFAULT = parseValue("text/xml; charset=utf-8");
             XML_DEFAULT.getEncoding();
-            SOAP_1_2_DEFAULT = parseValue("application/soap+xml; charset=UTF-8");
+            SOAP_1_2_DEFAULT = parseValue("application/soap+xml; charset=utf-8");
             APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded");
-            APPLICATION_JSON = parseValue("application/json; charset=UTF-8");
+            APPLICATION_JSON = parseValue("application/json; charset=utf-8");
         } catch (Throwable e) {
             throw new Error(e);
         }
