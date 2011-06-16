@@ -717,7 +717,7 @@ public class ExpandVariablesTest {
         vars.put("message", new Message(XmlUtil.parse( "<content/>" )) );
 
         assertEquals("message.parts.1.body", "<content/>", ExpandVariables.process( "${message.parts.1.body}", vars, audit, true ));
-        assertEquals("message.parts.1.contentType", "text/xml; charset=UTF-8", ExpandVariables.process( "${message.parts.1.contentType}", vars, audit, true ));
+        assertEquals("message.parts.1.contentType", "text/xml; charset=utf-8", ExpandVariables.process( "${message.parts.1.contentType}", vars, audit, true ));
         assertEquals("message.parts.1.size", "10", ExpandVariables.process( "${message.parts.1.size}", vars, audit, true ));
     }
 
