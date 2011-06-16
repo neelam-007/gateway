@@ -169,7 +169,7 @@ public enum CertificateAttribute {
         @Override
         String getNewName(String legacyName) {
             if ("issuerEmail".equals(legacyName))
-                return "issuer.dn.email";
+                return "issuer.dn.emailaddress";
             final int isslen = "issuer.".length();
             if (legacyName.startsWith("issuer.") && !legacyName.equals("issuer.dn") && !legacyName.startsWith("issuer.dn.") && legacyName.length() > isslen) {
                 String suffix = legacyName.substring(isslen);
@@ -246,7 +246,7 @@ public enum CertificateAttribute {
         }
         @Override
         String getNewName(String legacyName) {
-            if ("subjectEmail".equals(legacyName)) return "subject.dn.email";
+            if ("subjectEmail".equals(legacyName)) return "subject.dn.emailaddress";
             final int subjlen = "subject.".length();
             if (legacyName.startsWith("subject.") && !legacyName.equals("subject.dn") && !legacyName.startsWith("subject.dn.") && legacyName.length() > subjlen) {
                 String suffix = legacyName.substring(subjlen);
@@ -481,6 +481,10 @@ public enum CertificateAttribute {
 
     private static final Pattern OID_PATTERN = Pattern.compile("^(?:\\d+)(?:\\.\\d+)$");
 
+    private static final Map<String,String> DN_OID_MAP = Collections.unmodifiableMap( new HashMap<String,String>(){{
+        put( "1.2.840.113549.1.9.1", "EMAILADDRESS" );
+    }} );
+
     private final String attributeName;
     private final List<String> legacyNames;
     private final boolean prefixed;
@@ -579,7 +583,7 @@ public enum CertificateAttribute {
         try {
             if (x500Principal != null) {
                 addToMap(result, attrName, x500Principal.toString());
-                List<Rdn> rdns = new ArrayList<Rdn>(new LdapName(x500Principal.getName(X500Principal.RFC2253)).getRdns());
+                List<Rdn> rdns = new ArrayList<Rdn>(new LdapName(x500Principal.getName(X500Principal.RFC2253, DN_OID_MAP)).getRdns());
                 int rdnPos = rdns.size();
                 Collections.reverse(rdns);
                 for (Rdn rdn : rdns) {

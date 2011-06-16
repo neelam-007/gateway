@@ -173,37 +173,7 @@ public class X509CertificateAttributesExtractorTest {
     @Test
     @BugNumber(10211)
     public void testDodCertCountryOfCitizenShipAndSubjectAltName() throws Exception {
-        String certb64 =
-            "MIIFETCCA/mgAwIBAgIDFo8TMA0GCSqGSIb3DQEBBQUAMIGQMQswCQYDVQQGEwJV\n" +
-            "UzEYMBYGA1UEChMPVS5TLiBHb3Zlcm5tZW50MQwwCgYDVQQLEwNOU1MxDDAKBgNV\n" +
-            "BAsTA0RvRDEiMCAGA1UECxMZQ2VydGlmaWNhdGlvbiBBdXRob3JpdGllczEnMCUG\n" +
-            "A1UEAxMeVE1TLUNBLTEgQ2VydGlmaWNhdGUgQXV0aG9yaXR5MB4XDTExMDMwOTE0\n" +
-            "MTQyN1oXDTE0MDMwOTE0MTQyN1oweDELMAkGA1UEBhMCVVMxGDAWBgNVBAoTD1Uu\n" +
-            "Uy4gR292ZXJubWVudDEMMAoGA1UECxMDTlNTMQwwCgYDVQQLEwNEb0QxDDAKBgNV\n" +
-            "BAsTA1VTQTElMCMGA1UEAxMcVEVTVFVTLkpPSE4uSEFSUlkuMTcwMDAwMDAwMDCC\n" +
-            "ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIv0rry390Ob1Wn85E5dT2o2\n" +
-            "GTvh8HYMwtGzn8hyz7ZDc2crbDq8GlwkZZWmy9Ok8T+NsQp+uweKnGpC86UXbYDA\n" +
-            "/nSnrXUxUD83IRJ6KF8RmyznkEjmeZy27U3qPueR9Ef0p4QDobA3EiHQT78MDNB0\n" +
-            "aN0R/k+cvD+ughe+LedJmpka1IfFzqAaSwnT9GFDmD8mRgWZE375EsK9Pye8qkzW\n" +
-            "/1VYu12IrcE5py0+bb1UwuqipKPhV3Bokfzl2uhmItya8fSXmY/I4qzbfh6mKzXc\n" +
-            "kSQIuXycM+WP0yJ1jdlxBQgfDs+aqUCsTSTf6jBnn59/ZYAvzpAi/asWnO0ZhPkC\n" +
-            "AwEAAaOCAYkwggGFMB8GA1UdIwQYMBaAFB7SsZ2vfcozUGxW2zwTpKaBrkAwME0G\n" +
-            "A1UdHwRGMEQwQqBAoD6GPGh0dHA6Ly9jcmwuZ2RzLm5pdC5kaXNhLm1pbC9jcmwv\n" +
-            "TlNTSklUQ0RPRFNVQk9SRElOQVRFQ0ExLmNybDAOBgNVHQ8BAf8EBAMCB4AwFwYD\n" +
-            "VR0gBBAwDjAMBgpghkgBZQMCARUCMB0GA1UdDgQWBBSzU9dWEVcG+IA36kxiMYGd\n" +
-            "v0lKIzBgBggrBgEFBQcBAQRUMFIwUAYIKwYBBQUHMAKGRGh0dHA6Ly9jcmwuZ2Rz\n" +
-            "Lm5pdC5kaXNhLm1pbC9pc3N1ZWR0by9OU1NKSVRDRE9EU1VCT1JESU5BVEVDQTFf\n" +
-            "SVQucDdjMBYGA1UdCQQPMA0wCwYDVQQGMQQTAlVTMDAGA1UdEQQpMCegJQYKKwYB\n" +
-            "BAGCNxQCA6AXDBUxNzAwMDAwMDAwLlZAc21pbC5taWwwHwYDVR0lBBgwFgYKKwYB\n" +
-            "BAGCNxQCAgYIKwYBBQUHAwIwDQYJKoZIhvcNAQEFBQADggEBAGkOHcAv25n8rkoo\n" +
-            "v2lAcENZ/AUICTqsnQ5C14ji+ijAxu0+wSvCWP5AOUcdrdk9zEXeJatZh8HVpdkk\n" +
-            "xzSfkpUurJusbXnLQBEC8fL/QouYnDqyn1i1c3VRVXpXUEa1WpIA7sDhAi2tvIDU\n" +
-            "gRdFDERqH2HGWUfIxUSTNhCpZ+rn+5CpQ529VLyKhdmx7VPjr2hKF2ImK9phjbbH\n" +
-            "XR9iyR6uUd47hl5gXAXVbDqWcFpzEZgkUme6CAxkF4feFyLejz24r8xUXzDFXnoR\n" +
-            "02X6Cs2Gws7gYPRuDsh6/+gwZsMcO1dHaAL1azeGHtT3JSPAG9wS5XpDtglPseNE\n" +
-            "loz7OH4=";
-        X509Certificate cert = CertUtils.decodeFromPEM(certb64, false);
-
+        X509Certificate cert = CertUtils.decodeFromPEM(ALT_NAME_CERT_B64, false);
         X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
 
         // TODO current expected result is for this to fail, since we do not expose otherName.  Update test if support is later added
@@ -299,8 +269,26 @@ public class X509CertificateAttributesExtractorTest {
     }
 
     @Test
+    @BugNumber(10644)
+    public void testDNEmail() throws Exception {
+        X509Certificate cert = CertUtils.decodeFromPEM(EMAIL_IN_DN_CERT_B64, false);
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
+        assertArrayEquals( "issuerEmail", new Object[]{"jdy@layer7tech.com"}, (Object[])cae.getAttributeValue( "issuerEmail" ) );
+        assertArrayEquals( "issuer.dn.emailaddress", new Object[]{"jdy@layer7tech.com"}, (Object[])cae.getAttributeValue( "issuer.dn.emailaddress" ) );
+        assertArrayEquals( "issuer.dn.7.emailaddress", new Object[]{"jdy@layer7tech.com"}, (Object[])cae.getAttributeValue( "issuer.dn.7.emailaddress" ) );
+        assertArrayEquals( "subjectEmail", new Object[]{"jdy@layer7tech.com"}, (Object[])cae.getAttributeValue( "subjectEmail" ) );
+        assertArrayEquals( "subject.dn.emailaddress", new Object[]{"jdy@layer7tech.com"}, (Object[])cae.getAttributeValue( "subject.dn.emailaddress" ) );
+        assertArrayEquals( "subject.dn.7.emailaddress", new Object[]{"jdy@layer7tech.com"}, (Object[])cae.getAttributeValue( "subject.dn.7.emailaddress" ) );
+    }
+
+    @Test
     public void testLegacyNames() throws Exception {
-        X509Certificate cert = CertUtils.decodeCert(HexUtils.decodeBase64(THAWTE_CERT_PEM));
+        testLegacyNamesForCert( CertUtils.decodeCert(HexUtils.decodeBase64(THAWTE_CERT_PEM)) );
+        testLegacyNamesForCert( CertUtils.decodeCert(HexUtils.decodeBase64(ALT_NAME_CERT_B64)) );
+        testLegacyNamesForCert( CertUtils.decodeCert(HexUtils.decodeBase64(EMAIL_IN_DN_CERT_B64)) );
+    }
+
+    private void testLegacyNamesForCert( X509Certificate cert ) throws Exception {
         X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
         for(String legacyName : OLD_NAMES) {
             CertificateAttribute attr = CertificateAttribute.fromString(legacyName);
@@ -340,6 +328,60 @@ public class X509CertificateAttributesExtractorTest {
             "gQB2spzuE58b9i00kpRFczTcjmsuXPxMfYnrw2jx15kPLh0XyLUWi77NigUG8hlJ\n" +
             "OgNbBckgjm1S4XaBoMNliiJn5BxTUzdGv7zXL+t7ntAURWxAIQjiXXV2ZjAe9N+C\n" +
             "ii+986IMvx3bnxSimnI3TbB3SOhKPwnOVRks7+YHJOGv7A==";
+
+    private static final String ALT_NAME_CERT_B64 =
+            "MIIFETCCA/mgAwIBAgIDFo8TMA0GCSqGSIb3DQEBBQUAMIGQMQswCQYDVQQGEwJV\n" +
+            "UzEYMBYGA1UEChMPVS5TLiBHb3Zlcm5tZW50MQwwCgYDVQQLEwNOU1MxDDAKBgNV\n" +
+            "BAsTA0RvRDEiMCAGA1UECxMZQ2VydGlmaWNhdGlvbiBBdXRob3JpdGllczEnMCUG\n" +
+            "A1UEAxMeVE1TLUNBLTEgQ2VydGlmaWNhdGUgQXV0aG9yaXR5MB4XDTExMDMwOTE0\n" +
+            "MTQyN1oXDTE0MDMwOTE0MTQyN1oweDELMAkGA1UEBhMCVVMxGDAWBgNVBAoTD1Uu\n" +
+            "Uy4gR292ZXJubWVudDEMMAoGA1UECxMDTlNTMQwwCgYDVQQLEwNEb0QxDDAKBgNV\n" +
+            "BAsTA1VTQTElMCMGA1UEAxMcVEVTVFVTLkpPSE4uSEFSUlkuMTcwMDAwMDAwMDCC\n" +
+            "ASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAIv0rry390Ob1Wn85E5dT2o2\n" +
+            "GTvh8HYMwtGzn8hyz7ZDc2crbDq8GlwkZZWmy9Ok8T+NsQp+uweKnGpC86UXbYDA\n" +
+            "/nSnrXUxUD83IRJ6KF8RmyznkEjmeZy27U3qPueR9Ef0p4QDobA3EiHQT78MDNB0\n" +
+            "aN0R/k+cvD+ughe+LedJmpka1IfFzqAaSwnT9GFDmD8mRgWZE375EsK9Pye8qkzW\n" +
+            "/1VYu12IrcE5py0+bb1UwuqipKPhV3Bokfzl2uhmItya8fSXmY/I4qzbfh6mKzXc\n" +
+            "kSQIuXycM+WP0yJ1jdlxBQgfDs+aqUCsTSTf6jBnn59/ZYAvzpAi/asWnO0ZhPkC\n" +
+            "AwEAAaOCAYkwggGFMB8GA1UdIwQYMBaAFB7SsZ2vfcozUGxW2zwTpKaBrkAwME0G\n" +
+            "A1UdHwRGMEQwQqBAoD6GPGh0dHA6Ly9jcmwuZ2RzLm5pdC5kaXNhLm1pbC9jcmwv\n" +
+            "TlNTSklUQ0RPRFNVQk9SRElOQVRFQ0ExLmNybDAOBgNVHQ8BAf8EBAMCB4AwFwYD\n" +
+            "VR0gBBAwDjAMBgpghkgBZQMCARUCMB0GA1UdDgQWBBSzU9dWEVcG+IA36kxiMYGd\n" +
+            "v0lKIzBgBggrBgEFBQcBAQRUMFIwUAYIKwYBBQUHMAKGRGh0dHA6Ly9jcmwuZ2Rz\n" +
+            "Lm5pdC5kaXNhLm1pbC9pc3N1ZWR0by9OU1NKSVRDRE9EU1VCT1JESU5BVEVDQTFf\n" +
+            "SVQucDdjMBYGA1UdCQQPMA0wCwYDVQQGMQQTAlVTMDAGA1UdEQQpMCegJQYKKwYB\n" +
+            "BAGCNxQCA6AXDBUxNzAwMDAwMDAwLlZAc21pbC5taWwwHwYDVR0lBBgwFgYKKwYB\n" +
+            "BAGCNxQCAgYIKwYBBQUHAwIwDQYJKoZIhvcNAQEFBQADggEBAGkOHcAv25n8rkoo\n" +
+            "v2lAcENZ/AUICTqsnQ5C14ji+ijAxu0+wSvCWP5AOUcdrdk9zEXeJatZh8HVpdkk\n" +
+            "xzSfkpUurJusbXnLQBEC8fL/QouYnDqyn1i1c3VRVXpXUEa1WpIA7sDhAi2tvIDU\n" +
+            "gRdFDERqH2HGWUfIxUSTNhCpZ+rn+5CpQ529VLyKhdmx7VPjr2hKF2ImK9phjbbH\n" +
+            "XR9iyR6uUd47hl5gXAXVbDqWcFpzEZgkUme6CAxkF4feFyLejz24r8xUXzDFXnoR\n" +
+            "02X6Cs2Gws7gYPRuDsh6/+gwZsMcO1dHaAL1azeGHtT3JSPAG9wS5XpDtglPseNE\n" +
+            "loz7OH4=";
+
+    private static final String EMAIL_IN_DN_CERT_B64 =
+            "MIIEEzCCAvugAwIBAgIJAKrJb6VY9CsQMA0GCSqGSIb3DQEBBQUAMIGZMQswCQYD\n" +
+            "VQQGEwJDQTEZMBcGA1UECBMQQnJpdGlzaCBDb2x1bWJpYTESMBAGA1UEBxMJVmFu\n" +
+            "Y291dmVyMR0wGwYDVQQKExRMYXllciA3IFRlY2hub2xvZ2llczELMAkGA1UECxMC\n" +
+            "UUExDDAKBgNVBAMTA2pkeTEhMB8GCSqGSIb3DQEJARYSamR5QGxheWVyN3RlY2gu\n" +
+            "Y29tMB4XDTExMDYxNTE3MTkwNloXDTIxMDYxMjE3MTkwNlowgZkxCzAJBgNVBAYT\n" +
+            "AkNBMRkwFwYDVQQIExBCcml0aXNoIENvbHVtYmlhMRIwEAYDVQQHEwlWYW5jb3V2\n" +
+            "ZXIxHTAbBgNVBAoTFExheWVyIDcgVGVjaG5vbG9naWVzMQswCQYDVQQLEwJRQTEM\n" +
+            "MAoGA1UEAxMDamR5MSEwHwYJKoZIhvcNAQkBFhJqZHlAbGF5ZXI3dGVjaC5jb20w\n" +
+            "ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkl+99liFjd602Hou2bq0+\n" +
+            "6Zo0TGW82q0JZ44FJ2kTSNUwUz3Lwi4Sk2TqZDGEP9J04AcDjdtTUJLRGR/lnxlq\n" +
+            "fm9h8CYZaHePCOqh1uQn/iGFoSganP0Pz/8K8MmpKjz7W/y4GleduwQtpZ5e9JWO\n" +
+            "YrmWK0jE3w+5cjlw+VclXaDoi+RtcEcjAVsk9JDCUVFbUOSXhpW3cCXEiwBGvYZV\n" +
+            "h614nxzZvth85DvB6mt5Q3cT5ACSBnaTkIBy1o7KvyhHILcmUojIalYSjMiRMkLN\n" +
+            "84Xn3mQ/r6zAB5Dj9KMtFH+PD92wW5Psl48pbwaDbuj1KCeqr0db/5ZKlr3OUK/7\n" +
+            "AgMBAAGjXDBaMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgXgMEAGA1UdEQQ5MDeCEWhh\n" +
+            "cnVoaS5sN3RlY2guY29tghFtaWt1cnUubDd0ZWNoLmNvbYIPeXVraS5sN3RlY2gu\n" +
+            "Y29tMA0GCSqGSIb3DQEBBQUAA4IBAQBlqM1+EnGbuDQDzzjnBjHc2z1G6/S71Ebd\n" +
+            "xi4Or/dZem2eDeFsEWg4TDWM/upJkb4q0qvvSMCaIb6mGLy5JNTVvRnPvw/cRrhE\n" +
+            "soLm+E4SINP95XFxEOybhLFTU9wkh0C/fajmcTFKLJGCbu7TqFQy4WHPK9caFCZp\n" +
+            "qYQnfLuYZY5a0yq5qNqOH7Ul3UA/mUA5OeHhG5+54zp/nZZ2YxXa8IxPXQ6gWm44\n" +
+            "LR8FPSgtIUQHWh+v7Y45ytVDtknN+ZbYGC1Ww9FviQPY+hMo1vexoACAlFWi2W4j\n" +
+            "e5zngcaJASgin9LD7o1+A+BK5MkKQNe/S5pDoHgeX+cTYDXfU+ug";
 
     /**
      * Certificate attribute names exposed as context variables before 5.1 / multiple signature support.
