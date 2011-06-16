@@ -157,26 +157,47 @@ public class ClusterLogWorker extends SwingWorker {
                             rawHeaders = logService.findHeaders(asc);
                             logger.finer("End time of grab data:: " + new Date(System.currentTimeMillis()));
                             if (!isCancelled() && rawHeaders.size() > 0) {
-                                long lowest = -1;
-                                long oldest = -1;
-                                GatewayStatus nodeStatus;
+                                long oldest = Long.MAX_VALUE;
+
+                                Map<String, Long> nodeToLowestId = new HashMap<String, Long>();
+                                for (String nodeId : newNodeList.keySet()) {
+                                    nodeToLowestId.put(nodeId, Long.MAX_VALUE);
+                                }
+
                                 for (int j = 0; j < (rawHeaders.size()) && (retrievedLogs.size() < AuditLogTableSorterModel.MAX_NUMBER_OF_LOG_MESSAGES); j++) {
                                     AuditRecordHeader header = rawHeaders.get(j);
                                     logMessage = new AuditHeaderLogMessage(header);
-                                    nodeStatus = newNodeList.get(header.getNodeId());
+
+                                    final GatewayStatus nodeStatus = newNodeList.get(header.getNodeId());
                                     if (nodeStatus != null) { // do not add log messages for nodes that are no longer in the cluster
-                                        if (j == 0) {
-                                            lowest = logMessage.getMsgNumber();
-                                            oldest = logMessage.getTimestamp();
-                                        } else if (lowest > logMessage.getMsgNumber()) {
-                                            lowest = logMessage.getMsgNumber();
-                                            oldest = logMessage.getTimestamp();
+                                        if (nodeToLowestId.containsKey(header.getNodeId())) {
+                                            //based on nodeStatus != null this if is always true
+
+                                            //track lowest object id seen from each node
+                                            final Long lowest = nodeToLowestId.get(header.getNodeId());
+                                            if (header.getOid() < lowest ) {
+                                                nodeToLowestId.put(header.getNodeId(), header.getOid());
+                                            }
+
+                                            //track oldest across a cluster
+                                            if (header.getTimestamp() < oldest ) {
+                                                oldest = header.getTimestamp();
+                                            }
                                         }
+
                                         logMessage.setNodeName(nodeStatus.getName());
                                         newLogs.put(logMessage.getMsgNumber(), logMessage);
                                     }
                                 }
-                                logRequest.setEndMsgNumber(lowest);
+
+                                for (Map.Entry<String, Long> entry : nodeToLowestId.entrySet()) {
+                                    //for each node - we only want records with an object smaller than entry.getValue()
+                                    logRequest.setEndMsgNumberForNode(entry.getKey(), entry.getValue());
+                                }
+                                if (oldest == Long.MAX_VALUE) {
+                                    //should never happen.
+                                    oldest = -1;
+                                }
                                 logRequest.setEndMsgDate(new Date(oldest + 1)); // end date is exclusive
 
                             } else {

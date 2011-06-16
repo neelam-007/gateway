@@ -513,25 +513,18 @@ public class AuditRecordManagerImpl
             criterion.add(Restrictions.in(PROP_LEVEL, levels));
         }
 
-        //a start or end constraint cannot be supplied with out an associated node id.
-        //objectids do not increment across a cluster, they increment for a node.
+        // Note: a start or end constraint cannot be supplied with out an associated node id.
+        // object ids do not increment across a cluster, they increment for a node.
 
         final Map<String, Long> nodeIdToStartMsg = criteria.nodeIdToStartMsg;
         if (!nodeIdToStartMsg.isEmpty()) {
-            // only records for nodes contained in this map will be returned.
-            final Disjunction disjunction = Restrictions.disjunction();
-            for (Map.Entry<String, Long> nodeToStartMsg : nodeIdToStartMsg.entrySet()) {
-                final Conjunction conjunction = Restrictions.conjunction();
-                conjunction.add(Restrictions.eq(PROP_NODEID, nodeToStartMsg.getKey()));
-                conjunction.add(Restrictions.gt(PROP_OID, nodeToStartMsg.getValue()));
-                disjunction.add(conjunction);
-            }
-
-            criterion.add(disjunction);
+            criterion.add(getObjectIdForNodeDisjunction(nodeIdToStartMsg, true));
         }
 
-        //todo: fix end message number logic
-        if (criteria.endMessageNumber > 0) criterion.add(Restrictions.lt(PROP_OID, criteria.endMessageNumber));
+        final Map<String, Long> nodeIdToEndMsg = criteria.nodeIdToEndMsg;
+        if (!nodeIdToEndMsg.isEmpty()) {
+            criterion.add(getObjectIdForNodeDisjunction(nodeIdToEndMsg, false));
+        }
 
         if (criteria.requestId != null) criterion.add(Restrictions.ilike(PROP_REQUEST_ID, criteria.requestId));
         if (criteria.serviceName != null) criterion.add(Restrictions.ilike(PROP_SERVICE_NAME, criteria.serviceName));
@@ -564,6 +557,35 @@ public class AuditRecordManagerImpl
         }
 
         return criterion.toArray( new Criterion[criterion.size()] );
+    }
+
+    /**
+     * Get a disjunction which contains all nodes in the supplied map. If the returned Disjunction is added to a criteria
+     * then only results for nodes contained within nodeIdToObjectIdValue will be returned.
+     *
+     * Returned disjunction will represent the following SQL:
+     * ((nodeid=? and objectid <|> ?) or (nodeid=? and objectid <|> ?)) , one AND block for each node id in the supplied map.
+     *
+     * @param nodeIdToObjectIdValue map of node id to an object id, which will have a constraint applied to it.
+     * Cannot be null or empty.
+     * @param greaterThan if true, then the constraint added is Restrictions.gt, otherwise Restrictions.lt
+     * @return Disjunction to add to a hibernate criteria object.
+     */
+    private Disjunction getObjectIdForNodeDisjunction(final Map<String, Long> nodeIdToObjectIdValue, boolean greaterThan) {
+        final Disjunction disjunction = Restrictions.disjunction();
+        for (Map.Entry<String, Long> nodeToObjectId : nodeIdToObjectIdValue.entrySet()) {
+            final Conjunction conjunction = Restrictions.conjunction();
+            conjunction.add(Restrictions.eq(PROP_NODEID, nodeToObjectId.getKey()));
+            if (greaterThan) {
+                conjunction.add(Restrictions.gt(PROP_OID, nodeToObjectId.getValue()));
+            } else {
+                conjunction.add(Restrictions.lt(PROP_OID, nodeToObjectId.getValue()));
+            }
+
+            disjunction.add(conjunction);
+        }
+
+        return disjunction;
     }
 
     private class DeletionTask implements Runnable {

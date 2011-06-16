@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.logging.Level;
 
 /*
- * This class encapsultes the request for retrieving logs from cluster nodes.
+ * This class encapsulates the request for retrieving logs from cluster nodes.
  *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
@@ -33,6 +33,7 @@ public final class LogRequest {
     private final Long entityId; // null = any
     private int retrievedLogCount;
     private final Map<String, Long> nodeIdToStartMsg = new HashMap<String, Long>();
+    private final Map<String, Long> nodeIdToEndMsg = new HashMap<String, Long>();
 
     private LogRequest(Builder builder) {
         nodeName = builder.nodeName;
@@ -189,6 +190,8 @@ public final class LogRequest {
     /**
      * Return the endMsgNumber.
      *
+     * Do not use for Audits.
+     *
      * @return long  The endMsgNumber.
      */
     public long getEndMsgNumber() {
@@ -196,13 +199,20 @@ public final class LogRequest {
     }
 
     /**
-     * Set the endMsgNumber.
-     *
-     * Do not use for Audits. //todo [Donal] - fix usages
-     * @param endMsgNumber The value of the endMsgNumber.
+     * Record the maximum record id to retrieve for a node.
+     * @param nodeId String node id
+     * @param endMsgNumber object id of the audit record.
      */
-    public void setEndMsgNumber(long endMsgNumber) {
-        this.endMsgNumber = endMsgNumber;
+    public void setEndMsgNumberForNode(String nodeId, long endMsgNumber) {
+        nodeIdToEndMsg.put(nodeId, endMsgNumber);
+    }
+
+    /**
+     * Get the node id to maximum audit record id mappings.
+     * @return Map of node id to maximum audit record object id
+     */
+    public Map<String, Long> getNodeIdToEndMsg() {
+        return Collections.unmodifiableMap(nodeIdToEndMsg);
     }
 
     /**
