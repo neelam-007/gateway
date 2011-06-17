@@ -3,6 +3,8 @@
  */
 package com.l7tech.policy.assertion.credential;
 
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.security.token.SessionSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.HasUsernameAndPassword;
@@ -160,7 +162,19 @@ public final class LoginCredentials implements Disposable {
                     credentialSource,
                     null,
                     kst.getServiceTicket() );
-         } else {
+        } else if ( securityToken instanceof SessionSecurityToken ) {
+            SessionSecurityToken ist = (SessionSecurityToken) securityToken;
+            loginCredentials = new LoginCredentials(
+                    ist.getLogin(),
+                    null,
+                    CredentialFormat.SESSIONTOKEN,
+                    securityToken,
+                    isTokenPresent,
+                    supportingSecurityTokens,
+                    credentialSource,
+                    null,
+                    null );
+        } else {
             throw new IllegalArgumentException("Unsupported security token '"+securityToken.getClass()+"' of type '"+securityToken.getType()+"'");
         }
 
@@ -473,6 +487,7 @@ public final class LoginCredentials implements Disposable {
             {WssBasic.class, SecurityTokenType.WSS_USERNAME},
             {XpathCredentialSource.class, SecurityTokenType.XPATH_CREDENTIALS},
             {HttpNegotiate.class, SecurityTokenType.HTTP_KERBEROS},
+            {SecureConversation.class, SecurityTokenType.WSSC_CONTEXT},
     }, true);
 
     private final String login;

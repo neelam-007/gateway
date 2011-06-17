@@ -383,10 +383,12 @@
 
     <bean id="inboundSecureConversationContextManager" class="com.l7tech.server.secureconversation.InboundSecureConversationContextManager">
         <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="storedSecureConversationSessionManager"/>
     </bean>
 
     <bean id="outboundSecureConversationContextManager" class="com.l7tech.server.secureconversation.OutboundSecureConversationContextManager">
         <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="storedSecureConversationSessionManager"/>
     </bean>
 
     <bean id="kerberosSessionContextManager" class="com.l7tech.server.security.kerberos.KerberosSessionContextManager"/>
@@ -399,4 +401,7 @@
             </list>
         </constructor-arg>
     </bean>
+
+    <bean id="storedSecureConversationSessionManager" class="com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub"/>
+
 </beans>

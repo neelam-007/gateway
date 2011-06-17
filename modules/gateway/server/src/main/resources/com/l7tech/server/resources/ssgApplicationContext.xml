@@ -2198,11 +2198,13 @@
     <bean id="inboundSecureConversationContextManager"
           class="com.l7tech.server.secureconversation.InboundSecureConversationContextManager">
         <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="storedSecureConversationSessionManager"/>
     </bean>
 
     <bean id="outboundSecureConversationContextManager"
           class="com.l7tech.server.secureconversation.OutboundSecureConversationContextManager">
         <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="storedSecureConversationSessionManager"/>
     </bean>
 
     <bean id="kerberosSessionContextManager" class="com.l7tech.server.security.kerberos.KerberosSessionContextManager"/>
@@ -2235,6 +2237,18 @@
             <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
                 <constructor-arg value="trustManager"/>
                 <constructor-arg value="javax.net.ssl.X509TrustManager"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="storedSecureConversationSessionManager" class="com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerImpl" parent="hibernateBean"/>
+
+    <bean id="storedSecureConversationSessionMaintainer" class="com.l7tech.server.secureconversation.StoredSecureConversationSessionMaintainer" init-method="init">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="storedSecureConversationSessionManager"/>
+        <constructor-arg index="2">
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="Stored WSSC Session Maintainer"/>
             </bean>
         </constructor-arg>
     </bean>

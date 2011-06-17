@@ -12,10 +12,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.security.MockGenericHttpClient;
-import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -154,9 +151,8 @@ public class PolicyProcessingPerformanceTest extends TestCase {
             inboundSecureConversationContextManager.createContextForUser(
                     "http://www.layer7tech.com/uuid/00000000",
                     "http://www.layer7tech.com/uuid/00000000",
-                    System.currentTimeMillis() + TimeUnit.DAYS.getMultiplier(),
+                    System.currentTimeMillis() + (long) TimeUnit.DAYS.getMultiplier(),
                     new UserBean(),
-                    LoginCredentials.makeLoginCredentials(new HttpBasicToken("test", "password".toCharArray()), HttpBasic.class),
                     new byte[16]);
         }
 
@@ -213,7 +209,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
      * Populate the service cache with the test services.
      */
     private static void buildServices( final ServiceManager serviceManager ) throws Exception {
-        long oid = 1;
+        long oid = 1L;
 
         for (String[] serviceInfo : TEST_SERVICES) {
             PublishedService ps = new PublishedService();
@@ -479,7 +475,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
         hrequest.setRequestURI(uri);
         hrequest.setContent(message.getBytes());
         hrequest.addHeader("SOAPAction", "http://warehouse.acme.com/ws/listProducts");
-        ConnectionId.setConnectionId(new ConnectionId(0,0));
+        ConnectionId.setConnectionId(new ConnectionId( 0L, 0L ));
         hrequest.setAttribute("com.l7tech.server.connectionIdentifierObject", ConnectionId.getConnectionId());
 
         // Initialize processing context

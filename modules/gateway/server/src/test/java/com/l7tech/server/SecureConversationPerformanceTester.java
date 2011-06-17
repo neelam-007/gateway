@@ -3,9 +3,6 @@ package com.l7tech.server;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.xml.WssDecoratorTest;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
@@ -15,6 +12,7 @@ import com.l7tech.security.xml.processor.SecurityContextFinder;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.util.MockConfig;
 import com.l7tech.util.SoapConstants;
@@ -29,11 +27,9 @@ import java.util.Properties;
 public class SecureConversationPerformanceTester {
     @Test
     public void testSignatureValidationPerformance() throws Exception {
-        final InboundSecureConversationContextManager manager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ) );
+        final InboundSecureConversationContextManager manager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ), new StoredSecureConversationSessionManagerStub() );
         WssDecoratorTest.TestDocument td = new WssDecoratorTest().getSigningOnlyWithSecureConversationTestDocument();
-        final SecureConversationSession session = manager.createContextForUser(new UserBean(3, "foo"),
-                LoginCredentials.makeLoginCredentials(new HttpBasicToken("foo", "blah".toCharArray()),
-                        HttpBasic.class), SoapConstants.WSSC_NAMESPACE2);
+        final SecureConversationSession session = manager.createContextForUser(new UserBean( 3L, "foo"), SoapConstants.WSSC_NAMESPACE2);
         td.req.setSecureConversationSession(new DecorationRequirements.SimpleSecureConversationSession(session.getIdentifier(),
                 session.getSharedSecret(),
                 session.getSecConvNamespaceUsed()));

@@ -4,11 +4,8 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.LookupOutboundSecureConversationSession;
 import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -16,6 +13,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
+import com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub;
 import com.l7tech.util.MockConfig;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,7 +31,7 @@ import static junit.framework.Assert.assertEquals;
 public class ServerLookupOutboundSecureConversationSessionTest {
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
     private static final MockConfig mockConfig = new MockConfig(new Properties());
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig);
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig,new StoredSecureConversationSessionManagerStub());
     private static final String FAKE_SERVICE_URL = "fake_service_url";
     private static final String FAKE_SESSION_ID = "fake_session_identifier";
 
@@ -56,7 +54,7 @@ public class ServerLookupOutboundSecureConversationSessionTest {
     @Test
     public void testLookupFound() throws Exception {
         // Add a new session into the cache
-        User user1 = user(1, "Alice");
+        User user1 = user( 1L, "Alice");
         addNewSession(user1, FAKE_SERVICE_URL, FAKE_SESSION_ID);
 
         // To attempt to match the session, configure the lookup assertion
@@ -70,12 +68,12 @@ public class ServerLookupOutboundSecureConversationSessionTest {
     @Test
     public void testLookupNotFound() throws Exception {
         // Add a new session into the cache
-        User user2 = user(2, "Bob");
+        User user2 = user( 2L, "Bob");
         addNewSession(user2, FAKE_SERVICE_URL, FAKE_SESSION_ID);
 
         // Case 1: User Not Matched (but still set Service URL matched)
         lookupAssertion.setServiceUrl(FAKE_SERVICE_URL);
-        User user3 = user(3, "John");
+        User user3 = user( 3L, "John");
         AssertionStatus status = serverLookupAssertion.doCheckRequest(context, request, "", authenticationContext(user3));
 
         assertEquals("Session Not Found: authenticated user mismatched", AssertionStatus.FALSIFIED, status);
@@ -99,12 +97,11 @@ public class ServerLookupOutboundSecureConversationSessionTest {
 
         return outboundContextManager.createContextForUser(
             user,
-            OutboundSecureConversationContextManager.newSessionKey(user,serviceUrl),
-            LoginCredentials.makeLoginCredentials( new HttpBasicToken(user.getLogin(), "password".toCharArray()), HttpBasic.class ),
+            OutboundSecureConversationContextManager.newSessionKey( user, serviceUrl ),
             "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512",
             sessionId,
             creationTime,
-            creationTime + 2*60*1000,
+            creationTime + (long) (2 * 60 * 1000),
             generateNewSecret(64),
             null,
             null,

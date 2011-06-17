@@ -410,6 +410,7 @@ public class DecorationRequirements {
 
     public interface SecureConversationSession extends SecurityContext {
         String getId();
+        Element getElement();
         byte[] getSecretKey();
         String getSCNamespace();
     }
@@ -464,6 +465,11 @@ public class DecorationRequirements {
         @Override
         public byte[] getSharedSecret() {
             return key;
+        }
+
+        @Override
+        public Element getElement() {
+            return null;
         }
     }
 

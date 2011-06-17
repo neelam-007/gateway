@@ -14,10 +14,13 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.cert.CertVerifier;
+import com.l7tech.security.token.SecurityToken;
+import com.l7tech.security.token.SessionSecurityToken;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.ConfigurableIdentityProvider;
 import com.l7tech.server.identity.PersistentIdentityProviderImpl;
+import com.l7tech.server.identity.SessionAuthenticator;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.util.ExceptionUtils;
@@ -81,10 +84,12 @@ public class FederatedIdentityProviderImpl
                 throw new AuthenticationException("Error authorizing X.509 credentials: " + ExceptionUtils.getMessage( e ), e);
             }
             return user == null ? null : new AuthenticationResult(user, pc.getSecurityTokens(), pc.getClientCert(), false);
-        }
-        else if ( pc.getFormat() == CredentialFormat.SAML ) {
+        } else if ( pc.getFormat() == CredentialFormat.SAML ) {
             User user = samlHandler.authorize(pc);
             return user == null ? null : new AuthenticationResult(user, pc.getSecurityTokens(), pc.getClientCert(), false);
+        } else if ( pc.getFormat() == CredentialFormat.SESSIONTOKEN ) {
+            final FederatedUser user = getUserForCredential( pc );
+            return user == null ? null : sessionAuthenticator.authenticateSessionCredentials( pc, user );
         } else {
             throw new BadCredentialsException("Can't authenticate without SAML or X.509 certificate credentials");
         }
@@ -189,6 +194,7 @@ public class FederatedIdentityProviderImpl
         Auditor auditor = new Auditor(this, applicationContext, logger);
         this.x509Handler = new X509AuthorizationHandler(this, trustedCertServices, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
         this.samlHandler = new SamlAuthorizationHandler(this, trustedCertServices, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
+        this.sessionAuthenticator = new SessionAuthenticator( providerConfig.getOid() );
     }
 
     @Override
@@ -234,8 +240,46 @@ public class FederatedIdentityProviderImpl
         }
     }
 
+    /**
+     * Get the FederatedUser that matches the given session credential.
+     */
+    private FederatedUser getUserForCredential( final LoginCredentials pc ) throws AuthenticationException {
+        FederatedUser user;
+
+        // extract token
+        final SecurityToken securityToken = pc.getSecurityToken();
+        if ( !(securityToken instanceof SessionSecurityToken) ) {
+            throw new BadCredentialsException("Unexpected token");
+        }
+        final SessionSecurityToken sessionSecurityToken = (SessionSecurityToken) securityToken;
+
+        // verify provider
+        if ( sessionSecurityToken.getProviderId() != getConfig().getOid() ) {
+            return null;
+        }
+
+        // verify user
+        final String id = sessionSecurityToken.getUserId();
+        if ( id != null ) {
+            try {
+                user = getUserManager().findByPrimaryKey( id );
+            } catch ( FindException e ) {
+                throw new AuthenticationException("Error authorizing session credentials: " + ExceptionUtils.getMessage( e ), e);
+            }
+            if ( user == null ) {
+                throw new AuthenticationException("Couldn't authorize session credentials: user not found");
+            }
+        } else {
+            // re-create virtual user
+            user = new FederatedUser(getConfig().getOid(), null);
+        }
+
+        return user;
+    }
+
     private X509AuthorizationHandler x509Handler;
     private SamlAuthorizationHandler samlHandler;
+    private SessionAuthenticator sessionAuthenticator;
 
     private FederatedIdentityProviderConfig providerConfig;
     private FederatedUserManager userManager;

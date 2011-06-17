@@ -19,7 +19,7 @@ public class SecurityTokenType implements Serializable {
     public static final String SAML_NS = "urn:oasis:names:tc:SAML:1.0:assertion";
     public static final String SAML2_NS = "urn:oasis:names:tc:SAML:2.0:assertion";
     public static final String SAML_ELEMENT = "Assertion";
-    public static final String SECURECONVESATIONTOKEN_URI = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
+    public static final String SECURECONVERSATIONTOKEN_URI = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
 
     /**
      * Get a SecurityTokenType by its num.
@@ -85,7 +85,7 @@ public class SecurityTokenType implements Serializable {
     public static final SecurityTokenType SAML_ASSERTION =
             new SecurityTokenType(n++, "SAML Assertion", "SAML", SecurityTokenType.SAML_NS + "#Assertion", SAML_NS, SAML_ELEMENT, SamlSecurityToken.class);
     public static final SecurityTokenType WSSC_CONTEXT =
-            new SecurityTokenType(n++, "WS-SC SecurityContextToken", "SymmetricKey", SECURECONVESATIONTOKEN_URI, SoapConstants.WSSC_NAMESPACE, SoapConstants.SECURITY_CONTEXT_TOK_EL_NAME, SecurityContextToken.class);
+            new SecurityTokenType(n++, "WS-SC SecurityContextToken", "SymmetricKey", SECURECONVERSATIONTOKEN_URI, SoapConstants.WSSC_NAMESPACE, SoapConstants.SECURITY_CONTEXT_TOK_EL_NAME, SecurityContextToken.class);
     public static final SecurityTokenType WSSC_DERIVED_KEY =
             new SecurityTokenType(n++, "WS-SC DerivedKeyToken", "SymmetricKey", null, SoapConstants.WSSC_NAMESPACE, SoapConstants.WSSC_DK_EL_NAME, DerivedKeyToken.class);
     public static final SecurityTokenType WSS_USERNAME =

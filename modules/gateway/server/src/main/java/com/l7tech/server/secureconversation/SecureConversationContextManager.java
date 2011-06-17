@@ -1,15 +1,23 @@
 package com.l7tech.server.secureconversation;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.identity.UserBean;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ValidatedConfig;
+import fiorano.jms.util.xmlutils.XMLUtils;
 import org.apache.commons.collections.map.LRUMap;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -62,6 +70,28 @@ public abstract class SecureConversationContextManager<KT> {
             output = (SecureConversationSession) sessions.get(sessionKey);
         }
 
+        if ( output == null && storeSessions() ) {
+            try {
+                output = loadSession( sessionKey );
+                if ( output != null ) {
+                    // store to cache (use cached value if now present)
+                    synchronized( sessions ) {
+                        final SecureConversationSession session = (SecureConversationSession) sessions.get(sessionKey);
+                        if ( session == null ) {
+                            sessions.put(sessionKey, output);
+                        } else {
+                            output = session;
+                        }
+                    }
+                }
+            } catch( Exception e ) {
+                logger.log(
+                        Level.WARNING,
+                        "Error loading secure conversation session: " + ExceptionUtils.getMessage( e ),
+                        ExceptionUtils.getDebugException( e ) );
+            }
+        }
+
         // Check if expired
         if ( output != null && output.getExpiration() <= System.currentTimeMillis() ) {
             output = null;
@@ -86,6 +116,17 @@ public abstract class SecureConversationContextManager<KT> {
             cancelled = sessions.remove(sessionKey) != null;
         }
 
+        if ( storeSessions() ) {
+            try {
+                deleteSession( sessionKey );
+            } catch( Exception e ) {
+                logger.log(
+                        Level.WARNING,
+                        "Error deleting secure conversation session: " + ExceptionUtils.getMessage( e ),
+                        ExceptionUtils.getDebugException( e ) );
+            }
+        }
+
         return cancelled;
     }
 
@@ -108,6 +149,16 @@ public abstract class SecureConversationContextManager<KT> {
             sessions.put(sessionKey, newSession);
             logger.fine("Saved SecureConversation context " + newSession.getIdentifier());
         }
+        if ( storeSessions() ) {
+            try {
+                storeSession( sessionKey, newSession );
+            } catch ( Exception e ) {
+                logger.log(
+                        Level.WARNING,
+                        "Error saving secure conversation session: " + ExceptionUtils.getMessage( e ),
+                        ExceptionUtils.getDebugException( e ) );
+            }
+        }
     }
 
     /**
@@ -119,27 +170,51 @@ public abstract class SecureConversationContextManager<KT> {
     }
 
     /**
+     * Store a session to cluster wide storage.
+     *
+     * @param sessionKey The key of the session to save
+     * @param session The session to save
+     * @throws SaveException If an error occurs
+     */
+    protected abstract void storeSession( KT sessionKey, SecureConversationSession session ) throws SaveException;
+
+    /**
+     * Load a session from cluster wide storage.
+     *
+     * @param sessionKey The key of the session to load
+     * @return The session or null
+     * @throws FindException If an error occurs
+     */
+    protected abstract SecureConversationSession loadSession( KT sessionKey ) throws FindException;
+
+    /**
+     * Delete a session from cluster wide storage.
+     *
+     * @param sessionKey The key of the session to delete.
+     * @throws DeleteException If an error occurs
+     */
+    protected abstract void deleteSession( KT sessionKey ) throws DeleteException;
+
+    /**
      * Creates a new inbound/outbound session and saves it.
      *
      * @param sessionKey the key for the new session
      * @param sessionId the external ("public") session identifier, you should use your own "namespace"
      * @param expiryTime the expiry in milliseconds
      * @param sessionOwner the user
-     * @param credentials the users credentials
      * @param sharedKey the key for the session
      * @return the newly created session
      * @throws DuplicateSessionException thrown when attempting to create a new session, which exists already.
      */
-    public SecureConversationSession createContextForUser(KT sessionKey, String sessionId, long expiryTime, User sessionOwner, LoginCredentials credentials, byte[] sharedKey) throws SessionCreationException {
-        long expires = expiryTime > 0 ? expiryTime : System.currentTimeMillis() + getDefaultSessionDuration();
+    public SecureConversationSession createContextForUser(KT sessionKey, String sessionId, long expiryTime, User sessionOwner, byte[] sharedKey) throws SessionCreationException {
+        long expires = expiryTime > 0L ? expiryTime : System.currentTimeMillis() + getDefaultSessionDuration();
         SecureConversationSession session = new SecureConversationSession(
                 null,
                 sessionId,
                 sharedKey,
                 System.currentTimeMillis(),
                 expires,
-                sessionOwner,
-                credentials
+                sessionOwner
         );
         saveSession(sessionKey, session);
         return session;
@@ -150,7 +225,6 @@ public abstract class SecureConversationContextManager<KT> {
      *
      * @param sessionOwner The user for the session (required)
      * @param sessionKey The key for the session (must not be null)
-     * @param credentials The credentials used to authenticate
      * @param namespace The WS-SecureConversation namespace in use (may be null)
      * @param sessionIdentifier The external session identifier
      * @param creationTime: The time of the session created.  Its unit is milliseconds.  It must be greater than 0.
@@ -163,7 +237,6 @@ public abstract class SecureConversationContextManager<KT> {
      */
     public SecureConversationSession createContextForUser(final User sessionOwner,
                                                           final KT sessionKey,
-                                                          final LoginCredentials credentials,
                                                           final String namespace,
                                                           final String sessionIdentifier,
                                                           final long creationTime,
@@ -171,7 +244,8 @@ public abstract class SecureConversationContextManager<KT> {
                                                           final byte[] requestSharedSecret,
                                                           final byte[] requestClientEntropy,
                                                           final byte[] requestServerEntropy,
-                                                          final int keySizeBits ) throws SessionCreationException {
+                                                          final int keySizeBits,
+                                                          final Element token ) throws SessionCreationException {
         final byte[] sharedSecret;
         final byte[] clientEntropy;
         final byte[] serverEntropy;
@@ -238,7 +312,7 @@ public abstract class SecureConversationContextManager<KT> {
             creationTime,
             expirationTime,
             sessionOwner,
-            credentials
+            token
         );
 
         saveSession(sessionKey, session);
@@ -299,6 +373,50 @@ public abstract class SecureConversationContextManager<KT> {
                 SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE + "." + nsIndex, SyspropUtil.getInteger( PROP_DEFAULT_KEY_SIZE, 32) );
     }
 
+    protected SecureConversationSession fromStored( final StoredSecureConversationSession session,
+                                                    final byte[] sessionKey ) throws FindException {
+        return new SecureConversationSession(
+            session.getNamespace(),
+            session.getIdentifier(),
+            null,
+            null,
+            sessionKey,
+            session.getCreated(),
+            session.getExpires(),
+            user( session.getProviderId(), session.getUserId(), session.getUserLogin() ),
+            parseTokenElement( session.getOid(), session.getToken() )
+        );
+    }
+
+    private Element parseTokenElement( final long identifier,
+                                       final String token ) {
+        Element element = null;
+
+        if ( token != null && !token.isEmpty() ) {
+            try {
+                element = XmlUtil.parse( token ).getDocumentElement();
+            } catch ( SAXException e ) {
+                logger.log(
+                        Level.WARNING,
+                        "Error processing token element for stored session " + identifier + ": " + ExceptionUtils.getMessage( e ),
+                        ExceptionUtils.getDebugException( e ) );
+            }
+        }
+
+        return element;
+    }
+
+    private User user( final long providerId,
+                       final String userId,
+                       final String login ) {
+        final UserBean userBean = new UserBean( providerId, login );
+        userBean.setUniqueIdentifier( userId );
+        return userBean;
+    }
+
+    private boolean storeSessions(){
+        return config.getBooleanProperty( "wss.secureConversation.clusterSessions", false );
+    }
 
     private Config validated( final Config config ) {
         final ValidatedConfig vc = new ValidatedConfig( config, logger );
@@ -315,13 +433,13 @@ public abstract class SecureConversationContextManager<KT> {
     }
 
     private static final Random random = new SecureRandom();
-    private static final long MIN_SESSIONS = 1;
-    private static final long MAX_SESSIONS = 1000000;
+    private static final long MIN_SESSIONS = 1L;
+    private static final long MAX_SESSIONS = 1000000L;
     private static final int DEFAULT_MAX_SESSIONS = 10000;
-    private static final long MIN_SESSION_DURATION = 1000*60; // 1 min
-    private static final long MAX_SESSION_DURATION = 1000*60*60*24; // 24 hrs
-    private static final long DEFAULT_SESSION_DURATION = 1000*60*60*2; // 2 hrs
-    private static final long SESSION_CHECK_INTERVAL = 1000*60*5; // check every 5 minutes
+    private static final long MIN_SESSION_DURATION = TimeUnit.MINUTES.toMillis( 1L ); // 1 min
+    private static final long MAX_SESSION_DURATION = TimeUnit.HOURS.toMillis( 24L ); // 24 hrs
+    private static final long DEFAULT_SESSION_DURATION = TimeUnit.HOURS.toMillis( 2L ); // 2 hrs
+    private static final long SESSION_CHECK_INTERVAL = TimeUnit.MINUTES.toMillis( 5L ); // check every 5 minutes
 
     protected static final int MIN_CLIENT_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.clientEntropyMinBytes", 8 );
     protected static final int MAX_CLIENT_ENTROPY_BYTES = SyspropUtil.getInteger( "com.l7tech.server.secureconversation.clientEntropyMaxBytes", 1024 );

@@ -15,6 +15,28 @@ SET FOREIGN_KEY_CHECKS=0;
 UPDATE ssg_version SET current_version = '6.2.0';
 
 --
+-- Table for stored secure conversation sessions
+--
+DROP TABLE IF EXISTS wssc_session;
+CREATE TABLE wssc_session (
+  objectid bigint(20) NOT NULL,
+  session_key_hash varchar(128),
+  inbound tinyint(1) NOT NULL DEFAULT 0,
+  identifier varchar(4096) NOT NULL,
+  service_url varchar(4096),
+  encrypted_key varchar(4096),
+  created bigint(20) NOT NULL,
+  expires bigint(20) NOT NULL,
+  provider_id bigint NOT NULL,
+  user_id varchar(255) NOT NULL,
+  user_login varchar(255) NOT NULL,
+  namespace varchar(4096),
+  token mediumtext,
+  UNIQUE KEY (session_key_hash),
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
 --
 -- Reenable FK at very end of script
 --

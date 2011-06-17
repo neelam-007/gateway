@@ -462,9 +462,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                                                              final String scns ) throws TokenServiceException, GeneralSecurityException {
         SecureConversationSession newSession;
         try {
-            newSession = inboundSecureConversationContextManager.createContextForUser(requestor,
-                                                                                             context.getDefaultAuthenticationContext().getLastCredentials(),
-                                                                                             scns);
+            newSession = inboundSecureConversationContextManager.createContextForUser(requestor, scns);
         } catch (SessionCreationException e) {
             throw new TokenServiceException(e);
         }

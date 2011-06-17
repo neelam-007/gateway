@@ -52,7 +52,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
     private static final boolean PROTECTTOKENS_SIGNS_DERIVED_KEYS = SyspropUtil.getBoolean(PROPERTY_PROTECTTOKENS_SIGNS_DERIVED_KEYS, false);
 
-    public static final long TIMESTAMP_TIMOUT_MILLIS = 300000;
+    public static final long TIMESTAMP_TIMOUT_MILLIS = 300000L;
     private static final int NEW_DERIVED_KEY_LENGTH = 32;
     private static final int OLD_DERIVED_KEY_LENGTH = SyspropUtil.getInteger("com.l7tech.security.secureconversation.defaultDerivedKeyLengthInBytes", 32);
 
@@ -75,7 +75,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private static class Context {
         private final Message message;
         private final DecorationRequirements dreq;
-        private long count = 0;
+        private long count = 0L;
         private Map<String, Element> idToElementCache = new HashMap<String, Element>();
         private NamespaceFactory nsf = new NamespaceFactory();
         private byte[] lastEncryptedKeyBytes = null;
@@ -134,7 +134,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         long timeoutMillis = dreq.getTimestampTimeoutMillis();
-        if (timeoutMillis < 1)
+        if (timeoutMillis < 1L )
             timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
         Boolean includeNanoSeconds = dreq.getTimestampResolution() == DecorationRequirements.TimestampResolution.DEFAULT ?
                 null :
@@ -247,7 +247,7 @@ public class WssDecoratorImpl implements WssDecorator {
                     }
                 }
             }
-            sct = addOrFindSecurityContextToken(c, securityHeader, session.getId());
+            sct = addOrFindSecurityContextToken(c, securityHeader, session);
             if (dreq.isProtectTokens())
                 signList.add(sct);
         }
@@ -1148,7 +1148,10 @@ public class WssDecoratorImpl implements WssDecorator {
     }
 
     // Find an existing SCT in the header with the specified ID or else add a new one
-    private Element addOrFindSecurityContextToken(Context c, Element securityHeader, String id) throws TooManyChildElementsException {
+    private Element addOrFindSecurityContextToken( final Context c,
+                                                   final Element securityHeader,
+                                                   final DecorationRequirements.SecureConversationSession session ) throws TooManyChildElementsException {
+        final String id = session.getId();
         NamespaceFactory namespaceFactory = c.nsf;
         final String wsscNs = namespaceFactory.getWsscNs();
 
@@ -1164,11 +1167,19 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         // Add new SCT
-        Element sct = DomUtils.createAndAppendElementNS(securityHeader, SoapConstants.SECURITY_CONTEXT_TOK_EL_NAME, wsscNs, "wssc");
-        Element identifier = DomUtils.createAndAppendElementNS(sct, "Identifier", wsscNs, "wssc");
-        identifier.appendChild(DomUtils.createTextNode(identifier, id));
-        if (c.dreq.isOmitSecurityContextToken())
-            sct.getParentNode().removeChild(sct);
+        final Element sct;
+        Element sessionElement = session.getElement();
+        if ( sessionElement == null ) {
+            sct = XmlUtil.createElementNS( securityHeader, SoapConstants.SECURITY_CONTEXT_TOK_EL_NAME, wsscNs, "wssc" );
+            final Element identifier = XmlUtil.createAndAppendElementNS(sct, "Identifier", wsscNs, "wssc");
+            identifier.appendChild(XmlUtil.createTextNode(identifier, id));
+        } else {
+            sct = (Element) securityHeader.getOwnerDocument().importNode( sessionElement, true );
+        }
+
+        if ( !c.dreq.isOmitSecurityContextToken() ) {
+            securityHeader.appendChild(sct);
+        }
         return sct;
     }
 
@@ -1360,7 +1371,7 @@ public class WssDecoratorImpl implements WssDecorator {
         } catch (XSignatureException e) {
             DsigUtil.repairXSignatureException(e);
             String msg = e.getMessage();
-            if (msg != null && msg.indexOf("Found a relative URI") >= 0)       // Bug #1209
+            if (msg != null && msg.contains( "Found a relative URI" ) )       // Bug #1209
                 throw new InvalidDocumentFormatException("Unable to sign this message due to a relative namespace URI.", e);
             throw new DecoratorException(e);
         } catch (UncheckedInvalidDocumentFormatException e) {

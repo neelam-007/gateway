@@ -50,6 +50,7 @@ public class InternalIdentityProviderImpl
     private InternalUserManager userManager;
     private InternalGroupManager groupManager;
     private CertificateAuthenticator certificateAuthenticator;
+    private SessionAuthenticator sessionAuthenticator;
     private ApplicationContext springContext;
     private Auditor auditor;
     private PasswordHasher passwordHasher;
@@ -89,9 +90,10 @@ public class InternalIdentityProviderImpl
 
         CredentialFormat format = pc.getFormat();
         final AuthenticationResult ar;
-        if ((format.isClientCert())
-                || (format == CredentialFormat.SAML)) {
+        if ( format.isClientCert() || (format == CredentialFormat.SAML)) {
             ar = certificateAuthenticator.authenticateX509Credentials(pc, dbUser, config.getCertificateValidationType(), auditor);
+        } else if ( format == CredentialFormat.SESSIONTOKEN ) {
+            ar = sessionAuthenticator.authenticateSessionCredentials( pc, dbUser );
         } else {
             ar = authenticatePasswordCredentials(pc, dbUser, allowUserUpgrade);
         }
@@ -130,8 +132,19 @@ public class InternalIdentityProviderImpl
 
     @Override
     public InternalUser findUserByCredential(final LoginCredentials lc) throws FindException {
-        String login = lc.getLogin();
-        return userManager.findByLogin(login);
+        InternalUser user = null;
+        if ( lc.getFormat() == CredentialFormat.SESSIONTOKEN ) {
+            final String id = sessionAuthenticator.getUserId( lc );
+            if ( id != null ) {
+                user = userManager.findByPrimaryKey( id );
+            }
+        } else {
+            final String login = lc.getLogin();
+            if ( login != null ) {
+                user = userManager.findByLogin(login);
+            }
+        }
+        return user;
     }
 
     private AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc,
@@ -274,6 +287,8 @@ public class InternalIdentityProviderImpl
 
         userManager.configure( this );
         if (groupManager != null) groupManager.configure( this );
+
+        this.sessionAuthenticator = new SessionAuthenticator( config.getOid() );
     }
 
     @Override

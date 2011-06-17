@@ -1,8 +1,12 @@
 package com.l7tech.server.secureconversation;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.PoolByteArrayOutputStream;
 import com.l7tech.util.Config;
 import com.l7tech.util.HexUtils;
@@ -23,8 +27,10 @@ public class OutboundSecureConversationContextManager extends SecureConversation
 
     //- PUBLIC
 
-    public OutboundSecureConversationContextManager( final Config config ) {
+    public OutboundSecureConversationContextManager( final Config config,
+                                                     final StoredSecureConversationSessionManager storedSecureConversationSessionManager ) {
         super(logger, config, false);
+        this.storedSecureConversationSessionManager = storedSecureConversationSessionManager;
     }
 
     /**
@@ -149,7 +155,6 @@ public class OutboundSecureConversationContextManager extends SecureConversation
      *
      * @param sessionOwner The user for the session (required)
      * @param sessionKey The key for the session (required)
-     * @param credentials The credentials used to authenticate
      * @param namespace The WS-SecureConversation namespace in use (may be null)
      * @param sessionIdentifier The external session identifier
      * @param creationTime: The time of the session created.  Its unit is milliseconds.  It must be greater than 0.
@@ -162,7 +167,6 @@ public class OutboundSecureConversationContextManager extends SecureConversation
      */
     public SecureConversationSession createContextForUser( final User sessionOwner,
                                                            final OutboundSessionKey sessionKey,
-                                                           final LoginCredentials credentials,
                                                            final String namespace,
                                                            final String sessionIdentifier,
                                                            final long creationTime,
@@ -186,7 +190,6 @@ public class OutboundSecureConversationContextManager extends SecureConversation
         return super.createContextForUser( 
                 sessionOwner,
                 sessionKey,
-                credentials,
                 namespace,
                 sessionIdentifier,
                 creationTime,
@@ -194,7 +197,8 @@ public class OutboundSecureConversationContextManager extends SecureConversation
                 requestSharedSecret,
                 requestClientEntropy,
                 requestServerEntropy,
-                keySizeBits );
+                keySizeBits,
+                null );
     }
 
 
@@ -213,7 +217,55 @@ public class OutboundSecureConversationContextManager extends SecureConversation
         }
     }
 
+    @Override
+    protected void storeSession( final OutboundSessionKey sessionKey, final SecureConversationSession session ) throws SaveException {
+        storedSecureConversationSessionManager.save( toStored( sessionKey, session ) );
+    }
+
+    @Override
+    protected SecureConversationSession loadSession( final OutboundSessionKey sessionKey ) throws FindException {
+        final StoredSecureConversationSession session =
+                storedSecureConversationSessionManager.findOutboundSessionByUserAndService(
+                        sessionKey.providerId,
+                        sessionKey.userId,
+                        sessionKey.serviceUrl );
+        return session==null ?
+                null :
+                fromStored(
+                        session,
+                        storedSecureConversationSessionManager.decryptSessionKey( session.getEncryptedKey() ) );
+    }
+
+    @Override
+    protected void deleteSession( final OutboundSessionKey sessionKey ) throws DeleteException {
+        storedSecureConversationSessionManager.deleteOutboundSessionByUserAndService(
+                sessionKey.providerId,
+                sessionKey.userId,
+                sessionKey.serviceUrl );
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( OutboundSecureConversationContextManager.class.getName() );
+
+    private final StoredSecureConversationSessionManager storedSecureConversationSessionManager;
+
+    private StoredSecureConversationSession toStored( final OutboundSessionKey sessionKey,
+                                                      final SecureConversationSession session ) throws SaveException {
+        try {
+            return new StoredSecureConversationSession(
+                    sessionKey.serviceUrl,
+                    session.getUsedBy().getProviderId(),
+                    session.getUsedBy().getId(),
+                    session.getUsedBy().getLogin(),
+                    session.getIdentifier(),
+                    session.getCreation(),
+                    session.getExpiration(),
+                    session.getSCNamespace(),
+                    session.getElement()!=null ? XmlUtil.nodeToString( session.getElement() ) : null,
+                    storedSecureConversationSessionManager.encryptSessionKey( session.getSecretKey() ) );
+        } catch ( IOException e ) {
+            throw new SaveException( "Unable to serialize session for storage: " + ExceptionUtils.getMessage( e ), e );
+        }
+    }
 }

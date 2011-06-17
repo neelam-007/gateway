@@ -17,14 +17,11 @@ import com.l7tech.identity.GroupBean;
 import com.l7tech.message.*;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.SignatureConfirmation;
-import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.prov.JceProvider;
@@ -266,7 +263,6 @@ public class PolicyProcessingTest {
                     "http://www.layer7tech.com/uuid/00000001",
                     System.currentTimeMillis() + TimeUnit.DAYS.getMultiplier(),
                     ub1,
-                    LoginCredentials.makeLoginCredentials(new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class),
                     new byte[16]);
         }
     }

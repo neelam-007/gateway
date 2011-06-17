@@ -41,6 +41,11 @@ public class CredentialFormat {
      */
     public static final CredentialFormat OPAQUETOKEN = new CredentialFormat("Opaque Token");
 
+    /**
+     * The credentials identify a previously authenticated session.
+     */
+    public static final CredentialFormat SESSIONTOKEN = new CredentialFormat("Session Token");
+
     public String toString() {
         return "<CredentialFormat name='" + _name + "'/>";
     }

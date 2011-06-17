@@ -657,6 +657,21 @@ public class DomUtils {
     }
 
     /**
+     * Creates an element for use with the given Parent.  The element will be in the requested namespace.
+     * If the namespace is already declared in parent or a direct ancestor then that prefix will be reused;
+     * otherwise a new prefix will be declared in the new element that is as close as possible to desiredPrefix.
+     * @param parent The {@link Element} or {@link DocumentFragment} to which the new element is added
+     * @param localName The local name for the element
+     * @param namespace The namespace to use
+     * @param desiredPrefix The desired prefix
+     */
+    public static Element createElementNS(Node parent, String localName, String namespace, String desiredPrefix) {
+        final Element element = parent.getOwnerDocument().createElementNS(namespace, localName);
+        element.setPrefix(getOrCreatePrefixForNamespace(element, namespace, desiredPrefix));
+        return element;
+    }
+
+    /**
      * Creates an element and appends it to the end of Parent.  The element will be in the requested namespace.
      * If the namespace is already declared in parent or a direct ancestor then that prefix will be reused;
      * otherwise a new prefix will be declared in the new element that is as close as possible to desiredPrefix.

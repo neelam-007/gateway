@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.identity.User;
@@ -21,15 +22,19 @@ import com.l7tech.server.secureconversation.OutboundSecureConversationContextMan
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.util.*;
+import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -39,8 +44,8 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
     private static final Logger logger = Logger.getLogger(ServerEstablishOutboundSecureConversation.class.getName());
     private static final String DEFAULT_SESSION_DURATION = "outbound.secureConversation.defaultSessionDuration";
     private static final String SESSION_PRE_EXPIRY_AGE = "outbound.secureConversation.sessionPreExpiryAge";
-    private static final long MIN_SESSION_PRE_EXPIRY_AGE = 0;
-    private static final long MAX_SESSION_PRE_EXPIRY_AGE = 2*60*60*1000; // 2 hours
+    private static final long MIN_SESSION_PRE_EXPIRY_AGE = 0L;
+    private static final long MAX_SESSION_PRE_EXPIRY_AGE = TimeUnit.HOURS.toMillis( 2L ); // 2 hours
 
     private final Auditor auditor;
     private final Config config;
@@ -95,6 +100,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
                 ExpandVariables.process(assertion.getServiceUrl(), variableMap, auditor);
 
         // 4. Get the session identifier and the namespace of WS-Secure Conversation
+        Element sessionToken;
         String sessionId;
         String wsscNamespace;
         String tokenVarName = assertion.getSecurityContextTokenVarName();
@@ -121,6 +127,7 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
                 identifierEl = DomUtils.findExactlyOneChildElementByName(sctEl, wsscNamespace, SoapConstants.WSSC_ID_EL_NAME);
             }
             sessionId = DomUtils.getTextValue(identifierEl);
+            sessionToken = createDetatchedToken( sctEl );
         } catch (NoSuchVariableException e) {
             auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "The security context token variable (Name: \"" + tokenVarName + "\") does not exist.");
             return AssertionStatus.FALSIFIED;
@@ -167,26 +174,26 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
             expirationTime = Long.MAX_VALUE;
         }
         // 5.3 Apply Pre-expiry age on the expiration time
-        long preExpiryAge = config.getTimeUnitProperty(SESSION_PRE_EXPIRY_AGE, TimeUnit.MINUTES.toMillis(1)); // Default: 1 minute
+        long preExpiryAge = config.getTimeUnitProperty(SESSION_PRE_EXPIRY_AGE, TimeUnit.MINUTES.toMillis(1L)); // Default: 1 minute
         if (expirationTime != Long.MAX_VALUE) {
             expirationTime -= preExpiryAge;
-            if (expirationTime < 0) {
-                expirationTime = 0;
+            if (expirationTime < 0L ) {
+                expirationTime = 0L;
             }
         }
         // 5.4 Check the maximum expiry period against  "Maximum Expiry Period".
         // If "Maximum Expiry Period" is zero, then don't check the creation time and the expiration time against "Maximum Expiry Period". 
         long maxExpiryPeriod;
         if (assertion.isUseSystemDefaultSessionDuration()) {
-            maxExpiryPeriod = config.getTimeUnitProperty(DEFAULT_SESSION_DURATION, TimeUnit.HOURS.toMillis(2)); // Default: 2 hrs
+            maxExpiryPeriod = config.getTimeUnitProperty(DEFAULT_SESSION_DURATION, TimeUnit.HOURS.toMillis( 2L )); // Default: 2 hrs
         } else {
             maxExpiryPeriod = assertion.getMaxLifetime();
         }
-        if (maxExpiryPeriod > 0 && ((expirationTime == creationTime) || maxExpiryPeriod < (expirationTime - creationTime))) {
+        if (maxExpiryPeriod > 0L && ((expirationTime == creationTime) || maxExpiryPeriod < (expirationTime - creationTime))) {
             expirationTime = creationTime + maxExpiryPeriod;
         }
         // 5.5 Validate the expiration time against the creation time and check if the session has expired
-        if (expirationTime - creationTime < 0) {
+        if (expirationTime - creationTime < 0L ) {
             auditor.logAndAudit(AssertionMessages.OUTBOUND_SECURE_CONVERSATION_ESTABLISHMENT_FAILURE, "Invalid Session Time: the session expiration time is before the session creation time.");
             return AssertionStatus.FALSIFIED;
         } else if (expirationTime < now) {
@@ -218,7 +225,6 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
                 session = inboundSecurityContextManager.createContextForUser(
                     user,
                     sessionId,
-                    loginCredentials,
                     wsscNamespace,
                     sessionId,
                     creationTime,
@@ -226,13 +232,13 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
                     sharedSecret,
                     clientEntropy,
                     serverEntropy,
-                    keySize
+                    keySize,
+                    sessionToken
                 );
             } else {
                 session = outboundSecurityContextManager.createContextForUser(
                     user,
                     OutboundSecureConversationContextManager.newSessionKey( user, serviceUrl ),
-                    loginCredentials,
                     wsscNamespace,
                     sessionId,
                     creationTime,
@@ -240,7 +246,8 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
                     sharedSecret,
                     clientEntropy,
                     serverEntropy,
-                    keySize
+                    keySize,
+                    sessionToken
                 );
             }
         } catch (SessionCreationException e) {
@@ -285,5 +292,30 @@ public class ServerEstablishOutboundSecureConversation extends AbstractMessageTa
         }
 
         return null;
+    }
+
+    private Element createDetatchedToken( final Element element ) {
+        Element detachedElement = null;
+        PoolByteArrayOutputStream tokenStream = null;
+        InputStream tokenIn = null;
+        try {
+            tokenStream = new PoolByteArrayOutputStream(2048);
+            XmlUtil.canonicalize( element, tokenStream );
+            tokenIn = tokenStream.toInputStream();
+            detachedElement = XmlUtil.parse( tokenIn ).getDocumentElement();
+
+            // remove attributes that are message specific
+            for ( final String namespace : SoapUtil.WSU_URIS ) {
+                detachedElement.removeAttributeNS( namespace, SoapUtil.ID_ATTRIBUTE_NAME );
+            }
+        } catch ( IOException e ) {
+            logger.log( Level.WARNING, "Unable to create detatched context token '"+ExceptionUtils.getMessage( e )+"'", ExceptionUtils.getDebugException( e ) );
+        } catch ( SAXException e ) {
+            logger.log( Level.WARNING, "Unable to create detatched context token '"+ExceptionUtils.getMessage( e )+"'", ExceptionUtils.getDebugException( e ) );
+        } finally {
+            ResourceUtils.closeQuietly( tokenIn );
+            ResourceUtils.closeQuietly( tokenStream );
+        }
+        return detachedElement;
     }
 }

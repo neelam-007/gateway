@@ -174,13 +174,14 @@
                 <value>com.l7tech.gateway.common.resources.HttpConfiguration</value>
                 <value>com.l7tech.gateway.common.resources.ResourceEntry</value>
                 <value>com.l7tech.gateway.common.transport.ResolutionConfiguration</value>
+                <value>com.l7tech.gateway.common.security.password.SecurePassword</value>
                 <value>com.l7tech.gateway.common.security.RevocationCheckPolicy</value>
-                <value>com.l7tech.security.cert.TrustedCert</value>
                 <value>com.l7tech.identity.cert.CertEntryRow</value>
                 <value>com.l7tech.identity.LogonInfo</value>
+                <value>com.l7tech.security.cert.TrustedCert</value>
+                <value>com.l7tech.server.secureconversation.StoredSecureConversationSession</value>
                 <value>com.l7tech.server.security.keystore.KeystoreFile</value>
                 <value>com.l7tech.server.security.sharedkey.SharedKeyRecord</value>
-                <value>com.l7tech.gateway.common.security.password.SecurePassword</value>
 
                 <!-- UDDI -->
                 <value>com.l7tech.gateway.common.uddi.UDDIRegistry</value>

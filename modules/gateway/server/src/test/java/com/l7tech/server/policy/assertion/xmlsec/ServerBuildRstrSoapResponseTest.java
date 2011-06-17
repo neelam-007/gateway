@@ -6,16 +6,15 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.BuildRstrSoapResponse;
 import com.l7tech.security.token.XmlSecurityToken;
-import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.xml.processor.MockProcessorResult;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SessionCreationException;
+import com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ISO8601Date;
@@ -57,7 +56,7 @@ public class ServerBuildRstrSoapResponseTest {
 
     private static final Logger logger = Logger.getLogger( ServerBuildRstrSoapResponseTest.class.getName() );
 
-    private static final InboundSecureConversationContextManager contextManager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ) );
+    private static final InboundSecureConversationContextManager contextManager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ), new StoredSecureConversationSessionManagerStub() );
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
 
     static {
@@ -153,7 +152,7 @@ public class ServerBuildRstrSoapResponseTest {
         }, null, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
-                assertEquals( "AppliesTo element count", 0, document.getElementsByTagNameNS( "*", "AppliesTo" ).getLength() );
+                assertEquals( "AppliesTo element count", 0L, (long) document.getElementsByTagNameNS( "*", "AppliesTo" ).getLength() );
             }
         } );
 
@@ -168,7 +167,7 @@ public class ServerBuildRstrSoapResponseTest {
         }, null, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
-                assertEquals( "AppliesTo element count", 1, document.getElementsByTagNameNS( "*", "AppliesTo" ).getLength() );
+                assertEquals( "AppliesTo element count", 1L, (long) document.getElementsByTagNameNS( "*", "AppliesTo" ).getLength() );
                 final Element appliesToElement = (Element) document.getElementsByTagNameNS( "*", "AppliesTo" ).item( 0 );
                 final Element eprElement = getSingleChildElement( appliesToElement );
                 final Element addressElement = getSingleChildElement( eprElement );
@@ -189,7 +188,7 @@ public class ServerBuildRstrSoapResponseTest {
         }, null, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
-                assertEquals( "RequestedAttachedReference element count", 0, document.getElementsByTagNameNS( "*", "RequestedAttachedReference" ).getLength() );
+                assertEquals( "RequestedAttachedReference element count", 0L, (long) document.getElementsByTagNameNS( "*", "RequestedAttachedReference" ).getLength() );
             }
         } );
 
@@ -202,7 +201,7 @@ public class ServerBuildRstrSoapResponseTest {
         }, null, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
-                assertEquals( "RequestedAttachedReference element count", 1, document.getElementsByTagNameNS( "*", "RequestedAttachedReference" ).getLength() );
+                assertEquals( "RequestedAttachedReference element count", 1L, (long) document.getElementsByTagNameNS( "*", "RequestedAttachedReference" ).getLength() );
             }
         } );
     }
@@ -218,7 +217,7 @@ public class ServerBuildRstrSoapResponseTest {
         }, null, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
-                assertEquals( "RequestedUnattachedReference element count", 0, document.getElementsByTagNameNS( "*", "RequestedUnattachedReference" ).getLength() );
+                assertEquals( "RequestedUnattachedReference element count", 0L, (long) document.getElementsByTagNameNS( "*", "RequestedUnattachedReference" ).getLength() );
             }
         } );
 
@@ -231,7 +230,7 @@ public class ServerBuildRstrSoapResponseTest {
         }, null, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
-                assertEquals( "RequestedUnattachedReference element count", 1, document.getElementsByTagNameNS( "*", "RequestedUnattachedReference" ).getLength() );
+                assertEquals( "RequestedUnattachedReference element count", 1L, (long) document.getElementsByTagNameNS( "*", "RequestedUnattachedReference" ).getLength() );
             }
         } );
     }
@@ -247,7 +246,7 @@ public class ServerBuildRstrSoapResponseTest {
         }, null, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
-                assertEquals( "Lifetime element count", 0, document.getElementsByTagNameNS( "*", "Lifetime" ).getLength() );
+                assertEquals( "Lifetime element count", 0L, (long) document.getElementsByTagNameNS( "*", "Lifetime" ).getLength() );
             }
         } );
 
@@ -256,12 +255,12 @@ public class ServerBuildRstrSoapResponseTest {
             @Override
             public void call( final BuildRstrSoapResponse buildRstrSoapResponse ) {
                 buildRstrSoapResponse.setIncludeLifetime( true );
-                buildRstrSoapResponse.setLifetime( 1000 );
+                buildRstrSoapResponse.setLifetime( 1000L );
             }
         }, null, new Functions.UnaryVoid<Document>(){
             @Override
             public void call( final Document document ) {
-                assertEquals( "Lifetime element count", 1, document.getElementsByTagNameNS( "*", "Lifetime" ).getLength() );
+                assertEquals( "Lifetime element count", 1L, (long) document.getElementsByTagNameNS( "*", "Lifetime" ).getLength() );
                 final Element lifetimeElement = (Element) document.getElementsByTagNameNS( "*", "Lifetime" ).item( 0 );
                 final Element createdElement = getChildElement( lifetimeElement, SoapConstants.WSU_NAMESPACE, "Created" );
                 final Element expiresElement = getChildElement( lifetimeElement, SoapConstants.WSU_NAMESPACE, "Expires" );
@@ -270,7 +269,7 @@ public class ServerBuildRstrSoapResponseTest {
                     final Date created = ISO8601Date.parse( XmlUtil.getTextValue(createdElement) );
                     final Date expires = ISO8601Date.parse( XmlUtil.getTextValue(expiresElement) );
 
-                    assertEquals( "Response lifetime", 1000, expires.getTime()-created.getTime() );
+                    assertEquals( "Response lifetime", 1000L, expires.getTime()-created.getTime() );
                 } catch ( ParseException e ) {
                     throw new RuntimeException( e );
                 }
@@ -368,7 +367,7 @@ public class ServerBuildRstrSoapResponseTest {
         buildRstrSoapResponse.setIncludeAppliesTo( true );
         buildRstrSoapResponse.setAddressOfEPR( "http://gateway.l7tech.com/service" );
         buildRstrSoapResponse.setIncludeLifetime( true );
-        buildRstrSoapResponse.setLifetime( 300000 );
+        buildRstrSoapResponse.setLifetime( 300000L );
         buildRstrSoapResponse.setIncludeAttachedRef( true );
         buildRstrSoapResponse.setIncludeUnattachedRef( true );
         buildRstrSoapResponse.setTokenIssued( token );
@@ -490,9 +489,8 @@ public class ServerBuildRstrSoapResponseTest {
         final String token;
         final String id = contextManager.createContextForUser(
                 new UserBean( "Alice" ),
-                LoginCredentials.makeLoginCredentials( new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class ),
                 "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512",
-                300000,
+                300000L,
                 entropy ? HexUtils.randomBytes(32) : null,
                 256 ).getIdentifier();
 
@@ -513,7 +511,7 @@ public class ServerBuildRstrSoapResponseTest {
         XmlUtil.visitNodes( document.getDocumentElement(), new Functions.UnaryVoid<Node>(){
             @Override
             public void call( final Node node ) {
-                if ( node.getNodeType() == Node.ATTRIBUTE_NODE ) {
+                if ( (int) node.getNodeType() == (int) Node.ATTRIBUTE_NODE ) {
                     Attr attributeNode = (Attr) node;
                     
                     // Check wsu:Id validity

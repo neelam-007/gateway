@@ -81,9 +81,8 @@ public class ServerBuildRstSoapRequestTest {
                 "urn:token:token-0123456789",
                 new byte[32],
                 System.currentTimeMillis(),
-                System.currentTimeMillis() + TimeUnit.HOURS.toMillis( 1 ),
-                new UserBean("TestUser"),
-                null );
+                System.currentTimeMillis() + TimeUnit.HOURS.toMillis( 1L ),
+                new UserBean("TestUser") );
         doTestWithToken( WsTrustRequestType.CANCEL,
                          "CancelTarget",
                          trustNs,
@@ -148,7 +147,7 @@ public class ServerBuildRstSoapRequestTest {
         assertEquals( "Key size", "256", XmlUtil.getTextValue(keySizeElement));
         assertTrue( "Creation time", System.currentTimeMillis() >= ISO8601Date.parse(XmlUtil.getTextValue(createdElement)).getTime() );
         assertTrue( "Expiration time", System.currentTimeMillis() < ISO8601Date.parse(XmlUtil.getTextValue(expirationElement)).getTime() );
-        assertTrue( "Lifetime duration", System.currentTimeMillis()+ TimeUnit.MINUTES.toMillis(5) > ISO8601Date.parse(XmlUtil.getTextValue(expirationElement)).getTime() );
+        assertTrue( "Lifetime duration", System.currentTimeMillis()+ TimeUnit.MINUTES.toMillis( 5L ) > ISO8601Date.parse(XmlUtil.getTextValue(expirationElement)).getTime() );
 
     }
 

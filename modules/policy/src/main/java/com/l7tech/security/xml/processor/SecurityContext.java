@@ -20,7 +20,7 @@ public interface SecurityContext {
     byte[] getSharedSecret();
 
     /**
-     * Get the security token used to create the context (if any)
+     * Get the security token used to create the context (if any / applicable)
      *
      * @return The token, or null.
      */

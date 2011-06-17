@@ -23,6 +23,7 @@ import com.l7tech.server.secureconversation.InboundSecureConversationContextMana
 import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
+import com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub;
 import com.l7tech.util.Functions;
 import com.l7tech.util.MockConfig;
 import org.junit.Test;
@@ -39,8 +40,8 @@ import static org.junit.Assert.*;
 public class ServerCancelSecurityContextTest {
 
     private static final MockConfig mockConfig = new MockConfig(new Properties());
-    private static final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager( mockConfig );
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig);
+    private static final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager( mockConfig, new StoredSecureConversationSessionManagerStub() );
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig, new StoredSecureConversationSessionManagerStub());
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
 
     static {
@@ -168,14 +169,14 @@ public class ServerCancelSecurityContextTest {
                 {
                     final LoginCredentials loginCredentials = LoginCredentials.makeLoginCredentials( new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class );
                     context.getAuthenticationContext( request ).addCredentials( loginCredentials );
-                    context.getAuthenticationContext( request ).addAuthenticationResult( new AuthenticationResult( user(1, "Alice"), loginCredentials.getSecurityTokens(), null, false ) );
+                    context.getAuthenticationContext( request ).addAuthenticationResult( new AuthenticationResult( user( 1L, "Alice"), loginCredentials.getSecurityTokens(), null, false ) );
                 }
                 break;
             case TOKEN:
                 {
-                    final LoginCredentials loginCredentials = LoginCredentials.makeLoginCredentials(session.getCredentials().getSecurityToken(), false, SecureConversation.class, new SecurityContextTokenImpl(session));
+                    final LoginCredentials loginCredentials = LoginCredentials.makeLoginCredentials(session.getCredentialSecurityToken(), false, SecureConversation.class, new SecurityContextTokenImpl(session));
                     context.getAuthenticationContext( request ).addCredentials( loginCredentials );
-                    context.getAuthenticationContext( request ).addAuthenticationResult( new AuthenticationResult( user(1, "Alice"), loginCredentials.getSecurityTokens(), null, false ) );
+                    context.getAuthenticationContext( request ).addAuthenticationResult( new AuthenticationResult( user( 1L, "Alice"), loginCredentials.getSecurityTokens(), null, false ) );
                     break;
                 }
         }
@@ -191,8 +192,7 @@ public class ServerCancelSecurityContextTest {
 
     private SecureConversationSession generateContextToken() throws SessionCreationException {
         return inboundContextManager.createContextForUser(
-                user(1, "Alice"),
-                LoginCredentials.makeLoginCredentials( new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class ),
+                user( 1L, "Alice"),
                 "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512" );
     }
 

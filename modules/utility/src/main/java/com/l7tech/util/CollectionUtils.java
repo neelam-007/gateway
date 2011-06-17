@@ -3,6 +3,7 @@ package com.l7tech.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -17,6 +18,18 @@ public final class CollectionUtils {
     };
 
     private CollectionUtils() { }
+
+    /**
+     * Create an unmodifiable list with the given contents.
+     *
+     * @param items The items for the list (must not be null)
+     * @param <T> The type of the list
+     * @return The read-only list
+     */
+    //TODO [jdk7] @SafeVarargs
+    public static <T> List<T> list( T... items ) {
+        return Collections.unmodifiableList( Arrays.asList( items ) );
+    }
 
     /**
      * Makes a String representation of the provided Iterable.

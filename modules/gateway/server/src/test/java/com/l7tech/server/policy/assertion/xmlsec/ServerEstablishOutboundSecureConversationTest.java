@@ -18,6 +18,7 @@ import com.l7tech.server.secureconversation.InboundSecureConversationContextMana
 import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.secureconversation.SessionCreationException;
+import com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub;
 import com.l7tech.util.ISO8601Date;
 import com.l7tech.util.MockConfig;
 import org.junit.Before;
@@ -30,8 +31,7 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Properties;
 
-import static junit.framework.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author ghuang
@@ -39,8 +39,8 @@ import static org.junit.Assert.assertNotNull;
 public class ServerEstablishOutboundSecureConversationTest {
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
     private static final MockConfig mockConfig = new MockConfig(new Properties());
-    private static final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager(mockConfig);
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig);
+    private static final InboundSecureConversationContextManager inboundContextManager = new InboundSecureConversationContextManager(mockConfig,new StoredSecureConversationSessionManagerStub());
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig,new StoredSecureConversationSessionManagerStub());
 
     static {
         beanFactory.addBean("inboundSecureConversationContextManager", inboundContextManager);
@@ -50,8 +50,8 @@ public class ServerEstablishOutboundSecureConversationTest {
 
     private final String serviceUrl = "http://service_url";
     private final long now = System.currentTimeMillis();
-    private final long creationTime = now - 20*60*1000;   // 20 minutes before now;
-    private final long expirationTime = now + 20*60*1000; // 20 minute after now
+    private final long creationTime = now - (long) (20 * 60 * 1000);   // 20 minutes before now;
+    private final long expirationTime = now + (long) (20 * 60 * 1000); // 20 minute after now
 
     private EstablishOutboundSecureConversation establishmentAssertion;
     private ServerEstablishOutboundSecureConversation serverEstablishmentAssertion;
@@ -66,14 +66,15 @@ public class ServerEstablishOutboundSecureConversationTest {
         request = new Message();
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request,  new Message());
 
-        user = user(1, "Alice");
+        user = user( 1L, "Alice");
         final LoginCredentials loginCredentials = LoginCredentials.makeLoginCredentials(new HttpBasicToken("Alice", "password".toCharArray()), HttpBasic.class);
         context.getAuthenticationContext(request).addCredentials(loginCredentials);
         context.getAuthenticationContext(request).addAuthenticationResult(new AuthenticationResult(user, loginCredentials.getSecurityTokens(), null, false));
 
         final String tokenStr =
-            "<wsc:SecurityContextToken xmlns:wsc=\"http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512\">\n" +
+            "<wsc:SecurityContextToken wsu:Id=\"1234567890\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" xmlns:wsc=\"http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512\">\n" +
             "  <wsc:Identifier>urn:tokenid</wsc:Identifier>\n" +
+            "  <Cookie>Value</Cookie>\n" +
             "</wsc:SecurityContextToken>";
         Element tokenEl = XmlUtil.parse(tokenStr).getDocumentElement();
         context.setVariable("rstrResponseProcessor.token", tokenEl);
@@ -100,6 +101,8 @@ public class ServerEstablishOutboundSecureConversationTest {
         // Verify the context variable, outboundSC.session
         SecureConversationSession session = (SecureConversationSession) context.getVariable("outboundSC.session");
         assertNotNull( "Session Variable Found:", session);
+        assertNotNull( "Session token element", session.getElement() );
+        XmlUtil.findExactlyOneChildElementByName( session.getElement(), "Cookie" );
 
         // Look up the established session by using User and Service URL and then check if two sessions are matched.
         OutboundSecureConversationContextManager.OutboundSessionKey sessionKey = OutboundSecureConversationContextManager.newSessionKey(user, serviceUrl);
@@ -112,7 +115,7 @@ public class ServerEstablishOutboundSecureConversationTest {
         // Test 1: Expired
         establishmentAssertion.setUseSystemDefaultSessionDuration(false);
         // Set 15 minutes as the max expiry time.  This implies that the session has expired, since the max lifetime is set to 15 minutes after the creation time and then the new expiration time will be 5 minutes earlier than "now".
-        establishmentAssertion.setMaxLifetime(15*60*1000);
+        establishmentAssertion.setMaxLifetime( (long) (15 * 60 * 1000) );
 
         AssertionStatus status = serverEstablishmentAssertion.doCheckRequest(context, request, "", context.getAuthenticationContext(request));
         assertEquals( "Outbound Secure Conversation Session Expired:", AssertionStatus.FALSIFIED, status);
@@ -120,7 +123,7 @@ public class ServerEstablishOutboundSecureConversationTest {
         // Test 2: Not Expired
         // 2.1: Set "Maximum Expiry Period" to zero, then the session is not expired.
         establishmentAssertion.setUseSystemDefaultSessionDuration(false);
-        establishmentAssertion.setMaxLifetime(0);
+        establishmentAssertion.setMaxLifetime( 0L );
         cancelSession();
         status = serverEstablishmentAssertion.doCheckRequest(context, request, "", context.getAuthenticationContext(request));
         assertEquals( "Outbound Secure Conversation Session Not Expired:", AssertionStatus.NONE, status);
@@ -139,14 +142,14 @@ public class ServerEstablishOutboundSecureConversationTest {
         serverEstablishmentAssertion.doCheckRequest(context, request, "", context.getAuthenticationContext(request));
 
         SecureConversationSession session = (SecureConversationSession) context.getVariable("outboundSC.session");
-        final long defaultPreExpiryAge = 60*1000; // The default value of the pre-expiry age is 1 minute.
+        final long defaultPreExpiryAge = (long) (60 * 1000); // The default value of the pre-expiry age is 1 minute.
 
         long expectedExpirationTime = expirationTime - defaultPreExpiryAge; // Since the system default max expiry period is 2 hours, which is greater than [(expirationTime - creationTime) - defaultPreExpiryAge)].
         assertEquals( "New Expiration Time:", expectedExpirationTime, session.getExpiration());
 
         // Test 4: "Maximum Expiry Period" is less than [(expirationTime - creationTime) - defaultPreExpiryAge)]
         establishmentAssertion.setUseSystemDefaultSessionDuration(false);
-        final long maxExpiryPeriod = 30*60*1000; // 30 minutes for Maximum Expiry Period
+        final long maxExpiryPeriod = (long) (30 * 60 * 1000); // 30 minutes for Maximum Expiry Period
         establishmentAssertion.setMaxLifetime(maxExpiryPeriod);
 
         cancelSession();

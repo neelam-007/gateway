@@ -17,6 +17,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.ConfigurableIdentityProvider;
 import com.l7tech.server.identity.DigestAuthenticator;
+import com.l7tech.server.identity.SessionAuthenticator;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.ServerVariables;
@@ -80,6 +81,8 @@ public class LdapIdentityProviderImpl
 
         userManager.configure( this );
         groupManager.configure( this );
+
+        sessionAuthenticator = new SessionAuthenticator( config.getOid() );
 
         ldapTemplate = new LdapUtils.LdapTemplate(config.getSearchBase(), returningAttributes){
             @Override
@@ -261,6 +264,8 @@ public class LdapIdentityProviderImpl
             return DigestAuthenticator.authenticateDigestCredentials(pc, realUser);
         } else if (format  == CredentialFormat.KERBEROSTICKET) {
             return new AuthenticationResult( realUser, pc.getSecurityTokens() );
+        } else if (format == CredentialFormat.SESSIONTOKEN) {
+            return sessionAuthenticator.authenticateSessionCredentials( pc, realUser );
         } else {
             if (format == CredentialFormat.CLIENTCERT || format == CredentialFormat.SAML) {
 
@@ -313,7 +318,12 @@ public class LdapIdentityProviderImpl
                     }
                 }
             }
-        } else {
+        } else if (pc.getFormat() == CredentialFormat.SESSIONTOKEN) {
+            final String id = sessionAuthenticator.getUserId( pc );
+            if ( id!=null ) {
+                user = userManager.findByPrimaryKey( id );
+            }
+        } else if ( pc.getLogin() != null ) {
             user = userManager.findByLogin(pc.getLogin());
         }
 
@@ -1360,6 +1370,7 @@ public class LdapIdentityProviderImpl
     private LdapUserManager userManager;
     private LdapGroupManager groupManager;
     private CertificateAuthenticator certificateAuthenticator;
+    private SessionAuthenticator sessionAuthenticator;
 
     private String lastSuccessfulLdapUrl;
     private final ReentrantReadWriteLock fallbackLock = new ReentrantReadWriteLock();

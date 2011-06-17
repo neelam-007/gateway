@@ -6,7 +6,9 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.token.SessionSecurityToken;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
@@ -125,6 +127,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
         if (mu.certDn != null && pc.getClientCert()!=null && mu.certDn.equals(pc.getClientCert().getSubjectDN().getName())) {
             return new AuthenticationResult(mu.user, pc.getSecurityTokens(), pc.getClientCert(), false);
+        }
+        if ( pc.getFormat().equals( CredentialFormat.SESSIONTOKEN ) &&
+             mu.user.getId().equals( ((SessionSecurityToken)pc.getSecurityToken()).getUserId() ) &&
+             config.getOid() == ((SessionSecurityToken)pc.getSecurityToken()).getProviderId() ) {
+            return new AuthenticationResult(mu.user, pc.getSecurityTokens());
         }
         throw new AuthenticationException("Invalid username or password");
     }

@@ -1691,6 +1691,28 @@ CREATE TABLE email_listener_state (
   PRIMARY KEY  (objectid)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
+--
+-- Table for stored secure conversation sessions
+--
+DROP TABLE IF EXISTS wssc_session;
+CREATE TABLE wssc_session (
+  objectid bigint(20) NOT NULL,
+  session_key_hash varchar(128),
+  inbound tinyint(1) NOT NULL DEFAULT 0,
+  identifier varchar(4096) NOT NULL,
+  service_url varchar(4096),
+  encrypted_key varchar(4096),
+  created bigint(20) NOT NULL,
+  expires bigint(20) NOT NULL,
+  provider_id bigint NOT NULL,
+  user_id varchar(255) NOT NULL,
+  user_login varchar(255) NOT NULL,
+  namespace varchar(4096),
+  token mediumtext,
+  UNIQUE KEY (session_key_hash),
+  PRIMARY KEY (objectid)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
+
 DROP TABLE IF EXISTS ssg_version;
 CREATE TABLE ssg_version (
    current_version char(10) NOT NULL

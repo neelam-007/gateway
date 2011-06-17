@@ -13,6 +13,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
@@ -43,7 +44,7 @@ public class ServerCreateSecurityContextTokenTest {
 
     private static final Logger logger = Logger.getLogger( ServerCreateSecurityContextTokenTest.class.getName() );
 
-    private static final InboundSecureConversationContextManager contextManager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ) );
+    private static final InboundSecureConversationContextManager contextManager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ), new StoredSecureConversationSessionManagerStub() );
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
 
     static {

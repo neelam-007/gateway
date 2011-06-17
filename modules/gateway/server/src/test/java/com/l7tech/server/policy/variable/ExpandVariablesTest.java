@@ -15,11 +15,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
-import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.audit.LogOnlyAuditor;
@@ -29,6 +26,7 @@ import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import com.l7tech.server.policy.assertion.ServerXpathAssertion;
 import com.l7tech.server.secureconversation.OutboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
@@ -56,7 +54,8 @@ import static org.junit.Assert.*;
 
 /**
  * Class ExpandVariablesTest.
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
+ *
+ * @author Emil Marceta
  */
 public class ExpandVariablesTest {
     private static final Logger logger = Logger.getLogger(ExpandVariablesTest.class.getName());
@@ -64,7 +63,7 @@ public class ExpandVariablesTest {
     private static final String TINY_BODY = "<blah/>";
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
     private static final MockConfig mockConfig = new MockConfig(new Properties());
-    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig);
+    private static final OutboundSecureConversationContextManager outboundContextManager = new OutboundSecureConversationContextManager(mockConfig ,new StoredSecureConversationSessionManagerStub());
 
     static {
         beanFactory.addBean( "outboundSecureConversationContextManager", outboundContextManager );
@@ -85,7 +84,7 @@ public class ExpandVariablesTest {
         String inputMessage = "Blah message blah ${var1}";
         String expectedOutputMessage = "Blah message blah value_variable1";
         String processedMessage = ExpandVariables.process(inputMessage, variables, audit);
-        assertTrue(processedMessage.indexOf(value) >= 0);
+        assertTrue( processedMessage.contains( value ) );
         assertEquals(processedMessage, expectedOutputMessage);
     }
 
@@ -100,7 +99,7 @@ public class ExpandVariablesTest {
         String inputMessage = "Blah message blah ${var1} and more blah ${var2}";
         String expectedOutputMessage = "Blah message blah value_variable1 and more blah value_variable2";
         String processedMessage = ExpandVariables.process(inputMessage, variables, audit);
-        assertTrue(processedMessage.indexOf(value1) >= 0);
+        assertTrue( processedMessage.contains( value1 ) );
         assertEquals(processedMessage, expectedOutputMessage);
     }
 
@@ -119,7 +118,7 @@ public class ExpandVariablesTest {
     @Test
     public void testUnterminatedRef() throws Exception {
         String[] vars = Syntax.getReferencedNames("${foo");
-        assertEquals(vars.length, 0);
+        assertEquals( (long) vars.length, 0L );
     }
 
     @Test
@@ -392,7 +391,7 @@ public class ExpandVariablesTest {
     }
 
     public void testCertIssuerDnToString() throws Exception {
-        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(TestDocuments.getWssInteropAliceCert());
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -400,7 +399,7 @@ public class ExpandVariablesTest {
     }
 
     public void testCertIssuerDnName() throws Exception {
-        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(TestDocuments.getWssInteropAliceCert());
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -408,7 +407,7 @@ public class ExpandVariablesTest {
     }
 
     public void testCertIssuerAttribute() throws Exception {
-        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(TestDocuments.getWssInteropAliceCert());
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -416,7 +415,7 @@ public class ExpandVariablesTest {
     }
 
     public void testCertSubjectAttribute() throws Exception {
-        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(TestDocuments.getWssInteropAliceCert());
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -424,7 +423,7 @@ public class ExpandVariablesTest {
     }
 
     public void testMixedCaseCertAttributeName() throws Exception {
-        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(TestDocuments.getWssInteropAliceCert());
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -432,7 +431,7 @@ public class ExpandVariablesTest {
     }
 
     public void testMultivaluedDcAttributes() throws Exception {
-        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(CertUtils.decodeFromPEM(A_CERT));
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -441,7 +440,7 @@ public class ExpandVariablesTest {
     }
 
     public void testMultivaluedDcBttributes() throws Exception {
-        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        LdapUser u = new LdapUser( 1234L, "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(CertUtils.decodeFromPEM(B_CERT));
         Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
         vars.put("authenticatedUser", u);
@@ -469,7 +468,7 @@ public class ExpandVariablesTest {
         assertEquals(AssertionStatus.NONE, xpathStatus);
 
         final Element[] els = (Element[]) context.getVariable("requestXpath.elements");
-        assertEquals(4, els.length);
+        assertEquals( 4L, (long) els.length );
         
         final Object what = ExpandVariables.processSingleVariableAsDisplayableObject("${requestXpath.elements[0]}", context.getVariableMap(new String[] { "requestXpath.elements" }, audit), audit, true);
         assertEquals("Formatted element output","<productid xsi:type=\"xsd:long\">-9206260647417300294</productid>",what);
@@ -482,7 +481,7 @@ public class ExpandVariablesTest {
 
         context.setVariable( "requestXpath.elements",  getBodyFirstChildChildElements( doc ));
         final Element[] els = (Element[]) context.getVariable("requestXpath.elements");
-        assertEquals(4, els.length);
+        assertEquals( 4L, (long) els.length );
 
         final Object what = ExpandVariables.processSingleVariableAsDisplayableObject("${requestXpath.elements}", context.getVariableMap(new String[] { "requestXpath.elements" }, audit), audit, true);
         assertTrue( "Array result", what instanceof Object[] ); // doesn't seem very displayable ...
@@ -498,14 +497,14 @@ public class ExpandVariablesTest {
 
         Node node = body.getFirstChild();
         while ( node != null ) {
-            if ( node.getNodeType() == Node.ELEMENT_NODE ) {
+            if ( (int) node.getNodeType() == (int) Node.ELEMENT_NODE ) {
                 node = node.getFirstChild();
                 break;
             }
             node = node.getNextSibling();
         }
         while ( node != null ) {
-            if ( node.getNodeType() == Node.ELEMENT_NODE ) {
+            if ( (int) node.getNodeType() == (int) Node.ELEMENT_NODE ) {
                 children.add( (Element)node );
             }
             node = node.getNextSibling();
@@ -520,7 +519,7 @@ public class ExpandVariablesTest {
 
         context.setVariable( "elements",  getBodyFirstChildChildElements( doc ));
         final Element[] els = (Element[]) context.getVariable("elements");
-        assertEquals(4, els.length);
+        assertEquals( 4L, (long) els.length );
 
         final String what = ExpandVariables.process("${elements}", context.getVariableMap(new String[] { "elements" }, audit), audit, true);
         assertEquals("Variable output", "<productid xsi:type=\"xsd:long\">-9206260647417300294</productid><amount xsi:type=\"xsd:long\">1</amount><price xsi:type=\"xsd:float\">5.0</price><accountid xsi:type=\"xsd:long\">228</accountid>", what);
@@ -533,7 +532,7 @@ public class ExpandVariablesTest {
 
         context.setVariable( "elements",  getBodyFirstChildChildElements( doc ));
         final Element[] els = (Element[]) context.getVariable("elements");
-        assertEquals(4, els.length);
+        assertEquals( 4L, (long) els.length );
 
         final String what = ExpandVariables.process("${elements|,}", context.getVariableMap(new String[] { "elements" }, audit), audit, true);
         assertEquals("Variable output", "<productid xsi:type=\"xsd:long\">-9206260647417300294</productid>,<amount xsi:type=\"xsd:long\">1</amount>,<price xsi:type=\"xsd:float\">5.0</price>,<accountid xsi:type=\"xsd:long\">228</accountid>", what);
@@ -546,7 +545,7 @@ public class ExpandVariablesTest {
 
         context.setVariable( "elements",  getBodyFirstChildChildElements( doc ));
         final Element[] els = (Element[]) context.getVariable("elements");
-        assertEquals(4, els.length);
+        assertEquals( 4L, (long) els.length );
 
         final String what = ExpandVariables.process("${elements[0]}", context.getVariableMap(new String[] { "elements" }, audit), audit, true);
         assertEquals("Variable output", "<productid xsi:type=\"xsd:long\">-9206260647417300294</productid>", what);
@@ -603,29 +602,29 @@ public class ExpandVariablesTest {
         final Map<String, Object> vars = pec.getVariableMap(new String[]{}, audit);
         vars.put("varname", "value");
         List<Object> paramValue = ExpandVariables.processNoFormat("${varname}", vars, audit, true);
-        assertEquals("Incorrect number of values found", 1, paramValue.size());
+        assertEquals("Incorrect number of values found", 1L, (long) paramValue.size() );
         assertEquals("varname's value not found", "value", paramValue.get(0));
 
         paramValue = ExpandVariables.processNoFormat("preceeding text ${varname}", vars, audit, true);
-        assertEquals("Incorrect number of values found", 2, paramValue.size());
+        assertEquals("Incorrect number of values found", 2L, (long) paramValue.size() );
         assertEquals("Preceeding text should have been found", "preceeding text ", paramValue.get(0));
         assertEquals("varname's value not found", "value", paramValue.get(1));
 
         //preserve any empty formatting for what ever reason
         paramValue = ExpandVariables.processNoFormat(" ${varname}", vars, audit, true);
-        assertEquals("Incorrect number of values found", 2, paramValue.size());
+        assertEquals("Incorrect number of values found", 2L, (long) paramValue.size() );
         assertEquals("Preceeding empty string should have been preserved", " ", paramValue.get(0));
         assertEquals("varname's value not found", "value", paramValue.get(1));
 
         //preserve any post variable formatting
         paramValue = ExpandVariables.processNoFormat(" ${varname} ", vars, audit, true);
-        assertEquals("Incorrect number of values found", 3, paramValue.size());
+        assertEquals("Incorrect number of values found", 3L, (long) paramValue.size() );
         assertEquals("Preceeding empty string should have been preserved", " ", paramValue.get(0));
         assertEquals("Trailing empty string should have been preserved", " ", paramValue.get(2));
         assertEquals("varname's value not found", "value", paramValue.get(1));
 
         paramValue = ExpandVariables.processNoFormat(" ${varname} trailing text", vars, audit, true);
-        assertEquals("Incorrect number of values found", 3, paramValue.size());
+        assertEquals("Incorrect number of values found", 3L, (long) paramValue.size() );
         assertEquals("Preceeding empty string should have been preserved", " ", paramValue.get(0));
         assertEquals("Trailing empty string should have been preserved", " trailing text", paramValue.get(2));
         assertEquals("varname's value not found", "value", paramValue.get(1));
@@ -637,12 +636,12 @@ public class ExpandVariablesTest {
         vars.put("MESSAGE_VAR", m);
 
         paramValue = ExpandVariables.processNoFormat("${MESSAGE_VAR}", vars, audit, true);
-        assertEquals("Incorrect number of values found", 1, paramValue.size());
+        assertEquals("Incorrect number of values found", 1L, (long) paramValue.size() );
         assertTrue("varname's value not found", paramValue.get(0) instanceof Message);
 
         //test mix of single value variable, message variable and text
         paramValue = ExpandVariables.processNoFormat("The single valued var ${varname} and the Message var ${MESSAGE_VAR} test", vars, audit, true);
-        assertEquals("Incorrect number of values found", 5, paramValue.size());
+        assertEquals("Incorrect number of values found", 5L, (long) paramValue.size() );
         assertEquals("Incorrect text value extracted", "The single valued var ", paramValue.get(0));
         assertEquals("varname's value not found", "value", paramValue.get(1));
         assertEquals("Incorrect text value extracted", " and the Message var ", paramValue.get(2));
@@ -652,14 +651,14 @@ public class ExpandVariablesTest {
         //test coverage for multi valued variables
         vars.put("MULTI_VALUED_VAR", new Object[]{"one", m, "three"});
         paramValue = ExpandVariables.processNoFormat("${MULTI_VALUED_VAR}", vars, audit, true);
-        assertEquals("Incorrect number of values found", 3, paramValue.size());
+        assertEquals("Incorrect number of values found", 3L, (long) paramValue.size() );
         assertEquals("Incorrect value found from multi valued variable", "one", paramValue.get(0));
         assertTrue("Message not found from multi valued variable", paramValue.get(1) instanceof Message);
         assertEquals("Incorrect value found from multi valued variable", "three", paramValue.get(2));
 
         //test coverage for multi valued variables surrounded by other text and variables
         paramValue = ExpandVariables.processNoFormat("The single valued var ${varname} and multi valued ${MULTI_VALUED_VAR} the Message var ${MESSAGE_VAR} test", vars, audit, true);
-        assertEquals("Incorrect number of values found", 9, paramValue.size());
+        assertEquals("Incorrect number of values found", 9L, (long) paramValue.size() );
         assertEquals("Incorrect text value extracted", "The single valued var ", paramValue.get(0));
         assertEquals("varname's value not found", "value", paramValue.get(1));
         assertEquals("Incorrect text value extracted", " and multi valued ", paramValue.get(2));
@@ -678,7 +677,7 @@ public class ExpandVariablesTest {
         
         vars.put("LIST_VAR", testList);
         paramValue = ExpandVariables.processNoFormat("${LIST_VAR}", vars, audit, true);
-        assertEquals("Incorrect number of values found", 3, paramValue.size());
+        assertEquals("Incorrect number of values found", 3L, (long) paramValue.size() );
         assertEquals("Incorrect value found from multi valued variable", "one", paramValue.get(0));
         assertTrue("Message not found from multi valued variable", paramValue.get(1) instanceof Message);
         assertEquals("Incorrect value found from multi valued variable", "three", paramValue.get(2));
@@ -733,11 +732,10 @@ public class ExpandVariablesTest {
         SecureConversationSession session = outboundContextManager.createContextForUser(
             user,
             OutboundSecureConversationContextManager.newSessionKey( user, "fake_service_url" ),
-            LoginCredentials.makeLoginCredentials( new HttpBasicToken(user.getLogin(), "password".toCharArray()), HttpBasic.class ),
             "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512",
             "fake_session_identifier",
             creationTime,
-            creationTime + 2*60*1000,
+            creationTime + (long) (2 * 60 * 1000),
             generateNewSecret(64),
             null,
             null,
@@ -857,12 +855,12 @@ public class ExpandVariablesTest {
 
         @Override
         public long getContentLength() {
-            return partBody.length;
+            return (long) partBody.length;
         }
 
         @Override
         public long getActualContentLength() throws IOException, NoSuchPartException {
-            return partBody.length;
+            return (long) partBody.length;
         }
 
         @Override
