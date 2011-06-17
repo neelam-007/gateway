@@ -85,8 +85,7 @@ public class SftpServerModule extends TransportModule implements ApplicationList
                             SoapFaultManager soapFaultManager,
                             EventChannel messageProcessingEventChannel)
     {
-        // TODO add & use GatewayFeatureSets.SERVICE_SFTP_MESSAGE_INPUT instead of SERVICE_FTP_MESSAGE_INPUT
-        super("SFTP server module", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
+        super("SFTP server module", logger, GatewayFeatureSets.SERVICE_SFTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
         this.applicationEventProxy = applicationEventProxy;
         this.gatewayState = gatewayState;
         this.messageProcessor = messageProcessor;
@@ -299,9 +298,8 @@ public class SftpServerModule extends TransportModule implements ApplicationList
                 return true;
             }
         });
-            logger.info("Starting " + connector.getScheme() + " connector on port " + connector.getPort());
+            auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
             sshd.start();
-            auditStart(connector);
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, SshServer>(connector, sshd));
         } catch (IOException e) {
             auditError("Error during startup, unable to create sshd.", e);
@@ -315,11 +313,10 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         entry = activeConnectors.remove(oid);
         if (entry == null) return;
         SshServer sshd = entry.right;
-        logger.info("Removing " + entry.left.getScheme() + " connector on port " + entry.left.getPort());
         if (sshd != null) {
             try {
+                auditStop("connector OID " + oid + ", on port " + entry.left.getPort());
                 sshd.stop();
-                auditStop("connector OID " + oid);
             } catch (InterruptedException e) {
                 logger.log(Level.SEVERE, "Unable to remove sshd: " + ExceptionUtils.getMessage(e), e);
                 auditError("Error while shutting down, unable to remove sshd.", e);
@@ -332,23 +329,16 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         return SUPPORTED_SCHEMES;
     }
 
-    private void auditStart(SsgConnector connector) {
-        // TODO add and use SystemMessages.SFTPSERVER_START
-        getAuditor().logAndAudit(SystemMessages.FTPSERVER_START, toString(connector));
-    }
-
-    private String toString(SsgConnector connector) {
-        return "SFTP connector OID " + connector.getOid() + " (control port " + connector.getPort() + ")";
+    private void auditStart(String msg) {
+        getAuditor().logAndAudit(SystemMessages.SFTPSERVER_START, msg);
     }
 
     private void auditStop(String listener) {
-        // TODO add and use SystemMessages.SFTPSERVER_STOP
-        getAuditor().logAndAudit(SystemMessages.FTPSERVER_STOP, listener);
+        getAuditor().logAndAudit(SystemMessages.SFTPSERVER_STOP, listener);
     }
 
     private void auditError(String message, Exception exception) {
-        // TODO add and use SystemMessages.SFTPSERVER_ERROR
-        getAuditor().logAndAudit(SystemMessages.FTPSERVER_ERROR, new String[]{message}, exception);
+        getAuditor().logAndAudit(SystemMessages.SFTPSERVER_ERROR, new String[]{message}, exception);
     }
 
     private Auditor getAuditor() {

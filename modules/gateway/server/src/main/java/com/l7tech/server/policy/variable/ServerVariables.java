@@ -225,6 +225,20 @@ public class ServerVariables {
                 return frk == null ? null : String.valueOf(frk.isSecure());
             }
         }),
+        new Variable("request.sftp.path", new Getter() {
+            @Override
+            public Object get(String name, PolicyEnforcementContext context) {
+                FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
+                return frk == null ? null : frk.getPath();
+            }
+        }),
+        new Variable("request.sftp.file", new Getter() {
+            @Override
+            public Object get(String name, PolicyEnforcementContext context) {
+                FtpRequestKnob frk = context.getRequest().getKnob(FtpRequestKnob.class);
+                return frk == null ? null : frk.getFile();
+            }
+        }),
         new Variable("request.elapsedTime", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
