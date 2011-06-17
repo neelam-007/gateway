@@ -93,6 +93,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
                                     return generateSelfSignedSslCert();
                                 } catch (IOException ioe) {
                                     holder[0] = ioe;
+                                    transactionStatus.setRollbackOnly();
                                     return null;
                                 }
                             }

@@ -12,7 +12,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -76,8 +75,6 @@ public final class PcApiConnectorActivationListener implements SsgConnectorActiv
 
     private static final Logger logger = Logger.getLogger(PcApiConnectorActivationListener.class.getName());
 
-    @Inject
-    private ServerConfig serverConfig;
     private boolean sawApiConnector = false;
 
     private File getApiPortFile() {
@@ -94,6 +91,6 @@ public final class PcApiConnectorActivationListener implements SsgConnectorActiv
     }
 
     private ServerConfig serverConfig() {
-        return serverConfig != null ? serverConfig : ServerConfig.getInstance();
+        return ServerConfig.getInstance();
     }
 }
