@@ -211,7 +211,7 @@ public class TopComponents {
      *
      * @return the applicaiton Main Window
      */
-    public MainWindow getMainWindow() {
+    private MainWindow getMainWindow() {
         Component c = getComponent("mainWindow");
         if (c instanceof MainWindow) return (MainWindow)c;
 

@@ -1861,9 +1861,7 @@ public class LogPanel extends JPanel {
     }
 
     private void disableAVPolicyButtonIfOffline(JButton button) {
-        if (TopComponents.getInstance().getMainWindow() != null) {
-            button.setEnabled(TopComponents.getInstance().getMainWindow().isConnected());
-        }
+        button.setEnabled(Registry.getDefault().isAdminContextPresent());
     }
 
     private JCheckBox getRequestReformatCheckbox() {
