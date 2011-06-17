@@ -121,6 +121,14 @@ public class AuditRecordManagerImpl
     @Override
     @Transactional(readOnly = true)
     public List<AuditRecordHeader> findHeaders(final AuditSearchCriteria criteria) throws FindException {
+        final Class findClass = getFindClass(criteria);
+
+        // Enable discover of whether an audit is a message audit through the presence of not null request id property.
+        // If this property is not available then the audit record is not a message audit.
+        // This property can only be searched for when it may exist. If it will not exist e.g. were looking for admin
+        // or system records, then it cannot be included in the projection or in the result processing.
+        final boolean hasRequestIdProperty = findClass == getInterfaceClass() || findClass == MessageSummaryAuditRecord.class;
+
         final Functions.UnaryVoid<Criteria> criteriaConfigurator = new Functions.UnaryVoid<Criteria>(){
             @Override
             public void call(final Criteria hibernateCriteria) {
@@ -135,6 +143,10 @@ public class AuditRecordManagerImpl
                         .add(Property.forName(PROP_LEVEL))
                         ;
 
+                if (hasRequestIdProperty) {
+                    projectionList.add(Property.forName(PROP_REQUEST_ID));
+                }
+
                 if (criteria.messageId != null) {
                     //ensure distinct results only - only an issue when joining with audit_detail
                     hibernateCriteria.setProjection(Projections.distinct(projectionList));
@@ -148,15 +160,13 @@ public class AuditRecordManagerImpl
             }
         };
 
-        final Class findClass = getFindClass(criteria);
-        //todo: this does not work
-        final boolean isMessageAudit = findClass == MessageSummaryAuditRecord.class;
-
         //todo: Could a ResultTransformer be useful here and simplify the mapping of results to AuditRecordHeader?
         List<AuditRecordHeader> auditRecordHeaders = find(criteria, criteriaConfigurator, new Functions.BinaryVoid<List<AuditRecordHeader>, Object>() {
             @Override
             public void call(List<AuditRecordHeader> auditRecordHeaders, Object o) {
                 final Object [] values = (Object[]) o;
+
+                boolean isMessageAudit = hasRequestIdProperty && values[7] != null;
 
                 final Long id = Long.valueOf(values[0].toString());
                 final String name = (values[1] == null || !isMessageAudit) ? null : values[1].toString();
