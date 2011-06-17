@@ -1855,7 +1855,15 @@ public class LogPanel extends JPanel {
             } 
         }
 
+        disableAVPolicyButtonIfOffline(invokeRequestAVPolicyButton);
+
         return invokeRequestAVPolicyButton;
+    }
+
+    private void disableAVPolicyButtonIfOffline(JButton button) {
+        if (TopComponents.getInstance().getMainWindow() != null) {
+            button.setEnabled(TopComponents.getInstance().getMainWindow().isConnected());
+        }
     }
 
     private JCheckBox getRequestReformatCheckbox() {
@@ -1920,6 +1928,8 @@ public class LogPanel extends JPanel {
                 });
             } 
         }
+
+        disableAVPolicyButtonIfOffline(invokeResponseAVPolicyButton);
 
         return invokeResponseAVPolicyButton;
     }
