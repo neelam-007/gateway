@@ -213,8 +213,6 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_SESSION_EXPIRY = "logon.sessionExpiry";
     public static final String PARAM_INACTIVITY_PERIOD = "logon.inactivityPeriod";
 
-    public static final String PARAM_PASSWORD_EXPIRY = "password.expiry";
-
     public static final String PARAM_KERBEROS_CONFIG_REALM = "krb5Realm";
     public static final String PARAM_KERBEROS_CONFIG_KDC = "krb5KDC";
 
