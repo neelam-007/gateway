@@ -2641,7 +2641,7 @@ public class Utilities {
         return groupIndexToGroup;
     }
 
-    public static LinkedHashMap<String, String> getLegendDisplayStringToGroupMap(LinkedHashSet<String> mappingValuesLegend) {
+    public static LinkedHashMap<String, String> getLegendDisplayStringToGroupMap(Collection<String> mappingValuesLegend) {
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
         int index = 1;
         for (String s : mappingValuesLegend) {

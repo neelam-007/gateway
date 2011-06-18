@@ -16,8 +16,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.*;
 import java.sql.Connection;
-import java.sql.Statement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import javax.xml.transform.TransformerFactory;
@@ -32,14 +30,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
-import com.l7tech.util.TextUtils;
 import com.l7tech.common.io.ResourceMapEntityResolver;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.management.api.node.ReportApi;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.export.JRHtmlExporter;
 import net.sf.jasperreports.engine.export.JRHtmlExporterParameter;
-import net.sf.jasperreports.engine.export.JRPdfExporterParameter;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -369,7 +365,7 @@ public class ReportGenerator {
         if (isContextMapping && isUsingKeys) {
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sqlAndParamsPair);
             reportParams.put(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS, distinctMappingSets);
-            LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
+            Collection<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -594,6 +590,7 @@ public class ReportGenerator {
             while (psds.next()) {
                 List<String> mappingStrings = new ArrayList<String>();
                 String authUser = (String) psds.getFieldValue(new JRFieldAdapter() {
+                    @Override
                     public String getName() {
                         return PreparedStatementDataSource.ColumnName.AUTHENTICATED_USER.getColumnName();
                     }
@@ -603,6 +600,7 @@ public class ReportGenerator {
                 for (int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++) {
                     final int index = i;
                     String aMapStr = (String) psds.getFieldValue(new JRFieldAdapter() {
+                        @Override
                         public String getName() {
                             PreparedStatementDataSource.ColumnName columnName =
                                     PreparedStatementDataSource.ColumnName.getColumnName("MAPPING_VALUE_" + (index + 1));
@@ -637,12 +635,14 @@ public class ReportGenerator {
 
             while (psds.next()) {
                 String serviceName = (String) psds.getFieldValue(new JRFieldAdapter() {
+                    @Override
                     public String getName() {
                         return PreparedStatementDataSource.ColumnName.SERVICE_NAME.getColumnName();
                     }
                 });
 
                 String routingUri = (String) psds.getFieldValue(new JRFieldAdapter() {
+                    @Override
                     public String getName() {
                         return PreparedStatementDataSource.ColumnName.ROUTING_URI.getColumnName();
                     }

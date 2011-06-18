@@ -303,7 +303,7 @@ public class RuntimeDocUtilities {
         //see the jrxml files which have two charts defined.
 
         Utilities.checkMappingQueryParams(keysToFilters, false, false);
-        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
+        Collection<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
                 true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
 
@@ -464,7 +464,7 @@ public class RuntimeDocUtilities {
         jasperDoc.addIntElement(JasperDocument.ElementName.LEFT_MARGIN, LEFT_MARGIN_WIDTH);
         jasperDoc.addIntElement(JasperDocument.ElementName.RIGHT_MARGIN, LEFT_MARGIN_WIDTH);
 
-        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
+        Collection<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
                 true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
 
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
@@ -508,7 +508,7 @@ public class RuntimeDocUtilities {
                 }
                 mappingStrings.add(s);
             }
-            String mappingValue = getMappingValueString(authUser, mappingStrings.toArray(new String[]{}));
+            String mappingValue = getMappingValueString(authUser, mappingStrings.toArray(new String[mappingStrings.size()]));
             mappingValues.add(mappingValue);
         }
 
@@ -524,12 +524,12 @@ public class RuntimeDocUtilities {
      * The returned map is used when creating the chart xml. The category's on the chart will be the short 'Group x'
      * values and the legend will show the link between 'Group x' and the string in index x in mappingValuesLegend
      *
-     * @param mappingValuesLegend a linked hash set of the distinct mapping value sets, where each string, is a string
-     *                            representation of all the values found for the keys at runtime. Note: A set of keys are needed to create the
+     * @param mappingValuesLegend a collection of the distinct mapping value sets, where each string, is a string
+     *                            representation of all the values found for the keys at runtime. Note: A collection of keys are needed to create the
      *                            data structure mappingValuesLegend, see usages for how this created.
      * @return a linked hash map with short key value mapped to the orginal value at the same index in mappingValuesLegend
      */
-    private static LinkedHashMap<String, String> getGroupToLegendDisplayStringMap(LinkedHashSet<String> mappingValuesLegend) {
+    private static LinkedHashMap<String, String> getGroupToLegendDisplayStringMap(Collection<String> mappingValuesLegend) {
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         int index = 1;
         for (String s : mappingValuesLegend) {
@@ -561,7 +561,7 @@ public class RuntimeDocUtilities {
         //usage queires do not use isDetail to determine validity of parameters, it's not considered a key for usage reports
         Utilities.checkMappingQueryParams(keysToFilters, false, true);
 
-        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
+        Collection<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
                 true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
 
         /*
@@ -783,14 +783,14 @@ public class RuntimeDocUtilities {
      * @param truncateValues       if true truncation will be appplied to keys and values
      * @param truncateKeyMaxSize   if truncateValues is true, then this is the maximum size of a key after truncation
      * @param truncateValueMaxSize if truncateValues is true, then this is the maximum size of a value after truncation
-     * @return a LinkedHashSet with a string representing each distint group of valus from distinctMappingSets
+     * @return a Collection with a string representing each distint group of values from distinctMappingSets
      */
-    public static LinkedHashSet<String> getMappingLegendValues(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
+    public static Collection<String> getMappingLegendValues(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
                                                                LinkedHashSet<List<String>> distinctMappingSets,
                                                                boolean truncateValues,
                                                                Integer truncateKeyMaxSize,
                                                                Integer truncateValueMaxSize) {
-        LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
+        Collection<String> mappingValues = new ArrayList<String>();
 
         for (List<String> set : distinctMappingSets) {
             String[] mappingStringsArray = new String[Utilities.NUM_MAPPING_KEYS];
