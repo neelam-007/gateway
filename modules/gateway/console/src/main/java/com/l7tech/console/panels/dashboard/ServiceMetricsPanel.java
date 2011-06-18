@@ -1,8 +1,6 @@
-/*
- * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.console.panels.dashboard;
 
+import com.l7tech.console.security.LogonListener;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.audit.LogonEvent;
@@ -21,6 +19,7 @@ import com.l7tech.gateway.common.service.ServiceHeaderDifferentiator;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.util.TimeUnit;
 
 import javax.swing.*;
 import javax.swing.Timer;
@@ -45,7 +44,8 @@ import java.util.logging.Logger;
  * @since SecureSpan 4.2
  * @author rmak
  */
-public class ServiceMetricsPanel extends JPanel {
+public class ServiceMetricsPanel extends JPanel implements LogonListener {
+    @SuppressWarnings({ "UnusedDeclaration" })
     private JPanel mainPanel;
     private JPanel chartPanel;
     private JLabel statusLabel;
@@ -91,9 +91,9 @@ public class ServiceMetricsPanel extends JPanel {
     private static final MessageFormat STATUS_UPDATED_FORMAT = new MessageFormat(_resources.getString("status.updated"));
     private static final String METRICS_NOT_ENABLED = _resources.getString("status.notEnabled");
 
-    private static final long FINE_CHART_TIME_RANGE = 10 * 60 * 1000; // 10 minutes
-    private static final long HOURLY_CHART_TIME_RANGE = 60 * 60 * 60 * 1000; // 60 hours
-    private static final long DAILY_CHART_TIME_RANGE = 60 * 24 * 60 * 60 * 1000L; // 60 days
+    private static final long FINE_CHART_TIME_RANGE = TimeUnit.MINUTES.toMillis( 10L ); // 10 minutes
+    private static final long HOURLY_CHART_TIME_RANGE = TimeUnit.HOURS.toMillis( 60L ); // 60 hours
+    private static final long DAILY_CHART_TIME_RANGE =  TimeUnit.DAYS.toMillis( 60L ); // 60 days
 
     /** Index of tab panel for currently selected period. */
     private static final int SELECTION_TAB_INDEX = 0;
@@ -161,7 +161,7 @@ public class ServiceMetricsPanel extends JPanel {
 
     /** Combobox item to represent all published services selected. */
     private static final ServiceHeader ALL_SERVICES = new ServiceHeader(false, false,
-            _resources.getString("publishedServiceCombo.allValue"), null, null, null, -1L, null, -1, -1, null, false);
+            _resources.getString("publishedServiceCombo.allValue"), null, null, null, -1L, null, -1L, -1, null, false);
 
     private final DefaultComboBoxModel _publishedServicesComboModel =
             new DefaultComboBoxModel() {
@@ -207,10 +207,11 @@ public class ServiceMetricsPanel extends JPanel {
 
     private final Timer _refreshTimer = new Timer(2500, _refreshListener);
 
-    private long _latestDownloadedPeriodStart = -1;
+    private long _latestDownloadedPeriodStart = -1L;
 
     /** Whether previous attempt to connect to gateway was successful. */
     private boolean _connected = false;
+    private volatile boolean _inRefresh = false; // flag for refresh currently active
 
     private static final String SERVICES_WITH_PROBLEM_TOOLTIP = _resources.getString("servicesWithProblem.tooltip");
 
@@ -227,7 +228,7 @@ public class ServiceMetricsPanel extends JPanel {
     private static class ProblemListElement {
         private final ImageIcon _icon;
         private final EntityHeader _publishedService;
-        public ProblemListElement(ImageIcon icon, EntityHeader publishedService) {
+        private ProblemListElement(ImageIcon icon, EntityHeader publishedService) {
             _icon = icon;
             _publishedService = publishedService;
         }
@@ -369,6 +370,7 @@ public class ServiceMetricsPanel extends JPanel {
         TIME_FORMAT.setTimeZone(tz);
     }
 
+    @Override
     public void onLogon(LogonEvent e) {
         _clusterStatusAdmin = null;
         _serviceAdmin = null;
@@ -376,11 +378,12 @@ public class ServiceMetricsPanel extends JPanel {
         clusterNodeCombo.setEnabled(true);
         publishedServiceCombo.setEnabled(true);
         resolutionCombo.setEnabled(true);
-        setSelectedBin(null, -1, -1, false);
+        setSelectedBin(null, -1L, -1L, false);
         updateTimeZone();
         _connected = true;
     }
 
+    @Override
     public void onLogoff(LogonEvent e) {
         _refreshTimer.stop();
         if (_connected) {
@@ -423,13 +426,13 @@ public class ServiceMetricsPanel extends JPanel {
     private synchronized void resetData(final boolean saveSelectedPeriod) {
         _refreshTimer.stop();
 
-        _latestDownloadedPeriodStart = -1;
+        _latestDownloadedPeriodStart = -1L;
         _metricsChartPanel.clearData(saveSelectedPeriod);
         _metricsChartPanel.setResolution(_currentResolution.getResolution());
         _metricsChartPanel.setBinInterval(_currentResolution.getBinInterval());
         _metricsChartPanel.setMaxTimeRange(_currentResolution.getChartTimeRange());
 
-        setSelectedBin(null, -1, -1, false);
+        setSelectedBin(null, -1L, -1L, false);
 
         latestFromTimeLabel.setText("");
         latestToTimeLabel.setText("");
@@ -449,164 +452,144 @@ public class ServiceMetricsPanel extends JPanel {
 
     private synchronized void refreshData() {
         try {
-            final ClusterStatusAdmin clusterStatusAdmin = getClusterStatusAdmin();
-
-            if (!clusterStatusAdmin.isMetricsEnabled()) {
-                statusLabel.setText(METRICS_NOT_ENABLED);
-                // Skips refresh if service metrics collection is disabled on server. (Bug 4053)
-                return;
-            }
-
-            // Updates combo box with add/removed cluster nodes; taking care to preserve selection if only name changed.
-            final ClusterNodeInfo prevNode = (ClusterNodeInfo)_clusterNodesComboModel.getSelectedItem();
-            _clusterNodesUpdateConsumer.update(_clusterNodes, _clusterNodesComboModel);
-            if (_clusterNodesComboModel.getSelectedItem() != prevNode) {
-                for (int i = 1; i < _clusterNodesComboModel.getSize(); ++i) {
-                    final ClusterNodeInfo node = (ClusterNodeInfo)_clusterNodesComboModel.getElementAt(i);
-                    if ( node.getId().equals(prevNode.getId()) ) {
-                        _clusterNodesComboModel.setSelectedItem(node);
-                        break;
-                    }
-                }
-            }
-
-            // Updates combo box with add/removed published services; taking care to preserve selection if only name changed.
-            final ServiceHeader prevService = (ServiceHeader)_publishedServicesComboModel.getSelectedItem();
-            _publishedServicesUpdateConsumer.update(_publishedServices, _publishedServicesComboModel);
-            if (_publishedServicesComboModel.getSelectedItem() != prevService) {
-                for (int i = 1; i < _publishedServicesComboModel.getSize(); ++i) {
-                    final ServiceHeader service = (ServiceHeader)_publishedServicesComboModel.getElementAt(i);
-                    if (service.getOid() == prevService.getOid()) {
-                        _publishedServicesComboModel.setSelectedItem(service);
-                        if (_logger.isLoggable(Level.FINE)) {
-                            _logger.fine("Reselected modified published service \"" + service.getDisplayName() + "\" in combo box.");
-                        }
-                        break;
-                    }
-                }
-            }
-
-            String nodeId = null;
-            final ClusterNodeInfo node = (ClusterNodeInfo) _clusterNodesComboModel.getSelectedItem();
-            if (node != ALL_NODES) {
-                nodeId = node.getNodeIdentifier();
-            }
-
-            long[] serviceOids = null;
-            final EntityHeader service = (EntityHeader) _publishedServicesComboModel.getSelectedItem();
-            if (service != ALL_SERVICES) {
-                serviceOids = new long[]{service.getOid()};
-            }
+            // -----------------------------------------------------------------
+            // Get current UI selections and set defaults
+            // -----------------------------------------------------------------
 
             final Integer resolution = _currentResolution.getResolution();
 
+            final ClusterNodeInfo node = (ClusterNodeInfo) _clusterNodesComboModel.getSelectedItem();
+            final String nodeId = node != ALL_NODES ? node.getNodeIdentifier() : null;
+
+            final EntityHeader service = (EntityHeader) _publishedServicesComboModel.getSelectedItem();
+            final long[] serviceOids = service != ALL_SERVICES ? new long[]{service.getOid()} : null;
+
             // -----------------------------------------------------------------
-            // Updates the chart.
+            // Get data from Gateway
             // -----------------------------------------------------------------
 
-            Collection<MetricsSummaryBin> newBins;
-            if (_latestDownloadedPeriodStart == -1) {
-                newBins = clusterStatusAdmin.summarizeLatestByPeriod(nodeId,
-                                                                     serviceOids,
-                                                                     resolution,
-                                                                     _currentResolution.getChartTimeRange() +
-                                                                     _currentResolution.getBinInterval(),
-                                                                     true); // (Bug 3855) Need to include empty uptime bins in order for moving chart to advance when there are no request message.
-            } else {
-                newBins = clusterStatusAdmin.summarizeByPeriod(nodeId,
-                                                               serviceOids,
-                                                               resolution,
-                                                               _latestDownloadedPeriodStart + 1,
-                                                               null,
-                                                               true);       // (Bug 3855) Need to include empty uptime bins in order for moving chart to advance when there are no request message.
-            }
+            final RefreshWorker refreshWorker = new RefreshWorker( resolution, nodeId, serviceOids ){
+                @Override
+                protected void update( final MetricsData data ) {
+                    final Collection<MetricsSummaryBin> newBins = data.getNewBins();
+                    MetricsSummaryBin latestBin = data.getLatestBin();
 
-            MetricsSummaryBin latestBin = null;
-            if (newBins.size() > 0) {
-                for (MetricsSummaryBin bin : newBins) {
-                    if (_latestDownloadedPeriodStart < bin.getPeriodStart()) {
-                        _latestDownloadedPeriodStart = bin.getPeriodStart();
-                        latestBin = bin;    // For fine resolution, use this in "Latest" tab.
+                    // -----------------------------------------------------------------
+                    // Update the UI with data from Gateway
+                    // -----------------------------------------------------------------
+
+                    if ( !data.isEnabled() ) {
+                        statusLabel.setText(METRICS_NOT_ENABLED);
+                        return;
+                    } else if ( data.isError() ) {
+                        statusLabel.setText( data.getErrorMessage() );
+                        return;
                     }
-                }
 
-                if (_logger.isLoggable(Level.FINE)) {
-                    _logger.fine("Dowloaded " + newBins.size() + " " + MetricsBin.describeResolution(resolution) +
-                                 " summary bins. Latest bin = " + new Date(latestBin.getPeriodStart()) +
-                                 " - " + new Date(latestBin.getPeriodEnd()));
-                }
-
-                _metricsChartPanel.addData(newBins);
-            }
-
-            // -----------------------------------------------------------------
-            // Updates the "Latest" tab panel.
-            // -----------------------------------------------------------------
-
-            // Gets a summary of the latest resolution period.
-            if (_currentResolution == _fineResolution) {
-                // The latest fine resolution summary bin was already downloaded,
-                // either during this call or the previous call.
-            } else if (_currentResolution == _hourlyResolution) {
-                // Gets a summary collated from an hour's worth of fine metrics bins.
-                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_FINE, 60 * 60 * 1000, true);
-            } else if (_currentResolution == _dailyResolution) {
-                // Gets a summary collated from a day's worth of hourly metrics bins.
-                latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_HOURLY, 24 * 60 * 60 * 1000, false /* only FINE resolution has empty uptime bins */);
-            }
-
-            if (latestBin != null) {
-                latestFromTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodStart())));
-                latestToTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodEnd())));
-
-                latestFrontMaxText.setText(Integer.toString(latestBin.getMaxFrontendResponseTime()==null?0:latestBin.getMaxFrontendResponseTime()));
-                latestFrontAvgText.setText(Long.toString(Math.round(latestBin.getAverageFrontendResponseTime())));
-                latestFrontMinText.setText(Integer.toString(latestBin.getMinFrontendResponseTime()==null?0:latestBin.getMinFrontendResponseTime()));
-
-                latestBackMaxText.setText(Integer.toString(latestBin.getMaxBackendResponseTime()==null?0:latestBin.getMaxBackendResponseTime()));
-                latestBackAvgText.setText(Long.toString(Math.round(latestBin.getAverageBackendResponseTime())));
-                latestBackMinText.setText(Integer.toString(latestBin.getMinBackendResponseTime()==null?0:latestBin.getMinBackendResponseTime()));
-
-                latestNumRoutingFailureText.setText(Integer.toString(latestBin.getNumRoutingFailure()));
-                latestNumPolicyViolationText.setText(Integer.toString(latestBin.getNumPolicyViolation()));
-                latestNumSuccessText.setText(Integer.toString(latestBin.getNumSuccess()));
-                latestNumTotalText.setText(Integer.toString(latestBin.getNumTotal()));
-
-                _latestServicesWithProblemListModel.clear();
-                for (EntityHeader svc : _publishedServices) {   // Loop over sorted set so that the list box will be sorted too.
-                    final boolean hasRF = latestBin.getServicesWithRoutingFailure().contains(svc.getOid());
-                    final boolean hasPV = latestBin.getServicesWithPolicyViolation().contains(svc.getOid());
-                    if (hasRF || hasPV) {
-                        ImageIcon icon;
-                        if (hasRF && hasPV) {
-                            icon = BOTH_PROBLEMS_ICON;
-                        } else if (hasRF) {
-                            icon = ROUTING_FAILURE_ICON;
-                        } else {
-                            icon = POLICY_VIOLATION_ICON;
+                    // Updates combo box with add/removed cluster nodes; taking care to preserve selection if only name changed.
+                    final ClusterNodeInfo prevNode = (ClusterNodeInfo)_clusterNodesComboModel.getSelectedItem();
+                    if (_clusterNodesComboModel.getSelectedItem() != prevNode) {
+                        for (int i = 1; i < _clusterNodesComboModel.getSize(); ++i) {
+                            final ClusterNodeInfo clusterNodeInfo = (ClusterNodeInfo)_clusterNodesComboModel.getElementAt(i);
+                            if ( clusterNodeInfo.getId().equals(prevNode.getId()) ) {
+                                _clusterNodesComboModel.setSelectedItem(clusterNodeInfo);
+                                break;
+                            }
                         }
-                        _latestServicesWithProblemListModel.addElement(new ProblemListElement(icon, svc));
                     }
+
+                    // Updates combo box with add/removed published services; taking care to preserve selection if only name changed.
+                    final ServiceHeader prevService = (ServiceHeader)_publishedServicesComboModel.getSelectedItem();
+                    if (_publishedServicesComboModel.getSelectedItem() != prevService) {
+                        for (int i = 1; i < _publishedServicesComboModel.getSize(); ++i) {
+                            final ServiceHeader serviceHeader = (ServiceHeader)_publishedServicesComboModel.getElementAt(i);
+                            if ( serviceHeader.getOid() == prevService.getOid()) {
+                                _publishedServicesComboModel.setSelectedItem( serviceHeader );
+                                if (_logger.isLoggable(Level.FINE)) {
+                                    _logger.fine("Reselected modified published service \"" + serviceHeader.getDisplayName() + "\" in combo box.");
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+                    // -----------------------------------------------------------------
+                    // Updates the chart.
+                    // -----------------------------------------------------------------
+
+                    if (newBins.size() > 0) {
+                        if ( _currentResolution == _fineResolution ) {
+                            for (MetricsSummaryBin bin : newBins) {
+                                if (_latestDownloadedPeriodStart < bin.getPeriodStart()) {
+                                    _latestDownloadedPeriodStart = bin.getPeriodStart();
+                                    latestBin = bin;    // For fine resolution, use this in "Latest" tab.
+                                }
+                            }
+                        }
+
+                        if (_logger.isLoggable(Level.FINE) && latestBin != null ) {
+                            _logger.fine("Dowloaded " + newBins.size() + " " + MetricsBin.describeResolution(resolution) +
+                                         " summary bins. Latest bin = " + new Date(latestBin.getPeriodStart()) +
+                                         " - " + new Date(latestBin.getPeriodEnd()));
+                        }
+
+                        _metricsChartPanel.addData(newBins);
+                    }
+
+                    // -----------------------------------------------------------------
+                    // Updates the "Latest" tab panel.
+                    // -----------------------------------------------------------------
+
+                    if (latestBin != null) {
+                        latestFromTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodStart())));
+                        latestToTimeLabel.setText(TIME_FORMAT.format(new Date(latestBin.getPeriodEnd())));
+
+                        latestFrontMaxText.setText(Integer.toString(latestBin.getMaxFrontendResponseTime()==null?0:latestBin.getMaxFrontendResponseTime()));
+                        latestFrontAvgText.setText(Long.toString(Math.round(latestBin.getAverageFrontendResponseTime())));
+                        latestFrontMinText.setText(Integer.toString(latestBin.getMinFrontendResponseTime()==null?0:latestBin.getMinFrontendResponseTime()));
+
+                        latestBackMaxText.setText(Integer.toString(latestBin.getMaxBackendResponseTime()==null?0:latestBin.getMaxBackendResponseTime()));
+                        latestBackAvgText.setText(Long.toString(Math.round(latestBin.getAverageBackendResponseTime())));
+                        latestBackMinText.setText(Integer.toString(latestBin.getMinBackendResponseTime()==null?0:latestBin.getMinBackendResponseTime()));
+
+                        latestNumRoutingFailureText.setText(Integer.toString(latestBin.getNumRoutingFailure()));
+                        latestNumPolicyViolationText.setText(Integer.toString(latestBin.getNumPolicyViolation()));
+                        latestNumSuccessText.setText(Integer.toString(latestBin.getNumSuccess()));
+                        latestNumTotalText.setText(Integer.toString(latestBin.getNumTotal()));
+
+                        _latestServicesWithProblemListModel.clear();
+                        for (EntityHeader svc : _publishedServices) {   // Loop over sorted set so that the list box will be sorted too.
+                            final boolean hasRF = latestBin.getServicesWithRoutingFailure().contains(svc.getOid());
+                            final boolean hasPV = latestBin.getServicesWithPolicyViolation().contains(svc.getOid());
+                            if (hasRF || hasPV) {
+                                ImageIcon icon;
+                                if (hasRF && hasPV) {
+                                    icon = BOTH_PROBLEMS_ICON;
+                                } else if (hasRF) {
+                                    icon = ROUTING_FAILURE_ICON;
+                                } else {
+                                    icon = POLICY_VIOLATION_ICON;
+                                }
+                                _latestServicesWithProblemListModel.addElement(new ProblemListElement(icon, svc));
+                            }
+                        }
+                    }
+
+                    // -----------------------------------------------------------------
+                    // Updates the status label.
+                    // -----------------------------------------------------------------
+
+                    statusLabel.setText(STATUS_UPDATED_FORMAT.format(new Object[] { new Date() }));
+
+                    if (!_connected) {  // Previously disconnected.
+                        _logger.log(Level.INFO, "Reconnected to Gateway.");
+                    }
+                    _connected = true;
                 }
-            }
-
-            // -----------------------------------------------------------------
-            // Updates the status label.
-            // -----------------------------------------------------------------
-
-            statusLabel.setText(STATUS_UPDATED_FORMAT.format(new Object[] { new Date() }));
-
-            if (!_connected) {  // Previously disconnected.
-                _logger.log(Level.INFO, "Reconnected to Gateway.");
-            }
-            _connected = true;
+            };
+            refreshWorker.start();
         } catch (RuntimeException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to get dashboard data.");
-            _refreshTimer.stop();
-            dispose();
-        } catch (FindException e) {
-            _logger.log(Level.WARNING, "Gateway can't get data", e);
-            statusLabel.setText("[Problem on Gateway] " + e.getMessage() == null ? "" : e.getMessage());
             _refreshTimer.stop();
             dispose();
         }
@@ -622,12 +605,12 @@ public class ServiceMetricsPanel extends JPanel {
      */
     public void setSelectedBin(final MetricsSummaryBin bin, final long periodStart, final long periodEnd, final boolean bringTabToFront) {
         if (bin == null) {
-            if (periodStart == -1) {
+            if (periodStart == -1L ) {
                 selectionFromTimeLabel.setText("");
             } else {
                 selectionFromTimeLabel.setText(TIME_FORMAT.format(new Date(periodStart)));
             }
-            if (periodEnd == -1) {
+            if (periodEnd == -1L ) {
                 selectionToTimeLabel.setText("");
             } else {
                 selectionToTimeLabel.setText(TIME_FORMAT.format(new Date(periodEnd)));
@@ -694,5 +677,143 @@ public class ServiceMetricsPanel extends JPanel {
             _serviceAdmin = Registry.getDefault().getServiceManager();
         }
         return _serviceAdmin;
+    }
+
+    private static final class MetricsData {
+        private final boolean enabled;
+        private final String errorMessage;
+        private final Collection<MetricsSummaryBin> newBins;
+        private final MetricsSummaryBin latestBin;
+
+        private MetricsData() {
+            this( false, null, null, null );
+        }
+
+        private MetricsData( final String errorMessage ) {
+            this( true, errorMessage, null, null );
+        }
+
+        private MetricsData( final MetricsSummaryBin latestBin,
+                             final Collection<MetricsSummaryBin> newBins ) {
+            this( true, null, latestBin, newBins );
+        }
+
+        private MetricsData( final boolean enabled,
+                             final String errorMessage,
+                             final MetricsSummaryBin latestBin,
+                             final Collection<MetricsSummaryBin> newBins ) {
+            this.enabled = enabled;
+            this.errorMessage = errorMessage;
+            this.latestBin = latestBin;
+            this.newBins = newBins;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public boolean isError() {
+            return errorMessage != null;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
+
+        public MetricsSummaryBin getLatestBin() {
+            return latestBin;
+        }
+
+        public Collection<MetricsSummaryBin> getNewBins() {
+            return newBins;
+        }
+    }
+
+    private abstract class RefreshWorker extends com.l7tech.gui.util.SwingWorker {
+        private final Integer resolution;
+        private final String nodeId;
+        private final long[] serviceOids;
+
+        private RefreshWorker( final Integer resolution,
+                               final String nodeId,
+                               final long[] serviceOids ) {
+            this.resolution = resolution;
+            this.nodeId = nodeId;
+            this.serviceOids = serviceOids;
+        }
+
+        protected abstract void update( final MetricsData data );
+
+        @Override
+        public void finished() {
+            final MetricsData data = (MetricsData) get();
+            if ( data != null ) {
+                update( data );
+            }
+        }
+
+        @Override
+        public Object construct() {
+            if ( _inRefresh ) {
+                _logger.warning( "Concurrent refresh requested, skipping update." );
+                return null;
+            }
+            _inRefresh = true;
+            try {
+                final ClusterStatusAdmin clusterStatusAdmin = getClusterStatusAdmin();
+                if ( clusterStatusAdmin.isMetricsEnabled() ) {
+
+                    _clusterNodesUpdateConsumer.update(_clusterNodes, _clusterNodesComboModel);
+                    _publishedServicesUpdateConsumer.update(_publishedServices, _publishedServicesComboModel);
+
+
+                    Collection<MetricsSummaryBin> newBins;
+                    if (_latestDownloadedPeriodStart == -1L) {
+                        newBins = clusterStatusAdmin.summarizeLatestByPeriod(nodeId,
+                                                                             serviceOids,
+                                                                             resolution,
+                                                                             _currentResolution.getChartTimeRange() +
+                                                                             _currentResolution.getBinInterval(),
+                                                                             true); // (Bug 3855) Need to include empty uptime bins in order for moving chart to advance when there are no request message.
+                    } else {
+                        newBins = clusterStatusAdmin.summarizeByPeriod(nodeId,
+                                                                       serviceOids,
+                                                                       resolution,
+                                                                       _latestDownloadedPeriodStart + 1L,
+                                                                       null,
+                                                                       true);       // (Bug 3855) Need to include empty uptime bins in order for moving chart to advance when there are no request message.
+                    }
+
+                    // Gets a summary of the latest resolution period.
+                    MetricsSummaryBin latestBin = null;
+                    if (_currentResolution == _fineResolution) {
+                        // The latest fine resolution summary bin was already downloaded,
+                        // either during this call or the previous call.
+                    } else if (_currentResolution == _hourlyResolution) {
+                        // Gets a summary collated from an hour's worth of fine metrics bins.
+                        latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_FINE, 60 * 60 * 1000, true);
+                    } else if (_currentResolution == _dailyResolution) {
+                        // Gets a summary collated from a day's worth of hourly metrics bins.
+                        latestBin = clusterStatusAdmin.summarizeLatest(nodeId, serviceOids, MetricsBin.RES_HOURLY, 24 * 60 * 60 * 1000, false /* only FINE resolution has empty uptime bins */);
+                    }
+
+                    return new MetricsData( latestBin, newBins );
+                } else {
+                    return new MetricsData();
+                }
+            } catch (RuntimeException e) {
+                ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to get dashboard data.");
+                _refreshTimer.stop();
+                dispose();
+            } catch (FindException e) {
+                _logger.log(Level.WARNING, "Gateway can't get data", e);
+                _refreshTimer.stop();
+                dispose();
+                return new MetricsData("[Problem on Gateway] " + e.getMessage() == null ? "" : e.getMessage() );
+            } finally {
+                _inRefresh = false;
+            }
+            return null;
+        }
     }
 }
