@@ -30,7 +30,7 @@ public class CancelableOperationDialog extends JDialog {
     }
 
     public CancelableOperationDialog(Window owner, String title, String message, JProgressBar progressBar) {
-        super(owner, title, CancelableOperationDialog.DEFAULT_MODALITY_TYPE);
+        super(owner, title, ModalityType.DOCUMENT_MODAL);
         this.messageLabel.setText(message);
         this.progressBar = progressBar;
         if ( owner==null ) {
@@ -159,7 +159,7 @@ public class CancelableOperationDialog extends JDialog {
                 progressBar.setIndeterminate(true);
                 final CancelableOperationDialog cancelDialog =
                         new CancelableOperationDialog(parent, dialogTitle, dialogMessage, progressBar);
-                cancelDialog.setModal(true);
+                cancelDialog.setModalityType(ModalityType.DOCUMENT_MODAL);
                 return cancelDialog;
             }
         });

@@ -20,9 +20,14 @@ public class DialogFactoryShower implements DialogShower {
         this.dialogFactory = dialogFactory;
     }
 
+    protected JDialog getDialog() {
+        if (dialog == null)
+            dialog = dialogFactory.call();
+        return dialog;
+    }
+
     public void showDialog() {
-        if (dialog == null) dialog = dialogFactory.call();
-        dialog.setVisible(true);
+        getDialog().setVisible(true);
     }
 
     public void hideDialog() {

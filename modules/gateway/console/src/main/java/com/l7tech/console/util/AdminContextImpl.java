@@ -179,7 +179,7 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
 
     private static final String PROP_BASE = "com.l7tech.console.";
     private static final boolean NO_CANCEL_DIALOGS = SyspropUtil.getBoolean(PROP_BASE + "suppressRemoteInvocationCancelDialog");
-    private static final long MS_BEFORE_DLG = SyspropUtil.getLong(PROP_BASE + "remoteInvocationCancelDialogDelayMillis", 2500L);
+    private static final long MS_BEFORE_DLG = SyspropUtil.getLong(PROP_BASE + "remoteInvocationCancelDialogDelayMillis", 10000L);
     private static final boolean TRACE = SyspropUtil.getBoolean(PROP_BASE + "remoteInvocationTracing", false);
 
     private final Functions.Nullary<Void> activityCallback;
@@ -207,7 +207,7 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
                         throw new ThrowableWrapper(throwable);
                     }
                 }
-            }, null, "Waiting for Server", "Waiting for response from Gateway...", MS_BEFORE_DLG);
+            }, TopComponents.getInstance().getTopParent(), "Waiting for Server", "Waiting for response from Gateway...", MS_BEFORE_DLG);
             if ( !background && activityCallback != null ) {
                 activityCallback.call();
             }

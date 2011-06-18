@@ -282,7 +282,6 @@ public class Utilities {
             centerOnScreen(toCenter);
         }
         else {
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             Dimension parentSize = parent.getSize();
             Dimension compSize = component.getSize();
 
@@ -295,11 +294,15 @@ public class Utilities {
             int x = ((int)parent.getLocationOnScreen().getX()) + ((parentSize.width - compSize.width) / 2);
             int y = ((int)parent.getLocationOnScreen().getY()) + ((parentSize.height - compSize.height) / 2);
 
-            // fix offscreen
-            if (x < 0) x = 0;
-            if (y < 0) y = 0;
-            if ((x+compSize.width) > screenSize.width) x = screenSize.width - compSize.width;
-            if ((y+compSize.height) > screenSize.height) y = screenSize.height - compSize.height;
+            // fix offscreen if not a multimonitor environment (in which case we will give up, for now, on trying to figure out what counts as offscreen)
+            if (GraphicsEnvironment.isHeadless() || GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length == 1) {
+                if (x < 0) x = 0;
+                if (y < 0) y = 0;
+
+                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                if ((x+compSize.width) > screenSize.width) x = screenSize.width - compSize.width;
+                if ((y+compSize.height) > screenSize.height) y = screenSize.height - compSize.height;
+            }
 
             toCenter.setLocation(x, y);
         }
