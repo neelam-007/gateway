@@ -75,6 +75,9 @@ COMMIT
 [0:0] -A INPUT -i eth0 -p udp -m udp --dport 123 -j ACCEPT
 [0:0] -A INPUT -i eth2 -p udp -m udp --dport 123 -j ACCEPT
 [0:0] -A INPUT -i eth3 -p udp -m udp --dport 123 -j ACCEPT
+# SNMP Rules
+# [0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 161 -j ACCEPT
+# [0:0] -A INPUT -i eth0 -p udp -m udp --dport 161 -j ACCEPT
 # By exclusion, not allowed on eth1
 
 # Remote Assertion Server (uses loopback)
