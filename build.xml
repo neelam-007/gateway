@@ -2996,7 +2996,6 @@
 
             <copy todir="@{dir}/${install.src.app.bin}">
                 <fileset dir="${src.root}/etc/appliance">
-                    <include name="md5passwd.pl"/>
                     <include name="resetAdmin.sh"/>
                     <include name="passServiceUsage.sh"/>
                     <include name="ssg_appliance_startup_config.sh"/>
