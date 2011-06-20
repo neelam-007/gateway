@@ -2146,7 +2146,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             }
 
             if ( index >= 0 ) {
-                displayName = displayName.substring( 0, index ) + " \\n" + displayName.substring( index );                
+                displayName = displayName.substring( 0, index ) + " \n" + displayName.substring( index );
             }
 
             return displayName;
