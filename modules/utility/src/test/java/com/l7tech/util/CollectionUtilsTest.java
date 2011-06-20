@@ -1,5 +1,6 @@
 package com.l7tech.util;
 
+import static com.l7tech.util.CollectionUtils.*;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
@@ -23,22 +24,22 @@ public class CollectionUtilsTest {
         final List<String> list2 = Arrays.asList( "3", "4" );
         final List<String> list3 = Arrays.asList( "5", "6" );
 
-        final Iterator<Object> iterator0 = CollectionUtils.iterable().iterator();
+        final Iterator<Object> iterator0 = iterable().iterator();
         assertFalse( "no more values", iterator0.hasNext() );
 
-        final Iterator<String> iterator1 = CollectionUtils.iterable( list1 ).iterator();
+        final Iterator<String> iterator1 = iterable( list1 ).iterator();
         assertEquals("value 1", "1", iterator1.next() );
         assertEquals("value 2", "2", iterator1.next() );
         assertFalse( "no more values", iterator1.hasNext() );
 
-        final Iterator<String> iterator2 = CollectionUtils.iterable( list1, list2 ).iterator();
+        final Iterator<String> iterator2 = iterable( list1, list2 ).iterator();
         assertEquals("value 1", "1", iterator2.next() );
         assertEquals("value 2", "2", iterator2.next() );
         assertEquals("value 3", "3", iterator2.next() );
         assertEquals("value 4", "4", iterator2.next() );
         assertFalse( "no more values", iterator2.hasNext() );
 
-        final Iterator<String> iterator3 = CollectionUtils.iterable( list1, list2, list3 ).iterator();
+        final Iterator<String> iterator3 = iterable( list1, list2, list3 ).iterator();
         assertEquals("value 1", "1", iterator3.next() );
         assertEquals("value 2", "2", iterator3.next() );
         assertEquals("value 3", "3", iterator3.next() );
@@ -56,7 +57,7 @@ public class CollectionUtilsTest {
         final List<String> list2 = Arrays.asList( );
         final List<String> list3 = Arrays.asList( "2", "3", "4" );
 
-        final Iterator<String> iterator4 = CollectionUtils.iterable( list0, list1, list2, list3 ).iterator();
+        final Iterator<String> iterator4 = iterable( list0, list1, list2, list3 ).iterator();
         assertEquals("value 1", "1", iterator4.next() );
         assertEquals("value 2", "2", iterator4.next() );
         assertEquals("value 3", "3", iterator4.next() );
@@ -71,7 +72,7 @@ public class CollectionUtilsTest {
         final List<String> list2 = new ArrayList<String>(Arrays.asList( "3", "4" ));
         final List<String> list3 = new ArrayList<String>(Arrays.asList( "5", "6" ));
 
-        final Iterator<String> iterator3 = CollectionUtils.iterable( list1, list2, list3 ).iterator();
+        final Iterator<String> iterator3 = iterable( list1, list2, list3 ).iterator();
         assertEquals("value 1", "1", iterator3.next() );
         iterator3.remove();
         assertEquals("value 2", "2", iterator3.next() );
@@ -100,26 +101,47 @@ public class CollectionUtilsTest {
         final List<List<String>> listList = new ArrayList<List<String>>(Arrays.<List<String>>asList( list1, list2, list3 ));
         final List<String> expectedResultList = new ArrayList<String>(Arrays.asList( "1", "2", "3", "4", "5", "6" ));
 
-        assertEquals( "Joined list", expectedResultList, CollectionUtils.join( listList ) );
-        assertEquals( "Joined empty list", new ArrayList<String>(), CollectionUtils.join( new ArrayList<List<String>>() ) );
+        assertEquals( "Joined list", expectedResultList, join( listList ) );
+        assertEquals( "Joined empty list", new ArrayList<String>(), join( new ArrayList<List<String>>() ) );
     }
 
     @Test
     public void testList() {
-        final List<String> list1 = CollectionUtils.list( "1", "2" );
-        final List<String> list2 = CollectionUtils.list( );
-        final List<String> list3 = CollectionUtils.list( "3", "4", "5", "6" );
+        final List<String> list1 = list( "1", "2" );
+        final List<String> list2 = list();
+        final List<String> list3 = list( "3", "4", "5", "6" );
 
         assertEquals( "list1", Arrays.asList( "1", "2" ), list1 );
         assertEquals( "list2", Collections.<String>emptyList(), list2 );
         assertEquals( "list3", Arrays.asList( "3", "4", "5", "6" ), list3 );
 
-        final List<List<String>> listList = CollectionUtils.list( list1, list2, list3 );
+        final List<List<String>> listList = list( list1, list2, list3 );
         final List<List<String>> expectedResultList = new ArrayList<List<String>>( Arrays.asList(
                 Arrays.asList( "1", "2"),
                 Collections.<String>emptyList(),
                 Arrays.asList( "3", "4", "5", "6" ) ) );
 
         assertEquals( "listList", expectedResultList, listList );
+    }
+
+    @Test
+    public void testForeach() {
+        final List<String> result1 = new ArrayList<String>();
+        foreach( list( "1", "2", null ), true, new Functions.UnaryVoid<String>() {
+            @Override
+            public void call( final String s ) {
+                result1.add( s );
+            }
+        } );
+        assertEquals( "List result (nulls)", list( "1", "2", null ), result1 );
+
+        final List<String> result2 = new ArrayList<String>();
+        foreach( list( "1", "2", null ), false, new Functions.UnaryVoid<String>() {
+            @Override
+            public void call( final String s ) {
+                result2.add( s );
+            }
+        } );
+        assertEquals( "List result (no nulls)", list( "1", "2" ), result2 );
     }
 }

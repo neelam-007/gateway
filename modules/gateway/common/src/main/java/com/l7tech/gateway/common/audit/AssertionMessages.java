@@ -837,6 +837,10 @@ public class AssertionMessages extends Messages {
     public static final M WS_ADDRESSING_NO_HEADERS = m(8550, Level.WARNING, "Required WS-Addressing headers not present");
     public static final M WS_ADDRESSING_NO_SIGNED_HEADERS = m(8551, Level.WARNING, "Required signed WS-Addressing headers not present");
     public static final M WS_ADDRESSING_HEADERS_OK = m(8552, Level.FINE, "WS-Addressing headers present");
+    public static final M WS_ADDRESSING_HEADERS_NONE = m(8553, Level.FINE, "No WS-Addressing headers found");
+    public static final M WS_ADDRESSING_HEADERS_SIGNED_NONE = m(8554, Level.FINE, "No signed WS-Addressing headers found");
+    public static final M WS_ADDRESSING_FOUND_HEADERS = m(8555, Level.FINE, "Found WS-Addressing headers for namespace {0}");
+    public static final M WS_ADDRESSING_FOUND_SIGNED_HEADERS = m(8556, Level.FINE, "Found signed WS-Addressing headers for namespace {0}");
 
     public static final M TEMPLATE_RESPONSE_EARLY = m(8600, Level.FINE, "Sending response early");
     public static final M TEMPLATE_RESPONSE_NOT_HTTP = m(8601, Level.WARNING, "Unable to send early response for non HTTP message.");

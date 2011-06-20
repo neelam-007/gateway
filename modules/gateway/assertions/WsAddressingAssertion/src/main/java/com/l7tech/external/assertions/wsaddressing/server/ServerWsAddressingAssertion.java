@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.wsaddressing.server;
 
 import com.l7tech.external.assertions.wsaddressing.WsAddressingAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.MessageRole;
@@ -80,6 +81,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 populateAddressingFromMessage(getElementCursor(msg), addressingProperties, addressingElements);
             }
 
+            auditAddressing( addressingProperties, assertion.isRequireSignature() );
+
             final List<String> permittedNamespaces = new ArrayList<String>();
             if ( assertion.isEnableWsAddressing10() ) permittedNamespaces.add( SoapConstants.WSA_NAMESPACE_10 );
             if ( assertion.isEnableWsAddressing200408() ) permittedNamespaces.add( NS_WS_ADDRESSING_200408 );
@@ -121,7 +124,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
      *
      */
     ServerWsAddressingAssertion(final WsAddressingAssertion assertion,
-                                final Auditor auditor,
+                                final Audit auditor,
                                 final Config config) throws PolicyAssertionException {
         super(assertion);
         this.auditor = auditor;
@@ -139,12 +142,12 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     protected void populateAddressingFromMessage(final ElementCursor cursor,
                                                  final Map<QName, String> addressingProperties,
                                                  final Collection<Element> elements )
-            throws AddressingProcessingException, IOException {
+            throws AddressingProcessingException {
         try {
             if ( moveToSoapHeader(cursor) ) {
                 final ElementCursor.Visitor visitor = new ElementCursor.Visitor(){
                     @Override
-                    public void visit(final ElementCursor ec) throws InvalidDocumentFormatException {
+                    public void visit(final ElementCursor ec) {
                         if ( ArrayUtils.contains(acceptableNamespaces, ec.getNamespaceUri()) ) {
                             QName name = new QName(ec.getNamespaceUri(), ec.getLocalName());
 
@@ -172,7 +175,8 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 cursor.visitChildElements(visitor);
             }
         } catch (InvalidDocumentFormatException idfe) {
-            throw new CausedIOException(idfe);
+            // Not expected since our visitor does not throw this
+            throw new AddressingProcessingException( "Unexpected error populating addressing: " + ExceptionUtils.getMessage(idfe), AssertionStatus.FAILED);
         }
     }
 
@@ -181,8 +185,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
      */
     protected void populateAddressingFromSignedElements(final SignedElement[] signedElements,
                                                         final Map<QName, String> addressingProperties,
-                                                        final Collection<Element> elements )
-            throws AddressingProcessingException, IOException {
+                                                        final Collection<Element> elements ) {
         for (SignedElement signedElement : signedElements ) {
             Element element = signedElement.asElement();
 
@@ -255,7 +258,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     private static final String WSA_REPLYTO = "ReplyTo";
     private static final String WSA_TO = "To";
 
-    private final Auditor auditor;
+    private final Audit auditor;
     private final Config config;
 
     private final String otherNamespaceUri;
@@ -396,7 +399,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     private boolean isSoapHeader(final Node node) {
         boolean isHeader = false;
 
-        if ( node != null && node.getNodeType()==Node.ELEMENT_NODE ) {
+        if ( node != null && (int) node.getNodeType() == (int) Node.ELEMENT_NODE ) {
             Element element = (Element) node;
 
             // check element has a soap env namespace and name
@@ -405,14 +408,14 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                  SoapConstants.HEADER_EL_NAME.equals(element.getLocalName()) ) {
                 Node parent = element.getParentNode();
 
-                if ( parent != null && parent.getNodeType()==Node.ELEMENT_NODE  ) {
+                if ( parent != null && (int) parent.getNodeType() == (int) Node.ELEMENT_NODE ) {
                     Element parentElement = (Element) parent;
 
                     // check parent has same soap env namespace and correct name / location
                     if ( elementNamespace.equals(parentElement.getNamespaceURI()) &&
                          SoapConstants.ENVELOPE_EL_NAME.equals(parentElement.getLocalName()) &&
                          parentElement.getParentNode() != null &&
-                         parentElement.getParentNode().getNodeType() == Node.DOCUMENT_NODE ) {
+                            (int) parentElement.getParentNode().getNodeType() == (int) Node.DOCUMENT_NODE ) {
                         isHeader = true;    
                     }
                 }
@@ -420,6 +423,32 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         }
 
         return isHeader;
+    }
+
+    private void auditAddressing( final Map<QName, String> addressingProperties,
+                                  final boolean signed ) {
+        if ( addressingProperties.isEmpty() ) {
+            auditor.logAndAudit( signed ?
+                    AssertionMessages.WS_ADDRESSING_HEADERS_SIGNED_NONE :
+                    AssertionMessages.WS_ADDRESSING_HEADERS_NONE );
+        } else {
+            final Set<String> namespaces = Functions.reduce( addressingProperties.keySet(), new TreeSet<String>(), new Functions.Binary<TreeSet<String>, TreeSet<String>, QName>() {
+                @Override
+                public TreeSet<String> call( final TreeSet<String> namespaces, final QName qName ) {
+                    if ( qName.getNamespaceURI() != null ) namespaces.add( qName.getNamespaceURI() );
+                    return namespaces;
+                }
+            } );
+            CollectionUtils.foreach( namespaces, false, new Functions.UnaryVoid<String>(){
+                @Override
+                public void call( final String namespace ) {
+                    auditor.logAndAudit( signed ?
+                            AssertionMessages.WS_ADDRESSING_FOUND_SIGNED_HEADERS :
+                            AssertionMessages.WS_ADDRESSING_FOUND_HEADERS,
+                            namespace );
+                }
+            } );
+        }
     }
 
     /**

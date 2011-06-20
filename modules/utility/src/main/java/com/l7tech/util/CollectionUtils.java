@@ -32,6 +32,24 @@ public final class CollectionUtils {
     }
 
     /**
+     * Invoke the callback function for each item in the iterable.
+     *
+     * @param iterable The item to iterate
+     * @param callbackForNull True to callback for null values
+     * @param callback The callback function
+     * @param <T> The iterable type
+     */
+    public static <T> void foreach( final Iterable<T> iterable,
+                                    final boolean callbackForNull,
+                                    final Functions.UnaryVoid<T> callback) {
+        for ( final T item : iterable ) {
+            if ( callbackForNull || item != null ) {
+                callback.call( item );
+            }
+        }
+    }
+
+    /**
      * Makes a String representation of the provided Iterable.
      * @param iterable the iterable to traverse
      * @param prefix the prefix to prepend to the result
