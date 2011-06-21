@@ -108,7 +108,7 @@ public class AuditAlertChecker {
                     if ( configBean.isEnabled() ) {
                         checkForNewAlerts();
                     }
-                } catch ( final Exception exception ) {
+                } catch ( final Throwable exception ) {
                     ErrorManager.getDefault().notify(Level.WARNING, exception, "Error checking audit alerts.");
                 }
             }
