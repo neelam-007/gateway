@@ -27,7 +27,7 @@ public class SoftwareNodeConfigurationBeanProvider extends NodeConfigurationBean
 
     public SoftwareNodeConfigurationBeanProvider( final File propertiesFile ) {
         super(new NodeManagementApiFactory());
-        propertiesConfig = new PropertiesConfigurationBeanProvider( propertiesFile, "node." );
+        propertiesConfig = new PropertiesConfigurationBeanProvider( propertiesFile, "node.", true );
     }
 
     @Override

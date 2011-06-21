@@ -28,12 +28,15 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
     //- PUBLIC
 
     public PropertiesConfigurationBeanProvider( final File file ) {
-        this( file, "" );
+        this( file, "", true );
     }
 
-    public PropertiesConfigurationBeanProvider( final File file, final String prefix ) {
+    public PropertiesConfigurationBeanProvider( final File file,
+                                                final String prefix,
+                                                final boolean preserveExtraProperties ) {
         this.propertiesFile = file;
         this.propertyPrefix = prefix;
+        this.preserveExtraProperties = preserveExtraProperties;
     }
 
     @Override
@@ -75,6 +78,15 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
                 properties.setProperty( prefix(configBean.getConfigName()), toPersist );
             } else {
                 // will be removed
+            }
+        }
+
+        if ( preserveExtraProperties ) {
+            for ( final String property : properties.stringPropertyNames() ) {
+                final ConfigurationBean bean = getConfigurationBean( unprefix( property ), configuration );
+                if ( bean == null ) {
+                    propertiesToKeep.add( property );
+                }
             }
         }
 
@@ -203,6 +215,7 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
 
     private final File propertiesFile;
     private final String propertyPrefix;
+    private final boolean preserveExtraProperties;
 
     private String unprefix( final String name ) {
         String cleanName = null;

@@ -20,7 +20,7 @@ public class EsmConfigurationBeanProvider extends PropertiesConfigurationBeanPro
     //- PUBLIC
 
     public EsmConfigurationBeanProvider() {
-        super( getConfigurationFile(), "em." );
+        super( getConfigurationFile(), "em.", false );
     }
 
     //- PROTECTED
