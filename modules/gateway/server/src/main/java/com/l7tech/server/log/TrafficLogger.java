@@ -168,7 +168,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
         if (includeRes) {
             String responseXml;
             Message response = pec.getResponse();
-            if (response.getKnob(MimeKnob.class) != null) {
+            if (response.isInitialized() && response.getKnob(MimeKnob.class) != null) {
                 responseXml = getMessageText(response, "response");
             } else {
                 AssertionStatus globalstatus = pec.getPolicyResult();
@@ -212,7 +212,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
         String text = null;
 
         try {
-            if (message.getKnob(MimeKnob.class) != null) {
+            if (message.isInitialized() && message.getKnob(MimeKnob.class) != null) {
                 byte[] req = IOUtils.slurpStream(message.getMimeKnob().getFirstPart().getInputStream(false));
                 Charset encoding = message.getMimeKnob().getFirstPart().getContentType().getEncoding();
                 text = new String(req, encoding);

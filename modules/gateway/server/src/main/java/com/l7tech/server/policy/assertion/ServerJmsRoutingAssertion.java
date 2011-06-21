@@ -583,7 +583,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         long maxSize = serverConfig.getLongPropertyCached( "ioJmsMessageMaxBytes", 5242880L, 30000L );
         final MimeKnob mk = message.getKnob(MimeKnob.class);
 
-        if (mk == null) {
+        if (mk == null || !message.isInitialized()) {
             // Uninitialized request
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Request is not initialized; nothing to route");
             return false;

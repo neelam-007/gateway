@@ -5,7 +5,6 @@ package com.l7tech.server;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -1033,31 +1032,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         public void close() throws IOException {
             ResourceUtils.closeQuietly(serverPolicy);
             serverPolicy = null;
-        }
-
-        private void readAndStashEntireResponse() throws IOException {
-            MimeKnob mk;
-            try {
-                // attempts to read and stash the whole response
-                mk = context.getResponse().getKnob(MimeKnob.class);
-                if (mk != null) mk.getFirstPart().getActualContentLength();
-            } catch (IOException e) {
-                // create fault to be sent
-                String fault = soapFaultManager.constructExceptionFault(e, context.getFaultlevel(), context).getContent();
-
-                // there's no response message; substitute with the fault, so that the actual response that will be sent is audited
-                context.getResponse().initialize(
-                    (context.getService() != null && context.getService().getSoapVersion() == SoapVersion.SOAP_1_2) ?
-                    ContentTypeHeader.SOAP_1_2_DEFAULT : ContentTypeHeader.XML_DEFAULT,
-                    fault.getBytes());
-
-                auditor.logAndAudit(MessageProcessingMessages.RESPONSE_IO_ERROR, e.getMessage());
-
-                // pass the exception up to the SOAP servlet
-                throw new MessageResponseIOException(fault, e);
-            } catch (NoSuchPartException e) {
-                throw new RuntimeException(e); // The first part should always be available
-            }
         }
 
         @SuppressWarnings({ "deprecation" })

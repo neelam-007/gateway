@@ -170,7 +170,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     public Object run() throws Exception {
                         CustomService customService = null;
                         try {
-                            if (isPostRouting(context) && context.getResponse().getKnob(MimeKnob.class) != null) {
+                            if (isPostRouting(context) && context.getResponse().isInitialized() && context.getResponse().getKnob(MimeKnob.class) != null) {
                                 CustomServiceResponse customServiceResponse = new CustomServiceResponse(context);
                                 customService = customServiceResponse;
                                 serviceInvocation.onResponse(customServiceResponse);

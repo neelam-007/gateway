@@ -352,7 +352,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
 
     static Message cloneMessageBody(Message source) throws IOException {
         MimeKnob mk = source.getKnob(MimeKnob.class);
-        if (mk == null)
+        if (mk == null || !source.isInitialized())
             return new Message(); // not yet initialized
 
         try {

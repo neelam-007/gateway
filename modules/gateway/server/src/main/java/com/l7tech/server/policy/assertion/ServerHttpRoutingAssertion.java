@@ -484,7 +484,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             final MimeKnob reqMime = requestMessage.getKnob(MimeKnob.class);
 
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
-            final long contentLength = reqMime == null ? 0 : reqMime.getContentLength();
+            final long contentLength = (reqMime == null || !requestMessage.isInitialized()) ? 0 : reqMime.getContentLength();
             if (contentLength > Integer.MAX_VALUE)
                 throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
 

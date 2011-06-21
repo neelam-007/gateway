@@ -97,7 +97,7 @@ public class AuditFilterPolicyManager {
 
                 if (responseXml != null) {
                     final Message responseMsg = context.getResponse();
-                    if (responseMsg.getKnob(MimeKnob.class) != null) {
+                    if (responseMsg.getKnob(MimeKnob.class) != null && responseMsg.isInitialized()) {
                         processMessage(messageAudit, responseMsg, false, handle, listener, formatter);
                     } else {
                         //no response, in this case a fault is being returned.

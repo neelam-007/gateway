@@ -27,11 +27,12 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerRegex;
 import com.l7tech.server.service.ServicesHelper;
 import com.l7tech.server.transport.http.HttpTransportModuleTester;
+import com.l7tech.test.BugNumber;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
-import static junit.framework.Assert.*;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.xml.sax.SAXException;
@@ -45,6 +46,8 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static junit.framework.Assert.*;
 
 /**
  * Test the RegEx assertion
@@ -507,13 +510,11 @@ public class RegexAssertionTest {
     }
 
     @Test
+    @BugNumber(10329)
     public void testNewResponseTargetNotYetInitialized() throws Exception {
-        try {
-            expect(AssertionStatus.SERVER_ERROR, regex(SUBSTR_FOO, null, RESPONSE), context(PHRASE_ORLY, null));
-            fail("Expected exception not thrown (response not yet attached to an InputStream)");
-        } catch (IllegalStateException ise) {
-            assertTrue(ise.getMessage().contains("This Message has not yet been attached to an InputStream"));
-        }
+        // bug 10329 - when targeted at an uninitialized response, regex will succeed only if it would otherwise match against the empty string
+        // this seems like the best behavior for extrapolating the intended behavior of screening (expected-to-fail) regexes applied to an uninitialized response
+        expect(AssertionStatus.FALSIFIED, regex(SUBSTR_FOO, null, RESPONSE), context(PHRASE_ORLY, null));
     }
 
     @Test

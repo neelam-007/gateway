@@ -55,6 +55,7 @@ public final class Message implements Closeable {
     private MimeKnob mimeKnob;
     private SecurityKnob securityKnob;
     private JsonKnob jsonKnob;
+    private boolean initialized;
 
     /**
      * Create a Message with no facets.
@@ -92,6 +93,14 @@ public final class Message implements Closeable {
     }
 
     /**
+     * @return true if this message has been initialized by an external invocation of one of the initialize
+     *         methods.
+     */
+    public boolean isInitialized() {
+        return initialized;
+    }
+
+    /**
      * Initialize, or re-initialize, a Message with a MIME facet attached to the specified InputStream.
      * <p>
      * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
@@ -117,6 +126,7 @@ public final class Message implements Closeable {
         if (reqKnob != null) rootFacet = new HttpRequestFacet(this, rootFacet, reqKnob);
         if (respKnob != null) rootFacet = new HttpResponseFacet(this, rootFacet, respKnob);
         invalidateCachedKnobs();
+        initialized = true;
     }
 
     /**
@@ -156,6 +166,7 @@ public final class Message implements Closeable {
             if (reqKnob != null) attachHttpRequestKnob(reqKnob);
             if (respKnob != null) attachHttpResponseKnob(respKnob);
             getXmlKnob().setDocument(body);
+            initialized = true;
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen, it's a byte array input stream
         } catch (SAXException e) {
@@ -181,6 +192,7 @@ public final class Message implements Closeable {
             invalidateCachedKnobs();
             if (reqKnob != null) attachHttpRequestKnob(reqKnob);
             if (respKnob != null) attachHttpResponseKnob(respKnob);
+            initialized = true;
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen, it's a byte array input stream
         }
@@ -195,17 +207,30 @@ public final class Message implements Closeable {
     }
 
     /**
-     * Get the knob for the MIME facet of this Message, which must already be attached
-     * to an InputStream.
+     * Get the knob for the MIME facet of this Message.
+     * <p/>
+     * If this Message has not been initialized yet, this will return a MimeKnob for a zero-length message of
+     * type application/octet-stream.  After this point the message will behave roughly as though it had been initialized
+     * with a zero-length octet-stream (succeeding when queried for a MimeKnob), but with the notable exception
+     * that {@link #isInitialized()} will continue to return false until the message is initialized for real.
      *
      * @return the MimeKnob for this Message.  Never null.
-     * @throws IllegalStateException if this Message has not yet been attached to an InputStream.
      */
-    public MimeKnob getMimeKnob() throws IllegalStateException {
+    public MimeKnob getMimeKnob() {
         if (this.mimeKnob != null)
             return this.mimeKnob;
         MimeKnob mimeKnob = getKnob(MimeKnob.class);
-        if (mimeKnob == null) throw new IllegalStateException("This Message has not yet been attached to an InputStream");
+        if (mimeKnob == null) {
+            try {
+                boolean wasInitialized = initialized;
+                initialize(ContentTypeHeader.OCTET_STREAM_DEFAULT, new byte[0]);
+                initialized = wasInitialized; // isInitialized() should still return false for this message if it has never been given "real" contents
+                mimeKnob = this.mimeKnob != null ? this.mimeKnob : getKnob(MimeKnob.class);
+                assert mimeKnob != null;
+            } catch (IOException e) {
+                throw new RuntimeException(e); // can't happen
+            }
+        }
         return mimeKnob;
     }
 
@@ -236,18 +261,19 @@ public final class Message implements Closeable {
      *
      * @return the XmlKnob for this Message.  Never null.
      * @throws SAXException if the first part's content type is not text/xml.
-     * @throws IllegalStateException if this Message has not yet been attached to an InputStream.
      */
     public XmlKnob getXmlKnob() throws SAXException {
         if (this.xmlKnob != null)
             return this.xmlKnob;
         XmlKnob xmlKnob = getKnob(XmlKnob.class);
         if (xmlKnob == null) {
+            if (!initialized)
+                throw new SAXException("Message first part is not text/xml (message not initialized)");
             try {
                 rootFacet = new XmlFacet(this, rootFacet);
                 invalidateCachedKnobs();
                 xmlKnob = getKnob(XmlKnob.class);
-                if (xmlKnob == null) throw new IllegalStateException(); // can't happen, we just made one
+                assert xmlKnob != null;
             } catch (IOException e) {
                 throw new CausedIllegalStateException(e); // can't happen, no XML facet yet
             }
@@ -707,6 +733,7 @@ public final class Message implements Closeable {
                 rootFacet.close();
         } finally {
             rootFacet = null;
+            initialized = false;
             invalidateCachedKnobs();
         }
     }

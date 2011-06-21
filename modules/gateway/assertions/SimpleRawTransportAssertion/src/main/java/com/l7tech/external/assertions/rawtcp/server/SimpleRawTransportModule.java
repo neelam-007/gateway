@@ -392,7 +392,7 @@ public class SimpleRawTransportModule extends TransportModule implements Applica
                 // Send fault
                 logger.log(Level.WARNING, "Raw TCP policy failed with assertion status: {0}", status);
                 // TODO customize response to send upon error?
-            } else if (response.getKnob(MimeKnob.class) != null) {
+            } else if (response.getKnob(MimeKnob.class) != null && response.isInitialized()) {
                 // Send response
                 responseStream = response.getMimeKnob().getEntireMessageBodyAsInputStream();
                 responseBytes = IOUtils.slurpStream(responseStream);

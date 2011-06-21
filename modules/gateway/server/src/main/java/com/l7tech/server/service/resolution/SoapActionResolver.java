@@ -78,7 +78,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver<String> {
 
         // If we want to check for a soap knob here we need to mark this as a
         // resolver that required parsing of the message body (#usesMessageContent())
-        if ( mimeKnob != null ) {
+        if ( mimeKnob != null && request.isInitialized() ) {
             try {
                 isXml = mimeKnob.getFirstPart().getContentType().isXml();
             } catch (IOException e) {

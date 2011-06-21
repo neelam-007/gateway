@@ -313,7 +313,7 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
             Pair<Charset,byte[]> content;
             try {
                 final MimeKnob mimeKnob = message.getKnob(MimeKnob.class);
-                if ( mimeKnob != null ) {
+                if ( mimeKnob != null && message.isInitialized() ) {
                     final ContentTypeHeader contentType = mimeKnob.getFirstPart().getContentType();
                     if ( requireText && !contentType.isTextualContentType()) {
                         audit( AssertionMessages.ENCODE_DECODE_IN_ACCESS, null, "Message", "non-text content" );

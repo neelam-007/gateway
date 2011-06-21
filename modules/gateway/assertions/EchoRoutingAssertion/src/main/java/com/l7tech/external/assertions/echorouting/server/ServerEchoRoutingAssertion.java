@@ -46,7 +46,7 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRouti
         response.notifyMessage(request, MessageRole.REQUEST);
 
         final MimeKnob mimeKnob = request.getKnob(MimeKnob.class);
-        final ContentTypeHeader cth = mimeKnob == null ? null : mimeKnob.getOuterContentType();
+        final ContentTypeHeader cth = (mimeKnob == null || !request.isInitialized()) ? null : mimeKnob.getOuterContentType();
 
         if (cth == null) {
             auditor.logAndAudit(AssertionMessages.CANNOT_ECHO_NO_CTYPE);

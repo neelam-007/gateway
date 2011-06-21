@@ -275,7 +275,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
 
             if (status == AssertionStatus.NONE) {
-                if (response.getKnob(MimeKnob.class) == null) {
+                if (response.getKnob(MimeKnob.class) == null || !response.isInitialized()) {
                     // Routing successful, but no actual response received, probably due to a one-way JMS send.
                     // this could also be because of an empty payload response
                     if (routeStat >= 200 && routeStat < 400) {

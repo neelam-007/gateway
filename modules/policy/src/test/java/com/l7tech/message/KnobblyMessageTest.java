@@ -1,20 +1,19 @@
 package com.l7tech.message;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.test.BugNumber;
-import com.l7tech.common.TestDocuments;
-import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.TarariLoader;
+import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.GlobalTarariContextImpl;
 import com.tarari.xml.XmlSource;
-import static org.junit.Assert.*;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -26,6 +25,8 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.*;
+
 /**
  * @author alex
  * @version $Revision$
@@ -34,18 +35,17 @@ public class KnobblyMessageTest {
     private static final Logger logger = Logger.getLogger(KnobblyMessageTest.class.getName());
 
     @Test
-    public void testFacetlessMessage() {
+    public void testFacetlessMessage() throws IOException {
         Message msg = new Message();
         assertNull(msg.getKnob( MimeKnob.class));
         assertNull(msg.getKnob( XmlKnob.class));
         assertNull(msg.getKnob( SoapKnob.class));
-
-        try {
-            msg.getMimeKnob();
-            fail();
-        } catch (IllegalStateException e) {
-            // ok
-        }
+        assertFalse(msg.isInitialized());
+        MimeKnob mk = msg.getMimeKnob();
+        assertFalse(mk.isMultipart());
+        assertTrue(0 == mk.getContentLength());
+        assertEquals(ContentTypeHeader.OCTET_STREAM_DEFAULT.getFullValue(), mk.getOuterContentType().getFullValue());
+        assertFalse("Lazily-added 'empty' MimeKnob doesn't count as proper initialization", msg.isInitialized());
     }
 
     @Test
@@ -291,18 +291,12 @@ public class KnobblyMessageTest {
         assertNull(msg.getKnob(MimeKnob.class));
         assertNull(msg.getKnob(XmlKnob.class));
         assertNull(msg.getKnob(SoapKnob.class));
-
-        try {
-            msg.getMimeKnob();
-            fail();
-        } catch (IllegalStateException e) {
-            // ok
-        }
+        assertFalse(msg.isInitialized());
 
         try {
             msg.getXmlKnob();
             fail();
-        } catch (IllegalStateException e) {
+        } catch (SAXException e) {
             // ok
         }
 
@@ -311,8 +305,6 @@ public class KnobblyMessageTest {
             fail();
         } catch (MessageNotSoapException e) {
             // ok
-        } catch (IllegalStateException e) {
-            // ok
         }
 
         GlobalTarariContextImpl context = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
@@ -320,9 +312,11 @@ public class KnobblyMessageTest {
             logger.info("Initializing XML Hardware Acceleration");
             context.compileAllXpaths();
         }
+        assertFalse(msg.isInitialized());
         msg.initialize(new ByteArrayStashManager(),
                               ContentTypeHeader.XML_DEFAULT,
                               TestDocuments.getInputStream(TestDocuments.PLACEORDER_CLEARTEXT));
+        assertTrue(msg.isInitialized());
         SoapKnob soapKnob = msg.getSoapKnob();
         if (msg.isSoap()) {
             String uri = soapKnob.getPayloadNames()[0].getNamespaceURI();

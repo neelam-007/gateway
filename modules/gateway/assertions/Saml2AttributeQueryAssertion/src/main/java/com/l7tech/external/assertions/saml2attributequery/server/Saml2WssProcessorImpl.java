@@ -836,7 +836,7 @@ public class Saml2WssProcessorImpl {
         SignatureContext sigContext = new SignatureContext();
         MimeKnob mimeKnob = message.getKnob(MimeKnob.class);
         PartIterator iterator;
-        iterator = mimeKnob == null ? null : mimeKnob.getParts();
+        iterator = (mimeKnob == null || !message.isInitialized()) ? null : mimeKnob.getParts();
         Map<String,PartInfo> partMap = new HashMap<String,PartInfo>();
         sigContext.setEntityResolver(new AttachmentEntityResolver(iterator, XmlUtil.getXss4jEntityResolver(), partMap, 0));
         sigContext.setIDResolver(new IDResolver() {

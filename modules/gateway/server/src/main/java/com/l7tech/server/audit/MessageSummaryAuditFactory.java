@@ -260,7 +260,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
         String what = isRequest ? "request" : "response";
         try {
             final MimeKnob mk = msg.getKnob(MimeKnob.class);
-            if (mk == null) {
+            if (mk == null || !msg.isInitialized()) {
                 logger.fine(MessageFormat.format("{0} has not been initialized; not attempting to save body text", what));
                 lengthHolder[0] = 0;
                 return null;
