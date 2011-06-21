@@ -34,6 +34,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariables {
 
+    private static final String META_INITIALIZED = FtpRoutingAssertion.class.getName() + ".metadataInitialized";
+
     public static final int DEFAULT_FTP_PORT = 21;
     public static final int DEFAULT_FTPS_IMPLICIT_PORT = 990;
 
@@ -255,6 +257,8 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
     @Override
     public AssertionMetadata meta() {
         final DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Route requests from the Gateway to a backend FTP(S) server, using passive mode FTP.");
@@ -297,6 +301,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         // that is, we want our required feature set to be "assertion:FtpRouting" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 

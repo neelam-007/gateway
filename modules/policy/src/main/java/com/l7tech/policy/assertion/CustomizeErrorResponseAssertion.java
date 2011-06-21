@@ -106,6 +106,8 @@ public class CustomizeErrorResponseAssertion extends Assertion implements UsesVa
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
         meta.put(SHORT_NAME, "Customize Error Response");
         meta.put(DESCRIPTION, "Configure the response message to be used in case of policy failure.");
@@ -119,6 +121,7 @@ public class CustomizeErrorResponseAssertion extends Assertion implements UsesVa
             new Java5EnumTypeMapping(ErrorLevel.class, "errorLevel")
         )));
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
@@ -163,6 +166,8 @@ public class CustomizeErrorResponseAssertion extends Assertion implements UsesVa
     }
 
     //- PRIVATE
+
+    private static final String META_INITIALIZED = CustomizeErrorResponseAssertion.class.getName() + ".metadataInitialized";
 
     private ErrorLevel errorLevel = ErrorLevel.TEMPLATE_RESPONSE;
     private String httpStatus = "500";

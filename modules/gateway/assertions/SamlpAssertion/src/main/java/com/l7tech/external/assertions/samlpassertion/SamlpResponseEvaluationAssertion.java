@@ -26,6 +26,8 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  */
 public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion implements SetsVariables {
 
+    private static final String META_INITIALIZED = SamlpResponseEvaluationAssertion.class.getName() + ".metadataInitialized";
+
     // new stuff
     private boolean responseStatusFalsifyAssertion = true;
     private Integer authzDecisionOption;
@@ -183,6 +185,9 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
+
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
 
         // Set description for GUI
@@ -206,6 +211,7 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
         // that is, we want our required feature set to be "assertion:FtpCredential" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 

@@ -1,17 +1,29 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
+import org.jetbrains.annotations.Nullable;
 
+import javax.validation.constraints.NotNull;
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
+/**
+ * Context for use with policy validation.
+ *
+ * <p>A new context should be created for each validation operation.</p>
+ */
 public class PolicyValidationContext implements Serializable {
-    private final PolicyType policyType;
-    private final String policyInternalTag;
-    private final Wsdl wsdl;
+    private final @NotNull PolicyType policyType;
+    private final @Nullable String policyInternalTag;
+    private final @Nullable Wsdl wsdl;
     private final boolean soap;
-    private final SoapVersion soapVersion;
+    private final @Nullable SoapVersion soapVersion;
+    private transient Map<Assertion,AssertionValidator> validatorMap = new HashMap<Assertion,AssertionValidator>();
 
     /**
      * @param policyType   policy type.  Generally required.
@@ -20,7 +32,8 @@ public class PolicyValidationContext implements Serializable {
      * @param soap  true if this is known to be a SOAP policy
      * @param soapVersion if a specific SOAP version is in use and, if so, which version that is; or null if not relevant.
      */
-    public PolicyValidationContext(PolicyType policyType, String policyInternalTag, Wsdl wsdl, boolean soap, SoapVersion soapVersion) {
+    public PolicyValidationContext(@NotNull PolicyType policyType, @Nullable String policyInternalTag, @Nullable Wsdl wsdl, boolean soap, @Nullable SoapVersion soapVersion) {
+        assert policyType != null;
         this.policyType = policyType;
         this.policyInternalTag = policyInternalTag;
         this.wsdl = wsdl;
@@ -38,6 +51,7 @@ public class PolicyValidationContext implements Serializable {
     /**
      * @return the policy internal tag name if applicable and available, otherwise null.
      */
+    @Nullable
     public String getPolicyInternalTag() {
         return policyInternalTag;
     }
@@ -45,6 +59,7 @@ public class PolicyValidationContext implements Serializable {
     /**
      * @return  Service WSDL if known and available, otherwise null.
      */
+    @Nullable
     public Wsdl getWsdl() {
         return wsdl;
     }
@@ -59,7 +74,22 @@ public class PolicyValidationContext implements Serializable {
     /**
      * @return if a specific SOAP version is in use and, if so, what version that is.  May be null if not known or relevant.
      */
+    @Nullable
     public SoapVersion getSoapVersion() {
         return soapVersion;
+    }
+
+    AssertionValidator getValidator( final Assertion assertion ) {
+        AssertionValidator validator = validatorMap.get( assertion );
+        if ( validator == null ) {
+            validator = ValidatorFactory.getValidator( assertion );
+            validatorMap.put( assertion, validator );
+        }
+        return validator;
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        validatorMap = new HashMap<Assertion,AssertionValidator>();
     }
 }

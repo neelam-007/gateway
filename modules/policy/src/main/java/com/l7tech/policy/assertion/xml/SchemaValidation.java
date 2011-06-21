@@ -99,6 +99,8 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
         this.resourceInfo = sri;
     }
 
+    private static final String META_INITIALIZED = SchemaValidation.class.getName() + ".metadataInitialized";
+
     public static final String TOP_SCHEMA_ELNAME = "schema";
 
     private ValidationTarget validationTarget = ValidationTarget.BODY;
@@ -130,6 +132,8 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml", "threatProtection"});
 
@@ -151,6 +155,7 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
                     new Java5EnumTypeMapping(ValidationTarget.class, "validationTarget")
         )));
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 }

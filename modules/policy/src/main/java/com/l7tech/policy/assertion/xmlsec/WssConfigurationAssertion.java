@@ -1,7 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
@@ -10,11 +9,14 @@ import com.l7tech.security.xml.WsSecurityVersion;
 
 import java.util.Arrays;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+
 /**
  * An assertion that can modify the pending decoration requirements for a message before it is decorated.
  */
 @RequiresSOAP(wss=true)
 public class WssConfigurationAssertion extends MessageTargetableAssertion implements WssDecorationConfig, PrivateKeyable {
+    private static final String META_INITIALIZED = WssConfigurationAssertion.class.getName() + ".metadataInitialized";
     private WsSecurityVersion wssVersion;
     private String keyReference;
     private boolean useDerivedKeys = false;
@@ -40,6 +42,9 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
+
         meta.put(SHORT_NAME, "Configure WS-Security Decoration");
         meta.put(DESCRIPTION, "Configure WS-Security decoration requirements");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.WssConfigurationAssertionPropertiesDialog");
@@ -48,6 +53,7 @@ public class WssConfigurationAssertion extends MessageTargetableAssertion implem
             new Java5EnumTypeMapping(WsSecurityVersion.class, "wssVersion")
         )));
         meta.put(POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssConfigurationAssertionValidator");
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 

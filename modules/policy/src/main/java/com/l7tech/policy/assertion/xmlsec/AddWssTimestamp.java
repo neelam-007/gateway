@@ -197,6 +197,9 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
+
         meta.put(PALETTE_NODE_NAME, assertionName);
         meta.put(DESCRIPTION, "Add a Timestamp to the message with an optional signature.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
@@ -218,10 +221,13 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements WssDe
         Java5EnumTypeMapping mapping = new Java5EnumTypeMapping(Resolution.class, "resolutionValue");
         meta.put( WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder( Collections.<TypeMapping>singleton( mapping ) ) );
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
     //- PRIVATE
+
+    private static final String META_INITIALIZED = AddWssTimestamp.class.getName() + ".metadataInitialized";
 
     private static final String assertionName = "Add Timestamp";
 

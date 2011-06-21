@@ -90,6 +90,9 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
+
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xml" });
 
         // Set description for GUI
@@ -129,6 +132,7 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
         )));
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
@@ -181,6 +185,8 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
     }
 
     //- PRIVATE
+
+    private static final String META_INITIALIZED = ProcessSamlAuthnRequestAssertion.class.getName() + ".metadataInitialized";
 
     private static final String baseName = "Process SAML Authentication Request";
 

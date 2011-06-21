@@ -8,9 +8,6 @@ import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
-
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
@@ -18,6 +15,9 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 
 import java.util.*;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -70,6 +70,7 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
         private final String encapType;
     }
 
+    private static final String META_INITIALIZED = XacmlPdpAssertion.class.getName() + ".metadataInitialized";
     private XacmlAssertionEnums.MessageLocation inputMessageSource = XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST;
     private String inputMessageVariableName;
     private XacmlAssertionEnums.MessageLocation outputMessageLocation = XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE;
@@ -175,6 +176,8 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
         meta.put(SHORT_NAME, "Evaluate XACML Policy");
         meta.put(DESCRIPTION, "Evaluate a XACML policy and render an authorization decision for a resource.");
@@ -218,7 +221,7 @@ public class XacmlPdpAssertion extends Assertion implements UsesVariables, SetsV
         // that is, we want our required feature set to be "assertion:EchoRouting" rather than "set:modularAssertions"
         //meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
-        meta.put(XacmlPdpAssertion.class.getName() + ".metadataInitialized", Boolean.TRUE);
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 }

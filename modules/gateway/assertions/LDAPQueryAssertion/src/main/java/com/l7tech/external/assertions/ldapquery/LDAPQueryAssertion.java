@@ -32,6 +32,7 @@ import java.util.*;
  * Date: Nov 6, 2007<br/>
  */
 public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesVariables, SetsVariables, Serializable {
+    private static final String META_INITIALIZED = LDAPQueryAssertion.class.getName() + ".metadataInitialized";
     private final static String baseName = "Query LDAP";
     private String searchFilter;
     private boolean searchFilterInjectionProtected = false;
@@ -70,6 +71,8 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Retrieve attributes from an LDAP directory server and store them in context variables.");
@@ -100,6 +103,7 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 

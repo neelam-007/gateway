@@ -168,6 +168,8 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
         meta.put(AssertionMetadata.SHORT_NAME, baseName);
         meta.put(AssertionMetadata.DESCRIPTION, "Add, remove or modify the WS-Security related contents of a message.");
@@ -179,10 +181,13 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
             Collections.<TypeMapping>singleton(new Java5EnumTypeMapping(WsSecurityVersion.class, "wsSecurityVersion"))));
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WsSecurityValidator");        
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
     //- PRIVATE
+
+    private static final String META_INITIALIZED = WsSecurity.class.getName() + ".metadataInitialized";
 
     private boolean replaceSecurityHeader = true;
     private boolean removeUnmatchedSecurityHeaders = false;

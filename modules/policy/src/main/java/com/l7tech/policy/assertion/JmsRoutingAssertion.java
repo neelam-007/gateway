@@ -201,6 +201,8 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
         meta.put(PALETTE_FOLDERS, new String[]{"routing"});
 
@@ -216,6 +218,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
             new Java5EnumTypeMapping(JmsDeliveryMode.class, "jmsDeliveryMode")
         )));
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
@@ -256,6 +259,8 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     public void setDynamicJmsRoutingProperties(JmsDynamicProperties dynamicJmsRoutingProperties) {
         this.dynamicJmsRoutingProperties = dynamicJmsRoutingProperties;
     }
+
+    private static final String META_INITIALIZED = JmsRoutingAssertion.class.getName() + ".metadataInitialized";
 
     private Long endpointOid = null;
     private String endpointName = null;

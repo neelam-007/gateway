@@ -1,20 +1,21 @@
 package com.l7tech.external.assertions.comparison;
 
-import com.l7tech.util.ComparisonOperator;
 import com.l7tech.external.assertions.comparison.wsp.EqualityRenamedToComparison;
-import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.wsp.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.wsp.*;
+import com.l7tech.util.ComparisonOperator;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ResourceBundle;
+
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
 /**
  * Processes the value resulting from the evaluation of an expression through any number of {@link Predicate}s.
@@ -27,6 +28,7 @@ import java.util.ResourceBundle;
  * @see com.l7tech.server.message.PolicyEnforcementContext#setVariable(String, Object)
  */
 public class ComparisonAssertion extends Assertion implements UsesVariables {
+    private static final String META_INITIALIZED = ComparisonAssertion.class.getName() + ".metadataInitialized";
     private String leftValue;
     private Predicate[] predicates = new Predicate[0];
     public static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.ComparisonAssertion");
@@ -169,8 +171,9 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
     
     @Override
     public AssertionMetadata meta() {
-        clearCachedMetadata(getClass().getName());
         DefaultAssertionMetadata meta = super.defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
         // Request to appear in "misc" ("Service Availability") palette folder
         meta.put(PALETTE_FOLDERS, new String[] { "policyLogic" });
@@ -213,6 +216,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
 
         meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.comparison.server.ServerComparisonAssertion");
         
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 

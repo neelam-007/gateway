@@ -26,6 +26,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  * An assertion that sends an email base64message.
  */
 public class EmailAlertAssertion extends Assertion implements UsesVariables {
+    private static final String META_INITIALIZED = EmailAlertAssertion.class.getName() + ".metadataInitialized";
+
     public static final String DEFAULT_HOST = "mail";
     public static final int DEFAULT_PORT = 25;
     public static final String DEFAULT_SUBJECT = "Layer 7 Gateway Email Alert";
@@ -323,6 +325,8 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
         meta.put(PALETTE_FOLDERS, new String[]{"audit"});
 
@@ -340,6 +344,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
                 new Java5EnumTypeMapping(Protocol.class, "Protocol")
         )));
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 }

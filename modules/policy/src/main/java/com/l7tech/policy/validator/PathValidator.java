@@ -121,7 +121,7 @@ public class PathValidator {
             throw new InterruptedException();
 
         final String targetName = AssertionUtils.getTargetName(a);
-        final AssertionValidator av = ValidatorFactory.getValidator(a);
+        final AssertionValidator av = pvc.getValidator(a);
         av.validate(assertionPath, pvc, result);
 
         // Check licensing

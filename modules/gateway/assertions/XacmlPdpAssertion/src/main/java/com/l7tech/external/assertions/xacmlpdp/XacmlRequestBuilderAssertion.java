@@ -677,6 +677,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         }
     }
 
+    private static final String META_INITIALIZED = XacmlRequestBuilderAssertion.class.getName() + ".metadataInitialized";
     private XacmlAssertionEnums.XacmlVersionType xacmlVersion = XacmlAssertionEnums.XacmlVersionType.V2_0;
     private XacmlAssertionEnums.SoapVersion soapEncapsulation = XacmlAssertionEnums.SoapVersion.NONE;
     private XacmlAssertionEnums.MessageLocation outputMessageDestination =
@@ -903,6 +904,8 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
         meta.put(SHORT_NAME, "Create XACML Request");
         meta.put(DESCRIPTION, "Create a XACML Request and place it in the specified target.");
@@ -943,7 +946,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         // that is, we want our required feature set to be "assertion:EchoRouting" rather than "set:modularAssertions"
         //meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
-        meta.put(XacmlRequestBuilderAssertion.class.getName() + ".metadataInitialized", Boolean.TRUE);
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 

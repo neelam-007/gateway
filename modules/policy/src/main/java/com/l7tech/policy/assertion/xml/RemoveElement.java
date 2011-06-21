@@ -25,6 +25,8 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 @RequiresXML()
 public class RemoveElement extends MessageTargetableAssertion {
 
+    private static final String META_INITIALIZED = RemoveElement.class.getName() + ".metadataInitialized";
+
     public static enum ElementLocation {
         FIRST_CHILD("First Child"),
         LAST_CHILD("Last Child"),
@@ -122,6 +124,9 @@ public class RemoveElement extends MessageTargetableAssertion {
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
+
         meta.put(SHORT_NAME, baseName);
         meta.put(DESCRIPTION, "Add or remove one or more XML elements from a message.");
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
@@ -132,6 +137,7 @@ public class RemoveElement extends MessageTargetableAssertion {
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(ElementLocation.class, "insertedElementLocation")
         )));
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 

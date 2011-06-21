@@ -52,6 +52,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     public static final String PROP_SSL_SESSION_TIMEOUT = HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
 
+    private static final String META_INITIALIZED = HttpRoutingAssertion.class.getName() + ".metadataInitialized";
+
     @Deprecated 
     public static final String VAR_SERVICE_URL = "service.url";
 
@@ -657,6 +659,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
 
         meta.put(PALETTE_FOLDERS, new String[]{"routing"});
         
@@ -674,6 +678,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
                 new Java5EnumTypeMapping(HttpMethod.class, "httpMethod")
         )));
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 

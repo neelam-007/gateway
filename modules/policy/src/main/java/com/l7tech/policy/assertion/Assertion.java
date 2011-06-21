@@ -10,11 +10,13 @@ import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.ClassUtils;
 import com.l7tech.util.EmptyIterator;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a generic Assertion.  An Assertion is a bean that holds configuration for a single
@@ -36,7 +38,7 @@ import java.util.*;
  * @noinspection unchecked,ForLoopReplaceableByForEach,EqualsWhichDoesntCheckParameterClass
  */
 public abstract class Assertion implements Cloneable, Serializable {
-    private static final Map metadataCache = Collections.synchronizedMap(new HashMap());
+    private static final Map<String, DefaultAssertionMetadata> metadataCache = new ConcurrentHashMap<String, DefaultAssertionMetadata>();
 
     /**
      * This is the minimum ordinal value displayed in the SSM
@@ -47,7 +49,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     private transient int ordinal;
     private transient Long ownerPolicyOid = null;
     private boolean enabled = true;
-    private Comment assertionComment;
+    private @Nullable Comment assertionComment;
 
     // 2.1 CustomAssertion compatibility
     private static final long serialVersionUID = -2639281346815614287L;
@@ -71,7 +73,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * Reparent this assertion.  In normal operation, this should only be called by CompositeAssertions.
      * @param parent the new parent
      */
-    protected void setParent(CompositeAssertion parent) {
+    protected void setParent(@Nullable CompositeAssertion parent) {
         this.parent = parent;
     }
 
@@ -83,11 +85,12 @@ public abstract class Assertion implements Cloneable, Serializable {
         this.enabled = enabled;
     }
 
+    @Nullable
     public Comment getAssertionComment() {
         return assertionComment;
     }
 
-    public void setAssertionComment(Comment comment) {
+    public void setAssertionComment(@Nullable Comment comment) {
         this.assertionComment = comment;
     }
 
@@ -244,8 +247,10 @@ public abstract class Assertion implements Cloneable, Serializable {
      * iterator's
      * <code>next()</code> method is this assertion.<P>
 
+     * @param translator an AssertionTranslator to translate assertions returned by the iterator, as to expand Include assertions.  May be null.
      * @return	an <code>Iterator</code> for traversing the assertion tree in
      *          preorder
+     * @throws PolicyAssertionException if a provided AssertionTranslator fails.
      */
     public Iterator<Assertion> preorderIterator(AssertionTranslator translator) throws PolicyAssertionException {
         return new NewPreorderIterator(this, translator);
@@ -271,7 +276,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     public String toIndentedString(int indentLevel) {
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         for (int i = 0; i < indentLevel; ++i)
             b.append("  ");
         b.append(this.toString());
@@ -675,6 +680,7 @@ public abstract class Assertion implements Cloneable, Serializable {
         if (TargetMessageType.RESPONSE == getTargetMessageType(assertion))
             return true;
 
+        //noinspection SimplifiableIfStatement
         if (assertion instanceof RoutingAssertion) {
             return ((RoutingAssertion)assertion).needsInitializedResponse();
         }
@@ -719,7 +725,7 @@ public abstract class Assertion implements Cloneable, Serializable {
         return hasAnnotation;
     }
 
-    /**
+    /*
      * Check if the assertions validation metadata contains the given flag
      */
     private static boolean hasFlag(final Assertion a, final ValidatorFlag flag) {
@@ -753,7 +759,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     protected final DefaultAssertionMetadata defaultMeta() {
         final String classname = getClass().getName();
         try {
-            DefaultAssertionMetadata meta = (DefaultAssertionMetadata)metadataCache.get(classname);
+            DefaultAssertionMetadata meta = metadataCache.get(classname);
             if (meta != null)
                 return meta;
             meta = new DefaultAssertionMetadata((Assertion)getClass().newInstance());
@@ -952,7 +958,7 @@ public abstract class Assertion implements Cloneable, Serializable {
                 throw new RuntimeException(e);
             }
 
-            final Map<String, String> props = comment.getProperties();
+            @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"}) final Map<String, String> props = comment.getProperties();
             for (Map.Entry<String, String> entry : properties.entrySet()) {
                 props.put(entry.getKey(), entry.getValue());
             }

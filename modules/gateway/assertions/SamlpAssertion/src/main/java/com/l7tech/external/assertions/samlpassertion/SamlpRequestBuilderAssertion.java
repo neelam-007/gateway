@@ -32,6 +32,8 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * @author vchan
  */
 public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implements SetsVariables, UsesVariables, PrivateKeyable {
+    private static final String META_INITIALIZED = SamlpRequestBuilderAssertion.class.getName() + ".metadataInitialized";
+
     private int conditionsNotBeforeSecondsInPast = -1;
     private int conditionsNotOnOrAfterExpirySeconds = -1;
     /**
@@ -388,6 +390,9 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+            return meta;
+
         // Add to palette folder(s)
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
         //   misc, audit, policyLogic, threatProtection
@@ -418,6 +423,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         // that is, we want our required feature set to be "assertion:FtpCredential" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
+        meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
