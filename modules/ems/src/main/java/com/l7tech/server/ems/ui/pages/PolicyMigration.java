@@ -1570,14 +1570,14 @@ public class PolicyMigration extends EsmStandardWebPage {
             }
 
         } catch ( GatewayException ge ) {
-            logger.log( Level.INFO, "Error while reloading previous migration '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
+            logger.log( Level.INFO, "Error while reloading previous migration, mappings not restored due to '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
         } catch ( FindException fe ) {
-            logger.log( Level.WARNING, "Error while reloading previous migration.", fe );
+            logger.log( Level.WARNING, "Error while reloading previous migration, mappings not restored.", fe );
         } catch ( FailoverException fo ) {
-            logger.log( Level.INFO, "Error while reloading previous migration '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
+            logger.log( Level.INFO, "Error while reloading previous migration, mappings not restored due to '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
         } catch ( WebServiceException e ) {
             if ( !GatewayContext.isNetworkException( e ) && !GatewayContext.isConfigurationException( e ) ) {
-                logger.log( Level.WARNING, "Error while reloading previous migrations'"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                logger.log( Level.WARNING, "Error while reloading previous migration, mappings not restored due to '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
             }
         }
     }
