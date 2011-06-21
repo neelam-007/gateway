@@ -17,8 +17,6 @@ public class ConfigurationWizard {
 
     // - PUBLIC
 
-    public static final String COMMONS_LOGGING_PROP = "org.apache.commons.logging.Log";
-    public static final String COMMONS_LOGGING_JDK14_LOGGER = "org.apache.commons.logging.impl.Jdk14Logger";
     public static final String L7TECH_CLASSNAME = "com.l7tech";
     public static final String LOGCONFIG_NAME = "configlogging.properties";
 
@@ -86,7 +84,6 @@ public class ConfigurationWizard {
     private static final Logger logger = Logger.getLogger(ConfigurationWizard.class.getName());
 
     private void initLogging() {
-        System.setProperty(COMMONS_LOGGING_PROP, COMMONS_LOGGING_JDK14_LOGGER);
         JdkLoggerConfigurator.configure(L7TECH_CLASSNAME, "com/l7tech/server/config/resources/logging.properties", LOGCONFIG_NAME, false, true);
     }
 

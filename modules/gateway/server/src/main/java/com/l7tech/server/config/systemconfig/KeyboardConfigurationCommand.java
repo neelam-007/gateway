@@ -18,6 +18,13 @@ public class KeyboardConfigurationCommand extends BaseConfigurationCommand<Keybo
 
     @Override
     public boolean execute() {
+        final String keymap = configBean.getKeymap();
+        if (keymap == null) {
+            // user selected not to configure the keyboard.
+            logger.log(Level.INFO, "Keyboard configuration not changed.");
+            return true;
+        }
+
         return loadKeys() && writeConfigFile(KEYBOARD_CONFIG_FILE, configBean.getKeyboardConfig());
     }
 

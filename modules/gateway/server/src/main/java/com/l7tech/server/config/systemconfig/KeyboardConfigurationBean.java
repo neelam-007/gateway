@@ -20,6 +20,9 @@ public class KeyboardConfigurationBean extends BaseConfigurationBean {
         this.keymap = keymap;
     }
 
+    /**
+     * @return will be null if user selected to not configure the keyboard
+     */
     public String getKeymap() {
         return keymap;
     }
