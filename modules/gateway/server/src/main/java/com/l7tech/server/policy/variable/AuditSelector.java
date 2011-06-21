@@ -42,6 +42,8 @@ public class AuditSelector implements ExpandVariables.Selector<AuditSelector.Aud
             if (details == null || details.length == 0)
                 return new Selection(null);
             return AuditRecordSelector.selectDetails( name, details, logger );
+        } else if (name.toLowerCase().equalsIgnoreCase( "details" )) {
+            return new Selection(context.getDetailsInOrder());
         }
 
         return null;
