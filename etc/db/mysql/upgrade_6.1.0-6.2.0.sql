@@ -37,6 +37,11 @@ CREATE TABLE wssc_session (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
+-- Bug 10662: Enforce unique ordinals per policy for policy versions
+--
+ALTER IGNORE TABLE policy_version ADD UNIQUE KEY i_policy_ordinal (policy_oid, ordinal);
+
+--
 --
 -- Reenable FK at very end of script
 --

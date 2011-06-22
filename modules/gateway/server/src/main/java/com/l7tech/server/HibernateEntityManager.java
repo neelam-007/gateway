@@ -17,6 +17,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import static org.springframework.transaction.annotation.Propagation.REQUIRED;
 import static org.springframework.transaction.annotation.Propagation.SUPPORTS;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -310,7 +311,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * a single Map will contain two entries: name and age. If no two people can have the same name or the same age,
      * then two maps are required, one with the value 'name' and another with the value 'age' 
      * 
-     * @return Uniqueness constraint specification: entries in a map are ANDed, items in the collection are ORed.
+     * @return Uniqueness constraint specification, possibly immutable: entries in a map are ANDed, items in the collection are ORed.
      */
     protected Collection<Map<String, Object>> getUniqueConstraints(ET entity) {
         switch(getUniqueType()) {
@@ -319,7 +320,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     NamedEntity namedEntity = (NamedEntity) entity;
                     Map<String,Object> map = new HashMap<String, Object>();
                     map.put("name", namedEntity.getName());
-                    return Arrays.asList(map);
+                    return Collections.singletonList( map );
                 } else {
                     throw new IllegalArgumentException("UniqueType is NAME, but entity is not a NamedEntity");
                 }
@@ -700,7 +701,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             WeakReference<CacheInfo<ET>> ref = cacheInfoByOid.get(objectid);
             read.unlock(); read = null;
             cacheInfo = ref == null ? null : ref.get();
-            return cacheInfo != null && cacheInfo.timestamp + maxAge >= System.currentTimeMillis();
+            return cacheInfo != null && cacheInfo.timestamp + (long) maxAge >= System.currentTimeMillis();
         } finally {
             if (read != null) read.unlock();
         }
@@ -820,7 +821,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     }
 
     private ET freshen(CacheInfo<ET> cacheInfo, int maxAge) throws FindException {
-        if (cacheInfo.timestamp + maxAge < System.currentTimeMillis()) {
+        if (cacheInfo.timestamp + (long) maxAge < System.currentTimeMillis()) {
             // Time for a version check (getVersion() always goes to the database)
             Integer currentVersion = getVersion(cacheInfo.entity.getOid());
             if (currentVersion == null) {
@@ -1034,6 +1035,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @throws IllegalStateException if the entity is not annotated.
      */
     @Override
+    @Transactional(propagation= Propagation.SUPPORTS)
     public String getTableName() {
         String tableName = this.tableName;
         if ( tableName==null ) {
@@ -1051,6 +1053,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @return The implementation class.
      */
     @Override
+    @Transactional(propagation= Propagation.SUPPORTS)
     public Class<? extends Entity> getInterfaceClass() {
         return getImpClass();
     }

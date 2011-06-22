@@ -1,18 +1,19 @@
-/**
- * Copyright (C) 2006-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy;
 
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyVersion;
+import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.event.AdminInfo;
+import org.hibernate.Criteria;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
+import org.hibernate.criterion.DetachedCriteria;
+import org.hibernate.criterion.Property;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
@@ -21,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -29,35 +29,34 @@ import java.util.logging.Logger;
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersion, EntityHeader> implements PolicyVersionManager {
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
     protected static final Logger logger = Logger.getLogger(PolicyVersionManagerImpl.class.getName());
 
-    private final ServerConfig serverConfig;
+    private final Config config;
 
-    public PolicyVersionManagerImpl(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
+    public PolicyVersionManagerImpl( Config config ) {
+        this.config = config;
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public Class<? extends Entity> getImpClass() {
         return PolicyVersion.class;
     }
 
-    @Transactional(propagation=Propagation.SUPPORTS)
-    public Class<? extends Entity> getInterfaceClass() {
-        return PolicyVersion.class;
-    }
-
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public String getTableName() {
-        return "policy_verison";
+        return "policy_version";
     }
 
+    @Override
     @Transactional(readOnly=true)
     public PolicyVersion findByPrimaryKey(long policyOid, long policyVersionOid) throws FindException {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("oid", policyVersionOid);
         map.put("policyOid", policyOid);
-        List<PolicyVersion> found = findMatching(Arrays.asList(map));
+        List<PolicyVersion> found = findMatching(Collections.singletonList(map));
         if (found == null || found.isEmpty())
             return null;
         if (found.size() > 1)
@@ -65,14 +64,15 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         return found.iterator().next();
     }
 
+    @Override
     @Transactional(readOnly=true)
     public List<PolicyVersion> findAllForPolicy(long policyOid) throws FindException {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("policyOid", policyOid);
-        return findMatching(Arrays.asList(map));
+        return findMatching(Collections.singletonList(map));
     }
 
-    @Transactional(propagation=Propagation.SUPPORTS)
+    @Override
     public PolicyVersion checkpointPolicy(Policy newPolicy, boolean activated, boolean newEntity) throws ObjectModelException {
         final long policyOid = newPolicy.getOid();
         if (policyOid == Policy.DEFAULT_OID)
@@ -81,16 +81,20 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         AdminInfo adminInfo = AdminInfo.find(false);
         PolicyVersion ver = snapshot(newPolicy, adminInfo, activated, newEntity);
 
-        // If a PolicyVersion with this ordinal already exists, this was a do-nothing policy change
-        // and should be ignored (Bug #4569)
-        PolicyVersion existing = findByOrdinal(policyOid, ver.getOrdinal());
-        if (existing != null) {
-            if (activated && !existing.isActive()) {
-                existing.setActive(true);
-                update(existing);
-                deactivateVersions(policyOid, existing.getOid());
+        // If the most recent PolicyVersion matches then this was a do-nothing policy change
+        // and should be ignored (Bug #4569, #10662)
+        final PolicyVersion last = findLatestRevisionForPolicy( policyOid );
+        if ( last!=null ) {
+            if ( last.getXml()!=null && last.getXml().equals( newPolicy.getXml() ) ) {
+                if ( !last.isActive() ) {
+                    last.setActive( true );
+                    update( last );
+                    deactivateVersions(policyOid, last.getOid());
+                }
+                return last;
+            } else if ( ver.getOrdinal() <= last.getOrdinal() ) {
+                ver.setOrdinal( last.getOrdinal() + 1L );
             }
-            return existing;
         }
 
         final long versionOid = save(ver);
@@ -105,32 +109,33 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         return ver;
     }
 
-    @Transactional(propagation=Propagation.SUPPORTS)
-    private PolicyVersion findByOrdinal(final long policyOid, final long versionOrdinal) throws FindException {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put("policyOid", policyOid);
-        map.put("ordinal", versionOrdinal);
-        List<PolicyVersion> found = findMatching(Arrays.asList(map));
-        if (found == null || found.isEmpty())
-            return null;
-        if (found.size() > 1) {
-            logger.log(Level.WARNING, "Duplicate PolicyVersion ordinal found for policyOid=" + policyOid + ": ordinal=" + versionOrdinal);
-            return null;
-        }
-        return found.iterator().next();
+    private PolicyVersion findLatestRevisionForPolicy( final long policyOid ) {
+        return getHibernateTemplate().execute( new HibernateCallback<PolicyVersion>() {
+            @Override
+            public PolicyVersion doInHibernate( final Session session ) throws HibernateException, SQLException {
+                final DetachedCriteria detachedCriteria = DetachedCriteria.forClass( getImpClass() );
+                detachedCriteria.add( Property.forName( "policyOid" ).eq( policyOid ) );
+                detachedCriteria.setProjection( Property.forName( "ordinal" ).max() );
+
+                final Criteria criteria = session.createCriteria( getImpClass() );
+                criteria.add( Property.forName( "policyOid" ).eq( policyOid ) );
+                criteria.add( Property.forName( "ordinal" ).eq( detachedCriteria ) );
+                return (PolicyVersion) criteria.uniqueResult();
+            }
+        } );
     }
 
-    @Transactional(propagation=Propagation.SUPPORTS)
     private void deleteStaleRevisions(final long policyOid, final PolicyVersion justSaved) throws FindException, DeleteException {
         final long justSavedOid = justSaved.getOid();
 
         // Delete oldest anonymous revisions if we have exceeded MAX_REVISIONS
         // Revisions that have been assigned a name won't be deleted
-        int numToKeep = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VERSIONING_MAX_REVISIONS, 20);
+        int numToKeep = config.getIntProperty(ServerConfig.PARAM_POLICY_VERSIONING_MAX_REVISIONS, 20);
         List<PolicyVersion> revisions = new ArrayList<PolicyVersion>(findAllForPolicy(policyOid));
 
         // Don't count revisions against the limit if they have been assigned names
         revisions = Functions.grep(revisions, new Functions.Unary<Boolean,PolicyVersion>() {
+            @Override
             public Boolean call(PolicyVersion policyVersion) {
                 boolean inactive = !policyVersion.isActive();
                 boolean notTheOneWeJustSaved = policyVersion.getOid() != justSavedOid;
@@ -142,6 +147,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
             }
         });
         Collections.sort(revisions, new Comparator<PolicyVersion>() {
+            @Override
             public int compare(PolicyVersion o1, PolicyVersion o2) {
                 return new Long(o1.getOrdinal()).compareTo(o2.getOrdinal());
             }
@@ -163,6 +169,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         }
     }
 
+    @Override
     protected UniqueType getUniqueType() {
         return UniqueType.NONE;
     }
@@ -171,11 +178,12 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         return policyVersion.getName() == null || policyVersion.getName().length() < 1;
     }
 
-    @Transactional(propagation=Propagation.SUPPORTS)
+    @Override
     public void deactivateVersions(final long policyOid, final long versionOid) throws UpdateException {
         try {
-            getHibernateTemplate().execute(new HibernateCallback() {
-                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            getHibernateTemplate().execute(new HibernateCallback<Void>() {
+                @Override
+                public Void doInHibernate(Session session) throws HibernateException, SQLException {
                     FlushMode oldFlushMode = session.getFlushMode();
                     try {
                         session.setFlushMode(FlushMode.COMMIT);
@@ -195,11 +203,12 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         }
     }
 
+    @Override
     public PolicyVersion findActiveVersionForPolicy(long policyOid) throws FindException {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("policyOid", policyOid);
         map.put("active", Boolean.TRUE);
-        List<PolicyVersion> found = findMatching(Arrays.asList(map));
+        List<PolicyVersion> found = findMatching(Collections.singletonList(map));
         if (found == null || found.isEmpty())
             return null;
         if (found.size() > 1)
@@ -217,7 +226,7 @@ public class PolicyVersionManagerImpl extends HibernateEntityManager<PolicyVersi
         // behave, both the initial saved Policy and the first update() of an existing policy reach this code
         // with a version number of zero.  So, we increment once to switch to one-based numbering, the increment
         // once more if this isn't the initial save, so we get smooth "1,2,3,4,5" numbering of the ordinals.
-        int ordinal = policy.getVersion() + 1;
+        long ordinal = (long) (policy.getVersion() + 1);
         if (!newEntity) ordinal++;
 
         ver.setOrdinal(ordinal);

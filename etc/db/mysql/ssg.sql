@@ -269,6 +269,7 @@ CREATE TABLE policy_version (
   xml mediumtext,
   PRIMARY KEY (objectid),
   INDEX (policy_oid),
+  UNIQUE KEY i_policy_ordinal (policy_oid, ordinal),
   FOREIGN KEY (policy_oid) REFERENCES policy (objectid) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
