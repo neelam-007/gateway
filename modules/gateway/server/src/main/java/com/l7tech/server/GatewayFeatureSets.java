@@ -153,7 +153,7 @@ public class GatewayFeatureSets {
             mass("assertion:FtpCredential"));
 
         GatewayFeatureSet sftpFront =
-        fsr("set:SFTP:front", "Allow incoming SFTP messages",
+        fsr("set:SFTP(SSH2):front", "Allow incoming SFTP messages",
             srv(SERVICE_SFTP_MESSAGE_INPUT, "Accept incoming messages over SFTP"));
 
         GatewayFeatureSet srvRawTcp = misc(SERVICE_L7RAWTCP_MESSAGE_INPUT, "Accept incoming messages over l7.raw.tcp", null);

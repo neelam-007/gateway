@@ -20,13 +20,28 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Pair;
 import org.apache.sshd.SshServer;
-import org.apache.sshd.common.NamedFactory;
+import org.apache.sshd.common.*;
+import org.apache.sshd.common.cipher.*;
+import org.apache.sshd.common.compression.CompressionNone;
+import org.apache.sshd.common.mac.HMACMD5;
+import org.apache.sshd.common.mac.HMACMD596;
+import org.apache.sshd.common.mac.HMACSHA1;
+import org.apache.sshd.common.mac.HMACSHA196;
+import org.apache.sshd.common.random.BouncyCastleRandom;
+import org.apache.sshd.common.random.JceRandom;
+import org.apache.sshd.common.random.SingletonRandomFactory;
+import org.apache.sshd.common.signature.SignatureDSA;
+import org.apache.sshd.common.signature.SignatureRSA;
 import org.apache.sshd.common.util.OsUtils;
 import org.apache.sshd.common.util.SecurityUtils;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.ForwardingFilter;
 import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.PublickeyAuthenticator;
+import org.apache.sshd.server.channel.ChannelDirectTcpip;
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.kex.DHG1;
+import org.apache.sshd.server.kex.DHG14;
 import org.apache.sshd.server.keyprovider.PEMGeneratorHostKeyProvider;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
@@ -38,6 +53,7 @@ import org.springframework.context.ApplicationListener;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.util.*;
 import java.util.concurrent.*;
@@ -49,7 +65,7 @@ import java.util.logging.Logger;
  */
 public class SftpServerModule extends TransportModule implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(SftpServerModule.class.getName());
-    private static final String SCHEME_SFTP = "SFTP";
+    private static final String SCHEME_SFTP = "SFTP(SSH2)";
 
     private static final Set<String> SUPPORTED_SCHEMES = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     static {
@@ -252,52 +268,11 @@ public class SftpServerModule extends TransportModule implements ApplicationList
 
         try {
 
-        SshServer sshd = SshServer.setUpDefaultServer();
-        sshd.setFileSystemFactory(new VirtualFileSystemFactory());
-        sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(
-                new MessageProcessingSftpSubsystem.Factory(connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel)));
-        sshd.setPort(connector.getPort());
-        if (SecurityUtils.isBouncyCastleRegistered()) {
-            sshd.setKeyPairProvider(new PEMGeneratorHostKeyProvider("key.pem"));
-        } else {
-            sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("key.ser"));
-        }
-        if (OsUtils.isUNIX()) {
-            sshd.setShellFactory(new ProcessShellFactory(new String[] { "/bin/sh", "-i", "-l" },
-                                 EnumSet.of(ProcessShellFactory.TtyOptions.ONlCr)));
-        } else {
-            sshd.setShellFactory(new ProcessShellFactory(new String[] { "cmd.exe "},
-                                 EnumSet.of(ProcessShellFactory.TtyOptions.Echo, ProcessShellFactory.TtyOptions.ICrNl, ProcessShellFactory.TtyOptions.ONlCr)));
-        }
-        sshd.setPasswordAuthenticator(new PasswordAuthenticator() {
-            public boolean authenticate(String username, String password, ServerSession session) {
-                // allow all access, defer authentication to Gateway policy assertion
-                return true;
-            }
-        });
-        sshd.setPublickeyAuthenticator(new PublickeyAuthenticator() {
-            public boolean authenticate(String username, PublicKey key, ServerSession session) {
-                //File f = new File("/Users/" + username + "/.ssh/authorized_keys");
-                return true;
-            }
-        });
-        sshd.setForwardingFilter(new ForwardingFilter() {
-            public boolean canForwardAgent(ServerSession session) {
-                return true;
-            }
+            SshServer sshd = setUpSshServer();
+            sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(
+                    new MessageProcessingSftpSubsystem.Factory(connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel)));
+            sshd.setPort(connector.getPort());
 
-            public boolean canForwardX11(ServerSession session) {
-                return true;
-            }
-
-            public boolean canListen(InetSocketAddress address, ServerSession session) {
-                return true;
-            }
-
-            public boolean canConnect(InetSocketAddress address, ServerSession session) {
-                return true;
-            }
-        });
             auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
             sshd.start();
             activeConnectors.put(connector.getOid(), new Pair<SsgConnector, SshServer>(connector, sshd));
@@ -350,5 +325,118 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         }
 
         return auditor;
+    }
+
+    /*
+     * This method is based on org.apache.sshd.SshServer.setUpDefaultServer(...).
+     */
+    private SshServer setUpSshServer() {
+        SshServer sshd = new SshServer();
+        // DHG14 uses 2048 bits key which are not supported by the default JCE provider
+        if (SecurityUtils.isBouncyCastleRegistered()) {
+            sshd.setKeyExchangeFactories(Arrays.<NamedFactory<KeyExchange>>asList(
+                    new DHG14.Factory(),
+                    new DHG1.Factory()));
+            sshd.setRandomFactory(new SingletonRandomFactory(new BouncyCastleRandom.Factory()));
+        } else {
+            sshd.setKeyExchangeFactories(Arrays.<NamedFactory<KeyExchange>>asList(
+                    new DHG1.Factory()));
+            sshd.setRandomFactory(new SingletonRandomFactory(new JceRandom.Factory()));
+        }
+        setUpSshCiphers(sshd);
+        // Compression is not enabled by default
+        // sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList(
+        //         new CompressionNone.Factory(),
+        //         new CompressionZlib.Factory(),
+        //         new CompressionDelayedZlib.Factory()));
+        sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList(
+                new CompressionNone.Factory()));
+        sshd.setMacFactories(Arrays.<NamedFactory<Mac>>asList(
+                new HMACMD5.Factory(),
+                new HMACSHA1.Factory(),
+                new HMACMD596.Factory(),
+                new HMACSHA196.Factory()));
+        sshd.setChannelFactories(Arrays.<NamedFactory<Channel>>asList(
+                new ChannelSession.Factory(),
+                new ChannelDirectTcpip.Factory()));
+        sshd.setSignatureFactories(Arrays.<NamedFactory<Signature>>asList(
+                new SignatureDSA.Factory(),
+                new SignatureRSA.Factory()));
+        sshd.setFileSystemFactory(new VirtualFileSystemFactory());   // customized for Gateway
+
+        if (SecurityUtils.isBouncyCastleRegistered()) {
+            sshd.setKeyPairProvider(new PEMGeneratorHostKeyProvider("key.pem"));
+        } else {
+            sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("key.ser"));
+        }
+        if (OsUtils.isUNIX()) {
+            sshd.setShellFactory(new ProcessShellFactory(new String[] { "/bin/sh", "-i", "-l" },
+                    EnumSet.of(ProcessShellFactory.TtyOptions.ONlCr)));
+        } else {
+            sshd.setShellFactory(new ProcessShellFactory(new String[] { "cmd.exe "},
+                    EnumSet.of(ProcessShellFactory.TtyOptions.Echo, ProcessShellFactory.TtyOptions.ICrNl, ProcessShellFactory.TtyOptions.ONlCr)));
+        }
+
+        // customized for Gateway
+        sshd.setPasswordAuthenticator(new PasswordAuthenticator() {
+            public boolean authenticate(String username, String password, ServerSession session) {
+                // allow all access, defer authentication to Gateway policy assertion
+                return true;
+            }
+        });
+
+        sshd.setPublickeyAuthenticator(new PublickeyAuthenticator() {
+            public boolean authenticate(String username, PublicKey key, ServerSession session) {
+                //File f = new File("/Users/" + username + "/.ssh/authorized_keys");
+                return true;
+            }
+        });
+
+        sshd.setForwardingFilter(new ForwardingFilter() {
+            public boolean canForwardAgent(ServerSession session) {
+                return true;
+            }
+
+            public boolean canForwardX11(ServerSession session) {
+                return true;
+            }
+
+            public boolean canListen(InetSocketAddress address, ServerSession session) {
+                return true;
+            }
+
+            public boolean canConnect(InetSocketAddress address, ServerSession session) {
+                return true;
+            }
+        });
+
+        return sshd;
+    }
+
+    /*
+     * This method is based on org.apache.sshd.SshServer.setUpDefaultCiphers(...)
+     */
+    private void setUpSshCiphers(SshServer sshd) {
+        List<NamedFactory<Cipher>> avail = new LinkedList<NamedFactory<Cipher>>();
+        avail.add(new AES128CBC.Factory());
+        avail.add(new TripleDESCBC.Factory());
+        avail.add(new BlowfishCBC.Factory());
+        avail.add(new AES192CBC.Factory());
+        avail.add(new AES256CBC.Factory());
+
+        for (Iterator<NamedFactory<Cipher>> i = avail.iterator(); i.hasNext();) {
+            final NamedFactory<Cipher> f = i.next();
+            try {
+                final Cipher c = f.create();
+                final byte[] key = new byte[c.getBlockSize()];
+                final byte[] iv = new byte[c.getIVSize()];
+                c.init(Cipher.Mode.Encrypt, key, iv);
+            } catch (InvalidKeyException e) {
+                i.remove();
+            } catch (Exception e) {
+                i.remove();
+            }
+        }
+        sshd.setCipherFactories(avail);
     }
 }

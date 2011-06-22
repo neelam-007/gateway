@@ -164,7 +164,9 @@ public class ServerSftpRouteAssertion extends ServerRoutingAssertion<SftpRouteAs
 
             // upload the file
             try {
-                sftpClient.setDir(dir);
+                if (dir != null) {
+                    sftpClient.setDir(dir);
+                }
                 sftpClient.upload(mimeKnob.getEntireMessageBodyAsInputStream(), fileName);
             } catch (NoSuchPartException e) {
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {SftpAssertionMessages.SFTP_NO_SUCH_PART_ERROR + ",server:"+getHostName(context, assertion)+ ",error:"+e.getMessage()}, e);
