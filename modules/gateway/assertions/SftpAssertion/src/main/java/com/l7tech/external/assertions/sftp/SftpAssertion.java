@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * TODO SFTP put/route assertion
+ * TODO SFTP poll assertion/listener
  */
 public class SftpAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
 
@@ -67,8 +67,8 @@ public class SftpAssertion extends RoutingAssertion implements UsesVariables, Se
         @Override
         public String getAssertionName( final SftpAssertion assertion, final boolean decorate) {
             if (!decorate)
-                return "TODO Route via SFTP";
-            StringBuilder sb = new StringBuilder("TODO SFTP Put");
+                return "TODO SFTP Polling";
+            StringBuilder sb = new StringBuilder("TODO SFTP Polling");
 
             return AssertionUtils.decorateName(assertion, sb.toString());
         }
@@ -97,7 +97,7 @@ public class SftpAssertion extends RoutingAssertion implements UsesVariables, Se
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
         // meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.sftp.console.SftpAssertionPropertiesDialog");
-        // meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SFTP Put Properties");
+        // meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "SFTP Polling Properties");
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
