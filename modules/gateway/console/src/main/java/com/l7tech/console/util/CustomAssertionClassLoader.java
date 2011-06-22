@@ -36,7 +36,6 @@ public class CustomAssertionClassLoader extends ClassLoader {
      * Create a new CustomAssertionClassLoader.
      */
     public CustomAssertionClassLoader() {
-        super();
     }
 
     /**
@@ -75,7 +74,9 @@ public class CustomAssertionClassLoader extends ClassLoader {
 
         CustomAssertionsRegistrar car = null;
         try {
-            car = registry.getCustomAssertionsRegistrar();
+            car = registry.isAdminContextPresent() ?
+                    registry.getCustomAssertionsRegistrar() :
+                    null;
         } catch (IllegalStateException e) {
             logger.log(Level.WARNING, "Unable to load custom/modular assertion class or resource: " + ExceptionUtils.getMessage(e), e);
         }
