@@ -6,9 +6,9 @@ package com.l7tech.common.io;
 
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -19,21 +19,9 @@ import java.util.logging.Logger;
 /**
  * Unit test for {@link ByteOrderMarkInputStream}.
   */
-public class ByteOrderMarkInputStreamTest extends TestCase {
+public class ByteOrderMarkInputStreamTest {
     @SuppressWarnings({"UNUSED_SYMBOL"})
     private static Logger log = Logger.getLogger(ByteOrderMarkInputStreamTest.class.getName());
-
-    public ByteOrderMarkInputStreamTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ByteOrderMarkInputStreamTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     private class Result {
         private final ByteOrderMarkInputStream bomis;
@@ -62,6 +50,7 @@ public class ByteOrderMarkInputStreamTest extends TestCase {
         assertTrue(Arrays.equals(result.slurpedBytes, in));
     }
 
+    @Test
     public void testNoBom() throws Exception {
         assertSimpleNoBom(ASCII_DOC);
         assertSimpleNoBom(ASCII_C1);
@@ -86,6 +75,7 @@ public class ByteOrderMarkInputStreamTest extends TestCase {
         assertTrue(Arrays.equals(result.slurpedBytes, nobom));
     }
 
+    @Test
     public void testUtf8Bom() throws Exception {
         assertUtf8Bom(UTF8M_DOC);
         assertUtf8Bom(UTF8M_C1);
@@ -110,6 +100,7 @@ public class ByteOrderMarkInputStreamTest extends TestCase {
         assertTrue(Arrays.equals(result.slurpedBytes, nobom));
     }
 
+    @Test
     public void testUtf16Bom() throws Exception {
         assertUtf16Bom(UTF16M_DOC);
         assertUtf16Bom(UTF16M_C1);

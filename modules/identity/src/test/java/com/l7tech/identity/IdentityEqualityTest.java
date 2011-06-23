@@ -7,25 +7,18 @@ import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.identity.ldap.LdapUser;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 /**
  * @author alex
  */
-public class IdentityEqualityTest extends TestCase {
-    public IdentityEqualityTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(IdentityEqualityTest.class);
-    }
-
+public class IdentityEqualityTest {
     /**
      * Test that DNs in {@link LdapUser#equals} are compared semantically (e.g. case, quoting, escaping) 
      */
+    @Test
     public void testLdapUserSameSemanticDn() throws Exception {
         LdapUser u1 = ldapBob();
         u1.setDn("CN=bob, ou=\"Developers, developers\", DC=l7tech, DC=com");
@@ -39,6 +32,7 @@ public class IdentityEqualityTest extends TestCase {
     /**
      * Test that DNs in {@link LdapUser#equals} are compared semantically (e.g. case, quoting, escaping)
      */
+    @Test
     public void testLdapUserDiffSemanticDn() throws Exception {
         LdapUser u1 = ldapBob();
         u1.setDn("CN=bob, ou=\"Developers, developers\", DC=l7tech, DC=com");
@@ -52,6 +46,7 @@ public class IdentityEqualityTest extends TestCase {
     /**
      * Test that DNs are compared semantically (e.g. case, quoting, escaping) by {@link LdapGroup#equals}
      */
+    @Test
     public void testLdapGroupSameSemanticDn() throws Exception {
         LdapGroup g1 = ldapDevelopers();
         g1.setDn("ou=\"Developers, developers\", DC=l7tech, DC=com");
@@ -65,6 +60,7 @@ public class IdentityEqualityTest extends TestCase {
     /**
      * Test that DNs are compared semantically (e.g. case, quoting, escaping) by {@link LdapGroup#equals}
      */
+    @Test
     public void testLdapGroupDiffSemanticDn() throws Exception {
         LdapGroup g1 = ldapDevelopers();
         g1.setDn("ou=\"Developers, developers\", DC=l7tech, DC=com");
@@ -79,6 +75,7 @@ public class IdentityEqualityTest extends TestCase {
      * Test that {@link com.l7tech.objectmodel.PersistentEntity#getVersion} is not con
      * @throws Exception
      */
+    @Test
     public void testInternalUserVersionIgnored() throws Exception {
         InternalUser u1 = internalBob();
         u1.setVersion(-1);
@@ -93,6 +90,7 @@ public class IdentityEqualityTest extends TestCase {
      * Test that {@link com.l7tech.objectmodel.PersistentEntity#getVersion} is not con
      * @throws Exception
      */
+    @Test
     public void testInternalUserDepartment() throws Exception {
         InternalUser u1 = internalBob();
         u1.setDepartment("Development");
@@ -103,6 +101,7 @@ public class IdentityEqualityTest extends TestCase {
         assertFalse(u1.equals(u2));
     }
 
+    @Test
     public void testInternalGroupDiffDescription() throws Exception {
         InternalGroup g1 = internalDevelopers();
         g1.setDescription("Just a bunch of developers");
@@ -127,9 +126,5 @@ public class IdentityEqualityTest extends TestCase {
 
     private InternalUser internalBob() {
         return new InternalUser("bob");
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
     }
 }

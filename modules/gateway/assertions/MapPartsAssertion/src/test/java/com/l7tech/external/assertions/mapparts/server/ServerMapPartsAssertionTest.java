@@ -8,9 +8,9 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.springframework.context.ApplicationContext;
 
 import java.io.ByteArrayInputStream;
@@ -20,24 +20,13 @@ import java.util.logging.Logger;
 /**
  * Test the MapPartsAssertion.
  */
-public class ServerMapPartsAssertionTest extends TestCase {
+public class ServerMapPartsAssertionTest {
 
     private static final Logger log = Logger.getLogger(ServerMapPartsAssertionTest.class.getName());
     private static ApplicationContext applicationContext;
     private static ServerConfigStub serverConfig;
 
-    public ServerMapPartsAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerMapPartsAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testMapParts() throws Exception {
         ServerMapPartsAssertion sass = new ServerMapPartsAssertion(new MapPartsAssertion(), null);
 

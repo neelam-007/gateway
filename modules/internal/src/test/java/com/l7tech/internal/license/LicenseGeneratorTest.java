@@ -5,9 +5,9 @@
 
 package com.l7tech.internal.license;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -27,21 +27,10 @@ import com.l7tech.security.xml.DsigUtil;
  * Test the license generator to see if it can emit a document.  The emitted license isn't actually parsed --
  * for that, see LicenseRoundTripTest.  Instead, the output is just spot checked to make sure it looks sane.
  */
-public class LicenseGeneratorTest extends TestCase {
+public class LicenseGeneratorTest {
     private static Logger log = Logger.getLogger(LicenseGeneratorTest.class.getName());
 
-    public LicenseGeneratorTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(LicenseGeneratorTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+   @Test
     public void testInvalid() throws Exception {
         LicenseSpec spec = new LicenseSpec();
 
@@ -108,6 +97,7 @@ public class LicenseGeneratorTest extends TestCase {
 
     }
 
+    @Test
     public void testSimpleUnsigned() throws Exception {
         LicenseSpec spec = new LicenseSpec();
 
@@ -129,6 +119,7 @@ public class LicenseGeneratorTest extends TestCase {
 
     }
 
+    @Test
     public void testFeaturesetsUnsigned() throws Exception {
         LicenseSpec spec = new LicenseSpec();
 
@@ -152,6 +143,7 @@ public class LicenseGeneratorTest extends TestCase {
         log.info("Generated unsigned license (pretty-printed): \n" + XmlUtil.nodeToFormattedString(lic));
     }
 
+    @Test
     public void testFeaturesetsSigned() throws Exception {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         LicenseSpec spec = new LicenseSpec(signingCert,

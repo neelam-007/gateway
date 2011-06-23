@@ -13,9 +13,9 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerUnknownAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -25,34 +25,10 @@ import java.util.Arrays;
  * @author alex
  * @version $Revision$
  */
-public class ServerPolicyFactoryTest extends TestCase {
+public class ServerPolicyFactoryTest {
     private ApplicationContext testApplicationContext = ApplicationContexts.getTestApplicationContext();
 
-    /**
-     * test <code>ServerPolicyFactoryTest</code> constructor
-     */
-    public ServerPolicyFactoryTest(String name) {
-        super(name);
-    }
-
-    /**
-     * create the <code>TestSuite</code> for the
-     * ServerPolicyFactoryTest <code>TestCase</code>
-     */
-    public static Test suite() throws IOException {
-        return new TestSuite(ServerPolicyFactoryTest.class);
-    }
-
-    @Override
-    public void setUp() throws Exception {
-        // put set up code here
-    }
-
-    @Override
-    public void tearDown() throws Exception {
-        // put tear down code here
-    }
-
+    @Test
     public void testCompleteness() throws Exception {
 
         ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
@@ -67,6 +43,7 @@ public class ServerPolicyFactoryTest extends TestCase {
         }
     }
 
+    @Test
     public void testSimplePolicy() throws Exception {
         AllAssertion allTrue = new AllAssertion(Arrays.asList(
                 new TrueAssertion(),
@@ -169,10 +146,12 @@ public class ServerPolicyFactoryTest extends TestCase {
         }
     };
     
+    @Test
     public void testCtorThrowsException() {
         instantiateThrower(EXCEPTION_THROWER, EXCEPTION_MESS);
     }
 
+    @Test
     public void testCtorThrowsError() {
         instantiateThrower(ERROR_THROWER, ERROR_MESS);
     }
@@ -190,11 +169,4 @@ public class ServerPolicyFactoryTest extends TestCase {
         }
     }
 
-    /**
-     * Test <code>ServerPolicyFactoryTest</code> main.
-     */
-    public static void main(String[] args) throws
-      Throwable {
-        junit.textui.TestRunner.run(suite());
-    }
 }

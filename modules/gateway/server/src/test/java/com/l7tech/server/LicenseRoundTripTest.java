@@ -11,9 +11,9 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.gateway.common.License;
 import com.l7tech.gateway.common.InvalidLicenseException;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.w3c.dom.Document;
 
 import java.security.cert.X509Certificate;
@@ -26,25 +26,15 @@ import java.util.logging.Logger;
 /**
  * Tries to generate some licenses and then parse them.
  */
-public class LicenseRoundTripTest extends TestCase {
+public class LicenseRoundTripTest {
     private static Logger log = Logger.getLogger(LicenseRoundTripTest.class.getName());
 
-    public LicenseRoundTripTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(LicenseRoundTripTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSignedRoundTrip() throws Exception {
         doTestSignedRoundTrip(LICENSE_PLAIN, false, 45, 359 );
     }
 
+    @Test
     public void testSignedRoundTripWithFeatureSets() throws Exception {
         doTestSignedRoundTrip(LICENSE_FEATS, true, 46, 117 );
     }
@@ -107,6 +97,7 @@ public class LicenseRoundTripTest extends TestCase {
         license.checkValidity();
     }
 
+    @Test
     public void testExpiredLicense() throws Exception {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         Document lic = XmlUtil.stringAsDocument( LICENSE_EXPIRED );
@@ -122,6 +113,7 @@ public class LicenseRoundTripTest extends TestCase {
         }
     }
 
+    @Test
     public void testUnsignedLicense() throws Exception {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         Document lic = XmlUtil.stringAsDocument( LICENSE_UNSIGNED );
@@ -137,6 +129,7 @@ public class LicenseRoundTripTest extends TestCase {
         }
     }
 
+    @Test
     public void testPostDatedLicense() throws Exception {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         Document lic = XmlUtil.stringAsDocument( LICENSE_POSTDATED );

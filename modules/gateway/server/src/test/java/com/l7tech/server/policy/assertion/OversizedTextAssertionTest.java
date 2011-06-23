@@ -14,36 +14,27 @@ import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.Assertion;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.util.logging.Logger;
 
 /**
  * Test for OversizedTextAssertion bean.
  */
-public class OversizedTextAssertionTest extends TestCase {
+public class OversizedTextAssertionTest {
     private static Logger log = Logger.getLogger(OversizedTextAssertionTest.class.getName());
     private ServerPolicyFactory serverPolicyFactory;
 
-    public OversizedTextAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(OversizedTextAssertionTest.class);
-    }
-
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
         System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
     }
 
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testNestingLimitXpath() throws Exception {
         OversizedTextAssertion ota = new OversizedTextAssertion();
         ota.setLimitNestingDepth(true);
@@ -70,11 +61,13 @@ public class OversizedTextAssertionTest extends TestCase {
         return serverPolicyFactory;
     }
 
+    @Test
     public void testOtaDefaults() throws Exception {
         OversizedTextAssertion ota = new OversizedTextAssertion();
         assertEquals(AssertionStatus.NONE, checkRequest(ota.getCopy(), TEST_DOC));
     }
 
+    @Test
     public void testOtaLongTextNode() throws Exception {
         OversizedTextAssertion ota = new OversizedTextAssertion();
         ota.setLimitTextChars(true);
@@ -84,6 +77,7 @@ public class OversizedTextAssertionTest extends TestCase {
         assertEquals(AssertionStatus.BAD_REQUEST, checkRequest(ota.getCopy(), TEST_DOC));
     }
 
+    @Test
     public void testOtaLongAttrNode() throws Exception {
         OversizedTextAssertion ota = new OversizedTextAssertion();
         ota.setLimitAttrChars(true);
@@ -93,6 +87,7 @@ public class OversizedTextAssertionTest extends TestCase {
         assertEquals(AssertionStatus.BAD_REQUEST, checkRequest(ota.getCopy(), TEST_DOC));
     }
 
+    @Test
     public void testOtaLongAttrNameNode() throws Exception {
         OversizedTextAssertion ota = new OversizedTextAssertion();
         ota.setLimitAttrNameChars(true);
@@ -102,6 +97,7 @@ public class OversizedTextAssertionTest extends TestCase {
         assertEquals(AssertionStatus.BAD_REQUEST, checkRequest(ota.getCopy(), TEST_DOC_LONG_ATTR_NAME));
     }
 
+    @Test
     public void testOtaNesting() throws Exception {
         OversizedTextAssertion ota = new OversizedTextAssertion();
         ota.setLimitNestingDepth(true);
@@ -111,6 +107,7 @@ public class OversizedTextAssertionTest extends TestCase {
         assertEquals(AssertionStatus.BAD_REQUEST, checkRequest(ota.getCopy(), TEST_DOC));
     }
 
+    @Test
     public void testOtaMaxPayloads() throws Exception {
         OversizedTextAssertion ota = new OversizedTextAssertion();
         ota.setMaxPayloadElements(3);
@@ -119,6 +116,7 @@ public class OversizedTextAssertionTest extends TestCase {
         assertEquals(AssertionStatus.BAD_REQUEST, checkRequest(ota.getCopy(), TEST_DOC_THREE_PAYLOADS));
     }
 
+    @Test
     public void testOtaSoapEnv() throws Exception {
         OversizedTextAssertion ota = new OversizedTextAssertion();
         ota.setRequireValidSoapEnvelope(false);
@@ -132,6 +130,7 @@ public class OversizedTextAssertionTest extends TestCase {
      * - limit number of namespaces
      * if amount specified in new gui fields by the user
      */
+    @Test
     public void testOtaLimitedNamespaces() throws Exception {
             OversizedTextAssertion ota = new OversizedTextAssertion();
             ota.setLimitNamespaceCount(true);
@@ -148,6 +147,7 @@ public class OversizedTextAssertionTest extends TestCase {
      * - limit number of prefixes and
      * if amount specified in new gui fields by the user
      */
+    @Test
     public void testOtaLimitedPrefixes() throws Exception {
             OversizedTextAssertion ota = new OversizedTextAssertion();
             ota.setLimitNamespacePrefixCount(true);

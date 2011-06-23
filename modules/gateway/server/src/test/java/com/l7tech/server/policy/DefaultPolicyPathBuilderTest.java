@@ -26,9 +26,10 @@ import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.TestDocuments;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,21 +45,10 @@ import org.springframework.context.ApplicationContext;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class DefaultPolicyPathBuilderTest extends TestCase {
+public class DefaultPolicyPathBuilderTest {
     private ApplicationContext spring;
 
-    public DefaultPolicyPathBuilderTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(DefaultPolicyPathBuilderTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSingleDepthPolicyPathWithConjunctionOr() throws Exception {
         final List kids =
           Arrays.asList(new Assertion[]{
@@ -77,11 +67,12 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         return new DefaultPolicyPathBuilder((GuidBasedEntityManager<Policy>) spring.getBean("policyManager")){};
     }
 
-    @Override
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         this.spring = ApplicationContexts.getTestApplicationContext();
     }
 
+    @Test
     public void testAllAssertionSingleDepthWithConjunctionOr() throws Exception {
         final List kids =
           Arrays.asList(new Assertion[]{
@@ -104,6 +95,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
     }
 
 
+    @Test
     public void testSingleDepthPolicyPathWithConjunctionAnd() throws Exception {
         final List kids =
           Arrays.asList(new Assertion[]{
@@ -118,6 +110,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         assertTrue(builder.generate(oom).getPathCount() == 1);
     }
 
+    @Test
     public void testSingleDepthPolicyPathWithConjunctionAnd2() throws Exception {
         final List kids =
           Arrays.asList(new Assertion[]{
@@ -132,6 +125,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         assertTrue(builder.generate(oom).getPathCount() == 1);
     }
 
+    @Test
     public void testTwoDepthPolicyPathWithConjunctionOr() throws Exception {
         final List kids =
           Arrays.asList(new Assertion[]{
@@ -164,6 +158,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         assertTrue("The value received is " + count, count == 9);
     }
 
+    @Test
     public void testTwoDepthPolicyPathWithConjunctionAnd() throws Exception {
         final List kids =
           Arrays.asList(new Assertion[]{
@@ -189,6 +184,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         assertTrue("The value received is " + count, count == 7);
     }
 
+    @Test
     public void testBug763MonsterPolicy() throws Exception {
         Assertion policy = WspReader.getDefault().parsePermissively(XmlUtil.parse(TestDocuments.getInputStream(TestDocuments.BUG_763_MONSTER_POLICY)).getDocumentElement(), WspReader.INCLUDE_DISABLED);
         DefaultPolicyPathBuilder builder = getPathBuilder();
@@ -199,6 +195,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
     }
 
 
+    @Test
     public void testBug1022() throws Exception {
         Assertion firstAll = new AllAssertion(Arrays.asList(new Assertion[]{
             new RequireWssX509Cert(),
@@ -219,6 +216,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         assertTrue(result.getPathCount() == 2);
     }
 
+    @Test
     public void testBug1334() throws Exception {
         Assertion firstAll = new AllAssertion(Arrays.asList(new Assertion[]{
             new RequireWssX509Cert(),
@@ -249,6 +247,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
     }
 
 
+    @Test
     public void testBug1374() throws Exception {
         List credentials = getCredentialsLocations();
         int nCrendentials = credentials.size();

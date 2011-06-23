@@ -5,14 +5,14 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import static org.junit.Assert.*;
+import org.junit.Test;
+
 
 /**
  * @author jbufu
  */
-public class FtpRoutingAssertionTest extends TestCase {
+public class FtpRoutingAssertionTest {
 
     public static final String POLICY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
         "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
@@ -32,14 +32,7 @@ public class FtpRoutingAssertionTest extends TestCase {
         "    </L7p:FtpRoutingAssertion>\n" +
         "</wsp:Policy>";
 
-    public FtpRoutingAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(FtpRoutingAssertionTest.class);
-    }
-
+    @Test
     public void testFtpRoutingAssertion() throws Exception {
         AssertionRegistry registry = new AssertionRegistry();
         registry.registerAssertion(FtpRoutingAssertion.class);

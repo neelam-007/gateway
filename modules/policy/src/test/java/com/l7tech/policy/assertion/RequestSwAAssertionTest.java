@@ -4,9 +4,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Map;
 
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import static org.junit.Assert.*;
+import org.junit.Test;
+
 
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.wsdl.BindingInfo;
@@ -18,19 +18,12 @@ import com.l7tech.wsdl.MimePartInfo;
  *
  * @author Steve Jones
  */
-public class RequestSwAAssertionTest extends TestCase {
-
-    public static Test suite() {
-        return new TestSuite(RequestSwAAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
+public class RequestSwAAssertionTest {
 
     /**
      * Test 4.2 SOAP with Attachments assertion has expected defaults.
      */
+    @Test
     public void test42PolicyDefaults() throws Exception {
         testPolicyValues(POLICY_42, false);
     }
@@ -38,6 +31,7 @@ public class RequestSwAAssertionTest extends TestCase {
     /**
      * Test 4.3 SOAP with Attachments assertion with required signature.
      */
+    @Test
     public void test43PolicyAll() throws Exception {
         testPolicyValues(POLICY_43_SIGNED, true);
     }
@@ -45,6 +39,7 @@ public class RequestSwAAssertionTest extends TestCase {
     /**
      * Test 4.3 SOAP with Attachments assertion without required signature.
      */
+    @Test
     public void test43PolicyNone() throws Exception {
         testPolicyValues(POLICY_43_UNSIGNED, false);
     }
@@ -54,6 +49,7 @@ public class RequestSwAAssertionTest extends TestCase {
      *
      * This tests the requiresSignature method.
      */
+    @Test
     public void testSignatureRequired() throws Exception {
         testSignatureRequired(POLICY_43_SIGNED, true);
     }
@@ -63,6 +59,7 @@ public class RequestSwAAssertionTest extends TestCase {
      *
      * This tests the requiresSignature method.
      */
+    @Test
     public void testSignatureNotRequired() throws Exception {
         testSignatureRequired(POLICY_43_UNSIGNED, false);        
     }
@@ -114,7 +111,7 @@ public class RequestSwAAssertionTest extends TestCase {
     /**
      * Test assertion requireSignature method 
      */
-    public void testSignatureRequired(String policyXml, boolean signatureRequired) throws Exception {
+    private void testSignatureRequired(String policyXml, boolean signatureRequired) throws Exception {
         Assertion policy = WspReader.getDefault().parseStrictly(policyXml, WspReader.INCLUDE_DISABLED);
 
         boolean hasAssertion = false;

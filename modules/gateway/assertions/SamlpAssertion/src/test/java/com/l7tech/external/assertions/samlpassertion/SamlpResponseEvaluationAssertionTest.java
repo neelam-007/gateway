@@ -1,11 +1,15 @@
 package com.l7tech.external.assertions.samlpassertion;
 
+import static org.junit.Assert.*;
+import org.junit.Test;
+
 /**
  * User: vchan
  */
 public class SamlpResponseEvaluationAssertionTest extends BaseAssertionTestCase<SamlpResponseEvaluationAssertion> {
 
 
+    @Test
     public void testParseAssertion() {
 
         final String policyXml =
@@ -40,6 +44,7 @@ public class SamlpResponseEvaluationAssertionTest extends BaseAssertionTestCase<
         return SamlpResponseEvaluationAssertion.class.cast(obj);
     }
 
+    @Test
     public void testFeatureNames() throws Exception {
         assertEquals("assertion:SamlpResponseEvaluation", new SamlpResponseEvaluationAssertion().getFeatureSetName());
     }

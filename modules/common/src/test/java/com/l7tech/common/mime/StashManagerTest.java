@@ -8,9 +8,9 @@ package com.l7tech.common.mime;
 
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.RandomInputStream;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -23,20 +23,8 @@ import java.util.logging.Logger;
 /**
  * @author mike
  */
-public class StashManagerTest extends TestCase {
+public class StashManagerTest {
     private static Logger log = Logger.getLogger(StashManagerTest.class.getName());
-
-    public StashManagerTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(StashManagerTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     private static interface StashManagerFactory {
         StashManager createNewStashManager() throws IOException;
@@ -205,6 +193,7 @@ public class StashManagerTest extends TestCase {
         }
     }
 
+    @Test
     public void testByteArrayStashManager() throws Exception {
         // this is limited by RAM, so should not attempt to test the 30mb part
         doTestStashManager(true, new StashManagerFactory() {
@@ -214,6 +203,7 @@ public class StashManagerTest extends TestCase {
         });
     }
 
+    @Test
     public void testFileStashManager() throws Exception {
         // this is not limited by ram, so go ahead and test the 30mb part
         doTestStashManager(false, new StashManagerFactory() {
@@ -223,6 +213,7 @@ public class StashManagerTest extends TestCase {
         });
     }
 
+    @Test
     public void testHybridStashManager() throws Exception {
         // this is not limited by ram, so go ahead and test the 30mb part
         doTestStashManager(false, new StashManagerFactory() {

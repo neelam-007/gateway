@@ -21,9 +21,10 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ResourceUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Ignore;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @noinspection JavaDoc
  */
-public class CacheAssertionTest extends TestCase {
+public class CacheAssertionTest {
     private static final ApplicationEventProxy eventProxy = new ApplicationEventProxy();
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();
 
@@ -46,22 +47,12 @@ public class CacheAssertionTest extends TestCase {
         beanFactory.addBean( "clusterPropertyManager", new MockClusterPropertyManager( new ClusterProperty("messageCache.resetGeneration", "0")));
     }
 
-    public CacheAssertionTest( String name ) {
-        super( name );
+    @Ignore("unknown")
+    @Test
+    public void testFeatureNames() throws Exception {
+        assertEquals( "assertion:CacheStorage", new CacheStorageAssertion().getFeatureSetName() );
+        assertEquals( "assertion:CacheLookup", new CacheLookupAssertion().getFeatureSetName() );
     }
-
-    public static Test suite() {
-        return new TestSuite( CacheAssertionTest.class );
-    }
-
-    public static void main( String[] args ) {
-        junit.textui.TestRunner.run( suite() );
-    }
-
-//    public void testFeatureNames() throws Exception {
-//        assertEquals( "assertion:CacheStorage", new CacheStorageAssertion().getFeatureSetName() );
-//        assertEquals( "assertion:CacheLookup", new CacheLookupAssertion().getFeatureSetName() );
-//    }
 
     static String messageBodyToString( Message msg ) throws IOException, NoSuchPartException {
         final InputStream is = msg.getMimeKnob().getEntireMessageBodyAsInputStream();
@@ -72,6 +63,7 @@ public class CacheAssertionTest extends TestCase {
         }
     }
 
+    @Test
     public void testDefaultCache() throws Exception {
         ServerCacheStorageAssertion storass = new ServerCacheStorageAssertion(
             new CacheStorageAssertion() {{ setTarget(TargetMessageType.RESPONSE); }},
@@ -98,6 +90,7 @@ public class CacheAssertionTest extends TestCase {
         assertEquals( messageBodyToString( ctx.getResponse() ), cachedString );
     }
 
+    @Test
     public void testCachesDontOverlap() throws Exception {
         ServerCacheStorageAssertion storass = new ServerCacheStorageAssertion( new CacheStorageAssertion(), beanFactory );
         final CacheLookupAssertion lookbean = new CacheLookupAssertion();
@@ -122,6 +115,7 @@ public class CacheAssertionTest extends TestCase {
         assertEquals( messageBodyToString( ctx.getResponse() ), origResponse );
     }
 
+    @Test
     public void testCacheKeysMatter() throws Exception {
         ServerCacheStorageAssertion storass1 = makeStorAss( "myFunkyKey1" );
         ServerCacheLookupAssertion lookass1 = makeLookAss( "myFunkyKey1" );
@@ -185,6 +179,7 @@ public class CacheAssertionTest extends TestCase {
     /**
      * @noinspection InstanceMethodNamingConvention
      */
+    @Test
     public void test_FINALTEST_DefaultCacheShutdown() throws Exception {
         ServerCacheStorageAssertion storass = new ServerCacheStorageAssertion( new CacheStorageAssertion(), beanFactory );
         ServerCacheLookupAssertion lookass = new ServerCacheLookupAssertion( new CacheLookupAssertion(), beanFactory );

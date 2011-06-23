@@ -9,9 +9,10 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.external.assertions.ftpcredential.FtpCredentialAssertion;
 import com.l7tech.common.TestDocuments;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import junit.extensions.TestSetup;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -21,28 +22,16 @@ import java.net.PasswordAuthentication;
 /**
  * Test the ServerFtpCredentialAssertion.
  */
-public class ServerFtpCredentialAssertionTest extends TestCase {
+public class ServerFtpCredentialAssertionTest {
 
     private static ApplicationContext applicationContext;
 
-    public ServerFtpCredentialAssertionTest(String name) {
-        super(name);
-    }
 
-    public static Test suite() {
-        TestSuite testSuite = new TestSuite(ServerFtpCredentialAssertionTest.class);
-        return new TestSetup(testSuite) {
-            @Override
-            protected void setUp() throws Exception {
-                applicationContext = new ClassPathXmlApplicationContext(new String[]{
-                        "com/l7tech/external/assertions/ftpcredential/server/ftpCredentialAssertionTestApplicationContext.xml"
-                });
-            }
-        };
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
+    @BeforeClass
+    public static void setUp() throws Exception {
+        applicationContext = new ClassPathXmlApplicationContext(new String[]{
+                "com/l7tech/external/assertions/ftpcredential/server/ftpCredentialAssertionTestApplicationContext.xml"
+        });
     }
 
     private PolicyEnforcementContext makeContext(boolean addFtpKnob, final boolean withCreds) throws Exception {
@@ -128,6 +117,7 @@ public class ServerFtpCredentialAssertionTest extends TestCase {
         return new ServerFtpCredentialAssertion(fca, applicationContext);
     }
 
+    @Test
     public void testNotFtpRequest() throws Exception {
         FtpCredentialAssertion fca = new FtpCredentialAssertion();
         ServerAssertion ass = makePolicy(fca);
@@ -138,6 +128,7 @@ public class ServerFtpCredentialAssertionTest extends TestCase {
         assertEquals("Incorrect assertion status", AssertionStatus.NOT_APPLICABLE, result);
     }
 
+    @Test
     public void testCredentials() throws Exception {
         FtpCredentialAssertion fca = new FtpCredentialAssertion();
         ServerAssertion ass = makePolicy(fca);
@@ -150,6 +141,7 @@ public class ServerFtpCredentialAssertionTest extends TestCase {
         assertEquals("Incorrect login found", "user", pec.getDefaultAuthenticationContext().getLastCredentials().getLogin());
     }
 
+    @Test
     public void testMissingCredentials() throws Exception {
         FtpCredentialAssertion fca = new FtpCredentialAssertion();
         ServerAssertion ass = makePolicy(fca);

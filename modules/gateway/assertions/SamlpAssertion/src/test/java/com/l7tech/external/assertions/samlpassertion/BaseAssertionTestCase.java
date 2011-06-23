@@ -8,7 +8,9 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -16,13 +18,14 @@ import java.io.IOException;
 /**
  * User: vchan
  */
-public abstract class BaseAssertionTestCase<A extends Assertion> extends TestCase {
+public abstract class BaseAssertionTestCase<A extends Assertion> {
 
     protected ApplicationContext appCtx;
     protected WspReader policyReader;
     protected ServerPolicyFactory factory;
 
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
 
         // get the spring app context
         if (appCtx == null) {
@@ -50,11 +53,6 @@ public abstract class BaseAssertionTestCase<A extends Assertion> extends TestCas
             assertNotNull("Fail - Unable to obtain \"policyFactory\" from the application context", factory);
         }
     }
-
-    protected void tearDown() throws Exception {
-        super.tearDown();
-    }
-
 
     protected A parseAssertionFromXml(String policyXml) throws IOException, ServerPolicyException {
 

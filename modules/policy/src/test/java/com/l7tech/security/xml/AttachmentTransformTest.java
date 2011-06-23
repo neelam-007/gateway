@@ -5,9 +5,9 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeHeaders;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.HexUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -19,25 +19,12 @@ import java.security.MessageDigest;
  *
  * @author Steve Jones
  */
-public class AttachmentTransformTest extends TestCase {
-
-    /**
-     *
-     */
-    public static Test suite() {
-        return new TestSuite(AttachmentTransformTest.class);
-    }
-
-    /**
-     *
-     */
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
+public class AttachmentTransformTest {
 
     /**
      * Test addition/canonicalization of default ContentType header
      */
+    @Test
     public void testDefaultHeaders() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "asdf\n").getBytes());
@@ -48,6 +35,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Full test for MIME header and content canonicalization
      */
+    @Test
     public void testAllHeaders() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "Content-Description: attachment\n" +
@@ -64,6 +52,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for line wrapped MIME header and content canonicalization
      */
+    @Test
     public void testSpaceWrappedHeader() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "Content-Description: attachment\n" +
@@ -81,6 +70,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for line wrapped MIME header and content canonicalization
      */
+    @Test
     public void testTabWrappedHeader() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "Content-Description: attachment\n" +
@@ -98,6 +88,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for header with quoted parameter value
      */
+    @Test
     public void testQuotedParameterHeader() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "Content-Description: attachment\n" +
@@ -114,6 +105,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for header with escaped quote in parameter value
      */
+    @Test
     public void testQuotedEscapedParameterHeader() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "Content-Description: attachment\n" +
@@ -135,6 +127,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for headers with parameters that must be reordered
      */
+    @Test
     public void testOrderedParameterHeader() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "Content-Description: attachment\n" +
@@ -156,6 +149,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for line wrapped MIME header and content canonicalization
      */
+    @Test
     public void testCommentedHeader() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "Content-Description: attachment\n" +
@@ -172,6 +166,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for header names / values with odd cases
      */
+    @Test
     public void testCaseInsentitiveHeaders() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "content-description: attachment\n" +
@@ -188,6 +183,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for RFC 2184 language headers
      */
+    @Test
     public void testRFC2184LanguageHeader() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "content-description: attachment\n" +
@@ -204,6 +200,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for RFC 2184 parameter continuation header
      */
+    @Test
     public void testRFC2184ParamValueContinuationHeader() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "content-description: attachment\n" +
@@ -220,6 +217,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for RFC 2184 parameter continuation + language header
      */
+    @Test
     public void testRFC2184AllHeader() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "content-description: attachment\n" +
@@ -236,6 +234,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for text canonicalization '\n' -> '\r\n'
      */
+    @Test
     public void testTextContent() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "Content-Type: text/plain\n\n" +
@@ -250,6 +249,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for text canonicalization (already in correct format)
      */
+    @Test
     public void testNormalizedTextContent() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "Content-Type: text/plain\r\n\r\n" +
@@ -264,6 +264,7 @@ public class AttachmentTransformTest extends TestCase {
     /**
      * Test for binary canonicalization (nothing to do)
      */
+    @Test
     public void testBinaryContent() throws Exception {
         ByteArrayInputStream partIn = new ByteArrayInputStream((
                 "Content-Type: application/octet-stream\n\n" +

@@ -4,9 +4,9 @@ import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.message.Message;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.springframework.context.ApplicationContext;
 import org.apache.bsf.BSFManager;
 
@@ -16,23 +16,11 @@ import java.io.PrintStream;
 /**
  * Test the ScriptAssertion.
  */
-public class ServerScriptAssertionTest extends TestCase {
+public class ServerScriptAssertionTest {
 
     private static final Logger log = Logger.getLogger(ServerScriptAssertionTest.class.getName());
     private static ApplicationContext applicationContext;
     private static ServerConfigStub serverConfig;
-
-    public ServerScriptAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerScriptAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     public static class MyThing {
         public String blee;
@@ -72,6 +60,7 @@ public class ServerScriptAssertionTest extends TestCase {
             "\n" +
             "checkRequest(appContext, policyContext);";
 
+    @Test
     public void testJavascript() throws Exception {
         BSFManager manager = new BSFManager();
         MyThing myThing = new MyThing();

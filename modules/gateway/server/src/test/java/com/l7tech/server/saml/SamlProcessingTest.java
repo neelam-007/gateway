@@ -38,9 +38,11 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.server.MockServletApi;
 import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.apache.xmlbeans.XmlID;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
@@ -71,52 +73,26 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class SamlProcessingTest extends TestCase {
+public class SamlProcessingTest {
     private static final Logger logger = Logger.getLogger(SamlProcessingTest.class.getName());
     private static MockServletApi servletApi;
     private static ServiceDescriptor[] serviceDescriptors;
     private static SignerInfo authoritySigner;
     private static SignerInfo holderOfKeySigner;
 
-    /**
-     * test <code>SamlProcessingTest</code> constructor
-     */
-    public SamlProcessingTest(String name) {
-        super(name);
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/server/resources/testApplicationContext.xml");
+        ApplicationContext context = servletApi.getApplicationContext();
+        initializeServicesAndPolicies(context);
+
+        authoritySigner = new SignerInfo(TestDocuments.getWssInteropBobKey(), TestDocuments.getWssInteropBobChain());
+        holderOfKeySigner = new SignerInfo(TestDocuments.getWssInteropAliceKey(), TestDocuments.getWssInteropAliceChain());
     }
 
-    /**
-     * create the <code>TestSuite</code> for the
-     * SamlProcessingTest <code>TestCase</code>
-     */
-    public static Test suite() {
-        TestSuite suite = new TestSuite(SamlProcessingTest.class);
-        return new TestSetup(suite) {
-            /**
-             * sets the test environment
-             *
-             * @throws Exception on error deleting the stub data store
-             */
-            protected void setUp() throws Exception {
-                servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/server/resources/testApplicationContext.xml");
-                ApplicationContext context = servletApi.getApplicationContext();
-                initializeServicesAndPolicies(context);
-
-                authoritySigner = new SignerInfo(TestDocuments.getWssInteropBobKey(), TestDocuments.getWssInteropBobChain());
-                holderOfKeySigner = new SignerInfo(TestDocuments.getWssInteropAliceKey(), TestDocuments.getWssInteropAliceChain());
-            }
-
-            protected void tearDown() throws Exception {
-            }
-        };
-    }
-
+    @Before
     public void setUp() throws Exception {
         servletApi.reset();
-    }
-
-    public void tearDown() throws Exception {
-        // put tear down code here
     }
 
     /**
@@ -125,6 +101,7 @@ public class SamlProcessingTest extends TestCase {
      *
      * @throws Exception
      */
+    @Test
     public void testAuthenticationAssertionHolderOfKey() throws Exception {
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddress.getLocalHost());
@@ -166,6 +143,7 @@ public class SamlProcessingTest extends TestCase {
      *
      * @throws Exception
      */
+    @Test
     public void testAuthenticationAssertionSenderVouches() throws Exception {
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddress.getLocalHost());
@@ -208,6 +186,7 @@ public class SamlProcessingTest extends TestCase {
      *
      * @throws Exception
      */
+    @Test
     public void testAuthorizationAssertionSenderVouches() throws Exception {
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddress.getLocalHost());
@@ -253,6 +232,7 @@ public class SamlProcessingTest extends TestCase {
      *
      * @throws Exception
      */
+    @Test
     public void testAuthorizationAssertionHolderOfKey() throws Exception {
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddress.getLocalHost());
@@ -372,7 +352,8 @@ public class SamlProcessingTest extends TestCase {
         }
     }
 
-    public static void testSenderVouchesWithThumbprint() throws Exception {
+    @Test
+    public void testSenderVouchesWithThumbprint() throws Exception {
         AssertionType at = AssertionType.Factory.newInstance();
         XmlID aid = XmlID.Factory.newInstance();
         aid.setStringValue("EggSvTest-1");
@@ -450,6 +431,7 @@ public class SamlProcessingTest extends TestCase {
 
     }
 
+    @Test
     public void testStuff() throws Exception {
         SubjectStatement stmt = SubjectStatement.createAttributeStatement(LoginCredentials.makeLoginCredentials(new HttpBasicToken("foo", "bar".toCharArray()), HttpBasic.class), SubjectStatement.BEARER, "foo", "urn:example.com:attributes", "bar", KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
         SamlAssertionGenerator.Options opts = new SamlAssertionGenerator.Options();
@@ -460,7 +442,8 @@ public class SamlProcessingTest extends TestCase {
         ass.verifyEmbeddedIssuerSignature();
     }
 
-    public static void testAttributeStatementWithThumbprint() throws Exception {
+    @Test
+    public void testAttributeStatementWithThumbprint() throws Exception {
         AssertionType at = AssertionType.Factory.newInstance();
         XmlID aid = XmlID.Factory.newInstance();
         aid.setStringValue("EggSvTest-1");
@@ -570,11 +553,4 @@ public class SamlProcessingTest extends TestCase {
         return DsigUtil.createEnvelopedSignature(elementToSign, senderSigningCert, senderSigningKey, str, null, null);
     }
 
-    /**
-     * Test <code>SamlProcessingTest</code> main.
-     */
-    public static void main(String[] args) throws
-      Throwable {
-        junit.textui.TestRunner.run(suite());
-    }
 }

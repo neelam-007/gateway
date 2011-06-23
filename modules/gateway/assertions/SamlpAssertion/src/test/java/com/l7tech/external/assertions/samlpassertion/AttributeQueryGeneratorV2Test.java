@@ -10,6 +10,9 @@ import saml.v2.assertion.AttributeType;
 import saml.v2.assertion.NameIDType;
 import saml.v2.protocol.AttributeQueryType;
 
+import static org.junit.Assert.*;
+import org.junit.Test;
+
 import javax.xml.bind.JAXBElement;
 import java.util.HashMap;
 
@@ -51,6 +54,7 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTestCase
             "</L7p:AttributeStatement>";
 
 
+    @Test
     public void testCreateEmptyAttributeRequest() {
 
         try {
@@ -64,6 +68,7 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTestCase
     }
 
 
+    @Test
     public void testCreateAttributeRequest1() {
 
         try {
@@ -87,6 +92,7 @@ public class AttributeQueryGeneratorV2Test extends SamlpMessageGeneratorTestCase
     }
 
 
+    @Test
     public void testDebug() {
 
         final String policy =

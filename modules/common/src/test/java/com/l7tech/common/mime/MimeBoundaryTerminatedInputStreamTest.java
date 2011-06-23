@@ -10,9 +10,9 @@ import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.HexUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.io.*;
 import java.util.Random;
@@ -21,20 +21,8 @@ import java.util.logging.Logger;
 /**
  * @author mike
  */
-public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
+public class MimeBoundaryTerminatedInputStreamTest {
     private static Logger log = Logger.getLogger(MimeBoundaryTerminatedInputStreamTest.class.getName());
-
-    public MimeBoundaryTerminatedInputStreamTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(MimeBoundaryTerminatedInputStreamTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     /**
      * Create a SwaTestcaseFactory which can be used to generate test messages.  The same stream of test messages
@@ -51,6 +39,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         return new SwaTestcaseFactory(numparts, size, simpleSeed*28387 + size*149 + numparts*487 + 521 + simpleSeed);
     }
 
+    @Test
     public void testSinglepart() throws Exception {
         // A singlepart message will not contain the boundary, so should throw.
 
@@ -81,6 +70,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         }
     }
 
+    @Test
     public void testMultipartWithOnePart() throws Exception {
         int numparts = 1;
         int size = 500;
@@ -90,6 +80,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         readParts(testMsg, numparts, 4096);
     }
 
+    @Test
     public void testManyMultiparts() throws Exception {
         int numparts = 50;
         int size = 2030;
@@ -99,6 +90,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         readParts(testMsg, numparts, 4096);
     }
 
+    @Test
     public void testSmallBlockSize() throws Exception {
         int numparts = 3;
         int size = 1000;
@@ -108,6 +100,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         readParts(testMsg, numparts, 512);
     }
 
+    @Test
     public void testTinyBlockSize() throws Exception {
         int numparts = 4;
         int size = 400;
@@ -117,6 +110,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         readParts(testMsg, numparts, 5);
     }
 
+    @Test
     public void testMicroscopicBlockSize() throws Exception {
         int numparts = 4;
         int size = 400;
@@ -126,6 +120,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         readParts(testMsg, numparts, 3);
     }
 
+    @Test
     public void testSingleByteBlockSize() throws Exception {
         int numparts = 4;
         int size = 400;
@@ -135,6 +130,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         readParts(testMsg, numparts, 1);
     }
 
+    @Test
     public void testRandomBlockSize() throws Exception {
         int numparts = 20;
         int size = 10;
@@ -145,6 +141,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         readParts(testMsg, numparts, stfu.getRandom(), 1, 100, 0, 5, false);
     }
 
+    @Test
     public void testHugeBlockSize() throws Exception {
         int numparts = 2;
         int size = 1024 * 200 + 17;
@@ -154,6 +151,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         readParts(testMsg, numparts, 60000);
     }
 
+    @Test
     public void testHugeAttachment() throws Exception {
         int numparts = 2;
         int size = 1024 * 200 + 17;
@@ -163,6 +161,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         readParts(testMsg, numparts, 512);
     }
 
+    @Test
     public void testSingleByteRead() throws Exception {
         int numparts = 3;
         int size = 171;
@@ -172,6 +171,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         readParts(testMsg, numparts, stfu.getRandom(), 1, 1, 0, 0, true);
     }
 
+    @Test
     public void testBadIntermediateBoundaries() throws Exception {
         int numparts = 4;
         int size = 1024 + 17;
@@ -253,6 +253,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
 
     }
 
+    @Test
     public void testBadTerminatingBoundaries() throws Exception {
         int numparts = 4;
         int size = 1024 + 17;
@@ -439,6 +440,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         }
     }
 
+    @Test
     public void testRubyMultipartWithTwoParts() throws Exception {
         byte[] testMsg = ("Content-Type: multipart/related; boundary=\"----=Part_-763936460.407197826076299\"\r\n\r\n" +
                 MimeBodyTest.MESS).getBytes();
@@ -446,6 +448,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         readParts(testMsg, 2, 4096);
     }
 
+    @Test
     public void testRubyMultipartWithTwoPartsAndNoPreamble() throws Exception {
         // This is actual a legal multipart message -- messages with no preamble will have "--" as their first bytes
         // rather than "\r\n--" -- but rather than special case this, MimeBoundaryTerminatedInputStream requires that
@@ -462,6 +465,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         }
     }
 
+    @Test
     public void testEmptyStream() throws Exception {
         String boundary = "----=Part_-763936460.407197826076299";
         String stream = boundary + "--\r\n";
@@ -479,11 +483,13 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         }
     }
 
+    @Test
     public void testEmptyPart() throws Exception {
         String mess = "\r\n--foo\r\nContent-Type: application/octet-stream\r\nContent-Length: 0\r\n\r\n--foo--";
 //        readParts(mess.getBytes(), 1, 512);
     }
 
+    @Test
     public void testMakeMimeMessage() throws Exception {
         byte[] boundary = MimeUtil.randomBoundary();
         byte[] msg = MimeUtil.makeMultipartMessage( boundary, new byte[][] { "foo".getBytes(), "bar".getBytes() }, new String[] { "text/plain", "text/plain"} );

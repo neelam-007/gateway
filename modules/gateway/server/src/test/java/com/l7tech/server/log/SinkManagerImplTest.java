@@ -7,7 +7,7 @@ import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.log.syslog.SyslogManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.SoapFaultManager;
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -22,7 +22,7 @@ import java.util.ArrayList;
  * User: vchan
  */
 @Ignore("This test requires a Syslog server configured")
-public class SinkManagerImplTest extends TestCase {
+public class SinkManagerImplTest {
 
     private static final String TEST_MSG_PREFIX = "JUnit test message - SinkManagerImplTest";
 
@@ -47,6 +47,7 @@ public class SinkManagerImplTest extends TestCase {
                                            new ApplicationEventProxy());
     }
 
+    @Test
     public void testInitialized() {
 
         try {

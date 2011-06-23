@@ -3,9 +3,11 @@ package com.l7tech.xml.soap;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.xml.soap.SoapMessageGenerator;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
@@ -22,27 +24,12 @@ import java.io.InputStreamReader;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-public class SoapMessageGeneratorTest extends TestCase {
+public class SoapMessageGeneratorTest {
     private static final String WSDL = TestDocuments.WSDL;
     private static final String WSDL_DOC_LITERAL2 = TestDocuments.WSDL_DOC_LITERAL2;
     boolean messageGeneratorInvoked = false;
 
-    /**
-     * test <code>AbstractLocatorTest</code> constructor
-     */
-    public SoapMessageGeneratorTest(String name) {
-        super(name);
-    }
-
-    /**
-     * create the <code>TestSuite</code> for the
-     * AbstractLocatorTest <code>TestCase</code>
-     */
-    public static Test suite() {
-        TestSuite suite = new TestSuite(SoapMessageGeneratorTest.class);
-        return suite;
-    }
-
+    @Before
     public void setUp() throws Exception {
         messageGeneratorInvoked = false;
     }
@@ -56,7 +43,9 @@ public class SoapMessageGeneratorTest extends TestCase {
      * 
      * @throws Exception 
      */
-    public void xtestGenerateAndPrintSoapMessages() throws Exception {
+    @Ignore("disabled")
+    @Test
+    public void testGenerateAndPrintSoapMessages() throws Exception {
         SoapMessageGenerator sg = new SoapMessageGenerator();
 
         SoapMessageGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
@@ -73,6 +62,7 @@ public class SoapMessageGeneratorTest extends TestCase {
      * 
      * @throws Exception 
      */
+    @Test
     public void testGenerateSoapMessagesWithUserParamValues() throws Exception {
         SoapMessageGenerator sg = new SoapMessageGenerator(new SoapMessageGenerator.MessageInputGenerator() {
             public String generate(String messagePartName, String operationName, Definition definition) {
@@ -98,6 +88,7 @@ public class SoapMessageGeneratorTest extends TestCase {
      * 
      * @throws Exception 
      */
+    @Test
     public void testGenerateSoapMessagesValidateWithWsdl() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, new InputStreamReader(SoapMessageGeneratorTest.class.getClassLoader().getResourceAsStream( WSDL )) );
         SoapMessageGenerator sg = new SoapMessageGenerator();
@@ -140,6 +131,7 @@ public class SoapMessageGeneratorTest extends TestCase {
      *
      * @throws Exception
      */
+    @Test
     public void testGenerateAndPrintSoapMessagesDocumentStyle() throws Exception {
         SoapMessageGenerator sg = new SoapMessageGenerator();
 
@@ -149,13 +141,5 @@ public class SoapMessageGeneratorTest extends TestCase {
             SoapMessageGenerator.Message request = requests[i];
             request.getSOAPMessage().writeTo(System.out);
         }
-    }
-
-
-    /**
-     * Test <code>SoapRequestGeneratorTest</code> main.
-     */
-    public static void main(String[] args) throws Throwable {
-        junit.textui.TestRunner.run(suite());
     }
 }

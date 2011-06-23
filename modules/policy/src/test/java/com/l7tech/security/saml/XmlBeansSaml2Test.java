@@ -10,9 +10,10 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.token.http.HttpClientCertToken;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.Document;
@@ -29,24 +30,14 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class XmlBeansSaml2Test  extends TestCase {
+public class XmlBeansSaml2Test  {
 
     //- PUBLIC
-
-    public XmlBeansSaml2Test(String name) throws Exception {
-        super(name);
-    }
-
-    /**
-     * create the <code>TestSuite</code> containing the XmlBeansSaml2Test
-     */
-    public static Test suite() {
-        return new TestSuite(XmlBeansSaml2Test.class);
-    }
 
     /**
      *
      */
+    @Before
     public void setUp() throws Exception {
         caPrivateKey = TestDocuments.getEttkServerPrivateKey();
         caCertChain = new X509Certificate[]{TestDocuments.getEttkServerCertificate()};
@@ -60,6 +51,7 @@ public class XmlBeansSaml2Test  extends TestCase {
     /**
      *
      */
+    @Test
     public void testParseAssertionFromFile() throws Exception {
         ClassLoader cl = getClass().getClassLoader();
         URL assertionUrl = cl.getResource("com/l7tech/security/saml/saml_2_a.xml");
@@ -89,6 +81,7 @@ public class XmlBeansSaml2Test  extends TestCase {
     /**
      *
      */
+    @Test
     public void testParseAttributeStmtAssertionFromFile() throws Exception {
         ClassLoader cl = getClass().getClassLoader();
         URL assertionUrl = cl.getResource("com/l7tech/security/saml/saml_2_b.xml");
@@ -121,6 +114,7 @@ public class XmlBeansSaml2Test  extends TestCase {
     /**
      *
      */
+    @Test
     public void testParseAuthenticationStmtAssertionFromFile() throws Exception {
         ClassLoader cl = getClass().getClassLoader();
         URL assertionUrl = cl.getResource("com/l7tech/security/saml/saml_2_c.xml");
@@ -153,6 +147,7 @@ public class XmlBeansSaml2Test  extends TestCase {
     /**
      *
      */
+    @Test
     public void testGenerateAuthnStmtPasswordl() throws Exception {
         LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpBasicToken("test", "pass".toCharArray()), HttpBasic.class);
         generateAuthenticationStatement(creds);
@@ -161,6 +156,7 @@ public class XmlBeansSaml2Test  extends TestCase {
     /**
      *
      */
+    @Test
     public void testGenerateAuthnStmtTLS() throws Exception {
         LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(clientCertChain[0]), SslAssertion.class);
         generateAuthenticationStatement(creds);
@@ -169,6 +165,7 @@ public class XmlBeansSaml2Test  extends TestCase {
     /**
      *
      */
+    @Test
     public void testGenerateAuthnStmtDigSig() throws Exception {
         LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(clientCertChain[0]), SslAssertion.class);
         generateAuthenticationStatement(creds);

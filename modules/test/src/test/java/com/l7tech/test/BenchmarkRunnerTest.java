@@ -5,31 +5,18 @@
 
 package com.l7tech.test;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.framework.Assert;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class BenchmarkRunnerTest extends TestCase {
+public class BenchmarkRunnerTest {
     final Object mutex = new Object();
     volatile int runnableInvocationsCounter = 0;
 
-    public BenchmarkRunnerTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(BenchmarkRunnerTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSimpleRunnable() throws Exception {
         int[] counts = {1000, 10000, 100000, 1000000};
         for (int i = 0; i < counts.length; i++) {
@@ -53,7 +40,7 @@ public class BenchmarkRunnerTest extends TestCase {
             synchronized (mutex) {
                 counter = runnableInvocationsCounter;
             }
-            Assert.assertTrue("Expected " + count + " invocations, received  " +
+            assertTrue("Expected " + count + " invocations, received  " +
               counter, count == counter);
         }
     }

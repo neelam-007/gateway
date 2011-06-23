@@ -6,9 +6,9 @@
 
 package com.l7tech.util;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.util.logging.Logger;
 
@@ -21,20 +21,8 @@ import com.l7tech.util.ExceptionUtils;
  * Date: Sep 5, 2003
  * Time: 12:03:48 PM
  */
-public class ExceptionUtilsTest extends TestCase {
+public class ExceptionUtilsTest {
     private static Logger log = Logger.getLogger(ExceptionUtilsTest.class.getName());
-
-    public ExceptionUtilsTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ExceptionUtilsTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     private static class SizeException extends Exception {
         SizeException() {}
@@ -61,12 +49,14 @@ public class ExceptionUtilsTest extends TestCase {
         MovingException(Throwable cause) { super(cause); }
     }
 
+    @Test
     public void testGetCause() throws Exception {
         WidthException fat = new WidthException();
         RuntimeException re = new RuntimeException(fat);
         assertTrue( ExceptionUtils.getCauseIfCausedBy(re, WidthException.class) == fat);
     }
 
+    @Test
     public void testCausedBy() throws Exception {
         WidthException fat = new WidthException();
         SmellException smelly = new SmellException();

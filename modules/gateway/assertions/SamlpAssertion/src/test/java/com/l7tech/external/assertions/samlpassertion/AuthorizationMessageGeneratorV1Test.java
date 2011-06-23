@@ -10,6 +10,9 @@ import com.l7tech.server.audit.Auditor;
 import saml.v1.protocol.AuthorizationDecisionQueryType;
 import saml.v1.protocol.RequestType;
 
+import static org.junit.Assert.*;
+import org.junit.Test;
+
 import javax.xml.bind.JAXBElement;
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -22,6 +25,7 @@ import java.util.HashMap;
 public class AuthorizationMessageGeneratorV1Test extends SamlpMessageGeneratorTestCase<RequestType> {
 
 
+    @Test
     public void testCreateEmptyAuthzRequest() {
 
         try {

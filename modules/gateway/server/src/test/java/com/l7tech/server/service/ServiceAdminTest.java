@@ -6,9 +6,11 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.common.TestDocuments;
 import junit.extensions.TestSetup;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.*;
@@ -30,41 +32,17 @@ import java.util.List;
  * Time: 10:22:59 AM
  * To change this template use Options | File Templates.
  */
-public class ServiceAdminTest extends TestCase {
+public class ServiceAdminTest {
 
     static ApplicationContext applicationContext = null;
     PublishedService service;
 
-    /**
-     * test <code>AbstractLocatorTest</code> constructor
-     */
-    public ServiceAdminTest(String name) {
-        super(name);
+    @BeforeClass
+    public static void setUp() throws Exception {
+        applicationContext = ApplicationContexts.getTestApplicationContext();
     }
 
-    /**
-     * create the <code>TestSuite</code> for the
-     * LogCLientTest <code>TestCase</code>
-     */
-    public static Test suite() {
-        final TestSuite suite = new TestSuite(ServiceAdminTest.class);
-        return new TestSetup(suite) {
-            /**
-             * test setup that deletes the stub data store; will trigger
-             * store recreate
-             * sets the environment
-             * @throws Exception on error deleting the stub data store
-             */
-            protected void setUp() throws Exception {
-                applicationContext = ApplicationContexts.getTestApplicationContext();
-
-            }
-
-            protected void tearDown() throws Exception {
-            }
-        };
-    }
-
+    @Test
     public void testCreateService() throws Exception {
         System.out.println("creating service");
         PublishedService originalService = new PublishedService();
@@ -129,12 +107,5 @@ public class ServiceAdminTest extends TestCase {
         for (int i = 0; i < 50; i++) {
             testCreateService();
         }
-    }
-
-    /**
-     * Test <code>AbstractLocatorTest</code> main.
-     */
-    public static void main(String[] args) throws Throwable {
-        junit.textui.TestRunner.run(suite());
     }
 }

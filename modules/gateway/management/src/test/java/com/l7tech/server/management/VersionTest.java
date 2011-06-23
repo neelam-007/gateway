@@ -3,28 +3,17 @@
  */
 package com.l7tech.server.management;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.util.logging.Logger;
 
 /** @author alex */
-public class VersionTest extends TestCase {
+public class VersionTest {
     private static final Logger log = Logger.getLogger(VersionTest.class.getName());
 
-    public VersionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(VersionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testRoundTrip() throws Exception {
         assertEquals(SoftwareVersion.fromString("5.0").toString(), "5.0");
         assertEquals(SoftwareVersion.fromString("5.1").toString(), "5.1");
@@ -32,6 +21,7 @@ public class VersionTest extends TestCase {
         assertEquals(SoftwareVersion.fromString("5.2b3-b1").toString(), "5.2b3-b1");
     }
 
+    @Test
     public void testValidation() throws Exception {
         die("5");
         die("asdf");

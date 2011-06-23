@@ -6,9 +6,9 @@
 
 package com.l7tech.proxy.datamodel;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.util.logging.Logger;
 
@@ -17,26 +17,16 @@ import java.util.logging.Logger;
  * @author mike
  * @version 1.0
  */
-public class SsgTest extends TestCase {
+public class SsgTest {
     private static Logger log = Logger.getLogger(SsgTest.class.getName());
 
-    public SsgTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(SsgTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSsg() throws Exception {
         Ssg ssg = new Ssg();
         assertTrue(ssg.getLocalEndpoint().length() > 0);
     }
 
+    @Test
     public void testCopyFrom() throws Exception {
         Ssg ssgA = new Ssg(1);
         Ssg ssgB = new Ssg(2);

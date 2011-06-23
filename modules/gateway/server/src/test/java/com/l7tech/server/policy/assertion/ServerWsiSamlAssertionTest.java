@@ -8,9 +8,9 @@ import java.io.InputStream;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathConstants;
 
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import static org.junit.Assert.*;
+import org.junit.Test;
+
 import org.w3c.dom.Document;
 
 import com.l7tech.util.ResourceUtils;
@@ -24,15 +24,11 @@ import com.l7tech.common.io.XmlUtil;
  * @author $Author$
  * @version $Revision$
  */
-public class ServerWsiSamlAssertionTest extends TestCase {
+public class ServerWsiSamlAssertionTest {
 
     //- PUBLIC
 
-    public static Test suite() {
-        TestSuite suite = new TestSuite(ServerWsiSamlAssertionTest.class);
-        return suite;
-    }
-
+    @Test
     public void testSuccesses() throws Exception {
         System.out.println("Running testSuccesses()");
         Map ruleMap = swsa.getRules();
@@ -54,6 +50,7 @@ public class ServerWsiSamlAssertionTest extends TestCase {
         }
     }
 
+    @Test
     public void testNonSuccesses() throws Exception {
         System.out.println("Running testNonSuccesses()");
         Map ruleMap = swsa.getRules();

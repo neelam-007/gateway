@@ -18,9 +18,10 @@ import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.util.DomUtils;
 import com.l7tech.xml.saml.SamlAssertion;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -33,23 +34,9 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
-public class SignedSamlTest extends TestCase {
+public class SignedSamlTest {
     
-    /**
-     * test <code>SignedSamlTest</code> constructor
-     */
-    public SignedSamlTest(String name) {
-        super(name);
-    }
-
-    /**
-     * create the <code>TestSuite</code> for the SignedSamlTest <code>TestCase</code>
-     */
-    public static Test suite() {
-        return new TestSuite(SignedSamlTest.class);
-    }
-
-    @Override
+    @Before
     public void setUp() throws Exception {
         caPrivateKey = TestDocuments.getEttkServerPrivateKey();
         caCertChain = new X509Certificate[]{TestDocuments.getEttkServerCertificate()};
@@ -60,6 +47,7 @@ public class SignedSamlTest extends TestCase {
         clientPublicKey = clientCertChain[0].getPublicKey();
     }
 
+    @Test
     public void testKeys() throws Exception {
         System.out.println("CA private key: " + caPrivateKey);
         System.out.println("CA public key: " + caPublicKey);
@@ -124,17 +112,20 @@ public class SignedSamlTest extends TestCase {
         return assertionDoc;
     }
 
+    @Test
     public void testRequestSignedWithSamlToken() throws Exception {
         Document req = getRequestSignedWithSamlToken(false, false, false, 1);
         log.info("Signed request using saml token: " + XmlUtil.nodeToFormattedString(req));
     }
 
+    @Test
     public void testRequestSignedWithSamlTokenWithThumbprint() throws Exception {
         Document req = getRequestSignedWithSamlToken(true, true, false, 1);
         log.info("Signed request using saml token: " + XmlUtil.nodeToFormattedString(req));
     }
 
 
+    @Test
     public void testRequestSignedWithSamlTokenTwoStatements() throws Exception {
         Document req = getRequestSignedWithSamlToken(false, false, true, 2);
         final FileOutputStream fos = new FileOutputStream("/tmp/saml2statements.xml");
@@ -143,11 +134,13 @@ public class SignedSamlTest extends TestCase {
         log.info("Signed request using saml token: " + XmlUtil.nodeToFormattedString(req));
     }
 
+    @Test
     public void testRequestWithSenderVouchesToken() throws Exception {
         Document req = getRequestWithSenderVouchesToken();
         log.info("Request including sender vouches token: " + XmlUtil.nodeToFormattedString(req));
     }
 
+    @Test
     public void testSignedRequestWithSenderVouchesToken() throws Exception {
         Document req = getSignedRequestWithSenderVouchesToken();
         log.info("Request signed with a sender vouches token: " + XmlUtil.nodeToFormattedString(req));
@@ -219,14 +212,6 @@ public class SignedSamlTest extends TestCase {
         new WssDecoratorImpl().decorateMessage(new Message(request), req);
 
         return request;
-    }
-
-    /**
-     * Test <code>SignedSamlTest</code> main.
-     */
-    public static void main(String[] args) throws
-      Throwable {
-        junit.textui.TestRunner.run(suite());
     }
 
     private PrivateKey caPrivateKey;

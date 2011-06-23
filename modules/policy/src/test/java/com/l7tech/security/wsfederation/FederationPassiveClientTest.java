@@ -6,7 +6,8 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.wsfederation.FederationPassiveClient;
 import com.l7tech.security.wsfederation.InvalidHtmlException;
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 import java.net.URL;
 
@@ -16,13 +17,14 @@ import java.net.URL;
  * @author $Author$
  * @version $Revision$
  */
-public class FederationPassiveClientTest extends TestCase {
+public class FederationPassiveClientTest {
 
     //- PUBLIC
 
     /**
      * Basic test, should successfully parse and return a token.
      */
+    @Test
     public void testBasic() throws Exception {
         byte[] data = dataString.getBytes("UTF-8");
         MockGenericHttpClient client = new MockGenericHttpClient(200, null, ContentTypeHeader.parseValue("text/html; charset=UTF-8"), new Long(data.length), data);
@@ -42,6 +44,7 @@ public class FederationPassiveClientTest extends TestCase {
     /**
      * ADFS beta returns an invalid (empty) FORM element in the HTML response ... this ensures we handle it
      */
+    @Test
     public void testAdfsBeta() throws Exception {
         byte[] data = invalidFormDataString.getBytes("UTF-8");
         MockGenericHttpClient client = new MockGenericHttpClient(200, null, ContentTypeHeader.parseValue("text/html; charset=UTF-8"), new Long(data.length), data);
@@ -61,6 +64,7 @@ public class FederationPassiveClientTest extends TestCase {
     /**
      * Ensures TEXT/HTML response
      */
+    @Test
     public void testContentType() throws Exception {
         byte[] data = "Plain text page.".getBytes("UTF-8");
         MockGenericHttpClient client = new MockGenericHttpClient(200, null, ContentTypeHeader.parseValue("text/plain; charset=UTF-8"), new Long(data.length), data);
@@ -88,6 +92,7 @@ public class FederationPassiveClientTest extends TestCase {
     /**
      * Fail non-adfs / missing wresult
      */
+    @Test
     public void testRandomHtmlResponse() throws Exception {
         String htmlPage = "<html><head><title>HTML Page</title></head><body>Page body.</body></html>";
         byte[] data = htmlPage.getBytes("UTF-8");
@@ -116,6 +121,7 @@ public class FederationPassiveClientTest extends TestCase {
     /**
      * Fail multiple wresults in response form.
      */
+    @Test
     public void testMultipleWresultTest() throws Exception {
         byte[] data = multipleWresultDataString.getBytes("UTF-8");
         MockGenericHttpClient client = new MockGenericHttpClient(200, null, ContentTypeHeader.parseValue("text/html; charset=UTF-8"), new Long(data.length), data);

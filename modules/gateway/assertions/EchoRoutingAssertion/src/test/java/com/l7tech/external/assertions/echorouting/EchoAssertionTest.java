@@ -28,9 +28,10 @@ import com.l7tech.server.transport.http.HttpTransportModuleTester;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.server.service.ServicesHelper;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -47,27 +48,13 @@ import java.util.Arrays;
  * @author emil
  * @version 21-Mar-2005
  */
-public class EchoAssertionTest extends TestCase {
+public class EchoAssertionTest {
     private static MockServletApi servletApi;
     private SoapMessageProcessingServlet messageProcessingServlet;
     private static ServicesHelper servicesHelper;
     private static AssertionRegistry assReg;
 
-    /**
-     * test <code>EchoAssertionTest</code> constructor
-     */
-    public EchoAssertionTest(String name) {
-        super(name);
-    }
-
-    /**
-     * create the <code>TestSuite</code> for the
-     * ServerPolicyFactoryTest <code>TestCase</code>
-     */
-    public static Test suite() throws Exception {
-        return new TestSuite(EchoAssertionTest.class);
-    }
-
+    @Before
     public void setUp() throws Exception {
         if (servletApi == null) {
             servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/server/resources/testApplicationContext.xml");
@@ -83,15 +70,12 @@ public class EchoAssertionTest extends TestCase {
         });
     }
 
-    public void tearDown() throws Exception {
-        // put tear down code here
-    }
-
     /**
      * Test request response copying
      *
      * @throws Exception
      */
+    @Test
     public void testRequestResponseEqual() throws Exception {
         ServicesHelper.ServiceDescriptor[] serviceDescriptors = servicesHelper.getAlllDescriptors();
         for (int i = 0; i < serviceDescriptors.length; i++) {
@@ -130,6 +114,7 @@ public class EchoAssertionTest extends TestCase {
         }
     }
 
+    @Test
     public void testBug4570RoutingStatus() throws Exception {
         Message request = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
         Message response = new Message();
@@ -161,6 +146,7 @@ public class EchoAssertionTest extends TestCase {
      *
      * @throws Exception
      */
+    @Test
     public void testInstantiateEchoAssertion() throws Exception {
         ApplicationContext testApplicationContext = ApplicationContexts.getTestApplicationContext();
         AllAssertion echo = new AllAssertion(Arrays.asList(new EchoRoutingAssertion()));

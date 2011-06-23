@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import javax.xml.bind.JAXB;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -14,7 +14,7 @@ import java.io.ByteArrayInputStream;
 /**
  * @author jbufu
  */
-public class JaxbMapTypeTest extends TestCase {
+public class JaxbMapTypeTest {
 
     @XmlRootElement
     public static class A {
@@ -34,6 +34,7 @@ public class JaxbMapTypeTest extends TestCase {
         }
     }
 
+    @Test
     public void testJaxbMap() throws Exception {
 
         A a = new A();

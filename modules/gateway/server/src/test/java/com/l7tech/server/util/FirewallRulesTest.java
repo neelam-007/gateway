@@ -1,9 +1,9 @@
 package com.l7tech.server.util;
 
 import com.l7tech.util.IpProtocol;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.framework.Test;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -14,19 +14,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 /**
  *
  */
-public class FirewallRulesTest extends TestCase {
-
-    public FirewallRulesTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(FirewallRulesTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
+public class FirewallRulesTest {
 
     private List<SsgConnector> createTestConnectors() {
         List<SsgConnector> lc = new ArrayList<SsgConnector>();
@@ -84,6 +72,7 @@ public class FirewallRulesTest extends TestCase {
         return lc;
     }
 
+    @Test
     public void testGenerateRules() throws Exception {
         List<SsgConnector> lc = createTestConnectors();
 

@@ -5,9 +5,9 @@
 
 package com.l7tech.security.xml;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.util.Random;
 import java.util.logging.Logger;
@@ -17,21 +17,10 @@ import com.l7tech.security.xml.SecureConversationKeyDeriver;
 /**
  * @author mike
  */
-public class SecureConversationKeyDeriverTest extends TestCase {
+public class SecureConversationKeyDeriverTest {
     private static Logger log = Logger.getLogger(SecureConversationKeyDeriverTest.class.getName());
 
-    public SecureConversationKeyDeriverTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(SecureConversationKeyDeriverTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSecureConversationKeyDeriver() throws Exception {
         String label = "WS-SecureConversation";
         int length = 16;

@@ -1,11 +1,15 @@
 package com.l7tech.external.assertions.samlpassertion;
 
+import static org.junit.Assert.*;
+import org.junit.Test;
+
 /**
  * User: vchan
  */
 public class SamlpRequestBuilderAssertionTest extends BaseAssertionTestCase<SamlpRequestBuilderAssertion> {
 
 
+    @Test
     public void testParseAssertion() {
 
         final String policyXml =
@@ -63,6 +67,7 @@ public class SamlpRequestBuilderAssertionTest extends BaseAssertionTestCase<Saml
         return SamlpRequestBuilderAssertion.class.cast(obj);
     }
 
+    @Test
     public void testFeatureNames() throws Exception {
         assertEquals("assertion:SamlpRequestBuilder", new SamlpRequestBuilderAssertion().getFeatureSetName());
     }

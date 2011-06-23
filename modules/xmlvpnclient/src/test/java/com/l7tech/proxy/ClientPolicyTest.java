@@ -24,9 +24,10 @@ import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.*;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpBasic;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -39,24 +40,14 @@ import java.util.Arrays;
  * Date: Jun 16, 2003
  * Time: 11:23:25 AM
  */
-public class ClientPolicyTest extends TestCase {
-    public ClientPolicyTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ClientPolicyTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    protected void setUp() throws Exception {
+public class ClientPolicyTest {
+    @Before
+    public void setUp() throws Exception {
         AssertionRegistry.installEnhancedMetadataDefaults();
     }
 
     /** Decorate a message with an empty policy. */
+    @Test
     public void testNullPolicy() throws Exception {
         Ssg ssg = new Ssg(1, "foo");
         Document env = XmlUtil.stringToDocument("<foo/>");
@@ -70,6 +61,7 @@ public class ClientPolicyTest extends TestCase {
     }
 
     /** Test decoration of a message with an HTTP Basic policy. */
+    @Test
     public void testHttpBasicPolicy() throws Exception {
         ClientAssertion policy = new ClientHttpBasic( new HttpBasic() );
         Ssg ssg = new Ssg(1, "foo");
@@ -104,6 +96,7 @@ public class ClientPolicyTest extends TestCase {
     }
 
     /** Test decoration of a message with an SSL policy (specifying no certificates in particular). */
+    @Test
     public void testAnonymousSslPolicy() throws Exception {
         ClientAssertion policy = new ClientSslAssertion( new SslAssertion() );
         Ssg ssg = new Ssg(1, "foo");
@@ -125,6 +118,7 @@ public class ClientPolicyTest extends TestCase {
     }
 
     /** Test a composite policy. */
+    @Test
     public void testCompositePolicy() throws Exception {
         Ssg ssg = new Ssg(1, "foo");
         Document env = XmlUtil.stringToDocument("<foo/>");

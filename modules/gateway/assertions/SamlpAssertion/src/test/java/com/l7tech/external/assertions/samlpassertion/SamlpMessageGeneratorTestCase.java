@@ -4,6 +4,9 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.samlpassertion.server.SamlpMessageGenerator;
 import org.w3c.dom.Document;
 
+import static org.junit.Assert.*;
+import org.junit.Test;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -82,10 +85,6 @@ public abstract class SamlpMessageGeneratorTestCase<SAMLP_MSG>
             "    </wsp:All>" +
             "</wsp:Policy>";
 
-    protected void setUp() throws Exception {
-        super.setUp();
-    }
-
     protected void failUnexpected(Exception ex) {
         failUnexpected("Unexpected Exception encountered: ", ex);
     }
@@ -130,6 +129,7 @@ public abstract class SamlpMessageGeneratorTestCase<SAMLP_MSG>
 
     protected abstract SamlpMessageGenerator<SamlpRequestBuilderAssertion, SAMLP_MSG> createMessageGenerator(SamlpRequestBuilderAssertion assertion);
 
+    @Test
     public void testCreateEmptyRequest() {
 
         try {

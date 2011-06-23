@@ -8,7 +8,8 @@ import java.io.IOException;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathConstants;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.DomElementCursor;
@@ -23,10 +24,11 @@ import org.w3c.dom.Document;
  * @author $Author$
  * @version $Revision$
  */
-public class ServerWsiBspAssertionTest extends TestCase {
+public class ServerWsiBspAssertionTest {
 
     //- PUBLIC
 
+    @Test
     public void testSuccesses() throws Exception {
         System.out.println("Running testSuccesses()");
         Map ruleMap = swba.getRules();
@@ -48,6 +50,7 @@ public class ServerWsiBspAssertionTest extends TestCase {
         }
     }
 
+    @Test
     public void testNonSuccesses() throws Exception {
         System.out.println("Running testNonSuccesses()");
         Map ruleMap = swba.getRules();

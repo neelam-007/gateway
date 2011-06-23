@@ -14,7 +14,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.service.ServicesHelper;
 import com.l7tech.util.IOUtils;
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author jbufu
  */
-public class ServerRequestSizeLimitTest extends TestCase {
+public class ServerRequestSizeLimitTest {
 
     @Test
     public void testCompatibilityBug5044Format() throws Exception {

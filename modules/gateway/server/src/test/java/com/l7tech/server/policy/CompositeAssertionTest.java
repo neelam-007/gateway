@@ -23,9 +23,9 @@ import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerExactlyOneAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerOneOrMoreAssertion;
 import com.l7tech.server.ApplicationContexts;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.springframework.context.ApplicationContext;
 
 import java.util.Arrays;
@@ -39,21 +39,10 @@ import java.util.concurrent.Callable;
  * Date: Jun 13, 2003
  * Time: 9:54:23 AM
  */
-public class CompositeAssertionTest extends TestCase {
+public class CompositeAssertionTest {
     ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
 
-    public CompositeAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(CompositeAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSimpleLogic() throws Exception {
         ServerPolicyFactory.doWithEnforcement(false, new Callable<Void>() {
             @Override
@@ -108,6 +97,7 @@ public class CompositeAssertionTest extends TestCase {
         });
     }
 
+    @Test
     public void testCompositeLogic() throws Exception {
         final PolicyEnforcementContext context =
                 PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(new ByteArrayStashManager(),

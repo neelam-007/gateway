@@ -6,9 +6,9 @@
 
 package com.l7tech.policy;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.util.logging.Logger;
 import java.util.Arrays;
@@ -26,21 +26,10 @@ import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
  * Date: Aug 25, 2003
  * Time: 11:41:56 AM
  */
-public class PolicyCloneTest extends TestCase {
+public class PolicyCloneTest {
     private static Logger log = Logger.getLogger(PolicyCloneTest.class.getName());
 
-    public PolicyCloneTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(PolicyCloneTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testDeepCopy() throws Exception {
         SpecificUser u1 = new SpecificUser();
         u1.setUserLogin("Foo1");

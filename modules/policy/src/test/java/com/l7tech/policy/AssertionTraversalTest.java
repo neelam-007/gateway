@@ -12,9 +12,9 @@ import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,21 +28,9 @@ import java.util.List;
  * @version 1.0
 
  */
-public class AssertionTraversalTest extends TestCase {
+public class AssertionTraversalTest {
 
-    public AssertionTraversalTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(AssertionTraversalTest.class);
-    }
-
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSingleDepthTraversal() throws Exception {
         final List kids =
           Arrays.asList(new Assertion[]{
@@ -60,6 +48,7 @@ public class AssertionTraversalTest extends TestCase {
         assertTrue(counter == kids.size() + 1);
     }
 
+    @Test
     public void testDeepTraversal() throws Exception {
         final List kids =
           Arrays.asList(new Assertion[]{
@@ -80,6 +69,7 @@ public class AssertionTraversalTest extends TestCase {
         assertTrue(counter == kids.size() + 51);
     }
 
+    @Test
     public void testSingleDepthTraversalWithRemove() throws Exception {
         final List kids =
           Arrays.asList(new Assertion[]{
@@ -112,7 +102,8 @@ public class AssertionTraversalTest extends TestCase {
         }
     }
 
-     public void testDeepTraversalPruneEmptyComposites() throws Exception {
+     @Test
+    public void testDeepTraversalPruneEmptyComposites() throws Exception {
         final List kids =
           Arrays.asList(new Assertion[]{
               new TrueAssertion(),

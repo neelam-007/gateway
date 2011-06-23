@@ -8,9 +8,9 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.util.HexUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.junit.Before;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 /**
  * Test SftpRouteAssertion
  */
-public class ServerSftpRouteAssertionTest extends TestCase {
+public class ServerSftpRouteAssertionTest {
     private PolicyEnforcementContext context;
     private SftpRouteAssertion assertion;
 
@@ -51,28 +51,19 @@ public class ServerSftpRouteAssertionTest extends TestCase {
             return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
     }
 
-    public ServerSftpRouteAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerSftpRouteAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSftpSshRSAPublicKey() throws Exception {
         assertTrue(validateHostKeyData(HostDataRSA + sshRsaPublicServerKeyData));
         assertFalse(validateHostKeyData(HostDataRSA + sshDsaPublicServerKeyData));
     }
 
+    @Test
     public void testSftpSshDSAPublicKey() throws Exception {
         assertTrue(validateHostKeyData(HostDataDSA + sshDsaPublicServerKeyData));
         assertFalse(validateHostKeyData(HostDataDSA + sshRsaPublicServerKeyData));
     }
 
+    @Test
     public void testSftpAssertionData() throws Exception {
         assertNotNull(assertion.getHost());
         assertNotNull(assertion.getPort());

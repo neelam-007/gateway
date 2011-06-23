@@ -8,9 +8,9 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -18,20 +18,9 @@ import org.springframework.mock.web.MockServletContext;
 /**
  *
  */
-public class ServerSslAssertionTest extends TestCase {
+public class ServerSslAssertionTest {
 
-    public ServerSslAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerSslAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testBug4327PolicyViolationNotFlaggedIfNotSsl() throws Exception {
         SslAssertion sa = new SslAssertion();
         sa.setOption(SslAssertion.REQUIRED);

@@ -2,9 +2,9 @@ package com.l7tech.util;
 
 import static com.l7tech.util.Functions.*;
 import com.l7tech.util.Functions;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -13,20 +13,8 @@ import java.util.regex.Pattern;
 /**
  * Test cases for Functions and its inner classes.
  */
-public class FunctionsTest extends TestCase {
+public class FunctionsTest {
     private static final Logger log = Logger.getLogger(FunctionsTest.class.getName());
-
-    public FunctionsTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(FunctionsTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     // Some lists
 
@@ -69,6 +57,7 @@ public class FunctionsTest extends TestCase {
         }
     };
     
+    @Test
     public void testGrep() throws Exception {
         assertEquals("perl comes first", "perl", grepFirst(LANGS, HAS_VOWEL));
         assertNull("no jay tla", grepFirst(TLAS, HAS_JAY));
@@ -89,6 +78,7 @@ public class FunctionsTest extends TestCase {
         assertEquals("must add ruby and python", FRUITS.size() + 2, ordered.size());
     }
 
+    @Test
     public void testMap() throws Exception {
         List<String> upperFruits = map(FRUITS, TO_UPPER);
 
@@ -102,6 +92,7 @@ public class FunctionsTest extends TestCase {
         assertEquals("should return to normal", FRUITS, lowered);
     }
 
+    @Test
     public void testReduce() throws Exception {
         int totalLen = reduce(TLAS, 0, new Binary<Integer, Integer, String>() {
             public Integer call(Integer current, String s) {
@@ -112,6 +103,7 @@ public class FunctionsTest extends TestCase {
         assertEquals("TLAs are each three letters long", 3 * TLAS.size(), totalLen);
     }
 
+    @Test
     public void testPropertyTransform() throws Exception {
         List<byte[]> bytes = map(FRUITS, Functions.<byte[],String>propertyTransform(String.class, "bytes"));
         assertEquals(bytes.size(), FRUITS.size());
@@ -119,6 +111,7 @@ public class FunctionsTest extends TestCase {
             assertTrue("bytes match", Arrays.equals(bytes.get(i), FRUITS.get(i).getBytes()));
     }
     
+    @Test
     public void testGetterTransform() throws Exception {
         List<String> spacy = map(LANGS, new Unary<String,String>() {
             public String call(String s) {

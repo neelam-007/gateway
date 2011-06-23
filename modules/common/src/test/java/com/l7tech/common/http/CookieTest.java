@@ -1,6 +1,7 @@
 package com.l7tech.common.http;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.util.logging.Logger;
 import java.util.Locale;
@@ -20,11 +21,12 @@ import java.text.SimpleDateFormat;
  * Time: 10:07:11 AM
  * $Id$
  */
-public class CookieTest extends TestCase {
+public class CookieTest {
 
 
     //- PUBLIC
 
+    @Test
     public void testSetCookieProperties() {
         String name = "test";
         String value = "avalue";
@@ -49,6 +51,7 @@ public class CookieTest extends TestCase {
         assertNull("Checking comment property",cookie.getComment()); // should be null since version 0 cookies don't have comments
     }
 
+    @Test
     public void testSimpleSetCookieHeader() throws Exception {
         String name = "test";
         String value = "testvalue";
@@ -67,6 +70,7 @@ public class CookieTest extends TestCase {
         assertEquals("No expiry set", false, cookie.hasExpiry());
     }
 
+    @Test
     public void testSetCookieHeaderValueEndsWithEquals() throws Exception {
         String name = "test";
         String value = "testvalue==";
@@ -85,6 +89,7 @@ public class CookieTest extends TestCase {
         assertEquals("No expiry set", false, cookie.hasExpiry());
     }
 
+    @Test
     public void testFullV0ExpiresSetCookieHeader() throws Exception {
         String name = "test";
         String value = "testvalue";
@@ -111,6 +116,7 @@ public class CookieTest extends TestCase {
         assertEquals("Should not be secure", false, cookie.isSecure());
     }
 
+    @Test
     public void testFullV1SetCookieHeader() throws Exception {
         String name = "test";
         String value = "testvalue";
@@ -133,6 +139,7 @@ public class CookieTest extends TestCase {
         assertEquals("Should be secure", true, cookie.isSecure());
     }
 
+    @Test
     public void testIdentity() {
         HttpCookie cookie1 = new HttpCookie("name", "valuea", 1, "/", "a.domain.com");
         HttpCookie cookie2 = new HttpCookie("name", "valueb", 1, "/", "a.domain.com");
@@ -147,6 +154,7 @@ public class CookieTest extends TestCase {
     }
 
 
+    @Test
     public void testEnsurePathDomain() {
         HttpCookie cookie1 = new HttpCookie("name", "valuea", 1, "/some", ".domain.com");
 
@@ -160,6 +168,7 @@ public class CookieTest extends TestCase {
         assertFalse("Check modified path", cookie1.equals(cookie4));
     }
 
+    @Test
     public void testQuoting() {
         HttpCookie cookie1 = new HttpCookie("name", "value with spaces", 1, "/some", ".domain.com");
         String header1 = cookie1.getV0CookieHeaderPart();
@@ -174,6 +183,7 @@ public class CookieTest extends TestCase {
         assertEquals("Correctly quoted", "name=value_without_spaces", header3);
     }
 
+    @Test
     public void testCookieHeader() {
         HttpCookie cookie1 = new HttpCookie("name", "value", 1, "/", ".layer7tech.com");
         String header1 = HttpCookie.getCookieHeader(Collections.singletonList(cookie1));
@@ -195,6 +205,7 @@ public class CookieTest extends TestCase {
         assertEquals("Cookie header", "name=value; name2=value2; name3=\"value with \\\"spaces\"", header3);
     }
 
+    @Test
     public void testCookieWithEqualsInValue() throws Exception {
         // Test as though a Set-Cookie
         HttpCookie cookie1 = new HttpCookie(new URL("http://www.layer7tech.com/"), "iPlanetDirectoryPro=AQIC5wM2LY4SfcyETgWNhyoF+BR2H4zTz5vMoPKxzP2EPDA=@AAJTSQACMDE=#");
@@ -208,6 +219,7 @@ public class CookieTest extends TestCase {
     /*
     * Date Format: Sun, 17-Jan-2038 19:14:07 GMT
     * */
+    @Test
     public void testCookieExpiresNetscape() throws Exception{
         String name = "test";
         String value = "testvalue";
@@ -237,6 +249,7 @@ public class CookieTest extends TestCase {
     /*
     * Date format: Sun, 06 Nov 1994 08:49:37 GMT
     * */
+    @Test
     public void testCookieExpiresRfc1123() throws Exception{
         String name = "test";
         String value = "testvalue";
@@ -269,6 +282,7 @@ public class CookieTest extends TestCase {
     * need it done as it may assume it's in the last century.
     * Internally HttpCookie will expand the year to the current century
     * */
+    @Test
     public void testCookieExpiresRfc850() throws Exception{
         String name = "test";
         String value = "testvalue";
@@ -301,6 +315,7 @@ public class CookieTest extends TestCase {
     * need it done as it may assume it's in the last century.
     * Internally HttpCookie will expand the year to the current century
     * */
+    @Test
     public void testCookieExpiresRfc1036AndRfc822() throws Exception{
         String name = "test";
         String value = "testvalue";
@@ -330,6 +345,7 @@ public class CookieTest extends TestCase {
     /*
     * Date Format: Sun Nov  6 08:49:37 1994
     * */
+    @Test
     public void testCookieExpiresAnsiC_SingleDayDigit() throws Exception{
         String name = "test";
         String value = "testvalue";
@@ -359,6 +375,7 @@ public class CookieTest extends TestCase {
     /*
     * Date Format: Sun Nov  6 08:49:37 1994
     * */
+    @Test
     public void testCookieExpiresAnsiC_DoubleDayDigit() throws Exception{
         String name = "test";
         String value = "testvalue";
@@ -386,6 +403,7 @@ public class CookieTest extends TestCase {
     }
 
     //Wed Aug 29 07:00:00 2007 GMT
+    @Test
     public void testCookieExpiresAmazon() throws Exception{
         String name = "test";
         String value = "testvalue";

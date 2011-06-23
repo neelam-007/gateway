@@ -6,30 +6,23 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
 
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import static org.junit.Assert.*;
+import org.junit.Test;
+
 
 import com.l7tech.policy.assertion.AssertionStatus;
 
 /**
  *
  */
-public class MessagesTest extends TestCase {
+public class MessagesTest {
 
     private static final int MESSAGE_MAX_ID = 20000;
 
     /**
-      * create the <code>TestSuite</code> for the MessagesTest <code>TestCase</code>
-      */
-    public static Test suite() {
-        TestSuite suite = new TestSuite(MessagesTest.class);
-        return suite;
-    }
-
-    /**
      * test that all message formats are acceptable
      */
+    @Test
     public void testMessageText() {
         for(int i=-1000; i<MESSAGE_MAX_ID; i++) {
             AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(i);
@@ -61,6 +54,7 @@ public class MessagesTest extends TestCase {
      * You can't change the number (or order, but we can't test that) of parameters in a message
      * once it has been used in a released product.
      */
+    @Test
     public void testMessageParameters() throws Exception {
         Properties props = new Properties();
         props.load( MessagesTest.class.getResourceAsStream("MessageFormatParameters.properties") );
@@ -88,6 +82,7 @@ public class MessagesTest extends TestCase {
     /**
      * test that all message formats are acceptable
      */
+    @Test
     public void testMessageLevel() {
         for(int i=0; i<MESSAGE_MAX_ID; i++) {
 

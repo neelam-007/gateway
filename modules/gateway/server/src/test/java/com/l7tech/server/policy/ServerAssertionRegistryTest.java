@@ -2,9 +2,9 @@ package com.l7tech.server.policy;
 
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.RandomInputStream;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -15,21 +15,10 @@ import java.util.logging.Logger;
 /**
  *
  */
-public class ServerAssertionRegistryTest extends TestCase {
+public class ServerAssertionRegistryTest {
     private static final Logger log = Logger.getLogger(ServerAssertionRegistryTest.class.getName());
 
-    public ServerAssertionRegistryTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerAssertionRegistryTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testGetFileSha1() throws Exception {
         File file = new File("gfsha1_test.txt");
         try {

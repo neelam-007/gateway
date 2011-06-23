@@ -1,9 +1,9 @@
 package com.l7tech.security.saml;
 
 import com.l7tech.common.io.XmlUtil;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.Document;
@@ -21,22 +21,9 @@ import java.util.*;
 
 /**
  */
-public class XmlBeansSamlTest extends TestCase {
-    public XmlBeansSamlTest(String name) throws Exception {
-        super(name);
-    }
+public class XmlBeansSamlTest {
 
-    /**
-     * create the <code>TestSuite</code> containing the XmlBeansSamlTest
-     * <p/>
-     * Add new tests at the bottom of the list.
-     */
-    public static Test suite() {
-        return new TestSuite(XmlBeansSamlTest.class);
-
-    }
-
-
+    @Test
     public void testParseAssertionFromFile() throws Exception {
         ClassLoader cl = getClass().getClassLoader();
         URL assertionUrl = cl.getResource("com/l7tech/security/saml/saml1.xml");
@@ -63,6 +50,7 @@ public class XmlBeansSamlTest extends TestCase {
         System.out.println("The not after is: " + notAfter);
     }
 
+    @Test
     public void testParseAssertionFromNode() throws Exception {
         Document doc = getDocument("com/l7tech/security/saml/saml1.xml");
         XmlOptions xo = new XmlOptions();
@@ -85,6 +73,7 @@ public class XmlBeansSamlTest extends TestCase {
         System.out.println("The not after is: " + notAfter);
     }
 
+    @Test
     public void testCreateEmptyAssertion() throws Exception {
         AssertionDocument adoc = AssertionDocument.Factory.newInstance();
         AssertionType assertion = AssertionType.Factory.newInstance();
@@ -137,10 +126,4 @@ public class XmlBeansSamlTest extends TestCase {
         return XmlUtil.parse(is);
     }
 
-    /**
-     * Test <code>KeysTest</code> main.
-     */
-    public static void main(String[] args) throws Throwable {
-        junit.textui.TestRunner.run(suite());
-    }
 }

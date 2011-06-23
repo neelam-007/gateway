@@ -8,9 +8,10 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.io.IOException;
 import java.util.*;
@@ -21,7 +22,7 @@ import java.util.*;
  * Date: Jun 2, 2003
  * Time: 3:39:14 PM
  */
-public class SsgManagerTest extends TestCase {
+public class SsgManagerTest {
 
     private static final SsgManagerImpl sm = SsgManagerImpl.getSsgManagerImpl();
 
@@ -36,18 +37,10 @@ public class SsgManagerTest extends TestCase {
         SSG2.setTrustedGateway(SSG1);
     }
 
-    public SsgManagerTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(SsgManagerTest.class);
-    }
-
-    protected void tearDown() throws Exception {
+    @Before
+    public void tearDown() throws Exception {
         sm.clear();
         sm.save();
-        super.tearDown();
     }
 
     public void eraseAllSsgs() {
@@ -128,6 +121,7 @@ public class SsgManagerTest extends TestCase {
         }
     }
 
+    @Test
     public void testPersistence() throws Exception {
         eraseAllSsgs();
         assertTrue(sm.getSsgList().size() == 0);
@@ -236,10 +230,6 @@ public class SsgManagerTest extends TestCase {
 
         eraseAllSsgs();
         assertTrue(sm.getSsgList().size() == 0);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
     }
 }
 

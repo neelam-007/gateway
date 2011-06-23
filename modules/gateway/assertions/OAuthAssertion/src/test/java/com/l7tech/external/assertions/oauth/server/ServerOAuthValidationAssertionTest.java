@@ -3,9 +3,11 @@ package com.l7tech.external.assertions.oauth.server;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.util.HexUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.springframework.context.ApplicationContext;
 
 import javax.crypto.Cipher;
@@ -24,7 +26,7 @@ import java.net.URLDecoder;
 /**
  * Test the OAuthAssertion.
  */
-public class ServerOAuthValidationAssertionTest extends TestCase {
+public class ServerOAuthValidationAssertionTest {
 
     private static final Logger log = Logger.getLogger(ServerOAuthValidationAssertionTest.class.getName());
     private static ApplicationContext applicationContext;
@@ -35,8 +37,8 @@ public class ServerOAuthValidationAssertionTest extends TestCase {
     private PrivateKey privateKey;
     private SecureRandom rand;
 
-    @Override
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
 
         try {
             initKeypair();
@@ -51,19 +53,9 @@ public class ServerOAuthValidationAssertionTest extends TestCase {
         }
     }
 
-    public ServerOAuthValidationAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerOAuthValidationAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    public void xxtestKeyInitialized() throws Exception {
+    @Test
+    @Ignore("unknown")
+    public void testKeyInitialized() throws Exception {
 
         /*
         Requestor=ClientIdentifier&
@@ -126,7 +118,9 @@ public class ServerOAuthValidationAssertionTest extends TestCase {
         }
     }
 
-    public void xxtestSignHash() throws Exception {
+    @Test
+    @Ignore("unknown")
+    public void testSignHash() throws Exception {
 
         /*
         Requestor=ClientIdentifier&
@@ -193,7 +187,9 @@ public class ServerOAuthValidationAssertionTest extends TestCase {
         }
     }
 
-    public void xxtestTokenParse() throws Exception
+    @Test
+    @Ignore("unknown")
+    public void testTokenParse() throws Exception
     {
         final String testToken =
                 "Issuer=Erie&Audience=https%3a%2f%2fwww.erieinsurance.com%2fServices%2fAuto%2fPolicy%2fSummary&ExpiresOn=12312010" +
@@ -223,7 +219,9 @@ public class ServerOAuthValidationAssertionTest extends TestCase {
         }
     }
 
-    public void xxoldtestErieSampleEncrypted() throws Exception {
+    @Test
+    @Ignore("unknown")
+    public void oldtestErieSampleEncrypted() throws Exception {
 
         final byte[] signBytes =
                 "Issuer=Erie&Audience=https%3a%2f%2fwww.erieinsurance.com%2ftesting%2fTest%2fResource%2f0&ExpiresOn=1277477796".getBytes();
@@ -277,7 +275,9 @@ public class ServerOAuthValidationAssertionTest extends TestCase {
     }
 
 
-    public void xxtestErieSampleEncrypted() throws Exception {
+    @Test
+    @Ignore("unknown")
+    public void testErieSampleEncrypted() throws Exception {
 
         /*
            Issuer=Erie&Audience=https%3a%2f%2fwww.erieinsurance.com%2ftesting%2fTest%2fResource%2f1&ExpiresOn=1277477798
@@ -321,7 +321,9 @@ public class ServerOAuthValidationAssertionTest extends TestCase {
 
     }
 
-    public void xxtestCrypto() throws Exception {
+    @Test
+    @Ignore("unknown")
+    public void testCrypto() throws Exception {
 
         try {
             final String dataStr = "KZqTNL7DVgtkFqg9BQaP/QH3LT2WuhNeuStF+Nkrd+8=";
@@ -380,6 +382,7 @@ public class ServerOAuthValidationAssertionTest extends TestCase {
             "iRrSWQuvX4a2ye66uor9FBXMaWejDHL77KhvR6sfscXLazhSbXef/xqSfNb7WEx0M7U8fiorbtg2xOoxuwr94/wLgB0Dj/BHkQflZkuJMvvC22S6H9aZf/alZI+lcQvcoanG6IwlDpv9UZNsixu0A3AUfrfZrVBbp+9+jcpoM4E="
     };
 
+    @Test
     public void testCryptoWithErieKeys() throws Exception {
 
         final byte[] signBytes =
@@ -397,6 +400,7 @@ public class ServerOAuthValidationAssertionTest extends TestCase {
         }
     }
 
+    @Test
     public void testDecryptErieToken() throws Exception {
 
         final String signData =
@@ -422,6 +426,7 @@ public class ServerOAuthValidationAssertionTest extends TestCase {
         }
     }
 
+    @Test
     public void testVerifySig() throws Exception {
 
         final String signData =

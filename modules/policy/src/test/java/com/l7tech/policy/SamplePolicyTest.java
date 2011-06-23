@@ -19,9 +19,9 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -33,29 +33,19 @@ import java.util.logging.Logger;
  * Date: Jun 25, 2003
  * Time: 10:33:00 AM
  */
-public class SamplePolicyTest extends TestCase {
+public class SamplePolicyTest {
     private static Logger log = Logger.getLogger(SamplePolicyTest.class.getName());
     long identityProvider = 111;
     String userAlice = "alice";
     String userBob = "bob";
 
-    public SamplePolicyTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(SamplePolicyTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSimple() {
         // Simplest possible policy.  No special requirements at all; unconditionally route to default ProtServ.
         Assertion simplestPolicy = new HttpRoutingAssertion();
     }
 
+    @Test
     public void testBasicAuth() {
         // Require HTTP Basic auth.
         Assertion basicAuthPolicy = new AllAssertion(Arrays.asList(new Assertion[]{
@@ -70,6 +60,7 @@ public class SamplePolicyTest extends TestCase {
         }));
     }
 
+    @Test
     public void testDigestAuth() {
         String userAlice = "alice";
         // Require HTTP Digest auth.  Allow Alice in, but nobody else.
@@ -85,6 +76,7 @@ public class SamplePolicyTest extends TestCase {
         }));
     }
 
+    @Test
     public void testBasicSslAuth() {
         // Require HTTP Basic auth and SSL for link-level confidentiality.  Allow Bob or Alice in.
         Assertion basicAuthPolicy = new AllAssertion(Arrays.asList(new Assertion[]{
@@ -105,6 +97,7 @@ public class SamplePolicyTest extends TestCase {
         }));
     }
 
+    @Test
     public void testDigestGroup() {
         String groupStaff = "staff";
         // Require HTTP Digest auth with group.  All staff get to use this service.
@@ -120,6 +113,7 @@ public class SamplePolicyTest extends TestCase {
         }));
     }
     
+    @Test
     public void testPerUserRouting() {
         // Require HTTP Digest auth.  Alice goes to service1, Bob goes to service2
         Assertion perUserRoutingPolicy = new AllAssertion(Arrays.asList(new Assertion[]{
@@ -160,6 +154,7 @@ public class SamplePolicyTest extends TestCase {
 
     }
 
+    @Test
     public void testCustomAssertion() throws Exception {
         CustomAssertionHolder customAssertion = new CustomAssertionHolder();
         OneBean oneBean = new OneBean();

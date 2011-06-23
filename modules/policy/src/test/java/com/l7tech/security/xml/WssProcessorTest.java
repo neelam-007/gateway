@@ -241,7 +241,7 @@ public class WssProcessorTest {
 
     @Test
     public void testSampleSignedSamlHolderOfKeyRequest() throws Exception {
-        SignedSamlTest sst = new SignedSamlTest("blah");
+        SignedSamlTest sst = new SignedSamlTest();
         sst.setUp();
         doTest(makeEttkTestDocument("sample signed SAML holder-of-key request",
                                     /*TestDocuments.SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST*/sst.getRequestSignedWithSamlToken(false, false, false, 1)));
@@ -249,7 +249,7 @@ public class WssProcessorTest {
 
     @Test
     public void testSignedSamlSenderVouchesRequest() throws Exception {
-        SignedSamlTest sst = new SignedSamlTest("blah");
+        SignedSamlTest sst = new SignedSamlTest();
         sst.setUp();
         doTest(makeEttkTestDocument("Signed SAML sender-vouches request",
                                     sst.getSignedRequestWithSenderVouchesToken()));

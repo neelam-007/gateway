@@ -9,9 +9,9 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import com.l7tech.common.TestDocuments;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.w3c.dom.Document;
 
 import java.util.HashMap;
@@ -21,12 +21,9 @@ import java.util.Map;
  * Tests the ServerRequestXpathAssertion class.
  * @author franco
  */
-public class RequestXpathAssertionTest extends TestCase {
+public class RequestXpathAssertionTest {
 
-    public RequestXpathAssertionTest(String name) throws Exception {
-        super(name);
-    }
-
+    @Test
     public void testOKExpression() throws Exception {
         for (int i = 0 ; i < passingXpaths.length; i++) {
             AssertionStatus ret = null;
@@ -40,6 +37,7 @@ public class RequestXpathAssertionTest extends TestCase {
         }
     }
 
+    @Test
     public void testBadExpression() throws Exception {
         for (int i = 0 ; i < failingXpaths.length; i++) {
             AssertionStatus ret = null;
@@ -53,6 +51,7 @@ public class RequestXpathAssertionTest extends TestCase {
     private AssertionStatus getResultForXPath(String expression) throws Exception {
         ServerRequestXpathAssertion serverAssertion = getAssertion(new XpathExpression(expression, namespaces));
         Message m = new Message();
+        Document testDoc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         m.initialize(testDoc);
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(m, new Message(), false);
@@ -63,23 +62,6 @@ public class RequestXpathAssertionTest extends TestCase {
         RequestXpathAssertion assertion = new RequestXpathAssertion(expression);
         return new ServerRequestXpathAssertion(assertion, ApplicationContexts.getTestApplicationContext());
     }
-
-    /**
-     * create the <code>TestSuite</code> for the
-     * RequestXpathAssertionTest <code>TestCase</code>
-     */
-    public static Test suite() {
-
-        TestSuite suite = new TestSuite(RequestXpathAssertionTest.class);
-        return suite;
-    }
-
-    public static void main(String[] args) throws
-      Throwable {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    private Document testDoc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
 
     private String[] passingXpaths =
     {

@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.lang.reflect.Method;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.After;
@@ -20,7 +20,7 @@ import org.junit.After;
  * Date: Jul 28, 2008
  * Time: 1:56:03 PM
  */
-public class GroupCacheTest extends TestCase {
+public class GroupCacheTest {
 
     private static final String USER_NAME = "admin";
     private static final String PASSWORD = "password";

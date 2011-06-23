@@ -26,9 +26,10 @@ import com.l7tech.server.service.PolicyAliasManagerStub;
 import com.l7tech.server.service.ServiceAliasManagerStub;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerStub;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.aopalliance.intercept.MethodInvocation;
 
 import javax.security.auth.Subject;
@@ -42,7 +43,7 @@ import java.util.Collections;
 import java.util.List;
 
 /** @author alex */
-public class RbacFolderTest extends TestCase {
+public class RbacFolderTest {
     private final PolicyManager policyManager = new PolicyManagerStub();
     private final FolderManager folderManager = new FolderManagerStub();
     private final PolicyAliasManagerStub policyAliasManager = new PolicyAliasManagerStub();
@@ -66,14 +67,6 @@ public class RbacFolderTest extends TestCase {
     private PolicyAlias aliasToAPolicy;
     private PolicyAlias aliasToBPolicy;
     private PublishedService aService;
-
-    public RbacFolderTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(RbacFolderTest.class);
-    }
 
     private static class GenericMethodInvocation<RT> implements MethodInvocation {
         private final Object thiss;
@@ -132,8 +125,8 @@ public class RbacFolderTest extends TestCase {
      *       \_ alias(aPolicy)
      * </pre>
      */
-    @Override
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         final SecureMeImpl that = new SecureMeImpl();
 
         findAllPolicies = new GenericMethodInvocation<Collection<PolicyHeader>>(that, "findAllPolicies");
@@ -178,10 +171,6 @@ public class RbacFolderTest extends TestCase {
         interceptor = new SecuredMethodInterceptor(rbacServices, entityFinder);
     }
 
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
     private static interface SecureMe {
         Collection<PolicyHeader> findAllPolicies() throws FindException;
         Collection<Folder> findAllFolders() throws FindException;
@@ -209,6 +198,7 @@ public class RbacFolderTest extends TestCase {
         }
     }
 
+    @Test
     public void testFilteredRead() throws Throwable {
         canReadSpecific(jimbo, EntityType.POLICY, aPolicy.getOid());
         assertTrue(rbacServices.isPermittedForEntity(jimbo, aPolicy, OperationType.READ, null));
@@ -222,6 +212,7 @@ public class RbacFolderTest extends TestCase {
         assertEquals("aPolicy GUID", aPolicy.getGuid(), got.getGuid());
     }
 
+    @Test
     public void testReadAll() throws Throwable {
         canReadAnyPolicy(jimbo);
         assertTrue(rbacServices.isPermittedForEntity(jimbo, aPolicy, OperationType.READ, null));
@@ -232,6 +223,7 @@ public class RbacFolderTest extends TestCase {
         assertEquals("Number of policies read", 2, policies.size());
     }
 
+    @Test
     public void testFolderNonTransitiveNonRoot() throws Throwable {
         canReadStuffInFolder(jimbo, folder1, false, EntityType.POLICY_ALIAS, EntityType.POLICY);
         assertTrue(rbacServices.isPermittedForEntity(jimbo, aPolicy, OperationType.READ, null));
@@ -244,6 +236,7 @@ public class RbacFolderTest extends TestCase {
         assertEquals("Number of things read", 2, all.size());
     }
 
+    @Test
     public void testFolderNonTransitiveRoot() throws Throwable {
         canReadStuffInFolder(jimbo, rootFolder, false, EntityType.ANY);
         assertTrue(rbacServices.isPermittedForEntity(jimbo, aService, OperationType.READ, null));
@@ -253,6 +246,7 @@ public class RbacFolderTest extends TestCase {
         assertEquals("Number of things read", 1, all.size());
     }
 
+    @Test
     public void testTransitiveFolderPredicate() throws Throwable {
         canReadStuffInFolder(jimbo, rootFolder, true, EntityType.POLICY_ALIAS, EntityType.POLICY);
         assertTrue("Can read APolicy", rbacServices.isPermittedForEntity(jimbo, aPolicy, OperationType.READ, null));
@@ -267,6 +261,7 @@ public class RbacFolderTest extends TestCase {
         assertEquals("Number of things read", 4, all.size());
     }
 
+    @Test
     public void testFolderAncestry() throws Throwable {
         Role role = new Role();
         role.addAssignedUser(jimbo);
@@ -291,6 +286,7 @@ public class RbacFolderTest extends TestCase {
         assertFalse("Shouldn't find folder2", folders.contains(folder2));
     }
 
+    @Test
     public void testBug6230MultiplePermissions() throws Exception {
         canReadSpecific(jimbo, EntityType.POLICY, aPolicy.getOid(), bPolicy.getOid());
         assertTrue("Can read A policy", rbacServices.isPermittedForEntity(jimbo, aPolicy, OperationType.READ, null));

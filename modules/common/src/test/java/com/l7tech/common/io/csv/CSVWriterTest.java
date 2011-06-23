@@ -3,9 +3,9 @@
  */
 package com.l7tech.common.io.csv;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * Tests {@link CSVWriter} and round trip of {@link CSVWriter} + {@link CSVReader}.
  */
-public class CSVWriterTest extends TestCase {
+public class CSVWriterTest {
 
     private static final String ALL_CHARS;
     static {
@@ -27,14 +27,7 @@ public class CSVWriterTest extends TestCase {
         ALL_CHARS = tmp.toString();
     }
 
-    public static Test suite() {
-        return new TestSuite(CSVWriterTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSingleRecord() throws IOException {
         for (String eor : new String[]{"\n", "\r\n"}) {
             final CSVPreference p = new CSVPreference('"', ',', eor);
@@ -86,6 +79,7 @@ public class CSVWriterTest extends TestCase {
         assertEquals(message + " [readRecord]", input, output);
     }
 
+    @Test
     public void testMultiRecord() throws IOException {
         for (String eor : new String[]{"\n", "\r\n"}) {
             final CSVPreference p = new CSVPreference('"', ',', eor);
@@ -144,6 +138,7 @@ public class CSVWriterTest extends TestCase {
     /**
      * Tests 4-dimensional data.
      */
+    @Test
     public void test4D() throws IOException {
         final CSVPreference PREF[] = new CSVPreference[]{
             new CSVPreference('"' , ',', "\n"),     // 1st level CSV control characters

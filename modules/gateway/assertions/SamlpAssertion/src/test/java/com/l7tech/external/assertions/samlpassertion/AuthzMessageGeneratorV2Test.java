@@ -6,6 +6,9 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.audit.Auditor;
 import saml.v2.protocol.AuthzDecisionQueryType;
 
+import static org.junit.Assert.*;
+import org.junit.Test;
+
 import javax.xml.bind.JAXBElement;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -17,6 +20,7 @@ import java.util.HashMap;
 public class AuthzMessageGeneratorV2Test extends SamlpMessageGeneratorTestCase<AuthzDecisionQueryType> {
 
 
+    @Test
     public void testCreateEmptyAuthzRequest() {
 
         try {

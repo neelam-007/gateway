@@ -12,9 +12,10 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -27,35 +28,25 @@ import java.util.logging.Logger;
  * Test the StripPartsAssertion.
  * @noinspection SingleCharacterStringConcatenation
  */
-public class ServerStripPartsAssertionTest extends TestCase {
+public class ServerStripPartsAssertionTest {
 
     private static final Logger log = Logger.getLogger(ServerStripPartsAssertionTest.class.getName());
     private ApplicationContext applicationContext;
 
-    public ServerStripPartsAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerStripPartsAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         applicationContext = new ClassPathXmlApplicationContext(new String[]{
                 "com/l7tech/external/assertions/stripparts/server/stripPartsApplicationContext.xml"
         });
     }
 
+    @Test
     public void testMetadata() throws Exception {
         assertEquals(new StripPartsAssertion().meta().get(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME),
                      StripPartsPropertiesDialog.class.getName());
     }
 
+    @Test
     public void testMultipart() throws Exception {
         Message request = new Message(new ByteArrayStashManager(),
                                       ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE),
@@ -66,6 +57,7 @@ public class ServerStripPartsAssertionTest extends TestCase {
         assertIsMultipart(context.getRequest());
     }
 
+    @Test
     public void testStripRequest() throws Exception {
         StripPartsAssertion ass = new StripPartsAssertion();
         ass.setActOnRequest(true);
@@ -86,6 +78,7 @@ public class ServerStripPartsAssertionTest extends TestCase {
         log.info("Stripped message: " + new String( IOUtils.slurpStream(mess.getMimeKnob().getEntireMessageBodyAsInputStream())));
     }
 
+    @Test
     public void testStripResponse() throws Exception {
         StripPartsAssertion ass = new StripPartsAssertion();
         ass.setActOnRequest(false);

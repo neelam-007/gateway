@@ -7,9 +7,9 @@
 package com.l7tech.server.util;
 
 import com.l7tech.util.UptimeMetrics;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.util.logging.Logger;
 
@@ -20,20 +20,8 @@ import java.util.logging.Logger;
  * Date: Sep 16, 2003
  * Time: 5:56:19 PM
  */
-public class UptimeMonitorTest extends TestCase {
+public class UptimeMonitorTest {
     private static Logger log = Logger.getLogger(UptimeMonitorTest.class.getName());
-
-    public UptimeMonitorTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(UptimeMonitorTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     private static void logUptimeMetrics( UptimeMetrics um) {
         log.info("Raw    : " + um);
@@ -42,6 +30,7 @@ public class UptimeMonitorTest extends TestCase {
           "load: " + um.getLoad1() + ", " + um.getLoad2() + ", " + um.getLoad3());
     }
 
+    @Test
     public void testUptimeMetrics() {
         long time = System.currentTimeMillis();
         UptimeMetrics um = new UptimeMetrics(" 11:22:20  up 28 days, 18:57,  1 user,  load average: 1.43, 8.33, 0.12\n", time);
@@ -90,6 +79,7 @@ public class UptimeMonitorTest extends TestCase {
         assertTrue(um.getLoad3() > 0.42 && um.getLoad3() < 0.44);
     }
 
+    @Test
     public void testUptime() throws Exception {
         if (System.getProperty("os.name").contains("Windows"))
             return;

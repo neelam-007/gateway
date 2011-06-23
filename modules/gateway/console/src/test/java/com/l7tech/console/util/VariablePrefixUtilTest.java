@@ -1,11 +1,13 @@
 package com.l7tech.console.util;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
  * Tests for VariablePrefixUtil
  */
-public class VariablePrefixUtilTest extends TestCase {
+public class VariablePrefixUtilTest {
+    @Test
     public void testHasValidDollarCurlyOpenStart() {
 
         // invalid
@@ -33,6 +35,7 @@ public class VariablePrefixUtilTest extends TestCase {
         assertTrue(VariablePrefixUtil.hasValidDollarCurlyOpenStart("${variable88Name}"));
     }
 
+    @Test
     public void testHasValidCurlyCloseEnd() {
 
         // invalid
@@ -55,6 +58,7 @@ public class VariablePrefixUtilTest extends TestCase {
         assertTrue(VariablePrefixUtil.hasValidCurlyCloseEnd(" ${ variableName }  "));
     }
 
+    @Test
     public void testHasDollarOrCurlyOpen() {
 
         // false

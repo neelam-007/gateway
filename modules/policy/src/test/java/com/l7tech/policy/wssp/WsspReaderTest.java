@@ -9,9 +9,9 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.wsp.WspWriter;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.apache.ws.policy.Policy;
 import org.apache.ws.policy.util.PolicyFactory;
 import org.apache.ws.policy.util.PolicyWriter;
@@ -27,20 +27,8 @@ import java.util.logging.Logger;
 /**
  * Test for WsspReader class, which converts WS-SecurityPolicy files into Layer 7 format.
  */
-public class WsspReaderTest extends TestCase {
+public class WsspReaderTest {
     private static Logger log = Logger.getLogger(WsspReaderTest.class.getName());
-
-    public WsspReaderTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(WsspReaderTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     static void displayWispyPolicy(Policy blat, PrintStream out) throws IOException, SAXException {
         if (blat == null) {
@@ -54,21 +42,25 @@ public class WsspReaderTest extends TestCase {
         XmlUtil.nodeToFormattedOutputStream(d, out);
     }
 
+    @Test
     public void testGenerateSsbPolicyT1() throws Exception {
         final String bindingName = "T1Binding";
         testBinding(bindingName);
     }
 
+    @Test
     public void testGenerateSsbPolicyT3() throws Exception {
         final String bindingName = "T3Binding";
         testBinding(bindingName);
     }
 
+    @Test
     public void testGenerateSsbPolicyA11() throws Exception {
         final String bindingName = "A11Binding";
         testBinding(bindingName);
     }
 
+    @Test
     public void testGenerateSsbPolicyA12() throws Exception {
         final String bindingName = "A12Binding";
         testBinding(bindingName);

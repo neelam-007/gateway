@@ -6,6 +6,9 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.audit.Auditor;
 import saml.v2.protocol.AuthnRequestType;
 
+import static org.junit.Assert.*;
+import org.junit.Test;
+
 import javax.xml.bind.JAXBElement;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -21,6 +24,7 @@ public class AuthnMessageGeneratorV2Test extends SamlpMessageGeneratorTestCase<A
                     "    <L7p:AuthenticationMethods stringArrayValue=\"included\"/>\n" +
                     "</L7p:AuthenticationStatement>";
 
+    @Test
     public void testCreateEmptyAuthzRequest() {
 
         try {

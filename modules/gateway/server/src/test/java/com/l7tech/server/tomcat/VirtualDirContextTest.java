@@ -2,9 +2,9 @@ package com.l7tech.server.tomcat;
 
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.IOUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.apache.naming.resources.FileDirContext;
 import org.apache.naming.resources.Resource;
 import org.apache.naming.resources.ResourceAttributes;
@@ -20,25 +20,13 @@ import java.util.logging.Logger;
 /**
  *
  */
-public class VirtualDirContextTest extends TestCase {
+public class VirtualDirContextTest {
     private static final Logger log = Logger.getLogger(VirtualDirContextTest.class.getName());
     private static final String TEST_DIR = "_VirtualDirContextTest_";
     private static final String FILE_CONTENT_WEBXML = "<webxml>this is a web.xml file</webxml>";
     private static final String FILE_CONTENT_INDEXHTML = "<html><head><title>This is index.html</title></head><body></body></html>";
     private static final String FILE_CONTENT_BLAHHTML = "<html><head><title>This is blah.html</title></head><body></body></html>";
     private static final String FILE_CONTENT_FOOJAR = "this is a jarfile";
-
-    public VirtualDirContextTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(VirtualDirContextTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     private void createFile(File file, String contents) throws IOException {
         OutputStream os = null;
@@ -342,17 +330,20 @@ public class VirtualDirContextTest extends TestCase {
         assertFileContains(ssg, "blah.html", FILE_CONTENT_BLAHHTML);
     }
 
+    @Test
     public void testRealFilesystem() throws Exception {
         DirContext testdc = makeTestRealFilesystem();
         checkFilesystem(testdc);
     }
 
+    @Test
     public void testVirtualFilesystem() throws Exception {
         DirContext root = makeTestVirtualFilesystem();
         assertTrue(root.getNameInNamespace().equals(""));
         checkFilesystem(root);
     }
 
+    @Test
     public void testHybridFilesystem() throws Exception {
         DirContext root = makeTestHybridFilesystem();
         checkFilesystem(root);

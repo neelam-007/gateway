@@ -1,8 +1,8 @@
 package com.l7tech.xml.soap;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -20,24 +20,20 @@ import com.l7tech.common.io.XmlUtil;
  * Date: Sep 8, 2004<br/>
  * $Id$<br/>
  */
-public class SoapFaultUtilsTest extends TestCase {
-    public static Test suite() {
-        return new TestSuite(SoapFaultUtilsTest.class);
-    }
+public class SoapFaultUtilsTest {
 
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testNormalFault() throws Exception {
         Document parsedBack = tryThis("SpaceCrocodile", "Leakage detected in space suit", "Dont forget to floss", "John");
     }
 
+    @Test
     public void testSpecialCharacters() throws Exception {
         Document parsedBack = tryThis("<fault>", "![string]?", "\"details\"", ">actor=");
         parsedBack = tryThis("<fault>", "![string]?", "<>blah", ">actor=");
     }
 
+    @Test
     public void testEmptyStuff() throws Exception {
         Document parsedBack = tryThis("Le Code", "La String", "", null);
     }

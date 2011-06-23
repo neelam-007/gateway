@@ -1,9 +1,9 @@
 package com.l7tech.server.log.syslog;
 
 import com.l7tech.util.ResourceUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
@@ -29,26 +29,15 @@ import java.util.regex.Pattern;
  *
  * @author Steve Jones
  */
-public class SyslogManagerTest extends TestCase {
+public class SyslogManagerTest {
 
     public static final String REGEX_STANDARD = "<([1-9][0-9]{0,2})>([A-Za-z]{3} [ 1-9][0-9] [0-9]{2}:[0-9]{2}:[0-9]{2}) ([a-zA-Z\\-_0-9]{1,1024}) ([a-zA-Z0-9\\-_]{1,1024})\\[([0-9]{1,10})\\]: ([a-zA-Z0-9 ]{0,10000})[\\n]{0,1}";
     public static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public SyslogManagerTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(SyslogManagerTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
     /**
      * Full client/server test for message format
      */
+    @Test
     public void testSender() throws Exception {
         // create client
         System.out.println(DateFormat.getDateTimeInstance(DateFormat.MEDIUM,DateFormat.MEDIUM).format(new Date()));
@@ -87,6 +76,7 @@ public class SyslogManagerTest extends TestCase {
     /**
      * Full client/server test for message format
      */
+    @Test
     public void testSenderMessageTruncation() throws Exception {
         System.setProperty(SyslogManagerTest.class.getPackage().getName() + ".maxLength", "1");  // 1 is not valid, so this uses min length
 
@@ -131,6 +121,7 @@ public class SyslogManagerTest extends TestCase {
     /**
      * Test notification of connection and disconnection events.
      */
+    @Test
     public void testClientConnectionEvents() throws Exception {
         SyslogManager manager = new SyslogManager();
         VmPipeAddress[] addresses = new VmPipeAddress[] { new VmPipeAddress(1234) };
@@ -205,6 +196,7 @@ public class SyslogManagerTest extends TestCase {
     /**
      * Test client reconnection
      */
+    @Test
     public void testClientReconnection() throws Exception {
         SyslogManager manager = new SyslogManager();
         VmPipeAddress[] addresses = new VmPipeAddress[] { new VmPipeAddress(1234) };
@@ -298,6 +290,7 @@ public class SyslogManagerTest extends TestCase {
     /**
      * Test disconnection of out of use clients.
      */
+    @Test
     public void testClientDisconnect() throws Exception {
         SyslogManager manager = new SyslogManager();
         VmPipeAddress[] addresses = new VmPipeAddress[] { new VmPipeAddress(1234) };
@@ -357,6 +350,7 @@ public class SyslogManagerTest extends TestCase {
     /**
      * Test sharing of underlying transport by clients.
      */
+    @Test
     public void testClientsShareConnection() throws Exception {
         SyslogManager manager = new SyslogManager();
         VmPipeAddress[] addresses = new VmPipeAddress[] { new VmPipeAddress(1234) };

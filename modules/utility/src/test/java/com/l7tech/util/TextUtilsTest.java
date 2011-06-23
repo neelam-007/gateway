@@ -1,24 +1,17 @@
 package com.l7tech.util;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 /**
  * Tests for TextUtils
  *
  * @author Steve Jones
  */
-public class TextUtilsTest extends TestCase {
+public class TextUtilsTest {
 
-    public static void main(String[] args) throws Throwable {
-        junit.textui.TestRunner.run(suite());
-    }
-
-    public static Test suite() {
-        return new TestSuite(TextUtilsTest.class);
-    }
-
+    @Test
     public void testFullMatch() throws Exception {
         Object[][] pats = {
                 {"www*", "www.google.com", true},
@@ -46,6 +39,7 @@ public class TextUtilsTest extends TestCase {
         }
     }
 
+    @Test
     public void testStartsWithMatch() throws Exception {
         Object[][] pats = {
                 {"www*", "www.google.com", true},
@@ -74,6 +68,7 @@ public class TextUtilsTest extends TestCase {
         }
     }
 
+    @Test
     public void testCaseSensitiveMatch() throws Exception {
         Object[][] pats = {
                 {"!@#!#$%#^$&^&*)(&\\*){}?:\">DSFGWERHG", "!@#!#$%#^$&^&*)(&\\*){}?:\">DSFGWERHG", true},
@@ -103,6 +98,7 @@ public class TextUtilsTest extends TestCase {
         }
     }
 
+    @Test
     public void testTail() {
         String last1Line = "line 4";
         String last2Line = "line 3\r" + last1Line;
@@ -117,6 +113,7 @@ public class TextUtilsTest extends TestCase {
         assertEquals("Last 5 lines", last4Line, TextUtils.tail(text, 5));
     }
 
+    @Test
     public void testConvertLineBreaks() {
         final String CR = "\r";
         final String LF = "\n";
@@ -161,6 +158,7 @@ public class TextUtilsTest extends TestCase {
         assertEquals("mixed to CR-LF", "1\r\n2\r\n3\r\n4\r\n", TextUtils.convertLineBreaks(mixedWithTrailingCRLF, CRLF));
     }
     
+    @Test
     public void testGlobToRegexp() {
         assertEquals("", TextUtils.globToRegex(""));
         assertEquals("adze1290ADZE", TextUtils.globToRegex("adze1290ADZE"));
@@ -168,6 +166,7 @@ public class TextUtilsTest extends TestCase {
         assertEquals("snarf\\$gobble\\_blarf\\`22", TextUtils.globToRegex("snarf$gobble_blarf`22"));
     }
 
+    @Test
     public void testTruncateMiddleExact(){
 
         String s = "12345";
@@ -200,6 +199,7 @@ public class TextUtilsTest extends TestCase {
         assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
     }
 
+    @Test
     public void testTruncateEnd(){
 
         String s = "1234";
@@ -232,6 +232,7 @@ public class TextUtilsTest extends TestCase {
         assertTrue("Tructated string should equal: "+ expected+" it was: " + actual, expected.equals(actual));
     }
 
+    @Test
     public void testEnforceToBreakOnMultipleLines() {
         final int MAX_LEN = 5;
         final String testInput = "0123456789abcdef";
@@ -242,6 +243,7 @@ public class TextUtilsTest extends TestCase {
         assertEquals("Correctly enforce to break a string on multiple lines", expectedOutput, actualOutput);
     }
 
+    @Test
     public void testEscapeHtmlSpecialCharacters() {
         final String testInput = "abc&#1234;abc<br>abc/abc\"abc\'abc";
         final String expectedOutput = "abc&amp;#1234;abc&lt;br&gt;abc&#47;abc&quot;abc&#39;abc";
@@ -250,6 +252,7 @@ public class TextUtilsTest extends TestCase {
         assertEquals("Correctly escape HTML special characters", expectedOutput, actualOutput);
     }
 
+    @Test
     public void testMakeIgnorableCharactersViewableAsUnicode(){
         StringBuilder builder = new StringBuilder("Hello\u0000World");
         TextUtils.makeIgnorableCharactersViewableAsUnicode(builder);

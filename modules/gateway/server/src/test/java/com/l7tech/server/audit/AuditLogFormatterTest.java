@@ -11,7 +11,10 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import junit.framework.TestCase;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 
 import java.util.HashMap;
@@ -21,7 +24,7 @@ import java.util.logging.Level;
 /**
  * User: vchan
  */
-public class AuditLogFormatterTest extends TestCase {
+public class AuditLogFormatterTest {
 
     private ApplicationContext appCtx;
     private PolicyEnforcementContext pec;
@@ -41,7 +44,8 @@ public class AuditLogFormatterTest extends TestCase {
             "section 2. >{     }< >{x}< >{foo}< >{ww ww}< >{2 2}< >{2123xx}< >{x3x2s3}< >{x3x_2s3}< >{n98}< >${  }< " +
             "section 3. >{1.2 }< >{ 2.2}< >{ 3.3 }< >{1x2x2}< >{....123}< >{.2.a}< >{ .2.a}< >{.2.a }<";
 
-    protected void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
 
         if (appCtx == null) {
             appCtx = ApplicationContexts.getTestApplicationContext();
@@ -96,10 +100,7 @@ public class AuditLogFormatterTest extends TestCase {
         };
     }
 
-    protected void tearDown() throws Exception {
-        super.tearDown();
-    }
-
+    @Test
     public void testMessageSummaryAuditHeader() {
 
         final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_SERVICE_HEADER;
@@ -161,6 +162,7 @@ public class AuditLogFormatterTest extends TestCase {
         }
     }
 
+    @Test
     public void testMessageSummaryAuditFooter() {
 
         final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_SERVICE_FOOTER;
@@ -219,6 +221,7 @@ public class AuditLogFormatterTest extends TestCase {
         }
     }
 
+    @Test
     public void testAuditDetail() {
 
         final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_SERVICE_DETAIL;
@@ -281,6 +284,7 @@ public class AuditLogFormatterTest extends TestCase {
         }
     }
 
+    @Test
     public void testSystemAudit() {
 
         final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_OTHER;
@@ -333,6 +337,7 @@ public class AuditLogFormatterTest extends TestCase {
         }
     }
 
+    @Test
     public void testAdminAudit() {
 
         final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_OTHER;
@@ -385,6 +390,7 @@ public class AuditLogFormatterTest extends TestCase {
         }
     }
 
+    @Test
     public void testOtherAuditDetail() {
 
         final String TEST_PROP = ServerConfig.PARAM_AUDIT_LOG_FORMAT_OTHER_DETAIL;

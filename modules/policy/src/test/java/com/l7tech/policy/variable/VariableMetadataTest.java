@@ -3,30 +3,19 @@
  */
 package com.l7tech.policy.variable;
 
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.framework.Test;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 import java.util.logging.Logger;
 
 /**
  * @author alex
  */
-public class VariableMetadataTest extends TestCase {
+public class VariableMetadataTest {
     private static final Logger log = Logger.getLogger(VariableMetadataTest.class.getName());
 
-    public VariableMetadataTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(VariableMetadataTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testStuff() throws Exception {
         expectFail("$foo");
         expectFail("9foo");

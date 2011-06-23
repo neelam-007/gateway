@@ -29,7 +29,8 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
-import junit.framework.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -53,7 +54,7 @@ import java.util.logging.Logger;
 /**
  * @author mike
  */
-public class WssInteropTestMessage extends TestCase {
+public class WssInteropTestMessage {
     private static final Logger log = Logger.getLogger(WssInteropTestMessage.class.getName());
 
     private static final class MsgInfo {
@@ -217,6 +218,7 @@ public class WssInteropTestMessage extends TestCase {
         log.info("Response body:\n" + XmlUtil.nodeToFormattedString(responseDoc));
     }
 
+    @Test
     public void testSendTestMessage() throws Exception {
         //doSendTestMessage("http://131.107.72.15/wss11/ping", "Alice", "abcd!1234"); // Microsoft
         //doSendTestMessage("http://liberty.oracle.com:8446/webservice/webservice", "alice", "fiodi");   // Oracle

@@ -9,9 +9,9 @@ package com.l7tech.common.io;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,21 +21,10 @@ import java.util.logging.Logger;
 /**
  * Test for {@link HexUtils} facilities.
  */
-public class HexUtilsTest extends TestCase {
+public class HexUtilsTest {
     private static Logger log = Logger.getLogger(HexUtilsTest.class.getName());
 
-    public HexUtilsTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(HexUtilsTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testEncodeMd5Digest() throws Exception {
         byte[][] toDigest = {
             "484736327827227".getBytes(),
@@ -49,17 +38,20 @@ public class HexUtilsTest extends TestCase {
         assertTrue(result.equals("de615f787075c54bd19ba64da4128553"));
     }
 
+    @Test
     public void testHexDump() {
         assertTrue(HexUtils.hexDump(new byte[] { (byte)0xAB, (byte)0xCD }).equals("abcd"));
         assertTrue(HexUtils.hexDump(new byte[] { (byte)0xDE, (byte)0xAD, (byte)0xBE, (byte)0xEF }).equals("deadbeef"));
     }
 
+    @Test
     public void testUnhexDump() throws IOException {
         assertTrue(Arrays.equals( HexUtils.unHexDump( "abcd" ), new byte[] { (byte)0xAB, (byte)0xCD }));
         assertTrue(Arrays.equals( HexUtils.unHexDump( "deadbeef" ), new byte[] { (byte)0xDE, (byte)0xAD, (byte)0xBE, (byte)0xEF } ));
         assertTrue( HexUtils.hexDump( HexUtils.unHexDump( "de615f787075c54bd19ba64da4128553" )).equals("de615f787075c54bd19ba64da4128553"));
     }
     
+    @Test
     public void testBase64RoundTrip() throws Exception {
         byte[] data = new byte[4096];
         int index = 0;
@@ -74,6 +66,7 @@ public class HexUtilsTest extends TestCase {
         assertTrue(Arrays.equals( decoded, data ));
     }
 
+    @Test
     public void testSlurpStream() throws Exception {
         String teststring = "alsdkfhasdfhasdflskdfalksdflakflaksflasdlaksdflaksflaskdslkqpweofihqpwoef";
 
@@ -142,6 +135,7 @@ public class HexUtilsTest extends TestCase {
         }
     }
 
+    @Test
     public void testMatchSubarrayOrPrefix() throws Exception {
         byte[] nowisthetime = "Now is the time for all good men to get a latte at starbucks".getBytes();
         byte[] starbucksisgod = "starbucks is godly".getBytes();

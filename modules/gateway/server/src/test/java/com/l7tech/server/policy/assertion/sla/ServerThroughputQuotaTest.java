@@ -4,13 +4,13 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 /**
  * @author jbufu
  */
-public class ServerThroughputQuotaTest extends TestCase {
+public class ServerThroughputQuotaTest {
 
     @Test
     public void testCompatibilityBug5043Format() throws Exception {

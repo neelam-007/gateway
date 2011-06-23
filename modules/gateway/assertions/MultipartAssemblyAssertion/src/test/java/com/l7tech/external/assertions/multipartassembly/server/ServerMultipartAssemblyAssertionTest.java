@@ -7,9 +7,10 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -23,7 +24,7 @@ import java.util.List;
 /**
  * Test the MultipartAssemblyAssertion.
  */
-public class ServerMultipartAssemblyAssertionTest extends TestCase {
+public class ServerMultipartAssemblyAssertionTest {
     private ApplicationContext applicationContext;
     private ContentTypeHeader ctypeSoap;
     private ContentTypeHeader ctypeRuby;
@@ -32,20 +33,8 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
     private String partIdSoap;
     private String partIdRuby;
 
-    public ServerMultipartAssemblyAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerMultipartAssemblyAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Before
     public void setUp() throws Exception {
-        super.setUp();
         applicationContext = new ClassPathXmlApplicationContext(new String[]{
                 "com/l7tech/external/assertions/multipartassembly/server/multipartAssemblyApplicationContext.xml"
         });
@@ -64,6 +53,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
         partIdRuby = rubyPart.getContentId(true);
     }
 
+    @Test
     public void testMakeBodyInputStream() throws Exception {
         ContentTypeHeader multipartRelated = ServerMultipartAssemblyAssertion.makeMultipartRelated(partIdSoap);
         final ByteArrayStashManager sm = new ByteArrayStashManager();
@@ -92,6 +82,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
         assertEquals(part1.getContentId(true), partIdRuby);
     }
 
+    @Test
     public void testMultipartAssembly() throws Exception {
 
         MultipartAssemblyAssertion ass = new MultipartAssemblyAssertion();
@@ -144,6 +135,7 @@ public class ServerMultipartAssemblyAssertionTest extends TestCase {
         }
     }
     
+    @Test
     public void testAssemblyOfInputStreams() throws Exception {
 
         MultipartAssemblyAssertion ass = new MultipartAssemblyAssertion();

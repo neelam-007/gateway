@@ -3,9 +3,9 @@
  */
 package com.l7tech.common.io.csv;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -16,16 +16,9 @@ import java.util.List;
  * Tests {@link CSVReader}.
  * Round trip of {@link CSVWriter} + {@link CSVReader} is done in {@link CSVWriterTest}.
  */
-public class CSVReaderTest extends TestCase {
+public class CSVReaderTest {
 
-    public static Test suite() {
-        return new TestSuite(CSVReaderTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testSingleRecord() throws IOException {
         // Canonical CSV is already tested in round trip test of CSVWriterTest.testSingleRecord.
         // Here we'll test non-canonical CSV.
@@ -64,6 +57,7 @@ public class CSVReaderTest extends TestCase {
         assertEquals(message + " [readRecord]", expectedList, r.readRecord(true));
     }
 
+    @Test
     public void testSpecialCase() throws IOException {
         final CSVPreference p = new CSVPreference('"', ',', "\n");
         assertEquals("no record", null, CSVReader.decode(p, true, ""));
@@ -73,6 +67,7 @@ public class CSVReaderTest extends TestCase {
     /**
      * Tests the strict syntax option using sloppy csv.
      */
+    @Test
     public void testStrictSyntax() throws IOException {
         final CSVPreference p = new CSVPreference('"', ',', "\n");
         doStrictSyntax(p, "unexpected character after a quoted value", "\"A\"x", "A");
