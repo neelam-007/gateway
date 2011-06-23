@@ -351,10 +351,12 @@ class NcipherKeyStoreData implements Serializable {
         if (!written.isEmpty())
             throw new IOException("Not all files in the fileset could be renamed into place (permission problem?)");
 
-        Iterator<String> fit = deletedFilenames.iterator();
-        while (fit.hasNext() && deletedFilenames.size() > MAX_DELETED_FILENAMES_TO_TRACK) {
-            fit.next();
-            fit.remove();
+        if (deletedFilenames != null) {
+            Iterator<String> fit = deletedFilenames.iterator();
+            while (fit.hasNext() && deletedFilenames.size() > MAX_DELETED_FILENAMES_TO_TRACK) {
+                fit.next();
+                fit.remove();
+            }
         }
     }
 
