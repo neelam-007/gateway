@@ -1,9 +1,9 @@
 #!/bin/bash
 
 ############################################
-##        SSG VirualAppliance 5.4.1       ##
+##										  ##
 ##      Radius and/or LDAP integration    ##
-##           Date: 2011-04-13             ##
+##										  ##
 ############################################
 
 # Description:
@@ -11,11 +11,8 @@
 # use a Radius and/or LDAP server for SSH and console authentication.
 #
 # It should be run with one argument only: the configuration file (full_path/filename).
-# This configuration file is to be created by a Java interactive wizard gathering info
+# This configuration file is to be created by a Java interactive wizard used to gather info
 # from the user setting up the SSG appliance
-
-# TBD:
-# should we add a firewall rule to allow access to radius/ldap server?
 
 # The SSG Virtual Appliance 5.4.1 64bit system has the following packages already installed:
 # openldap-2.3.43-12.el5_6.7.x86_64.rpm
@@ -77,6 +74,7 @@ fi
 
 getCurrentConfigType () {
 # this is used to determine the current configuration type of the system
+# should we use authconfig --test here ?!
 
 if [ $(grep "ldap" $LDAP_NSS_FILE | wc -l) -eq 0 ] && [ $(grep "radius" $PAM_SSHD_CONF_FILE | wc -l) -eq 0 ]; then
 	# type is local
@@ -284,14 +282,23 @@ else
 	# SSHD will allow logins if radius server fails; also, the 'retry=2' and
 	# 'localifdown' option makes sure that after 2 retries the auth process
 	# will fall back to local authentication
-	sed -i "s/\(.*requisite.*$\)/auth\tsufficient\tpam_radius_auth.so conf=\/etc\/pam_radius.conf retry=2 localifdown\n\1/" $PAM_SSHD_CONF_FILE
-	if [ $? -ne 0 ]; then
-		toLog "    ERROR - Inserting the pam_radius module line in the $PAM_SSHD_CONF_FILE file failed! Exiting..."
-		exit 1
+	
+	# search for the requisite line (added by the hardenning script... but after) and if it's not there, add it
+	if [ $(grep "requisite" $PAM_SSHD_CONF_FILE | wc -l) -eq 1 ]; then
+		sed -i "s/\(.*requisite.*$\)/auth\tsufficient\tpam_radius_auth.so conf=\/etc\/pam_radius.conf retry=2 localifdown\n\1/" $PAM_SSHD_CONF_FILE
+		if [ $(grep "pam_radius.conf" $PAM_SSHD_CONF_FILE | wc -l) -ne 1 ]; then
+			toLog "    ERROR - Inserting the pam_radius module line in the $PAM_SSHD_CONF_FILE file failed! Exiting..."
+			exit 1
+		fi
 	else
-		toLog "    Success - Configuration of $PAM_SSHD_CONF_FILE completed."
-		RETVAL=0
+		sed -i "s/\(^#%PAM.*$\)/\1\nauth\tsufficient\tpam_radius_auth.so conf=\/etc\/pam_radius.conf retry=2 localifdown\nauth\trequisite\tpam_listfile.so item=user sense=allow file=\/etc\/ssh\/ssh_allowed_users onerr=succeed/" $PAM_SSHD_CONF_FILE
+		if [ $(grep "pam_radius.conf" $PAM_SSHD_CONF_FILE | wc -l) -ne 1 ]; then
+			toLog "    ERROR - Inserting the pam_radius module line in the $PAM_SSHD_CONF_FILE file failed! Exiting..."
+			exit 1
+		fi
 	fi
+	toLog "    Success - Configuration of $PAM_SSHD_CONF_FILE completed."
+	RETVAL=0
 fi
 
 
@@ -676,3 +683,43 @@ else
 fi
 
 # END of script
+
+
+
+# the authconfig way:
+
+1. To enable LDAP only:
+authconfig --enableshadow --enablemd5 --ldapserver=10.7.48.40 --ldapbasedn=dc=example,dc=com --updateall
+
+* the user home dir must be created manually
+
+
+2. To enable LDAP with TLS (LDAPS)
+authconfig --enableshadow --enablemd5 --ldapserver=10.7.48.40 --ldapbasedn=dc=example,dc=com --updateall???
+
+
+
+?. To revert back to local authentication
+
+
+
+
+# --enableldap          enable LDAP for user information by default
+# --enableldapauth      enable LDAP for authentication by default
+# --ldapserver=<server> default LDAP server
+# --ldapbasedn=<dn>     default LDAP base DN
+# --enableldaptls, --enableldapssl               enable use of TLS with LDAP
+# --ldaploadcacert=<URL>                        load CA certificate from the URL
+# --enablelocauthorize  local authorization is sufficient for local users
+# --enablepamaccess     check access.conf during account authorization
+# --disablesysnetauth   authenticate system accounts by local files only
+# --enablesysnetauth    authenticate system accounts by network services 
+# --enablemkhomedir     create home directories for users on their first login
+
+
+# --test                do not update the configuration files, only print new settings
+# --probe               probe network for defaults and print them
+# --updateall           update all configuration files
+
+
+
