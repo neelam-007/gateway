@@ -2,18 +2,21 @@ package com.l7tech.external.assertions.xmlsec.server;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.security.cert.TestCertificateGenerator;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.identity.cert.TestTrustedCertManager;
+import com.l7tech.server.identity.cert.TrustedCertCache;
 import com.l7tech.server.security.keystore.SsgKeyFinderStub;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManagerStub;
-import com.l7tech.server.identity.cert.TrustedCertCache;
 import com.l7tech.util.Pair;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.IOException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
@@ -51,7 +54,8 @@ public class NonSoapXmlSecurityTestUtils {
         try {
             KeyFactory.getInstance("EC");
         } catch (NoSuchAlgorithmException e) {
-            Security.addProvider(new BouncyCastleProvider());
+            System.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
+            JceProvider.init();
         }
     }
 

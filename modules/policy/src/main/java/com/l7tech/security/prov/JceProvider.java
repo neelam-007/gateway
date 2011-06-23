@@ -115,7 +115,6 @@ public abstract class JceProvider {
 
     // Default driver
     private static final String DEFAULT_ENGINE = RSA_ENGINE;
-    private static final String FALLBACK_DEFAULT_ENGINE = BC_ENGINE; // For running tests in modules that lack RSA
 
     private static class Holder {
         private static final String ENGINE_NAME = getEngineClassname();
@@ -148,14 +147,7 @@ public abstract class JceProvider {
                     logger.log(Level.SEVERE, "Attempting to fallback to default JceProvider engine: " + DEFAULT_ENGINE);
                     return (JceProvider) Class.forName(DEFAULT_ENGINE).getConstructors()[0].newInstance();
                 } catch (Throwable e) {
-                    if (FALLBACK_DEFAULT_ENGINE.equals(DEFAULT_ENGINE) || nofallback)
-                        throw new RuntimeException(e);
-                    try {
-                        logger.log(Level.SEVERE, "Attempting to fallback to emergency default JceProvider engine: " + FALLBACK_DEFAULT_ENGINE);
-                        return (JceProvider) Class.forName(FALLBACK_DEFAULT_ENGINE).getConstructors()[0].newInstance();
-                    } catch (Throwable t3) {
-                        throw new RuntimeException("Fallback to default JceProvider engine failed: " + ExceptionUtils.getMessage(e), e);
-                    }
+                    throw new RuntimeException(e);
                 }
             }
         }

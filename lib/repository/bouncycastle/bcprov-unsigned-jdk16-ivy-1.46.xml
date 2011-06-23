@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="bouncycastle"
+		module="bcprov-unsigned-jdk16"
+		revision="1.46"
+		status="release"
+		publication="20110622163231"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="bcprov-unsigned-jdk16" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

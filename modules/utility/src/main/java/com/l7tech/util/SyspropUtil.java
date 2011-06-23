@@ -5,6 +5,8 @@
 
 package com.l7tech.util;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -96,7 +98,7 @@ public class SyspropUtil {
         }
     }
 
-    public static String getString(String name, String dflt) {
+    public static String getString(String name, @Nullable String dflt) {
         try {
             return System.getProperty(name, dflt);
         } catch (AccessControlException e) {

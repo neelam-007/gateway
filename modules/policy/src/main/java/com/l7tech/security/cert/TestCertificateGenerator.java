@@ -7,7 +7,6 @@ import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jce.X509KeyUsage;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
@@ -336,13 +335,6 @@ public class TestCertificateGenerator {
         return (X509Certificate) CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(cert.getEncoded()));
     }
 
-    private static void storeAsBcPkcs12(X509Certificate[] chain, PrivateKey privateKey, char[] p12Pass, String p12Alias, OutputStream out) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException {
-        KeyStore ks = KeyStore.getInstance("PKCS12-DEF", new BouncyCastleProvider());
-        ks.load(null, p12Pass);
-        ks.setKeyEntry(p12Alias, privateKey, p12Pass, chain);
-        ks.store(out, p12Pass);
-    }
-
     private static Pair<X509Certificate[], PrivateKey> pkcs12ToSunChain(InputStream in, char[] p12Pass, String p12Alias) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException, IOException {
         KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(in, p12Pass);
@@ -380,7 +372,11 @@ public class TestCertificateGenerator {
     public static void saveAsPkcs12(X509Certificate[] certChain, PrivateKey privateKey, OutputStream out, String pkcs12Password)
             throws IOException, GeneralSecurityException
     {
-        storeAsBcPkcs12(certChain, privateKey, pkcs12Password.toCharArray(), "entry", out);
+        char[] p12Pass = pkcs12Password.toCharArray();
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(null, p12Pass);
+        ks.setKeyEntry("entry", privateKey, p12Pass, certChain);
+        ks.store(out, p12Pass);
     }
 
     public static void saveAsPkcs12(X509Certificate[] certChain, PrivateKey privateKey, String pathname, String pkcs12Password)

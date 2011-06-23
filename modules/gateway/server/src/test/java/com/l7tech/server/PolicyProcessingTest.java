@@ -1,30 +1,26 @@
 package com.l7tech.server;
 
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.GenericHttpHeaders;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.http.*;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.identity.UserBean;
 import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.MockGenericHttpClient;
-import com.l7tech.security.token.UsernamePasswordSecurityToken;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.SignatureConfirmation;
+import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextStubInt;
 import com.l7tech.server.audit.Auditor;
@@ -35,6 +31,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.server.service.ServiceCacheStub;
@@ -44,22 +41,23 @@ import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
-import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.GlobalTarariContext;
-import com.l7tech.test.BugNumber;
-import org.junit.*;
-import static org.junit.Assert.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.soap.SOAPConstants;
@@ -67,12 +65,14 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.net.PasswordAuthentication;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.PasswordAuthentication;
-import java.lang.reflect.Field;
-import java.lang.reflect.Constructor;
+
+import static org.junit.Assert.*;
 
 /**
  * Functional tests for message processing.
@@ -89,7 +89,7 @@ public class PolicyProcessingTest {
     private static InboundSecureConversationContextManager inboundSecureConversationContextManager = null;
 
     static {
-        System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
+        System.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
         JceProvider.init();
     }
 

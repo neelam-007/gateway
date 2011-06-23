@@ -7,6 +7,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.BuildRstrSoapResponse;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.processor.MockProcessorResult;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
@@ -15,39 +16,19 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SessionCreationException;
 import com.l7tech.server.secureconversation.StoredSecureConversationSessionManagerStub;
-import com.l7tech.util.Functions;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.ISO8601Date;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.MissingRequiredElementException;
-import com.l7tech.util.MockConfig;
-
-import static org.junit.Assert.*;
-
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
 import org.junit.Test;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -55,6 +36,11 @@ import java.util.logging.Logger;
 public class ServerBuildRstrSoapResponseTest {
 
     private static final Logger logger = Logger.getLogger( ServerBuildRstrSoapResponseTest.class.getName() );
+
+    static {
+        // Init jce provider early to use crypto-j from classpath for test purposes
+        JceProvider.init();
+    }
 
     private static final InboundSecureConversationContextManager contextManager = new InboundSecureConversationContextManager( new MockConfig( new Properties() ), new StoredSecureConversationSessionManagerStub() );
     private static final StaticListableBeanFactory beanFactory = new StaticListableBeanFactory();

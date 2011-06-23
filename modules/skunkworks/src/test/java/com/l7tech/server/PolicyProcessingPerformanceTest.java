@@ -4,6 +4,7 @@ import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpHeader;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -57,6 +58,11 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     private static SoapFaultManager soapFaultManager = null;
     private static TestingHttpClientFactory testingHttpClientFactory = null;
     private static InboundSecureConversationContextManager inboundSecureConversationContextManager = null;
+
+    static {
+        System.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
+        JceProvider.init();
+    }
 
     /**
      * Test services, data is:

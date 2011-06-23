@@ -41,6 +41,7 @@ class CryptoJWrapper {
     static final String CLASSNAME_CRYPTOJ = "com.rsa.jsafe.crypto.CryptoJ";
     static final String CLASSNAME_PROVIDER = "com.rsa.jsafe.provider.JsafeJCE";
 
+    @SuppressWarnings({"unchecked"})
     private static final Collection<Pair<String,String>> SERVICE_BLACKLIST = Collections.unmodifiableCollection(Arrays.asList(
             new Pair<String,String>( "CertificateFactory", "X.509" ),
             new Pair<String,String>( "KeyStore", "PKCS12" ),
@@ -58,7 +59,7 @@ class CryptoJWrapper {
 
     CryptoJWrapper(boolean fips) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchFieldException, MalformedURLException {
         String libPath = fips ? FIPS_LIB_PATH : NON_FIPS_LIB_PATH;
-        cl = libPath == null
+        cl = libPath == null || "USECLASSPATH".equals(libPath)
                 ? Thread.currentThread().getContextClassLoader()
                 : makeJarClassLoader(libPath);
         provider = (Provider)cl.loadClass(CLASSNAME_PROVIDER).newInstance();

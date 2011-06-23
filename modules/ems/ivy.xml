@@ -61,6 +61,9 @@
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
 
+        <!-- This needs the signed version of bouncy castle because it registers it as a provider. -->
+        <exclude org="bouncycastle" module="bcprov-unsigned-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
+
         <override org="antlr" module="antlr" matcher="exact" rev="2.7.7-l7p1"/>
 
         <conflict org="org.slf4j" module="slf4j-api" rev="1.6.1"/>

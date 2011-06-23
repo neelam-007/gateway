@@ -4,53 +4,55 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.token.UsernameTokenImpl;
 import com.l7tech.security.wstrust.TokenServiceClient;
-import com.l7tech.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.security.wstrust.WsTrustConfig;
+import com.l7tech.security.wstrust.WsTrustConfigFactory;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
-import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.BadSecurityContextException;
-import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.MockConfig;
-import com.l7tech.xml.WsTrustRequestType;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.saml.SamlAssertion;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.MockConfig;
+import com.l7tech.xml.WsTrustRequestType;
+import com.l7tech.xml.saml.SamlAssertion;
+import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import static org.junit.Assert.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.XMLConstants;
 import java.io.InputStream;
-import java.security.PrivateKey;
 import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Properties;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.*;
 
 /**
  * @author mike
@@ -61,6 +63,7 @@ public class TokenServiceTest {
 
     @BeforeClass
     public static void init() {
+        JceProvider.init(); // Init jce provider before overridden crypto-j lib paths are configured by serverconfig, so that it will just look for the crypto-j in the current classpath
         applicationContext = ApplicationContexts.getTestApplicationContext();
     }
 

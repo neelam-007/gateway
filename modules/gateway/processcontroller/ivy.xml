@@ -52,6 +52,9 @@
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
 
+        <!-- This needs the signed version of bouncy castle because it registers it as a provider. -->
+        <exclude org="bouncycastle" module="bcprov-unsigned-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
+
         <override org="org.mortbay.jetty" module="jetty" matcher="exact" rev="6.1.26"/>
 
         <conflict org="org.slf4j" module="slf4j-api" rev="1.6.1"/>

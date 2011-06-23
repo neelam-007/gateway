@@ -22,11 +22,14 @@
         <dependency name="layer7-gui" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core"/>
-        <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>
         <dependency org="com.rsa" name="jsafe-jce-fips" rev="4.1" force="true" conf="core"/>
 		<dependency org="commons-codec" name="commons-codec" rev="1.4" force="true" conf="core"/>
         <dependency org="commons-collections" name="commons-collections" rev="3.2.1" force="true" conf="core"/>
         <dependency org="commons-logging" name="commons-logging" rev="1.1.1" force="true" conf="core"/>
         <dependency org="com.whirlycott" name="whirlycache" rev="1.0.1" force="true" conf="core"/>
+        <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>
+
+        <!-- This needs the signed version of bouncy castle because it registers it as a provider. -->
+        <exclude org="bouncycastle" module="bcprov-unsigned-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
 	</dependencies>
 </ivy-module>

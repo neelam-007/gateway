@@ -1,11 +1,10 @@
 package com.l7tech.external.assertions.saml2attributequery.server;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.util.Charsets;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
-import org.junit.BeforeClass;
+import com.l7tech.util.HexUtils;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -19,10 +18,10 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.StringReader;
-import java.security.KeyPair;
-import java.security.Security;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.security.spec.PKCS8EncodedKeySpec;
 
 import static org.junit.Assert.assertEquals;
 
@@ -182,29 +181,20 @@ public class RequestSignerTest {
             "BBAA0bzHDYsjP31bO+IfqubLJ6W5RKbxOfsW+ceTTDcSm3DhT+LlfMVzN7VNOtuU\n" +
             "aa5AG6CdLDzMUo2avg==\n" +
             "-----END CERTIFICATE-----";
-    private static final String PRIVATE_KEY_PEM = "-----BEGIN RSA PRIVATE KEY-----\n" +
-            "MIICXAIBAAKBgQDXneKwtPfKz0koTJ6vUX+WvvmebruBcHEmNEtrT6YjTEgpkkEY\n" +
-            "y2YMLK4h6JZ2lFhVFFOoH2d2TgUpYHGe4X9bCmVzDf8MCy0f4KrOZsO31QuyZfvL\n" +
-            "nxzzyf4J5dJfIaglkogrumV8CQBviuCtY/uS9Dd+R9orAnuuLtmUXQ7UXQIDAQAB\n" +
-            "AoGARE2+102sxbGeskZ7anx916pN9zOK8LlHDtw4HBmSPtJWddzgBFPC0w6AZzuA\n" +
-            "FrZtuR4EVlkEdITIu8/SjotOxVoLmY8Z6vd5wkBDvj1s8uoOJkiWN2KmH+k1z7/w\n" +
-            "7hVfdsb0Bcfx9GgQwbU6F2nyXLKSz7L8yp5IHkhVnjn1ov0CQQD/N59bfrxTJeNp\n" +
-            "bkPk8+Lg365ZqdHla4RqJOOZUYnta4qVQyi10Pqzik51CXoFdUx6udmBtkgVq2Mk\n" +
-            "5t1XzXHbAkEA2Ecr8LRMGeBsEyKQ7enrbs0TozTJ7suuMh3epcUbtTj9myS4fajb\n" +
-            "6m2P5wwz8sSvmHWjOQhbSQOuVVPcy4Y0JwJAdBVnrWUi4ar9GipmRVBNJL14/x2H\n" +
-            "9BMIYoMu5sC4vL3KhgPLE4/fSCSjdQZ/ctYcmEHKVf6EIR8YdGNx0AsJOwJAJeos\n" +
-            "MNFaufqW16/qmlq0tELtW2IouF0ql4yW+JaaaeWox+bjFNxiWTGF1apU/Q0v/1k4\n" +
-            "GQp2/lDP4hOGlINdZwJBAKf2YDAX53Oe6p5JZnToUMU4F49J6iUgGf0QjWUWbENa\n" +
-            "2rnuYDWVLTxb9ZEu/Gv20KCjhpsi6OiVew3fQS2HqGA=\n" +
-            "-----END RSA PRIVATE KEY-----";
 
-    @BeforeClass
-    public static void initBc() {
-        BouncyCastleProvider bcprov = new BouncyCastleProvider();
-        if (Security.getProvider(bcprov.getName()) == null) {
-            Security.addProvider(bcprov);
-        }
-    }
+    private static final String PRIVATE_KEY_B64 =
+            "MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBANed4rC098rPSShMnq9Rf5a++Z5u\n" +
+            "u4FwcSY0S2tPpiNMSCmSQRjLZgwsriHolnaUWFUUU6gfZ3ZOBSlgcZ7hf1sKZXMN/wwLLR/gqs5m\n" +
+            "w7fVC7Jl+8ufHPPJ/gnl0l8hqCWSiCu6ZXwJAG+K4K1j+5L0N35H2isCe64u2ZRdDtRdAgMBAAEC\n" +
+            "gYBETb7XTazFsZ6yRntqfH3Xqk33M4rwuUcO3DgcGZI+0lZ13OAEU8LTDoBnO4AWtm25HgRWWQR0\n" +
+            "hMi7z9KOi07FWguZjxnq93nCQEO+PWzy6g4mSJY3YqYf6TXPv/DuFV92xvQFx/H0aBDBtToXafJc\n" +
+            "spLPsvzKnkgeSFWeOfWi/QJBAP83n1t+vFMl42luQ+Tz4uDfrlmp0eVrhGok45lRie1ripVDKLXQ\n" +
+            "+rOKTnUJegV1THq52YG2SBWrYyTm3VfNcdsCQQDYRyvwtEwZ4GwTIpDt6etuzROjNMnuy64yHd6l\n" +
+            "xRu1OP2bJLh9qNvqbY/nDDPyxK+YdaM5CFtJA65VU9zLhjQnAkB0FWetZSLhqv0aKmZFUE0kvXj/\n" +
+            "HYf0Ewhigy7mwLi8vcqGA8sTj99IJKN1Bn9y1hyYQcpV/oQhHxh0Y3HQCwk7AkAl6iww0Vq5+pbX\n" +
+            "r+qaWrS0Qu1bYii4XSqXjJb4lppp5ajH5uMU3GJZMYXVqlT9DS//WTgZCnb+UM/iE4aUg11nAkEA\n" +
+            "p/ZgMBfnc57qnklmdOhQxTgXj0nqJSAZ/RCNZRZsQ1raue5gNZUtPFv1kS78a/bQoKOGmyLo6JV7\n" +
+            "Dd9BLYeoYA==";
 
     @Test
     public void testSignSamlpRequest1() throws Exception {
@@ -217,12 +207,10 @@ public class RequestSignerTest {
         NodeList nodes = doc.getElementsByTagNameNS(SamlConstants.NS_SAML2, "Assertion");
         Element assertionElement = (Element)nodes.item(0);
 
-        PEMReader pemReader = new PEMReader(new StringReader(CERTIFICATE_PEM));
-        X509Certificate cert = (X509Certificate)pemReader.readObject();
-        pemReader = new PEMReader(new StringReader(PRIVATE_KEY_PEM));
-        KeyPair keyPair = (KeyPair)pemReader.readObject();
+        X509Certificate cert = CertUtils.decodeFromPEM(CERTIFICATE_PEM);
+        PrivateKey privateKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(HexUtils.decodeBase64(PRIVATE_KEY_B64)));
 
-        RequestSigner.signSamlpRequest(doc, assertionElement, keyPair.getPrivate(), new X509Certificate[] {cert}, KeyInfoInclusionType.STR_SKI);
+        RequestSigner.signSamlpRequest(doc, assertionElement, privateKey, new X509Certificate[] {cert}, KeyInfoInclusionType.STR_SKI);
 
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
@@ -243,12 +231,10 @@ public class RequestSignerTest {
         NodeList nodes = doc.getElementsByTagNameNS(SamlConstants.NS_SAML2, "Assertion");
         Element assertionElement = (Element)nodes.item(0);
 
-        PEMReader pemReader = new PEMReader(new StringReader(CERTIFICATE_PEM));
-        X509Certificate cert = (X509Certificate)pemReader.readObject();
-        pemReader = new PEMReader(new StringReader(PRIVATE_KEY_PEM));
-        KeyPair keyPair = (KeyPair)pemReader.readObject();
+        X509Certificate cert = CertUtils.decodeFromPEM(CERTIFICATE_PEM);
+        PrivateKey privateKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(HexUtils.decodeBase64(PRIVATE_KEY_B64)));
 
-        RequestSigner.signSamlpRequest(doc, assertionElement, keyPair.getPrivate(), new X509Certificate[] {cert}, KeyInfoInclusionType.CERT);
+        RequestSigner.signSamlpRequest(doc, assertionElement, privateKey, new X509Certificate[] {cert}, KeyInfoInclusionType.CERT);
 
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
@@ -271,12 +257,9 @@ public class RequestSignerTest {
         NodeList nodes = doc.getElementsByTagNameNS(SamlConstants.NS_SAML2, "Assertion");
         Element assertionElement = (Element)nodes.item(0);
 
-        PEMReader pemReader = new PEMReader(new StringReader(CERTIFICATE_PEM));
-        X509Certificate cert = (X509Certificate)pemReader.readObject();
-        pemReader = new PEMReader(new StringReader(PRIVATE_KEY_PEM));
-        KeyPair keyPair = (KeyPair)pemReader.readObject();
-
-        RequestSigner.signSamlpRequest(doc, assertionElement, keyPair.getPrivate(), new X509Certificate[] {cert}, KeyInfoInclusionType.STR_THUMBPRINT);
+        X509Certificate cert = CertUtils.decodeFromPEM(CERTIFICATE_PEM);
+        PrivateKey privateKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(HexUtils.decodeBase64(PRIVATE_KEY_B64)));
+        RequestSigner.signSamlpRequest(doc, assertionElement, privateKey, new X509Certificate[] {cert}, KeyInfoInclusionType.STR_THUMBPRINT);
 
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();

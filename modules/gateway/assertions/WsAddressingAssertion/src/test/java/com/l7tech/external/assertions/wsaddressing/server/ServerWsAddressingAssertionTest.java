@@ -10,6 +10,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
@@ -22,7 +23,6 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.MockConfig;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.soap.SoapUtil;
-import static org.junit.Assert.*;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -32,6 +32,9 @@ import javax.xml.namespace.QName;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Test the WsAddressingAssertion.
  */
@@ -40,6 +43,12 @@ public class ServerWsAddressingAssertionTest {
     private static final Logger logger = Logger.getLogger(ServerWsAddressingAssertionTest.class.getName());
     private static final String ADDRESSING_NAMESPACE = "http://www.w3.org/2005/08/addressing";
     private static final String ADDRESSING_NAMESPACE_200408 = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
+
+    static {
+        // init JCE early to use crypto-j in classpath
+        System.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
+        JceProvider.init();
+    }
 
     /**
      * Test find from SignedElements

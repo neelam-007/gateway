@@ -1,6 +1,7 @@
 package com.l7tech.skunkworks;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.UsernameTokenImpl;
 import com.l7tech.util.HexUtils;
 import com.l7tech.xml.soap.SoapUtil;
@@ -15,6 +16,10 @@ import java.util.logging.Logger;
 public class WssxInteropMessageGeneratorTest {
     private static final Logger log = Logger.getLogger(WssxInteropMessageGeneratorTest.class.getName());
 
+    static {
+        System.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
+        JceProvider.init();
+    }
 
     @Test
     public void test_2113_UsernameTokenRequest() throws Exception {

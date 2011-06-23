@@ -9,17 +9,20 @@ import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
+import java.io.File;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 /**
  * Test for TestCertificateGenerator, that also shows how to use it for creating test certificates for QA purposes.
@@ -56,12 +59,14 @@ public class TestCertificateGeneratorTest {
         X509Certificate cert3 = certAndKey.left;
         PrivateKey key3 = certAndKey.right;
 
+        String path = File.createTempFile("certkey", ".p12").getAbsolutePath();
+
         // Save a cert chain to disk along with its private key in a PKCS#12 file
         // Here we are saving a cert chain that just contains a single self-signed cert
-        TestCertificateGenerator.saveAsPkcs12(new X509Certificate[] { cert3 }, key3, "/tmp/Cert3AndKey3.p12", "7layer");
+        TestCertificateGenerator.saveAsPkcs12(new X509Certificate[] { cert3 }, key3, path, "7layer");
 
         // Load back the file we just saved
-        Pair<X509Certificate[], PrivateKey> loaded = TestCertificateGenerator.loadFromPkcs12("/tmp/Cert3AndKey3.p12", "7layer");
+        Pair<X509Certificate[], PrivateKey> loaded = TestCertificateGenerator.loadFromPkcs12(path, "7layer");
         assertTrue(CertUtils.certsAreEqual(loaded.left[0], cert3)); // Loaded cert matches the one we saved
         assertTrue(Arrays.equals(loaded.right.getEncoded(), key3.getEncoded())); // Loaded private key matches too
 

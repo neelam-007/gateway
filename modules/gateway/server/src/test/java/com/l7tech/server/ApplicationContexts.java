@@ -1,16 +1,10 @@
 /*
  * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
-<<<<<<< ApplicationContexts.java
-=======
- *
- * $Id$
->>>>>>> 1.5.14.1
  */
 package com.l7tech.server;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 /**
  * A bag of application contexts
