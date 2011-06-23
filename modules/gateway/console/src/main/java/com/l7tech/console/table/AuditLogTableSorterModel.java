@@ -46,6 +46,8 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
 
         NOT_YET_VALIDATED("pending", "not yet validated", null),
 
+        MANUAL_DOWNLOAD("manual download", "click to validate", MainWindow.RESOURCE_PATH + "/DigitalSignatureStateManualDownloaded16.png"),
+
         /** Has signature and is valid. */
         VALID("verified", "digital signature is verified", MainWindow.RESOURCE_PATH + "/DigitalSignatureStateValid16.png");
 
@@ -265,9 +267,12 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
                                         return;
                                     }
 
+                                    final AuditHeaderLogMessage auditHeader = auditHeaders.get(auditRecordId);
                                     if (digestsForRecords.containsKey(auditRecordId)) {
-                                        final AuditHeaderLogMessage auditHeader = auditHeaders.get(auditRecordId);
                                         auditHeader.setSignatureDigest(digestsForRecords.get(auditRecordId));
+                                    } else {
+                                        // audit record was skipped, possibly if message and audited message is too large.
+                                        auditHeader.setDigestWasSkipped(true);
                                     }
                                 }
                             }
@@ -496,7 +501,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
 
     private DigitalSignatureUIState getUISignatureState(LogMessage msg) {
         try {
-            return compareSignatureDigests( msg.getSignature(), msg.getSignatureDigest() );
+            return compareSignatureDigests(msg);
         } catch ( IOException e ) {
             logger.log(Level.WARNING, "could not serialize audit record", e);
             return DigitalSignatureUIState.INVALID;
@@ -889,8 +894,18 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         }
     }
 
-    private DigitalSignatureUIState compareSignatureDigests( String signatureToVerify, byte[] digestValue ) {
+    private DigitalSignatureUIState compareSignatureDigests( LogMessage msg ) throws IOException {
+        final String signatureToVerify = msg.getSignature();
+        final byte[] digestValue =  msg.getSignatureDigest();
+
         if (signatureToVerify != null && digestValue == null) {
+            if (msg instanceof AuditHeaderLogMessage) {
+                AuditHeaderLogMessage auditHeader = (AuditHeaderLogMessage) msg;
+                if (auditHeader.isDigestWasSkipped()) {
+                    return DigitalSignatureUIState.MANUAL_DOWNLOAD;
+                }
+            }
+
             return DigitalSignatureUIState.NOT_YET_VALIDATED;
         }
 

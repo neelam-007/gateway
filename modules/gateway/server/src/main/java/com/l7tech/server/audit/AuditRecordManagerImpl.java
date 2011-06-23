@@ -14,10 +14,7 @@ import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
-import org.hibernate.Criteria;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
-import org.hibernate.ScrollableResults;
+import org.hibernate.*;
 import org.hibernate.criterion.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -53,6 +50,15 @@ public class AuditRecordManagerImpl
     private static final String SQL_GET_MIN_OID = "SELECT MIN(objectid) FROM audit_main WHERE objectid > ?";
     private static final String SQL_INNODB_DATA = "SHOW VARIABLES LIKE 'innodb_data_file_path'";
     private static final String SQL_CURRENT_USAGE = "SHOW TABLE STATUS";
+
+    private static final String IDS_PARAMETER = "ids";
+    private static final String MAX_SIZE_PARAMETER = "maxSize";
+    /**
+     * Concrete class tables are outer joined and hibernate generates correct sql to safely reference message_audit only
+     * properties.
+     */
+    private static final String HQL_SELECT_AUDIT_RECORDS_SIZE_PROTECTED = "from AuditRecord where oid in (:"+IDS_PARAMETER+") and (requestXml is null or length(requestXml) < :"+MAX_SIZE_PARAMETER+") and (responseXml is null or length(responseXml) < :"+MAX_SIZE_PARAMETER+")";
+
     private ValidatedConfig validatedConfig;
 
     //- PUBLIC
@@ -79,8 +85,6 @@ public class AuditRecordManagerImpl
 
         Session session = null;
         try {
-            session = getSession();
-            final Criteria hibernateCriteria = session.createCriteria(interfaceClass);
 
             final int maxRecords = validatedConfig.getIntProperty(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
 
@@ -95,11 +99,17 @@ public class AuditRecordManagerImpl
                 logger.log(Level.INFO, "Number of audits to digest reduced to limit of " + maxRecords +" from " + auditRecordIds.size());
             }
 
-            hibernateCriteria.add(Restrictions.in("oid", auditRecordIds));
+            session = getSession();
+            // Note: this produces exactly the same set of queries as session.createCriteria(interfaceClass).scroll()
+            // This query must perform multiple queries to avoid cartesian product as there are several possible collections
+            // to fill in the audit record hierarchy.
+            final Query query = session.createQuery(HQL_SELECT_AUDIT_RECORDS_SIZE_PROTECTED);
+            query.setParameterList(IDS_PARAMETER, auditRecordIds);
+            final int maxMsgSize = validatedConfig.getIntProperty(ServerConfig.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 2621440);
+            query.setInteger(MAX_SIZE_PARAMETER, maxMsgSize);
 
-            //todo: filter out message audit records based on size. Add cluster property for filter value.
+            final ScrollableResults results = query.scroll();
 
-            final ScrollableResults results = hibernateCriteria.scroll();
             while (results.next()) {
                 AuditRecord record = (AuditRecord) results.get(0);
                 String sig = record.getSignature();
@@ -445,6 +455,9 @@ public class AuditRecordManagerImpl
         validatedConfig = new ValidatedConfig(serverConfig, logger);
         validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 100);
         validatedConfig.setMaximumValue(ServerConfig.PARAM_AUDIT_SIGN_MAX_VALIDATE, 1000);
+
+        validatedConfig.setMinimumValue(ServerConfig.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 1024); // 1KB
+        validatedConfig.setMaximumValue(ServerConfig.PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE, 20971520); // 20MB
     }
 
     @Override

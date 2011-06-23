@@ -111,6 +111,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
     public static final String CONFIG_AUDIT_SIGN_CLUSTER = "audit.signing";
     public static final String PARAM_AUDIT_SIGN_MAX_VALIDATE = "audit.validateSignature.maxrecords";
+    public static final String PARAM_AUDIT_SEARCH_MAX_MESSAGE_SIZE = "audit.search.maxMessageSize";
 
     public static final String PARAM_ANTIVIRUS_ENABLED = "savseEnable";
     public static final String PARAM_ANTIVIRUS_HOST = "savseHost";

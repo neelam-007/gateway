@@ -74,8 +74,21 @@ public class AuditHeaderLogMessage extends LogMessage {
         header.setSignatureDigest(signatureDigest);
     }
 
+    public boolean isDigestWasSkipped() {
+        return digestWasSkipped;
+    }
+
+    public void setDigestWasSkipped(boolean digestWasSkipped) {
+        this.digestWasSkipped = digestWasSkipped;
+    }
+
     //- PRIVATE
 
     private final AuditRecordHeader header;
+    /**
+     * Record whether the digest of this record was skipped possibly due to the related audit record
+     * containing an audited message which is too large to read as part of the validate signature query.
+     */
+    private boolean digestWasSkipped;
 
 }
