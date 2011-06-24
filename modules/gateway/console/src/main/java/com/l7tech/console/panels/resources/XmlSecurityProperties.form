@@ -3,7 +3,7 @@
   <grid id="24f2b" binding="mainPanel" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="5" left="10" bottom="0" right="10"/>
     <constraints>
-      <xy x="46" y="21" width="1142" height="1120"/>
+      <xy x="46" y="21" width="1142" height="1152"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -285,7 +285,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <grid id="9dec5" binding="encryptionAlgorithmsPanel" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="9dec5" binding="encryptionAlgorithmsPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -295,37 +295,53 @@
                 </properties>
                 <border type="none" title="Encryption Method"/>
                 <children>
-                  <component id="fa70b" class="javax.swing.JCheckBox" binding="aes128CheckBox">
+                  <grid id="95ee7" binding="encryptionCheckBoxesPanel" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>
-                    <properties>
-                      <text value="AES 128bit"/>
-                    </properties>
-                  </component>
-                  <component id="4640b" class="javax.swing.JCheckBox" binding="aes192CheckBox">
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="fa70b" class="javax.swing.JCheckBox" binding="aes128CheckBox">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="AES 128bit"/>
+                        </properties>
+                      </component>
+                      <component id="4640b" class="javax.swing.JCheckBox" binding="aes192CheckBox">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="AES 192bit"/>
+                        </properties>
+                      </component>
+                      <component id="2e110" class="javax.swing.JCheckBox" binding="aes256CheckBox">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="AES 256bit"/>
+                        </properties>
+                      </component>
+                      <component id="555b1" class="javax.swing.JCheckBox" binding="tripleDESCheckBox" default-binding="true">
+                        <constraints>
+                          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="Triple DES"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </grid>
+                  <component id="dea59" class="javax.swing.JComboBox" binding="encryptionMethodComboBox">
                     <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
-                    <properties>
-                      <text value="AES 192bit"/>
-                    </properties>
-                  </component>
-                  <component id="2e110" class="javax.swing.JCheckBox" binding="aes256CheckBox">
-                    <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="AES 256bit"/>
-                    </properties>
-                  </component>
-                  <component id="555b1" class="javax.swing.JCheckBox" binding="tripleDESCheckBox" default-binding="true">
-                    <constraints>
-                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <text value="Triple DES"/>
-                    </properties>
+                    <properties/>
                   </component>
                 </children>
               </grid>

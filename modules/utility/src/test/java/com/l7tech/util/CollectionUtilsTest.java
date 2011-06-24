@@ -9,13 +9,17 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.TreeMap;
 
 /**
  *
  */
+@SuppressWarnings({ "unchecked" })
 public class CollectionUtilsTest {
 
     @Test(expected= NoSuchElementException.class)
@@ -152,5 +156,29 @@ public class CollectionUtilsTest {
             }
         } );
         assertEquals( "List result (no nulls)", list( "1", "2" ), result3 );
+    }
+
+    @Test
+    public void testMapBuilder() {
+        final Map<String,String> map1 = CollectionUtils.<String,String>mapBuilder().put( "1", "a" ).map();
+        assertEquals( "map1 contents", Collections.singletonMap( "1", "a" ), map1 );
+        assertTrue( "map1 type", map1 instanceof HashMap );
+
+        final Map<String,String> map2 = CollectionUtils.<String,String>treeMapBuilder().put( "2", "b" ).map();
+        assertEquals( "map2 contents", Collections.singletonMap( "2", "b" ), map2 );
+        assertTrue( "map2 type", map2 instanceof TreeMap );
+
+        final Map<String,String> map3 = CollectionUtils.<String,String>mapBuilder().map();
+        assertEquals( "map3 contents", Collections.<String, String>emptyMap(), map3 );
+
+        final Map<String,String> map4 = CollectionUtils.<String,String>mapBuilder().put( "1", "a" ).put( "2", "b" ).put( "3", "c" ).map();
+        assertEquals( "map4 contents", new HashMap<String,String>(){{ put( "1", "a" ); put( "2", "b" ); put( "3", "c" ); }}, map4 );
+
+        try {
+            CollectionUtils.<String,String>mapBuilder().unmodifiableMap().put( "a", "1" );
+            fail( "Expected exception for modification of immutable map" );
+        } catch ( UnsupportedOperationException uoe ) {
+            // expected
+        }
     }
 }

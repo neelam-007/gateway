@@ -8,13 +8,13 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.CollectionUtils.MapBuilder;
 
 import javax.validation.groups.Default;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -253,25 +253,4 @@ class EntityPropertiesHelper {
             "certificate"
         ) ) )
         .unmodifiableMap();
-
-    private static final class MapBuilder<K,V> {
-        private final Map<K,V> map = new HashMap<K,V>();
-
-        public static <K,V> MapBuilder<K,V> builder() {
-            return new MapBuilder<K,V>();
-        }
-
-        public MapBuilder<K,V> put( K key, V value ) {
-            map.put( key, value );
-            return this;
-        }
-
-        public Map<K,V> map() {
-            return map;
-        }
-
-        public Map<K,V> unmodifiableMap() {
-            return Collections.unmodifiableMap( map );
-        }
-    }
 }

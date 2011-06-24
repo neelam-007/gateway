@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 public final class CollectionUtils {
@@ -158,5 +161,89 @@ public final class CollectionUtils {
                 };
             }
         };
+    }
+
+    /**
+     * Create a map builder for a HashMap.
+     *
+     * @param <K> The key type
+     * @param <V> The value type
+     * @return The map builder.
+     */
+    public static <K,V> MapBuilder<K,V> mapBuilder() {
+        return MapBuilder.builder();
+    }
+
+    /**
+     * Create a map builder for a TreeMap.
+     *
+     * @param <K> The key type
+     * @param <V> The value type
+     * @return The tree map builder.
+     */
+    public static <K,V> MapBuilder<K,V> treeMapBuilder() {
+        return new MapBuilder<K,V>( new TreeMap<K,V>() );
+    }
+
+    /**
+     * Builder for maps.
+     *
+     * <p>Supports construction of mutable and immutable maps.</p>
+     *
+     * @param <K> The key type
+     * @param <V> The value type
+     */
+    public static final class MapBuilder<K,V> {
+        private final Map<K,V> map;
+
+        private MapBuilder( final Map<K,V> map ){
+            this.map = map;
+        }
+
+        /**
+         * Create a map builder for a HashMap.
+         *
+         * @param <K> The key type
+         * @param <V> The value type
+         * @return The map builder
+         */
+        public static <K,V> MapBuilder<K,V> builder() {
+            return new MapBuilder<K,V>( new HashMap<K,V>() );
+        }
+
+        /**
+         * Add an entry to the map.
+         *
+         * <p>A duplicate key will overwrite an existing entry.</p>
+         *
+         * @param key The key to add
+         * @param value The value to add.
+         * @return This builder.
+         */
+        public MapBuilder<K,V> put( K key, V value ) {
+            map.put( key, value );
+            return this;
+        }
+
+        /**
+         * Construct the result map.
+         *
+         * @return The map.
+         */
+        public Map<K,V> map() {
+            return map;
+        }
+
+        /**
+         * Construct an immutable result map.
+         *
+         * <p>Currently the builder will permit modification of the
+         * underlying map.</p>
+         *
+         * @return The map.
+         */
+        public Map<K,V> unmodifiableMap() {
+            return Collections.unmodifiableMap( map );
+        }
     }
 }
