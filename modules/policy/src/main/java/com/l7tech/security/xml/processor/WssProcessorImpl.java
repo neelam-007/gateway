@@ -599,7 +599,7 @@ public class WssProcessorImpl implements WssProcessor {
      * Return a resolver that will find certs from already-seen X.509 tokens in this message by their wsu:Id.
      * @return a ContextualSecurityTokenResolver that will find certs from already-seen X.509 BSTs in this message processing context
      */
-    private ContextualSecurityTokenResolver contextual( final SecurityTokenResolver securityTokenResolver ) {
+    public ContextualSecurityTokenResolver contextual( final SecurityTokenResolver securityTokenResolver ) {
         return new ContextualSecurityTokenResolver.Support.DelegatingContextualSecurityTokenResolver(
                 securityTokenResolver == null ? new SimpleSecurityTokenResolver() : securityTokenResolver
         ) {

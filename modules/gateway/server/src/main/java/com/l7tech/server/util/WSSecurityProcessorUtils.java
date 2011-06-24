@@ -89,7 +89,7 @@ public class WSSecurityProcessorUtils {
 
             if ( hasSecurity ) {
                 final WssProcessorImpl impl = new WssProcessorImpl(msg);
-                impl.setSecurityTokenResolver(securityTokenResolver);
+                impl.setSecurityTokenResolver(impl.contextual(securityTokenResolver));
                 impl.setSecurityContextFinder(securityContextFinder != null ? securityContextFinder : buildContextualFinder(msg));
 
                 WssSettings settings = getWssSettings();
