@@ -452,9 +452,10 @@ public class HttpForwardingRuleEnforcer {
                                               final String[] varNames) {
         boolean passIncomingCookies = false;
         if (rules.isForwardAll()) {
+            final boolean logFine = logger.isLoggable(Level.FINE);
             for (HttpHeader h : sourceOfResponseHeaders.getHeadersArray()) {
                 if (!passThroughSpecialHeaders && headerShouldBeIgnored(h.getName())) {
-                    logger.fine("ignoring header " + h.getName() + " with value " + h.getFullValue());
+                    if (logFine) logger.fine("ignoring header " + h.getName() + " with value " + h.getFullValue());
                 } else if (HttpConstants.HEADER_SET_COOKIE.equals(h.getName())) {
                     // special cookie handling happens outside this loop (see below)
                 } else {
