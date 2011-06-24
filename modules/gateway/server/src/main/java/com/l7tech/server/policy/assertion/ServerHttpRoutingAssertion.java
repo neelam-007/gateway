@@ -3,10 +3,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.io.EmptyInputStream;
-import com.l7tech.common.io.IOExceptionThrowingInputStream;
-import com.l7tech.common.io.SSLSocketFactoryWrapper;
-import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.common.io.*;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
@@ -772,7 +769,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
             final String ctype = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_TYPE);
-            ContentTypeHeader outerContentType = ctype != null ? ContentTypeHeader.parseValue(ctype) : null;
+            ContentTypeHeader outerContentType = ctype != null ? ContentTypeHeader.create(ctype) : null;
             boolean passthroughSoapFault = false;
             if (assertion.isPassThroughSoapFaults() && status == HttpConstants.STATUS_SERVER_ERROR &&
                 context.getService() != null && context.getService().isSoap() &&
@@ -819,9 +816,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         String defaultContentType = serverConfig.getPropertyCached( "ioHttpDefaultContentType" );
         if ( defaultContentType != null ) {
             try {
-                contentTypeHeader = ContentTypeHeader.parseValue(defaultContentType);
+                contentTypeHeader = ContentTypeHeader.create(defaultContentType);
                 auditor.logAndAudit( AssertionMessages.HTTPROUTE_RESPONSE_DEFCONTENTTYPE);
-            } catch ( IOException ioe ) {
+            } catch ( UncheckedIOException ioe ) {
                 logger.log( Level.WARNING,
                         "Error processing default content type '"+ ExceptionUtils.getMessage( ioe )+"'.",
                         ExceptionUtils.getDebugException(ioe));
