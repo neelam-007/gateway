@@ -646,7 +646,7 @@ public class GenericUserPanel extends UserPanel {
     private void enableDisableComponents() {
         final boolean neverExpire = accountNeverExpiresCheckbox.isSelected();
         long now = System.currentTimeMillis();
-        boolean notExpired = expireTimeChooser.getDate().after(new Date(now));
+        boolean notExpired = expireTimeChooser.getDate() == null? false : expireTimeChooser.getDate().after(new Date(now));
         expireTimeChooser.setEnabled(!neverExpire);
         expireTimeChooser.getDateEditor().getUiComponent().setBackground(notExpired || neverExpire ? Color.WHITE : Color.RED);
         expiresLabel.setEnabled(neverExpire);
