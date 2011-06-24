@@ -487,7 +487,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             if ( displayValue == null ) displayValue = "";
 
             String prompt = "Enter new value.";
-            String regex = "^(?:.{1,1024})$";
+            String regex = "^(?:.{1,4096})$";
             switch ( valueType ) {
                 case HTTP_URL:
                     prompt = "Enter HTTP(S) URL.";
