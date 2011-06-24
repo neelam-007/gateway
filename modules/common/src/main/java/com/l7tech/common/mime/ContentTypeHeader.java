@@ -112,9 +112,14 @@ public class ContentTypeHeader extends MimeHeader {
      * This does a quick parse with little or no validation (unless strict validation is turned on globally).
      * The returned object will lazily parse parameters if asked to do so.
      *
+     * <p>WARNING: This method was originally intended for similar usage to
+     * URI.create, i.e. known good values. If using with values that may be
+     * invalid, the caller MUST handle the possible UncheckedIOException.</p>
+     *
      * @param contentTypeHeaderValue the header value to parse.  Must be non-null.
      * @return a ContentTypeHeader instance.  Never null, but may show "application/x-invalid-content-type" as the type and subtype
      * if the provided content type could not be parsed at least well enough to distinguish a type and subtype.
+     * @throws UncheckedIOException If validation is enabled and the header is not valid.
      */
     public static ContentTypeHeader create( final String contentTypeHeaderValue ) {
         if (contentTypeHeaderValue == null)
