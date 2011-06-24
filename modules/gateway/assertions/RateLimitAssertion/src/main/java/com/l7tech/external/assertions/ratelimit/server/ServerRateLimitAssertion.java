@@ -14,6 +14,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
 import org.springframework.context.ApplicationContext;
@@ -106,11 +107,11 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         this.serverConfig = context.getBean("serverConfig", ServerConfig.class);
         if (serverConfig == null) throw new PolicyAssertionException(rla, "Missing serverConfig bean");
 
-        this.windowSizeInSecondsFinder = makeBigIntFinder(assertion.getWindowSizeInSeconds(), auditor);
-        this.maxConcurrencyFinder = makeBigIntFinder(assertion.getMaxConcurrency(), auditor);
-        this.maxRequestsPerSecondFinder = makeBigIntFinder(assertion.getMaxRequestsPerSecond(), auditor);
+        this.windowSizeInSecondsFinder = makeBigIntFinder(assertion.getWindowSizeInSeconds(), "windowSizeInSeconds", auditor, 1);
+        this.maxConcurrencyFinder = makeBigIntFinder(assertion.getMaxConcurrency(), "maxConcurrency", auditor, 0);
+        this.maxRequestsPerSecondFinder = makeBigIntFinder(assertion.getMaxRequestsPerSecond(), "maxRequestsPerSecond", auditor, 0);
         final String blackout = assertion.getBlackoutPeriodInSeconds();
-        this.blackoutSecondsFinder = blackout == null ? null : makeBigIntFinder(blackout, auditor);
+        this.blackoutSecondsFinder = blackout == null ? null : makeBigIntFinder(blackout, "blackoutPeriodInSeconds", auditor, 1);
     }
 
     private static class ThreadToken {
@@ -533,14 +534,29 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         }
     }
 
-    private static BigIntFinder makeBigIntFinder(final String variableExpression, final Audit auditor) {
+    private static BigIntFinder makeBigIntFinder(final String variableExpression, final String fieldName, final Audit auditor, final long min) {
         final String[] varsUsed = Syntax.getReferencedNames(variableExpression);
         if (varsUsed.length > 0) {
             // Context variable
             return new BigIntFinder() {
                 @Override
                 public BigInteger call(PolicyEnforcementContext context) {
-                    return new BigInteger(ExpandVariables.process(variableExpression, context.getVariableMap(varsUsed, auditor), auditor));
+                    final String str = ExpandVariables.process(variableExpression, context.getVariableMap(varsUsed, auditor), auditor);
+
+                    final long longVal;
+                    try {
+                        longVal = Long.valueOf(str);
+                    } catch (NumberFormatException e) {
+                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Variable value for rate limit field " + fieldName + " is not a valid integer");
+                        throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
+                    }
+
+                    if (longVal < min) {
+                        auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Variable value for rate limit field " + fieldName + " is below minimum of " + min);
+                        throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
+                    }
+
+                    return BigInteger.valueOf(longVal);
                 }
             };
         } else {

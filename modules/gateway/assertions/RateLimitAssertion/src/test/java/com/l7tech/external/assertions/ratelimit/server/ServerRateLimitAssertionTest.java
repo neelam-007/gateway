@@ -5,11 +5,13 @@ import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.test.BugNumber;
@@ -23,6 +25,7 @@ import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +45,7 @@ import static junit.framework.Assert.*;
  */
 public class ServerRateLimitAssertionTest {
     static {
-        //System.setProperty("com.l7tech.external.server.ratelimit.logAtInfo", "true");
+        System.setProperty("com.l7tech.external.server.ratelimit.logAtInfo", "true");
     }
 
     private static final Logger log = Logger.getLogger(ServerRateLimitAssertionTest.class.getName());
@@ -131,6 +134,8 @@ public class ServerRateLimitAssertionTest {
         context.setVariable("five", "5");
         context.setVariable("ten", "10");
         context.setVariable("tenthousand", "10000");
+        context.setVariable("negone", "-1");
+        context.setVariable("junk", "asdfasdf");
         return context;
     }
 
@@ -340,6 +345,71 @@ public class ServerRateLimitAssertionTest {
     }
 
     @Test
+    public void testBadContextVariable_rate() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setHardLimit(false);
+        rla.setCounterName("testBadContextVariable_rate");
+        rla.setMaxRequestsPerSecond("${negone}");
+        ServerAssertion ass = makePolicy(rla);
+
+        clock.sync();
+        assertEquals(AssertionStatus.SERVER_ERROR, checkRequest(ass, makeContext()));
+    }
+
+    @Test
+    public void testBadContextVariable_rate_notlong() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setHardLimit(false);
+        rla.setCounterName("testBadContextVariable_rate_notlong");
+        rla.setMaxRequestsPerSecond("${junk}");
+        ServerAssertion ass = makePolicy(rla);
+
+        clock.sync();
+        assertEquals(AssertionStatus.SERVER_ERROR, checkRequest(ass, makeContext()));
+    }
+
+    @Test
+    public void testBadContextVariable_window() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setHardLimit(false);
+        rla.setCounterName("testBadContextVariable_window");
+        rla.setMaxRequestsPerSecond("1");
+        rla.setWindowSizeInSeconds("${negone}");
+        ServerAssertion ass = makePolicy(rla);
+
+        clock.sync();
+        assertEquals(AssertionStatus.SERVER_ERROR, checkRequest(ass, makeContext()));
+    }
+
+    @Test
+    public void testBadContextVariable_concurrency() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setHardLimit(false);
+        rla.setCounterName("testBadContextVariable_concurrency");
+        rla.setMaxRequestsPerSecond("1");
+        rla.setMaxConcurrency("${negone}");
+        ServerAssertion ass = makePolicy(rla);
+
+        clock.sync();
+        assertEquals(AssertionStatus.SERVER_ERROR, checkRequest(ass, makeContext()));
+    }
+
+    @Test
+    public void testBadContextVariable_blackout() throws Exception {
+        RateLimitAssertion rla = new RateLimitAssertion();
+        rla.setHardLimit(false);
+        rla.setCounterName("testBadContextVariable_blackout");
+        rla.setMaxRequestsPerSecond("1");
+        rla.setBlackoutPeriodInSeconds("${negone}");
+        ServerAssertion ass = makePolicy(rla);
+
+        clock.sync();
+        assertEquals(AssertionStatus.NONE, checkRequest(ass, makeContext()));
+        assertEquals(AssertionStatus.SERVER_ERROR, checkRequest(ass, makeContext()));
+    }
+
+
+    @Test
     public void testSimpleRateLimitWithBlackout() throws Exception {
         RateLimitAssertion rla = new RateLimitAssertion();
         rla.setHardLimit(false);
@@ -436,111 +506,6 @@ public class ServerRateLimitAssertionTest {
         }
         assertTrue("Success: " + desc, finished[0]);
     }
-
-//    /**
-//     * Test to show that the initial flow through the server assertions will generate an overflow for a value
-//     * over 93824.
-//     * @throws Exception
-//     */
-//    @Test
-//    public void testOverflow() throws Exception{
-//        long maxRate = 93825;
-//
-//        final long maxIdle = 3 * 1000L * 1000000L;
-//        final long rps = maxRate * 0x8000L;
-//        final long top = maxIdle * rps;
-//        final long newPoints = top / (1000L * 1000000L);
-//
-//        System.out.println("newPoints: " + newPoints); - this number is negative
-//
-//    }
-//
-
-//    /**
-//     * Same as above but with BigIntegers. The long value calculated is negative.
-//     * @throws Exception
-//     */
-//    @Test
-//    public void testOverflowBigInteger() throws Exception{
-//        long maxRate = 2621440;
-//
-//        final BigInteger maxIdle = new BigInteger(String.valueOf(3 * 1000L * 1000000L));
-//
-//        final BigInteger rps = maxIdle.multiply(new BigInteger(String.valueOf(maxRate * 0x8000L) ) );
-//        final BigInteger top = maxIdle.multiply(rps);
-//        final BigInteger newPoints = top.divide(new BigInteger(String.valueOf(1000L * 1000000L)));
-//
-//        System.out.println("newPoints: " + newPoints);
-//
-//        long l = newPoints.longValue();
-//        System.out.println("Long: " + l);
-//
-//    }
-
-    //Commented out the following 2 test cases as its no longer possible to supply a value larger than RateLimitAssertion.MAX_REQUESTS_PER_SECOND
-//    @Test
-//    public void testHighRateLimitNoSleepSingleThreadNanos() throws Exception {
-//        ServerRateLimitAssertion.useNanos = true;
-//
-//        RateLimitAssertion rla = new RateLimitAssertion();
-//        rla.setCounterName("testHighRateLimitNoSleepSingleThread");
-//        int rps = RateLimitAssertion.MAX_REQUESTS_PER_SECOND + 1; // 1 higher than highest safe value of 80220368
-//        rla.setMaxRequestsPerSecond(String.valueOf(rps));
-//        rla.setShapeRequests(false);
-//        rla.setHardLimit(false);
-//        final ServerAssertion ass = makePolicy(rla);
-//        final int nreq = 5000;
-//        String desc = "send " + nreq + " requests through non-shaping rate limit of " + rps + " req/sec";
-//
-//        sleepHandler.set(new FailingSleepHandler("supposed to be shapeRequests=false"));
-//        clock.sync();
-//        for (int i = 0; i < nreq; ++i) {
-//            final PolicyEnforcementContext context = makeContext();
-//            try {
-//                assertEquals("Limit should have succeeded (Iteration " + i + ")", AssertionStatus.NONE, ass.checkRequest(context));
-//                if (i % 11 == 0)
-//                    clock.advanceByNanos(3416L);
-//                if (i % 3000 == 0)
-//                    log.info("Request " + i + " of " + nreq);
-//            } finally {
-//                context.close();
-//            }
-//        }
-//
-//        log.info("Success: " + desc);
-//    }
-
-//    @Test
-//    public void testHighRateLimitNoSleepSingleThreadMillis() throws Exception {
-//        ServerRateLimitAssertion.useNanos = false;
-//
-//        RateLimitAssertion rla = new RateLimitAssertion();
-//        rla.setCounterName("testHighRateLimitNoSleepSingleThread");
-//        int rps = 80220369; // 1 higher than highest safe value of 80220368
-//        rla.setMaxRequestsPerSecond(String.valueOf(rps));
-//        rla.setShapeRequests(false);
-//        rla.setHardLimit(false);
-//        final ServerAssertion ass = makePolicy(rla);
-//        final int nreq = 5000;
-//        String desc = "send " + nreq + " requests through non-shaping rate limit of " + rps + " req/sec";
-//
-//        sleepHandler.set(new FailingSleepHandler("supposed to be shapeRequests=false"));
-//        clock.sync();
-//        for (int i = 0; i < nreq; ++i) {
-//            final PolicyEnforcementContext context = makeContext();
-//            try {
-//                assertEquals(AssertionStatus.NONE, ass.checkRequest(context));
-//                if (i % 11 == 0)
-//                    clock.advanceByNanos(3416L);
-//                if (i % 3000 == 0)
-//                    log.info("Request " + i + " of " + nreq);
-//            } finally {
-//                context.close();
-//            }
-//        }
-//
-//        log.info("Success: " + desc);
-//    }
 
     @Test
     public void testHighRateLimitNoSleepMultiThread() throws Exception {
@@ -875,5 +840,14 @@ public class ServerRateLimitAssertionTest {
             if (!want.equals(future.get(30, SECONDS)))
                 return false;
         return true;
+    }
+
+    private AssertionStatus checkRequest(ServerAssertion ass, PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        try {
+            return ass.checkRequest(context);
+        } catch (AssertionStatusException e) {
+            assertTrue("AssertionStatusException shall not be used to report successful execution", !AssertionStatus.NONE.equals(e.getAssertionStatus()));
+            return e.getAssertionStatus();
+        }
     }
 }
