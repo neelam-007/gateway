@@ -12,7 +12,7 @@ function extractProperty() {
 
 if [ ! -z "${SSGNODE}" ] ; then
     NODE_PROPS_PATH="${SSG_HOME}/node/${SSGNODE}/etc/conf/node.properties"
-    NODE_DEFAULT_MAX_PERM_SIZE="128M"
+    NODE_DEFAULT_MAX_PERM_SIZE="256M"
 
     if [ -f "${NODE_PROPS_PATH}" ] ; then
         extractProperty "node.java.path" NODE_JAVA_HOME "${NODE_PROPS_PATH}"
