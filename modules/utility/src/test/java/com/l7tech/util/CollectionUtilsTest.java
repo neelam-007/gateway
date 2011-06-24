@@ -125,7 +125,7 @@ public class CollectionUtilsTest {
     }
 
     @Test
-    public void testForeach() {
+    public void testForeach() throws Exception {
         final List<String> result1 = new ArrayList<String>();
         foreach( list( "1", "2", null ), true, new Functions.UnaryVoid<String>() {
             @Override
@@ -143,5 +143,14 @@ public class CollectionUtilsTest {
             }
         } );
         assertEquals( "List result (no nulls)", list( "1", "2" ), result2 );
+
+        final List<String> result3 = new ArrayList<String>();
+        foreach( list( "1", "2", null ), false, new Functions.UnaryVoidThrows<String,Exception>() {
+            @Override
+            public void call( final String s ) {
+                result3.add( s );
+            }
+        } );
+        assertEquals( "List result (no nulls)", list( "1", "2" ), result3 );
     }
 }

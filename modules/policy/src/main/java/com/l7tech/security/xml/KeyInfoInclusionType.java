@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.security.xml;
 
 import java.util.EnumSet;
@@ -40,9 +37,14 @@ public enum KeyInfoInclusionType {
      * ...or sometimes...
      * //KeyInfo/X509Data/X509IssuerSerial (issuer DN &amp; serial number)
      */
-    ISSUER_SERIAL;
+    ISSUER_SERIAL,
+
+    /**
+     * //KeyInfo/KeyName (the related certificates subject DN, usually in  RFC 2253 section 2.3 format)
+     */
+    KEY_NAME;
 
     public static final EnumSet<KeyInfoInclusionType> CERT_ONLY = EnumSet.of(CERT);
     public static final EnumSet<KeyInfoInclusionType> CERT_OR_SKI = EnumSet.of(CERT, STR_SKI);
-    public static final EnumSet<KeyInfoInclusionType> ANY = EnumSet.of(ISSUER_SERIAL, STR_SKI, STR_THUMBPRINT, CERT);
+    public static final EnumSet<KeyInfoInclusionType> ANY = EnumSet.of(ISSUER_SERIAL, STR_SKI, STR_THUMBPRINT, CERT, KEY_NAME);
 }

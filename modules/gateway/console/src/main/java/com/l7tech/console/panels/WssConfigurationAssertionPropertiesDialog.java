@@ -86,11 +86,11 @@ public class WssConfigurationAssertionPropertiesDialog extends AssertionProperti
     protected JPanel createPropertyPanel() {
         wssVersionCombo.setModel(new DefaultComboBoxModel(prependUnchanged(WsSecurityVersion.values())));
         signatureDigestCombo.setModel(new DefaultComboBoxModel(prependUnchanged(SupportedDigestMethods.getDigestNames())));
-        signatureKeyReferenceCombo.setModel(new DefaultComboBoxModel(prependUnchanged(KeyReference.getAllTypes().toArray())));
+        Set<KeyReference> sigTypes = new HashSet<KeyReference>(KeyReference.getAllTypes());
+        sigTypes.remove( KeyReference.KEY_NAME ); // key name references not supported for signatures
+        signatureKeyReferenceCombo.setModel(new DefaultComboBoxModel(prependUnchanged(sigTypes.toArray())));
 
-        // X.509 BinarySecurityToken isn't supported for identifying recipient for encryption
         Set<KeyReference> encTypes = new HashSet<KeyReference>(KeyReference.getAllTypes());
-        encTypes.remove(KeyReference.BST);
         encryptionKeyReferenceCombo.setModel(new DefaultComboBoxModel(prependUnchanged(encTypes.toArray())));
 
         encryptionAlgCombo.setModel(new DefaultComboBoxModel(new String[] {

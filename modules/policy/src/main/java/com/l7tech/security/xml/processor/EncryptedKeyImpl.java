@@ -5,10 +5,11 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.*;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 
 import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
 
 /**
  * Implementation of an EncryptedKey token.
@@ -23,22 +24,33 @@ public class EncryptedKeyImpl extends SigningSecurityTokenImpl implements Encryp
     private String encryptedKeySHA1 = null;
     private byte[] secretKeyBytes = null;
 
-    // Constructor that supports lazily-unwrapping the key
-    public EncryptedKeyImpl(Element encryptedKeyEl, SecurityTokenResolver tokenResolver, Resolver<String,X509Certificate> x509Resolver)
+    /**
+     * Constructor that supports lazily-unwrapping the key
+     *
+     * @param encryptedKeyEl The encrypted key element to process.
+     * @param tokenResolver The token resolver, must be a ContextualSecurityTokenResolver for BST resolution.
+     */
+    public EncryptedKeyImpl( @NotNull final Element encryptedKeyEl,
+                             @NotNull final SecurityTokenResolver tokenResolver)
             throws InvalidDocumentFormatException, GeneralSecurityException, UnexpectedKeyInfoException {
-        this( encryptedKeyEl, tokenResolver, x509Resolver, null, null );
+        this( encryptedKeyEl, tokenResolver, null, null );
     }
 
-    public EncryptedKeyImpl( final Element encryptedKeyEl,
-                             final SecurityTokenResolver tokenResolver,
-                             final Resolver<String,X509Certificate> x509Resolver,
-                             final String extraTokenType,
-                             final String extraTokenId )
+    /**
+     * Create a new encrypted key.
+     *
+     * @param encryptedKeyEl The encrypted key element to process.
+     * @param tokenResolver The token resolver, must be a ContextualSecurityTokenResolver for BST resolution.
+     */
+    public EncryptedKeyImpl( @NotNull final Element encryptedKeyEl,
+                             @NotNull final SecurityTokenResolver tokenResolver,
+                             @Nullable final String extraTokenType,
+                             @Nullable final String extraTokenId )
             throws InvalidDocumentFormatException, GeneralSecurityException, UnexpectedKeyInfoException {
         super(encryptedKeyEl);
         this.elementWsuId = SoapUtil.getElementWsuId(encryptedKeyEl);
         this.tokenResolver = tokenResolver;
-        this.signerInfo = KeyInfoElement.getTargetPrivateKeyForEncryptedType(encryptedKeyEl, tokenResolver, x509Resolver);
+        this.signerInfo = KeyInfoElement.getTargetPrivateKeyForEncryptedType(encryptedKeyEl, tokenResolver);
         String cipherValueB64 = XencUtil.getEncryptedKeyCipherValue(encryptedKeyEl);
         this.encryptedKeyBytes = HexUtils.decodeBase64(cipherValueB64.trim());
         this.extraTokenType = extraTokenType;

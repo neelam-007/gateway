@@ -243,14 +243,14 @@ public class SamlAssertionV1 extends SamlAssertion {
     }
 
     @Override
-    public EncryptedKey getSubjectConfirmationEncryptedKey(SecurityTokenResolver tokenResolver, Resolver<String, X509Certificate> x509Resolver) throws InvalidDocumentFormatException, UnexpectedKeyInfoException, GeneralSecurityException {
+    public EncryptedKey getSubjectConfirmationEncryptedKey(SecurityTokenResolver tokenResolver) throws InvalidDocumentFormatException, UnexpectedKeyInfoException, GeneralSecurityException {
         if (subjectConfirmationEncryptedKey != null) {
             return subjectConfirmationEncryptedKey;
         }
 
         Element encryptedKeyElement = getSubjectConfirmationEncryptedKeyElement(true);
 
-        return subjectConfirmationEncryptedKey = new EncryptedKeyImpl(encryptedKeyElement, tokenResolver, x509Resolver, SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11, assertionId);
+        return subjectConfirmationEncryptedKey = new EncryptedKeyImpl(encryptedKeyElement, tokenResolver, SoapConstants.VALUETYPE_SAML_ASSERTIONID_SAML11, assertionId);
     }
 
     private Element getSubjectConfirmationEncryptedKeyElement(boolean failIfNotPresent) throws InvalidDocumentFormatException {

@@ -131,6 +131,10 @@ public class ServerWssEncryptElement extends ServerAddWssEncryption<WssEncryptEl
                 wssReq.setEncryptionKeyInfoInclusionType(KeyInfoInclusionType.STR_SKI);
             } else if (KeyReference.ISSUER_SERIAL.getName().equals(keyReference)) {
                 wssReq.setEncryptionKeyInfoInclusionType(KeyInfoInclusionType.ISSUER_SERIAL);
+            } else if (KeyReference.BST.getName().equals(keyReference)) {
+                wssReq.setEncryptionKeyInfoInclusionType(KeyInfoInclusionType.CERT);
+            } else if (KeyReference.KEY_NAME.getName().equals(keyReference)) {
+                wssReq.setEncryptionKeyInfoInclusionType(KeyInfoInclusionType.KEY_NAME);
             }
             applyDecorationRequirements( context, wssReq, encryptionContext );
 

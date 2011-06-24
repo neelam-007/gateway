@@ -1,12 +1,10 @@
-/*
- * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.security.xml;
 
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.NamespaceFactory;
 import com.l7tech.util.SoapConstants;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -25,7 +23,9 @@ public abstract class KeyInfoDetails {
      * @param uri        the Reference URI, not including leading hash mark: one will be added.  Must not be null.
      * @param valueType  the ValueType URI.  Must not be null.
      * @return a new KeyInfoDetails instance, ready to create the requested KeyInfo element.  Never null.
+     * @deprecated Use makeUriReferenceRaw instead
      */
+    @Deprecated
     public static KeyInfoDetails makeUriReference(String uri, String valueType) {
         // TODO replace all uses of this method with makeUriReferenceRaw, then rename that method to this name
         return new UriReferenceKeyInfoDetails(uri.startsWith("#") ? uri : "#" + uri, valueType);
@@ -113,6 +113,20 @@ public abstract class KeyInfoDetails {
     }
 
     /**
+     * Prepare to create a new KeyInfo element using KeyInfo/[SecurityTokenReference/]KeyName.
+     *
+     * @param certificate the certificate from which to extract the Subject DN.
+     * @param includeStr <code>true</code> to interpose an otherwise empty wsse:SecurityTokenReference between the
+     *                   KeyInfo and the KeyName (required by BSP), or <code>false</code> to
+     *                   make the KeyName a direct child of the KeyInfo.
+     * @return a new KeyInfoDetails instance, ready to create the requested KeyInfo element.  Never null.
+     */
+    @NotNull
+    public static KeyInfoDetails makeKeyName( @NotNull X509Certificate certificate, boolean includeStr ) {
+        return new KeyNameKeyInfoDetails( certificate, includeStr );
+    }
+
+    /**
      * Add our information to an existing presumably-empty KeyInfo element.
      *
      * @param nsf     the NamespaceFactory to use when choosing namespaces.  Must not be null.
@@ -147,5 +161,10 @@ public abstract class KeyInfoDetails {
         return DomUtils.createAndAppendElementNS(keyInfo, SoapConstants.SECURITYTOKENREFERENCE_EL_NAME, nsf.getWsseNs(), "wsse");
     }
 
+    /**
+     * Return false if the referenced token is present in the message.
+     *
+     * @return true for a value reference.
+     */
     public abstract boolean isX509ValueReference();
 }

@@ -177,7 +177,7 @@ public class ServerAddWssSecurityToken extends AbstractMessageTargetableServerAs
             // To use this assertion for decoration we'll need to either already have its secret key or else be able to unwrap it
             EncryptedKey encryptedKey = null;
             try {
-                encryptedKey = samlAssertion.getSubjectConfirmationEncryptedKey(securityTokenResolver, null);
+                encryptedKey = samlAssertion.getSubjectConfirmationEncryptedKey(securityTokenResolver);
             } catch (InvalidDocumentFormatException e) {
                 auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_SAML_SECRET_KEY_UNAVAILABLE, null, e);
             } catch (UnexpectedKeyInfoException e) {

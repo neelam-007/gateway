@@ -126,6 +126,8 @@ public class ServerWssConfigurationAssertion extends AbstractMessageTargetableSe
             return KeyInfoInclusionType.ISSUER_SERIAL;
         } else if (KeyReference.SKI.getName().equals(keyReferenceName)) {
             return KeyInfoInclusionType.STR_SKI;
+        } else if (KeyReference.KEY_NAME.getName().equals(keyReferenceName)) {
+            return KeyInfoInclusionType.KEY_NAME;
         } else {
             throw new PolicyAssertionException(assertion, "Invalid key reference type: " + keyReferenceName);
         }

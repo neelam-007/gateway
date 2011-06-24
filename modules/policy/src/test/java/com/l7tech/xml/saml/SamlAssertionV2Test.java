@@ -27,7 +27,7 @@ public class SamlAssertionV2Test {
 
         SamlAssertion ass = SamlAssertion.newInstance(XmlUtil.stringAsDocument(SAML2_ATTR_STMNT_WITH_SECRET_KEY_HOK).getDocumentElement(), resolver);
         assertTrue(ass.hasSubjectConfirmationEncryptedKey());
-        EncryptedKey encryptedKey = ass.getSubjectConfirmationEncryptedKey(resolver, null);
+        EncryptedKey encryptedKey = ass.getSubjectConfirmationEncryptedKey(resolver);
         assertNotNull(encryptedKey);
         assertFalse("Key not yet unwrapped", encryptedKey.isUnwrapped());
         assertNotNull(encryptedKey.getSecretKey());

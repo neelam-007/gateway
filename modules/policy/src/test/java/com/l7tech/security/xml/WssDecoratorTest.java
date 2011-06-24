@@ -44,12 +44,15 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.l7tech.security.xml.KeyInfoInclusionType.*;
 import static org.junit.Assert.*;
 
 /**
@@ -136,7 +139,7 @@ public class WssDecoratorTest {
                             Element[] elementsToEncrypt,
                             Element[] elementsToSign) throws SAXException {
             this(c, null, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
-                 elementsToEncrypt, elementsToSign, null, false, KeyInfoInclusionType.CERT);
+                 elementsToEncrypt, elementsToSign, null, false, CERT);
         }
 
         public TestDocument(Context c, Element senderSamlAssertion, X509Certificate senderCert, PrivateKey senderKey,
@@ -510,12 +513,12 @@ public class WssDecoratorTest {
 	public void testGoogleProblem() throws Exception {
         TestDocument doc = getGoogleTestDocument();
         Message msg = new Message(doc.c.message);
-        assertTrue(msg.isSoap());
-        runTest(getGoogleTestDocument());
+        assertTrue( msg.isSoap() );
+        runTest( getGoogleTestDocument() );
     }
 
     public TestDocument getGoogleTestDocument() throws Exception {
-        Document googleDoc = TestDocuments.getTestDocument(TestDocuments.DIR + "badgoogle.xml");
+        Document googleDoc = TestDocuments.getTestDocument( TestDocuments.DIR + "badgoogle.xml" );
         final Context c = new Context(googleDoc);
         return new TestDocument(c,
                                 TestDocuments.getEttkClientCertificate(),
@@ -569,6 +572,48 @@ public class WssDecoratorTest {
     @Test
 	public void testEncryptionOnly() throws Exception {
         runTest(getEncryptionOnlyTestDocument());
+    }
+
+    @Test
+    public void testEncryptionReferenceTypes() throws Exception {
+        final Collection<KeyInfoInclusionType> keyReferenceTypes = EnumSet.of( CERT, STR_SKI, ISSUER_SERIAL, KEY_NAME );
+        final Functions.BinaryVoid<KeyInfoInclusionType,Document> verifier = new Functions.BinaryVoid<KeyInfoInclusionType,Document>(){
+            @Override
+            public void call( final KeyInfoInclusionType expectedKeyInfoInclusionType, final Document document ) {
+                try {
+                    final Element header = SoapUtil.getSecurityElementForL7( document );
+                    assertNotNull( "No security header found", header );
+
+                    final Element encryptedKeyElement = DomUtils.findExactlyOneChildElementByName( header, SoapUtil.XMLENC_NS, SoapUtil.ENCRYPTEDKEY_EL_NAME );
+                    final Element keyInfoElement = DomUtils.findOnlyOneChildElementByName( encryptedKeyElement, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME );
+
+                    final IdAttributeConfig idConfig = IdAttributeConfig.fromString( "{http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd}Id" );
+                    final Map<String,Element> identifierMap = DomUtils.getElementByIdMap( document, idConfig );
+
+                    final X509Certificate bobCert = TestDocuments.getWssInteropBobCert();
+                    final ContextualSecurityTokenResolver resolver = new ContextualSecurityTokenResolver.Support.DelegatingContextualSecurityTokenResolver(
+                            new SimpleSecurityTokenResolver( bobCert )){
+                        @Override
+                        public X509Certificate lookupByIdentifier( final String identifier ) {
+                            assertTrue(  "BST element present", identifierMap.keySet().contains( identifier ) );
+                            return bobCert;
+                        }
+                    };
+                    final KeyInfoElement element = KeyInfoElement.parse( keyInfoElement, resolver, EnumSet.allOf(KeyInfoInclusionType.class) );
+                    assertEquals( "Reference type", expectedKeyInfoInclusionType, element.getKeyInfoInclusionType() );
+                } catch ( Exception e ) {
+                    throw ExceptionUtils.wrap( e );
+                }
+            }
+        };
+        CollectionUtils.foreach( keyReferenceTypes, false, new Functions.UnaryVoidThrows<KeyInfoInclusionType,Exception>() {
+            @Override
+            public void call( final KeyInfoInclusionType keyInfoInclusionType ) throws Exception {
+                final TestDocument testDocument = getEncryptionOnlyTestDocument();
+                testDocument.req.setEncryptionKeyInfoInclusionType( keyInfoInclusionType );
+                runTest( testDocument, Functions.partial( verifier, keyInfoInclusionType ) );
+            }
+        } );
     }
 
     public TestDocument getEncryptionOnlyTestDocument() throws Exception {
@@ -679,7 +724,7 @@ public class WssDecoratorTest {
         return new TestDocument(c, null, null, null, null, null, true,
                                 new Element[0],
                                 new Element[]{c.body},
-                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, CERT);
     }
 
     @Test
@@ -692,7 +737,7 @@ public class WssDecoratorTest {
         return new TestDocument(c, null, null, null, null, null, true,
                                 new Element[]{c.productid, c.accountid},
                                 new Element[]{c.body},
-                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, CERT);
     }
 
     @Test
@@ -705,7 +750,7 @@ public class WssDecoratorTest {
         TestDocument td = new TestDocument(c, null, null, null, null, null, true,
                                 new Element[]{c.productid, c.accountid},
                                 new Element[]{c.body},
-                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, CERT);
         td.req.setSecureConversationSession(new SimpleSecureConversationSession(
                 "urn:layer7_test_sct:00001",
                 TestDocuments.getDotNetSecureConversationSharedSecret(),
@@ -724,7 +769,7 @@ public class WssDecoratorTest {
         TestDocument td = new TestDocument(c, null, null, null, null, null, true,
                                 new Element[]{c.productid, c.accountid},
                                 new Element[]{c.body},
-                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, CERT);
         td.req.setSecureConversationSession(new SimpleSecureConversationSession(
                 "urn:layer7_test_sct:00001",
                 TestDocuments.getDotNetSecureConversationSharedSecret(),
@@ -743,7 +788,7 @@ public class WssDecoratorTest {
         TestDocument td = new TestDocument(c, null, null, null, null, null, true,
                                 new Element[]{c.productid, c.accountid},
                                 new Element[]{c.body},
-                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, KeyInfoInclusionType.CERT);
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, CERT);
         td.req.setOmitSecurityContextToken(true);
         return td;
     }
@@ -769,7 +814,7 @@ public class WssDecoratorTest {
                                 true,
                                 new Element[0],
                                 new Element[]{c.body},
-                                null, false, KeyInfoInclusionType.CERT);
+                                null, false, CERT);
     }
 
     @Test
@@ -794,7 +839,7 @@ public class WssDecoratorTest {
                                 new Element[0],
                                 new Element[]{c.body},
                                 null,
-                                true, KeyInfoInclusionType.CERT);
+                                true, CERT);
     }
 
     private Element createSenderSamlToken(String subjectNameIdentifierValue,
@@ -822,7 +867,7 @@ public class WssDecoratorTest {
             creds = LoginCredentials.makeLoginCredentials(new HttpBasicToken(subjectNameIdentifierValue, "secret".toCharArray()), HttpBasic.class);
             confirmationMethod = SubjectStatement.SENDER_VOUCHES;
         }
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, confirmationMethod, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, confirmationMethod, CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
         return generator.createAssertion(subjectStatement, samlOptions).getDocumentElement();
     }
@@ -1089,7 +1134,7 @@ public class WssDecoratorTest {
                                 new Element[0],
                                 null,
                                 false,
-                                KeyInfoInclusionType.CERT,
+                                CERT,
                                 false,
                                 null,
                                 new String[]{null},
@@ -1148,7 +1193,7 @@ public class WssDecoratorTest {
         testDoc.req.setSenderMessageSigningCertificate( TestDocuments.getEttkClientCertificate() );
         testDoc.req.setSenderMessageSigningPrivateKey( TestDocuments.getEttkClientPrivateKey() );
         testDoc.req.setPreferredSigningTokenType( DecorationRequirements.PreferredSigningTokenType.X509 );
-        testDoc.req.setKeyInfoInclusionType( KeyInfoInclusionType.CERT );
+        testDoc.req.setKeyInfoInclusionType( CERT );
         runTest(testDoc, verifier( true, 0, true ) );
     }
 
@@ -1182,7 +1227,7 @@ public class WssDecoratorTest {
                                  new Element[]{c.body},
                                  keyBytes,
                                  false,
-                                 KeyInfoInclusionType.CERT,
+                                 CERT,
                                  false, "abc11EncryptedKeySHA1Value11blahblahblah11==",
                                  new String[] {"abc11SignatureConfirmationValue11blahblahblah11=="},
                                  ACTOR_NONE, null, false, false);
@@ -1207,7 +1252,7 @@ public class WssDecoratorTest {
                             new Element[]{c.body},
                             null,
                             false,
-                            KeyInfoInclusionType.CERT,
+                            CERT,
                             false,
                             null,
                             new String[]{null},
@@ -1297,7 +1342,7 @@ public class WssDecoratorTest {
                         true, new Element[]{ c.body },
                         null, new Element[]{ c.body },
                         null, false,
-                        KeyInfoInclusionType.CERT,
+                        CERT,
                         false, null, null,
                         ACTOR_NONE,
                         null, false, false );
@@ -1426,7 +1471,7 @@ public class WssDecoratorTest {
                 "bookstoreservice_com", "bookstorests_com");
         final SimpleSecurityTokenResolver resolver = new SimpleSecurityTokenResolver(null, privateKeys);
         SamlAssertion samlAssertion = SamlAssertion.newInstance(XmlUtil.stringToDocument(samlString).getDocumentElement(), resolver);
-        EncryptedKey subjectConfirmationEncryptedKey = samlAssertion.getSubjectConfirmationEncryptedKey(resolver, null);
+        EncryptedKey subjectConfirmationEncryptedKey = samlAssertion.getSubjectConfirmationEncryptedKey(resolver);
 
         // Create decoration requirements that will decorate placeorder_cleartext with this assertion
         Context c = new Context();

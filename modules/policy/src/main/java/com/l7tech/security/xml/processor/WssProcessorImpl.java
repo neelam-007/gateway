@@ -104,7 +104,6 @@ public class WssProcessorImpl implements WssProcessor {
     private String lastKeyEncryptionAlgorithm = null;
     private boolean isWsse11Seen = false;
     private boolean isDerivedKeySeen = false; // If we see any derived keys, we'll assume we can derive our own keys in reponse
-    private Resolver<String,X509Certificate> messageX509TokenResolver = null;
 
     /**
      * Create a WssProcessorImpl context not bound to any message.
@@ -132,7 +131,7 @@ public class WssProcessorImpl implements WssProcessor {
     {
         final WssProcessorImpl context = new WssProcessorImpl(message);
         context.setSecurityContextFinder(securityContextFinder);
-        context.setSecurityTokenResolver(securityTokenResolver);
+        context.setSecurityTokenResolver(context.contextual( securityTokenResolver ));
         context.setSignedAttachmentSizeLimit(signedAttachmentSizeLimit);
         context.setPermitMultipleTimestampSignatures(permitMultipleTimestampSignatures);
         context.setPermitUnknownBinarySecurityTokens(permitUnknownBinarySecurityTokens);
@@ -598,16 +597,16 @@ public class WssProcessorImpl implements WssProcessor {
 
     /**
      * Return a resolver that will find certs from already-seen X.509 tokens in this message by their wsu:Id.
-     * @return a Resolver<String,X509Certificate> that will find certs from already-seen X.509 BSTs in this message processing context
+     * @return a ContextualSecurityTokenResolver that will find certs from already-seen X.509 BSTs in this message processing context
      */
-    private Resolver<String,X509Certificate> getMessageX509TokenResolver() {
-        if (messageX509TokenResolver != null)
-            return messageX509TokenResolver;
-        messageX509TokenResolver = new Resolver<String,X509Certificate>() {
+    private ContextualSecurityTokenResolver contextual( final SecurityTokenResolver securityTokenResolver ) {
+        return new ContextualSecurityTokenResolver.Support.DelegatingContextualSecurityTokenResolver(
+                securityTokenResolver == null ? new SimpleSecurityTokenResolver() : securityTokenResolver
+        ) {
             @Override
-            public X509Certificate resolve(String id) {
+            public X509Certificate lookupByIdentifier( final String identifier ) {
                 X509Certificate resolved = null;
-                Object token = x509TokensById.get(id);
+                Object token = x509TokensById.get(identifier);
                 if (token instanceof X509BinarySecurityTokenImpl) {
                     X509BinarySecurityTokenImpl bst = (X509BinarySecurityTokenImpl) token;
                     resolved = bst.getCertificate();
@@ -615,7 +614,6 @@ public class WssProcessorImpl implements WssProcessor {
                 return resolved;
             }
         };
-        return messageX509TokenResolver;
     }
 
     private void validateSignatureConfirmations() {
@@ -1229,7 +1227,7 @@ public class WssProcessorImpl implements WssProcessor {
                 // Check for a token in the message
                 final SamlAssertion samlAssertion = findSamlSecurityTokenByAssertionId(samlAssertionId);
                 if (samlAssertion != null) {
-                    ek = samlAssertion.getSubjectConfirmationEncryptedKey(securityTokenResolver, messageX509TokenResolver);
+                    ek = samlAssertion.getSubjectConfirmationEncryptedKey(securityTokenResolver);
                 }
 
                 if (ek == null) {
@@ -1926,7 +1924,7 @@ public class WssProcessorImpl implements WssProcessor {
         // If there's a KeyIdentifier, log whether it's talking about our key
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
         try {
-            KeyInfoElement.getTargetPrivateKeyForEncryptedType(encryptedKeyElement, securityTokenResolver, getMessageX509TokenResolver());
+            KeyInfoElement.getTargetPrivateKeyForEncryptedType(encryptedKeyElement, securityTokenResolver );
         } catch (UnexpectedKeyInfoException e) {
             if (secHeaderActor == SecurityActor.L7ACTOR) {
                 logger.warning("We do not appear to be the intended recipient for this EncryptedKey however the " +
@@ -1951,7 +1949,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         final EncryptedKeyImpl ekTok;
         try {
-            ekTok = new EncryptedKeyImpl(encryptedKeyElement, securityTokenResolver, getMessageX509TokenResolver());
+            ekTok = new EncryptedKeyImpl(encryptedKeyElement, securityTokenResolver );
             if (refList != null)
                 decryptReferencedElements(ekTok.getSecretKey(), refList);
         } catch (ParserConfigurationException e) {

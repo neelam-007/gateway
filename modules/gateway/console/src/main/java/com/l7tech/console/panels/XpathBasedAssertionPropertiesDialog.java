@@ -151,9 +151,11 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     };
     private BindingOperation currentOperation;
     private JButton editSampleButton;
-    private JRadioButton encIssuerSerialReferenceRadioButton;
-    private JPanel encryptionResponseConfigPanel;
+    private JRadioButton encBstReferenceRadioButton;
     private JRadioButton encSkiReferenceRadioButton;
+    private JRadioButton encIssuerSerialReferenceRadioButton;
+    private JRadioButton encKeyNameReferenceRadioButton;
+    private JPanel encryptionResponseConfigPanel;
     private JPanel signaturesAceptedPanel;
     private JCheckBox acceptSha1;
     private JCheckBox acceptSha256;
@@ -844,6 +846,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         WssEncryptElement wee = (WssEncryptElement)assertion;
         if (KeyReference.ISSUER_SERIAL.getName().equals(wee.getKeyReference())) {
             encIssuerSerialReferenceRadioButton.setSelected(true);
+        } else if (KeyReference.BST.getName().equals(wee.getKeyReference())) {
+            encBstReferenceRadioButton.setSelected(true);
+        } else if (KeyReference.KEY_NAME.getName().equals(wee.getKeyReference())) {
+            encKeyNameReferenceRadioButton.setSelected(true);
         } else {
             encSkiReferenceRadioButton.setSelected(true);
         }
@@ -982,9 +988,14 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         WssEncryptElement wee = (WssEncryptElement)assertion;
         if (encSkiReferenceRadioButton.isSelected()) {
             wee.setKeyReference(KeyReference.SKI.getName());
+        } else if (encBstReferenceRadioButton.isSelected()) {
+            wee.setKeyReference(KeyReference.BST.getName());
         } else if (encIssuerSerialReferenceRadioButton.isSelected()) {
             wee.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
+        } else if (encKeyNameReferenceRadioButton.isSelected()) {
+            wee.setKeyReference(KeyReference.KEY_NAME.getName());
         }
+
     }
 
     /**
@@ -1218,7 +1229,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             soapMessage.writeTo(bos);
-            displayMessage(bos.toString());
+            displayMessage( bos.toString() );
         } catch (SOAPException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
@@ -1259,8 +1270,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 log.log(Level.WARNING, "Couldn't get namespaces from non-XML document", e);
             }
             JTextField xpathTextField = messageViewerToolBar.getxpathField();
-            xpathFieldPauseListener.textEntryPaused(xpathTextField, 0);
-            exchangerDocument.load(soapMessage);
+            xpathFieldPauseListener.textEntryPaused( xpathTextField, 0 );
+            exchangerDocument.load( soapMessage );
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

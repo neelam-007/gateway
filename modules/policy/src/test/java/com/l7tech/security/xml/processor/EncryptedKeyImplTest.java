@@ -6,7 +6,6 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
-import com.l7tech.util.Resolver;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -25,7 +24,6 @@ public class EncryptedKeyImplTest {
 
     Element elm;
     SimpleSecurityTokenResolver tokenResolver;
-    Resolver<String,X509Certificate> x509Resolver;
     boolean restricted = false;
     String eksha1;
     String secretkeybytes;
@@ -59,7 +57,6 @@ public class EncryptedKeyImplTest {
         Document doc = XmlUtil.stringAsDocument(xml);
         elm = (Element) doc.getElementsByTagNameNS(doc.getDocumentElement().getNamespaceURI(), "EncryptedKey").item(0);
         tokenResolver = new SimpleSecurityTokenResolver(null, new SignerInfo[] {signerInfo});
-        x509Resolver = null;
         eksha1 = "YKOL7WvI07yN+KvVSVSpZD0fHAI=";
         secretkeybytes = "b810485d6717b1b35d1b37f8b806c074";
     }
@@ -68,7 +65,7 @@ public class EncryptedKeyImplTest {
     public void testPublishUnwrappedKey() throws Exception {
         restricted = false;
         assertNull(tokenResolver.getSecretKeyByEncryptedKeySha1(eksha1));
-        EncryptedKeyImpl ek = new EncryptedKeyImpl(elm, tokenResolver, x509Resolver);
+        EncryptedKeyImpl ek = new EncryptedKeyImpl(elm, tokenResolver);
         String skhex = HexUtils.hexDump(ek.getSecretKey());
         assertEquals(secretkeybytes, skhex);
         assertEquals(skhex, HexUtils.hexDump(tokenResolver.getSecretKeyByEncryptedKeySha1(eksha1)));
@@ -78,7 +75,7 @@ public class EncryptedKeyImplTest {
     public void testDoNotPublishUnwrappedRestrictedKey() throws Exception {
         restricted = true;
         assertNull(tokenResolver.getSecretKeyByEncryptedKeySha1(eksha1));
-        EncryptedKeyImpl ek = new EncryptedKeyImpl(elm, tokenResolver, x509Resolver);
+        EncryptedKeyImpl ek = new EncryptedKeyImpl(elm, tokenResolver);
         String skhex = HexUtils.hexDump(ek.getSecretKey());
         assertEquals(secretkeybytes, skhex);
         assertNull(tokenResolver.getSecretKeyByEncryptedKeySha1(eksha1));

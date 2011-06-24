@@ -1,5 +1,6 @@
 package com.l7tech.security.xml;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
 import com.l7tech.message.MessageRole;
@@ -33,6 +34,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static com.l7tech.security.xml.KeyInfoInclusionType.*;
 import static org.junit.Assert.*;
 
 /**
@@ -185,6 +187,41 @@ public class WssRoundTripTest {
     public void testEncryptionOnlyTripleDES() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptionOnlyTripleDES",
                                                wssDecoratorTest.getEncryptionOnlyTestDocument(XencAlgorithm.TRIPLE_DES_CBC.getXEncName())));
+    }
+
+    @Test
+    public void testEncryptionKeyReferences() throws Exception {
+        final Collection<KeyInfoInclusionType> keyReferenceTypes = EnumSet.of( CERT, STR_SKI, ISSUER_SERIAL, KEY_NAME );
+        CollectionUtils.foreach( keyReferenceTypes, false, new Functions.UnaryVoidThrows<KeyInfoInclusionType, Exception>() {
+            @Override
+            public void call( final KeyInfoInclusionType keyInfoInclusionType ) throws Exception {
+                final NamedTestDocument testDocument = new NamedTestDocument( "EncryptionOnlyAES128",
+                        wssDecoratorTest.getEncryptionOnlyTestDocument( XencAlgorithm.AES_128_CBC.getXEncName() ) );
+                testDocument.td.req.setEncryptionKeyInfoInclusionType( keyInfoInclusionType );
+                final String decoratedRequest = runRoundTripTest( testDocument, false );
+                final Document document = XmlUtil.parse( decoratedRequest );
+                final Element header = SoapUtil.getSecurityElementForL7( document );
+                assertNotNull( "No security header found", header );
+
+                final Element encryptedKeyElement = DomUtils.findExactlyOneChildElementByName( header, SoapUtil.XMLENC_NS, SoapUtil.ENCRYPTEDKEY_EL_NAME );
+                final Element keyInfoElement = DomUtils.findOnlyOneChildElementByName( encryptedKeyElement, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME );
+
+                final IdAttributeConfig idConfig = IdAttributeConfig.fromString( "{http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd}Id" );
+                final Map<String,Element> identifierMap = DomUtils.getElementByIdMap( document, idConfig );
+
+                final X509Certificate bobCert = TestDocuments.getWssInteropBobCert();
+                final ContextualSecurityTokenResolver resolver = new ContextualSecurityTokenResolver.Support.DelegatingContextualSecurityTokenResolver(
+                        new SimpleSecurityTokenResolver( bobCert )){
+                    @Override
+                    public X509Certificate lookupByIdentifier( final String identifier ) {
+                        assertTrue(  "BST element present", identifierMap.keySet().contains( identifier ) );
+                        return bobCert;
+                    }
+                };
+                final KeyInfoElement element = KeyInfoElement.parse( keyInfoElement, resolver, EnumSet.allOf(KeyInfoInclusionType.class) );
+                assertEquals( "Reference type", keyInfoInclusionType, element.getKeyInfoInclusionType() );
+            }
+        } );
     }
 
     @Test

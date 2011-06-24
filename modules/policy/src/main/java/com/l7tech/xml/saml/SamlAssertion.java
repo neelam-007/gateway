@@ -92,15 +92,13 @@ public abstract class SamlAssertion extends X509SigningSecurityTokenImpl impleme
      * Even if an encrypted key is returned, it still may not have been unwrapped; call call {@link com.l7tech.security.token.EncryptedKey#isUnwrapped()} to
      * check whether the unwrapped secret key is already available.
      *
-     * @param tokenResolver resolver for finding information that may be needed for unwrapping an embedded encrypted key.  Required unless {@link #isSubjectConfirmationEncryptedKeyAvailable()} returned true.
-     * @param x509Resolver resolver for certificates by identifier, to resolve references to BSTs in the same message that are carrying certificate bytes,
-     *                     or null if no Reference URIs to BSTs within the same message should be followed
+     * @param tokenResolver resolver for finding information that may be needed for unwrapping an embedded encrypted key. Pass a ContextualSecurityTokenResolver if BST resolution is desired. Required unless {@link #isSubjectConfirmationEncryptedKeyAvailable()} returned true.
      * @return an EncryptedKey, or null if one was not present or could not be processed
      * @throws InvalidDocumentFormatException if there is a problem with the format of the SAML assertion or the encrypted key.
      * @throws GeneralSecurityException if there was a problem with the recipient certificate or a certificate embedded within the EncryptedKey.
      * @throws UnexpectedKeyInfoException  if the EncryptedKey's KeyInfo did not match private key known to the tokenResolver.
      */
-    public abstract EncryptedKey getSubjectConfirmationEncryptedKey(SecurityTokenResolver tokenResolver, Resolver<String,X509Certificate> x509Resolver) throws InvalidDocumentFormatException, UnexpectedKeyInfoException, GeneralSecurityException;
+    public abstract EncryptedKey getSubjectConfirmationEncryptedKey(SecurityTokenResolver tokenResolver) throws InvalidDocumentFormatException, UnexpectedKeyInfoException, GeneralSecurityException;
 
     /**
      * Check if a subject confirmation EncryptedKey has already been located and examined (though not necessarily unwrapped).

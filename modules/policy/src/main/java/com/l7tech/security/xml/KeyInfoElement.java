@@ -1,11 +1,11 @@
-/*
- * Copyright (C) 2005-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.security.xml;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.token.ParsedElement;
 import com.l7tech.util.*;
+import com.l7tech.xml.soap.SoapUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -29,6 +29,7 @@ public class KeyInfoElement implements ParsedElement {
     private static final Logger logger = Logger.getLogger(KeyInfoElement.class.getName());
     private final Element element;
     private final X509Certificate cert;
+    private final KeyInfoInclusionType keyInfoInclusionType;
     private static final EnumSet<KeyInfoInclusionType> CERT_ONLY = EnumSet.of(KeyInfoInclusionType.CERT);
 
     /** Exception throws if a certificate resolver is required to parse a KeyInfo, but none is available. */
@@ -74,13 +75,16 @@ public class KeyInfoElement implements ParsedElement {
     public static KeyInfoElement parse(Element keyinfo, SecurityTokenResolver securityTokenResolver, EnumSet<KeyInfoInclusionType> allowedTypes)
             throws SAXException, MissingResolverException
     {
-        return new KeyInfoElement(keyinfo, securityTokenResolver, allowedTypes);
+        return new KeyInfoElement(
+                keyinfo,
+                securityTokenResolver==null ? null : ContextualSecurityTokenResolver.Support.asContextualResolver( securityTokenResolver ),
+                allowedTypes );
     }
 
 
-    private KeyInfoElement(final Element keyinfo,
-                           final SecurityTokenResolver securityTokenResolver,
-                           final EnumSet<KeyInfoInclusionType> allowedTypes)
+    private KeyInfoElement( @NotNull  final Element keyinfo,
+                            @Nullable final ContextualSecurityTokenResolver securityTokenResolver,
+                            @NotNull  final EnumSet<KeyInfoInclusionType> allowedTypes)
             throws SAXException, MissingResolverException
     {
         if (!"KeyInfo".equals(keyinfo.getLocalName())) throw new IllegalArgumentException("Element is not a KeyInfo element");
@@ -88,55 +92,68 @@ public class KeyInfoElement implements ParsedElement {
         try {
             this.element = keyinfo;
 
-            Element str = DomUtils.findOnlyOneChildElementByName(keyinfo, SoapConstants.SECURITY_URIS_ARRAY, "SecurityTokenReference");
+            final Element str = DomUtils.findOnlyOneChildElementByName(keyinfo, SoapConstants.SECURITY_URIS_ARRAY, "SecurityTokenReference");
             if (str != null) {
                 // Use SecurityTokenReference
                 if (securityTokenResolver == null) throw new MissingResolverException("KeyInfo uses SecurityTokenReference but no certificate resolver is available");
 
-                X509Certificate gotCert;
-                Element keyid = DomUtils.findOnlyOneChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
-                Element x509Data = DomUtils.findOnlyOneChildElementByName(str, SoapConstants.DIGSIG_URI, "X509Data");
+                final Element keyid = DomUtils.findOnlyOneChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
+                final Element x509Data = DomUtils.findOnlyOneChildElementByName(str, SoapConstants.DIGSIG_URI, "X509Data");
+                final Element reference = DomUtils.findOnlyOneChildElementByName(str, str.getNamespaceURI(), SoapUtil.REFERENCE_EL_NAME);
                 if (keyid != null) {
-                    String vt = keyid.getAttribute("ValueType");
+                    final String vt = keyid.getAttribute("ValueType");
 
                     // TODO There can be multiple KeyIdentifiers in a single SecurityTokenReference
                     //      We should fix this, but at least it isn't a security hole.
-                    String value = DomUtils.getTextValue(keyid);
+                    final String value = DomUtils.getTextValue(keyid);
                     if (value == null || value.length() < 1) throw new SAXException("KeyInfo contains an empty KeyIdentifier");
                     if (vt == null) {
                         throw new SAXException("KeyInfo has null STR/KeyIdentifier ValueType");
                     } else if (vt.endsWith( SoapConstants.VALUETYPE_X509_THUMB_SHA1_SUFFIX)) {
-                        gotCert = securityTokenResolver.lookup(value);
+                        cert = securityTokenResolver.lookup(value);
+                        keyInfoInclusionType = KeyInfoInclusionType.STR_THUMBPRINT;
                     } else if (vt.endsWith( SoapConstants.VALUETYPE_SKI_SUFFIX)) {
-                        gotCert = securityTokenResolver.lookupBySki(value);
+                        cert = securityTokenResolver.lookupBySki(value);
+                        keyInfoInclusionType = KeyInfoInclusionType.STR_SKI;
                     } else {
                         throw new SAXException("KeyInfo uses STR/KeyIdentifier ValueType other than ThumbprintSHA1: " + vt);
                     }
                 } else if (x509Data != null) {
-                    gotCert = handleX509Data(x509Data, securityTokenResolver, allowedTypes);
+                    final Pair<X509Certificate,KeyInfoInclusionType> certAndInfo = handleX509Data(x509Data, securityTokenResolver, allowedTypes);
+                    cert = certAndInfo.left;
+                    keyInfoInclusionType = certAndInfo.right;
+                } else if ( reference != null ) {
+                    final String referenceUri = reference.getAttribute("URI");
+                    if ( !referenceUri.startsWith( "#" ) ) {
+                        throw new SAXException("KeyInfo contains STR/Reference but the URI is invalid: " + referenceUri);
+                    }
+                    cert = securityTokenResolver.lookupByIdentifier( referenceUri.substring( 1 ) );
+                    keyInfoInclusionType = KeyInfoInclusionType.CERT;
                 } else {
                     // No x509data or securitytokenreference -- try last-ditch KeyName lookup before giving up
-                    Element keyNameEl = DomUtils.findOnlyOneChildElementByName(keyinfo, SoapConstants.DIGSIG_URI, "KeyName");
-                    if (keyNameEl == null) throw new SAXException("KeyInfo has no X509Data, KeyName, or SecurityTokenReference");
-                    String keyName = DomUtils.getTextValue(keyNameEl).trim();
-                    if (keyName == null || keyName.length() < 1)
-                        throw new SAXException("KeyInfo contains KeyName but it is empty");
-                    // Use KeyName
-                    gotCert = securityTokenResolver.lookupByKeyName(CertUtils.formatDN(keyName));
-                    if (gotCert == null) throw new SAXException("KeyInfo KeyName did not match any X.509 certificate known to this recipient");
+                    cert = handleKeyName( str, securityTokenResolver );
+                    if (cert == null) throw new SAXException("KeyInfo KeyName did not match any X.509 certificate known to this recipient");
+                    keyInfoInclusionType = KeyInfoInclusionType.KEY_NAME;
                 }
 
-                if (gotCert == null) throw new SAXException("KeyInfo SecurityTokenReference did not match any X.509 certificate known to this recipient");
-                cert = gotCert;
+                if (cert == null) throw new SAXException("KeyInfo SecurityTokenReference did not match any X.509 certificate known to this recipient");
             } else {
                 // Finally try the rare but appropriate KeyInfo/X509Data
-                Element x509Data = DomUtils.findOnlyOneChildElementByName(keyinfo, SoapConstants.DIGSIG_URI, "X509Data");
-                if (x509Data == null)
+                final Element x509Data = DomUtils.findOnlyOneChildElementByName(keyinfo, SoapConstants.DIGSIG_URI, "X509Data");
+                final Element keyNameEl = DomUtils.findOnlyOneChildElementByName(keyinfo, SoapConstants.DIGSIG_URI, "KeyName" );
+                if ( x509Data != null ) {
+                    final Pair<X509Certificate,KeyInfoInclusionType> certAndInfo = handleX509Data(x509Data, securityTokenResolver, allowedTypes);
+                    if (certAndInfo.left == null) throw new SAXException("KeyInfo includes certificate which cannot be recovered");
+                    cert = certAndInfo.left;
+                    keyInfoInclusionType = certAndInfo.right;
+                } else if ( keyNameEl != null ) {
+                    if (securityTokenResolver == null) throw new MissingResolverException("KeyInfo uses KeyName but no certificate resolver is available");
+                    cert = handleKeyName( keyinfo, securityTokenResolver );
+                    if (cert == null) throw new SAXException("KeyInfo KeyName did not match any X.509 certificate known to this recipient");
+                    keyInfoInclusionType = KeyInfoInclusionType.KEY_NAME;
+                } else {
                     throw new SAXException("KeyInfo did not contain any recognized certificate reference format");
-
-                X509Certificate gotCert = handleX509Data(x509Data, securityTokenResolver, allowedTypes);
-                if (gotCert == null) throw new SAXException("KeyInfo includes certificate which cannot be recovered");
-                cert = gotCert;
+                }
             }
         } catch (InvalidDocumentFormatException e) {
             throw new SAXException(e);
@@ -147,7 +164,24 @@ public class KeyInfoElement implements ParsedElement {
         }
     }
 
-    private static X509Certificate handleX509Data(Element x509Data, SecurityTokenResolver securityTokenResolver, EnumSet<KeyInfoInclusionType> allowedTypes)
+    private static X509Certificate handleKeyName( @NotNull final Element keyNameParent,
+                                                  @NotNull final ContextualSecurityTokenResolver securityTokenResolver )
+            throws TooManyChildElementsException, SAXException {
+        final Element keyNameEl = DomUtils.findOnlyOneChildElementByName( keyNameParent, SoapConstants.DIGSIG_URI, "KeyName" );
+        if (keyNameEl == null) throw new SAXException("KeyInfo has no X509Data, KeyName, or SecurityTokenReference");
+
+        final String keyName = DomUtils.getTextValue(keyNameEl).trim();
+        if (keyName == null || keyName.length() < 1)
+            throw new SAXException("KeyInfo contains KeyName but it is empty");
+
+        // Use KeyName
+        return securityTokenResolver.lookupByKeyName( CertUtils.formatDN( keyName ));
+    }
+
+    @NotNull
+    private static Pair<X509Certificate,KeyInfoInclusionType> handleX509Data( final Element x509Data,
+                                                                              final SecurityTokenResolver securityTokenResolver,
+                                                                              final EnumSet<KeyInfoInclusionType> allowedTypes )
         throws IOException, CertificateException, MissingResolverException, SAXException, TooManyChildElementsException,
         MissingRequiredElementException {
         // Use X509Data
@@ -157,12 +191,12 @@ public class KeyInfoElement implements ParsedElement {
         if (x509CertEl != null) {
             String certBase64 = DomUtils.getTextValue(x509CertEl);
             byte[] certBytes = HexUtils.decodeBase64(certBase64, true);
-            return CertUtils.decodeCert(certBytes);
+            return new Pair<X509Certificate, KeyInfoInclusionType>( CertUtils.decodeCert(certBytes), KeyInfoInclusionType.CERT );
         } else if (x509SkiEl != null) {
             if (securityTokenResolver == null) throw new MissingResolverException("KeyInfo uses X509Data/X509SKI but no certificate resolver is available");
             String skiRaw = DomUtils.getTextValue(x509SkiEl);
             String ski = HexUtils.encodeBase64(HexUtils.decodeBase64(skiRaw, true), true);
-            return securityTokenResolver.lookupBySki(ski);
+            return new Pair<X509Certificate, KeyInfoInclusionType>( securityTokenResolver.lookupBySki(ski), KeyInfoInclusionType.STR_SKI );
         } else if (x509IssuerSerialEl != null) {
             if (securityTokenResolver == null) throw new MissingResolverException("KeyInfo uses X509Data/X509IssuerSerial but no certificate resolver is available");
             final Element issuerEl = DomUtils.findExactlyOneChildElementByName(x509IssuerSerialEl, SoapConstants.DIGSIG_URI, "X509IssuerName");
@@ -172,7 +206,7 @@ public class KeyInfoElement implements ParsedElement {
             if (issuerVal.length() == 0) throw new SAXException("X509IssuerName was empty");
             final String serialVal = DomUtils.getTextValue(serialEl);
             if (serialVal.length() == 0) throw new SAXException("X509SerialNumber was empty");
-            return securityTokenResolver.lookupByIssuerAndSerial(new X500Principal(issuerVal), new BigInteger(serialVal));
+            return new Pair<X509Certificate, KeyInfoInclusionType>( securityTokenResolver.lookupByIssuerAndSerial(new X500Principal(issuerVal), new BigInteger(serialVal)), KeyInfoInclusionType.ISSUER_SERIAL );
         } else {
             throw new SAXException("KeyInfo X509Data did not contain one of " + allowedTypes);
         }
@@ -198,6 +232,11 @@ public class KeyInfoElement implements ParsedElement {
         return cert;
     }
 
+    public KeyInfoInclusionType getKeyInfoInclusionType() {
+        if (keyInfoInclusionType == null) throw new IllegalStateException("Key reference type unknown");
+        return keyInfoInclusionType;
+    }
+
     /**
      * Checks if the specified EncryptedType's KeyInfo is addressed to the specified recipient certificate.
      * @param encryptedType the EncryptedKey or EncryptedData element.  Must include a KeyInfo child.
@@ -212,7 +251,7 @@ public class KeyInfoElement implements ParsedElement {
     {
         SimpleSecurityTokenResolver resolver = new SimpleSecurityTokenResolver();
         resolver.addPrivateKey(new SignerInfo(null, new X509Certificate[] { recipientCert }));
-        getTargetPrivateKeyForEncryptedType(encryptedType, resolver, null);
+        getTargetPrivateKeyForEncryptedType(encryptedType, resolver);
     }
 
     /**
@@ -222,16 +261,15 @@ public class KeyInfoElement implements ParsedElement {
      * the EncryptedType.  Concrete examples are EncryptedKey and EncryptedData.
      *
      * @param encryptedType the EncryptedKey or EncryptedData element.  Must include a KeyInfo child.
-     * @param securityTokenResolver resolver for private keys.  required
-     * @param certResolver resolver for certificates by identifier, to resolve references to BSTs in the same message that are carrying certificate bytes,
-     *                     or null if no Reference URIs to BSTs within the same message should be followed
+     * @param securityTokenResolver resolver for private keys. Use a ContextualSecurityTokenResolver if certificates from the message should be resolved. required
      * @return a SignerInfo containing the matching private key and certificate chain.  Never null.
      * @throws com.l7tech.util.InvalidDocumentFormatException  if there was a problem with the encryptedType, or the KeyInfo didn't match.
      * @throws com.l7tech.security.xml.UnexpectedKeyInfoException      if the keyinfo did not match any known private key
      * @throws java.security.GeneralSecurityException        if there was a problem with the recipient certificate or a certificate
      *                                         embedded within the encryptedType.
      */
-    public static SignerInfo getTargetPrivateKeyForEncryptedType(Element encryptedType, SecurityTokenResolver securityTokenResolver, Resolver<String,X509Certificate> certResolver)
+    public static SignerInfo getTargetPrivateKeyForEncryptedType( final Element encryptedType,
+                                                                  final SecurityTokenResolver securityTokenResolver )
             throws UnexpectedKeyInfoException, InvalidDocumentFormatException, GeneralSecurityException
     {
         // bugzilla #1582
@@ -246,7 +284,7 @@ public class KeyInfoElement implements ParsedElement {
         if (keyInfos == null || keyInfos.size() < 1)
             throw new InvalidDocumentFormatException(encryptedType.getLocalName() + " includes no KeyInfo element");
         for (Element keyInfo : keyInfos) {
-            SignerInfo found = getTargetPrivateKeyForKeyInfo(keyInfo, securityTokenResolver, certResolver);
+            SignerInfo found = getTargetPrivateKeyForKeyInfo(keyInfo, securityTokenResolver);
             if (found != null)
                 return found;
         }
@@ -298,23 +336,24 @@ public class KeyInfoElement implements ParsedElement {
      * Try to look up a SignerInfo (private key and cert chain) corresponding to the specified KeyInfo element.
      *
      * @param keyInfo    the KeyInfo element to check.  Must not be null.
-     * @param securityTokenResolver resolver for private keys.  required
-     * @param certResolver resolver for certificates by identifier, to resolve references to BSTs in the same message that are carrying certificate bytes,
-     *                     or null if no Reference URIs to BSTs within the same message should be followed
+     * @param securityTokenResolver resolver for private keys. Use a ContextualSecurityContextResolver if BST resolution is desired.  required
      * @return the private key and cert chain for this private key, or null if we didn't recognize this KeyInfo.
      * @throws InvalidDocumentFormatException   If we can't figure out the KeyInfo format.
      * @throws CertificateException             If we need the encoded form of the certificate but it is invalid.
      */
-    public static SignerInfo getTargetPrivateKeyForKeyInfo(Element keyInfo, SecurityTokenResolver securityTokenResolver, Resolver<String,X509Certificate> certResolver)
+    public static SignerInfo getTargetPrivateKeyForKeyInfo( final Element keyInfo,
+                                                            final SecurityTokenResolver securityTokenResolver )
             throws InvalidDocumentFormatException, CertificateException
     {
+        final ContextualSecurityTokenResolver tokenResolver = ContextualSecurityTokenResolver.Support.asContextualResolver( securityTokenResolver );
+
         Element str = DomUtils.findOnlyOneChildElementByName(keyInfo,
                                                             SoapConstants.SECURITY_URIS_ARRAY,
                                                             SoapConstants.SECURITYTOKENREFERENCE_EL_NAME);
         if (str == null) {
             X509Certificate embedded = decodeEmbeddedCert(keyInfo);
             if (embedded != null) {
-                SignerInfo found = securityTokenResolver.lookupPrivateKeyByCert(embedded);
+                SignerInfo found = tokenResolver.lookupPrivateKeyByCert(embedded);
                 if (found != null)
                     return found;
 
@@ -325,19 +364,19 @@ public class KeyInfoElement implements ParsedElement {
             return null;
         }
 
-        Element ki = DomUtils.findOnlyOneChildElementByName(str,
-                                                           SoapConstants.SECURITY_URIS_ARRAY,
-                                                           SoapConstants.KEYIDENTIFIER_EL_NAME);
+        Element ki = DomUtils.findOnlyOneChildElementByName( str,
+                SoapConstants.SECURITY_URIS_ARRAY,
+                SoapConstants.KEYIDENTIFIER_EL_NAME );
         if (ki == null) {
             Element reference = DomUtils.findOnlyOneChildElementByName(str,
                                                               SoapConstants.SECURITY_URIS_ARRAY,
                                                               SoapConstants.REFERENCE_EL_NAME);
-            if (reference == null || certResolver == null) {
+            if ( reference == null ) {
                 Element x509Data = DomUtils.findOnlyOneChildElementByName(str, SoapConstants.DIGSIG_URI, "X509Data");
                 if ( x509Data != null ) {
                     try {
-                        X509Certificate cert = handleX509Data(x509Data, securityTokenResolver, EnumSet.of(KeyInfoInclusionType.ISSUER_SERIAL));
-                        return cert==null ? null : securityTokenResolver.lookupPrivateKeyByCert(cert);
+                        X509Certificate cert = handleX509Data(x509Data, tokenResolver, EnumSet.of(KeyInfoInclusionType.ISSUER_SERIAL)).left;
+                        return cert==null ? null : tokenResolver.lookupPrivateKeyByCert(cert);
                     } catch (IOException e) {
                         throw new InvalidDocumentFormatException(ExceptionUtils.getMessage(e));
                     } catch (SAXException e) {
@@ -347,22 +386,32 @@ public class KeyInfoElement implements ParsedElement {
                         throw new InvalidDocumentFormatException(ExceptionUtils.getMessage(e));
                     }
                 } else {
-                    // no reference or keyidentifier
-                    throw new UnsupportedKeyInfoFormatException("KeyInfo's SecurityTokenReference includes no KeyIdentifier element");
+                    final Element keyNameEl = DomUtils.findOnlyOneChildElementByName(str, SoapConstants.DIGSIG_URI, "KeyName" );
+                    if ( keyNameEl != null ) {
+                        try {
+                            X509Certificate cert = handleKeyName( str, tokenResolver );
+                            return cert==null ? null : tokenResolver.lookupPrivateKeyByCert(cert);
+                        } catch ( SAXException e ) {
+                            throw new InvalidDocumentFormatException(ExceptionUtils.getMessage(e));
+                        }
+                    } else {
+                        // no reference or keyidentifier
+                        throw new UnsupportedKeyInfoFormatException("KeyInfo's SecurityTokenReference includes no KeyIdentifier/KeyName element");
+                    }
                 }
             } else {
                 String uriAttr = reference.getAttribute("URI");
                 if (uriAttr == null || uriAttr.length() < 1) {
                     throw new UnsupportedKeyInfoFormatException("KeyInfo contains a reference but the URI attribute cannot be obtained");
                 }
-                if (uriAttr.charAt(0) == '#') {
+                if (uriAttr.charAt( 0 ) == '#') {
                     uriAttr = uriAttr.substring(1);
                 }
-                if (certResolver.resolve(uriAttr)==null) {
+                X509Certificate referencedCert = tokenResolver.lookupByIdentifier( uriAttr );
+                if (referencedCert==null) {
                     throw new InvalidDocumentFormatException("Invalid security token reference '"+uriAttr+"' in KeyInfo");
                 }
-                X509Certificate referencedCert = certResolver.resolve(uriAttr);
-                SignerInfo found = securityTokenResolver.lookupPrivateKeyByCert(referencedCert);
+                SignerInfo found = tokenResolver.lookupPrivateKeyByCert(referencedCert);
 
                 if (found != null) {
                     logger.fine("The Key recipient cert is recognized");
@@ -375,14 +424,14 @@ public class KeyInfoElement implements ParsedElement {
                 }
             }
         } else {
-            String valueType = ki.getAttribute("ValueType");
+            String valueType = ki.getAttribute( "ValueType" );
             String keyIdentifierValue = DomUtils.getTextValue(ki);
             if (valueType == null || valueType.length() <= 0) {
                 logger.fine("The KeyId Value Type is not specified. We will therefore assume it is a Subject Key Identifier.");
                 valueType = SoapConstants.VALUETYPE_SKI;
             }
             if (valueType.endsWith( SoapConstants.VALUETYPE_SKI_SUFFIX)) {
-                SignerInfo found = securityTokenResolver.lookupPrivateKeyBySki(keyIdentifierValue);
+                SignerInfo found = tokenResolver.lookupPrivateKeyBySki(keyIdentifierValue);
                 if (found != null) {
                     logger.fine("the Key SKI is recognized. This key is for us for sure!");
                     return found;
@@ -398,7 +447,7 @@ public class KeyInfoElement implements ParsedElement {
                 keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue, true);
                 if (keyIdValueBytes == null || keyIdValueBytes.length < 1) throw new InvalidDocumentFormatException("KeyIdentifier was empty");
                 X509Certificate referencedCert = CertUtils.decodeCert(keyIdValueBytes);
-                SignerInfo found = securityTokenResolver.lookupPrivateKeyByCert(referencedCert);
+                SignerInfo found = tokenResolver.lookupPrivateKeyByCert(referencedCert);
 
                 if (found != null) {
                     logger.fine("The Key recipient cert is recognized");
@@ -412,7 +461,7 @@ public class KeyInfoElement implements ParsedElement {
                 }
             } else if (valueType.endsWith( SoapConstants.VALUETYPE_X509_THUMB_SHA1_SUFFIX))
             {
-                SignerInfo found = securityTokenResolver.lookupPrivateKeyByX509Thumbprint(keyIdentifierValue);
+                SignerInfo found = tokenResolver.lookupPrivateKeyByX509Thumbprint(keyIdentifierValue);
                 if (found != null) {
                     logger.fine("The cert SHA1 thumbprint was recognized.  The cert is ours for sure.");
                     return found;

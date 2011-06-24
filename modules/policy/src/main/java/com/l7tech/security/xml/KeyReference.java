@@ -1,7 +1,3 @@
-/**
- * @author emil
- * @version 17-Apr-2005
- */
 package com.l7tech.security.xml;
 
 import java.io.ObjectStreamException;
@@ -11,15 +7,18 @@ import java.util.List;
 
 /**
  * The enumeration type for Key References.
+ *
+ * @author emil
  */
 public final class KeyReference implements Serializable {
     private static int index = 0;
     public static final KeyReference BST = new KeyReference(index++, "BinarySecurityToken");
     public static final KeyReference SKI = new KeyReference(index++, "SubjectKeyIdentifier");
     public static final KeyReference ISSUER_SERIAL = new KeyReference(index++, "IssuerSerial");
+    public static final KeyReference KEY_NAME = new KeyReference(index++, "KeyName");
 
     // for readResolve
-    private static final KeyReference[] REFERENCES = {BST, SKI, ISSUER_SERIAL};
+    private static final KeyReference[] REFERENCES = {BST, SKI, ISSUER_SERIAL, KEY_NAME};
 
     private int val;
     private final String name;
@@ -48,6 +47,8 @@ public final class KeyReference implements Serializable {
             return SKI;
         } else if (name.equals(ISSUER_SERIAL.getName())) {
             return ISSUER_SERIAL;
+        } else if (name.equals(KEY_NAME.getName())) {
+            return KEY_NAME;
         }
         throw new IllegalArgumentException("No such KeyReference: " + name);
     }

@@ -377,7 +377,7 @@ public class RstrInfo {
                 throw new InvalidDocumentFormatException( "No resolver, cannot process EncryptedKey." );
             }
 
-            final SignerInfo signerInfo = KeyInfoElement.getTargetPrivateKeyForEncryptedType(encryptedKeyEl, securityTokenResolver, null);
+            final SignerInfo signerInfo = KeyInfoElement.getTargetPrivateKeyForEncryptedType(encryptedKeyEl, securityTokenResolver);
 
             // verify that the algo is supported
             XencUtil.checkEncryptionMethod(encryptedKeyEl);

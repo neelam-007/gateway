@@ -424,7 +424,7 @@ public class WssDecoratorImpl implements WssDecorator {
             switch(c.dreq.getKeyInfoInclusionType()) {
                 case CERT: {
                     // Use keyinfo reference target of a BinarySecurityToken
-                    Element x509Bst = addX509BinarySecurityToken(securityHeader, c.dreq.getSenderMessageSigningCertificate(), c);
+                    Element x509Bst = addX509BinarySecurityToken(securityHeader, null, c.dreq.getSenderMessageSigningCertificate(), c);
                     String bstId = getOrCreateWsuId(c, x509Bst, null);
                     final KeyInfoDetails keyinfo = KeyInfoDetails.makeUriReference(bstId, SoapUtil.VALUETYPE_X509);
                     senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, keyinfo);
@@ -1531,6 +1531,11 @@ public class WssDecoratorImpl implements WssDecorator {
                     : KeyInfoDetails.makeKeyId(recipientCertificate.getEncoded(), SoapConstants.VALUETYPE_X509);
         } else if ( recipientKeyReferenceType==KeyInfoInclusionType.ISSUER_SERIAL ) {
             keyInfo = KeyInfoDetails.makeIssuerSerial( recipientCertificate, true );   
+        } else if ( recipientKeyReferenceType==KeyInfoInclusionType.CERT ) {
+            final Element bstElement = addX509BinarySecurityToken( securityHeader, encryptedKey, recipientCertificate, c );
+            keyInfo = KeyInfoDetails.makeUriReferenceRaw( "#" + getOrCreateWsuId( c, bstElement, null ), SoapUtil.VALUETYPE_X509 );
+        } else if ( recipientKeyReferenceType==KeyInfoInclusionType.KEY_NAME ) {
+            keyInfo = KeyInfoDetails.makeKeyName( recipientCertificate, true );
         } else {
             throw new DecoratorException("Unsupported encryptio KeyInfoInclusionType: " + recipientKeyReferenceType);
         }
@@ -1671,15 +1676,17 @@ public class WssDecoratorImpl implements WssDecorator {
         return new AttachmentEntityResolver(iterator, XmlUtil.getXss4jEntityResolver());
     }
 
-    private Element addX509BinarySecurityToken(Element securityHeader, X509Certificate certificate, Context c)
+    private Element addX509BinarySecurityToken(Element securityHeader, Element nextSibling, X509Certificate certificate, Context c)
       throws CertificateEncodingException
     {
-        Element element = DomUtils.createAndAppendElementNS(securityHeader,
-                                                           SoapConstants.BINARYSECURITYTOKEN_EL_NAME,
-                                                           securityHeader.getNamespaceURI(), "wsse");
+        Element element = DomUtils.createElementNS(securityHeader,
+                                                   SoapConstants.BINARYSECURITYTOKEN_EL_NAME,
+                                                   securityHeader.getNamespaceURI(), "wsse");
         element.setAttributeNS(null, "ValueType", c.nsf.getValueType( SoapConstants.VALUETYPE_X509, element));
         element.setAttributeNS(null, "EncodingType", c.nsf.getEncodingType( SoapConstants.ENCODINGTYPE_BASE64BINARY, element));
         element.appendChild(DomUtils.createTextNode(element, HexUtils.encodeBase64(certificate.getEncoded(), true)));
+        securityHeader.insertBefore( element, nextSibling );
+
         return element;
     }
 

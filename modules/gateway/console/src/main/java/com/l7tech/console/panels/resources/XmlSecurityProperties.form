@@ -3,7 +3,7 @@
   <grid id="24f2b" binding="mainPanel" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="5" left="10" bottom="0" right="10"/>
     <constraints>
-      <xy x="46" y="21" width="1142" height="1076"/>
+      <xy x="46" y="21" width="1142" height="1120"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -371,7 +371,7 @@
                   </component>
                 </children>
               </grid>
-              <grid id="a2f30" binding="encryptionResponseConfigPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="a2f30" binding="encryptionResponseConfigPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -381,7 +381,7 @@
                 <children>
                   <component id="1aa45" class="javax.swing.JRadioButton" binding="encSkiReferenceRadioButton">
                     <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <selected value="true"/>
@@ -390,10 +390,26 @@
                   </component>
                   <component id="97722" class="javax.swing.JRadioButton" binding="encIssuerSerialReferenceRadioButton">
                     <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="Issuer Name / Serial Number"/>
+                    </properties>
+                  </component>
+                  <component id="13cbe" class="javax.swing.JRadioButton" binding="encBstReferenceRadioButton">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="BinarySecurityToken (BST)"/>
+                    </properties>
+                  </component>
+                  <component id="aafec" class="javax.swing.JRadioButton" binding="encKeyNameReferenceRadioButton">
+                    <constraints>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="Key Name"/>
                     </properties>
                   </component>
                 </children>
@@ -572,6 +588,8 @@
     <group name="encryptionKeyReference">
       <member id="1aa45"/>
       <member id="97722"/>
+      <member id="13cbe"/>
+      <member id="aafec"/>
     </group>
     <group name="elementEncryptionGroup">
       <member id="fe94b"/>
