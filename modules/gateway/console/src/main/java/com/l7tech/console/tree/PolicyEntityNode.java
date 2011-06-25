@@ -115,7 +115,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
 
     @Override
     public String getName() {
-        return getEntityHeader().getName();
+        return getEntityHeader().getDisplayName();
     }
 
     @Override

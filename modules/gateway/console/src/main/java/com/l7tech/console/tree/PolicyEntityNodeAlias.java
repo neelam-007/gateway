@@ -40,6 +40,6 @@ public class PolicyEntityNodeAlias extends PolicyEntityNode{
 
     @Override
     public String getName() {
-        return getEntityHeader().getName()+" alias";
+        return super.getName()+" alias";
     }
 }

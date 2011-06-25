@@ -87,6 +87,23 @@ public class PolicyHeader extends OrganizationHeader {
         return policyRevision;
     }
 
+    /**
+     * Get the display name for this policy.
+     *
+     * <p>The display name is the policy name with an optional tag appended.</p>
+     *
+     * @return The display name.
+     */
+    public String getDisplayName() {
+        String displayName = getName();
+
+        String tag = policyType.getGuiTags().isEmpty() ? null : this.getDescription();
+        if ( tag != null) {
+            displayName += " [" + tag + "]";
+        }
+
+        return displayName;    }
+
     @Override
     public String toString() {
         return getName();
