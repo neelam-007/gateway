@@ -296,7 +296,13 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 hresponse.setStatus(routeStat);
                 String[] ct = response.getHttpResponseKnob().getHeaderValues("content-type");
                 if (ct == null || ct.length <= 0) {
-                    hresponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
+                    final ContentTypeHeader mimeKnobCt = response.getMimeKnob().getOuterContentType();
+                    final String toset = mimeKnobCt == ContentTypeHeader.NONE ? null : mimeKnobCt.getFullValue();
+                    hresponse.setContentType(toset);
+                    if (toset == null) {
+                        // Omit content length if no content type
+                        hresponse.setHeader("content-length", null);
+                    }
                 }
                 OutputStream responseos = hresponse.getOutputStream();
                 if (gzipEncodedTransaction) {

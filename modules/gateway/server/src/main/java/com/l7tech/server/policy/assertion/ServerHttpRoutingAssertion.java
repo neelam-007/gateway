@@ -449,26 +449,13 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
         final HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
         final HttpMethod requestMethod = httpRequestKnob.getMethod();
-        switch (requestMethod) {
-            case GET:
-                routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
-                return HttpMethod.GET;
-            case POST:
-                // redirects not supported under POST
-                return HttpMethod.POST;
-            case PUT:
-                // redirects not supported under PUT
-                return HttpMethod.PUT;
-            case DELETE:
-                routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
-                return HttpMethod.DELETE;
-            case HEAD:
-                routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
-                return HttpMethod.HEAD;
-            default:
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_UNEXPECTED_METHOD, requestMethod.name());
-                return HttpMethod.POST;
+        if (requestMethod == null) {
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_UNEXPECTED_METHOD, "null");
+            return HttpMethod.POST;
         }
+        if (requestMethod.isFollowRedirects())
+            routedRequestParams.setFollowRedirects(assertion.isFollowRedirects());
+        return requestMethod;
     }
 
     private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, Message requestMessage, final GenericHttpRequestParams routedRequestParams,
@@ -518,7 +505,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             final HttpMethod method = methodFromRequest(context, routedRequestParams);
 
             // dont add content-type for get and deletes
-            if (method == HttpMethod.PUT || method == HttpMethod.POST) {
+            if (method.needsRequestBody()) {
                 final String requestContentType = reqMime == null ? "application/octet-stream" : reqMime.getOuterContentType().getFullValue();
                 routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, requestContentType));
             }
@@ -571,7 +558,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             } else {
                 // only include payload if the method is POST or PUT
-                if (method == HttpMethod.POST || method == HttpMethod.PUT) {
+                if (method.needsRequestBody()) {
                     if (routedRequest instanceof RerunnableHttpRequest) {
                         RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) routedRequest;
                         rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
@@ -782,17 +769,16 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
             // Handle missing content type error
-            if (status == HttpConstants.STATUS_OK && outerContentType == null) {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_NOCONTENTTYPE, Integer.toString(status));
-                responseOk = false;
-            } else if (assertion.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
+            if (assertion.isPassthroughHttpAuthentication() && status == HttpConstants.STATUS_UNAUTHORIZED) {
                 if ( outerContentType==null ) outerContentType = getDefaultContentType(true);
                 destination.initialize(stashManagerFactory.createStashManager(), outerContentType, responseStream);
                 responseOk = false;
             } else if (status >= HttpConstants.STATUS_ERROR_RANGE_START && assertion.isFailOnErrorStatus() && !passthroughSoapFault) {
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, Integer.toString(status));
                 responseOk = false;
-            } else if (outerContentType != null) { // response OK
+            } else { // response OK
+                if ( outerContentType==null ) outerContentType = getDefaultContentType(false);
+                if ( outerContentType==null ) outerContentType = ContentTypeHeader.NONE;
                 if (responseStream == null) {
                     destination.initialize(outerContentType, new byte[0]);
                 } else {

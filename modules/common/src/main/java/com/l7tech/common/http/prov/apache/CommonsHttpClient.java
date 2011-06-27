@@ -27,6 +27,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -201,6 +203,27 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         return SyspropUtil.getIntegerCached(PROP_STALE_CHECKS, 1);
     }
 
+    private static Constructor<? extends org.apache.commons.httpclient.HttpMethod> findApacheCtor(Class<? extends org.apache.commons.httpclient.HttpMethod> ac) {
+        try {
+            return ac.getConstructor(String.class);
+        } catch (NoSuchMethodException e) {
+            logger.log(Level.SEVERE, "Missing Apache commons HTTP method constructor: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static final Map<HttpMethod, Constructor<? extends org.apache.commons.httpclient.HttpMethod>> apacheMethodMap;
+    static {
+        Map<HttpMethod, Constructor<? extends org.apache.commons.httpclient.HttpMethod>> map = new HashMap<HttpMethod, Constructor<? extends org.apache.commons.httpclient.HttpMethod>>();
+        map.put(HttpMethod.GET, findApacheCtor(GetMethod.class));
+        map.put(HttpMethod.POST, findApacheCtor(PostMethod.class));
+        map.put(HttpMethod.PUT, findApacheCtor(PutMethod.class));
+        map.put(HttpMethod.DELETE, findApacheCtor(DeleteMethod.class));
+        map.put(HttpMethod.HEAD, findApacheCtor(HeadMethod.class));
+        map.put(HttpMethod.OPTIONS, findApacheCtor(OptionsMethod.class));
+        apacheMethodMap = Collections.unmodifiableMap(map);
+    }
+
     @Override
     public GenericHttpRequest createRequest( final HttpMethod method,
                                              final GenericHttpRequestParams params )
@@ -231,71 +254,24 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
 
         final HttpState state = getHttpState(client, params);
 
-        // NOTE: Use the FILE part of the url here (path + query string), if we use the full URL then
-        //       we end up with the default socket factory for the protocol
         org.apache.commons.httpclient.HttpMethod clientMethod;
-        try {
-            switch (method) {
-                case POST:
-                    clientMethod = new PostMethod(encodePathAndQuery(targetUrl.getFile())) {
-                        @Override
-                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException {
-                            if (virtualHost != null && virtualHost.length() > 0)
-                                setRequestHeader("Host", virtualHost);
-                            else
-                                super.addHostRequestHeader(state, conn);
-                        }
-                    };
-                    break;
-                case GET:
-                    clientMethod = new GetMethod(encodePathAndQuery(targetUrl.getFile())) {
-                        @Override
-                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException {
-                            if (virtualHost != null && virtualHost.length() > 0)
-                                setRequestHeader("Host", virtualHost);
-                            else
-                                super.addHostRequestHeader(state, conn);
-                        }
-                    };
-                    break;
-                case PUT:
-                    clientMethod = new PutMethod(encodePathAndQuery(targetUrl.getFile())) {
-                        @Override
-                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException {
-                            if (virtualHost != null && virtualHost.length() > 0)
-                                setRequestHeader("Host", virtualHost);
-                            else
-                                super.addHostRequestHeader(state, conn);
-                        }
-                    };
-                    break;
-                case DELETE:
-                    clientMethod = new DeleteMethod(encodePathAndQuery(targetUrl.getFile())) {
-                        @Override
-                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException {
-                            if (virtualHost != null && virtualHost.length() > 0)
-                                setRequestHeader("Host", virtualHost);
-                            else
-                                super.addHostRequestHeader(state, conn);
-                        }
-                    };
-                    break;
-                case HEAD:
-                    clientMethod = new HeadMethod(encodePathAndQuery(targetUrl.getFile())) {
-                        @Override
-                        protected void addHostRequestHeader(HttpState state, HttpConnection conn) throws IOException {
-                            if (virtualHost != null && virtualHost.length() > 0)
-                                setRequestHeader("Host", virtualHost);
-                            else
-                                super.addHostRequestHeader(state, conn);
-                        }
-                    };
-                    break;
-                default:
-                    throw new IllegalStateException("Method " + method + " not supported");
+        Constructor<? extends org.apache.commons.httpclient.HttpMethod> apacheMethodCtor = apacheMethodMap.get(method);
+        if (apacheMethodCtor != null) {
+            try {
+                // NOTE: Use the FILE part of the url here (path + query string), if we use the full URL then
+                //       we end up with the default socket factory for the protocol
+                clientMethod = apacheMethodCtor.newInstance(encodePathAndQuery(targetUrl.getFile()));
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                final Throwable cause = e.getTargetException();
+                clientMethod = new ExceptionMethod(cause instanceof Exception ? (Exception)cause : e);
             }
-        } catch ( IllegalArgumentException e ) {
-            clientMethod = new ExceptionMethod( e );
+        } else {
+            // TODO support arbitrary HTTP methods, perhaps borrowing POST's semantics for them, or having configurable semantics
+            throw new IllegalStateException("Method " + method + " not supported");
         }
         final org.apache.commons.httpclient.HttpMethod httpMethod = clientMethod;
 
@@ -304,6 +280,8 @@ public class CommonsHttpClient implements RerunnableGenericHttpClient {
         final HttpMethodParams methodParams = httpMethod.getParams();
         methodParams.setVersion(useHttp1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1);
         methodParams.setCookiePolicy(CookiePolicy.BROWSER_COMPATIBILITY);
+        if (virtualHost != null && virtualHost.length() > 0)
+            methodParams.setVirtualHost(virtualHost);
         
         final Long contentLen = params.getContentLength();
         if ( (httpMethod instanceof PostMethod || httpMethod instanceof PutMethod) && contentLen != null) {

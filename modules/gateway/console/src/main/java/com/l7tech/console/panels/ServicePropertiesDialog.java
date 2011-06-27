@@ -78,6 +78,7 @@ public class ServicePropertiesDialog extends JDialog {
     private JCheckBox postCheck;
     private JCheckBox deleteCheck;
     private JCheckBox headCheck;
+    private JCheckBox optionsCheck;
     private JPanel wsdlPanel;
     private JButton resetWSDLButton;
     private JButton helpButton;
@@ -232,6 +233,7 @@ public class ServicePropertiesDialog extends JDialog {
         if (methods.contains(HttpMethod.HEAD)) {
             headCheck.setSelected(true);
         }
+        optionsCheck.setSelected(methods.contains(HttpMethod.OPTIONS));
 
         if (!subject.isSoap()) {
             tabbedPane1.setEnabledAt(2, false);
@@ -679,6 +681,7 @@ public class ServicePropertiesDialog extends JDialog {
         enableIfHasUpdatePermission(postCheck);
         enableIfHasUpdatePermission(deleteCheck);
         enableIfHasUpdatePermission(headCheck);
+        enableIfHasUpdatePermission(optionsCheck);
         enableIfHasUpdatePermission(disableRadio);
         enableIfHasUpdatePermission(enableRadio);
         enableIfHasUpdatePermission(laxResolutionCheckbox);
@@ -828,7 +831,7 @@ public class ServicePropertiesDialog extends JDialog {
             return;
         }
 
-        if (!getCheck.isSelected() && !putCheck.isSelected() && !postCheck.isSelected() && !deleteCheck.isSelected() && !headCheck.isSelected()) {
+        if (!getCheck.isSelected() && !putCheck.isSelected() && !postCheck.isSelected() && !deleteCheck.isSelected() && !headCheck.isSelected() && !optionsCheck.isSelected()) {
             int res = JOptionPane.showConfirmDialog(this, "Because no HTTP methods are selected, this service will " +
                                                           "not be accessible through HTTP. Are you sure you want to " +
                                                           "do this?", "Warning", JOptionPane.YES_NO_OPTION);
@@ -856,6 +859,9 @@ public class ServicePropertiesDialog extends JDialog {
         }
         if (headCheck.isSelected()) {
             methods.add(HttpMethod.HEAD);
+        }
+        if (optionsCheck.isSelected()) {
+            methods.add(HttpMethod.OPTIONS);
         }
         subject.setHttpMethods(methods);
         subject.setLaxResolution(laxResolutionCheckbox.isSelected());

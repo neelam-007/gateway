@@ -3,29 +3,32 @@
  */
 package com.l7tech.common.http;
 
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import javax.xml.bind.annotation.XmlEnum;
-
 /** @author alex */
 public enum HttpMethod {
-    GET(false),
-    POST(true),
-    PUT(true),
-    DELETE(false),
-    HEAD(false),
+    GET(false, true),
+    POST(true, false),
+    PUT(true, false),
+    DELETE(false, true),
+    HEAD(false, true),
+    OPTIONS(false, false), // According to RFC 2616 an OPTIONS request may include a body, but the commons OptionsMethod does not extend EntityEnclosingMethod so we'll ingore that possibility for now.
     /**
      * Other methods are possible, but enums aren't extensible.
-     * @see HttpServletRequestKnob#getMethod
-     * */
-    OTHER(false);
+     */
+    OTHER(false, false);
 
     private final boolean needsRequestBody;
+    private final boolean followRedirects;
 
-    private HttpMethod(boolean needsRequestBody) {
+    private HttpMethod(boolean needsRequestBody, boolean followRedirects) {
         this.needsRequestBody = needsRequestBody;
+        this.followRedirects = followRedirects;
     }
 
     public boolean needsRequestBody() {
         return needsRequestBody;
+    }
+
+    public boolean isFollowRedirects() {
+        return followRedirects;
     }
 }

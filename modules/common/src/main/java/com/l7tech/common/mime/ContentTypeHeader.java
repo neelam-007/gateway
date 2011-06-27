@@ -33,6 +33,9 @@ public class ContentTypeHeader extends MimeHeader {
     public static final String PROP_ALWAYS_VALIDATE = "com.l7tech.common.mime.alwaysValidateContentType";
     public static final boolean ALWAYS_VALIDATE = SyspropUtil.getBoolean(PROP_ALWAYS_VALIDATE, false);
 
+    /** Special instance (null object) that represents the lack of a content type header, where supported.  Where not supported, acts like application/octet-stream. */
+    public static final ContentTypeHeader NONE;
+
     public static final ContentTypeHeader OCTET_STREAM_DEFAULT; // application/octet-stream
     public static final ContentTypeHeader TEXT_DEFAULT; // text/plain; charset=UTF-8
     public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
@@ -56,14 +59,20 @@ public class ContentTypeHeader extends MimeHeader {
 
     static {
         try {
+            NONE = parseValue("application/octet-stream");
+            NONE.getEncoding();
             OCTET_STREAM_DEFAULT = parseValue("application/octet-stream");
             OCTET_STREAM_DEFAULT.getEncoding();
             TEXT_DEFAULT = parseValue("text/plain; charset=utf-8");
+            TEXT_DEFAULT.getEncoding();
             XML_DEFAULT = parseValue("text/xml; charset=utf-8");
             XML_DEFAULT.getEncoding();
             SOAP_1_2_DEFAULT = parseValue("application/soap+xml; charset=utf-8");
+            SOAP_1_2_DEFAULT.getEncoding();
             APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded");
+            APPLICATION_X_WWW_FORM_URLENCODED.getEncoding();
             APPLICATION_JSON = parseValue("application/json; charset=utf-8");
+            APPLICATION_JSON.getEncoding();
         } catch (Throwable e) {
             throw new Error(e);
         }
