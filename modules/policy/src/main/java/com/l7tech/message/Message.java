@@ -16,6 +16,7 @@ import com.l7tech.xml.MessageNotSoapException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.validation.constraints.NotNull;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -635,7 +636,7 @@ public final class Message implements Closeable {
      * @throws IllegalStateException if this message already offers an implementation of the specified knobClass
      * @throws IllegalArgumentException if knob is not an instance of knobClass
      */
-    public void attachKnob(Class<? extends MessageKnob> knobClass, MessageKnob knob) {
+    public void attachKnob(@NotNull Class<? extends MessageKnob> knobClass, @NotNull MessageKnob knob) {
         if (getKnob(knobClass) != null)
             throw new IllegalStateException("An implementation of the knob " + knobClass + " is already attached to this Message.");
         if (!knobClass.isAssignableFrom(knob.getClass()))
@@ -644,6 +645,27 @@ public final class Message implements Closeable {
         if (getKnob(knobClass) == null)
             throw new IllegalArgumentException("knob failed to provide an implementation of knobClass" + knobClass); // can't happen
     }
+
+    /**
+     * Attach a knob to this message that responds to the specified knob classes, if and only if
+     * the message does not already provide any of these knob classes.
+     *
+     * @param knob the knob to attach.  It will be attached in a new facet.  Must not be null.
+     * @param knobClasses the classes of the interface provided by this knob implementation.  Must be non-null and non-empty.
+     * @throws IllegalStateException if this message already offers an implementation of the specified knobClass
+     * @throws IllegalArgumentException if knob is not an instance of knobClass
+     */
+    public void attachKnob(@NotNull MessageKnob knob, @NotNull Class[] knobClasses) {
+        for (Class knobClass : knobClasses) {
+            if (!knobClass.isAssignableFrom(knob.getClass()))
+                throw new IllegalArgumentException("knob was not an implementation of knobClass " + knobClass);
+            //noinspection unchecked
+            if (getKnob(knobClass) != null)
+                throw new IllegalStateException("An implementation of the knob " + knobClass + " is already attached to this Message.");
+        }
+        rootFacet = new KnobHolderFacet(this, rootFacet, knob, knobClasses);
+    }
+
 
     /**
      * Get the specified knob, which must already be provided.

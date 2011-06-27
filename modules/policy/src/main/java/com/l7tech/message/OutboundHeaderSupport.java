@@ -34,7 +34,7 @@ class OutboundHeaderSupport implements HasOutboundHeaders {
         // Clear out any previous value
         for ( Iterator<Pair<String, Object>> i = headersToSend.iterator(); i.hasNext();) {
             Pair<String, Object> pair = i.next();
-            if (name.equals(pair.left)) i.remove();
+            if (name.equalsIgnoreCase(pair.left)) i.remove();
         }
         headersToSend.add(new Pair<String, Object>(name, value));
     }
@@ -74,7 +74,7 @@ class OutboundHeaderSupport implements HasOutboundHeaders {
     @Override
     public boolean containsHeader(String name) {
         for (Pair<String, Object> pair : headersToSend) {
-            if (name.equals(pair.left)) return true;
+            if (name.equalsIgnoreCase(pair.left)) return true;
         }
 
         return false;

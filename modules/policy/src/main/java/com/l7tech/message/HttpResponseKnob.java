@@ -11,7 +11,7 @@ import com.l7tech.common.http.HttpCookie;
  * For information recorded about the last INCOMING BACK-END RESPONSE, look for an HttpInboundResponseKnob.
  * Information about a response to be sent via HTTP.
  */
-public interface HttpResponseKnob extends MessageKnob, HasOutboundHeaders {
+public interface HttpResponseKnob extends OutboundHeadersKnob {
     /**
      * Adds the specified {@link HttpCookie} to the response
      * @param cookie the {@link HttpCookie} to be added. Must not be null.
