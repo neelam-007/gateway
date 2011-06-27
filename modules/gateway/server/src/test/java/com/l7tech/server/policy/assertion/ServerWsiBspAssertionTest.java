@@ -9,6 +9,8 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathConstants;
 
 import static org.junit.Assert.*;
+
+import com.l7tech.policy.assertion.WsiBspAssertion;
 import org.junit.Test;
 
 import com.l7tech.util.ResourceUtils;
@@ -74,7 +76,7 @@ public class ServerWsiBspAssertionTest {
 
     //- PRIVATE
 
-    private ServerWsiBspAssertion swba = new ServerWsiBspAssertion();
+    private ServerWsiBspAssertion swba = new ServerWsiBspAssertion( new WsiBspAssertion() );
 
     private String readMessage(String name) throws IOException {
         String result = null;

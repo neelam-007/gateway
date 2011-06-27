@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathException;
@@ -85,9 +84,8 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
 
     //- PROTECTED
 
-    protected ServerXpathValidationAssertion(AT assertion, Logger validationLogger) {
+    protected ServerXpathValidationAssertion(AT assertion) {
         super(assertion);
-        this.logger = validationLogger;
         namespaceContext = new NamespaceContextImpl(Collections.<String,String>emptyMap());
         rulesMap = Collections.emptyMap();
         initRules();
@@ -244,7 +242,6 @@ public abstract class ServerXpathValidationAssertion<AT extends Assertion> exten
     private static final String NAMESPACE_PREFIX = "Namespace.";
 
     //
-    private final Logger logger;
     private NamespaceContext namespaceContext;
     private Map<XPathExpression,String> rulesMap;      //Map of XPaths to descriptions
 

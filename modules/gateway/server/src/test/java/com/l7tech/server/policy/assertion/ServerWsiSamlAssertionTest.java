@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
 import java.util.Map;
-import java.util.Iterator;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -9,6 +8,8 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathConstants;
 
 import static org.junit.Assert.*;
+
+import com.l7tech.policy.assertion.WsiSamlAssertion;
 import org.junit.Test;
 
 import org.w3c.dom.Document;
@@ -32,20 +33,20 @@ public class ServerWsiSamlAssertionTest {
     public void testSuccesses() throws Exception {
         System.out.println("Running testSuccesses()");
         Map ruleMap = swsa.getRules();
-        for(Iterator iterator = ruleMap.entrySet().iterator(); iterator.hasNext(); ) {
-            Map.Entry entry = (Map.Entry) iterator.next();
+        for ( final Object o : ruleMap.entrySet() ) {
+            Map.Entry entry = (Map.Entry) o;
             XPathExpression xpe = (XPathExpression) entry.getKey();
             String description = (String) entry.getValue();
-            String rule = description.substring(0, description.indexOf(':'));
+            String rule = description.substring( 0, description.indexOf( ':' ) );
 
-            if(rule.startsWith("R")) {
-                System.out.println("Running rule: " + description);
-                String messageText = readMessage(rule + "_success_01.xml");
-                Document document = XmlUtil.stringToDocument(messageText);
-                DomElementCursor dec = new DomElementCursor(document);
+            if ( rule.startsWith( "R" ) ) {
+                System.out.println( "Running rule: " + description );
+                String messageText = readMessage( rule + "_success_01.xml" );
+                Document document = XmlUtil.stringToDocument( messageText );
+                DomElementCursor dec = new DomElementCursor( document );
 
-                Boolean result = (Boolean) xpe.evaluate(dec, XPathConstants.BOOLEAN);
-                assertTrue("XPath should be true for rule '"+description+"'.", result.booleanValue());
+                Boolean result = (Boolean) xpe.evaluate( dec, XPathConstants.BOOLEAN );
+                assertTrue( "XPath should be true for rule '" + description + "'.", result );
             }
         }
     }
@@ -54,27 +55,27 @@ public class ServerWsiSamlAssertionTest {
     public void testNonSuccesses() throws Exception {
         System.out.println("Running testNonSuccesses()");
         Map ruleMap = swsa.getRules();
-        for(Iterator iterator = ruleMap.entrySet().iterator(); iterator.hasNext(); ) {
-            Map.Entry entry = (Map.Entry) iterator.next();
+        for ( final Object o : ruleMap.entrySet() ) {
+            Map.Entry entry = (Map.Entry) o;
             XPathExpression xpe = (XPathExpression) entry.getKey();
             String description = (String) entry.getValue();
-            String rule = description.substring(0, description.indexOf(':'));
+            String rule = description.substring( 0, description.indexOf( ':' ) );
 
-            if(rule.startsWith("R")) {
-                System.out.println("Running rule: " + description);
-                String messageText = readMessage(rule + "_failure_01.xml");
-                Document document = XmlUtil.stringToDocument(messageText);
-                DomElementCursor dec = new DomElementCursor(document);
+            if ( rule.startsWith( "R" ) ) {
+                System.out.println( "Running rule: " + description );
+                String messageText = readMessage( rule + "_failure_01.xml" );
+                Document document = XmlUtil.stringToDocument( messageText );
+                DomElementCursor dec = new DomElementCursor( document );
 
-                Boolean result = (Boolean) xpe.evaluate(dec, XPathConstants.BOOLEAN);
-                assertFalse("XPath should be false [message is invalid] for rule '"+description+"'.", result.booleanValue());
+                Boolean result = (Boolean) xpe.evaluate( dec, XPathConstants.BOOLEAN );
+                assertFalse( "XPath should be false [message is invalid] for rule '" + description + "'.", result );
             }
         }
     }
 
     //- PRIVATE
 
-    private ServerWsiSamlAssertion swsa = new ServerWsiSamlAssertion();
+    private ServerWsiSamlAssertion swsa = new ServerWsiSamlAssertion( new WsiSamlAssertion() );
 
     private String readMessage(String name) throws IOException {
         String result = null;

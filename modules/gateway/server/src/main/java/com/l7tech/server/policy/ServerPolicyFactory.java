@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2003-2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.LicenseException;
@@ -13,6 +10,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.TarariLoader;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEventPublisher;
@@ -174,7 +172,12 @@ public class ServerPolicyFactory implements ApplicationContextAware {
                             params[0] = genericAssertion;
                         for (int i = 1; i < params.length; ++i)
                             params[i] = applicationContext;
-                        return (ServerAssertion)ctor.newInstance(params);
+                        final ServerAssertion serverAssertion = (ServerAssertion) ctor.newInstance(params);
+                        applicationContext.getAutowireCapableBeanFactory().autowireBeanProperties(
+                                serverAssertion,
+                                AutowireCapableBeanFactory.AUTOWIRE_NO,
+                                true );
+                        return serverAssertion;
                     }
                 }
             } finally {

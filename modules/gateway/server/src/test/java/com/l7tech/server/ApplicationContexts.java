@@ -3,8 +3,15 @@
  */
 package com.l7tech.server;
 
+import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.Functions;
+import org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import java.util.Map;
 
 /**
  * A bag of application contexts
@@ -46,4 +53,29 @@ public class ApplicationContexts {
             "com/l7tech/server/resources/ssgApplicationContext.xml",
             "com/l7tech/server/resources/adminContext.xml"
     };
+
+    /**
+     * Inject dependencies into the given bean.
+     *
+     * <p>The primary usage is for injecting server assertions, but this can be
+     * used with any object.</p>
+     *
+     * @param bean The object to inject.
+     * @param beans The injectable dependencies
+     * @param <T> Any type, typically Object
+     */
+    public static <T> void inject( final Object bean,
+                                   final Map<String,T> beans ) {
+        final DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
+        final AutowiredAnnotationBeanPostProcessor autowiredAnnotationBeanPostProcessor = new AutowiredAnnotationBeanPostProcessor();
+        autowiredAnnotationBeanPostProcessor.setBeanFactory( factory );
+        factory.addBeanPostProcessor( autowiredAnnotationBeanPostProcessor );
+        CollectionUtils.foreach( beans.entrySet(), false, new Functions.UnaryVoid<Map.Entry<String,T>>(){
+            @Override
+            public void call( final Map.Entry<String, T> nameAndBean ) {
+                factory.registerSingleton( nameAndBean.getKey(), nameAndBean.getValue() );
+            }
+        } );
+        factory.autowireBeanProperties( bean, AutowireCapableBeanFactory.AUTOWIRE_NO, true );
+    }
 }
