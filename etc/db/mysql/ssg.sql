@@ -25,6 +25,7 @@ INSERT INTO hibernate_unique_key VALUES (1);
 --
 -- NOTE that the function is safe when either row based or statement based replication is in use.
 --
+DROP FUNCTION IF EXISTS next_hi;
 delimiter //
 CREATE FUNCTION next_hi() RETURNS bigint NOT DETERMINISTIC MODIFIES SQL DATA SQL SECURITY INVOKER
 BEGIN
