@@ -1776,9 +1776,12 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
                     // if there's a user selection which is not a folder, each node is inserted immediately after the selection
                     // reversing the node list preserves the original order
+                    // insert after a folder selection if its not empty, not expanded or is a policy fragment
                     final TreePath path = getSelectionPath();
-                    if (path != null && path.getPathCount()!=1 && path.getLastPathComponent() != null
-                            && (!((AssertionTreeNode) path.getLastPathComponent()).accept(null) || !((TreeNode) path.getLastPathComponent()).getAllowsChildren()  )) {
+                    if (path != null && path.getPathCount()!=1 && path.getLastPathComponent() != null &&
+                            ((!((TreeNode) path.getLastPathComponent()).getAllowsChildren()) ||
+                                    (!isModelExpanded(path) && !(((TreeNode) path.getLastPathComponent()).getChildCount()==0 ) ||  !((AssertionTreeNode) path.getLastPathComponent()).accept(null) )))
+                    {
                         Collections.reverse( nodeList );
                     }
 
@@ -1834,9 +1837,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
                     // if there's a user selection which is not a folder, each node is inserted immediately after the selection
                     // reversing the node list preserves the original order
+                    // insert after a folder selection if its not empty, not expanded or is a policy fragment
                     final TreePath path = getSelectionPath();
-                    if (path != null && path.getPathCount()!=1 && path.getLastPathComponent() != null
-                            && (!((AssertionTreeNode) path.getLastPathComponent()).accept(null) || !((TreeNode) path.getLastPathComponent()).getAllowsChildren()  )) {
+                   if (path != null && path.getPathCount()!=1 && path.getLastPathComponent() != null &&
+                           ((!((TreeNode) path.getLastPathComponent()).getAllowsChildren()) ||
+                                   (!isModelExpanded(path) && !(((TreeNode) path.getLastPathComponent()).getChildCount()==0 ) ||  !((AssertionTreeNode) path.getLastPathComponent()).accept(null) )))
+
+                    {
                         Collections.reverse( list );
                     }
 
