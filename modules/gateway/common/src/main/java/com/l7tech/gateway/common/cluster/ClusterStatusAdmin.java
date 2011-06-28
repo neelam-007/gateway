@@ -10,6 +10,8 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.CollectionUpdate;
+import com.l7tech.util.Either;
+import com.l7tech.util.Pair;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -380,6 +382,42 @@ public interface ClusterStatusAdmin {
     public static final class NoSuchPropertyException extends Exception {
         private static final long serialVersionUID = 356702534346778195L;
     }
+
+    /**
+     * Get information about any currently-registered admin extension interfaces.
+     * @return a collection of pairs of (interface classname, instance identifier) for any registered extension interface implementations.  The instance identifieres may be null.
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    Collection<Pair<String, String>> getExtensionInterfaceInstances();
+
+    /**
+     * Check whether a particular admin extension interface has an implementation registered on the current Gateway.
+     *
+     * @param interfaceClassname the interface to query.  Required.
+     * @param instanceIdentifier an instance identifier to name a particular implementation, or null.
+     * @return true if {@link #invokeExtensionMethod} might currently succeed against this interface.  False if it would not currently succeed currently regardless of arguments.
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    boolean isExtensionInterfaceAvailable(String interfaceClassname, String instanceIdentifier);
+
+    /**
+     * Invoke a method of an extension interface registered by a module.
+     * <p/>
+     * The extension interface may use @Transactional and @Secured annotations; any present
+     * on the interface or implementation will be honored when the invocation is processed by the Gateway.
+     *
+     * @param interfaceClassname full classname of the extension interface to use.  Required.
+     * @param targetObjectId opaque identifier naming target object.  Required if more than one implementation of the specified extension interface is registered.
+     * @param methodName name of method to invoke on interface.  Required.
+     * @param parameterTypes  parameter types.  Required, but may be zero-length for a nullary method.  Must be same length as arguments.
+     * @param arguments method arguments.  Required, but may be zero-length for a nullary method.  Must be same length as parameterTypes.
+     * @return the result of invoking the specified method on the specified extension interface.  May contain a return value or thrown exception.  Never null.
+     * @throws ClassNotFoundException if no provider of the specified extension interface is registered.
+     * @throws NoSuchMethodException if the invocation refers to a method that does not exist on the server's version of the specified extension interface.
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    Either<Object,Throwable> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments)
+            throws ClassNotFoundException, NoSuchMethodException;
 
     /**
      * Check hardware capabilities of the node that receives this admin request.

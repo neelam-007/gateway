@@ -1,20 +1,18 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.util.*;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.AssertionRegistry;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.MetadataFinder;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.event.system.LicenseEvent;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationContext;
+import com.l7tech.util.*;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ApplicationEventMulticaster;
 
@@ -22,6 +20,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -34,9 +35,6 @@ import java.util.jar.Manifest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 
 /**
  * The Gateway's AssertionRegistry, which extends the default registry with the ability to look for
@@ -71,6 +69,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
 
     private final ServerConfig serverConfig;
     private final LicenseManager licenseManager;
+    private final ExtensionInterfaceManager extensionInterfaceManager;
     private final Map<String, AssertionModule> loadedModules = new HashMap<String, AssertionModule>();
     private final Map<String, Long> failModTimes = new HashMap<String, Long>();    // should not be loaded (until mod time changes) because last time we tried it, it failed
     private final Map<String, String[]> newClusterProps = new ConcurrentHashMap<String, String[]>();
@@ -88,11 +87,12 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
      *                     to search
      * @param licenseManager the licenseManager, for checking to see if scanning the modules directory is enabled
      */
-    public ServerAssertionRegistry(ServerConfig serverConfig, LicenseManager licenseManager) {
+    public ServerAssertionRegistry(ServerConfig serverConfig, LicenseManager licenseManager, ExtensionInterfaceManager extensionInterfaceManager) {
         if (serverConfig == null) throw new IllegalArgumentException("A non-null serverConfig is required");
         if (licenseManager == null) throw new IllegalArgumentException("A non-null licenseManager is required");
         this.serverConfig = serverConfig;
         this.licenseManager = licenseManager;
+        this.extensionInterfaceManager = extensionInterfaceManager;
         installGatewayMetadataDefaults();
     }
 
@@ -103,17 +103,19 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         }
 
         ApplicationEventMulticaster eventMulticaster = getApplicationContext().getBean( "applicationEventMulticaster", ApplicationEventMulticaster.class );
-        eventMulticaster.addApplicationListener( new ApplicationListener(){
+        eventMulticaster.addApplicationListener(new ApplicationListener() {
             @Override
             public void onApplicationEvent(ApplicationEvent event) {
-                ServerAssertionRegistry.this.onApplicationEvent( event );
+                ServerAssertionRegistry.this.onApplicationEvent(event);
             }
-        } );
+        });
     }
 
     public synchronized Assertion registerAssertion(Class<? extends Assertion> assertionClass) {
         Assertion prototype = super.registerAssertion(assertionClass);
-        gatherClusterProps(prototype.meta());
+        final AssertionMetadata meta = prototype.meta();
+        gatherClusterProps(meta);
+        registerExtensionInterfaces(meta);
         return prototype;
     }
 
@@ -128,6 +130,25 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
                 String desc = tuple != null && tuple.length > 0 ? tuple[0] : null;
                 String dflt = tuple != null && tuple.length > 1 ? tuple[1] : null;
                 newClusterProps.put(name, new String[] { desc, dflt });
+            }
+        }
+    }
+
+    private void registerExtensionInterfaces(AssertionMetadata meta) {
+        Functions.Nullary< Collection<ExtensionInterfaceBinding> > factory = meta.get(AssertionMetadata.EXTENSION_INTERFACES_FACTORY);
+        if (factory != null) {
+            Collection<ExtensionInterfaceBinding> bindings = factory.call();
+            if (bindings != null) {
+                for (ExtensionInterfaceBinding<?> binding : bindings) {
+                    try {
+                        logger.log(Level.INFO, "Registering admin extension interface: " + binding.getInterfaceClass());
+                        extensionInterfaceManager.registerInterface(binding);
+                    } catch (Exception e) {
+                        //noinspection ThrowableResultOfMethodCallIgnored
+                        logger.log(Level.SEVERE, "Unable to register admin extension interface " + binding.getInterfaceClass() + " for modular assertion " + meta.getAssertionClass() +
+                                ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    }
+                }
             }
         }
     }

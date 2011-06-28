@@ -11,6 +11,8 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateProducer;
+import com.l7tech.util.Either;
+import com.l7tech.util.Pair;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -218,6 +220,21 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     @Transactional(propagation = Propagation.SUPPORTS)
     public Collection<ModuleInfo> getAssertionModuleInfo() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public Collection<Pair<String, String>> getExtensionInterfaceInstances() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public boolean isExtensionInterfaceAvailable(String interfaceClassname, String instanceIdentifier) {
+        return false;
+    }
+
+    @Override
+    public Either<Object, Throwable> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments) throws ClassNotFoundException, NoSuchMethodException {
+        throw new ClassNotFoundException("Not implemented in stub");
     }
 
     @Override

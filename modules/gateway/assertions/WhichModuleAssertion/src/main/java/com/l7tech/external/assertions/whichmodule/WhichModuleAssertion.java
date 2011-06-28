@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.whichmodule;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -21,6 +22,7 @@ import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -31,6 +33,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -72,6 +75,13 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, getClass().getName() + "$PropDialog");
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, getClass().getName() + "$Validator");
         meta.put(AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] { getClass().getName() + "$CustomAction" });
+        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Nullary<Collection<ExtensionInterfaceBinding>>() {
+            @Override
+            public Collection<ExtensionInterfaceBinding> call() {
+                ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<DemoExtensionInterface>(DemoExtensionInterface.class, null, new DemoExtensionInterfaceImpl());
+                return Collections.singletonList(binding);
+            }
+        });
 
         return meta;
     }
@@ -84,7 +94,28 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Which Module Assertion .AAR File", "Hello from Which Module Assertion custom Tasks menu action!", null);
+            String response = Registry.getDefault().getExtensionInterface(DemoExtensionInterface.class, null).demoHello("Info from SSM");
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Which Module Assertion .AAR File", "Response from Gateway: " + response, null);
+        }
+    }
+
+    /**
+     * A sample interface to demo use of an admin extension interface.
+     */
+    public static interface DemoExtensionInterface {
+        public String demoHello(String arg);
+    }
+
+    /**
+     * A sample server-side implementation of our extension interface.
+     * <p/>
+     * Note that the implementation class must be public or else the ExtensionInterfaceManager will not be permitted to invoke on it,
+     * and that anonymous inner classes are not public.
+     */
+    public static class DemoExtensionInterfaceImpl implements DemoExtensionInterface {
+        @Override
+        public String demoHello(String arg) {
+            return "Hello from Gateway!  You sent: " + arg;
         }
     }
 

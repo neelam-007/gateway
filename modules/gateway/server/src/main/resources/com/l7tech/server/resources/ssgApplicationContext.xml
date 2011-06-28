@@ -1653,9 +1653,13 @@
     <bean id="messageCacheStashManagerFactory" class="com.l7tech.server.MessageCacheStashManagerFactory"
           factory-method="getInstance"/>
 
+    <bean id="extensionInterfaceManager" class="com.l7tech.server.admin.ExtensionInterfaceManager">
+    </bean>
+
     <bean id="assertionRegistry" class="com.l7tech.server.policy.ServerAssertionRegistry" depends-on="ssgBoot">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="licenseManager"/>
+        <constructor-arg ref="extensionInterfaceManager"/>
     </bean>
 
     <bean id="wspReader" class="com.l7tech.policy.wsp.WspReader">

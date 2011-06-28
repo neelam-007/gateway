@@ -42,6 +42,9 @@ import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 
 import javax.security.auth.login.LoginException;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
@@ -413,6 +416,17 @@ public class RegistryStub extends Registry {
     @Override
     public UDDIRegistryAdmin getUDDIRegistryAdmin() {
         return null;
+    }
+
+    @Override
+    public <T> T getExtensionInterface(Class<T> interfaceClass, String instanceIdentifier) {
+        //noinspection unchecked
+        return (T) Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class[]{interfaceClass}, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                throw new NoSuchMethodException("No extension interfaces in stub");
+            }
+        });
     }
 
     @Override

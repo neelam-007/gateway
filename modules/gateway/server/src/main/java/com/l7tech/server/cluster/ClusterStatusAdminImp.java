@@ -14,7 +14,9 @@ import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.ExtensionInterfaceBinding;
 import com.l7tech.server.*;
+import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.PersistenceEvent;
@@ -64,7 +66,8 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
                                  AssertionRegistry assertionRegistry,
                                  TrustedEsmManager trustedEsmManager,
                                  TrustedEsmUserManager trustedEsmUserManager,
-                                 RbacServices rbacServices)
+                                 RbacServices rbacServices,
+                                 ExtensionInterfaceManager extensionInterfaceManager)
     {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
@@ -77,6 +80,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         this.trustedEsmManager = trustedEsmManager;
         this.trustedEsmUserManager = trustedEsmUserManager;
         this.rbacServices = rbacServices;
+        this.extensionInterfaceManager = extensionInterfaceManager;
 
         if (clusterInfoManager == null)
             throw new IllegalArgumentException("Cluster Info manager is required");
@@ -343,6 +347,28 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
         return ret;
     }
 
+    @Override
+    public Collection<Pair<String, String>> getExtensionInterfaceInstances() {
+        Collection<ExtensionInterfaceBinding<?>> bindings = extensionInterfaceManager.getRegisteredInterfaces();
+        List<Pair<String, String>> ret = new ArrayList<Pair<String, String>>();
+        for (ExtensionInterfaceBinding<?> binding : bindings) {
+            ret.add(new Pair<String, String>(binding.getInterfaceClass().getName(), binding.getInstanceIdentifier()));
+        }
+        return ret;
+    }
+
+    @Override
+    public boolean isExtensionInterfaceAvailable(String interfaceClassname, String instanceIdentifier) {
+        return extensionInterfaceManager.isInterfaceRegistered(interfaceClassname, instanceIdentifier);
+    }
+
+    @Override
+    public Either<Object, Throwable> invokeExtensionMethod(String interfaceClassname, String targetObjectId, String methodName, Class[] parameterTypes, Object[] arguments)
+            throws ClassNotFoundException, NoSuchMethodException
+    {
+        return extensionInterfaceManager.invokeExtensionMethod(interfaceClassname, targetObjectId, methodName, parameterTypes, arguments);
+    }
+
     // Hardware capability support.
     // TODO refactor these methods into a separate HardwareCapabilityManager bean that delegates to HardwareCapability instances
 
@@ -475,6 +501,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin, ApplicationCon
     private final TrustedEsmManager trustedEsmManager;
     private final TrustedEsmUserManager trustedEsmUserManager;
     private final RbacServices rbacServices;
+    private final ExtensionInterfaceManager extensionInterfaceManager;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

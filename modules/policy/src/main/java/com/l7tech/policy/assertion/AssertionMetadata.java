@@ -567,6 +567,20 @@ public interface AssertionMetadata {
     String CLUSTER_PROPERTIES = "clusterProperties";
 
     /**
+     * Functions.Nullary< Collection< ExtensionInterfaceBinding > >.  Gateway-only.  Factory method that constructs
+     * a list of implementation objects of admin extension interfaces this assertion wishes to expose via the
+     * Gateway's remote admin interface.
+     * <p/>
+     * If a value for this property is provided, it will be invoked exactly once when this assertion prototype
+     * is registered on the Gateway.  Any returned bindings will be registered with the Gateway's extensionInterfaceManager.
+     * <p/>
+     * There is no default value for this property.
+     * <p/>
+     * This key was introduced in SecureSpan Gateway version 6.2.
+     */
+    String EXTENSION_INTERFACES_FACTORY = "extensionInterfacesFactory";
+
+    /**
      * String classname.  Name of class that contains a public static void method named "onModuleLoaded" that
      * takes a single argument of type {@link org.springframework.context.ApplicationContext}.
      * <p/>

@@ -436,6 +436,7 @@
         <constructor-arg ref="trustedEsmManager"/>
         <constructor-arg ref="trustedEsmUserManager"/>
         <constructor-arg ref="rbacServices"/>
+        <constructor-arg ref="extensionInterfaceManager"/>
     </bean>
 
     <!-- RBAC admin impl -->

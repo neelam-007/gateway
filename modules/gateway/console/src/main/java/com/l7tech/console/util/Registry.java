@@ -21,6 +21,11 @@ import com.l7tech.policy.Policy;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
+import org.jetbrains.annotations.Nullable;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 
 /**
@@ -222,6 +227,18 @@ public abstract class Registry {
      */
     public abstract UDDIRegistryAdmin getUDDIRegistryAdmin();
 
+    /**
+     * Get a local proxy for an admin extension interface.
+     * <p/>
+     * Note that currently this method will succeed even if no such interface is registered on the server.
+     * In such cases, the first attempt to use the returned proxy will throw an exception.
+     *
+     * @param interfaceClass the interface class for which the caller desires an implementation.  Required.
+     * @param instanceIdentifier instance identifier, or null if there is only ever one registered implementation of this interface.
+     * @return a local proxy instance implementing the interface class.  Methods called on the local proxy will be forwarded to the server.  Never null.
+     */
+    public abstract <T> T getExtensionInterface(Class<T> interfaceClass, @Nullable String instanceIdentifier);
+
     public ConsoleLicenseManager getLicenseManager() {
         return ConsoleLicenseManager.getInstance();
     }
@@ -371,6 +388,17 @@ public abstract class Registry {
         @Override
         public UDDIRegistryAdmin getUDDIRegistryAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
+        }
+
+        @Override
+        public <T> T getExtensionInterface(Class<T> interfaceClass, String instanceIdentifier) {
+            //noinspection unchecked
+            return (T)Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class[] { interfaceClass }, new InvocationHandler() {
+                @Override
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    throw new IllegalStateException(ILLEGAL_STATE_MSG);
+                }
+            });
         }
     }
 }

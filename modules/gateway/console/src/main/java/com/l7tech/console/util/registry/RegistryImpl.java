@@ -24,12 +24,16 @@ import com.l7tech.policy.Policy;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
+import com.l7tech.util.Either;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -342,6 +346,20 @@ public final class RegistryImpl extends Registry
         }
         uddiRegistryAdmin = adminContext.getUDDIRegistryAdmin();
         return uddiRegistryAdmin;
+    }
+
+    @Override
+    public <T> T getExtensionInterface(final Class<T> interfaceClass, final String instanceIdentifier) {
+        //noinspection unchecked
+        return (T)Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class[] { interfaceClass }, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                Either<Object, Throwable> result = getClusterStatusAdmin().invokeExtensionMethod(interfaceClass.getName(), instanceIdentifier, method.getName(), method.getParameterTypes(), args);
+                if (result.isRight())
+                    throw result.right();
+                return result.left();
+            }
+        });
     }
 
     /**
