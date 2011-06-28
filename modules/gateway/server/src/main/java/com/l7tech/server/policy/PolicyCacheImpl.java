@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.LicenseException;
@@ -240,7 +237,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                      (tag == null || tag.equals( pce.policy.getInternalTag() ))) {
                     if ( pce.policy.isDisabled() ) {
                         logger.log( Level.INFO,
-                                "Ignoring disabled '{0}' : #{1} ({2})",
+                                "Ignoring disabled ''{0}'' : #{1} ({2})",
                                 new Object[]{ pce.policy.getType(), pce.policy.getOid(), pce.policy.getName() }  );
                     } else {
                         guids.add( pce.policy.getGuid() );
@@ -504,7 +501,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
             if( !Policy.class.isAssignableFrom( event.getEntityClass() ) ) return;
 
             ensureCacheValid();
-            long policyOid = -1;
+            long policyOid = -1L;
             try {
                 for( long oid : event.getEntityIds() ) {
                     policyOid = oid;
@@ -1485,7 +1482,7 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
     }
 
     private static final class RegisteredPolicy extends Policy {
-        private static final AtomicLong registeredOidCounter = new AtomicLong(-100000);
+        private static final AtomicLong registeredOidCounter = new AtomicLong( -100000L );
 
         RegisteredPolicy( final String name,
                           final PolicyType type,
