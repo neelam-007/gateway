@@ -1,0 +1,41 @@
+rpm -Uvh src.rpm
+cd /usr/src/redhat/SPEC
+vim bash.spec
+
+Release: 142%{?dist} - to be discussed about this
+
+Patch142: bash-paranoia.patch
+
+%patch142 -p0 -b .paranoia
+
+%configure --with-bash-malloc=no --with-afs --enable-paranoia
+
+* Thu Apr 21 2011 Adi Chiru <achiru@layer7tech.com> - 3.2.24-142
+- Activating logging to syslog
+
+cp /root/kit_bash/bash-paranoia.patch /usr/src/redhat/SOURCES
+
+yum install libtermcap-devel
+
+
+
+rpmbuild -bp bash.spec
+rpmbuild -bc bash.spec
+rpmbuild -bi bash.spec
+rpmbuild -bb bash.spec
+
+- for 64 bit version:
+rpm -Uvh /usr/src/redhat/RPMS/x86_64/bash-3.2-24.x86_64.rpm
+
+
+- for 32 bit version:
+rpm -Uvh /usr/src/redhat/RPMS/i386/bash-3.2-142.i386.rpm
+
+
+
+bash --version
+
+
+
+service syslog restart
+tail -f /var/log/messages
