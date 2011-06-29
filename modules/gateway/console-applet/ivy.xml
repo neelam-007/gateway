@@ -6,7 +6,7 @@
             >
     </info>
     <configurations
-            defaultconfmapping="core->runtime">
+            defaultconfmapping="core->runtime; runtime->default">
         <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
         <conf name="default" description="Runtime dependencies and master artifact can be used with this conf"
               extends="runtime,master"/>
@@ -33,7 +33,7 @@
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-json" rev="latest.integration" force="true" conf="core"/>
-        <dependency org="bouncycastle" name="bcprov-unsigned-jdk16" rev="1.46" force="true" conf="core"/> <!-- use unsigned BC jar to be same as applet -->
+        <dependency org="bouncycastle" name="bcprov-unsigned-jdk16" rev="1.46" force="true" conf="runtime"/> <!-- use unsigned BC jar to be same as applet -->
         <exclude org="bouncycastle" module="bcprov-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />  <!-- exclude signed BC jar -->
         <exclude org="com.l7tech"/>
     </dependencies>
