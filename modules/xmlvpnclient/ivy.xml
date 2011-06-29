@@ -40,6 +40,10 @@
         <dependency org="com.rsa" name="jsafe-jce-fips" rev="4.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="certj" rev="3.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="sslj" rev="5.1.1" force="true" conf="core"/>
+        <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/> <!-- signed BC provider jar -->
+
+        <!-- The XVC needs the signed version of bouncy castle because it uses it as a provider in some places. -->
+        <exclude org="bouncycastle" module="bcprov-unsigned-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" /> <!-- exclude unsigned BC jar -->
 
         <conflict org="org.slf4j" module="slf4j-api" rev="1.6.1"/>
     </dependencies>
