@@ -128,12 +128,6 @@ public class Api3ScaleReportAssertion extends Assertion implements UsesVariables
         // that is, we want our required feature set to be "assertion:Api3Scale" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
-        Collection<TypeMapping> otherMappings = new ArrayList<TypeMapping>();
-        otherMappings.add(new ArrayTypeMapping(new Api3ScaleTransactions[0], "transactions"));
-        otherMappings.add(new BeanTypeMapping(Api3ScaleTransactions.class, "transaction"));
-        otherMappings.add(new MapTypeMapping());
-        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(otherMappings));
-
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

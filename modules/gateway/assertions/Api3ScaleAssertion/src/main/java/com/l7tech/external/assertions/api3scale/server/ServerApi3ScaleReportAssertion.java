@@ -1,9 +1,7 @@
 package com.l7tech.external.assertions.api3scale.server;
 
 import com.l7tech.external.assertions.api3scale.Api3ScaleReportAssertion;
-import com.l7tech.external.assertions.api3scale.Api3ScaleTransactions;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -12,7 +10,6 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ISO8601Date;
 import net.threescale.api.ApiFactory;
 import net.threescale.api.v2.Api2;
 import net.threescale.api.v2.ApiException;
@@ -20,9 +17,6 @@ import net.threescale.api.v2.ApiTransaction;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;

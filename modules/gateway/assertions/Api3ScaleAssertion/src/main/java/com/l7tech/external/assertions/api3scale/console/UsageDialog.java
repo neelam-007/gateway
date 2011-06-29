@@ -1,19 +1,12 @@
 package com.l7tech.external.assertions.api3scale.console;
 
-import com.l7tech.console.panels.TargetVariablePanel;
-import com.l7tech.external.assertions.api3scale.Api3ScaleReportAssertion;
-import com.l7tech.external.assertions.api3scale.Api3ScaleTransactions;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
