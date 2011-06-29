@@ -87,7 +87,6 @@
         <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.32" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="catalina" rev="6.0.32" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="coyote" rev="6.0.32" force="true" conf="core"/>
-        <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/> <!-- signed BC provider jar -->
 
         <!-- Optional dependencies -->
         <dependency org="com.ibm.mq" name="mq6" rev="6.0.2.2" force="true" conf="optional"/>
@@ -114,9 +113,6 @@
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="org.apache.cxf" module="cxf-rt-transports-http-jetty" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="xerces" module="xmlParserAPIs" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
-
-        <!-- The Gateway needs the signed version of bouncy castle because it uses it as a provider in some places, and (optionally) registers it. -->
-        <exclude org="bouncycastle" module="bcprov-unsigned-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" /> <!-- exclude unsigned BC jar -->
 
         <conflict org="org.slf4j" module="slf4j-api" rev="1.6.1"/>
         <conflict org="wsdl4j" module="wsdl4j" rev="1.6.2-l7p2"/>
