@@ -1852,16 +1852,12 @@ public class LogPanel extends JPanel {
                         getRequestXmlTextArea().setCaretPosition(0);
                     }
                 });
-            } 
+            } else {
+                invokeRequestAVPolicyButton.setEnabled(false);
+            }
         }
 
-        disableAVPolicyButtonIfOffline(invokeRequestAVPolicyButton);
-
         return invokeRequestAVPolicyButton;
-    }
-
-    private void disableAVPolicyButtonIfOffline(JButton button) {
-        button.setEnabled(Registry.getDefault().isAdminContextPresent());
     }
 
     private JCheckBox getRequestReformatCheckbox() {
@@ -1924,10 +1920,10 @@ public class LogPanel extends JPanel {
                         getRequestXmlTextArea().setCaretPosition(0);
                     }
                 });
-            } 
+            } else {
+                invokeResponseAVPolicyButton.setEnabled(false);
+            }
         }
-
-        disableAVPolicyButtonIfOffline(invokeResponseAVPolicyButton);
 
         return invokeResponseAVPolicyButton;
     }
