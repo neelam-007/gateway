@@ -7,8 +7,11 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.external.assertions.comparison.*;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.util.Functions;
+import com.l7tech.util.Resolver;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -30,6 +33,7 @@ import java.util.ArrayList;
 public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport<ComparisonAssertion> {
     private JTextField expressionField;
     private JComboBox dataTypeComboBox;
+    private JComboBox multivaluedComboBox;
     private JTable predicatesTable;
     private JButton addPredicateButton;
     private JButton okButton;
@@ -133,6 +137,16 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
 
         dataTypeComboBox.setModel(new DefaultComboBoxModel(DATA_TYPES));
         dataTypeComboBox.setSelectedItem(dtp == null ? DataType.UNKNOWN : dtp.getType());
+        dataTypeComboBox.setRenderer( TextListCellRenderer.<Object>basicComboBoxRenderer() );
+
+        multivaluedComboBox.setModel(new DefaultComboBoxModel(MultivaluedComparison.values()));
+        multivaluedComboBox.setRenderer(new TextListCellRenderer<MultivaluedComparison>( new Functions.Unary<String,MultivaluedComparison>(){
+            @Override
+            public String call( final MultivaluedComparison multivaluedComparison ) {
+                return ComparisonAssertion.resources.getString("multivaluedComparison."+multivaluedComparison+".label");
+            }
+        } ));
+        multivaluedComboBox.setSelectedItem(assertion.getMultivaluedComparison());
 
         addPredicateButton.addActionListener(new ActionListener() {
             @Override
@@ -216,6 +230,7 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
             newPreds.add(pred);
         }
         assertion.setExpression1(expressionField.getText());
+        assertion.setMultivaluedComparison((MultivaluedComparison)multivaluedComboBox.getSelectedItem());
         assertion.setPredicates(newPreds.toArray(new Predicate[newPreds.size()]));
     }
 

@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2007 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.comparison.server;
 
 import com.l7tech.external.assertions.comparison.Predicate;
@@ -9,22 +6,26 @@ import com.l7tech.external.assertions.comparison.BinaryPredicate;
 import com.l7tech.external.assertions.comparison.server.evaluate.Evaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.MultiValuedEvaluator;
 import com.l7tech.external.assertions.comparison.server.evaluate.SingleValuedEvaluator;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.Audit;
 
 import java.util.Map;
 
 /**
  * Manages the progress of a <b>single-valued value</b> through {@link ServerComparisonAssertion}.
+ *
  * @author alex
  */
-class SVState extends State {
-    private Object value;
+class SVState extends State<Object> {
 
-    SVState(final Map<Predicate, Evaluator> evaluators, Object value, Map<String, Object> vars, Auditor auditor) {
+    SVState( final Map<Predicate, Evaluator> evaluators,
+             final Object value,
+             final Map<String, Object> vars,
+             final Audit auditor ) {
         super(evaluators, vars, auditor);
         this.value = value;
     }
 
+    @Override
     protected void evaluate(final Predicate pred) {
         Evaluator eval = evaluators.get(pred);
         boolean predResult;

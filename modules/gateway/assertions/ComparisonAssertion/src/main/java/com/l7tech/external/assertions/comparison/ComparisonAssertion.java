@@ -9,6 +9,7 @@ import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.*;
 import com.l7tech.util.ComparisonOperator;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
     private static final String META_INITIALIZED = ComparisonAssertion.class.getName() + ".metadataInitialized";
     private String leftValue;
     private Predicate[] predicates = new Predicate[0];
+    private MultivaluedComparison multivaluedComparison = MultivaluedComparison.ALL;
     public static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.comparison.ComparisonAssertion");
 
     /**
@@ -79,6 +81,17 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
 
     public void setExpression1(String expression1) {
         this.leftValue = expression1;
+    }
+
+    @NotNull
+    public MultivaluedComparison getMultivaluedComparison() {
+        return multivaluedComparison;
+    }
+
+    public void setMultivaluedComparison( final MultivaluedComparison multivaluedComparison ) {
+        this.multivaluedComparison = multivaluedComparison==null ?
+                MultivaluedComparison.ALL :
+                multivaluedComparison;
     }
 
     private boolean check() {
@@ -150,7 +163,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         public String getAssertionName( final ComparisonAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;
 
-            StringBuffer name = new StringBuffer(baseName).append(": ");
+            StringBuilder name = new StringBuilder(baseName).append(": ");
             name.append(assertion.getExpression1()).append(" ");
 
             Predicate [] predicatesLocal = assertion.getPredicates();
@@ -199,6 +212,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
             new Java5EnumTypeMapping(ComparisonOperator.class, "operator"),
+            new Java5EnumTypeMapping(MultivaluedComparison.class, "multivaluedComparison"),
             new ArrayTypeMapping(new Predicate[0], "predicates"),
             new AbstractClassTypeMapping(Predicate.class, "predicate"),
             new BeanTypeMapping(BinaryPredicate.class, "binary"),
@@ -221,11 +235,9 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
     }
 
     @Override
-    public Object clone()  {
+    public ComparisonAssertion clone()  {
         ComparisonAssertion clone = (ComparisonAssertion) super.clone();
         try {
-            clone.setExpression1(getExpression1());
-
             //we have an array of predicates which need to be manually cloned, clone each predicates
             Predicate[] clonePreds = new Predicate[predicates.length];
             for (int i = 0; i < predicates.length; i++) {

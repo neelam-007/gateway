@@ -1,7 +1,8 @@
 package com.l7tech.external.assertions.comparison.server;
 
+import com.l7tech.external.assertions.comparison.MultivaluedComparison;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.external.assertions.comparison.BinaryPredicate;
 import com.l7tech.external.assertions.comparison.ComparisonAssertion;
 import com.l7tech.external.assertions.comparison.DataTypePredicate;
@@ -16,12 +17,14 @@ import java.util.Map;
 
 /**
  * Holds the state kept while evaluating a single request through the {@link ServerComparisonAssertion}.
+ *
  * @author alex
 */
-abstract class State {
+abstract class State<T> {
     protected final Map<Predicate, Evaluator> evaluators;
-    protected final Auditor auditor;
+    protected final Audit auditor;
     protected final Map<String, Object> vars;
+    protected T value;
 
     /**
      * The {@link DataType} of any {@link DataTypePredicate} that has been observed so far in the evaluation.
@@ -31,7 +34,7 @@ abstract class State {
     protected DataType type;
 
     /**
-     * True iff all predicates processed thus far have evaluated to true. 
+     * True iff all predicates processed thus far have evaluated to true.
      */
     protected boolean assertionResult = true;
 
@@ -39,20 +42,31 @@ abstract class State {
         return assertionResult;
     }
 
-    protected State(Map<Predicate, Evaluator> evaluators, Map<String, Object> vars, Auditor auditor) {
+    protected State( final Map<Predicate, Evaluator> evaluators,
+                     final Map<String, Object> vars,
+                     final Audit auditor ) {
         this.evaluators = evaluators;
         this.vars = vars;
         this.auditor = auditor;
     }
 
+    final T getValue() {
+        return value;
+    }
+
     protected abstract void evaluate(Predicate pred);
 
-    protected static State make(Map<Predicate, Evaluator> evaluators, Object left, Map<String, Object> vars, Auditor auditor) {
-        Class leftClass = left.getClass();
+    protected static State make( final Map<Predicate, Evaluator> evaluators,
+                                 final MultivaluedComparison multivaluedComparison,
+                                 final Object left,
+                                 final Map<String, Object> vars,
+                                 final Audit auditor ) {
+        final Class leftClass = left.getClass();
         if (leftClass.isArray()) {
-            return new MVState(evaluators, (Object[])left, vars, auditor);
+            return new MVState(evaluators, multivaluedComparison, (Object[])left, vars, auditor);
         } else if (Collection.class.isAssignableFrom(leftClass)) {
-            return new MVState(evaluators, ((Collection)left).toArray(new Object[0]), vars, auditor);
+            final Collection<?> leftCollection = (Collection<?>) left;
+            return new MVState(evaluators, multivaluedComparison, leftCollection.toArray( new Object[leftCollection.size()] ), vars, auditor);
         } else {
             return new SVState(evaluators, left, vars, auditor);
         }

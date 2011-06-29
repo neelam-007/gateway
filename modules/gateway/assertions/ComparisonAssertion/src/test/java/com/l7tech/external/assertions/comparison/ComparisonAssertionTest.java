@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2009 Layer 7 Technologies Inc.
- */
 package com.l7tech.external.assertions.comparison;
 
 import com.l7tech.policy.AssertionRegistry;
@@ -8,9 +5,15 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ComparisonOperator;
-import junit.framework.Assert;
+import static org.junit.Assert.*;
+
+import com.l7tech.util.Functions;
 import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.EnumSet;
 
 public class ComparisonAssertionTest {
     @Test
@@ -21,7 +24,7 @@ public class ComparisonAssertionTest {
         Assertion ass = WspReader.getDefault().parseStrictly(POLICY_XML, WspReader.INCLUDE_DISABLED);
 
         String what = WspWriter.getPolicyXml(ass);
-        Assert.assertEquals("what", what, POLICY_XML);
+        assertEquals( "what", what, POLICY_XML );
     }
 
     /**
@@ -36,6 +39,31 @@ public class ComparisonAssertionTest {
             System.out.println(new BinaryPredicate(op, right, false, true).toString());
             System.out.println(new BinaryPredicate(op, right, false, false).toString());
         }
+    }
+
+    @Test
+    public void testClone() {
+        final ComparisonAssertion ca = new ComparisonAssertion();
+        ca.setExpression1( "expression goes here" );
+        ca.setMultivaluedComparison( MultivaluedComparison.ANY );
+        ca.setPredicates(new EmptyPredicate());
+
+        final ComparisonAssertion cloned = ca.clone();
+        assertEquals( "Expression", "expression goes here", cloned.getExpression1() );
+        assertEquals( "MultivaluedComparison", MultivaluedComparison.ANY, cloned.getMultivaluedComparison() );
+        assertEquals( "Predicates length", 1L, (long) cloned.getPredicates().length );
+        assertNotSame( "Predicates array copied", ca.getPredicates(), cloned.getPredicates() );
+        assertNotSame( "Predicates copied", ca.getPredicates()[0], cloned.getPredicates()[0] );
+    }
+
+    @Test
+    public void testResources() {
+        CollectionUtils.foreach( EnumSet.allOf(MultivaluedComparison.class), false, new Functions.UnaryVoid<MultivaluedComparison>(){
+            @Override
+            public void call( final MultivaluedComparison multivaluedComparison ) {
+                ComparisonAssertion.resources.getString( "multivaluedComparison."+multivaluedComparison+".label" );
+            }
+        } );
     }
 
     public static final String POLICY_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
