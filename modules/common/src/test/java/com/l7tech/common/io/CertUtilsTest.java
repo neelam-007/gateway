@@ -3,6 +3,7 @@ package com.l7tech.common.io;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
@@ -315,6 +316,15 @@ public class CertUtilsTest {
         assertTrue("Empty CRL urls", crlUrls.length > 0);
         assertEquals("CRL url missing or invalid", "http://crl.thawte.com/ThawteSGCCA.crl", crlUrls[0]);
 
+    }
+
+    @Test
+    @BugNumber(10713)
+    public void testCRLURLAlice() throws Exception {
+        X509Certificate certificate = TestDocuments.getWssInteropAliceCert();
+        String[] crlUrls = CertUtils.getCrlUrls(certificate);
+        assertNotNull( "Null CRL urls", crlUrls );
+        assertEquals( "CRL urls", 0L, (long) crlUrls.length );
     }
 
     @Test

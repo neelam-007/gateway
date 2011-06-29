@@ -1822,13 +1822,14 @@ public class CertUtils {
     public static String[] getCrlUrls(X509Certificate cert) throws IOException {
         Set<String> urls = new LinkedHashSet<String>();
         byte[] distibutionPointBytes = cert.getExtensionValue(X509_OID_CRL_DISTRIBUTION_POINTS);
-        if (distibutionPointBytes != null && distibutionPointBytes.length > 0) {
+        if ( distibutionPointBytes != null && distibutionPointBytes.length > 0 ) {
             ASN1Encodable asn1 = X509ExtensionUtil.fromExtensionValue(distibutionPointBytes);
             DERObject obj = asn1.getDERObject();
             CRLDistPoint distPoint = CRLDistPoint.getInstance(obj);
             DistributionPoint[] points = distPoint.getDistributionPoints();
             for (DistributionPoint point : points) {
                 DistributionPointName dpn = point.getDistributionPoint();
+                if ( dpn == null ) continue;
                 obj = dpn.getName().toASN1Object();
                 org.bouncycastle.asn1.ASN1Sequence seq = org.bouncycastle.asn1.ASN1Sequence.getInstance(obj);
                 Enumeration objs = seq.getObjects();
