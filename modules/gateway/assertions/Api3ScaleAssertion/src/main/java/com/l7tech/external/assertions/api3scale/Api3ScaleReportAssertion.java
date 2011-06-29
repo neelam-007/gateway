@@ -1,10 +1,8 @@
 package com.l7tech.external.assertions.api3scale;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.*;
 
 import java.util.*;
@@ -15,30 +13,87 @@ import java.util.logging.Logger;
  */
 public class Api3ScaleReportAssertion extends Assertion implements UsesVariables {
     protected static final Logger logger = Logger.getLogger(Api3ScaleReportAssertion.class.getName());
+    private static final String DEFAULT_APP_ID = "${request.http.header.app_id}";
 
-    private Api3ScaleTransaction[] transactions = new Api3ScaleTransaction[0];
-    
-    public Api3ScaleTransaction[] getTransactions(){
-        return transactions;
+    private String privateKey;
+    private String applicationId = DEFAULT_APP_ID;
+    private String server;
+    private Map<String,String> transactionUsages = new HashMap<String,String>();
+
+    public void setTransactionUsages(Map<String,String> usages) {
+        this.transactionUsages = usages;
+    }
+    public void setApplicationId(String applicationId) {
+        this.applicationId = applicationId;
     }
 
-    public void setTransactions(Api3ScaleTransaction[] transactions){
-        this.transactions = transactions;    
+    public Map<String,String> getTransactionUsages() {
+        return transactionUsages;
+    }
+
+    public String getApplicationId() {
+        return applicationId;
+    }
+
+        public String getPrivateKey() {
+        return privateKey;
+    }
+
+    public void setPrivateKey(String privateKey) {
+        this.privateKey = privateKey;
+    }
+
+    public void setServer (String server){
+        this.server = server;
+    }
+
+    public String getServer (){
+        return server;
     }
 
     @Override
     public String[] getVariablesUsed() {
         List<String> ret = new ArrayList<String>();
-        for(Api3ScaleTransaction transaction : transactions){
-            ret.addAll(Arrays.asList(Syntax.getReferencedNames(transaction.getAppId())));
-            ret.addAll(Arrays.asList(Syntax.getReferencedNames(transaction.getTimestamp())));
-            Set <String> keys = transaction.getMetrics().keySet();
-            for(String key: keys )
-            {
-                ret.addAll(Arrays.asList(Syntax.getReferencedNames(key)));
-                ret.addAll(Arrays.asList(Syntax.getReferencedNames(transaction.getMetrics().get(key))));
+
+        String[] privateKeyRefNames;
+        if (this.privateKey != null){
+            privateKeyRefNames = Syntax.getReferencedNames(this.privateKey);
+            if(privateKeyRefNames!=null){
+                ret.addAll(Arrays.asList(privateKeyRefNames));
             }
         }
+
+        String[] serverRefNames;
+        if (this.server != null){
+            serverRefNames = Syntax.getReferencedNames(this.server);
+            if(serverRefNames!=null){
+                ret.addAll(Arrays.asList(serverRefNames));
+            }
+        }
+
+        String[] applicationIdRefNames;
+        if (this.applicationId != null){
+            applicationIdRefNames = Syntax.getReferencedNames(this.applicationId);
+            if(applicationIdRefNames!=null){
+                ret.addAll(Arrays.asList(applicationIdRefNames));
+            }
+        }
+
+        if (this.transactionUsages != null){
+            for(String key: transactionUsages.keySet()){
+                String[] keyRefNames;
+                keyRefNames = Syntax.getReferencedNames(key);
+                if(keyRefNames!=null){
+                    ret.addAll(Arrays.asList(keyRefNames));
+                }
+                String[] valueRefNames;
+                valueRefNames = Syntax.getReferencedNames(transactionUsages.get(key));
+                if(valueRefNames!=null){
+                    ret.addAll(Arrays.asList(valueRefNames));
+                }
+            }
+        }
+
         return ret.toArray(new String[ret.size()]);
     }
 
@@ -61,43 +116,27 @@ public class Api3ScaleReportAssertion extends Assertion implements UsesVariables
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "3 Scale Report");
-        meta.put(AssertionMetadata.LONG_NAME, "Forwards request to 3 Scale report");
+        meta.put(AssertionMetadata.SHORT_NAME, "API Report");
+        meta.put(AssertionMetadata.LONG_NAME, "Reports managed API application usage");
 
-        // Add to palette folder(s) 
-        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
-        //   misc, audit, policyLogic, threatProtection 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/api3scale/console/resources/3scale16.gif");
-
-        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-
-        // Set up smart Getter for nice, informative policy node name, for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/api3scale/console/resources/3scale16.gif");
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:Api3Scale" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");// "(fromClass)");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
-        Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
-        othermappings.add(new ArrayTypeMapping(new Api3ScaleTransaction[0], "transactions"));
-        othermappings.add(new BeanTypeMapping(Api3ScaleTransaction.class, "transaction"));
-        othermappings.add(new MapTypeMapping());
-        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
+        Collection<TypeMapping> otherMappings = new ArrayList<TypeMapping>();
+        otherMappings.add(new ArrayTypeMapping(new Api3ScaleTransactions[0], "transactions"));
+        otherMappings.add(new BeanTypeMapping(Api3ScaleTransactions.class, "transaction"));
+        otherMappings.add(new MapTypeMapping());
+        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(otherMappings));
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
 
-    @Override
-    public Api3ScaleReportAssertion clone() {
-        Api3ScaleReportAssertion cloned = (Api3ScaleReportAssertion) super.clone();
-        cloned.transactions = cloned.transactions.clone();
-        for ( int i=0; i<cloned.transactions.length; i++  ) {
-            cloned.transactions[i] = cloned.transactions[i].clone();
-        }
-        return cloned;
-    }
 
 }

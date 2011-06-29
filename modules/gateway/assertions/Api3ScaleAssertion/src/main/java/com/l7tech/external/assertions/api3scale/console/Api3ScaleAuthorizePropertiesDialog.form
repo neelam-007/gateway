@@ -1,50 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.external.assertions.api3scale.console.Api3ScaleAuthorizePropertiesDialog">
-  <grid id="cbd77" binding="propertyPanel" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="cbd77" binding="propertyPanel" layout-manager="GridLayoutManager" row-count="7" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="8" bottom="0" right="8"/>
     <constraints>
-      <xy x="48" y="54" width="755" height="297"/>
+      <xy x="48" y="54" width="457" height="298"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
       <component id="c9432" class="javax.swing.JLabel">
         <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text resource-bundle="com/l7tech/external/assertions/api3scale/console/Api3ScaleAuthorizePropertiesDialog" key="privateKey"/>
         </properties>
       </component>
-      <vspacer id="7ff73">
-        <constraints>
-          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-        </constraints>
-      </vspacer>
       <component id="896e7" class="javax.swing.JTextField" binding="privateKeyTextField">
-        <constraints>
-          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-            <minimum-size width="300" height="-1"/>
-            <preferred-size width="300" height="-1"/>
-          </grid>
-        </constraints>
-        <properties/>
-      </component>
-      <component id="feacc" class="javax.swing.JLabel">
-        <constraints>
-          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties>
-          <text resource-bundle="com/l7tech/external/assertions/api3scale/console/Api3ScaleAuthorizePropertiesDialog" key="target"/>
-        </properties>
-      </component>
-      <component id="da741" class="com.l7tech.console.panels.TargetVariablePanel" binding="targetVariablePanel">
-        <constraints>
-          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-        </constraints>
-        <properties/>
-      </component>
-      <component id="5ac3b" class="javax.swing.JTextField" binding="serverTextField">
         <constraints>
           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <minimum-size width="300" height="-1"/>
@@ -53,12 +25,134 @@
         </constraints>
         <properties/>
       </component>
+      <component id="da741" class="com.l7tech.console.panels.TargetVariablePanel" binding="targetVariablePanel">
+        <constraints>
+          <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="5ac3b" class="javax.swing.JTextField" binding="applicationIdTextField">
+        <constraints>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+            <minimum-size width="300" height="-1"/>
+            <preferred-size width="300" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+      </component>
       <component id="82e60" class="javax.swing.JLabel">
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text resource-bundle="com/l7tech/external/assertions/api3scale/console/Api3ScaleAuthorizePropertiesDialog" key="applicationId"/>
+        </properties>
+      </component>
+      <component id="80015" class="javax.swing.JTextField" binding="applicationKeyTextField">
+        <constraints>
+          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+            <minimum-size width="300" height="-1"/>
+            <preferred-size width="300" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="abef4" class="javax.swing.JCheckBox" binding="usageCheckBox" default-binding="true">
+        <constraints>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text resource-bundle="com/l7tech/external/assertions/api3scale/console/Api3ScaleAuthorizePropertiesDialog" key="usage"/>
+        </properties>
+      </component>
+      <grid id="ff816" layout-manager="GridLayoutManager" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="bd6fc" class="javax.swing.JButton" binding="usageAddButton">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/api3scale/console/Api3ScaleAuthorizePropertiesDialog" key="add"/>
+            </properties>
+          </component>
+          <component id="c44e6" class="javax.swing.JButton" binding="usageRemoveButton">
+            <constraints>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/api3scale/console/Api3ScaleAuthorizePropertiesDialog" key="remove"/>
+            </properties>
+          </component>
+          <component id="1b795" class="javax.swing.JButton" binding="usageEditButton">
+            <constraints>
+              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/api3scale/console/Api3ScaleAuthorizePropertiesDialog" key="edit"/>
+              <toolTipText value=""/>
+            </properties>
+          </component>
+          <scrollpane id="c7e5d" binding="usageScrollPane">
+            <constraints>
+              <grid row="0" column="0" row-span="4" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="e36a2" class="javax.swing.JTable" binding="usageTable">
+                <constraints/>
+                <properties>
+                  <preferredScrollableViewportSize width="-1" height="-1"/>
+                </properties>
+              </component>
+            </children>
+          </scrollpane>
+        </children>
+      </grid>
+      <component id="94fee" class="javax.swing.JLabel">
+        <constraints>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text resource-bundle="com/l7tech/external/assertions/api3scale/console/Api3ScaleAuthorizePropertiesDialog" key="applicationKey"/>
+        </properties>
+      </component>
+      <component id="62060" class="javax.swing.JLabel">
+        <constraints>
+          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="Prefix:"/>
+        </properties>
+      </component>
+      <component id="47961" class="javax.swing.JLabel">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <text resource-bundle="com/l7tech/external/assertions/api3scale/console/Api3ScaleAuthorizePropertiesDialog" key="server"/>
+        </properties>
+      </component>
+      <component id="65343" class="javax.swing.JTextField" binding="serverTextField">
+        <constraints>
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="e1fb7" class="javax.swing.JButton" binding="testButton">
+        <constraints>
+          <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text resource-bundle="com/l7tech/external/assertions/api3scale/console/Api3ScaleAuthorizePropertiesDialog" key="test"/>
         </properties>
       </component>
     </children>

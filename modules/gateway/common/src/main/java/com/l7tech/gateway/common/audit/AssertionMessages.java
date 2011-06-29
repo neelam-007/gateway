@@ -988,5 +988,10 @@ public class AssertionMessages extends Messages {
     public static final M CSRF_PROTECTION_MULTIPLE_REFERERS = m(9408, Level.WARNING, "The HTTP-Referer header was provided multiple times, failing assertion.");
     public static final M CSRF_PROTECTION_INVALID_REFERER = m(9409, Level.WARNING, "The HTTP-Referer header value ''{0}'' was not valid, failing assertion.");
 
+    public static final M API_AUTHORIZE_FAILED = m(9410, Level.WARNING, "Authorized failed: {0}");
+    public static final M API_AUTHORIZE_FAILED_WITH_USAGE = m(9411, Level.WARNING, "Failed to authorize: usage will exceed for {0}");
+    public static final M API_AUTHORIZE_FAILED_WITH_INVALID_USAGE = m(9412, Level.WARNING, "Failed to authorize: usage metric not found: {0}");
+    public static final M API_REPORT_FAILED = m(9413, Level.WARNING, "Failed to report: {0}");
+
     // Highest ID reserved for AssertionMessages = 99999
 }

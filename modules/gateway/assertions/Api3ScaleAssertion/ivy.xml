@@ -21,6 +21,6 @@
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>
-        <dependency org="com.l7tech.lib" name="threescale-api" rev="1.0" force="true" conf="core"/>        
+        <dependency org="threescale" name="threescale-api" rev="1.1" force="true" conf="core"/>
 	</dependencies>
 </ivy-module>

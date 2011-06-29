@@ -5,15 +5,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The <code>SamlAuthorizationStatementAssertion</code> assertion describes
- * the SAML Authorization Statement constraints.
+ * User: wlui
  */
-public class Api3ScaleTransaction implements Cloneable, Serializable {
+
+public class Api3ScaleTransactions implements Cloneable, Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String appId;
-    private Map<String, String> metrics = new HashMap<String, String>();
+    private String appId = DEFAULT_APP_ID;
+    private Map<String, String> metrics = new  HashMap<String, String>();
     private String timestamp;
+    private static final String DEFAULT_APP_ID = "${request.http.header.app_id}";
+
 
     public String getAppId() {
         return appId;
@@ -39,10 +41,10 @@ public class Api3ScaleTransaction implements Cloneable, Serializable {
         this.timestamp = timestamp;
     }
 
-    public Api3ScaleTransaction clone() {
+    public Api3ScaleTransactions clone() {
         try {
 
-            Api3ScaleTransaction stmt = (Api3ScaleTransaction) super.clone();
+            Api3ScaleTransactions stmt = (Api3ScaleTransactions) super.clone();
             return stmt;
         }
         catch(CloneNotSupportedException cnse) {

@@ -1,25 +1,31 @@
 package com.l7tech.external.assertions.api3scale.server;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.api3scale.Api3ScaleAuthorizeAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ExceptionUtils;
 import net.threescale.api.ApiFactory;
-import net.threescale.api.v2.Api2;
+import net.threescale.api.v2.*;
 import net.threescale.api.v2.ApiException;
-import net.threescale.api.v2.ApiUsageMetric;
-import net.threescale.api.v2.AuthorizeResponse;
 import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,7 +39,6 @@ public class ServerApi3ScaleAuthorizeAssertion extends AbstractServerAssertion<A
 
     private final Api3ScaleAuthorizeAssertion assertion;
     private final Auditor auditor;
-    private final String url = "http://layer7.3scale.net"; //"http://server.3scale.net";//
 
     public ServerApi3ScaleAuthorizeAssertion(Api3ScaleAuthorizeAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
         super(assertion);
@@ -44,69 +49,72 @@ public class ServerApi3ScaleAuthorizeAssertion extends AbstractServerAssertion<A
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         String appKey = null;
-        String appId = null;
-        String referrer = null;
-        String server = "http://su1.3scale.net";
-        String providerKey = null;
-
-        String queryStr = context.getRequest().getHttpRequestKnob().getQueryString();
-        if( queryStr == null ){
-            logger.warning("No query provided");
-            return AssertionStatus.FAILED;
-        }
-
-        StringTokenizer tokenizer = new  StringTokenizer(queryStr, "&=");
-        while (tokenizer.hasMoreTokens()) {
-            String token = tokenizer.nextToken();
-            if (token.equals("provider_key"))
-                providerKey = tokenizer.nextToken();
-            else if (token.equals("app_key"))
-                appKey = tokenizer.nextToken();
-            else if (token.equals("app_id"))
-                appId = tokenizer.nextToken();
-            else if (token.equals("referrer"))
-                referrer = tokenizer.nextToken();
-        }
-
 
         Map<String, Object> vars = context.getVariableMap(assertion.getVariablesUsed(), auditor);
-        if(assertion.getServer()!=null && !assertion.getServer().trim().isEmpty())
+
+        String providerKey = ExpandVariables.process(assertion.getPrivateKey(), vars, auditor, true);
+        String appId = ExpandVariables.process(assertion.getApplicationID(), vars, auditor, true);
+        if(assertion.getApplicationKey()!=null&& !assertion.getApplicationKey().trim().isEmpty())
+            appKey = ExpandVariables.process(assertion.getApplicationKey(), vars, auditor, true);
+        String server;
+        if(assertion.getServer()== null || assertion.getServer().isEmpty()){
+            server = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_GATEWAY_3SCALE_REPORTING_SERVER);
+        } else {
             server = ExpandVariables.process(assertion.getServer(), vars, auditor, true);
-        if(assertion.getPrivateKey()!=null&& !assertion.getPrivateKey().trim().isEmpty())
-            providerKey = ExpandVariables.process(assertion.getPrivateKey(), vars, auditor, true);
-        
-        if( providerKey == null || appId == null){
-            logger.warning("Unable to extract API Keys");
-            return AssertionStatus.FAILED;
         }
-        
+
+
+        String strResponse;
+        final AuthorizeResponse response;
         try {            
-            // This call returns the users current usage, you decide whether to allow the transaction or not
-            Api2 api2 = ApiFactory.createV2Api(server, appId , providerKey );   // url, appid  privatekey
-            AuthorizeResponse response = api2.authorize(appKey, referrer); // app key, referrer
-
-            if(!response.getAuthorized())
-                return AssertionStatus.FALSIFIED;
-
-            String plan = response.getPlan();
-            context.setVariable(assertion.getPrefixUsed()+ "." + Api3ScaleAuthorizeAssertion.SUFFIX_PLAN,plan);
-            List<ApiUsageMetric>  usageReports = response.getUsageReports();
-            String[] metrics = new String[usageReports.size()];
-            for (int i = 0; i < usageReports.size(); i++) {
-                metrics[i] = usageReports.get(i).toString();
-            }
-            context.setVariable(assertion.getPrefixUsed()+ "." + Api3ScaleAuthorizeAssertion.SUFFIX_USAGE,metrics);
-            context.setVariable(assertion.getPrefixUsed()+ "." + Api3ScaleAuthorizeAssertion.SUFFIX_PROVIDER_KEY,providerKey);
-            context.setVariable(Api3ScaleAuthorizeAssertion.PREFIX+ "." + Api3ScaleAuthorizeAssertion.SUFFIX_PROVIDER_KEY,providerKey);
-            context.setVariable(assertion.getPrefixUsed()+ "." + Api3ScaleAuthorizeAssertion.SUFFIX_APP_ID,appId);
+            //Api2 api2 = ApiFactory.createV2Api(server, appId , providerKey );   // AUTHORIZE_URL, appid  privatekey
+//            Api2 api2 = ApiFactory.createV2Api(appId/*"http://su1.3scale.net"*/, providerKey);   // url, appid  privatekey
+            Api3ScaleHttpSender sender  = new Api3ScaleHttpSender();
+            Api2 api2 = ApiFactory.createV2Api(server, appId, providerKey,sender); // url, appid  privatekey, httpsender
+            response = api2.authorize(appKey,null); // app key, referrer
+            strResponse = sender.getHttpResponseString();
         }
         catch(ApiException e){
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                new String[]{"Failed to authorize: " +  e.getErrorCode() + " "+ e.getErrorMessage()}, e);
+            auditor.logAndAudit(AssertionMessages.API_AUTHORIZE_FAILED,
+                new String[]{e.getErrorMessage()}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
         }
-        return AssertionStatus.NONE;
 
+
+        if(!response.getAuthorized()){
+            auditor.logAndAudit(AssertionMessages.API_AUTHORIZE_FAILED,response.getReason());
+            return AssertionStatus.FALSIFIED;
+        }
+
+        if(assertion.getUsage()!=null){
+            Set<String> keys = assertion.getUsage().keySet();
+            for(String key: keys){
+                String value = assertion.getUsage().get(key);
+                ApiUsageMetric metric = response.firstMetricByName(key);
+                if(metric == null){
+                    auditor.logAndAudit(AssertionMessages.API_AUTHORIZE_FAILED_WITH_INVALID_USAGE, key);
+                    return AssertionStatus.FALSIFIED;
+                }
+                int currentValue = Integer.parseInt(metric.getCurrentValue());
+                int maxValue = Integer.parseInt(metric.getMaxValue());
+                int predictedUsage = Integer.parseInt(value);
+                if(predictedUsage > (maxValue-currentValue)){
+                    auditor.logAndAudit(AssertionMessages.API_AUTHORIZE_FAILED_WITH_USAGE, key );
+                    return AssertionStatus.FALSIFIED;
+                }
+            }
+        }
+
+        try {
+            Document doc = XmlUtil.stringToDocument(strResponse);
+            Message message = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getOutputPrefix()), false );
+            message.initialize(doc);
+        } catch (SAXException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{e.getMessage()},ExceptionUtils.getDebugException(e) );
+        } catch (NoSuchVariableException e) {  // should not get here
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{e.getMessage()},ExceptionUtils.getDebugException(e) );
+        }
+        return AssertionStatus.NONE;
     }
 
     /*
@@ -116,6 +124,6 @@ public class ServerApi3ScaleAuthorizeAssertion extends AbstractServerAssertion<A
     public static void onModuleUnloaded() {
         // This assertion doesn't have anything to do in response to this, but it implements this anyway
         // since it will be used as an example by future modular assertion authors
-        logger.log(Level.INFO, "ServerApi3ScaleAssertion is preparing itself to be unloaded");
+        logger.log(Level.INFO, "ApiAssertion is preparing itself to be unloaded");
     }
 }

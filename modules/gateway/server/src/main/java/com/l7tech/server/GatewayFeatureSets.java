@@ -578,6 +578,11 @@ public class GatewayFeatureSets {
         fsr("set:MtomValidate:Assertions", "The necessary assertions to enable MTOM Validate functionality",
             mass("assertion:MtomValidate"));
 
+        GatewayFeatureSet api3scaleAssertions =
+        fsr("set:api3scaleAssertions:Assertions", "The necessary assertions to enable MTOM Validate functionality",
+            mass("assertion:Api3ScaleAuthorize"),
+            mass("assertion:Api3ScaleReport"));
+
         // Saml2AttributeQueryAssertion.aar
         GatewayFeatureSet saml2AttributeQueryAssertions =
         fsr("set:Saml2AttributeQuery:Assertions", "BAE Saml2AttributeQueryAssertion.aar",
@@ -708,6 +713,7 @@ public class GatewayFeatureSets {
             fs(mtomEncodeAssertions),
             fs(mtomValidateAssertions),
             fs(uiFw),
+            fs(api3scaleAssertions),
             fs(esmAssertions),
             fs(wssp));
 

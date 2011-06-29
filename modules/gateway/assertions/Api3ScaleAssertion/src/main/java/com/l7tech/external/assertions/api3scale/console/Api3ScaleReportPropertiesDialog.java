@@ -1,24 +1,48 @@
 package com.l7tech.external.assertions.api3scale.console;
 
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
+import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.api3scale.Api3ScaleReportAssertion;
-import com.l7tech.external.assertions.api3scale.Api3ScaleTransaction;
+import com.l7tech.external.assertions.api3scale.Api3ScaleTransactions;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.FindException;
+import net.threescale.api.ApiTransaction;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.transaction.Transaction;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class Api3ScaleReportPropertiesDialog extends AssertionPropertiesOkCancelSupport<Api3ScaleReportAssertion> {
+    private static final Logger logger = Logger.getLogger(Api3ScaleReportPropertiesDialog.class.getName());
+
+    private JPanel propertyPanel;
+    private JButton addButton;
+    private JButton removeButton;
+    private JButton propertiesButton;
+    private JTable usageTable;
+    private JTextField privateKeyTextField;
+    private JTextField appIdTextField;
+    private JTextField serverTextField;
+    private ResourceBundle resourceBundle = ResourceBundle.getBundle(Api3ScaleReportPropertiesDialog.class.getName());
+    private Map<String,String> usages = new HashMap<String,String>();
+    private List<String> metrics = new ArrayList<String>();
+    private final UsageTableModel tableModel = new UsageTableModel();
+
+    private InputValidator validators;
 
     public Api3ScaleReportPropertiesDialog(final Window parent, final Api3ScaleReportAssertion assertion) {
         super(Api3ScaleReportAssertion.class, parent, assertion, true);
@@ -29,9 +53,8 @@ public class Api3ScaleReportPropertiesDialog extends AssertionPropertiesOkCancel
     protected void initComponents() {
         super.initComponents();
 
-        transactionTable.setModel(tableModel);
-        transactions.clear();
-        transactionTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+        usageTable.setModel(tableModel);
+        usageTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
             @Override
             public void valueChanged(ListSelectionEvent e){
                 enableDisableComponents();
@@ -41,10 +64,9 @@ public class Api3ScaleReportPropertiesDialog extends AssertionPropertiesOkCancel
         addButton.addActionListener(new RunOnChangeListener(){
             @Override
             public void run(){
-                final Api3ScaleTransaction transaction = new Api3ScaleTransaction();
-                if (edit(transaction)) {
-                    transactions.add(transaction);
-                    final int last = transactions.size() - 1;
+                final String metric = null, value = null;
+                if (edit(metric,value)) {
+                    final int last = usages.size() - 1;
                     tableModel.fireTableRowsInserted(last, last);
                 }
             }
@@ -52,41 +74,90 @@ public class Api3ScaleReportPropertiesDialog extends AssertionPropertiesOkCancel
         removeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                doDeleteTransaction();
+                doDeleteUsage();
             }
         });
 
         propertiesButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                final int sel = transactionTable.getSelectedRow();
+                final int sel = usageTable.getSelectedRow();
                 if (sel == -1) return;
-                if (edit(transactions.get(sel))) tableModel.fireTableRowsUpdated(sel, sel);
+                if (edit(metrics.get(sel),usages.get(metrics.get(sel)))) tableModel.fireTableRowsUpdated(sel, sel);
             }
         });
 
-        Utilities.setDoubleClickAction(transactionTable, propertiesButton);
+        metrics.clear();
+        usages.clear();
+
+        validators = new InputValidator( this, getTitle() );
+        validators.constrainTextFieldToBeNonEmpty(getPropertyValue("privateKey"), privateKeyTextField, null);
+        validators.constrainTextFieldToBeNonEmpty(getPropertyValue("applicationId"), appIdTextField, null);
+        validators.constrainTextFieldToBeNonEmpty(getPropertyValue("server"), serverTextField, null);
+        validators.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if (usageTable.getModel().getRowCount() < 1)
+                    return resourceBundle.getString("usageTableEmptyError");
+                return null;
+            }
+        });
+
+        Utilities.setDoubleClickAction(usageTable, propertiesButton);
         enableDisableComponents();
 
     }
 
     private void enableDisableComponents() {
-        final boolean attributeSelected = transactionTable.getSelectedRow() != -1;
+        final boolean attributeSelected = usageTable.getSelectedRow() != -1;
         propertiesButton.setEnabled(attributeSelected);
         removeButton.setEnabled(attributeSelected);
     }
 
     @Override
     public Api3ScaleReportAssertion getData(Api3ScaleReportAssertion assertion) throws ValidationException {
-        validateData();
-        assertion.setTransactions(transactions.toArray(new Api3ScaleTransaction[transactions.size()]));
+        final String error = validators.validate();
+        if(error != null){
+            throw new ValidationException(error);
+        }
+
+        assertion.setTransactionUsages(usages);
+        assertion.setApplicationId(appIdTextField.getText());
+        assertion.setPrivateKey(privateKeyTextField.getText());
+        assertion.setServer(serverTextField.getText());
         return assertion;
     }
 
     @Override
     public void setData(Api3ScaleReportAssertion assertion) {
-        transactions.clear();
-        Collections.addAll(transactions,assertion.getTransactions());
+        if(assertion.getTransactionUsages()!=null){
+            usages = assertion.getTransactionUsages();
+        }
+        Collections.addAll(metrics,usages.keySet().toArray(new String[usages.size()]));
+
+        privateKeyTextField.setText(assertion.getPrivateKey());
+        appIdTextField.setText(assertion.getApplicationId());
+
+        final String server = assertion.getServer();
+        if(server != null && !server.trim().isEmpty()){
+            serverTextField.setText(server);
+        }else{
+            ClusterProperty prop = null;
+            try {
+                prop = Registry.getDefault().getClusterStatusAdmin().findPropertyByName("gateway.3scale.reportingServer");
+            } catch (FindException e) {
+                logger.warning("Error getting server value: " + e.getMessage());
+            }
+            if (prop == null) {
+                Collection<ClusterPropertyDescriptor> descriptors = Registry.getDefault().getClusterStatusAdmin().getAllPropertyDescriptors();
+                for (ClusterPropertyDescriptor desc : descriptors) {
+                    if (desc.getName().equals("gateway.3scale.reportingServer"))
+                        serverTextField.setText(desc.getDefaultValue());
+                }
+            }else{
+               serverTextField.setText(prop.getValue());
+            }
+        }
     }
 
     @Override
@@ -94,17 +165,46 @@ public class Api3ScaleReportPropertiesDialog extends AssertionPropertiesOkCancel
         return propertyPanel;
     }
 
-    private void validateData() throws ValidationException {
-        if(transactions.isEmpty())
-            throw new ValidationException("Transactions cannot be empty.");
-    }
-
-    private boolean edit(Api3ScaleTransaction trans) {
-        TransactionDialog dlg = new TransactionDialog(this, trans);
+    private boolean edit(String metric, String value) {
+        UsageDialog dlg = new UsageDialog(this, metric, value);
         dlg.pack();
         Utilities.centerOnParentWindow(dlg);
         dlg.setVisible(true);
-        return dlg.isWasOKed();
+        if(dlg.isWasOKed()){
+            String newMetric = dlg.getMetric();
+            String newValue = dlg.getValue();
+            if(metric != null){
+                metrics.set(metrics.indexOf(metric),newMetric);
+                usages.remove(metric);
+                usages.put(newMetric,newValue);
+            }
+            else {
+                usages.put(newMetric,newValue);
+                metrics.add(newMetric);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void doDeleteUsage() {
+        final int sel = usageTable.getSelectedRow();
+        if (sel == -1) return;
+        final String found = metrics.get(sel);
+        DialogDisplayer.showConfirmDialog(this,
+                MessageFormat.format(getPropertyValue("remove.usage"), found),
+                getPropertyValue("confirm.delete"),
+                JOptionPane.YES_NO_OPTION,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option == JOptionPane.YES_OPTION) {
+                            metrics.remove(sel);
+                            usages.remove(found);
+                            tableModel.fireTableRowsDeleted(sel, sel);
+                        }
+                    }
+                });
     }
 
     private String getPropertyValue(String propKey){
@@ -115,57 +215,27 @@ public class Api3ScaleReportPropertiesDialog extends AssertionPropertiesOkCancel
         return propertyName;
     }
 
-    private void doDeleteTransaction() {
-        final int sel = transactionTable.getSelectedRow();
-        if (sel == -1) return;
-        final Api3ScaleTransaction found = transactions.get(sel);
-        DialogDisplayer.showConfirmDialog(this,
-                        MessageFormat.format("Are you sure you want to remove the transaction for \"{0}\"", found.getAppId()),
-                "Confirm Deletion",
-                JOptionPane.YES_NO_OPTION,
-                new DialogDisplayer.OptionListener() {
-                    @Override
-                    public void reportResult(int option) {
-                        if (option == JOptionPane.YES_OPTION) {
-                            transactions.remove(sel);
-                            tableModel.fireTableRowsDeleted(sel, sel);
-                        }
-                    }
-                });
-    }
-
-    private class TransactionTableModel extends AbstractTableModel {
+    private class UsageTableModel extends AbstractTableModel {
         @Override
         public int getRowCount() {
-            return transactions.size();
+            return metrics.size();
         }
 
         @Override
         public int getColumnCount() {
-            return 3;
+            return 2;
         }
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            Api3ScaleTransaction transaction = transactions.get(rowIndex);
+            String metric = metrics.get(rowIndex);
             switch(columnIndex) {
                 case 0:
-                    return transaction.getAppId();
+                    return metric;
                 case 1:
-                    Set<String> keys = transaction.getMetrics().keySet();
-                    StringBuilder builder = new StringBuilder();
-                    for(String key: keys )
-                    {
-                        builder.append(keys);
-                        builder.append("=");
-                        builder.append(transaction.getMetrics().get(key));
-                        builder.append(";");
-                    }
-                    return builder.toString();
-                case 2:
-                    return transaction.getTimestamp();
+                    return usages.get(metric);
                 default:
-                    throw new IllegalArgumentException("No such column " + columnIndex);
+                    throw new IllegalArgumentException(getPropertyValue("noColumn") + columnIndex);
             }
         }
 
@@ -173,23 +243,15 @@ public class Api3ScaleReportPropertiesDialog extends AssertionPropertiesOkCancel
         public String getColumnName(int column) {
             switch(column) {
                 case 0:
-                    return "Application ID";
+                    return getPropertyValue("metric");
                 case 1:
-                    return "Usage";
-                case 2:
-                    return "Timestamp";
+                    return getPropertyValue("value");
                 default:
-                    throw new IllegalArgumentException("No such column " + column);
+                    throw new IllegalArgumentException(getPropertyValue("noColumn") + column);
             }
         }
     }
 
-    private JPanel propertyPanel;
-    private JButton addButton;
-    private JButton removeButton;
-    private JButton propertiesButton;
-    private JTable transactionTable;
-    private ResourceBundle resourceBundle = ResourceBundle.getBundle(Api3ScaleReportPropertiesDialog.class.getName());
-    private List<Api3ScaleTransaction> transactions = new ArrayList<Api3ScaleTransaction>();
-    private final TransactionTableModel tableModel = new TransactionTableModel();
+
+
 }

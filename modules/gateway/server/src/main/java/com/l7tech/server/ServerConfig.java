@@ -347,6 +347,8 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_OTHER_TEXTUAL_CONTENT_TYPES = "otherTextualContentTypes";
 
     public static final String PARAM_AUDIT_EXPORT_GROUP_CONCAT_MAX_LEN = "audit.export.group_concat_max_len";
+
+    public static final String PARAM_GATEWAY_3SCALE_REPORTING_SERVER = "gateway.3scale.reportingServer";
     
     private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";
