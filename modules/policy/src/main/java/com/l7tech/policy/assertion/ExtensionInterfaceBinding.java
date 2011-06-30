@@ -1,8 +1,7 @@
 package com.l7tech.policy.assertion;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import javax.validation.constraints.NotNull;
 
 /**
  * Describes an available implementation of an admin extension interface.  These are interfaces that .aar files
@@ -22,7 +21,8 @@ import javax.validation.constraints.NotNull;
  * one implementation.
  */
 public class ExtensionInterfaceBinding<T> {
-    private final @NotNull Class<T> interfaceClass;
+    private final @NotNull
+    Class<T> interfaceClass;
     private final @Nullable String instanceIdentifier;
     private final @NotNull T implementationObject;
 

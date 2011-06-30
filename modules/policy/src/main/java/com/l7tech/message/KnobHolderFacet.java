@@ -1,14 +1,8 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.message;
 
 import com.l7tech.util.ResourceUtils;
+import org.jetbrains.annotations.NotNull;
 
-import javax.validation.constraints.NotNull;
 import java.io.Closeable;
 
 /**
@@ -18,7 +12,7 @@ public class KnobHolderFacet extends MessageFacet {
     private final @NotNull Class[] knobClasses;
     private final @NotNull MessageKnob knob;
 
-    public KnobHolderFacet(@NotNull Message message, @NotNull MessageFacet delegate, @NotNull Class knobClass, @NotNull MessageKnob knob) {
+    public KnobHolderFacet(@NotNull Message message, MessageFacet delegate, @NotNull Class knobClass, @NotNull MessageKnob knob) {
         super(message, delegate);
         if (knob == null || knobClass == null)
             throw new NullPointerException();

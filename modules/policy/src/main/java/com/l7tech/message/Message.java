@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2004-2008 Layer 7 Technologies Inc.
- */
 package com.l7tech.message;
 
 import com.l7tech.common.http.HttpConstants;
@@ -13,10 +10,10 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.util.CausedIllegalStateException;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.MessageNotSoapException;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import javax.validation.constraints.NotNull;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -636,7 +633,7 @@ public final class Message implements Closeable {
      * @throws IllegalStateException if this message already offers an implementation of the specified knobClass
      * @throws IllegalArgumentException if knob is not an instance of knobClass
      */
-    public void attachKnob(@NotNull Class<? extends MessageKnob> knobClass, @NotNull MessageKnob knob) {
+    public <T extends MessageKnob> void attachKnob(@NotNull Class<T> knobClass, @NotNull T knob) {
         if (getKnob(knobClass) != null)
             throw new IllegalStateException("An implementation of the knob " + knobClass + " is already attached to this Message.");
         if (!knobClass.isAssignableFrom(knob.getClass()))
