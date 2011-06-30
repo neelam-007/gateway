@@ -11,6 +11,7 @@
             </bean>
         </property>
         <property name="securityCallback" ref="remotingProvider"/>
+        <property name="moduleClassLoader" ref="allModulesClassLoader"/>
     </bean>
 
     <bean name="/AdminLogin" parent="httpInvokerParent">

@@ -13,7 +13,7 @@ import static org.junit.Assert.assertTrue;
  * Test case for {@link ExtensionInterfaceManager}.
  */
 public class ExtensionInterfaceManagerTest {
-    ExtensionInterfaceManager manager = new ExtensionInterfaceManager();
+    ExtensionInterfaceManager manager = new ExtensionInterfaceManager(null, null, null);
 
     @Test
     public void testRegisterInterface() throws Exception {

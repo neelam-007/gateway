@@ -21,8 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * one implementation.
  */
 public class ExtensionInterfaceBinding<T> {
-    private final @NotNull
-    Class<T> interfaceClass;
+    private final @NotNull Class<T> interfaceClass;
     private final @Nullable String instanceIdentifier;
     private final @NotNull T implementationObject;
 
@@ -36,10 +35,15 @@ public class ExtensionInterfaceBinding<T> {
      * @throws ClassCastException if implementationObject is not a subclass of interfaceClass
      */
     public ExtensionInterfaceBinding(@NotNull Class<T> interfaceClass, @Nullable String instanceIdentifier, @NotNull T implementationObject) {
+        //noinspection ConstantConditions
         if (interfaceClass == null) throw new NullPointerException("interfaceClass");
+
+        //noinspection ConstantConditions
         if (implementationObject == null) throw new NullPointerException("implementationObject");
+
         if (!interfaceClass.isAssignableFrom(implementationObject.getClass()))
             throw new ClassCastException("implmeentationObject does not implement " + interfaceClass);
+
         this.interfaceClass = interfaceClass;
         this.instanceIdentifier = instanceIdentifier;
         this.implementationObject = implementationObject;
@@ -48,6 +52,7 @@ public class ExtensionInterfaceBinding<T> {
     /**
      * @return the interface class for this binding.  Never null.
      */
+    @NotNull
     public Class<T> getInterfaceClass() {
         return interfaceClass;
     }
@@ -60,6 +65,7 @@ public class ExtensionInterfaceBinding<T> {
         return instanceIdentifier;
     }
 
+    @NotNull
     public T getImplementationObject() {
         return implementationObject;
     }

@@ -70,8 +70,9 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     private final ServerConfig serverConfig;
     private final LicenseManager licenseManager;
     private final ExtensionInterfaceManager extensionInterfaceManager;
-    private final Map<String, AssertionModule> loadedModules = new HashMap<String, AssertionModule>();
-    private final Map<String, Long> failModTimes = new HashMap<String, Long>();    // should not be loaded (until mod time changes) because last time we tried it, it failed
+    private final Map<String, AssertionModule> loadedModules = new ConcurrentHashMap<String, AssertionModule>();
+    private final Map<String, AssertionModule> modulesByPackageName = new ConcurrentHashMap<String, AssertionModule>(); // Quick lookup of module by a (non-empty) package it offers.  In case of dupes, last module loaded wins!
+    private final Map<String, Long> failModTimes = new ConcurrentHashMap<String, Long>();    // should not be loaded (until mod time changes) because last time we tried it, it failed
     private final Map<String, String[]> newClusterProps = new ConcurrentHashMap<String, String[]>();
     private File lastScannedDir = null;
     private long lastScannedDirModTime = 0;
@@ -506,6 +507,9 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
 
             AssertionModule module = new AssertionModule(filename, jar, modifiedTime, sha1, assloader, protos, packages);
             previousVersion = loadedModules.put(filename, module);
+            for (String p : packages) {
+                modulesByPackageName.put(p, module);
+            }
             failModTimes.clear(); // retry all failures whenever a module is loaded or unloaded
             try {
                 // Register any new cluster properties, in case the assertion initialization requires them
@@ -590,6 +594,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
 
         final String name = module.getName();
         loadedModules.remove(name);
+        modulesByPackageName.values().remove(module);
         failModTimes.clear(); // retry all failures whenever a module is loaded or unloaded
 
         // Unregister all assertions from this module
@@ -666,6 +671,16 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     }
 
     /**
+     * Find the most-recently-loaded loaded module that contains at least one class or resource in the specified package.
+     *
+     * @param packageName a package name.  required
+     * @return the most-recently-loaded loaded module that offers at least one file in this package, or null if there isn't one.
+     */
+    public AssertionModule getModuleForPackage(String packageName) {
+        return modulesByPackageName.get(packageName);
+    }
+
+    /**
      * @param file the file to digest.  Must not be null.
      * @return the hex dump of the SHA-1 digest of the specified file.
      * @throws java.io.IOException if there is a problem reading the file
@@ -694,7 +709,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     /**
      * @return a view of all assertion modules which are currently loaded.  May be empty but never null.
      */
-    public synchronized Set<AssertionModule> getLoadedModules() {
+    public Set<AssertionModule> getLoadedModules() {
         return new HashSet<AssertionModule>(loadedModules.values());
     }
 
@@ -704,7 +719,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
      * @param moduleFilename  the module name to check.  Required.
      * @return the AssertionModule instance describing this module if it is loaded, or null if no such module is loaded.
      */
-    public synchronized AssertionModule getModule(String moduleFilename) {
+    public AssertionModule getModule(String moduleFilename) {
         return loadedModules.get(moduleFilename);
     }
 
@@ -766,4 +781,5 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
             }
         }
     }
+
 }

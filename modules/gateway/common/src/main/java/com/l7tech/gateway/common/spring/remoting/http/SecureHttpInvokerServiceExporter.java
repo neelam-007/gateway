@@ -48,6 +48,10 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
         void checkSecured() throws IOException;
     }
 
+    public void setModuleClassLoader(ClassLoader moduleClassLoader) {
+        this.moduleClassLoader = moduleClassLoader;
+    }
+
     //- PROTECTED
 
     @Override
@@ -66,6 +70,11 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
         final RemoteInvocation remoteInvocation = super.doReadRemoteInvocation(ois);
         validate( remoteInvocation );
         return remoteInvocation;
+    }
+
+    @Override
+    protected ClassLoader getBeanClassLoader() {
+        return moduleClassLoader != null ? moduleClassLoader : super.getBeanClassLoader();
     }
 
     @Override
@@ -99,6 +108,7 @@ public class SecureHttpInvokerServiceExporter extends HttpInvokerServiceExporter
 
     private Set<String> permittedClassNames;
     private SecurityCallback securityCallback;
+    private ClassLoader moduleClassLoader;
 
     private void validate( final RemoteInvocation remoteInvocation ) throws IOException {
         if ( remoteInvocation != null && restrictMethods ) {

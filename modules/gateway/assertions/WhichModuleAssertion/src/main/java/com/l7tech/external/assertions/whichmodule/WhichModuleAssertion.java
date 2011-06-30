@@ -4,7 +4,9 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.Utilities;
@@ -24,6 +26,8 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -31,10 +35,15 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.logging.Logger;
+
+import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_MULTI;
+import static com.l7tech.objectmodel.EntityType.SSG_KEY_ENTRY;
+import static com.l7tech.objectmodel.EntityType.TRUSTED_CERT;
 
 /**
  * A utility module that shows info about the module that provided a currently-loaded assertion.
@@ -78,7 +87,12 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Nullary<Collection<ExtensionInterfaceBinding>>() {
             @Override
             public Collection<ExtensionInterfaceBinding> call() {
-                ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<DemoExtensionInterface>(DemoExtensionInterface.class, null, new DemoExtensionInterfaceImpl());
+                ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<DemoExtensionInterface>(DemoExtensionInterface.class, null, new DemoExtensionInterface() {
+                    @Override
+                    public DemoReturnVal demoHello(DemoArgument arg) {
+                        return new DemoReturnVal("Hello from Gateway anon inner class!  You sent: " + arg.s);
+                    }
+                });
                 return Collections.singletonList(binding);
             }
         });
@@ -94,28 +108,39 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            String response = Registry.getDefault().getExtensionInterface(DemoExtensionInterface.class, null).demoHello("Info from SSM");
-            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Which Module Assertion .AAR File", "Response from Gateway: " + response, null);
+            final DemoExtensionInterface demoInterface = Registry.getDefault().getExtensionInterface(DemoExtensionInterface.class, null);
+            DemoExtensionInterface.DemoReturnVal response = demoInterface.demoHello(new DemoExtensionInterface.DemoArgument("Info from SSM packed inside DemoArgument"));
+            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Which Module Assertion .AAR File", "Response from Gateway from DemoReturnVal: " + response.v, null);
         }
     }
 
     /**
      * A sample interface to demo use of an admin extension interface.
      */
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
+    @Administrative
+    @Secured(types=TRUSTED_CERT)
     public static interface DemoExtensionInterface {
-        public String demoHello(String arg);
-    }
 
-    /**
-     * A sample server-side implementation of our extension interface.
-     * <p/>
-     * Note that the implementation class must be public or else the ExtensionInterfaceManager will not be permitted to invoke on it,
-     * and that anonymous inner classes are not public.
-     */
-    public static class DemoExtensionInterfaceImpl implements DemoExtensionInterface {
-        @Override
-        public String demoHello(String arg) {
-            return "Hello from Gateway!  You sent: " + arg;
+        // Demonstrate passing arguments and return values that are themselves classes loaded from the .aar
+        // Naturally, passing serializable JDK classes works as well, as does passing classes shared between the core gateway and SSM (as long as they are serializable)
+        @Secured(stereotype=DELETE_MULTI, types=SSG_KEY_ENTRY)
+        public DemoReturnVal demoHello(DemoArgument arg);
+
+        public static class DemoArgument implements Serializable {
+            public final String s;
+
+            public DemoArgument(String s) {
+                this.s = s;
+            }
+        }
+
+        public static class DemoReturnVal implements Serializable {
+            public final StringBuilder v;
+
+            public DemoReturnVal(String v) {
+                this.v = new StringBuilder(v);
+            }
         }
     }
 
