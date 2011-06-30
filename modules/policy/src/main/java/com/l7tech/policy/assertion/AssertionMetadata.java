@@ -574,6 +574,11 @@ public interface AssertionMetadata {
      * If a value for this property is provided, it will be invoked exactly once when this assertion prototype
      * is registered on the Gateway.  Any returned bindings will be registered with the Gateway's extensionInterfaceManager.
      * <p/>
+     * If an interface is annotated with both @Administrative and @Secured, then method
+     * calls will be passed through the RBAC enforcemetn interceptor.
+     * <p/>
+     * Any @Transactional annotations present on the interface will be honored when methods are invoked remotely.
+     * <p/>
      * There is no default value for this property.
      * <p/>
      * This key was introduced in SecureSpan Gateway version 6.2.
