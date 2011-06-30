@@ -44,6 +44,7 @@ public class ServerApi3ScaleReportAssertion extends AbstractServerAssertion<Api3
         Map<String, Object> vars = context.getVariableMap(assertion.getVariablesUsed(), auditor);
         String  requestPrivateKey = ExpandVariables.process(assertion.getPrivateKey(), vars, auditor, true);
         String  requestAppId = ExpandVariables.process(assertion.getApplicationId(), vars, auditor, true);
+        String  server = ExpandVariables.process(assertion.getServer(), vars, auditor, true);
 
         List<ApiTransaction> transactions = new ArrayList<ApiTransaction>();
         transactions.add(new ApiTransaction( requestAppId ,null ,assertion.getTransactionUsages()));
@@ -51,7 +52,7 @@ public class ServerApi3ScaleReportAssertion extends AbstractServerAssertion<Api3
         try {
             // This call returns the users current usage, you decide whether to allow the transaction or not
             Api3ScaleHttpSender sender  = new Api3ScaleHttpSender();
-            Api2 api2 = ApiFactory.createV2Api("http://su1.3scale.net", requestAppId, requestPrivateKey,sender); // url, appid  privatekey, httpsender
+            Api2 api2 = ApiFactory.createV2Api(server, requestAppId, requestPrivateKey,sender); // url, appid  privatekey, httpsender
             api2.report(transactions.toArray(new ApiTransaction[transactions.size()]));
         }
         catch(ApiException e){

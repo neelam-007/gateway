@@ -6,7 +6,6 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -23,7 +22,6 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -56,19 +54,12 @@ public class ServerApi3ScaleAuthorizeAssertion extends AbstractServerAssertion<A
         String appId = ExpandVariables.process(assertion.getApplicationID(), vars, auditor, true);
         if(assertion.getApplicationKey()!=null&& !assertion.getApplicationKey().trim().isEmpty())
             appKey = ExpandVariables.process(assertion.getApplicationKey(), vars, auditor, true);
-        String server;
-        if(assertion.getServer()== null || assertion.getServer().isEmpty()){
-            server = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_GATEWAY_3SCALE_REPORTING_SERVER);
-        } else {
-            server = ExpandVariables.process(assertion.getServer(), vars, auditor, true);
-        }
+        String server = ExpandVariables.process(assertion.getServer(), vars, auditor, true);
 
 
         String strResponse;
         final AuthorizeResponse response;
         try {            
-            //Api2 api2 = ApiFactory.createV2Api(server, appId , providerKey );   // AUTHORIZE_URL, appid  privatekey
-//            Api2 api2 = ApiFactory.createV2Api(appId/*"http://su1.3scale.net"*/, providerKey);   // url, appid  privatekey
             Api3ScaleHttpSender sender  = new Api3ScaleHttpSender();
             Api2 api2 = ApiFactory.createV2Api(server, appId, providerKey,sender); // url, appid  privatekey, httpsender
             response = api2.authorize(appKey,null); // app key, referrer
