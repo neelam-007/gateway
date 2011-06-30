@@ -42,7 +42,7 @@ public class ExtensionInterfaceBinding<T> {
         if (implementationObject == null) throw new NullPointerException("implementationObject");
 
         if (!interfaceClass.isAssignableFrom(implementationObject.getClass()))
-            throw new ClassCastException("implmeentationObject does not implement " + interfaceClass);
+            throw new ClassCastException("implementationObject does not implement " + interfaceClass);
 
         this.interfaceClass = interfaceClass;
         this.instanceIdentifier = instanceIdentifier;
