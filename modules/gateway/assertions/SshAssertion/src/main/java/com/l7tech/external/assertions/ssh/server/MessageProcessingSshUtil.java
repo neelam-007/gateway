@@ -1,0 +1,138 @@
+package com.l7tech.external.assertions.ssh.server;
+
+import com.l7tech.message.FtpRequestKnob;
+import com.l7tech.util.InetAddressUtil;
+import com.l7tech.util.Pair;
+
+import java.net.PasswordAuthentication;
+import java.net.SocketAddress;
+
+/**
+ * Utility methods for SSH support.
+ */
+public class MessageProcessingSshUtil {
+
+    /*
+     * SCP and SFTP uses a similar format to FtpKnob.  Create an FtpKnob.
+     */
+    public static FtpRequestKnob buildFtpKnob(final String protocol, final SocketAddress localSocketAddress,
+                                              final SocketAddress remoteSocketAddress, final String file, final String path,
+                                              final boolean secure, final boolean unique, final MessageProcessingPasswordAuthenticator user) {
+
+        // SocketAddress requires us to parse for host and port (e.g. /127.0.0.1:22)
+        Pair<String,String> localHostPortPair = MessageProcessingSshUtil.getHostAndPort(localSocketAddress.toString());
+        Pair<String,String> remoteHostPortPair = MessageProcessingSshUtil.getHostAndPort(remoteSocketAddress.toString());
+
+        final String localHostFinal = localHostPortPair.getKey();
+        final int localPortFinal = Integer.parseInt(localHostPortPair.getValue());
+        final String remoteHostFinal = remoteHostPortPair.getKey();
+        final int remotePortFinal = Integer.parseInt(remoteHostPortPair.getValue());
+
+        return new FtpRequestKnob(){
+            @Override
+            public String getLocalAddress() {
+                return localHostFinal;
+            }
+            @Override
+            public String getLocalHost() {
+                return localHostFinal;
+            }
+            @Override
+            public int getLocalPort() {
+                return getLocalListenerPort();
+            }
+            @Override
+            public int getLocalListenerPort() {
+                return localPortFinal;
+            }
+            @Override
+            public String getRemoteAddress() {
+                return remoteHostFinal;
+            }
+            @Override
+            public String getRemoteHost() {
+                return remoteHostFinal;
+            }
+            @Override
+            public int getRemotePort() {
+                return remotePortFinal;
+            }
+            @Override
+            public String getFile() {
+                return file;
+            }
+            @Override
+            public String getPath() {
+                return path;
+            }
+            @Override
+            public String getRequestUri() {
+                return path;
+            }
+            @Override
+            public String getRequestUrl() {
+
+                StringBuffer urlBuffer = new StringBuffer();
+
+                urlBuffer.append(protocol);
+                urlBuffer.append("://");
+                urlBuffer.append(InetAddressUtil.getHostForUrl(localHostFinal));
+                urlBuffer.append(":");
+                urlBuffer.append(localPortFinal);
+                urlBuffer.append(path);
+                if (!path.endsWith("/"))
+                    urlBuffer.append("/");
+                urlBuffer.append(file);
+
+                return urlBuffer.toString();
+            }
+            @Override
+            public boolean isSecure() {
+                return secure;
+            }
+            @Override
+            public boolean isUnique() {
+                return unique;
+            }
+            @Override
+            public PasswordAuthentication getCredentials() {
+                if (user != null) {
+                    return new PasswordAuthentication(user.getUserName(),
+                        user.getPassword() !=null ? user.getPassword().toCharArray() : null);
+                } else {
+                    return null;
+                }
+            }
+        };
+    }
+
+    /**
+     * Parses the host and port from a "host[:port]" string.
+     *
+     * Similar to InetAddressUtil.getHostAndPort(String hostAndPossiblyPort, String defaultPort),
+     * but does not return unwanted square bracket around the host name (e.g. [hostname]) like InetAddressUtil
+     *
+     * @param hostAndPossiblyPort string containing a host and optionally a port (delimited from the host part with ":")
+     * @return the host and port determined as described above
+     */
+    private static Pair<String,String> getHostAndPort(String hostAndPossiblyPort) {
+        boolean startsWithForwardSlash = hostAndPossiblyPort.charAt(0) == '/';
+        int colonIndex = hostAndPossiblyPort.indexOf(':');
+        String host;
+        if (startsWithForwardSlash && colonIndex > 1) {
+            host = hostAndPossiblyPort.substring(1, colonIndex);
+        } else if (startsWithForwardSlash) {
+            host = hostAndPossiblyPort.substring(1);
+        } else if (colonIndex > -1) {
+            host = hostAndPossiblyPort.substring(0, colonIndex);
+        } else {
+            host = hostAndPossiblyPort;
+        }
+        String port = null;
+        if (colonIndex > -1) {
+            port = hostAndPossiblyPort.substring(colonIndex + 1);
+        }
+
+        return new Pair<String, String>(host, port);
+    }
+}

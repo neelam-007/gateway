@@ -1,5 +1,6 @@
-package com.l7tech.external.assertions.sftp.server;
+package com.l7tech.external.assertions.ssh.server;
 
+import com.l7tech.external.assertions.ssh.SshRouteAssertion;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -27,7 +28,6 @@ import org.apache.sshd.common.mac.HMACMD5;
 import org.apache.sshd.common.mac.HMACMD596;
 import org.apache.sshd.common.mac.HMACSHA1;
 import org.apache.sshd.common.mac.HMACSHA196;
-import org.apache.sshd.common.random.BouncyCastleRandom;
 import org.apache.sshd.common.random.JceRandom;
 import org.apache.sshd.common.random.SingletonRandomFactory;
 import org.apache.sshd.common.signature.SignatureDSA;
@@ -36,16 +36,15 @@ import org.apache.sshd.common.util.OsUtils;
 import org.apache.sshd.common.util.SecurityUtils;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.ForwardingFilter;
-import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.PublickeyAuthenticator;
 import org.apache.sshd.server.channel.ChannelDirectTcpip;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.kex.DHG1;
-import org.apache.sshd.server.kex.DHG14;
 import org.apache.sshd.server.keyprovider.PEMGeneratorHostKeyProvider;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.shell.ProcessShellFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -55,21 +54,23 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.InvalidKeyException;
 import java.security.PublicKey;
+import java.security.Security;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Creates and controls an embedded SFTP server for each configured SsgConnector with a SFTP scheme.
+ * Creates and controls an embedded SSH server for each configured SsgConnector with a SSH scheme.
+ * Supports SCP and SFTP over SSH2.
  */
-public class SftpServerModule extends TransportModule implements ApplicationListener {
-    private static final Logger logger = Logger.getLogger(SftpServerModule.class.getName());
-    private static final String SCHEME_SFTP = "SFTP(SSH2)";
+public class SshServerModule extends TransportModule implements ApplicationListener {
+    private static final Logger logger = Logger.getLogger(SshServerModule.class.getName());
+    private static final String SCHEME_SSH = "SSH2";
 
     private static final Set<String> SUPPORTED_SCHEMES = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     static {
-        SUPPORTED_SCHEMES.addAll(Arrays.asList(SCHEME_SFTP));
+        SUPPORTED_SCHEMES.addAll(Arrays.asList(SCHEME_SSH));
     }
 
     private static BlockingQueue<Runnable> requestQueue = new LinkedBlockingQueue<Runnable>();
@@ -89,19 +90,19 @@ public class SftpServerModule extends TransportModule implements ApplicationList
 
     private Auditor auditor;
 
-    public SftpServerModule(ApplicationEventProxy applicationEventProxy,
-                            LicenseManager licenseManager,
-                            SsgConnectorManager ssgConnectorManager,
-                            TrustedCertServices trustedCertServices,
-                            DefaultKey defaultKey,
-                            ServerConfig serverConfig,
-                            GatewayState gatewayState,
-                            MessageProcessor messageProcessor,
-                            StashManagerFactory stashManagerFactory,
-                            SoapFaultManager soapFaultManager,
-                            EventChannel messageProcessingEventChannel)
+    public SshServerModule(ApplicationEventProxy applicationEventProxy,
+                           LicenseManager licenseManager,
+                           SsgConnectorManager ssgConnectorManager,
+                           TrustedCertServices trustedCertServices,
+                           DefaultKey defaultKey,
+                           ServerConfig serverConfig,
+                           GatewayState gatewayState,
+                           MessageProcessor messageProcessor,
+                           StashManagerFactory stashManagerFactory,
+                           SoapFaultManager soapFaultManager,
+                           EventChannel messageProcessingEventChannel)
     {
-        super("SFTP server module", logger, GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
+        super("SSH server module", logger, GatewayFeatureSets.SERVICE_SSH_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
         this.applicationEventProxy = applicationEventProxy;
         this.gatewayState = gatewayState;
         this.messageProcessor = messageProcessor;
@@ -117,7 +118,7 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         throw new IllegalStateException("Unable to get bean from application context: " + beanName);
     }
 
-    static SftpServerModule createModule(ApplicationContext appContext) {
+    static SshServerModule createModule(ApplicationContext appContext) {
         LicenseManager licenseManager = getBean(appContext, "licenseManager", LicenseManager.class);
         SsgConnectorManager ssgConnectorManager = getBean(appContext, "ssgConnectorManager", SsgConnectorManager.class);
         TrustedCertServices trustedCertServices = getBean(appContext, "trustedCertServices", TrustedCertServices.class);
@@ -130,7 +131,7 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         SoapFaultManager soapFaultManager = getBean(appContext, "soapFaultManager", SoapFaultManager.class);
         EventChannel messageProcessingEventChannel = getBean(appContext, "messageProcessingEventChannel", EventChannel.class);
 
-        return new SftpServerModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices,
+        return new SshServerModule(applicationEventProxy, licenseManager, ssgConnectorManager, trustedCertServices,
                 defaultKey, serverConfig, gatewayState, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel);
     }
 
@@ -142,7 +143,7 @@ public class SftpServerModule extends TransportModule implements ApplicationList
             try {
                 startInitialConnectors();
             } catch (FindException e) {
-                logger.log(Level.SEVERE, "Unable to access initial SFTP connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                logger.log(Level.SEVERE, "Unable to access initial SSH connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
     }
@@ -181,7 +182,7 @@ public class SftpServerModule extends TransportModule implements ApplicationList
             try {
                 startInitialConnectors();
             } catch (FindException e) {
-                logger.log(Level.SEVERE, "Unable to access initial SFTP connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                logger.log(Level.SEVERE, "Unable to access initial SSH connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
     }
@@ -191,16 +192,16 @@ public class SftpServerModule extends TransportModule implements ApplicationList
     }
 
     private void registerCustomProtocols() {
-        TransportDescriptor sftpInfo = new TransportDescriptor();
-        sftpInfo.setScheme(SCHEME_SFTP);
-        sftpInfo.setSupportsSpecifiedContentType(true);
-        sftpInfo.setRequiresSpecifiedContentType(true);
-        sftpInfo.setSupportsHardwiredServiceResolution(true);
-        sftpInfo.setRequiresHardwiredServiceResolutionForNonXml(true);
-        sftpInfo.setRequiresHardwiredServiceResolutionAlways(false);
-        // sftpInfo.setCustomPropertiesPanelClassname("com.l7tech.external.assertions.sftp.console.SftpPropertiesPanel");
-        // sftpInfo.setModularAssertionClassname(SftpAssertion.class.getName());
-        ssgConnectorManager.registerTransportProtocol(sftpInfo, this);
+        TransportDescriptor ssh = new TransportDescriptor();
+        ssh.setScheme(SCHEME_SSH);
+        ssh.setSupportsSpecifiedContentType(true);
+        ssh.setRequiresSpecifiedContentType(true);
+        ssh.setSupportsHardwiredServiceResolution(true);
+        ssh.setRequiresHardwiredServiceResolutionForNonXml(true);
+        ssh.setRequiresHardwiredServiceResolutionAlways(false);
+        ssh.setCustomPropertiesPanelClassname("com.l7tech.external.assertions.ssh.console.SshTransportPropertiesPanel");
+        ssh.setModularAssertionClassname(SshRouteAssertion.class.getName());
+        ssgConnectorManager.registerTransportProtocol(ssh, this);
     }
 
     @Override
@@ -239,7 +240,7 @@ public class SftpServerModule extends TransportModule implements ApplicationList
 
         connector = connector.getReadOnlyCopy();
         final String scheme = connector.getScheme();
-        if (SCHEME_SFTP.equalsIgnoreCase(scheme)) {
+        if (SCHEME_SSH.equalsIgnoreCase(scheme)) {
             addSftpConnector(connector);
         } else {
             // Can't happen
@@ -266,11 +267,21 @@ public class SftpServerModule extends TransportModule implements ApplicationList
             executorNeedsClose = true;
         }
 
+        // configure and start sshd
         try {
-
             SshServer sshd = setUpSshServer();
-            sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(
-                    new MessageProcessingSftpSubsystem.Factory(connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel)));
+
+            MessageProcessingPasswordAuthenticator user = (MessageProcessingPasswordAuthenticator) sshd.getPasswordAuthenticator();
+            final boolean enableScp = Boolean.parseBoolean(connector.getProperty(SshRouteAssertion.LISTEN_PROP_ENABLE_SCP));
+            if (enableScp) {
+                sshd.setCommandFactory(new MessageProcessingScpCommand.Factory(
+                        connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user));
+            }
+            final boolean enableSftp = Boolean.parseBoolean(connector.getProperty(SshRouteAssertion.LISTEN_PROP_ENABLE_SFTP));
+            if (enableSftp) {
+                sshd.setSubsystemFactories(Arrays.<NamedFactory<Command>>asList(new MessageProcessingSftpSubsystem.Factory(
+                        connector, messageProcessor, stashManagerFactory, soapFaultManager, messageProcessingEventChannel, user)));
+            }
             sshd.setPort(connector.getPort());
 
             auditStart("connector OID " + connector.getOid() + ", on port " + connector.getPort());
@@ -331,19 +342,20 @@ public class SftpServerModule extends TransportModule implements ApplicationList
      * This method is based on org.apache.sshd.SshServer.setUpDefaultServer(...).
      */
     private SshServer setUpSshServer() {
-        SshServer sshd = new SshServer();
-        // DHG14 uses 2048 bits key which are not supported by the default JCE provider
-        if (SecurityUtils.isBouncyCastleRegistered()) {
-            sshd.setKeyExchangeFactories(Arrays.<NamedFactory<KeyExchange>>asList(
-                    new DHG14.Factory(),
-                    new DHG1.Factory()));
-            sshd.setRandomFactory(new SingletonRandomFactory(new BouncyCastleRandom.Factory()));
+        // customized for Gateway, we don't want Apache's SecurityUtils to explicitly register BouncyCastle, let the Gateway decide
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) != null) {
+            SecurityUtils.setRegisterBouncyCastle(true);
+            SecurityUtils.getSecurityProvider();
         } else {
-            sshd.setKeyExchangeFactories(Arrays.<NamedFactory<KeyExchange>>asList(
-                    new DHG1.Factory()));
-            sshd.setRandomFactory(new SingletonRandomFactory(new JceRandom.Factory()));
+            SecurityUtils.setRegisterBouncyCastle(false);
+            SecurityUtils.setSecurityProvider(null);
         }
+
+        SshServer sshd = new SshServer();
+        sshd.setKeyExchangeFactories(Arrays.<NamedFactory<KeyExchange>>asList(new DHG1.Factory()));
+        sshd.setRandomFactory(new SingletonRandomFactory(new JceRandom.Factory()));
         setUpSshCiphers(sshd);
+
         // Compression is not enabled by default
         // sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList(
         //         new CompressionNone.Factory(),
@@ -363,12 +375,12 @@ public class SftpServerModule extends TransportModule implements ApplicationList
                 new SignatureDSA.Factory(),
                 new SignatureRSA.Factory()));
         sshd.setFileSystemFactory(new VirtualFileSystemFactory());   // customized for Gateway
-
+        
         if (SecurityUtils.isBouncyCastleRegistered()) {
             sshd.setKeyPairProvider(new PEMGeneratorHostKeyProvider("key.pem"));
         } else {
             sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("key.ser"));
-        }
+        }        
         if (OsUtils.isUNIX()) {
             sshd.setShellFactory(new ProcessShellFactory(new String[] { "/bin/sh", "-i", "-l" },
                     EnumSet.of(ProcessShellFactory.TtyOptions.ONlCr)));
@@ -378,15 +390,11 @@ public class SftpServerModule extends TransportModule implements ApplicationList
         }
 
         // customized for Gateway
-        sshd.setPasswordAuthenticator(new PasswordAuthenticator() {
-            public boolean authenticate(String username, String password, ServerSession session) {
-                // allow all access, defer authentication to Gateway policy assertion
-                return true;
-            }
-        });
-
+        sshd.setPasswordAuthenticator(new MessageProcessingPasswordAuthenticator());
         sshd.setPublickeyAuthenticator(new PublickeyAuthenticator() {
             public boolean authenticate(String username, PublicKey key, ServerSession session) {
+                logger.log(Level.INFO, "Username:" + username + " key:" + key.toString());
+                // TODO
                 //File f = new File("/Users/" + username + "/.ssh/authorized_keys");
                 return true;
             }

@@ -67,7 +67,7 @@ public class GatewayFeatureSets {
     // Constants for service names
     public static final String SERVICE_MESSAGEPROCESSOR = "service:MessageProcessor";
     public static final String SERVICE_FTP_MESSAGE_INPUT = "service:FtpMessageInput";
-    public static final String SERVICE_SFTP_MESSAGE_INPUT = "service:SftpMessageInput";
+    public static final String SERVICE_SSH_MESSAGE_INPUT = "service:Ssh2MessageInput";
     public static final String SERVICE_HTTP_MESSAGE_INPUT = "service:HttpMessageInput";
     public static final String SERVICE_JMS_MESSAGE_INPUT = "service:JmsMessageInput";
     public static final String SERVICE_EMAIL_MESSAGE_INPUT = "service:EmailMessageInput";
@@ -152,9 +152,9 @@ public class GatewayFeatureSets {
             srv(SERVICE_FTP_MESSAGE_INPUT, "Accept incoming messages over FTP"),
             mass("assertion:FtpCredential"));
 
-        GatewayFeatureSet sftpFront =
-        fsr("set:SFTP(SSH2):front", "Allow incoming SFTP messages",
-            srv(SERVICE_SFTP_MESSAGE_INPUT, "Accept incoming messages over SFTP"));
+        GatewayFeatureSet sshFront =
+        fsr("set:SSH2:front", "Allow incoming SSH2 messages",
+            srv(SERVICE_SSH_MESSAGE_INPUT, "Accept incoming messages over SSH2"));
 
         GatewayFeatureSet srvRawTcp = misc(SERVICE_L7RAWTCP_MESSAGE_INPUT, "Accept incoming messages over l7.raw.tcp", null);
         GatewayFeatureSet rawTcpFront =
@@ -439,7 +439,7 @@ public class GatewayFeatureSets {
             "Adds BRA, JMS and FTP routing.",
             fs(routingFw),
             fs(ftpFront),
-            fs(sftpFront),
+            fs(sshFront),
             fs(jmsFront),
             fs(jmsBack),
             fs(emailFront),

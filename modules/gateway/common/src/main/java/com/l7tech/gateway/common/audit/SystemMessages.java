@@ -156,9 +156,9 @@ public class SystemMessages extends Messages {
     public static final M MONITOR_DB_REPLICATION_RECOVERED   = m( 2382, Level.WARNING, "Replication recovered for host/database {0}" );
 
     // SFTP
-    public static final M SFTPSERVER_START               = m(2400, Level.INFO, "Starting SFTP server: {0}");
-    public static final M SFTPSERVER_STOP                = m(2401, Level.INFO, "Stopping SFTP server: {0}");
-    public static final M SFTPSERVER_ERROR               = m(2402, Level.WARNING, "SFTP server error: {0}");
+    public static final M SSH_SERVER_START = m(2400, Level.INFO, "Starting SSH server: {0}");
+    public static final M SSH_SERVER_STOP = m(2401, Level.INFO, "Stopping SSH server: {0}");
+    public static final M SSH_SERVER_ERROR = m(2402, Level.WARNING, "SSH server error: {0}");
 
     // MAX -                                      m(2999
 }
